@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.string;
@@ -10,7 +11,7 @@ namespace Star {
 class PlayerLog {
 public:
   PlayerLog();
-  PlayerLog(Json const& json);
+  [[nodiscard]] static std::expected<PlayerLog, StarException> create(Json const& json);
 
   Json toJson() const;
 

@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.ordered_map;
 import star.bi_map;
@@ -29,30 +30,50 @@ namespace Star {
 
 constexpr double VanillaStepsPerSecond = 60.0;
 
-InterpolationTracker::InterpolationTracker() {
-  readConfig(JsonObject{});
-}
+InterpolationTracker::InterpolationTracker()
+  : m_interpolationEnabled(false), m_entityUpdateDelta(3.0 / VanillaStepsPerSecond), m_timeLead(0),
+    m_extrapolationHint(0), m_timeTrackFactor(1.0), m_timeMaxDistance(0), m_currentTime(0) {}
 
-InterpolationTracker::InterpolationTracker(Root& root, Json config) {
+std::expected<InterpolationTracker, StarException> InterpolationTracker::create(Root& root, Json config) {
+  InterpolationTracker result;
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {
     auto assets = root.assets();
-    config = assets->json(config.toString());
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto path = config.toString();
+    if (!path) return std::unexpected(std::move(path.error()));
+    auto loaded = (*assets)->json(*path);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    config = std::move(*loaded);
   }
-  readConfig(config);
+  if (auto r = result.readConfig(config); !r) return std::unexpected(std::move(r.error()));
+  return result;
 }
 
-void InterpolationTracker::readConfig(Json const& config) {
+std::expected<void, StarException> InterpolationTracker::readConfig(Json const& config) {
 
-  m_interpolationEnabled = config.getBool("interpolationEnabled", false);
-  m_entityUpdateDelta = config.getDouble("entityUpdateDelta", 3) / VanillaStepsPerSecond;
-  m_timeLead = config.getDouble("stepLead", 0) / VanillaStepsPerSecond;
-  m_extrapolationHint = config.getUInt("extrapolationHint", 0);
-  m_timeTrackFactor = config.getDouble("stepTrackFactor", 1.0);
-  m_timeMaxDistance = config.getDouble("stepMaxDistance", 0.0) / VanillaStepsPerSecond;
+  auto m_interpolationEnabledResult = config.getBool("interpolationEnabled", false);
+  if (!m_interpolationEnabledResult) return std::unexpected(std::move(m_interpolationEnabledResult.error()));
+  m_interpolationEnabled = *m_interpolationEnabledResult;
+  auto m_entityUpdateDeltaResult = config.getDouble("entityUpdateDelta", 3);
+  if (!m_entityUpdateDeltaResult) return std::unexpected(std::move(m_entityUpdateDeltaResult.error()));
+  m_entityUpdateDelta = *m_entityUpdateDeltaResult / VanillaStepsPerSecond;
+  auto m_timeLeadResult = config.getDouble("stepLead", 0);
+  if (!m_timeLeadResult) return std::unexpected(std::move(m_timeLeadResult.error()));
+  m_timeLead = *m_timeLeadResult / VanillaStepsPerSecond;
+  auto m_extrapolationHintResult = config.getUInt("extrapolationHint", 0);
+  if (!m_extrapolationHintResult) return std::unexpected(std::move(m_extrapolationHintResult.error()));
+  m_extrapolationHint = *m_extrapolationHintResult;
+  auto m_timeTrackFactorResult = config.getDouble("stepTrackFactor", 1.0);
+  if (!m_timeTrackFactorResult) return std::unexpected(std::move(m_timeTrackFactorResult.error()));
+  m_timeTrackFactor = *m_timeTrackFactorResult;
+  auto m_timeMaxDistanceResult = config.getDouble("stepMaxDistance", 0.0);
+  if (!m_timeMaxDistanceResult) return std::unexpected(std::move(m_timeMaxDistanceResult.error()));
+  m_timeMaxDistance = *m_timeMaxDistanceResult / VanillaStepsPerSecond;
 
   m_currentTime = 0.0;
+  return {};
 }
 
 bool InterpolationTracker::interpolationEnabled() const {

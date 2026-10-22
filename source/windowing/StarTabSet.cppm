@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -74,20 +75,22 @@ public:
     return Star::typeName<TabSetWidget>();
   }
 
-  TabSetWidget(GuiContext& context, TabSetConfig const& tabSetconfig);
+  [[nodiscard]] static std::expected<std::shared_ptr<TabSetWidget>, StarException> create(GuiContext& context, TabSetConfig const& tabSetConfig);
 
   virtual void setSize(Vec2I const& size) override;
 
-  void addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title);
+  [[nodiscard]] std::expected<void, StarException> addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title);
 
   std::size_t tabCount() const;
-  void tabSelect(std::size_t page);
+  [[nodiscard]] std::expected<void, StarException> tabSelect(std::size_t page);
   std::size_t selectedTab() const;
 
   // Callback is called when the tab changes
   void setCallback(WidgetCallbackFunc callback);
 
 private:
+  explicit TabSetWidget(GuiContext& context, TabSetConfig const& config);
+  int m_tabHeight = 0;
   TabSetConfig m_tabSetConfig;
   std::shared_ptr<FlowLayout> m_tabBar;
   std::shared_ptr<StackWidget> m_stack;

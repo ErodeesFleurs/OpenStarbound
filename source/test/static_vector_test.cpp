@@ -7,63 +7,90 @@ using namespace Star;
 
 TEST(StaticVectorTest, InsertErase) {
   typedef StaticVector<int, 64> SV;
-  SV a = {1, 2, 3, 4};
+  auto created = SV::create({1, 2, 3, 4});
+  ASSERT_TRUE(created);
+  auto& a = *created;
   EXPECT_EQ(a.size(), 4u);
-  EXPECT_EQ(a, SV({1, 2, 3, 4}));
-  EXPECT_NE(a, SV({1, 2, 3}));
-  a.insert(a.begin(), 0);
-  a.insert(a.begin(), -1);
-  EXPECT_EQ(a, SV({-1, 0, 1, 2, 3, 4}));
-  a.insert(a.begin(), {-3, -2});
-  EXPECT_EQ(a, SV({-3, -2, -1, 0, 1, 2, 3, 4}));
+  EXPECT_EQ(a, SV::create({1, 2, 3, 4}));
+  auto shorter = SV::create({1, 2, 3});
+  ASSERT_TRUE(shorter);
+  EXPECT_NE(a, *shorter);
+  ASSERT_TRUE(a.insert(a.begin(), 0));
+  ASSERT_TRUE(a.insert(a.begin(), -1));
+  EXPECT_EQ(a, SV::create({-1, 0, 1, 2, 3, 4}));
+  ASSERT_TRUE(a.insert(a.begin(), {-3, -2}));
+  EXPECT_EQ(a, SV::create({-3, -2, -1, 0, 1, 2, 3, 4}));
   a.erase(a.begin() + 1);
-  EXPECT_EQ(a, SV({-3, -1, 0, 1, 2, 3, 4}));
+  EXPECT_EQ(a, SV::create({-3, -1, 0, 1, 2, 3, 4}));
   a.erase(a.begin(), a.begin() + 3);
-  EXPECT_EQ(a, SV({1, 2, 3, 4}));
-  a.insert(a.end(), {5, 6, 7, 8});
-  EXPECT_EQ(a, SV({1, 2, 3, 4, 5, 6, 7, 8}));
+  EXPECT_EQ(a, SV::create({1, 2, 3, 4}));
+  ASSERT_TRUE(a.insert(a.end(), {5, 6, 7, 8}));
+  EXPECT_EQ(a, SV::create({1, 2, 3, 4, 5, 6, 7, 8}));
   a.erase(a.begin() + 2, a.end() - 2);
-  EXPECT_EQ(a, SV({1, 2, 7, 8}));
-  a.insert(a.begin() + 2, 6);
-  a.insert(a.begin() + 2, 5);
-  a.insert(a.begin() + 2, 4);
-  a.insert(a.begin() + 2, 3);
-  EXPECT_EQ(a, SV({1, 2, 3, 4, 5, 6, 7, 8}));
+  EXPECT_EQ(a, SV::create({1, 2, 7, 8}));
+  ASSERT_TRUE(a.insert(a.begin() + 2, 6));
+  ASSERT_TRUE(a.insert(a.begin() + 2, 5));
+  ASSERT_TRUE(a.insert(a.begin() + 2, 4));
+  ASSERT_TRUE(a.insert(a.begin() + 2, 3));
+  EXPECT_EQ(a, SV::create({1, 2, 3, 4, 5, 6, 7, 8}));
 
-  SV b(a.begin(), a.end());
-  EXPECT_EQ(b, SV({1, 2, 3, 4, 5, 6, 7, 8}));
+  auto b = SV::create(a.begin(), a.end());
+  ASSERT_TRUE(b);
+  EXPECT_EQ(*b, SV::create({1, 2, 3, 4, 5, 6, 7, 8}));
 }
 
 TEST(StaticVectorTest, Comparators) {
   typedef StaticVector<int, 64> SV;
 
-  EXPECT_TRUE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 5}));
-  EXPECT_FALSE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 4}));
-  EXPECT_FALSE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 3}));
-  EXPECT_TRUE(SV({1, 2, 3}) < SV({1, 2, 3, 4}));
-  EXPECT_FALSE(SV({1, 2, 3, 4, 5}) < SV({1, 2, 3, 4}));
+  auto base = SV::create({1, 2, 3, 4});
+  auto greater = SV::create({1, 2, 3, 5});
+  auto equal = SV::create({1, 2, 3, 4});
+  auto lesser = SV::create({1, 2, 3, 3});
+  auto shorter = SV::create({1, 2, 3});
+  auto longer = SV::create({1, 2, 3, 4, 5});
+  ASSERT_TRUE(base);
+  ASSERT_TRUE(greater);
+  ASSERT_TRUE(equal);
+  ASSERT_TRUE(lesser);
+  ASSERT_TRUE(shorter);
+  ASSERT_TRUE(longer);
+  EXPECT_TRUE(*base < *greater);
+  EXPECT_FALSE(*base < *equal);
+  EXPECT_FALSE(*base < *lesser);
+  EXPECT_TRUE(*shorter < *base);
+  EXPECT_FALSE(*longer < *base);
 }
 
 TEST(StaticVectorTest, SizeLimits) {
   StaticVector<int, 0> a;
   StaticVector<int, 1> b;
-  b.push_back(0);
+  ASSERT_TRUE(b.push_back(0));
   StaticVector<int, 2> c;
-  c.resize(2, 0);
+  ASSERT_TRUE(c.resize(2, 0));
 
-  EXPECT_THROW(a.push_back(0), StaticVectorSizeException);
-  EXPECT_THROW(b.push_back(0), StaticVectorSizeException);
-  EXPECT_THROW(c.push_back(0), StaticVectorSizeException);
+  auto zeroCapacity = a.push_back(0);
+  ASSERT_FALSE(zeroCapacity);
+  EXPECT_TRUE(zeroCapacity.error().is<StaticVectorSizeException>());
+  auto oneCapacity = b.push_back(0);
+  ASSERT_FALSE(oneCapacity);
+  EXPECT_TRUE(oneCapacity.error().is<StaticVectorSizeException>());
+  auto twoCapacity = c.push_back(0);
+  ASSERT_FALSE(twoCapacity);
+  EXPECT_TRUE(twoCapacity.error().is<StaticVectorSizeException>());
+  EXPECT_TRUE(a.empty());
+  EXPECT_EQ(b.size(), 1u);
+  EXPECT_EQ(b[0], 0);
+  EXPECT_EQ(c.size(), 2u);
+  EXPECT_EQ(c[0], 0);
+  EXPECT_EQ(c[1], 0);
 }
 
-TEST(StaticVectorTest, ThrowingConstructionPreservesLivePrefix) {
+TEST(StaticVectorTest, CapacityRejectionPreservesLivePrefix) {
   struct Value {
     int* alive;
     int value;
 
     Value(int& alive, int value) : alive(&alive), value(value) {
-      if (value < 0)
-        throw std::runtime_error("construction");
       ++alive;
     }
     ~Value() {
@@ -73,15 +100,19 @@ TEST(StaticVectorTest, ThrowingConstructionPreservesLivePrefix) {
   int alive = 0;
   {
     StaticVector<Value, 2> values;
-    values.emplace_back(alive, 42);
-    EXPECT_THROW(values.emplace_back(alive, -1), std::runtime_error);
+    ASSERT_TRUE(values.emplace_back(alive, 42));
     EXPECT_EQ(values.size(), 1u);
     EXPECT_EQ(values[0].value, 42);
     EXPECT_EQ(alive, 1);
-    values.emplace_back(alive, 7);
+    ASSERT_TRUE(values.emplace_back(alive, 7));
     EXPECT_EQ(values.size(), 2u);
     EXPECT_EQ(alive, 2);
-    EXPECT_THROW(values.emplace_back(alive, 9), StaticVectorSizeException);
+    auto rejected = values.emplace_back(alive, 9);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().is<StaticVectorSizeException>());
+    EXPECT_EQ(values.size(), 2u);
+    EXPECT_EQ(values[0].value, 42);
+    EXPECT_EQ(values[1].value, 7);
     EXPECT_EQ(alive, 2);
   }
   EXPECT_EQ(alive, 0);
@@ -98,46 +129,61 @@ TEST(StaticVectorTest, AlignedStorageAndZeroCapacity) {
   StaticVector<Value, 0> empty;
   EXPECT_NE(empty.ptr(), nullptr);
   EXPECT_EQ(empty.begin(), empty.end());
-  EXPECT_THROW(empty.emplace_back(42), StaticVectorSizeException);
+  auto rejected = empty.emplace_back(42);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().is<StaticVectorSizeException>());
+  EXPECT_TRUE(empty.empty());
   StaticVector<Value, 2> values;
-  values.emplace_back(1);
-  values.emplace_back(2);
+  ASSERT_TRUE(values.emplace_back(1));
+  ASSERT_TRUE(values.emplace_back(2));
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(values.ptr()) % alignof(Value), 0u);
   EXPECT_EQ(values[0].value, 1);
   EXPECT_EQ(values[1].value, 2);
   values.clear();
-  values.emplace_back(3);
+  ASSERT_TRUE(values.emplace_back(3));
   EXPECT_EQ(values[0].value, 3);
 }
 
 TEST(StaticVectorTest, SinglePassAndMoveOnlyInsertion) {
   std::istringstream stream("2 3 4");
-  StaticVector<int, 5> values{1};
+  auto created = StaticVector<int, 5>::create({1});
+  ASSERT_TRUE(created);
+  auto& values = *created;
   auto inserted = values.insert(values.end(), std::istream_iterator<int>(stream), std::istream_iterator<int>{});
-  ASSERT_EQ(inserted, values.begin() + 1);
-  EXPECT_EQ(values, (StaticVector<int, 5>{1, 2, 3, 4}));
+  ASSERT_TRUE(inserted);
+  EXPECT_EQ(*inserted, values.begin() + 1);
+  EXPECT_EQ(values, (StaticVector<int, 5>::create({1, 2, 3, 4})));
   StaticVector<std::unique_ptr<int>, 2> owners;
-  owners.emplace_back(std::make_unique<int>(7));
-  owners.emplace(owners.begin(), std::make_unique<int>(9));
+  ASSERT_TRUE(owners.emplace_back(std::make_unique<int>(7)));
+  ASSERT_TRUE(owners.emplace(owners.begin(), std::make_unique<int>(9)));
   EXPECT_EQ(*owners[0], 9);
   EXPECT_EQ(*owners[1], 7);
 }
 
 TEST(StaticVectorTest, RangeOverflowRollsBackAppendedElements) {
-  StaticVector<int, 3> values{1, 2};
+  auto created = StaticVector<int, 3>::create({1, 2});
+  ASSERT_TRUE(created);
+  auto& values = *created;
   std::array<int, 2> more{3, 4};
-  EXPECT_THROW(values.insert(values.begin(), more.begin(), more.end()), StaticVectorSizeException);
-  EXPECT_EQ(values, (StaticVector<int, 3>{1, 2}));
+  auto forwardFailure = values.insert(values.begin(), more.begin(), more.end());
+  ASSERT_FALSE(forwardFailure);
+  EXPECT_TRUE(forwardFailure.error().is<StaticVectorSizeException>());
+  EXPECT_EQ(values, (StaticVector<int, 3>::create({1, 2})));
   std::istringstream stream("3 4");
-  EXPECT_THROW(values.insert(values.begin(), std::istream_iterator<int>(stream), std::istream_iterator<int>{}), StaticVectorSizeException);
-  EXPECT_EQ(values, (StaticVector<int, 3>{1, 2}));
+  auto inputFailure = values.insert(values.begin(), std::istream_iterator<int>(stream), std::istream_iterator<int>{});
+  ASSERT_FALSE(inputFailure);
+  EXPECT_TRUE(inputFailure.error().is<StaticVectorSizeException>());
+  EXPECT_EQ(values, (StaticVector<int, 3>::create({1, 2})));
 }
 
 TEST(StaticVectorTest, CapacityFailureDoesNotConsumeEmplaceArgument) {
   StaticVector<std::unique_ptr<int>, 1> values;
-  values.emplace_back(std::make_unique<int>(7));
+  ASSERT_TRUE(values.emplace_back(std::make_unique<int>(7)));
   auto candidate = std::make_unique<int>(9);
-  EXPECT_THROW(values.emplace(values.begin(), std::move(candidate)), StaticVectorSizeException);
+  auto rejected = values.emplace(values.begin(), std::move(candidate));
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().is<StaticVectorSizeException>());
+  EXPECT_EQ(values.size(), 1u);
   ASSERT_TRUE(candidate);
   EXPECT_EQ(*candidate, 9);
   EXPECT_EQ(*values[0], 7);
@@ -150,9 +196,6 @@ struct StaticVectorLifetime {
   int moves = 0;
   int assignments = 0;
   int destroyed = 0;
-  int failCopy = -1;
-  int failMove = -1;
-  int failAssignment = -1;
 };
 
 struct NondefaultStaticValue {
@@ -163,25 +206,21 @@ struct NondefaultStaticValue {
     ++state.alive;
   }
   NondefaultStaticValue(NondefaultStaticValue const& other) : state(other.state), value(other.value) {
-    if (state->copies++ == state->failCopy)
-      throw std::runtime_error("copy");
+    ++state->copies;
     ++state->alive;
   }
   NondefaultStaticValue(NondefaultStaticValue&& other) : state(other.state), value(other.value) {
-    if (state->moves++ == state->failMove)
-      throw std::runtime_error("move");
+    ++state->moves;
     other.value = -1;
     ++state->alive;
   }
   NondefaultStaticValue& operator=(NondefaultStaticValue const& other) {
-    if (state->assignments++ == state->failAssignment)
-      throw std::runtime_error("copy assignment");
+    ++state->assignments;
     value = other.value;
     return *this;
   }
   NondefaultStaticValue& operator=(NondefaultStaticValue&& other) {
-    if (state->assignments++ == state->failAssignment)
-      throw std::runtime_error("move assignment");
+    ++state->assignments;
     value = std::exchange(other.value, -1);
     return *this;
   }
@@ -196,11 +235,11 @@ TEST(StaticVectorTest, NondefaultAssignmentConstructsOnlyNewElements) {
   StaticVectorLifetime state;
   {
     StaticVector<NondefaultStaticValue, 4> source;
-    source.emplace_back(state, 10);
-    source.emplace_back(state, 20);
-    source.emplace_back(state, 30);
+    ASSERT_TRUE(source.emplace_back(state, 10));
+    ASSERT_TRUE(source.emplace_back(state, 20));
+    ASSERT_TRUE(source.emplace_back(state, 30));
     StaticVector<NondefaultStaticValue, 4> target;
-    target.emplace_back(state, 1);
+    ASSERT_TRUE(target.emplace_back(state, 1));
     target = source;
     EXPECT_EQ(state.assignments, 1);
     EXPECT_EQ(state.copies, 2);
@@ -208,8 +247,8 @@ TEST(StaticVectorTest, NondefaultAssignmentConstructsOnlyNewElements) {
     ASSERT_EQ(target.size(), 3u);
     EXPECT_EQ(target[0].value, 10);
     EXPECT_EQ(target[2].value, 30);
-    source.pop_back();
-    source.pop_back();
+    ASSERT_TRUE(source.pop_back());
+    ASSERT_TRUE(source.pop_back());
     auto destroyed = state.destroyed;
     target = source;
     EXPECT_EQ(target.size(), 1u);
@@ -223,14 +262,14 @@ TEST(StaticVectorTest, NondefaultAssignmentConstructsOnlyNewElements) {
     EXPECT_EQ(state.assignments, 2);
     EXPECT_EQ(target[0].value, 10);
 
-    target = {NondefaultStaticValue(state, 40), NondefaultStaticValue(state, 50)};
+    ASSERT_TRUE(target.assign({NondefaultStaticValue(state, 40), NondefaultStaticValue(state, 50)}));
     ASSERT_EQ(target.size(), 2u);
     EXPECT_EQ(target[0].value, 40);
     EXPECT_EQ(target[1].value, 50);
     EXPECT_EQ(state.assignments, 3);
     EXPECT_EQ(state.copies, 3);
     EXPECT_EQ(state.alive, 3);
-    target = {};
+    ASSERT_TRUE(target.assign({}));
     EXPECT_TRUE(target.empty());
     EXPECT_EQ(state.alive, 1);
   }
@@ -253,11 +292,11 @@ TEST(StaticVectorTest, MoveOnlyAssignmentAndEraseNeedNoCopyOrDefault) {
   int alive = 0;
   {
     StaticVector<Value, 4> source;
-    source.emplace_back(alive, 10);
-    source.emplace_back(alive, 20);
-    source.emplace_back(alive, 30);
+    ASSERT_TRUE(source.emplace_back(alive, 10));
+    ASSERT_TRUE(source.emplace_back(alive, 20));
+    ASSERT_TRUE(source.emplace_back(alive, 30));
     StaticVector<Value, 4> target;
-    target.emplace_back(alive, 1);
+    ASSERT_TRUE(target.emplace_back(alive, 1));
     target = std::move(source);
     ASSERT_EQ(target.size(), 3u);
     EXPECT_EQ(target[0].value, 10);
@@ -271,10 +310,10 @@ TEST(StaticVectorTest, MoveOnlyAssignmentAndEraseNeedNoCopyOrDefault) {
     EXPECT_EQ(target.erase(target.begin(), target.end()), target.begin());
     EXPECT_TRUE(target.empty());
     EXPECT_EQ(alive, 3);
-    target.emplace_back(alive, 40);
-    target.emplace_back(alive, 50);
+    ASSERT_TRUE(target.emplace_back(alive, 40));
+    ASSERT_TRUE(target.emplace_back(alive, 50));
     source.clear();
-    source.emplace_back(alive, 60);
+    ASSERT_TRUE(source.emplace_back(alive, 60));
     target = std::move(source);
     EXPECT_EQ(target.size(), 1u);
     EXPECT_EQ(target[0].value, 60);
@@ -283,46 +322,15 @@ TEST(StaticVectorTest, MoveOnlyAssignmentAndEraseNeedNoCopyOrDefault) {
   EXPECT_EQ(alive, 0);
 }
 
-TEST(StaticVectorTest, ThrowingAssignmentAndConstructionKeepLivePrefixes) {
-  StaticVectorLifetime state;
-  {
-    StaticVector<NondefaultStaticValue, 4> source;
-    source.emplace_back(state, 10);
-    source.emplace_back(state, 20);
-    source.emplace_back(state, 30);
-    StaticVector<NondefaultStaticValue, 4> target;
-    target.emplace_back(state, 1);
-    state.failAssignment = 0;
-    EXPECT_THROW(target = source, std::runtime_error);
-    EXPECT_EQ(target.size(), 1u);
-    EXPECT_EQ(target[0].value, 1);
-    EXPECT_EQ(state.alive, 4);
-    state.failAssignment = -1;
-    state.failCopy = 1;
-    EXPECT_THROW(target = source, std::runtime_error);
-    EXPECT_EQ(target.size(), 2u);
-    EXPECT_EQ(target[0].value, 10);
-    EXPECT_EQ(target[1].value, 20);
-    EXPECT_EQ(state.alive, 5);
-    target.clear();
-    target.emplace_back(state, 40);
-    state.failMove = 1;
-    EXPECT_THROW(target = std::move(source), std::runtime_error);
-    EXPECT_EQ(target.size(), 2u);
-    EXPECT_EQ(source.size(), 3u);
-    EXPECT_EQ(state.alive, 5);
-    state.failMove = -1;
-    target = std::move(source);
-    EXPECT_EQ(target.size(), 3u);
-    EXPECT_EQ(state.alive, 6);
-  }
-  EXPECT_EQ(state.alive, 0);
-}
 
 TEST(StaticVectorTest, InitializerAssignmentChecksCapacityBeforeMutation) {
-  StaticVector<int, 2> values{1};
-  EXPECT_THROW((values = {2, 3, 4}), StaticVectorSizeException);
-  EXPECT_EQ(values, (StaticVector<int, 2>{1}));
+  auto created = StaticVector<int, 2>::create({1});
+  ASSERT_TRUE(created);
+  auto& values = *created;
+  auto rejected = values.assign({2, 3, 4});
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().is<StaticVectorSizeException>());
+  EXPECT_EQ(values, (StaticVector<int, 2>::create({1})));
 }
 
 TEST(StaticVectorTest, ResizePreservesDefaultTemporaryCopyAndDestructionOrder) {
@@ -337,55 +345,21 @@ TEST(StaticVectorTest, ResizePreservesDefaultTemporaryCopyAndDestructionOrder) {
   };
   StaticVector<Value, 4> values;
   Value::events().clear();
-  values.resize(2);
+  ASSERT_TRUE(values.resize(2));
   EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'C', 'C', 'X'}));
   Value::events().clear();
-  values.resize(2);
+  ASSERT_TRUE(values.resize(2));
   EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'X'}));
   Value::events().clear();
-  values.resize(0);
+  ASSERT_TRUE(values.resize(0));
   EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'X', 'X', 'X'}));
 }
 
-TEST(StaticVectorTest, AliasedEmplaceStagesValueAndRangeFailureRollsBack) {
-  StaticVector<std::string, 4> text{"first", "second"};
-  text.emplace(text.begin() + 1, text[0]);
-  EXPECT_EQ(text, (StaticVector<std::string, 4>{"first", "first", "second"}));
-  StaticVectorLifetime state;
-  {
-    StaticVector<NondefaultStaticValue, 4> values;
-    values.emplace_back(state, 10);
-    StaticVector<NondefaultStaticValue, 4> more;
-    more.emplace_back(state, 20);
-    more.emplace_back(state, 30);
-    state.failCopy = 1;
-    EXPECT_THROW(values.insert(values.begin(), more.begin(), more.end()), std::runtime_error);
-    EXPECT_EQ(values.size(), 1u);
-    EXPECT_EQ(values[0].value, 10);
-    EXPECT_EQ(state.alive, 3);
-    EXPECT_EQ(state.destroyed, 1);
-  }
-  EXPECT_EQ(state.alive, 0);
+TEST(StaticVectorTest, AliasedEmplaceStagesValue) {
+  auto created = StaticVector<std::string, 4>::create({"first", "second"});
+  ASSERT_TRUE(created);
+  auto& text = *created;
+  ASSERT_TRUE(text.emplace(text.begin() + 1, text[0]));
+  EXPECT_EQ(text, (StaticVector<std::string, 4>::create({"first", "first", "second"})));
 }
 
-TEST(StaticVectorTest, ThrowingEraseDoesNotDestroyAnUnshiftedTail) {
-  StaticVectorLifetime state;
-  {
-    StaticVector<NondefaultStaticValue, 4> values;
-    values.emplace_back(state, 10);
-    values.emplace_back(state, 20);
-    values.emplace_back(state, 30);
-    state.failAssignment = 1;
-    EXPECT_THROW(values.erase(values.begin()), std::runtime_error);
-    EXPECT_EQ(values.size(), 3u);
-    EXPECT_EQ(state.alive, 3);
-    EXPECT_EQ(state.destroyed, 0);
-    state.failAssignment = -1;
-    values.erase(values.begin() + 1, values.end());
-    EXPECT_EQ(values.size(), 1u);
-    EXPECT_EQ(state.alive, 1);
-    EXPECT_EQ(state.destroyed, 2);
-  }
-  EXPECT_EQ(state.alive, 0);
-  EXPECT_EQ(state.destroyed, 3);
-}

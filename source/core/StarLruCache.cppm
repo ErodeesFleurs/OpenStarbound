@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 import star.hash;
 import star.ordered_map;
@@ -47,7 +48,7 @@ public:
   // value.
   template <typename Producer>
     requires std::invocable<Producer&, Key const&>
-  Value& get(Key const& key, Producer&& producer);
+  [[nodiscard]] std::expected<Value*, StarException> get(Key const& key, Producer&& producer);
 
   // Clear all cached entries.
   void clear();
@@ -82,7 +83,7 @@ void LruCacheBase<OrderedMapType>::setMaxSize(std::size_t maxSize) {
   m_maxSize = std::max<std::size_t>(maxSize, 1);
 
   while (m_map.size() > m_maxSize)
-    m_map.removeFirst();
+    m_map.erase(m_map.begin());
 }
 
 template <typename OrderedMapType>
@@ -113,7 +114,7 @@ template <typename OrderedMapType>
 void LruCacheBase<OrderedMapType>::set(Key const& key, Value value) {
   auto i = m_map.find(key);
   if (i == m_map.end()) {
-    m_map.add(key, std::move(value));
+    m_map.insert({key, std::move(value)});
   } else {
     i->second = std::move(value);
     m_map.toBack(i);
@@ -137,17 +138,28 @@ void LruCacheBase<OrderedMapType>::removeWhere(Filter&& filter) {
 template <typename OrderedMapType>
 template <typename Producer>
   requires std::invocable<Producer&, typename OrderedMapType::key_type const&>
-auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer&& producer) -> Value & {
+[[nodiscard]] auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer&& producer) -> std::expected<Value*, StarException> {
   auto i = m_map.find(key);
   if (i == m_map.end()) {
     while (m_map.size() > m_maxSize - 1)
-      m_map.removeFirst();
-    i = m_map.insert({key, std::invoke(producer, key)}).first;
+      m_map.erase(m_map.begin());
+    if constexpr (requires { producer == nullptr; }) {
+      if (producer == nullptr)
+        return std::unexpected(StarException("Cannot invoke an empty cache producer"));
+    }
+    if constexpr (std::same_as<std::invoke_result_t<Producer&, Key const&>, std::expected<Value, StarException>>) {
+      auto value = std::invoke(producer, key);
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      i = m_map.insert({key, std::move(*value)}).first;
+    } else {
+      i = m_map.insert({key, std::invoke(producer, key)}).first;
+    }
   } else {
     i = m_map.toBack(i);
   }
 
-  return i->second;
+  return &i->second;
 }
 
 template <typename OrderedMapType>

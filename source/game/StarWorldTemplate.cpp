@@ -87,88 +87,163 @@ import star.static_random;
 import star.algorithm;
 namespace Star {
 
-WorldTemplate::WorldTemplate(Root& root, Vec2U const& size) : WorldTemplate(root) {
-  m_geometry = size;
+std::expected<std::shared_ptr<WorldTemplate>, StarException> WorldTemplate::create(Root& root, Vec2U const& size) {
+  auto result = std::shared_ptr<WorldTemplate>(new WorldTemplate(root));
+  auto initialized = result->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  result->m_geometry = size;
+  return result;
 }
 
-WorldTemplate::WorldTemplate(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
-  : WorldTemplate(root) {
-  auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
-  if (!celestialParameters)
-    throw StarException("Celestial parameters for constructing WorldTemplate not found!");
-
-  m_celestialParameters = celestialParameters;
-  m_worldParameters = m_celestialParameters->visitableParameters();
-  if (!m_worldParameters)
-    throw StarException("Cannot create WorldTemplate from non-visitable world");
-
-  m_skyParameters = SkyParameters(root, celestialCoordinate, celestialDatabase);
-  m_seed = m_celestialParameters->seed();
-  m_geometry = WorldGeometry(m_worldParameters->worldSize);
-
-  if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(root, *terrestrialParameters, m_seed));
-  else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(root, *asteroidsParameters, m_seed));
-  else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(root, *floatingDungeonParameters, m_seed));
-
-  determineWorldName();
-  setupWeatherDomains();
+std::expected<std::shared_ptr<WorldTemplate>, StarException> WorldTemplate::create(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase) {
+  auto result = std::shared_ptr<WorldTemplate>(new WorldTemplate(root));
+  auto initialized = result->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  auto parameters = celestialDatabase->parameters(celestialCoordinate);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  if (!*parameters)
+    return std::unexpected(StarException("Celestial parameters for constructing WorldTemplate not found!"));
+  result->m_celestialParameters = std::move(*parameters);
+  result->m_worldParameters = result->m_celestialParameters->visitableParameters();
+  if (!result->m_worldParameters)
+    return std::unexpected(StarException("Cannot create WorldTemplate from non-visitable world"));
+  auto sky = SkyParameters::create(root, celestialCoordinate, celestialDatabase);
+  if (!sky) return std::unexpected(std::move(sky.error()));
+  result->m_skyParameters = std::move(*sky);
+  result->m_seed = result->m_celestialParameters->seed();
+  result->m_geometry = WorldGeometry(result->m_worldParameters->worldSize);
+  if (auto parameters = as<TerrestrialWorldParameters>(result->m_worldParameters)) {
+    auto layout = WorldLayout::buildTerrestrialLayout(root, *parameters, result->m_seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  } else if (auto parameters = as<AsteroidsWorldParameters>(result->m_worldParameters)) {
+    auto layout = WorldLayout::buildAsteroidsLayout(root, *parameters, result->m_seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  } else if (auto parameters = as<FloatingDungeonWorldParameters>(result->m_worldParameters)) {
+    auto layout = WorldLayout::buildFloatingDungeonLayout(root, *parameters, result->m_seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  }
+  auto name = result->determineWorldName();
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto weather = result->setupWeatherDomains();
+  if (!weather) return std::unexpected(std::move(weather.error()));
+  return result;
 }
 
-WorldTemplate::WorldTemplate(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
-  : WorldTemplate(root) {
+std::expected<std::shared_ptr<WorldTemplate>, StarException> WorldTemplate::create(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed) {
+  auto result = std::shared_ptr<WorldTemplate>(new WorldTemplate(root));
+  auto initialized = result->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
   if (!worldParameters)
-    throw StarException("Cannot create WorldTemplate from non-visitable world");
-
-  m_worldParameters = worldParameters;
-  m_skyParameters = skyParameters;
-  m_seed = seed;
-  m_geometry = WorldGeometry(m_worldParameters->worldSize);
-
-  if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(root, *terrestrialParameters, seed));
-  else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(root, *asteroidsParameters, seed));
-  else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(root, *floatingDungeonParameters, m_seed));
-
-  determineWorldName();
-  setupWeatherDomains();
+    return std::unexpected(StarException("Cannot create WorldTemplate from non-visitable world"));
+  result->m_worldParameters = worldParameters;
+  result->m_skyParameters = skyParameters;
+  result->m_seed = seed;
+  result->m_geometry = WorldGeometry(worldParameters->worldSize);
+  if (auto parameters = as<TerrestrialWorldParameters>(worldParameters)) {
+    auto layout = WorldLayout::buildTerrestrialLayout(root, *parameters, seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  } else if (auto parameters = as<AsteroidsWorldParameters>(worldParameters)) {
+    auto layout = WorldLayout::buildAsteroidsLayout(root, *parameters, seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  } else if (auto parameters = as<FloatingDungeonWorldParameters>(worldParameters)) {
+    auto layout = WorldLayout::buildFloatingDungeonLayout(root, *parameters, seed);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::make_shared<WorldLayout>(std::move(*layout));
+  }
+  auto name = result->determineWorldName();
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto weather = result->setupWeatherDomains();
+  if (!weather) return std::unexpected(std::move(weather.error()));
+  return result;
 }
 
-WorldTemplate::WorldTemplate(Root& root, Json const& store) : WorldTemplate(root) {
-  m_celestialParameters = jsonToOptional<CelestialParameters>(store.get("celestialParameters", {}));
-  m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
-  m_skyParameters = SkyParameters(store.get("skyParameters"));
-
-  m_seed = store.getUInt("seed");
-  m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
-  if (auto regionData = store.opt("regionData"))
-    m_layout = std::make_shared<WorldLayout>(root, takeOptional(regionData));
-
-  m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
-      CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
-      ctr.regionBounds = ctr.region.boundBox();
-      return ctr;
-    });
-
-  determineWorldName();
-  setupWeatherDomains();
+std::expected<std::shared_ptr<WorldTemplate>, StarException> WorldTemplate::create(Root& root, Json const& store) {
+  auto result = std::shared_ptr<WorldTemplate>(new WorldTemplate(root));
+  auto initialized = result->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  auto celestial = store.get("celestialParameters", {});
+  if (!celestial) return std::unexpected(std::move(celestial.error()));
+  if (!celestial->isNull()) {
+    auto parameters = CelestialParameters::create(*celestial);
+    if (!parameters) return std::unexpected(std::move(parameters.error()));
+    result->m_celestialParameters = std::move(*parameters);
+  }
+  auto parametersJson = store.get("worldParameters", {});
+  if (!parametersJson) return std::unexpected(std::move(parametersJson.error()));
+  auto parameters = diskLoadVisitableWorldParameters(*parametersJson);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  result->m_worldParameters = std::move(*parameters);
+  auto skyJson = store.get("skyParameters");
+  if (!skyJson) return std::unexpected(std::move(skyJson.error()));
+  auto sky = SkyParameters::create(*skyJson);
+  if (!sky) return std::unexpected(std::move(sky.error()));
+  result->m_skyParameters = std::move(*sky);
+  auto seed = store.getUInt("seed");
+  if (!seed) return std::unexpected(std::move(seed.error()));
+  result->m_seed = *seed;
+  auto sizeJson = store.get("size");
+  if (!sizeJson) return std::unexpected(std::move(sizeJson.error()));
+  auto size = jsonToVec2U(*sizeJson);
+  if (!size) return std::unexpected(std::move(size.error()));
+  result->m_geometry = WorldGeometry(*size);
+  auto regionData = store.opt("regionData");
+  if (!regionData) return std::unexpected(std::move(regionData.error()));
+  if (*regionData) {
+    auto layout = WorldLayout::create(root, **regionData);
+    if (!layout) return std::unexpected(std::move(layout.error()));
+    result->m_layout = std::move(*layout);
+  }
+  auto customRegions = store.getArray("customTerrainRegions", JsonArray());
+  if (!customRegions) return std::unexpected(std::move(customRegions.error()));
+  for (auto const& config : *customRegions) {
+    auto regionJson = config.get("region");
+    if (!regionJson) return std::unexpected(std::move(regionJson.error()));
+    auto region = jsonToPolyF(*regionJson);
+    if (!region) return std::unexpected(std::move(region.error()));
+    auto solid = config.getBool("solid");
+    if (!solid) return std::unexpected(std::move(solid.error()));
+    auto bounds = region->boundBox();
+    result->m_customTerrainRegions.append({std::move(*region), bounds, *solid});
+  }
+  auto name = result->determineWorldName();
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto weather = result->setupWeatherDomains();
+  if (!weather) return std::unexpected(std::move(weather.error()));
+  return result;
 }
 
-Json WorldTemplate::store() const {
+std::expected<Json, StarException> WorldTemplate::store() const {
+  Json celestial;
+  if (m_celestialParameters) {
+    auto stored = m_celestialParameters->diskStore();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    celestial = std::move(*stored);
+  }
+  auto parameters = diskStoreVisitableWorldParameters(m_worldParameters);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  auto sky = m_skyParameters.toJson();
+  if (!sky) return std::unexpected(std::move(sky.error()));
+  Json regionData;
+  if (m_layout) {
+    auto stored = m_layout->toJson();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    regionData = std::move(*stored);
+  }
   return JsonObject{
-    {"celestialParameters", jsonFromOptional(m_celestialParameters, std::mem_fn(&CelestialParameters::diskStore))},
-    {"worldParameters", diskStoreVisitableWorldParameters(m_worldParameters)},
-    {"skyParameters", m_skyParameters.toJson()},
+    {"celestialParameters", std::move(celestial)},
+    {"worldParameters", std::move(*parameters)},
+    {"skyParameters", std::move(*sky)},
     {"seed", m_seed},
     {"size", jsonFromVec2U(m_geometry.size())},
-    {"regionData", m_layout ? m_layout->toJson() : Json()},
+    {"regionData", std::move(regionData)},
     {"customTerrainRegions", transform<JsonArray>(m_customTerrainRegions, [](CustomTerrainRegion const& region) {
-        return JsonObject{{"region", jsonFromPolyF(region.region)}, {"solid", region.solid}};
-      })}
+      return JsonObject{{"region", jsonFromPolyF(region.region)}, {"solid", region.solid}};
+    })}
   };
 }
 
@@ -188,9 +263,9 @@ std::shared_ptr<WorldLayout> WorldTemplate::worldLayout() const {
   return m_layout;
 }
 
-void WorldTemplate::setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters) {
+std::expected<void, StarException> WorldTemplate::setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters) {
   m_worldParameters = take(newParameters);
-  setupWeatherDomains();
+  return setupWeatherDomains();
 }
 
 void WorldTemplate::setWorldLayout(std::shared_ptr<WorldLayout> newLayout) {
@@ -237,30 +312,35 @@ bool WorldTemplate::inSurfaceLayer(Vec2I const& position) const {
   return false;
 }
 
-std::optional<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
-  if (!m_layout)
-    return {};
-
+std::expected<std::optional<Vec2I>, StarException> WorldTemplate::findSensiblePlayerStart() const {
+  if (!m_layout) return {};
   auto playerStartSearchRegions = m_layout->playerStartSearchRegions();
-  if (playerStartSearchRegions.empty())
-    return {};
-
-  int playerStartSearchTries = m_templateConfig.getInt("playerStartSearchTries");
-  int playerStartFreeBlocksRadius = m_templateConfig.getInt("playerStartFreeBlocksRadius");
-  int playerStartFreeBlocksHeight = m_templateConfig.getInt("playerStartFreeBlocksHeight");
-
-  for (int i = 0; i < playerStartSearchTries; ++i) {
-    RectI searchRegion = this->root().random().randFrom(playerStartSearchRegions);
-    int x = this->root().random().randInt(searchRegion.xMin(), searchRegion.xMax());
-
-    for (int y = searchRegion.yMax() - 1; y >= searchRegion.yMin(); --y) {
-      if (getBlockInfo(x, y).terrain && !getBlockInfo(x, y + 1).terrain) {
-        if (isOutside(RectI(x - playerStartFreeBlocksRadius, y + 1, x + playerStartFreeBlocksRadius, y + playerStartFreeBlocksHeight)))
-          return Vec2I(x, y + 1);
+  if (playerStartSearchRegions.empty()) return {};
+  auto tries = m_templateConfig.getInt("playerStartSearchTries");
+  if (!tries) return std::unexpected(std::move(tries.error()));
+  auto radius = m_templateConfig.getInt("playerStartFreeBlocksRadius");
+  if (!radius) return std::unexpected(std::move(radius.error()));
+  auto height = m_templateConfig.getInt("playerStartFreeBlocksHeight");
+  if (!height) return std::unexpected(std::move(height.error()));
+  for (int i = 0; i < *tries; ++i) {
+    auto searchRegion = this->root().random().randFrom(playerStartSearchRegions);
+    if (!searchRegion) return std::unexpected(std::move(searchRegion.error()));
+    auto randomX = this->root().random().randInt((*searchRegion)->xMin(), (*searchRegion)->xMax());
+    if (!randomX) return std::unexpected(std::move(randomX.error()));
+    int x = *randomX;
+    for (int y = (*searchRegion)->yMax() - 1; y >= (*searchRegion)->yMin(); --y) {
+      auto block = getBlockInfo(x, y);
+      if (!block) return std::unexpected(std::move(block.error()));
+      if (!block->terrain) continue;
+      auto above = getBlockInfo(x, y + 1);
+      if (!above) return std::unexpected(std::move(above.error()));
+      if (!above->terrain) {
+        auto outside = isOutside(RectI(x - *radius, y + 1, x + *radius, y + *height));
+        if (!outside) return std::unexpected(std::move(outside.error()));
+        if (*outside) return Vec2I(x, y + 1);
       }
     }
   }
-
   return {};
 }
 
@@ -279,206 +359,240 @@ void WorldTemplate::clearCustomTerrains() {
   m_blockCache.clear();
 }
 
-List<RectI> WorldTemplate::previewAddBiomeRegion(Vec2I const& position, int width) {
+std::expected<List<RectI>, StarException> WorldTemplate::previewAddBiomeRegion(Vec2I const& position, int width) {
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewAddBiomeRegion(position, width);
-    regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(std::ceil(terrestrialParameters->blendSize));
-      });
-    return regionRects;
-  } else {
-    this->root().logger().error("Cannot add biome region to non-terrestrial world!");
-    // throw StarException("Cannot add biome region to non-terrestrial world!");
-    return List<RectI>();
+    if (!regionRects) return std::unexpected(std::move(regionRects.error()));
+    regionRects->transform([terrestrialParameters](RectI const& rect) {
+      return rect.padded(std::ceil(terrestrialParameters->blendSize));
+    });
+    return std::move(*regionRects);
   }
+  auto logged = this->root().logger().error("Cannot add biome region to non-terrestrial world!");
+  if (!logged) return std::unexpected(std::move(logged.error()));
+  return List<RectI>();
 }
 
-List<RectI> WorldTemplate::previewExpandBiomeRegion(Vec2I const& position, int newWidth) {
+std::expected<List<RectI>, StarException> WorldTemplate::previewExpandBiomeRegion(Vec2I const& position, int newWidth) {
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewExpandBiomeRegion(position, newWidth);
-    regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(std::ceil(terrestrialParameters->blendSize));
-      });
-    return regionRects;
-  } else {
-    this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
-    // throw StarException("Cannot expand biome region on non-terrestrial world!");
-    return List<RectI>();
+    if (!regionRects) return std::unexpected(std::move(regionRects.error()));
+    regionRects->transform([terrestrialParameters](RectI const& rect) {
+      return rect.padded(std::ceil(terrestrialParameters->blendSize));
+    });
+    return std::move(*regionRects);
   }
+  auto logged = this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
+  if (!logged) return std::unexpected(std::move(logged.error()));
+  return List<RectI>();
 }
 
-void WorldTemplate::addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width) {
+std::expected<void, StarException> WorldTemplate::addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width) {
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
-    m_layout->addBiomeRegion(*terrestrialParameters, m_seed, position, biomeName, subBlockSelector, width);
+    auto added = m_layout->addBiomeRegion(*terrestrialParameters, m_seed, position, biomeName, subBlockSelector, width);
+    if (!added) return std::unexpected(std::move(added.error()));
     m_blockCache.clear();
-  } else {
-    this->root().logger().error("Cannot add biome region to non-terrestrial world!");
-    // throw StarException("Cannot add biome region to non-terrestrial world!");
+    return {};
   }
+  return this->root().logger().error("Cannot add biome region to non-terrestrial world!");
 }
 
-void WorldTemplate::expandBiomeRegion(Vec2I const& position, int newWidth) {
-  if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
-    m_layout->expandBiomeRegion(position, newWidth);
+std::expected<void, StarException> WorldTemplate::expandBiomeRegion(Vec2I const& position, int newWidth) {
+  if (as<TerrestrialWorldParameters>(m_worldParameters)) {
+    auto expanded = m_layout->expandBiomeRegion(position, newWidth);
+    if (!expanded) return std::unexpected(std::move(expanded.error()));
     m_blockCache.clear();
-  } else {
-    this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
-    // throw StarException("Cannot expand biome region on non-terrestrial world!");
+    return {};
   }
+  return this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
 }
 
-List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
+std::expected<List<WorldTemplate::Dungeon>, StarException> WorldTemplate::dungeons() const {
   List<Dungeon> dungeonList;
 
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     dungeonList.append({floatingDungeonParameters->primaryDungeon, floatingDungeonParameters->dungeonBaseHeight, 0, 0, true, false});
   } else if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
-    auto addLayerDungeons = [this, &dungeonList](TerrestrialWorldParameters::TerrestrialLayer const& layer) {
+    auto addLayerDungeons = [this, &dungeonList](TerrestrialWorldParameters::TerrestrialLayer const& layer) -> std::expected<void, StarException> {
       if (layer.dungeons.size() > 0) {
         int dungeonSpacing = std::floor(m_geometry.width() / layer.dungeons.size());
-        std::uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
+        auto offset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
+        std::uint32_t dungeonOffset = offset;
         for (auto const& dungeon : layer.dungeons) {
           dungeonList.append({dungeon, layer.layerBaseHeight, (int)dungeonOffset, layer.dungeonXVariance, false, true});
           dungeonOffset = (dungeonOffset + dungeonSpacing) % m_geometry.width();
         }
       }
+      return {};
     };
 
-    addLayerDungeons(terrestrialParameters->spaceLayer);
-    addLayerDungeons(terrestrialParameters->atmosphereLayer);
-    addLayerDungeons(terrestrialParameters->surfaceLayer);
-    addLayerDungeons(terrestrialParameters->subsurfaceLayer);
+    {
+      auto added = addLayerDungeons(terrestrialParameters->spaceLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto added = addLayerDungeons(terrestrialParameters->atmosphereLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto added = addLayerDungeons(terrestrialParameters->surfaceLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto added = addLayerDungeons(terrestrialParameters->subsurfaceLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
     for (auto const& ul : terrestrialParameters->undergroundLayers)
-      addLayerDungeons(ul);
-    addLayerDungeons(terrestrialParameters->coreLayer);
+      {
+      auto added = addLayerDungeons(ul);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto added = addLayerDungeons(terrestrialParameters->coreLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
   }
 
   return dungeonList;
 }
 
-WorldTemplate::BlockInfo WorldTemplate::blockInfo(int x, int y) const {
+std::expected<WorldTemplate::BlockInfo, StarException> WorldTemplate::blockInfo(int x, int y) const {
   return getBlockInfo(m_geometry.xwrap(x), y);
 }
 
-WorldTemplate::BlockInfo WorldTemplate::blockBiomeInfo(int x, int y) const {
+std::expected<WorldTemplate::BlockInfo, StarException> WorldTemplate::blockBiomeInfo(int x, int y) const {
   BlockInfo blockInfo;
-
-  if (!m_layout)
-    return blockInfo;
-
-  // The environment biome is calculated with weighting based on the flat coordinates.
-  List<WorldLayout::RegionWeighting> flatWeighting = m_layout->getWeighting(x, y);
-
+  if (!m_layout) return blockInfo;
+  auto flatWeighting = m_layout->getWeighting(x, y);
+  if (!flatWeighting) return std::unexpected(std::move(flatWeighting.error()));
   int blendNoiseOffset = 0;
-  if (auto const& blendNoise = m_layout->blendNoise())
-    blendNoiseOffset = (int)blendNoise->get(x, y);
-
+  if (auto const& blendNoise = m_layout->blendNoise()) {
+    auto noise = blendNoise->get(x, y);
+    if (!noise) return std::unexpected(std::move(noise.error()));
+    blendNoiseOffset = (int)*noise;
+  }
   Vec2I blockPos;
   List<WorldLayout::RegionWeighting> blockWeighting;
   List<WorldLayout::RegionWeighting> transitionWeighting;
   if (auto const& blockNoise = m_layout->blockNoise()) {
-    blockPos = blockNoise->apply(Vec2I(x, y), m_geometry.size());
-    blockWeighting = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
-    transitionWeighting = m_layout->getWeighting(blockPos[0], blockPos[1]);
+    auto position = blockNoise->apply(Vec2I(x, y), m_geometry.size());
+    if (!position) return std::unexpected(std::move(position.error()));
+    blockPos = *position;
+    auto weighting = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
+    if (!weighting) return std::unexpected(std::move(weighting.error()));
+    blockWeighting = std::move(*weighting);
+    weighting = m_layout->getWeighting(blockPos[0], blockPos[1]);
+    if (!weighting) return std::unexpected(std::move(weighting.error()));
+    transitionWeighting = std::move(*weighting);
   } else {
     blockPos = Vec2I(x, y);
-    blockWeighting = flatWeighting;
-    transitionWeighting = flatWeighting;
+    blockWeighting = *flatWeighting;
+    transitionWeighting = *flatWeighting;
   }
-
-  if (flatWeighting.empty() || blockWeighting.empty())
-    return blockInfo;
-
-  auto const& primaryFlatWeighting = flatWeighting.first();
-  auto const& primaryBlockWeighting = blockWeighting.first();
-
+  if (flatWeighting->empty() || blockWeighting.empty()) return blockInfo;
+  auto const& primaryFlatWeighting = (*flatWeighting)[0];
+  auto const& primaryBlockWeighting = blockWeighting[0];
   blockInfo.blockBiomeIndex = primaryBlockWeighting.region->blockBiomeIndex;
   blockInfo.environmentBiomeIndex = primaryFlatWeighting.region->environmentBiomeIndex;
-
-  blockInfo.biomeTransition = transitionWeighting.first().weight < m_templateConfig.getFloat("biomeTransitionThreshold", 0);
-
-  if (auto blockBiome = biome(blockInfo.blockBiomeIndex)) {
+  auto transition = transitionWeighting.first();
+  if (!transition) return std::unexpected(std::move(transition.error()));
+  auto threshold = m_templateConfig.getFloat("biomeTransitionThreshold", 0);
+  if (!threshold) return std::unexpected(std::move(threshold.error()));
+  blockInfo.biomeTransition = (*transition)->weight < *threshold;
+  auto biomeResult = biome(blockInfo.blockBiomeIndex);
+  if (!biomeResult) return std::unexpected(std::move(biomeResult.error()));
+  if (auto const& blockBiome = *biomeResult) {
     if (!blockInfo.foregroundCave) {
       blockInfo.foreground = blockBiome->mainBlock;
       blockInfo.background = blockInfo.foreground;
     } else if (!blockInfo.backgroundCave) {
       blockInfo.background = blockBiome->mainBlock;
     }
-
     if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
       for (std::size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
-        auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
-        if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
+        auto index = primaryBlockWeighting.region->subBlockSelectorIndexes.at(i);
+        if (!index) return std::unexpected(std::move(index.error()));
+        auto selector = m_layout->getTerrainSelector(**index);
+        if (!selector) return std::unexpected(std::move(selector.error()));
+        auto value = (**selector)->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]);
+        if (!value) return std::unexpected(std::move(value.error()));
+        if (*value > 0.0f) {
           if (!blockInfo.foregroundCave) {
-            blockInfo.foreground = blockBiome->subBlocks.at(i);
+            blockInfo.foreground = blockBiome->subBlocks[i];
             blockInfo.background = blockInfo.foreground;
           } else if (!blockInfo.backgroundCave) {
-            blockInfo.background = blockBiome->subBlocks.at(i);
+            blockInfo.background = blockBiome->subBlocks[i];
           }
-
           break;
         }
       }
     }
   }
-
   return blockInfo;
 }
 
-bool WorldTemplate::isOutside(int x, int y) const {
-  return !getBlockInfo(m_geometry.xwrap(x), y).terrain;
+std::expected<bool, StarException> WorldTemplate::isOutside(int x, int y) const {
+  auto block = getBlockInfo(m_geometry.xwrap(x), y);
+  if (!block) return std::unexpected(std::move(block.error()));
+  return !block->terrain;
 }
 
-bool WorldTemplate::isOutside(RectI const& region) const {
+std::expected<bool, StarException> WorldTemplate::isOutside(RectI const& region) const {
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
-      if (getBlockInfo(m_geometry.xwrap(x), y).terrain)
-        return false;
+      auto block = getBlockInfo(m_geometry.xwrap(x), y);
+      if (!block) return std::unexpected(std::move(block.error()));
+      if (block->terrain) return false;
     }
   }
   return true;
 }
 
-BiomeIndex WorldTemplate::blockBiomeIndex(int x, int y) const {
-  return getBlockInfo(m_geometry.xwrap(x), y).blockBiomeIndex;
+std::expected<BiomeIndex, StarException> WorldTemplate::blockBiomeIndex(int x, int y) const {
+  auto block = getBlockInfo(m_geometry.xwrap(x), y);
+  if (!block) return std::unexpected(std::move(block.error()));
+  return block->blockBiomeIndex;
 }
 
-BiomeIndex WorldTemplate::environmentBiomeIndex(int x, int y) const {
-  return getBlockInfo(m_geometry.xwrap(x), y).environmentBiomeIndex;
+std::expected<BiomeIndex, StarException> WorldTemplate::environmentBiomeIndex(int x, int y) const {
+  auto block = getBlockInfo(m_geometry.xwrap(x), y);
+  if (!block) return std::unexpected(std::move(block.error()));
+  return block->environmentBiomeIndex;
 }
 
-std::shared_ptr<Biome const> WorldTemplate::biome(BiomeIndex biomeIndex) const {
-  if (!m_layout)
-    return {};
-  if (biomeIndex == NullBiomeIndex)
-    return {};
-  return m_layout->getBiome(biomeIndex);
+std::expected<std::shared_ptr<Biome const>, StarException> WorldTemplate::biome(BiomeIndex biomeIndex) const {
+  if (!m_layout || biomeIndex == NullBiomeIndex) return {};
+  auto biome = m_layout->getBiome(biomeIndex);
+  if (!biome) return std::unexpected(std::move(biome.error()));
+  return **biome;
 }
 
-std::shared_ptr<Biome const> WorldTemplate::blockBiome(int x, int y) const {
-  return biome(blockBiomeIndex(m_geometry.xwrap(x), y));
+std::expected<std::shared_ptr<Biome const>, StarException> WorldTemplate::blockBiome(int x, int y) const {
+  auto index = blockBiomeIndex(m_geometry.xwrap(x), y);
+  if (!index) return std::unexpected(std::move(index.error()));
+  return biome(*index);
 }
 
-std::shared_ptr<Biome const> WorldTemplate::environmentBiome(int x, int y) const {
-  return biome(environmentBiomeIndex(m_geometry.xwrap(x), y));
+std::expected<std::shared_ptr<Biome const>, StarException> WorldTemplate::environmentBiome(int x, int y) const {
+  auto index = environmentBiomeIndex(m_geometry.xwrap(x), y);
+  if (!index) return std::unexpected(std::move(index.error()));
+  return biome(*index);
 }
 
-MaterialHue WorldTemplate::biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const {
-  if (m_layout && biomeIndex != NullBiomeIndex) {
-    auto const& biome = m_layout->getBiome(biomeIndex);
-    if (material == biome->mainBlock)
-      return biome->materialHueShift;
-  }
-
+std::expected<MaterialHue, StarException> WorldTemplate::biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const {
+  auto result = biome(biomeIndex);
+  if (!result) return std::unexpected(std::move(result.error()));
+  if (*result && material == (*result)->mainBlock)
+    return (*result)->materialHueShift;
   return MaterialHue();
 }
 
-MaterialHue WorldTemplate::biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const {
-  if (m_layout && biomeIndex != NullBiomeIndex) {
-    auto const& biome = m_layout->getBiome(biomeIndex);
+std::expected<MaterialHue, StarException> WorldTemplate::biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const {
+  auto result = biome(biomeIndex);
+  if (!result) return std::unexpected(std::move(result.error()));
+  if (auto const& biome = *result) {
     if (mod == biome->surfacePlaceables.grassMod || mod == biome->surfacePlaceables.ceilingGrassMod
-        || mod == biome->undergroundPlaceables.grassMod
-        || mod == biome->undergroundPlaceables.ceilingGrassMod)
+        || mod == biome->undergroundPlaceables.grassMod || mod == biome->undergroundPlaceables.ceilingGrassMod)
       return biome->materialHueShift;
   }
   return MaterialHue();
@@ -494,7 +608,7 @@ List<WorldTemplate::WeatherDomain> const& WorldTemplate::weatherDomains() const 
   return m_weatherDomains;
 }
 
-WorldTemplate::WeatherDomain const* WorldTemplate::weatherDomain(String const& name) const {
+std::expected<WorldTemplate::WeatherDomain const*, StarException> WorldTemplate::weatherDomain(String const& name) const {
   for (auto const& domain : m_weatherDomains) {
     if (domain.name == name)
       return &domain;
@@ -502,7 +616,7 @@ WorldTemplate::WeatherDomain const* WorldTemplate::weatherDomain(String const& n
   return nullptr;
 }
 
-WorldTemplate::WeatherLayer const* WorldTemplate::weatherLayerAt(Vec2I const& position) const {
+std::expected<WorldTemplate::WeatherLayer const*, StarException> WorldTemplate::weatherLayerAt(Vec2I const& position) const {
   for (auto const& layer : m_weatherLayers) {
     if (position[1] >= layer.minHeight && position[1] < layer.maxHeight)
       return &layer;
@@ -510,7 +624,7 @@ WorldTemplate::WeatherLayer const* WorldTemplate::weatherLayerAt(Vec2I const& po
   return nullptr;
 }
 
-std::shared_ptr<AmbientNoisesDescription> WorldTemplate::ambientNoises(int x, int y) const {
+std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> WorldTemplate::ambientNoises(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayAmbientNoises || floatingDungeonParameters->nightAmbientNoises) {
       auto dayTracks = floatingDungeonParameters->dayAmbientNoises
@@ -522,12 +636,13 @@ std::shared_ptr<AmbientNoisesDescription> WorldTemplate::ambientNoises(int x, in
       return std::make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
-  if (auto biome = environmentBiome(x, y))
-    return biome->ambientNoises;
+  auto biome = environmentBiome(x, y);
+  if (!biome) return std::unexpected(std::move(biome.error()));
+  if (*biome) return (*biome)->ambientNoises;
   return {};
 }
 
-std::shared_ptr<AmbientNoisesDescription> WorldTemplate::musicTrack(int x, int y) const {
+std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> WorldTemplate::musicTrack(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayMusicTrack || floatingDungeonParameters->nightMusicTrack) {
       auto dayTracks = floatingDungeonParameters->dayMusicTrack
@@ -539,8 +654,9 @@ std::shared_ptr<AmbientNoisesDescription> WorldTemplate::musicTrack(int x, int y
       return std::make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
-  if (auto biome = environmentBiome(x, y))
-    return biome->musicTrack;
+  auto biome = environmentBiome(x, y);
+  if (!biome) return std::unexpected(std::move(biome.error()));
+  if (*biome) return (*biome)->musicTrack;
   return {};
 }
 
@@ -556,105 +672,134 @@ bool WorldTemplate::breathable(int, int) const {
   return true;
 }
 
-void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode) const {
+std::expected<void, StarException> WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode) const {
   for (auto const& itemDistribution : distributions) {
     auto placeMode = mode.value_or(itemDistribution.mode());
 
     if (area == BiomePlacementArea::Surface) {
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Floor) {
-        if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.surfaceBiomeItems.append(takeOptional(itemToPlace));
+        auto itemToPlace = itemDistribution.itemToPlace(x, y);
+        if (!itemToPlace) return std::unexpected(std::move(itemToPlace.error()));
+        if (*itemToPlace)
+          items.surfaceBiomeItems.append(std::move(**itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Ocean) {
-        if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.oceanItems.append(takeOptional(itemToPlace));
+        auto itemToPlace = itemDistribution.itemToPlace(x, y);
+        if (!itemToPlace) return std::unexpected(std::move(itemToPlace.error()));
+        if (*itemToPlace)
+          items.oceanItems.append(std::move(**itemToPlace));
       }
     } else if (area == BiomePlacementArea::Underground) {
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Floor) {
-        if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveSurfaceBiomeItems.append(takeOptional(itemToPlace));
+        auto itemToPlace = itemDistribution.itemToPlace(x, y);
+        if (!itemToPlace) return std::unexpected(std::move(itemToPlace.error()));
+        if (*itemToPlace)
+          items.caveSurfaceBiomeItems.append(std::move(**itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Ceiling) {
-        if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveCeilingBiomeItems.append(takeOptional(itemToPlace));
+        auto itemToPlace = itemDistribution.itemToPlace(x, y);
+        if (!itemToPlace) return std::unexpected(std::move(itemToPlace.error()));
+        if (*itemToPlace)
+          items.caveCeilingBiomeItems.append(std::move(**itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Background) {
-        if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveBackgroundBiomeItems.append(takeOptional(itemToPlace));
+        auto itemToPlace = itemDistribution.itemToPlace(x, y);
+        if (!itemToPlace) return std::unexpected(std::move(itemToPlace.error()));
+        if (*itemToPlace)
+          items.caveBackgroundBiomeItems.append(std::move(**itemToPlace));
       }
     }
   }
+  return {};
 }
 
 
-WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, int y) const {
+std::expected<WorldTemplate::PotentialBiomeItems, StarException> WorldTemplate::potentialBiomeItemsAt(int x, int y) const {
   if (!m_layout || y <= 0 || y >= (int)m_geometry.height() - 1)
     return {};
   x = m_geometry.xwrap(x);
 
-  auto blockBiome = [this](int x, int y) -> Biome const* {
-    BiomeIndex index = blockBiomeIndex(m_geometry.xwrap(x), y);
-    if (index == NullBiomeIndex)
-      return nullptr;
-    return m_layout->getBiome(index).get();
+  auto blockBiome = [this](int x, int y) -> std::expected<Biome const*, StarException> {
+    auto index = blockBiomeIndex(m_geometry.xwrap(x), y);
+    if (!index) return std::unexpected(std::move(index.error()));
+    if (*index == NullBiomeIndex) return nullptr;
+    auto biome = m_layout->getBiome(*index);
+    if (!biome) return std::unexpected(std::move(biome.error()));
+    return (**biome).get();
   };
 
   auto lowerBlockBiome = blockBiome(x, y - 1);
+  if (!lowerBlockBiome) return std::unexpected(std::move(lowerBlockBiome.error()));
   auto upperBlockBiome = blockBiome(x, y + 1);
+  if (!upperBlockBiome) return std::unexpected(std::move(upperBlockBiome.error()));
   auto thisBlockBiome = blockBiome(x, y);
+  if (!thisBlockBiome) return std::unexpected(std::move(thisBlockBiome.error()));
 
   PotentialBiomeItems potentialBiomeItems;
   // surface floor, surface ocean
-  if (lowerBlockBiome)
-    addPotentialBiomeItems(x, y, potentialBiomeItems, lowerBlockBiome->surfacePlaceables.itemDistributions, BiomePlacementArea::Surface, BiomePlacementMode::Floor);
-  if (thisBlockBiome)
-    addPotentialBiomeItems(x, y, potentialBiomeItems, thisBlockBiome->surfacePlaceables.itemDistributions, BiomePlacementArea::Surface, BiomePlacementMode::Ocean);
+  if (*lowerBlockBiome) {
+    auto added = addPotentialBiomeItems(x, y, potentialBiomeItems, (*lowerBlockBiome)->surfacePlaceables.itemDistributions, BiomePlacementArea::Surface, BiomePlacementMode::Floor);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  if (*thisBlockBiome) {
+    auto added = addPotentialBiomeItems(x, y, potentialBiomeItems, (*thisBlockBiome)->surfacePlaceables.itemDistributions, BiomePlacementArea::Surface, BiomePlacementMode::Ocean);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
   // underground floor, ceiling, background
-  if (lowerBlockBiome)
-    addPotentialBiomeItems(x, y, potentialBiomeItems, lowerBlockBiome->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Floor);
-  if (upperBlockBiome)
-    addPotentialBiomeItems(x, y, potentialBiomeItems, upperBlockBiome->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Ceiling);
-  if (thisBlockBiome)
-    addPotentialBiomeItems(x, y, potentialBiomeItems, thisBlockBiome->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Background);
+  if (*lowerBlockBiome) {
+    auto added = addPotentialBiomeItems(x, y, potentialBiomeItems, (*lowerBlockBiome)->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Floor);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  if (*upperBlockBiome) {
+    auto added = addPotentialBiomeItems(x, y, potentialBiomeItems, (*upperBlockBiome)->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Ceiling);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  if (*thisBlockBiome) {
+    auto added = addPotentialBiomeItems(x, y, potentialBiomeItems, (*thisBlockBiome)->undergroundPlaceables.itemDistributions, BiomePlacementArea::Underground, BiomePlacementMode::Background);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
   return potentialBiomeItems;
 }
 
-List<BiomeItemPlacement> WorldTemplate::validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const {
+std::expected<List<BiomeItemPlacement>, StarException> WorldTemplate::validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const {
   if (y <= 0 || y >= (int)m_geometry.height() - 1)
     return {};
 
   x = m_geometry.xwrap(x);
 
   auto block = getBlockInfo(x, y);
+  if (!block) return std::unexpected(std::move(block.error()));
 
-  if (block.biomeTransition)
+  if (block->biomeTransition)
     return {};
   List<BiomeItemPlacement> biomeItems;
 
   auto blockAbove = getBlockInfo(x, y + 1);
+  if (!blockAbove) return std::unexpected(std::move(blockAbove.error()));
   auto blockBelow = getBlockInfo(x, y - 1);
+  if (!blockBelow) return std::unexpected(std::move(blockBelow.error()));
 
-  if (!blockBelow.biomeTransition && blockBelow.terrain && !block.terrain && !blockBelow.foregroundCave)
+  if (!blockBelow->biomeTransition && blockBelow->terrain && !block->terrain && !blockBelow->foregroundCave)
     biomeItems.appendAll(std::move(potentialBiomeItems.surfaceBiomeItems));
 
-  if (!blockBelow.biomeTransition && blockBelow.terrain && block.terrain && !blockBelow.foregroundCave && block.foregroundCave)
+  if (!blockBelow->biomeTransition && blockBelow->terrain && block->terrain && !blockBelow->foregroundCave && block->foregroundCave)
     biomeItems.appendAll(std::move(potentialBiomeItems.caveSurfaceBiomeItems));
 
-  if (!blockAbove.biomeTransition && blockAbove.terrain && block.terrain && !blockAbove.foregroundCave && block.foregroundCave)
+  if (!blockAbove->biomeTransition && blockAbove->terrain && block->terrain && !blockAbove->foregroundCave && block->foregroundCave)
     biomeItems.appendAll(std::move(potentialBiomeItems.caveCeilingBiomeItems));
 
-  if (block.terrain && block.foregroundCave && !block.backgroundCave)
+  if (block->terrain && block->foregroundCave && !block->backgroundCave)
     biomeItems.appendAll(std::move(potentialBiomeItems.caveBackgroundBiomeItems));
 
-  if (block.oceanLiquid != EmptyLiquidId && y == block.oceanLiquidLevel)
+  if (block->oceanLiquid != EmptyLiquidId && y == block->oceanLiquidLevel)
     biomeItems.appendAll(std::move(potentialBiomeItems.oceanItems));
 
   return biomeItems;
 }
 
-float WorldTemplate::gravity() const {
+std::expected<float, StarException> WorldTemplate::gravity() const {
   if (m_worldParameters)
     return m_worldParameters->gravity;
   return m_templateConfig.getFloat("defaultGravity");
@@ -670,32 +815,49 @@ std::uint64_t WorldTemplate::seedFor(int x, int y) const {
   return staticRandomU64(m_seed, m_geometry.xwrap(x), y, "Block");
 }
 
-WorldTemplate::WorldTemplate(Root& root) : m_root(root) {
-  auto assets = this->root().assets();
-  m_templateConfig = this->root().assets()->json("/world_template.config");
-  m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");
-  m_customTerrainBlendWeight = m_templateConfig.getFloat("customTerrainBlendWeight");
+WorldTemplate::WorldTemplate(Root& root) : m_root(root) {}
 
-  m_blockCache.setMaxSize(m_templateConfig.getInt("blockCacheSize"));
+std::expected<void, StarException> WorldTemplate::initialize() {
+  auto assets = this->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/world_template.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  m_templateConfig = std::move(*config);
+  auto size = m_templateConfig.getFloat("customTerrainBlendSize");
+  if (!size) return std::unexpected(std::move(size.error()));
+  m_customTerrainBlendSize = *size;
+  auto weight = m_templateConfig.getFloat("customTerrainBlendWeight");
+  if (!weight) return std::unexpected(std::move(weight.error()));
+  m_customTerrainBlendWeight = *weight;
+  auto cacheSize = m_templateConfig.getInt("blockCacheSize");
+  if (!cacheSize) return std::unexpected(std::move(cacheSize.error()));
+  m_blockCache.setMaxSize(*cacheSize);
   m_geometry = Vec2U(2048, 2048);
   m_seed = this->root().random().randu64();
+  return {};
 }
 
-void WorldTemplate::determineWorldName() {
-  if (m_celestialParameters)
+std::expected<void, StarException> WorldTemplate::determineWorldName() {
+  if (m_celestialParameters) {
     m_worldName = m_celestialParameters->name();
-  else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_worldName = this->root().dungeonDefinitions()->get(floatingDungeonParameters->primaryDungeon)->displayName();
-  else
+  } else if (auto parameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
+    auto definitions = this->root().dungeonDefinitions();
+    if (!definitions) return std::unexpected(std::move(definitions.error()));
+    auto dungeon = (*definitions)->get(parameters->primaryDungeon);
+    if (!dungeon) return std::unexpected(std::move(dungeon.error()));
+    m_worldName = (*dungeon)->displayName();
+  } else {
     m_worldName = "";
+  }
+  return {};
 }
 
-void WorldTemplate::setupWeatherDomains() {
+std::expected<void, StarException> WorldTemplate::setupWeatherDomains() {
   m_weatherDomains.clear();
   m_weatherLayers.clear();
 
   if (!m_worldParameters)
-    return;
+    return {};
 
   if (auto terrestrial = as<TerrestrialWorldParameters>(m_worldParameters)) {
     struct LayerDefinition {
@@ -716,6 +878,7 @@ void WorldTemplate::setupWeatherDomains() {
     m_weatherDomains.append({"surface", terrestrial->weatherPool, terrestrial->surfaceLayer.layerMinHeight});
 
     auto biomeDatabase = this->root().biomeDatabase();
+    if (!biomeDatabase) return std::unexpected(std::move(biomeDatabase.error()));
     for (std::size_t i = 0; i < definitions.size(); ++i) {
       auto const& definition = definitions[i];
       int minHeight = definition.layer->layerMinHeight;
@@ -726,13 +889,18 @@ void WorldTemplate::setupWeatherDomains() {
       std::optional<String> domain;
       if (definition.name == "surface") {
         domain = String("surface");
-      } else if (biomeDatabase->biomeHasWeather(definition.layer->primaryRegion.biome)) {
-        domain = definition.name;
-        auto pool = biomeDatabase->biomeWeathers(definition.layer->primaryRegion.biome, m_seed, threatLevel());
-        m_weatherDomains.append({definition.name, take(pool), minHeight});
-      } else if (definition.inheritsSurface) {
-        domain = String("surface");
-        m_weatherDomains[0].effectsMinHeight = std::min(m_weatherDomains[0].effectsMinHeight, minHeight);
+      } else {
+        auto hasWeather = (*biomeDatabase)->biomeHasWeather(definition.layer->primaryRegion.biome);
+        if (!hasWeather) return std::unexpected(std::move(hasWeather.error()));
+        if (*hasWeather) {
+          domain = definition.name;
+          auto pool = (*biomeDatabase)->biomeWeathers(definition.layer->primaryRegion.biome, m_seed, threatLevel());
+          if (!pool) return std::unexpected(std::move(pool.error()));
+          m_weatherDomains.append({definition.name, std::move(*pool), minHeight});
+        } else if (definition.inheritsSurface) {
+          domain = String("surface");
+          m_weatherDomains[0].effectsMinHeight = std::min(m_weatherDomains[0].effectsMinHeight, minHeight);
+        }
       }
 
       m_weatherLayers.append({definition.name, take(domain), minHeight, maxHeight});
@@ -741,17 +909,18 @@ void WorldTemplate::setupWeatherDomains() {
     m_weatherDomains.append({"surface", m_worldParameters->weatherPool, (int)undergroundLevel()});
     m_weatherLayers.append({"surface", std::optional<String>(String("surface")), 0, (int)m_geometry.height()});
   }
+  return {};
 }
 
-std::pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
-  auto assets = this->root().assets();
-
+std::expected<std::pair<float, float>, StarException> WorldTemplate::customTerrainWeighting(int x, int y) const {
   float minimumDistance = std::numeric_limits<float>::max();
   float finalSolidWeight = 0.0f;
   float totalWeight = 0.0f;
 
   for (auto const& region : m_customTerrainRegions) {
-    if (!m_geometry.rectContains(region.regionBounds.padded(m_customTerrainBlendSize), Vec2F(x, y)))
+    auto contains = m_geometry.rectContains(region.regionBounds.padded(m_customTerrainBlendSize), Vec2F(x, y));
+    if (!contains) return std::unexpected(std::move(contains.error()));
+    if (!*contains)
       continue;
 
     float distance = m_geometry.polyDistance(region.region, Vec2F(x, y));
@@ -768,38 +937,49 @@ std::pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) cons
   }
 
   if (minimumDistance > m_customTerrainBlendSize)
-    return {0.0f, 0.0f};
+    return std::pair(0.0f, 0.0f);
 
   finalSolidWeight /= totalWeight;
 
-  return {finalSolidWeight * m_customTerrainBlendWeight, 1.0f - minimumDistance / m_customTerrainBlendSize};
+  return std::pair(finalSolidWeight * m_customTerrainBlendWeight, 1.0f - minimumDistance / m_customTerrainBlendSize);
 }
 
-WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint32_t y) const {
-  return m_blockCache.get(Vector<std::uint32_t, 2>(x, y), [this, x, y](Vector<std::uint32_t, 2>) {
+std::expected<WorldTemplate::BlockInfo, StarException> WorldTemplate::getBlockInfo(std::uint32_t x, std::uint32_t y) const {
+  auto cached = m_blockCache.get(Vector<std::uint32_t, 2>(x, y), [this, x, y](Vector<std::uint32_t, 2>) -> std::expected<BlockInfo, StarException> {
       BlockInfo blockInfo;
 
       if (!m_layout)
         return blockInfo;
 
       // The environment biome is calculated with weighting based on the flat coordinates.
-      List<WorldLayout::RegionWeighting> flatWeighting = m_layout->getWeighting(x, y);
+      auto flatWeightingResult = m_layout->getWeighting(x, y);
+      if (!flatWeightingResult) return std::unexpected(std::move(flatWeightingResult.error()));
+      auto const& flatWeighting = *flatWeightingResult;
 
       // The block biome is calculated optionally with higher frequency noise
       // added to prevent straight lines appearing on the boundaries of
       // regions.
 
       int blendNoiseOffset = 0;
-      if (auto const& blendNoise = m_layout->blendNoise())
-        blendNoiseOffset = (int)blendNoise->get(x, y);
+      if (auto const& blendNoise = m_layout->blendNoise()) {
+        auto noise = blendNoise->get(x, y);
+        if (!noise) return std::unexpected(std::move(noise.error()));
+        blendNoiseOffset = (int)*noise;
+      }
 
       Vec2I blockPos;
       List<WorldLayout::RegionWeighting> blockWeighting;
       List<WorldLayout::RegionWeighting> transitionWeighting;
       if (auto const& blockNoise = m_layout->blockNoise()) {
-        blockPos = blockNoise->apply(Vec2I(x, y), m_geometry.size());
-        blockWeighting = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
-        transitionWeighting = m_layout->getWeighting(blockPos[0], blockPos[1]);
+        auto position = blockNoise->apply(Vec2I(x, y), m_geometry.size());
+        if (!position) return std::unexpected(std::move(position.error()));
+        blockPos = *position;
+        auto blockWeightingResult = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
+        if (!blockWeightingResult) return std::unexpected(std::move(blockWeightingResult.error()));
+        blockWeighting = std::move(*blockWeightingResult);
+        auto transitionWeightingResult = m_layout->getWeighting(blockPos[0], blockPos[1]);
+        if (!transitionWeightingResult) return std::unexpected(std::move(transitionWeightingResult.error()));
+        transitionWeighting = std::move(*transitionWeightingResult);
       } else {
         blockPos = Vec2I(x, y);
         blockWeighting = flatWeighting;
@@ -809,13 +989,17 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
       if (flatWeighting.empty() || blockWeighting.empty())
         return blockInfo;
 
-      auto const& primaryFlatWeighting = flatWeighting.first();
-      auto const& primaryBlockWeighting = blockWeighting.first();
+      auto const& primaryFlatWeighting = flatWeighting[0];
+      auto const& primaryBlockWeighting = blockWeighting[0];
 
       blockInfo.blockBiomeIndex = primaryBlockWeighting.region->blockBiomeIndex;
       blockInfo.environmentBiomeIndex = primaryFlatWeighting.region->environmentBiomeIndex;
 
-      blockInfo.biomeTransition = transitionWeighting.first().weight < m_templateConfig.getFloat("biomeTransitionThreshold", 0);
+      auto transition = transitionWeighting.first();
+      if (!transition) return std::unexpected(std::move(transition.error()));
+      auto threshold = m_templateConfig.getFloat("biomeTransitionThreshold", 0);
+      if (!threshold) return std::unexpected(std::move(threshold.error()));
+      blockInfo.biomeTransition = (*transition)->weight < *threshold;
 
       float terrainSelect = 0.0f;
       float foregroundCaveSelect = 0.0f;
@@ -825,8 +1009,12 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
       // to blend among them.
       for (auto const& weighting : flatWeighting) {
         if (weighting.region->terrainSelectorIndex != NullTerrainSelectorIndex) {
-          auto const& terrainSelector = m_layout->getTerrainSelector(weighting.region->terrainSelectorIndex);
-          float select = terrainSelector->get(weighting.xValue, y) * weighting.weight;
+          auto terrainSelectorResult = m_layout->getTerrainSelector(weighting.region->terrainSelectorIndex);
+          if (!terrainSelectorResult) return std::unexpected(std::move(terrainSelectorResult.error()));
+          auto const& terrainSelector = **terrainSelectorResult;
+          auto terrainSelectorValue = terrainSelector->get(weighting.xValue, y);
+          if (!terrainSelectorValue) return std::unexpected(std::move(terrainSelectorValue.error()));
+          float select = *terrainSelectorValue * weighting.weight;
           terrainSelect += select;
         }
       }
@@ -837,26 +1025,39 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
       // using an interpolator that has an exaggerated S curve between the
       // points, this hides some of these effects.
       auto ctweighting = customTerrainWeighting(x, y);
-      terrainSelect = quintic2(ctweighting.second, terrainSelect, ctweighting.first);
+      if (!ctweighting) return std::unexpected(std::move(ctweighting.error()));
+      terrainSelect = quintic2(ctweighting->second, terrainSelect, ctweighting->first);
 
       if (terrainSelect > 0.0f) {
         blockInfo.terrain = true;
 
         for (auto const& weighting : flatWeighting) {
           if (weighting.region->foregroundCaveSelectorIndex != NullTerrainSelectorIndex) {
-            auto const& foregroundCaveSelector = m_layout->getTerrainSelector(weighting.region->foregroundCaveSelectorIndex);
-            foregroundCaveSelect += foregroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
+            auto foregroundCaveSelectorResult = m_layout->getTerrainSelector(weighting.region->foregroundCaveSelectorIndex);
+            if (!foregroundCaveSelectorResult) return std::unexpected(std::move(foregroundCaveSelectorResult.error()));
+            auto const& foregroundCaveSelector = **foregroundCaveSelectorResult;
+            auto foregroundCaveSelectorValue = foregroundCaveSelector->get(weighting.xValue, y);
+            if (!foregroundCaveSelectorValue) return std::unexpected(std::move(foregroundCaveSelectorValue.error()));
+            foregroundCaveSelect += *foregroundCaveSelectorValue * weighting.weight;
           }
 
           if (weighting.region->backgroundCaveSelectorIndex != NullTerrainSelectorIndex) {
-            auto const& backgroundCaveSelector = m_layout->getTerrainSelector(weighting.region->backgroundCaveSelectorIndex);
-            backgroundCaveSelect += backgroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
+            auto backgroundCaveSelectorResult = m_layout->getTerrainSelector(weighting.region->backgroundCaveSelectorIndex);
+            if (!backgroundCaveSelectorResult) return std::unexpected(std::move(backgroundCaveSelectorResult.error()));
+            auto const& backgroundCaveSelector = **backgroundCaveSelectorResult;
+            auto backgroundCaveSelectorValue = backgroundCaveSelector->get(weighting.xValue, y);
+            if (!backgroundCaveSelectorValue) return std::unexpected(std::move(backgroundCaveSelectorValue.error()));
+            backgroundCaveSelect += *backgroundCaveSelectorValue * weighting.weight;
           }
         }
 
-        auto surfaceCaveAttenuationDist = m_templateConfig.getFloat("surfaceCaveAttenuationDist", 0);
+        auto surfaceCaveAttenuationDistResult = m_templateConfig.getFloat("surfaceCaveAttenuationDist", 0);
+        if (!surfaceCaveAttenuationDistResult) return std::unexpected(std::move(surfaceCaveAttenuationDistResult.error()));
+        auto surfaceCaveAttenuationDist = *surfaceCaveAttenuationDistResult;
         if (terrainSelect < surfaceCaveAttenuationDist) {
-          auto surfaceCaveAttenuationFactor = m_templateConfig.getFloat("surfaceCaveAttenuationFactor", 1);
+          auto surfaceCaveAttenuationFactorResult = m_templateConfig.getFloat("surfaceCaveAttenuationFactor", 1);
+          if (!surfaceCaveAttenuationFactorResult) return std::unexpected(std::move(surfaceCaveAttenuationFactorResult.error()));
+          auto surfaceCaveAttenuationFactor = *surfaceCaveAttenuationFactorResult;
           foregroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
           backgroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
         }
@@ -879,7 +1080,9 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
       }
 
       if (blockInfo.terrain) {
-        if (auto blockBiome = biome(blockInfo.blockBiomeIndex)) {
+        auto biomeResult = biome(blockInfo.blockBiomeIndex);
+        if (!biomeResult) return std::unexpected(std::move(biomeResult.error()));
+        if (auto const& blockBiome = *biomeResult) {
           if (!blockInfo.foregroundCave) {
             blockInfo.foreground = blockBiome->mainBlock;
             blockInfo.background = blockInfo.foreground;
@@ -893,13 +1096,19 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
 
           if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
             for (std::size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
-              if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
+              auto index = primaryBlockWeighting.region->subBlockSelectorIndexes.at(i);
+              if (!index) return std::unexpected(std::move(index.error()));
+              auto selectorResult = m_layout->getTerrainSelector(**index);
+              if (!selectorResult) return std::unexpected(std::move(selectorResult.error()));
+              auto const& selector = **selectorResult;
+              auto select = selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]);
+              if (!select) return std::unexpected(std::move(select.error()));
+              if (*select > 0.0f) {
                 if (!blockInfo.foregroundCave) {
-                  blockInfo.foreground = blockBiome->subBlocks.at(i);
+                  blockInfo.foreground = blockBiome->subBlocks[i];
                   blockInfo.background = blockInfo.foreground;
                 } else if (!blockInfo.backgroundCave) {
-                  blockInfo.background = blockBiome->subBlocks.at(i);
+                  blockInfo.background = blockBiome->subBlocks[i];
                 }
 
                 break;
@@ -909,9 +1118,15 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
 
           if (!blockInfo.foregroundCave && !primaryBlockWeighting.region->foregroundOreSelectorIndexes.empty()) {
             for (std::size_t i = 0; i < blockBiome->ores.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->foregroundOreSelectorIndexes.at(i));
-              if (selector->get(x, y) > 0.0f) {
-                blockInfo.foregroundMod = blockBiome->ores.at(i).first;
+              auto index = primaryBlockWeighting.region->foregroundOreSelectorIndexes.at(i);
+              if (!index) return std::unexpected(std::move(index.error()));
+              auto selectorResult = m_layout->getTerrainSelector(**index);
+              if (!selectorResult) return std::unexpected(std::move(selectorResult.error()));
+              auto const& selector = **selectorResult;
+              auto select = selector->get(x, y);
+              if (!select) return std::unexpected(std::move(select.error()));
+              if (*select > 0.0f) {
+                blockInfo.foregroundMod = blockBiome->ores[i].first;
                 break;
               }
             }
@@ -919,9 +1134,15 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
 
           if (!blockInfo.backgroundCave && !primaryBlockWeighting.region->backgroundOreSelectorIndexes.empty()) {
             for (std::size_t i = 0; i < blockBiome->ores.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->backgroundOreSelectorIndexes.at(i));
-              if (selector->get(x, y) > 0.0f) {
-                blockInfo.backgroundMod = blockBiome->ores.at(i).first;
+              auto index = primaryBlockWeighting.region->backgroundOreSelectorIndexes.at(i);
+              if (!index) return std::unexpected(std::move(index.error()));
+              auto selectorResult = m_layout->getTerrainSelector(**index);
+              if (!selectorResult) return std::unexpected(std::move(selectorResult.error()));
+              auto const& selector = **selectorResult;
+              auto select = selector->get(x, y);
+              if (!select) return std::unexpected(std::move(select.error()));
+              if (*select > 0.0f) {
+                blockInfo.backgroundMod = blockBiome->ores[i].first;
                 break;
               }
             }
@@ -931,6 +1152,8 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint3
 
       return blockInfo;
     });
+  if (!cached) return std::unexpected(std::move(cached.error()));
+  return **cached;
 }
 
 Json WorldTemplate::BlockInfo::toJson() const {

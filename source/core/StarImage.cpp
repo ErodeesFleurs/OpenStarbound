@@ -21,7 +21,7 @@ struct PngState {
   png_structp png = nullptr;
   png_infop info = nullptr;
   png_infop end = nullptr;
-  std::exception_ptr exception{};
+  std::optional<StarException> error{};
 
   ~PngState() {
     if (writing)
@@ -30,62 +30,68 @@ struct PngState {
       png_destroy_read_struct(&png, &info, &end);
   }
 
-  void check(bool success, char const* message) const {
-    if (exception)
-      std::rethrow_exception(exception);
+  std::expected<void, StarException> check(bool success, char const* message) {
+    if (error)
+      return std::unexpected(std::move(*error));
     if (!success)
-      throw ImageException(message);
+      return std::unexpected(ImageException(message));
+    return {};
   }
 };
 
 void logPngMessage(PngState& state, char const* kind, png_const_charp message) noexcept {
-  try {
-    state.logger.debug("PNG {} in file: '{}', {}", kind, state.device->deviceName(), message);
-  } catch (...) {
-    state.exception = std::current_exception();
+  auto name = state.device->deviceName();
+  if (!name) {
+    state.error = std::move(name.error());
+    return;
   }
+  auto logged = state.logger.debug("PNG {} in file: '{}', {}", kind, *name, message);
+  if (!logged)
+    state.error = std::move(logged.error());
 }
 
 void pngError(png_structp png, png_const_charp message) noexcept {
   auto& state = *static_cast<PngState*>(png_get_error_ptr(png));
   logPngMessage(state, "error", message);
+  if (!state.error)
+    state.error = ImageException(message);
   png_longjmp(png, 1);
 }
 
 void pngWarning(png_structp png, png_const_charp message) noexcept {
   auto& state = *static_cast<PngState*>(png_get_error_ptr(png));
   logPngMessage(state, "warning", message);
-  if (state.exception)
+  if (state.error)
     png_longjmp(png, 1);
 }
 
 void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
-  try {
-    state.device->readFull(reinterpret_cast<char*>(data), length);
-  } catch (...) {
-    state.exception = std::current_exception();
+  {
+    auto result = state.device->readFull(reinterpret_cast<char*>(data), length);
+    if (!result)
+      state.error = std::move(result.error());
   }
-  // Leave the catch scope before jumping: no C++ exception unwinding crosses C.
-  if (state.exception)
+  // Destroy the result before jumping back through the C decoder.
+  if (state.error)
     png_longjmp(png, 1);
 }
 
 void writePngData(png_structp png, png_bytep data, png_size_t length) noexcept {
   auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
-  try {
-    state.device->writeFull(reinterpret_cast<char*>(data), length);
-  } catch (...) {
-    state.exception = std::current_exception();
+  {
+    auto result = state.device->writeFull(reinterpret_cast<char*>(data), length);
+    if (!result)
+      state.error = std::move(result.error());
   }
-  if (state.exception)
+  if (state.error)
     png_longjmp(png, 1);
 }
 
 void flushPngData(png_structp) noexcept {}
 
 // Each jump target lives in a separate frame with only trivial locals. Owners,
-// Images, row arrays and exception_ptrs live in the caller, never across a jump.
+// Images, row arrays and diagnostics live in the caller, never across a jump.
 bool createPngInfo(PngState& state) {
   if (setjmp(png_jmpbuf(state.png)))
     return false;
@@ -100,13 +106,15 @@ bool createPngInfo(PngState& state) {
   return true;
 }
 
-void initializePng(PngState& state) {
+std::expected<void, StarException> initializePng(PngState& state) {
   if (state.writing)
     state.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, &state, pngError, pngWarning);
   else
     state.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, &state, pngError, pngWarning);
-  state.check(state.png != nullptr, "Internal libPNG error");
-  state.check(createPngInfo(state), "Internal libPNG error");
+  auto created = state.check(state.png != nullptr, "Internal libPNG error");
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  return state.check(createPngInfo(state), "Internal libPNG error");
 }
 
 struct PngMetadata {
@@ -172,45 +180,69 @@ bool writePngRows(PngState& state, unsigned width, unsigned height, unsigned cha
   return true;
 }
 
-void readPngSignature(IODevice& device) {
+std::expected<void, StarException> readPngSignature(IODevice& device) {
   png_byte header[8]{};
-  device.readFull(reinterpret_cast<char*>(header), sizeof(header));
-  if (png_sig_cmp(header, 0, sizeof(header)))
-    throw ImageException(strf("File {} is not a png image!", device.deviceName()));
+  auto result = device.readFull(reinterpret_cast<char*>(header), sizeof(header));
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  if (png_sig_cmp(header, 0, sizeof(header))) {
+    auto name = device.deviceName();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return std::unexpected(ImageException(strf("File {} is not a png image!", *name)));
+  }
+  return {};
 }
 
 }
 
-bool Image::isPng(std::shared_ptr<IODevice> device) {
+std::expected<bool, StarException> Image::isPng(std::shared_ptr<IODevice> device) {
   png_byte header[8]{};
-  return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
+  auto read = device->readAbsolute(0, (char*)header, sizeof(header));
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  return *read == sizeof(header) && !png_sig_cmp(header, 0, sizeof(header));
 }
 
-Image Image::readPng(Logger& logger, std::shared_ptr<IODevice> device) {
-  readPngSignature(*device);
+std::expected<Image, StarException> Image::readPng(Logger& logger, std::shared_ptr<IODevice> device) {
+  auto signature = readPngSignature(*device);
+  if (!signature)
+    return std::unexpected(std::move(signature.error()));
   PngState state{logger, device.get(), false};
-  initializePng(state);
+  auto initialized = initializePng(state);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   PngMetadata metadata{};
-  state.check(readPngInfo(state, metadata, true), "Internal error reading png.");
+  auto info = state.check(readPngInfo(state, metadata, true), "Internal error reading png.");
+  if (!info)
+    return std::unexpected(std::move(info.error()));
 
   if (metadata.bitdepth != 8 || (metadata.channels != 3 && metadata.channels != 4))
-    throw ImageException(strf("Unsupported PNG pixel format in file {}", device->deviceName()));
+    return std::unexpected(ImageException("Unsupported PNG pixel format"));
 
   Image image(metadata.width, metadata.height, metadata.channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
   auto rows = std::make_unique<png_bytep[]>(metadata.height);
   std::size_t stride = static_cast<std::size_t>(metadata.width) * metadata.channels;
   for (std::size_t i = 0; i < metadata.height; ++i)
     rows[i] = image.data() + (metadata.height - i - 1) * stride;
-  state.check(readPngRows(state, rows.get()), "Internal error reading png.");
+  auto read = state.check(readPngRows(state, rows.get()), "Internal error reading png.");
+  if (!read)
+    return std::unexpected(std::move(read.error()));
   return image;
 }
 
-std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device) {
-  readPngSignature(*device);
+std::expected<std::tuple<Vec2U, PixelFormat>, StarException> Image::readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device) {
+  auto signature = readPngSignature(*device);
+  if (!signature)
+    return std::unexpected(std::move(signature.error()));
   PngState state{logger, device.get(), false};
-  initializePng(state);
+  auto initialized = initializePng(state);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   PngMetadata metadata{};
-  state.check(readPngInfo(state, metadata, false), "Internal error reading png.");
+  auto info = state.check(readPngInfo(state, metadata, false), "Internal error reading png.");
+  if (!info)
+    return std::unexpected(std::move(info.error()));
   return std::make_tuple(Vec2U{metadata.width, metadata.height},
       metadata.channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
 }
@@ -286,7 +318,7 @@ void Image::reset(unsigned width, unsigned height, std::optional<PixelFormat> pf
       newData = (std::uint8_t*)Star::realloc(m_data, imageSize);
 
     if (!newData)
-      throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
+      std::terminate();
 
     m_data = newData;
     std::memset(m_data, 0, imageSize);
@@ -321,21 +353,29 @@ void Image::fill(Vec4B const& c) {
   }
 }
 
-void Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c) {
+std::expected<void, StarException> Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c) {
   for (unsigned y = pos[1]; y < pos[1] + size[1] && y < m_height; ++y)
-    for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x)
-      set(Vec2U(x, y), c);
+    for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x) {
+      auto result = set(Vec2U(x, y), c);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c) {
+std::expected<void, StarException> Image::fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c) {
   for (unsigned y = pos[1]; y < pos[1] + size[1] && y < m_height; ++y)
-    for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x)
-      set(Vec2U(x, y), c);
+    for (unsigned x = pos[0]; x < pos[0] + size[0] && x < m_width; ++x) {
+      auto result = set(Vec2U(x, y), c);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void Image::set(Vec2U const& pos, Vec4B const& c) {
+std::expected<void, StarException> Image::set(Vec2U const& pos, Vec4B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("{} out of range in Image::set", pos));
+    return std::unexpected(ImageException(strf("{} out of range in Image::set", pos)));
   } else if (bytesPerPixel() == 4) {
     std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
@@ -348,11 +388,12 @@ void Image::set(Vec2U const& pos, Vec4B const& c) {
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
   }
+  return {};
 }
 
-void Image::set(Vec2U const& pos, Vec3B const& c) {
+std::expected<void, StarException> Image::set(Vec2U const& pos, Vec3B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("{} out of range in Image::set", pos));
+    return std::unexpected(ImageException(strf("{} out of range in Image::set", pos)));
   } else if (bytesPerPixel() == 4) {
     std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
@@ -365,12 +406,13 @@ void Image::set(Vec2U const& pos, Vec3B const& c) {
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
   }
+  return {};
 }
 
-Vec4B Image::get(Vec2U const& pos) const {
+std::expected<Vec4B, StarException> Image::get(Vec2U const& pos) const {
   Vec4B c;
   if (pos[0] >= m_width || pos[1] >= m_height) {
-    throw ImageException(strf("{} out of range in Image::get", pos));
+    return std::unexpected(ImageException(strf("{} out of range in Image::get", pos)));
   } else if (bytesPerPixel() == 4) {
     std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     c[0] = m_data[offset];
@@ -387,26 +429,25 @@ Vec4B Image::get(Vec2U const& pos) const {
   return c;
 }
 
-void Image::setrgb(Vec2U const& pos, Vec4B const& c) {
+std::expected<void, StarException> Image::setrgb(Vec2U const& pos, Vec4B const& c) {
   if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
-    set(pos, Vec4B{c[2], c[1], c[0], c[3]});
-  else
-    set(pos, c);
+    return set(pos, Vec4B{c[2], c[1], c[0], c[3]});
+  return set(pos, c);
 }
 
-void Image::setrgb(Vec2U const& pos, Vec3B const& c) {
+std::expected<void, StarException> Image::setrgb(Vec2U const& pos, Vec3B const& c) {
   if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
-    set(pos, Vec3B{c[2], c[1], c[0]});
-  else
-    set(pos, c);
+    return set(pos, Vec3B{c[2], c[1], c[0]});
+  return set(pos, c);
 }
 
-Vec4B Image::getrgb(Vec2U const& pos) const {
+std::expected<Vec4B, StarException> Image::getrgb(Vec2U const& pos) const {
   auto c = get(pos);
+  if (!c)
+    return std::unexpected(std::move(c.error()));
   if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
-    return Vec4B{c[2], c[1], c[0], c[3]};
-  else
-    return c;
+    return Vec4B{(*c)[2], (*c)[1], (*c)[0], (*c)[3]};
+  return *c;
 }
 
 Vec4B Image::clamp(Vec2I const& pos) const {
@@ -439,37 +480,55 @@ Vec4B Image::clamprgb(Vec2I const& pos) const {
     return c;
 }
 
-Image Image::subImage(Vec2U const& pos, Vec2U const& size) const {
+std::expected<Image, StarException> Image::subImage(Vec2U const& pos, Vec2U const& size) const {
   if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height)
-    throw ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height));
+    return std::unexpected(ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height)));
 
   Image sub(size[0], size[1], m_pixelFormat);
 
   for (unsigned y = 0; y < size[1]; ++y) {
     for (unsigned x = 0; x < size[0]; ++x) {
-      sub.set({x, y}, get(pos + Vec2U(x, y)));
+      auto pixel = get(pos + Vec2U(x, y));
+      if (!pixel)
+        return std::unexpected(std::move(pixel.error()));
+      auto assigned = sub.set({x, y}, *pixel);
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
     }
   }
 
   return sub;
 }
 
-void Image::copyInto(Vec2U const& min, Image const& image) {
-  Vec2U max = (min + image.size()).piecewiseMin(size());
-
-  for (unsigned y = min[1]; y < max[1]; ++y) {
-    for (unsigned x = min[0]; x < max[0]; ++x)
-      set(x, y, image.get(Vec2U(x, y) - min));
-  }
-}
-
-void Image::drawInto(Vec2U const& min, Image const& image) {
+std::expected<void, StarException> Image::copyInto(Vec2U const& min, Image const& image) {
   Vec2U max = (min + image.size()).piecewiseMin(size());
 
   for (unsigned y = min[1]; y < max[1]; ++y) {
     for (unsigned x = min[0]; x < max[0]; ++x) {
-      Vec4B dest = get(Vec2U(x, y));
-      Vec4B src = image.get(Vec2U(x, y) - min);
+      auto pixel = image.get(Vec2U(x, y) - min);
+      if (!pixel)
+        return std::unexpected(std::move(pixel.error()));
+      auto assigned = set(x, y, *pixel);
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
+    }
+  }
+  return {};
+}
+
+std::expected<void, StarException> Image::drawInto(Vec2U const& min, Image const& image) {
+  Vec2U max = (min + image.size()).piecewiseMin(size());
+
+  for (unsigned y = min[1]; y < max[1]; ++y) {
+    for (unsigned x = min[0]; x < max[0]; ++x) {
+      auto destResult = get(Vec2U(x, y));
+      if (!destResult)
+        return std::unexpected(std::move(destResult.error()));
+      auto srcResult = image.get(Vec2U(x, y) - min);
+      if (!srcResult)
+        return std::unexpected(std::move(srcResult.error()));
+      Vec4B dest = *destResult;
+      Vec4B src = *srcResult;
 
       Vec3U destMultiplied = Vec3U(dest[0], dest[1], dest[2]) * dest[3] / 255;
       Vec3U srcMultiplied = Vec3U(src[0], src[1], src[2]) * src[3] / 255;
@@ -478,26 +537,38 @@ void Image::drawInto(Vec2U const& min, Image const& image) {
       Vec3U over = srcMultiplied + destMultiplied * (255 - src[3]) / 255;
       unsigned alpha = src[3] + dest[3] * (255 - src[3]) / 255;
 
-      set(x, y, Vec4B(over[0], over[1], over[2], alpha));
+      auto assigned = set(x, y, Vec4B(over[0], over[1], over[2], alpha));
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
     }
   }
+  return {};
 }
 
 Image Image::convert(PixelFormat pixelFormat) const {
   Image converted(m_width, m_height, pixelFormat);
-  converted.copyInto(Vec2U(), *this);
+  for (unsigned y = 0; y < m_height; ++y)
+    for (unsigned x = 0; x < m_width; ++x) {
+      auto pixel = bytesPerPixel() == 4 ? get32(x, y) : Vec4B(get24(x, y), 255);
+      if (converted.bytesPerPixel() == 4)
+        converted.set32(x, y, pixel);
+      else
+        converted.set24(x, y, pixel.vec3());
+    }
   return converted;
 }
 
-void Image::writePng(Logger& logger, std::shared_ptr<IODevice> device) const {
+std::expected<void, StarException> Image::writePng(Logger& logger, std::shared_ptr<IODevice> device) const {
   PngState state{logger, device.get(), true};
-  initializePng(state);
+  auto initialized = initializePng(state);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   unsigned channels = m_pixelFormat == PixelFormat::RGB24 ? 3 : 4;
   auto rows = std::make_unique<png_bytep[]>(m_height);
   std::size_t stride = static_cast<std::size_t>(m_width) * channels;
   for (std::size_t i = 0; i < m_height; ++i)
     rows[i] = m_data + (m_height - i - 1) * stride;
-  state.check(writePngRows(state, m_width, m_height, channels, rows.get()), "Internal error writing png.");
+  return state.check(writePngRows(state, m_width, m_height, channels, rows.get()), "Internal error writing png.");
 }
 
 ImageView::ImageView(Image const& image) {

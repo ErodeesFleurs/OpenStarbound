@@ -16,7 +16,7 @@ struct RadioMessageDatabaseExceptionTag {
 using RadioMessageDatabaseException = StarError<RadioMessageDatabaseExceptionTag, StarException>;
 
 enum class RadioMessageType { Generic, Mission, Quest, Tutorial };
-extern EnumMap<RadioMessageType> const RadioMessageTypeNames;
+extern std::expected<EnumMap<RadioMessageType>, StarException> const RadioMessageTypeNames;
 
 struct RadioMessage {
   // Break the default-construction trait cycle in the recursive StringMap members.
@@ -41,12 +41,13 @@ struct RadioMessage {
 
 class RadioMessageDatabase {
 public:
-  explicit RadioMessageDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<RadioMessageDatabase>, StarException> create(Root& root);
 
-  RadioMessage radioMessage(String const& messageName) const;
-  RadioMessage createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const;
+  [[nodiscard]] std::expected<RadioMessage, StarException> radioMessage(String const& messageName) const;
+  [[nodiscard]] std::expected<RadioMessage, StarException> createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const;
 
 private:
+  explicit RadioMessageDatabase(Root& root);
   Root& m_root;
   StringMap<RadioMessage> m_radioMessages;
 };

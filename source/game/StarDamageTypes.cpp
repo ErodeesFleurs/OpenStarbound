@@ -4,24 +4,27 @@ import star.data_stream;
 import star.bi_map;
 import star.game_types;
 import star.damage_types;
+import star.format;
 
 namespace Star {
 
-extern EnumMap<DamageType> const DamageTypeNames{{DamageType::NoDamage, "NoDamage"},
+extern std::expected<EnumMap<DamageType>, StarException> const DamageTypeNames = EnumMap<DamageType>::create({
+    {DamageType::NoDamage, "NoDamage"},
     {DamageType::Damage, "Damage"},
     {DamageType::IgnoresDef, "IgnoresDef"},
     {DamageType::Knockback, "Knockback"},
     {DamageType::Environment, "Environment"},
-		{DamageType::Status, "Status"}};
+    {DamageType::Status, "Status"}});
 
-extern EnumMap<HitType> const HitTypeNames{
+extern std::expected<EnumMap<HitType>, StarException> const HitTypeNames = EnumMap<HitType>::create({
     {HitType::Hit, "Hit"},
     {HitType::StrongHit, "StrongHit"},
     {HitType::WeakHit, "WeakHit"},
     {HitType::ShieldHit, "ShieldHit"},
-    {HitType::Kill, "Kill"}};
+    {HitType::Kill, "Kill"}});
 
-extern EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
+extern std::expected<EnumMap<TeamType>, StarException> const TeamTypeNames = EnumMap<TeamType>::create({
+    {TeamType::Null, "null"},
     {TeamType::Friendly, "friendly"},
     {TeamType::Enemy, "enemy"},
     {TeamType::PVP, "pvp"},
@@ -29,19 +32,34 @@ extern EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
     {TeamType::Ghostly, "ghostly"},
     {TeamType::Environment, "environment"},
     {TeamType::Indiscriminate, "indiscriminate"},
-    {TeamType::Assistant, "assistant"}};
+    {TeamType::Assistant, "assistant"}});
 
 EntityDamageTeam::EntityDamageTeam() : type(TeamType::Null), team(0) {}
 
 EntityDamageTeam::EntityDamageTeam(TeamType type, TeamNumber team) : type(type), team(team) {}
 
-EntityDamageTeam::EntityDamageTeam(Json const& json) {
-  type = TeamTypeNames.getLeft(json.getString("type"));
-  team = json.getUInt("team", 0);
+std::expected<EntityDamageTeam, StarException> EntityDamageTeam::create(Json const& json) {
+  if (!TeamTypeNames)
+    return std::unexpected(TeamTypeNames.error());
+  auto name = json.getString("type");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto type = TeamTypeNames->getLeft(*name);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  auto team = json.getUInt("team", 0);
+  if (!team)
+    return std::unexpected(std::move(team.error()));
+  return EntityDamageTeam(**type, *team);
 }
 
-Json EntityDamageTeam::toJson() const {
-  return JsonObject{{"type", TeamTypeNames.getRight(type)}, {"team", team}};
+std::expected<Json, StarException> EntityDamageTeam::toJson() const {
+  if (!TeamTypeNames)
+    return std::unexpected(TeamTypeNames.error());
+  auto name = TeamTypeNames->getRight(type);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  return JsonObject{{"type", **name}, {"team", team}};
 }
 
 bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const {
@@ -86,16 +104,18 @@ bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
   return std::tie(type, team) == std::tie(rhs.type, rhs.team);
 }
 
-DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team) {
-  ds.write(team.type);
-  ds.write(team.team);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team) {
+  auto result = ds << team.type << team.team;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, EntityDamageTeam& team) {
-  ds.read(team.type);
-  ds.read(team.team);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& team) {
+  auto result = ds >> team.type >> team.team;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
 TeamNumber soloPvpTeam(ConnectionId clientId) {

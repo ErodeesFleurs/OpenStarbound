@@ -122,6 +122,7 @@ import star.item_bag;
 
 
 import star.net_element_basic_fields;
+import star.net_element;
 import star.net_element_sync_group;
 
 import star.net_compatibility;
@@ -129,7 +130,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) const {
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) const {
   // any inventory type can have empty slots
   if (!items || items->empty())
     return true;
@@ -154,83 +155,129 @@ bool PlayerInventory::itemAllowedAsEquipment(std::shared_ptr<Item> const& item, 
     return is<ArmorItem>(item);
 }
 
-PlayerInventory::PlayerInventory(Root& root)
-  : PlayerInventory(root, root.assets()->json("/player.config:inventory"), root.assets()->json("/currencies.config")) {}
+PlayerInventory::PlayerInventory(Root& root) : PlayerInventory(root, Json(), Json()) {}
+
+[[nodiscard]] std::expected<std::shared_ptr<PlayerInventory>, StarException> PlayerInventory::create(Root& root) {
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/player.config:inventory");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto currencies = (*assets)->json("/currencies.config");
+  if (!currencies) return std::unexpected(std::move(currencies.error()));
+  return create(root, std::move(*config), std::move(*currencies));
+}
 
 PlayerInventory::PlayerInventory(Root& root, Json inventoryConfig, Json currenciesConfig)
-  : m_root(&root), m_inventoryConfig(std::move(inventoryConfig)), m_currenciesConfig(std::move(currenciesConfig)) {
-  auto const& config = m_inventoryConfig;
+  : m_root(&root), m_inventoryConfig(std::move(inventoryConfig)), m_currenciesConfig(std::move(currenciesConfig)),
+    m_customBarGroup(0), m_equipmentVisibilityMask(0xFFFFFFFF), m_player(nullptr) {}
 
-  auto bags = config.get("itemBags");
-  auto bagOrder = bags.toObject().keys().sorted([&bags](String const& a, String const& b) {
-    return bags.get(a).getInt("priority", 0) < bags.get(b).getInt("priority", 0);
-  });
-  for (auto name : bagOrder) {
-    std::size_t size = bags.get(name).getUInt("size");
-    m_bags[name] = std::make_shared<ItemBag>(root, size);
-    m_bagsNetState[name].resize(size);
+[[nodiscard]] std::expected<std::shared_ptr<PlayerInventory>, StarException> PlayerInventory::create(Root& root, Json inventoryConfig, Json currenciesConfig) {
+  auto inventory = std::shared_ptr<PlayerInventory>(new PlayerInventory(root, std::move(inventoryConfig), std::move(currenciesConfig)));
+  auto initialized = inventory->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return inventory;
+}
+
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::initialize() {
+  if (m_inventoryConfig.isNull()) {
+    auto assets = m_root->assets();
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto config = (*assets)->json("/player.config:inventory");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto currencies = (*assets)->json("/currencies.config");
+    if (!currencies) return std::unexpected(std::move(currencies.error()));
+    m_inventoryConfig = std::move(*config);
+    m_currenciesConfig = std::move(*currencies);
   }
-
-  for (auto p : m_currenciesConfig.iterateObject())
-    m_currencies[p.first] = 0;
-
-  std::size_t customBarGroups = config.getUInt("customBarGroups");
-  std::size_t customBarIndexes = config.getUInt("customBarIndexes");
-  m_customBarGroup = 0;
+  auto bags = m_inventoryConfig.getObject("itemBags");
+  if (!bags) return std::unexpected(std::move(bags.error()));
+  List<std::pair<String, std::int64_t>> bagOrder;
+  for (auto const& bag : *bags) {
+    auto priority = bag.second.getInt("priority", 0);
+    if (!priority) return std::unexpected(std::move(priority.error()));
+    bagOrder.append({bag.first, *priority});
+  }
+  bagOrder.sort([](auto const& a, auto const& b) { return a.second < b.second; });
+  for (auto const& entry : bagOrder) {
+    auto config = bags->get(entry.first);
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto size = (*config)->getUInt("size");
+    if (!size) return std::unexpected(std::move(size.error()));
+    m_bags[entry.first] = std::make_shared<ItemBag>(*m_root, *size);
+    m_bagsNetState[entry.first].resize(*size);
+  }
+  auto currencies = m_currenciesConfig.toObject();
+  if (!currencies) return std::unexpected(std::move(currencies.error()));
+  for (auto const& currency : *currencies) m_currencies[currency.first] = 0;
+  auto groups = m_inventoryConfig.getUInt("customBarGroups");
+  if (!groups) return std::unexpected(std::move(groups.error()));
+  auto indexes = m_inventoryConfig.getUInt("customBarIndexes");
+  if (!indexes) return std::unexpected(std::move(indexes.error()));
+  std::size_t customBarGroups = *groups;
+  std::size_t customBarIndexes = *indexes;
   m_customBar.resize(customBarGroups, customBarIndexes);
 
-  for (auto slot : EquipmentSlotNames) {
+  if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
+  for (auto slot : *EquipmentSlotNames) {
     auto& element = m_equipmentNetState[slot.first];
     if (slot.first > EquipmentSlot::BackCosmetic)
       element.setCompatibilityVersion(9);
-    addNetElement(&element);
+    auto added = addNetElement(&element);
+    if (!added) return std::unexpected(std::move(added.error()));
   }
 
-  for (auto& p : m_bagsNetState) {
-    for (auto& e : p.second)
-      addNetElement(&e);
+  for (auto& bag : m_bagsNetState) {
+    for (auto& element : bag.second) {
+      auto added = addNetElement(&element);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
   }
-
-  addNetElement(&m_swapSlotNetState);
-  addNetElement(&m_trashSlotNetState);
-
-  addNetElement(&m_currenciesNetState);
-
-  addNetElement(&m_customBarGroupNetState);
+  for (NetElement* element : {static_cast<NetElement*>(&m_swapSlotNetState), static_cast<NetElement*>(&m_trashSlotNetState),
+      static_cast<NetElement*>(&m_currenciesNetState), static_cast<NetElement*>(&m_customBarGroupNetState)}) {
+    auto added = addNetElement(element);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
   m_customBarNetState.resize(customBarGroups, customBarIndexes);
-  m_customBarNetState.forEach([this](Array2S const&, NetElementData<CustomBarLink>& e) {
-      addNetElement(&e);
-    });
+  for (std::size_t i = 0; i < customBarGroups; ++i) {
+    for (std::size_t j = 0; j < customBarIndexes; ++j) {
+      auto added = addNetElement(&m_customBarNetState(i, j));
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+  }
+  auto selected = addNetElement(&m_selectedActionBarNetState);
+  if (!selected) return std::unexpected(std::move(selected.error()));
+  for (auto item : {EssentialItem::BeamAxe, EssentialItem::WireTool, EssentialItem::PaintTool, EssentialItem::InspectionTool}) {
+    auto added = addNetElement(&m_essentialNetState[item]);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
-  addNetElement(&m_selectedActionBarNetState);
-
-  addNetElement(&m_essentialNetState[EssentialItem::BeamAxe]);
-  addNetElement(&m_essentialNetState[EssentialItem::WireTool]);
-  addNetElement(&m_essentialNetState[EssentialItem::PaintTool]);
-  addNetElement(&m_essentialNetState[EssentialItem::InspectionTool]);
-
-  m_equipmentVisibilityMask = 0xFFFFFFFF;
-  m_player = nullptr;
+  return {};
 }
 
-std::shared_ptr<Item> PlayerInventory::itemsAt(InventorySlot const& slot) const {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::itemsAt(InventorySlot const& slot) const {
   return retrieve(slot);
 }
 
-std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items) {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items) {
   if (!items || items->empty())
     return {};
 
+  auto destination = retrieveForMutation(slot);
+  if (!destination) return std::unexpected(std::move(destination.error()));
+  auto& dest = **destination;
   if (auto es = std::get_if<EquipmentSlot>(&slot)) {
-    auto& itemSlot = retrieveForMutation(slot);
-    if (!itemSlot && itemAllowedAsEquipment(items, *es))
-      m_equipment[*es] = items->take(1);
+    if (!dest && itemAllowedAsEquipment(items, *es)) {
+      auto taken = items->take(1);
+      if (!taken) return std::unexpected(std::move(taken.error()));
+      dest = std::move(*taken);
+    }
   } else {
-    auto& dest = retrieveForMutation(slot);
-    if (dest && dest->stackableWith(items))
-      dest->stackWith(items);
-    if (!dest)
-      dest = items->take(items->count());
+    if (dest && dest->stackableWith(items)) dest->stackWith(items);
+    if (!dest) {
+      auto taken = items->take(items->count());
+      if (!taken) return std::unexpected(std::move(taken.error()));
+      dest = std::move(*taken);
+    }
     normalizeItem(dest);
   }
 
@@ -240,20 +287,31 @@ std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std:
   return items;
 }
 
-std::shared_ptr<Item> PlayerInventory::takeSlot(InventorySlot const& slot) {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::takeSlot(InventorySlot const& slot) {
   if (std::holds_alternative<SwapSlot>(slot))
     m_swapReturnSlot = {};
-  return take(retrieveForMutation(slot));
+  auto item = retrieveForMutation(slot);
+  if (!item) return std::unexpected(std::move(item.error()));
+  return take(**item);
 }
 
-bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot const& second) {
-  auto& firstItems = retrieveForMutation(first);
-  auto& secondItems = retrieveForMutation(second);
-
-  if (std::holds_alternative<BagSlot>(first) && !itemAllowedInBag(secondItems, std::get<BagSlot>(first).first))
-    return false;
-  if (std::holds_alternative<BagSlot>(second) && !itemAllowedInBag(firstItems, std::get<BagSlot>(second).first))
-    return false;
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot const& second) {
+  auto firstResult = retrieveForMutation(first);
+  if (!firstResult) return std::unexpected(std::move(firstResult.error()));
+  auto secondResult = retrieveForMutation(second);
+  if (!secondResult) return std::unexpected(std::move(secondResult.error()));
+  auto& firstItems = **firstResult;
+  auto& secondItems = **secondResult;
+  if (auto bag = std::get_if<BagSlot>(&first)) {
+    auto allowed = itemAllowedInBag(secondItems, bag->first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (!*allowed) return false;
+  }
+  if (auto bag = std::get_if<BagSlot>(&second)) {
+    auto allowed = itemAllowedInBag(firstItems, bag->first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (!*allowed) return false;
+  }
   if (std::holds_alternative<EquipmentSlot>(first) && (itemSafeCount(secondItems) > 1 || !itemAllowedAsEquipment(secondItems, std::get<EquipmentSlot>(first))))
     return false;
   if (std::holds_alternative<EquipmentSlot>(second) && (itemSafeCount(firstItems) > 1 || !itemAllowedAsEquipment(firstItems, std::get<EquipmentSlot>(second))))
@@ -265,7 +323,7 @@ bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot co
   return true;
 }
 
-bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item) {
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item) {
   if (item && item->empty())
     return setItem(slot, {});
 
@@ -285,8 +343,13 @@ bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> c
     return true;
   } else {
     auto bs = std::get<BagSlot>(slot);
-    if (itemAllowedInBag(item, bs.first)) {
-      m_bags[bs.first]->setItem(bs.second, item);
+    auto allowed = itemAllowedInBag(item, bs.first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (*allowed) {
+      auto bag = m_bags.ptr(bs.first);
+      if (!bag) return std::unexpected(ItemException("Invalid inventory bag"));
+      auto assigned = (*bag)->setItem(bs.second, item);
+      if (!assigned) return std::unexpected(std::move(assigned.error()));
       return true;
     }
   }
@@ -294,11 +357,13 @@ bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> c
   return false;
 }
 
-bool PlayerInventory::consumeSlot(InventorySlot const& slot, std::uint64_t count) {
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::consumeSlot(InventorySlot const& slot, std::uint64_t count) {
   if (count == 0)
     return true;
 
-  auto& item = retrieveForMutation(slot);
+  auto result = retrieveForMutation(slot);
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto& item = **result;
   if (!item)
     return false;
 
@@ -319,31 +384,32 @@ bool PlayerInventory::slotValid(InventorySlot const& slot) const {
   return true;
 }
 
-std::shared_ptr<Item> PlayerInventory::addItems(std::shared_ptr<Item> items) {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::addItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
   // First, add coins as monetary value.
   if (auto currencyItem = as<CurrencyItem>(items)) {
-    addCurrency(currencyItem->currencyType(), currencyItem->totalValue());
+    auto added = addCurrency(currencyItem->currencyType(), currencyItem->totalValue());
+    if (!added) return std::unexpected(std::move(added.error()));
     return {};
   }
 
   // Then, try adding equipment to the equipment slots.
-  if (is<HeadArmor>(items) && !headArmor())
-    m_equipment[EquipmentSlot::Head] = items->take(1);
-  if (is<ChestArmor>(items) && !chestArmor())
-    m_equipment[EquipmentSlot::Chest] = items->take(1);
-  if (is<LegsArmor>(items) && !legsArmor())
-    m_equipment[EquipmentSlot::Legs] = items->take(1);
-  if (is<BackArmor>(items) && !backArmor())
-    m_equipment[EquipmentSlot::Back] = items->take(1);
+  for (auto slot : {EquipmentSlot::Head, EquipmentSlot::Chest, EquipmentSlot::Legs, EquipmentSlot::Back}) {
+    if (!items->empty() && itemAllowedAsEquipment(items, slot) && !equipment(slot)) {
+      auto taken = items->take(1);
+      if (!taken) return std::unexpected(std::move(taken.error()));
+      m_equipment[slot] = std::move(*taken);
+    }
+  }
 
   if (is<MaterialItem>(items)) {
-    if (auto primary = primaryHeldItem()) {
-      primary->stackWith(items);
-      if (items->empty())
-        return {};
+    auto primary = primaryHeldItem();
+    if (!primary) return std::unexpected(std::move(primary.error()));
+    if (*primary) {
+      (*primary)->stackWith(items);
+      if (items->empty()) return std::shared_ptr<Item>();
     }
   }
 
@@ -351,22 +417,27 @@ std::shared_ptr<Item> PlayerInventory::addItems(std::shared_ptr<Item> items) {
   return addToBags(std::move(items));
 }
 
-std::shared_ptr<Item> PlayerInventory::addToBags(std::shared_ptr<Item> items) {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::addToBags(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
   for (auto pair : m_bags) {
-    if (!itemAllowedInBag(items, pair.first))
-      continue;
-
-    items = pair.second->stackItems(items);
-    if (!items)
-      break;
+    auto allowed = itemAllowedInBag(items, pair.first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (!*allowed) continue;
+    auto stacked = pair.second->stackItems(items);
+    if (!stacked) return std::unexpected(std::move(stacked.error()));
+    items = std::move(*stacked);
+    if (!items) break;
 
     for (unsigned i = 0; i < pair.second->size(); ++i) {
-      if (!pair.second->at(i)) {
-        pair.second->setItem(i, take(items));
-        autoAddToCustomBar(BagSlot(pair.first, i));
+      auto slot = std::as_const(*pair.second).at(i);
+      if (!slot) return std::unexpected(std::move(slot.error()));
+      if (!*slot) {
+        auto assigned = pair.second->setItem(i, take(items));
+        if (!assigned) return std::unexpected(std::move(assigned.error()));
+        auto added = autoAddToCustomBar(BagSlot(pair.first, i));
+        if (!added) return std::unexpected(std::move(added.error()));
         break;
       }
     }
@@ -375,7 +446,7 @@ std::shared_ptr<Item> PlayerInventory::addToBags(std::shared_ptr<Item> items) {
   return items;
 }
 
-std::uint64_t PlayerInventory::itemsCanFit(std::shared_ptr<Item> const& items) const {
+[[nodiscard]] std::expected<std::uint64_t, StarException> PlayerInventory::itemsCanFit(std::shared_ptr<Item> const& items) const {
   if (!items || items->empty())
     return 0;
 
@@ -396,8 +467,9 @@ std::uint64_t PlayerInventory::itemsCanFit(std::shared_ptr<Item> const& items) c
 
   // Then add into bags
   for (auto const& pair : m_bags) {
-    if (itemAllowedInBag(items, pair.first))
-      canFit += pair.second->itemsCanFit(items);
+    auto allowed = itemAllowedInBag(items, pair.first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (*allowed) canFit += pair.second->itemsCanFit(items);
   }
 
   return std::min(canFit, items->count());
@@ -539,7 +611,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   return true;
 }
 
-ItemDescriptor PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool takePartial, bool exactMatch) {
+[[nodiscard]] std::expected<ItemDescriptor, StarException> PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool takePartial, bool exactMatch) {
   std::uint64_t hasCount = hasCountOfItem(descriptor, exactMatch);
 
   if (hasCount >= descriptor.count() || (takePartial && hasCount > 0)) {
@@ -551,147 +623,148 @@ ItemDescriptor PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool
   return {};
 }
 
-HashMap<ItemDescriptor, std::uint64_t> PlayerInventory::availableItems() const {
-  return ItemDatabase::normalizeBag(allItems());
+[[nodiscard]] std::expected<HashMap<ItemDescriptor, std::uint64_t>, StarException> PlayerInventory::availableItems() const {
+  auto items = allItems();
+  if (!items) return std::unexpected(std::move(items.error()));
+  return ItemDatabase::normalizeBag(*items);
 }
 
 std::shared_ptr<HeadArmor> PlayerInventory::headArmor() const {
-  return as<HeadArmor>(retrieve(EquipmentSlot::Head));
+  return as<HeadArmor>(equipment(EquipmentSlot::Head));
 }
 
 std::shared_ptr<ChestArmor> PlayerInventory::chestArmor() const {
-  return as<ChestArmor>(retrieve(EquipmentSlot::Chest));
+  return as<ChestArmor>(equipment(EquipmentSlot::Chest));
 }
 
 std::shared_ptr<LegsArmor> PlayerInventory::legsArmor() const {
-  return as<LegsArmor>(retrieve(EquipmentSlot::Legs));
+  return as<LegsArmor>(equipment(EquipmentSlot::Legs));
 }
 
 std::shared_ptr<BackArmor> PlayerInventory::backArmor() const {
-  return as<BackArmor>(retrieve(EquipmentSlot::Back));
+  return as<BackArmor>(equipment(EquipmentSlot::Back));
 }
 
 std::shared_ptr<HeadArmor> PlayerInventory::headCosmetic() const {
-  return as<HeadArmor>(retrieve(EquipmentSlot::HeadCosmetic));
+  return as<HeadArmor>(equipment(EquipmentSlot::HeadCosmetic));
 }
 
 std::shared_ptr<ChestArmor> PlayerInventory::chestCosmetic() const {
-  return as<ChestArmor>(retrieve(EquipmentSlot::ChestCosmetic));
+  return as<ChestArmor>(equipment(EquipmentSlot::ChestCosmetic));
 }
 
 std::shared_ptr<LegsArmor> PlayerInventory::legsCosmetic() const {
-  return as<LegsArmor>(retrieve(EquipmentSlot::LegsCosmetic));
+  return as<LegsArmor>(equipment(EquipmentSlot::LegsCosmetic));
 }
 
 std::shared_ptr<BackArmor> PlayerInventory::backCosmetic() const {
-  return as<BackArmor>(retrieve(EquipmentSlot::BackCosmetic));
+  return as<BackArmor>(equipment(EquipmentSlot::BackCosmetic));
 }
 
 std::shared_ptr<ArmorItem> PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
   if (testMask && !equipmentVisibility(slot))
     return {};
 
-  return as<ArmorItem>(retrieve(slot));
+  auto item = m_equipment.value(slot);
+  return item && !item->empty() ? as<ArmorItem>(item) : std::shared_ptr<ArmorItem>();
 }
 
 std::shared_ptr<ItemBag const> PlayerInventory::bagContents(String const& type) const {
-  if (!m_bags.contains(type)) return nullptr;
-  return m_bags.get(type);
+  auto bag = m_bags.ptr(type);
+  return bag ? *bag : nullptr;
 }
 
-void PlayerInventory::condenseBagStacks(String const& bagType) {
-  auto bag = m_bags[bagType];
-
-  bag->condenseStacks();
-
-  m_customBar.forEach([&](auto const&, CustomBarLink& link) {
-      if (link.first) {
-        if (auto bs = std::get_if<BagSlot>(&*link.first)) {
-          if (bs->first == bagType && !bag->at(bs->second))
-            link.first = {};
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::condenseBagStacks(String const& bagType) {
+  auto entry = m_bags.ptr(bagType);
+  if (!entry) return std::unexpected(ItemException("Invalid inventory bag"));
+  auto condensed = (*entry)->condenseStacks();
+  if (!condensed) return std::unexpected(std::move(condensed.error()));
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
+      auto& link = m_customBar(i, j);
+      for (auto* slot : {&link.first, &link.second}) {
+        if (*slot) {
+          if (auto bag = std::get_if<BagSlot>(&**slot); bag && bag->first == bagType) {
+            auto item = std::as_const(**entry).at(bag->second);
+            if (!item) return std::unexpected(std::move(item.error()));
+            if (!*item) slot->reset();
+          }
         }
       }
-      if (link.second) {
-        if (auto bs = std::get_if<BagSlot>(&*link.second)) {
-          if (bs->first == bagType && !bag->at(bs->second))
-            link.second = {};
-        }
-      }
-    });
-}
-
-void PlayerInventory::sortBag(String const& bagType) {
-  auto bag = m_bags[bagType];
-
-  // When sorting bags, we need to record where all the action bar links were
-  // pointing if any of them were pointing to the bag we are about to sort.
-  MultiArray<std::pair<std::shared_ptr<Item>, std::shared_ptr<Item>>, 2> savedCustomBar(m_customBar.size());
-  m_customBar.forEach([&](auto const& index, CustomBarLink const& link) {
-      if (link.first) {
-        if (auto bs = std::get_if<BagSlot>(&*link.first)) {
-          if (bs->first == bagType)
-            savedCustomBar(index).first = bag->at(bs->second);
-        }
-      }
-      if (link.second) {
-        if (auto bs = std::get_if<BagSlot>(&*link.second)) {
-          if (bs->first == bagType)
-            savedCustomBar(index).second = bag->at(bs->second);
-        }
-      }
-    });
-
-  auto itemDatabase = m_root->itemDatabase();
-  bag->items().sort([itemDatabase](std::shared_ptr<Item> const& a, std::shared_ptr<Item> const& b) {
-      if (a && !b)
-        return true;
-      if (!a)
-        return false;
-
-      auto aType = itemDatabase->itemType(a->name());
-      auto bType = itemDatabase->itemType(b->name());
-      if (aType != bType)
-        return aType < bType;
-
-      if (a->rarity() != b->rarity())
-        return a->rarity() > b->rarity();
-
-      if (a->name().compare(b->name()) != 0)
-        return a->name().compare(b->name()) < 0;
-
-      if (a->count() != b->count())
-        return a->count() > b->count();
-
-      return false;
-    });
-
-  // Once we are done sorting, we need to restore the potentially action bar
-  // links to point to where the item with the same identity is now residing.
-
-  Map<std::shared_ptr<Item>, std::size_t> itemIndexes;
-  for (std::size_t i = 0; i < bag->size(); ++i) {
-    if (auto item = bag->at(i))
-      itemIndexes[item] = i;
+    }
   }
-
-  savedCustomBar.forEach([&](auto const& index, auto const& savedItems) {
-      if (savedItems.first)
-        m_customBar.at(index).first.emplace(BagSlot(bagType, itemIndexes.get(savedItems.first)));
-      if (savedItems.second)
-        m_customBar.at(index).second.emplace(BagSlot(bagType, itemIndexes.get(savedItems.second)));
-    });
+  return {};
 }
 
-void PlayerInventory::shiftSwap(InventorySlot const& slot) {
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::sortBag(String const& bagType) {
+  auto entry = m_bags.ptr(bagType);
+  if (!entry) return std::unexpected(ItemException("Invalid inventory bag"));
+  auto& bag = **entry;
+  MultiArray<std::pair<std::shared_ptr<Item>, std::shared_ptr<Item>>, 2> saved(m_customBar.size());
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
+      auto const& link = m_customBar(i, j);
+      for (bool primary : {true, false}) {
+        auto const& slot = primary ? link.first : link.second;
+        if (slot) {
+          if (auto position = std::get_if<BagSlot>(&*slot); position && position->first == bagType) {
+            auto item = std::as_const(bag).at(position->second);
+            if (!item) return std::unexpected(std::move(item.error()));
+            (primary ? saved(i, j).first : saved(i, j).second) = *item;
+          }
+        }
+      }
+    }
+  }
+  auto database = m_root->itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  Map<String, ItemType> types;
+  for (auto const& item : bag.items()) {
+    if (item && !types.contains(item->name())) {
+      auto length = item->name().size();
+      if (!length) return std::unexpected(std::move(length.error()));
+      auto type = (*database)->itemType(item->name());
+      if (!type) return std::unexpected(std::move(type.error()));
+      types[item->name()] = *type;
+    }
+  }
+  bag.items().sort([&types](auto const& a, auto const& b) {
+    if (a && !b) return true;
+    if (!a) return false;
+    auto aType = types.value(a->name());
+    auto bType = types.value(b->name());
+    if (aType != bType) return aType < bType;
+    if (a->rarity() != b->rarity()) return a->rarity() > b->rarity();
+    if (a->name().utf8() != b->name().utf8()) return a->name().utf8() < b->name().utf8();
+    return a->count() > b->count();
+  });
+  Map<std::shared_ptr<Item>, std::size_t> indexes;
+  for (std::size_t i = 0; i < bag.size(); ++i)
+    if (bag.items()[i]) indexes[bag.items()[i]] = i;
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
+      auto const& old = saved(i, j);
+      if (old.first) m_customBar(i, j).first.emplace(BagSlot(bagType, indexes.value(old.first)));
+      if (old.second) m_customBar(i, j).second.emplace(BagSlot(bagType, indexes.value(old.second)));
+    }
+  }
+  return {};
+}
+
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::shiftSwap(InventorySlot const& slot) {
   normalizeItem(m_swapSlot);
   if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     if (itemAllowedAsEquipment(m_swapSlot, *es)) {
-      auto& equipSlot = retrieveForMutation(slot);
+      auto result = retrieveForMutation(slot);
+      if (!result) return std::unexpected(std::move(result.error()));
+      auto& equipSlot = **result;
       if (itemSafeCount(m_swapSlot) <= 1) {
         std::swap(m_swapSlot, equipSlot);
         swapCustomBarLinks(SwapSlot(), slot);
       } else if (itemSafeCount(equipSlot) == 0) {
-        equipSlot = m_swapSlot->take(1);
+        auto taken = m_swapSlot->take(1);
+        if (!taken) return std::unexpected(std::move(taken.error()));
+        equipSlot = std::move(*taken);
       }
     }
   } else if (std::holds_alternative<TrashSlot>(slot)) {
@@ -699,8 +772,14 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
     std::swap(m_swapSlot, m_trashSlot);
     swapCustomBarLinks(SwapSlot(), slot);
   } else if (auto bs = std::get_if<BagSlot>(&slot)) {
-    if (itemAllowedInBag(m_swapSlot, bs->first)) {
-      m_swapSlot = m_bags[bs->first]->swapItems(bs->second, m_swapSlot);
+    auto allowed = itemAllowedInBag(m_swapSlot, bs->first);
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (*allowed) {
+      auto bag = m_bags.ptr(bs->first);
+      if (!bag) return std::unexpected(ItemException("Invalid inventory bag"));
+      auto swapped = (*bag)->swapItems(bs->second, m_swapSlot);
+      if (!swapped) return std::unexpected(std::move(swapped.error()));
+      m_swapSlot = std::move(*swapped);
       swapCustomBarLinks(SwapSlot(), slot);
     }
   }
@@ -710,54 +789,57 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
     m_swapReturnSlot = {};
   else
     m_swapReturnSlot = slot;
+  return {};
 }
 
-bool PlayerInventory::clearSwap() {
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::clearSwap() {
   normalizeItem(m_swapSlot);
-  auto trySlot = [&](InventorySlot slot) {
-    if (!m_swapSlot)
-      return;
-
-    m_swapSlot = stackWith(slot, m_swapSlot);
-    if (!m_swapSlot)
-      swapCustomBarLinks(SwapSlot(), slot);
+  auto trySlot = [&](InventorySlot slot) -> std::expected<void, StarException> {
+    if (!m_swapSlot) return {};
+    auto stacked = stackWith(slot, m_swapSlot);
+    if (!stacked) return std::unexpected(std::move(stacked.error()));
+    m_swapSlot = std::move(*stacked);
+    if (!m_swapSlot) swapCustomBarLinks(SwapSlot(), slot);
+    return {};
   };
-
-  auto tryBag = [&](String const& bagType) {
-    for (unsigned i = 0; i < m_bags[bagType]->size(); ++i) {
-      if (!m_swapSlot || !itemAllowedInBag(m_swapSlot, bagType))
-        break;
-      trySlot(BagSlot(bagType, i));
+  if (m_swapReturnSlot) {
+    auto slot = std::move(*m_swapReturnSlot);
+    m_swapReturnSlot.reset();
+    auto tried = trySlot(slot);
+    if (!tried) return std::unexpected(std::move(tried.error()));
+  }
+  for (auto slot : {EquipmentSlot::Head, EquipmentSlot::Chest, EquipmentSlot::Legs, EquipmentSlot::Back}) {
+    auto tried = trySlot(slot);
+    if (!tried) return std::unexpected(std::move(tried.error()));
+  }
+  for (auto const& bag : m_bags) {
+    for (unsigned i = 0; i < bag.second->size() && m_swapSlot; ++i) {
+      auto allowed = itemAllowedInBag(m_swapSlot, bag.first);
+      if (!allowed) return std::unexpected(std::move(allowed.error()));
+      if (!*allowed) break;
+      auto tried = trySlot(BagSlot(bag.first, i));
+      if (!tried) return std::unexpected(std::move(tried.error()));
     }
-  };
-
-  if (m_swapReturnSlot)
-    trySlot(takeOptional(m_swapReturnSlot));
-
-  trySlot(EquipmentSlot::Head);
-  trySlot(EquipmentSlot::Chest);
-  trySlot(EquipmentSlot::Legs);
-  trySlot(EquipmentSlot::Back);
-
-  for (auto bagType : m_bags.keys())
-    tryBag(bagType);
-
+  }
   return !m_swapSlot;
 }
 
 std::shared_ptr<Item> PlayerInventory::swapSlotItem() const {
-  return retrieve(SwapSlot());
+  return m_swapSlot && !m_swapSlot->empty() ? m_swapSlot : std::shared_ptr<Item>();
 }
 
-void PlayerInventory::setSwapSlotItem(std::shared_ptr<Item> const& items) {
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::setSwapSlotItem(std::shared_ptr<Item> const& items) {
   if (auto currencyItem = as<CurrencyItem>(items)) {
-    addCurrency(currencyItem->currencyType(), currencyItem->totalValue());
+    auto added = addCurrency(currencyItem->currencyType(), currencyItem->totalValue());
+    if (!added) return std::unexpected(std::move(added.error()));
     m_swapSlot = {};
   } else {
     m_swapSlot = items;
     normalizeItem(m_swapSlot);
-    autoAddToCustomBar(SwapSlot());
+    auto added = autoAddToCustomBar(SwapSlot());
+    if (!added) return std::unexpected(std::move(added.error()));
   }
+  return {};
 }
 
 std::shared_ptr<Item> PlayerInventory::essentialItem(EssentialItem essentialItem) const {
@@ -776,12 +858,21 @@ std::uint64_t PlayerInventory::currency(String const& currencyType) const {
   return m_currencies.value(currencyType, 0);
 }
 
-void PlayerInventory::addCurrency(String const& currencyType, std::uint64_t amount) {
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::addCurrency(String const& currencyType, std::uint64_t amount) {
   std::uint64_t previousTotal = m_currencies[currencyType];
   std::uint64_t newTotal = previousTotal + amount;
   if (newTotal < previousTotal)
     newTotal = std::numeric_limits<std::uint64_t>::max();
-  m_currencies[currencyType] = std::min(m_root->assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", std::numeric_limits<std::uint64_t>::max()), newTotal);
+  auto assets = m_root->assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/currencies.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto currency = config->get(currencyType);
+  if (!currency) return std::unexpected(std::move(currency.error()));
+  auto maximum = currency->getUInt("playerMax", std::numeric_limits<std::uint64_t>::max());
+  if (!maximum) return std::unexpected(std::move(maximum.error()));
+  m_currencies[currencyType] = std::min(*maximum, newTotal);
+  return {};
 }
 
 bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t amount) {
@@ -793,60 +884,66 @@ bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t 
   }
 }
 
-std::optional<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
-  return m_customBar.at(m_customBarGroup, customBarIndex).first;
+[[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> PlayerInventory::customBarPrimarySlot(CustomBarIndex index) const {
+  auto link = m_customBar.at(m_customBarGroup, index);
+  if (!link) return std::unexpected(std::move(link.error()));
+  return (*link)->first;
 }
 
-std::optional<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
-  return m_customBar.at(m_customBarGroup, customBarIndex).second;
+[[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> PlayerInventory::customBarSecondarySlot(CustomBarIndex index) const {
+  auto link = m_customBar.at(m_customBarGroup, index);
+  if (!link) return std::unexpected(std::move(link.error()));
+  return (*link)->second;
 }
 
-void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
-  // The primary slot is not allowed to point to an empty item.
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex index, std::optional<InventorySlot> slot) {
   if (slot) {
-    if (!itemsAt(*slot))
-      slot = {};
+    auto item = itemsAt(*slot);
+    if (!item) return std::unexpected(std::move(item.error()));
+    if (!*item) slot.reset();
   }
-
-  auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
-  if (slot && cbl.second == slot) {
-    // If we match the secondary slot, just swap the slots for primary and
-    // secondary
-    std::swap(cbl.first, cbl.second);
-  } else {
-    cbl.first = slot;
-  }
+  auto link = m_customBar.at(m_customBarGroup, index);
+  if (!link) return std::unexpected(std::move(link.error()));
+  auto& cbl = **link;
+  if (slot && cbl.second == slot) std::swap(cbl.first, cbl.second);
+  else cbl.first = slot;
+  return {};
 }
 
-void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
-  auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
-  // The secondary slot is not allowed to point to an empty item or a two
-  // handed item.
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex index, std::optional<InventorySlot> slot) {
+  auto link = m_customBar.at(m_customBarGroup, index);
+  if (!link) return std::unexpected(std::move(link.error()));
+  auto& cbl = **link;
   if (slot) {
-    if (!itemsAt(*slot) || itemSafeTwoHanded(itemsAt(*slot)))
-      slot = {};
+    auto item = itemsAt(*slot);
+    if (!item) return std::unexpected(std::move(item.error()));
+    if (!*item || itemSafeTwoHanded(*item)) slot.reset();
   }
-
-  if (cbl.first && cbl.first == slot && !itemSafeTwoHanded(itemsAt(*cbl.first))) {
-    // If we match the primary slot and the primary slot is not a two handed
-    // item, then just swap the two slots.
-    std::swap(cbl.first, cbl.second);
-  } else {
+  bool primaryTwoHanded = false;
+  if (cbl.first) {
+    auto item = itemsAt(*cbl.first);
+    if (!item) return std::unexpected(std::move(item.error()));
+    primaryTwoHanded = itemSafeTwoHanded(*item);
+  }
+  if (cbl.first && cbl.first == slot && !primaryTwoHanded) std::swap(cbl.first, cbl.second);
+  else {
     cbl.second = slot;
-    // If the primary slot was two handed, it is no longer valid so clear it.
-    if (cbl.first && itemSafeTwoHanded(itemsAt(*cbl.first)))
-      cbl.first = {};
+    if (primaryTwoHanded) cbl.first.reset();
   }
+  return {};
 }
 
-void PlayerInventory::addToCustomBar(InventorySlot slot) {
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::addToCustomBar(InventorySlot slot) {
   for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
-    auto& cbl = m_customBar.at(m_customBarGroup, j);
+    auto result = m_customBar.at(m_customBarGroup, j);
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto& cbl = **result;
     if (!cbl.first && !cbl.second) {
       cbl.first.emplace(slot);
       break;
     }
   }
+  return {};
 }
 
 std::uint8_t PlayerInventory::customBarGroup() const {
@@ -873,7 +970,7 @@ void PlayerInventory::selectActionBarLocation(SelectedActionBarLocation location
   m_selectedActionBar = location;
 }
 
-std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::primaryHeldItem() const {
   if (auto swapItem = swapSlotItem())
     return swapItem;
 
@@ -881,40 +978,44 @@ std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
     return m_essential.value(std::get<EssentialItem>(m_selectedActionBar));
 
   if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar)) {
-    if (auto slot = m_customBar.at(m_customBarGroup, std::get<CustomBarIndex>(m_selectedActionBar)).first)
-      return itemsAt(*slot);
+    auto slot = customBarPrimarySlot(std::get<CustomBarIndex>(m_selectedActionBar));
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    if (*slot) return itemsAt(**slot);
   }
 
   return {};
 }
 
-std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
-  auto pri = primaryHeldItem();
-  if (itemSafeTwoHanded(pri) || swapSlotItem() || !std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
-    return {};
-
-  auto const& cbl = m_customBar.at(m_customBarGroup, std::get<CustomBarIndex>(m_selectedActionBar));
-
-  if (cbl.first && itemSafeTwoHanded(itemsAt(*cbl.first)))
-    return {};
-
-  if (cbl.second)
-    return itemsAt(*cbl.second);
-
-  return {};
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::secondaryHeldItem() const {
+  auto primary = primaryHeldItem();
+  if (!primary) return std::unexpected(std::move(primary.error()));
+  if (itemSafeTwoHanded(*primary) || swapSlotItem() || !std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
+    return std::shared_ptr<Item>();
+  auto link = m_customBar.at(m_customBarGroup, std::get<CustomBarIndex>(m_selectedActionBar));
+  if (!link) return std::unexpected(std::move(link.error()));
+  auto const& cbl = **link;
+  if (cbl.first) {
+    auto item = itemsAt(*cbl.first);
+    if (!item) return std::unexpected(std::move(item.error()));
+    if (itemSafeTwoHanded(*item)) return std::shared_ptr<Item>();
+  }
+  if (cbl.second) return itemsAt(*cbl.second);
+  return std::shared_ptr<Item>();
 }
 
-std::optional<InventorySlot> PlayerInventory::primaryHeldSlot() const {
+[[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> PlayerInventory::primaryHeldSlot() const {
   if (swapSlotItem())
-    return InventorySlot(SwapSlot());
+    return std::optional<InventorySlot>(SwapSlot());
   if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
     return customBarPrimarySlot(std::get<CustomBarIndex>(m_selectedActionBar));
   return {};
 }
 
-std::optional<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
-  if (swapSlotItem() || itemSafeTwoHanded(primaryHeldItem()))
-    return {};
+[[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> PlayerInventory::secondaryHeldSlot() const {
+  auto primary = primaryHeldItem();
+  if (!primary) return std::unexpected(std::move(primary.error()));
+  if (swapSlotItem() || itemSafeTwoHanded(*primary))
+    return std::optional<InventorySlot>();
   if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
     return customBarSecondarySlot(std::get<CustomBarIndex>(m_selectedActionBar));
   return {};
@@ -935,277 +1036,349 @@ void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
     m_equipmentVisibilityMask &= ~(1 << (std::uint8_t)slot);
 }
 
-void PlayerInventory::load(Json const& store) {
-  auto itemDatabase = m_root->itemDatabase();
-
-  for (auto slot : EquipmentSlotNames) {
-    auto jItem = store.get(strf("{}Slot", slot.second), Json());
-    m_equipment[slot.first] = itemDatabase->diskLoad(jItem);
-    normalizeItem(m_equipment[slot.first]);
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::load(Json const& store) {
+  auto database = m_root->itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto loadItem = [&](String const& key, std::shared_ptr<Item>& item, bool optional = false) -> std::expected<void, StarException> {
+    auto json = optional ? store.get(key, Json()) : store.get(key);
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto loaded = (*database)->diskLoad(*json);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    item = std::move(*loaded);
+    normalizeItem(item);
+    return {};
+  };
+  if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
+  for (auto const& slot : *EquipmentSlotNames) {
+    auto loaded = loadItem(strf("{}Slot", slot.second), m_equipment[slot.first], true);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
   }
-
-  //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
-  auto itemBags = store.get("itemBags").toObject();
+  auto bags = store.getObject("itemBags");
+  if (!bags) return std::unexpected(std::move(bags.error()));
   m_inventoryLoadOverflow.clear();
-  for (auto const& p : itemBags) {
-    auto& bagType = p.first;
-    auto newBag = ItemBag::loadStore(*m_root, p.second);
-    newBag.cleanup();
-    if (m_bags.contains(bagType)) {
-      auto& bag = m_bags.at(bagType);
-      m_inventoryLoadOverflow.appendAll(newBag.resize(bag->size()));
-      *bag = std::move(newBag);
-    } else {
-      m_inventoryLoadOverflow.appendAll(newBag.items());
-    }
+  for (auto const& entry : *bags) {
+    auto loaded = ItemBag::loadStore(*m_root, entry.second);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    loaded->cleanup();
+    if (auto bag = m_bags.ptr(entry.first)) {
+      auto overflow = loaded->resize((*bag)->size());
+      if (!overflow) return std::unexpected(std::move(overflow.error()));
+      m_inventoryLoadOverflow.appendAll(*overflow);
+      **bag = std::move(*loaded);
+    } else m_inventoryLoadOverflow.appendAll(loaded->items());
   }
-
-  m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
-  m_trashSlot = itemDatabase->diskLoad(store.get("trashSlot"));
-  normalizeItem(m_swapSlot);
-  normalizeItem(m_trashSlot);
-
-  m_currencies = jsonToMapV<StringMap<std::uint64_t>>(store.get("currencies"), std::mem_fn(&Json::toUInt));
-
-  m_customBarGroup = store.getUInt("customBarGroup");
-
+  auto swap = loadItem("swapSlot", m_swapSlot);
+  if (!swap) return std::unexpected(std::move(swap.error()));
+  auto trash = loadItem("trashSlot", m_trashSlot);
+  if (!trash) return std::unexpected(std::move(trash.error()));
+  auto currencies = store.getObject("currencies");
+  if (!currencies) return std::unexpected(std::move(currencies.error()));
+  m_currencies.clear();
+  for (auto const& entry : *currencies) {
+    auto count = entry.second.toUInt();
+    if (!count) return std::unexpected(std::move(count.error()));
+    m_currencies[entry.first] = *count;
+  }
+  auto group = store.getUInt("customBarGroup");
+  if (!group) return std::unexpected(std::move(group.error()));
+  m_customBarGroup = *group;
+  auto bar = store.get("customBar");
+  if (!bar) return std::unexpected(std::move(bar.error()));
   for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    auto row = bar->get(i, JsonArray());
+    if (!row) return std::unexpected(std::move(row.error()));
     for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
-      Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
-      auto validateLink = [this](std::optional<InventorySlot> link) -> std::optional<InventorySlot> {
-        if (link && std::holds_alternative<BagSlot>(*link)) {
-          auto& slot = std::get<BagSlot>(*link);
-          if (m_bags.contains(slot.first) && std::size_t(slot.second) < m_bags[slot.first]->size())
-            return link;
-          else
-            return {};
+      auto links = row->get(j, JsonArray());
+      if (!links) return std::unexpected(std::move(links.error()));
+      for (std::size_t hand = 0; hand < 2; ++hand) {
+        auto json = links->get(hand, {});
+        if (!json) return std::unexpected(std::move(json.error()));
+        std::optional<InventorySlot> link;
+        if (!json->isNull()) {
+          auto parsed = jsonToInventorySlot(*json);
+          if (!parsed) return std::unexpected(std::move(parsed.error()));
+          if (slotValid(*parsed)) link = std::move(*parsed);
         }
-        return link;
-      };
-      m_customBar.at(i, j) = CustomBarLink{
-        validateLink(jsonToOptional<InventorySlot>(cbl.get(0, {}), jsonToInventorySlot)),
-        validateLink(jsonToOptional<InventorySlot>(cbl.get(1, {}), jsonToInventorySlot))
-      };
+        (hand == 0 ? m_customBar(i, j).first : m_customBar(i, j).second) = std::move(link);
+      }
     }
   }
-
-  m_selectedActionBar = jsonToSelectedActionBarLocation(store.get("selectedActionBar"));
-
+  auto selected = store.get("selectedActionBar");
+  if (!selected) return std::unexpected(std::move(selected.error()));
+  auto location = jsonToSelectedActionBarLocation(*selected);
+  if (!location) return std::unexpected(std::move(location.error()));
+  m_selectedActionBar = std::move(*location);
   m_essential.clear();
-  m_essential[EssentialItem::BeamAxe] = itemDatabase->diskLoad(store.get("beamAxe"));
-  m_essential[EssentialItem::WireTool] = itemDatabase->diskLoad(store.get("wireTool"));
-  m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
-  m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
-
-  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value_or(0xFFFFFFFF);
+  for (auto const& entry : {std::pair{EssentialItem::BeamAxe, "beamAxe"}, {EssentialItem::WireTool, "wireTool"},
+      {EssentialItem::PaintTool, "paintTool"}, {EssentialItem::InspectionTool, "inspectionTool"}}) {
+    auto loaded = loadItem(entry.second, m_essential[entry.first]);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+  }
+  auto visibility = store.optUInt("equipmentVisibilityMask");
+  if (!visibility) return std::unexpected(std::move(visibility.error()));
+  m_equipmentVisibilityMask = static_cast<unsigned>(visibility->value_or(0xFFFFFFFF));
+  return {};
 }
 
-Json PlayerInventory::store() const {
-  auto itemDatabase = m_root->itemDatabase();
-
-  JsonArray customBar;
+[[nodiscard]] std::expected<Json, StarException> PlayerInventory::store() const {
+  auto database = m_root->itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  JsonArray bar;
   for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
-    JsonArray customBarGroup;
+    JsonArray row;
     for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
-      auto const& cbl  = m_customBar.at(i, j);
-      customBarGroup.append(JsonArray{jsonFromOptional(cbl.first, jsonFromInventorySlot), jsonFromOptional(cbl.second, jsonFromInventorySlot)});
+      auto const& link = m_customBar(i, j);
+      JsonArray hands;
+      for (auto const* slot : {&link.first, &link.second}) {
+        Json json;
+        if (*slot) {
+          auto encoded = jsonFromInventorySlot(**slot);
+          if (!encoded) return std::unexpected(std::move(encoded.error()));
+          json = std::move(*encoded);
+        }
+        hands.append(std::move(json));
+      }
+      row.append(std::move(hands));
     }
-    customBar.append(take(customBarGroup));
+    bar.append(std::move(row));
   }
-
-  JsonObject itemBags;
-  for (auto& bag : m_bags)
-    itemBags.add(bag.first, bag.second->diskStore());
-
-  auto data = JsonObject{
-    {"itemBags", itemBags},
-    {"swapSlot", itemDatabase->diskStore(m_swapSlot)},
-    {"trashSlot", itemDatabase->diskStore(m_trashSlot)},
-    {"currencies", jsonFromMap(m_currencies)},
-    {"customBarGroup", m_customBarGroup},
-    {"customBar", std::move(customBar)},
-    {"selectedActionBar", jsonFromSelectedActionBarLocation(m_selectedActionBar)},
-    {"beamAxe", itemDatabase->diskStore(m_essential.value(EssentialItem::BeamAxe))},
-    {"wireTool", itemDatabase->diskStore(m_essential.value(EssentialItem::WireTool))},
-    {"paintTool", itemDatabase->diskStore(m_essential.value(EssentialItem::PaintTool))},
-    {"inspectionTool", itemDatabase->diskStore(m_essential.value(EssentialItem::InspectionTool))}
+  JsonObject bags;
+  for (auto const& bag : m_bags) {
+    auto encoded = bag.second->diskStore();
+    if (!encoded) return std::unexpected(std::move(encoded.error()));
+    bags[bag.first] = std::move(*encoded);
+  }
+  JsonObject currencies;
+  for (auto const& currency : m_currencies) currencies[currency.first] = currency.second;
+  auto selected = jsonFromSelectedActionBarLocation(m_selectedActionBar);
+  if (!selected) return std::unexpected(std::move(selected.error()));
+  JsonObject data{{"itemBags", std::move(bags)}, {"currencies", std::move(currencies)},
+    {"customBarGroup", m_customBarGroup}, {"customBar", std::move(bar)},
+    {"selectedActionBar", std::move(*selected)}, {"equipmentVisibilityMask", m_equipmentVisibilityMask}};
+  auto saveItem = [&](String const& key, std::shared_ptr<Item> const& item) -> std::expected<void, StarException> {
+    auto encoded = (*database)->diskStore(item);
+    if (!encoded) return std::unexpected(std::move(encoded.error()));
+    data[key] = std::move(*encoded);
+    return {};
   };
-
-  for (auto& equipment : m_equipment) {
-    if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
-      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), itemDatabase->diskStore(equipment.second));
+  auto swap = saveItem("swapSlot", m_swapSlot);
+  if (!swap) return std::unexpected(std::move(swap.error()));
+  auto trash = saveItem("trashSlot", m_trashSlot);
+  if (!trash) return std::unexpected(std::move(trash.error()));
+  for (auto const& entry : {std::pair{EssentialItem::BeamAxe, "beamAxe"}, {EssentialItem::WireTool, "wireTool"},
+      {EssentialItem::PaintTool, "paintTool"}, {EssentialItem::InspectionTool, "inspectionTool"}}) {
+    auto saved = saveItem(entry.second, m_essential.value(entry.first));
+    if (!saved) return std::unexpected(std::move(saved.error()));
   }
-
-  data.set("equipmentVisibilityMask", m_equipmentVisibilityMask);
-
+  if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
+  for (auto const& equipment : m_equipment) {
+    if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second) {
+      auto name = EquipmentSlotNames->getRight(equipment.first);
+      if (!name) return std::unexpected(std::move(name.error()));
+      auto saved = saveItem(strf("{}Slot", **name), equipment.second);
+      if (!saved) return std::unexpected(std::move(saved.error()));
+    }
+  }
   return data;
 }
 
-void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function) {
-  auto checkedFunction = [&function](InventorySlot const& slot, std::shared_ptr<Item>& item) {
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::forEveryItem(std::function<std::expected<void, StarException>(InventorySlot const&, std::shared_ptr<Item>&)> function) {
+  if (!function) return std::unexpected(InventoryException("Empty inventory callback"));
+  auto visit = [&](InventorySlot const& slot, std::shared_ptr<Item>& item) -> std::expected<void, StarException> {
     normalizeItem(item);
-    if (item) {
-      function(slot, item);
-      normalizeItem(item);
+    if (!item) return {};
+    auto result = function(slot, item);
+    normalizeItem(item);
+    return result;
+  };
+  for (auto& item : m_equipment) {
+    auto result = visit(item.first, item.second);
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
+  for (auto const& bag : m_bags) {
+    for (std::size_t i = 0; i < bag.second->size(); ++i) {
+      auto item = bag.second->at(i);
+      if (!item) return std::unexpected(std::move(item.error()));
+      auto result = visit(BagSlot(bag.first, i), **item);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
-  };
-
-  for (auto& p : m_equipment)
-    checkedFunction(p.first, p.second);
-  for (auto const& p : m_bags) {
-    for (std::size_t i = 0; i < p.second->size(); ++i)
-      checkedFunction(BagSlot(p.first, i), p.second->at(i));
   }
-  checkedFunction(SwapSlot(), m_swapSlot);
-  checkedFunction(TrashSlot(), m_trashSlot);
+  auto swap = visit(SwapSlot(), m_swapSlot);
+  if (!swap) return std::unexpected(std::move(swap.error()));
+  return visit(TrashSlot(), m_trashSlot);
 }
 
-void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const {
-  auto checkedFunction = [&function](InventorySlot const& slot, std::shared_ptr<Item> const& item) {
-    if (item && !item->empty())
-      function(slot, item);
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::forEveryItem(std::function<std::expected<void, StarException>(InventorySlot const&, std::shared_ptr<Item> const&)> function) const {
+  if (!function) return std::unexpected(InventoryException("Empty inventory callback"));
+  auto visit = [&](InventorySlot const& slot, std::shared_ptr<Item> const& item) -> std::expected<void, StarException> {
+    if (item && !item->empty()) return function(slot, item);
+    return {};
   };
-
-  for (auto const& p : m_equipment)
-    checkedFunction(p.first, p.second);
-  for (auto const& p : m_bags) {
-    auto const& bag = std::as_const(*p.second);
-    for (std::size_t i = 0; i < bag.size(); ++i)
-      checkedFunction(BagSlot(p.first, i), bag.at(i));
+  for (auto const& item : m_equipment) {
+    auto result = visit(item.first, item.second);
+    if (!result) return std::unexpected(std::move(result.error()));
   }
-  checkedFunction(SwapSlot(), m_swapSlot);
-  checkedFunction(TrashSlot(), m_trashSlot);
+  for (auto const& bag : m_bags) {
+    auto const& contents = std::as_const(*bag.second);
+    for (std::size_t i = 0; i < contents.size(); ++i) {
+      auto item = contents.at(i);
+      if (!item) return std::unexpected(std::move(item.error()));
+      auto result = visit(BagSlot(bag.first, i), *item);
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
+  }
+  auto swap = visit(SwapSlot(), m_swapSlot);
+  if (!swap) return std::unexpected(std::move(swap.error()));
+  return visit(TrashSlot(), m_trashSlot);
 }
 
-List<std::shared_ptr<Item>> PlayerInventory::allItems() const {
+[[nodiscard]] std::expected<List<std::shared_ptr<Item>>, StarException> PlayerInventory::allItems() const {
   List<std::shared_ptr<Item>> items;
-  forEveryItem([&items](InventorySlot const&, std::shared_ptr<Item> const& item) {
-      items.append(item);
-    });
+  auto result = forEveryItem([&](InventorySlot const&, std::shared_ptr<Item> const& item) -> std::expected<void, StarException> {
+    items.append(item);
+    return {};
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
   return items;
 }
 
-Map<String, std::uint64_t> PlayerInventory::itemSummary() const {
-  Map<String, std::uint64_t> result;
-  forEveryItem([&result](auto const&, auto const& item) {
-      result[item->name()] += item->count();
-    });
-  return result;
+[[nodiscard]] std::expected<Map<String, std::uint64_t>, StarException> PlayerInventory::itemSummary() const {
+  Map<String, std::uint64_t> summary;
+  auto result = forEveryItem([&](InventorySlot const&, std::shared_ptr<Item> const& item) -> std::expected<void, StarException> {
+    summary[item->name()] += item->count();
+    return {};
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
+  return summary;
 }
 
-void PlayerInventory::cleanup() {
-  for (auto pair : m_bags)
-    pair.second->cleanup();
-
-  for (auto& p : m_equipment)
-    normalizeItem(p.second);
-
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::cleanup() {
+  for (auto const& bag : m_bags) bag.second->cleanup();
+  for (auto& item : m_equipment) normalizeItem(item.second);
   normalizeItem(m_swapSlot);
   normalizeItem(m_trashSlot);
-
-  m_customBar.forEach([this](Array2S const&, CustomBarLink& p) {
-      std::shared_ptr<Item> primary = p.first ? retrieve(*p.first) : std::shared_ptr<Item>();
-      std::shared_ptr<Item> secondary = p.second ? retrieve(*p.second) : std::shared_ptr<Item>();
-
-      // Reset the primary and secondary action bar link if the item is gone
-      if (!primary)
-        p.first.reset();
-      if (!secondary)
-        p.second.reset();
-
-      // If the primary hand item is two handed, the secondary hand should not be
-      // set
-      if (itemSafeTwoHanded(primary))
-        p.second.reset();
-      // Two handed items are not allowed in the secondary slot
-      if (itemSafeTwoHanded(secondary))
-        p.second.reset();
-    });
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
+      auto& link = m_customBar(i, j);
+      std::shared_ptr<Item> primary, secondary;
+      if (link.first) {
+        auto item = retrieve(*link.first);
+        if (!item) return std::unexpected(std::move(item.error()));
+        primary = *item;
+      }
+      if (link.second) {
+        auto item = retrieve(*link.second);
+        if (!item) return std::unexpected(std::move(item.error()));
+        secondary = *item;
+      }
+      if (!primary) link.first.reset();
+      if (!secondary || itemSafeTwoHanded(primary) || itemSafeTwoHanded(secondary)) link.second.reset();
+    }
+  }
+  return {};
 }
 
 void PlayerInventory::setPlayer(Player* player) {
   m_player = player;
 }
 
-PlayerInventory const& PlayerInventory::blankInventory() const {
-  if (!m_blankInventory)
-    m_blankInventory.reset(new PlayerInventory(*m_root, m_inventoryConfig, m_currenciesConfig));
-  return *m_blankInventory;
+[[nodiscard]] std::expected<PlayerInventory const*, StarException> PlayerInventory::blankInventory() const {
+  if (!m_blankInventory) {
+    auto blank = create(*m_root, m_inventoryConfig, m_currenciesConfig);
+    if (!blank) return std::unexpected(std::move(blank.error()));
+    m_blankInventory = std::move(*blank);
+  }
+  return m_blankInventory.get();
 }
 
-void PlayerInventory::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (m_player && !m_player->isMaster() && !rules.isAdmin())
-    return blankInventory().netStore(ds, rules);
-  else
-    return NetElementSyncGroup::netStore(ds, rules);
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (m_player && !m_player->isMaster() && !rules.isAdmin()) {
+    auto blank = blankInventory();
+    if (!blank) return std::unexpected(std::move(blank.error()));
+    return (*blank)->netStore(ds, rules);
+  }
+  return NetElementSyncGroup::netStore(ds, rules);
 }
 
-
-bool PlayerInventory::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (m_player && !m_player->isMaster() && !rules.isAdmin())
-    return blankInventory().writeNetDelta(ds, fromVersion, rules);
-  else
-    return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::writeNetDelta(DataStream& ds, std::uint64_t version, NetCompatibilityRules rules) const {
+  if (m_player && !m_player->isMaster() && !rules.isAdmin()) {
+    auto blank = blankInventory();
+    if (!blank) return std::unexpected(std::move(blank.error()));
+    return (*blank)->writeNetDelta(ds, version, rules);
+  }
+  return NetElementSyncGroup::writeNetDelta(ds, version, rules);
 }
 
-bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const {
+[[nodiscard]] std::expected<bool, StarException> PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const {
   Json filterConfig;
-
-  auto itemFilters = items->instanceValue("inventoryFilters");
-  if (itemFilters.isType(Json::Type::Object)) {
-    filterConfig = itemFilters.opt(filterName).value_or(Json{});
-    if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = itemFilters.opt("default").value_or(Json{});
+  auto filters = items->instanceValue("inventoryFilters");
+  if (!filters) return std::unexpected(std::move(filters.error()));
+  if (filters->isType(Json::Type::Object)) {
+    auto selected = filters->opt(filterName);
+    if (!selected) return std::unexpected(std::move(selected.error()));
+    filterConfig = selected->value_or(Json{});
+    if (!filterConfig.isType(Json::Type::Object)) {
+      auto fallback = filters->opt("default");
+      if (!fallback) return std::unexpected(std::move(fallback.error()));
+      filterConfig = fallback->value_or(Json{});
+    }
   }
-
   if (!filterConfig.isType(Json::Type::Object)) {
-    auto config = m_root->assets()->json("/player.config:inventoryFilters");
-    filterConfig = config.opt(filterName).value_or(Json{});
-    if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = config.get("default", JsonObject());
+    auto assets = m_root->assets();
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto config = (*assets)->json("/player.config:inventoryFilters");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto selected = config->opt(filterName);
+    if (!selected) return std::unexpected(std::move(selected.error()));
+    filterConfig = selected->value_or(Json{});
+    if (!filterConfig.isType(Json::Type::Object)) {
+      auto fallback = config->get("default", JsonObject());
+      if (!fallback) return std::unexpected(std::move(fallback.error()));
+      filterConfig = std::move(*fallback);
+    }
   }
-
-  // filter by item type if an itemTypes filter is set
-  auto itemDatabase = m_root->itemDatabase();
-  auto itemTypeName = ItemTypeNames.getRight(itemDatabase->itemType(items->name()));
-  if (filterConfig.contains("typeWhitelist") && !filterConfig.getArray("typeWhitelist").contains(itemTypeName))
-    return false;
-
-  if (filterConfig.contains("typeBlacklist") && filterConfig.getArray("typeBlacklist").contains(itemTypeName))
-    return false;
-
-  // filter by item tags if an itemTags filter is set
-  // this is an inclusive filter
-  auto itemTags = itemDatabase->itemTags(items->name());
-  if (filterConfig.contains("tagWhitelist")) {
-    auto whitelistedTags = filterConfig.getArray("tagWhitelist").filtered([itemTags](Json const& tag) {
-        return itemTags.contains(tag.toString());
-      });
-    if (whitelistedTags.size() == 0)
-      return false;
+  auto database = m_root->itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto type = (*database)->itemType(items->name());
+  if (!type) return std::unexpected(std::move(type.error()));
+  if (!ItemTypeNames) return std::unexpected(ItemTypeNames.error());
+  auto typeName = ItemTypeNames->getRight(*type);
+  if (!typeName) return std::unexpected(std::move(typeName.error()));
+  for (auto const& entry : {std::pair{"typeWhitelist", false}, {"typeBlacklist", true}}) {
+    auto present = filterConfig.contains(entry.first);
+    if (!present) return std::unexpected(std::move(present.error()));
+    if (*present) {
+      auto list = filterConfig.getArray(entry.first);
+      if (!list) return std::unexpected(std::move(list.error()));
+      if (list->contains(Json(**typeName)) == entry.second) return false;
+    }
   }
-
-  if (filterConfig.contains("tagBlacklist")) {
-    auto blacklistedTags = filterConfig.getArray("tagBlacklist").filtered([itemTags](Json const& tag) {
-        return itemTags.contains(tag.toString());
-      });
-    if (blacklistedTags.size() > 0)
-      return false;
+  auto tags = (*database)->itemTags(items->name());
+  if (!tags) return std::unexpected(std::move(tags.error()));
+  for (auto const& entry : {std::pair{"tagWhitelist", false}, {"tagBlacklist", true}}) {
+    auto present = filterConfig.contains(entry.first);
+    if (!present) return std::unexpected(std::move(present.error()));
+    if (*present) {
+      auto list = filterConfig.getArray(entry.first);
+      if (!list) return std::unexpected(std::move(list.error()));
+      bool matched = false;
+      for (auto const& value : *list) {
+        auto tag = value.toString();
+        if (!tag) return std::unexpected(std::move(tag.error()));
+        if (tags->contains(*tag)) matched = true;
+      }
+      if (matched == entry.second) return false;
+    }
   }
-
-  auto itemCategory = items->category();
-  if (auto categoryWhitelist = filterConfig.optArray("categoryWhitelist")) {
-    auto categoryWhiteset = jsonToStringSet(*categoryWhitelist);
-    if (!categoryWhiteset.contains(itemCategory))
-      return false;
+  for (auto const& entry : {std::pair{"categoryWhitelist", false}, {"categoryBlacklist", true}}) {
+    auto list = filterConfig.optArray(entry.first);
+    if (!list) return std::unexpected(std::move(list.error()));
+    if (*list) {
+      auto categories = jsonToStringSet(**list);
+      if (!categories) return std::unexpected(std::move(categories.error()));
+      if (categories->contains(items->category()) == entry.second) return false;
+    }
   }
-
-  if (auto categoryBlacklist = filterConfig.optArray("categoryBlacklist")) {
-    auto categoryBlackset = jsonToStringSet(*categoryBlacklist);
-    if (categoryBlackset.contains(itemCategory))
-      return false;
-  }
-
   return true;
 }
 
@@ -1214,7 +1387,7 @@ void PlayerInventory::normalizeItem(std::shared_ptr<Item>& item) {
     item.reset();
 }
 
-std::shared_ptr<Item> PlayerInventory::retrieve(InventorySlot const& slot) const {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> PlayerInventory::retrieve(InventorySlot const& slot) const {
   if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     auto const* item = m_equipment.ptr(*es);
     return item && *item && !(*item)->empty() ? *item : std::shared_ptr<Item>();
@@ -1226,26 +1399,31 @@ std::shared_ptr<Item> PlayerInventory::retrieve(InventorySlot const& slot) const
     return item && !item->empty() ? item : std::shared_ptr<Item>();
   }
 
-  throw ItemException::format("Invalid inventory slot {}", jsonFromInventorySlot(slot));
+  auto json = jsonFromInventorySlot(slot);
+  if (!json) return std::unexpected(std::move(json.error()));
+  auto diagnostic = json->repr();
+  if (!diagnostic) return std::unexpected(std::move(diagnostic.error()));
+  return std::unexpected(ItemException::format("Invalid inventory slot {}", *diagnostic));
 }
 
-std::shared_ptr<Item>& PlayerInventory::retrieveForMutation(InventorySlot const& slot) {
-  auto normalized = [](std::shared_ptr<Item>& item) -> std::shared_ptr<Item>& {
-    normalizeItem(item);
-    return item;
-  };
-
-  if (auto es = std::get_if<EquipmentSlot>(&slot))
-    return normalized(m_equipment[*es]);
-  else if (auto bs = std::get_if<BagSlot>(&slot)) {
-    if (auto bag = m_bags.ptr(bs->first))
-      return normalized((*bag)->at(bs->second));
-  } else if (std::holds_alternative<SwapSlot>(slot))
-    return normalized(m_swapSlot);
-  else
-    return normalized(m_trashSlot);
-
-  throw ItemException::format("Invalid inventory slot {}", jsonFromInventorySlot(slot));
+[[nodiscard]] std::expected<std::shared_ptr<Item>*, StarException> PlayerInventory::retrieveForMutation(InventorySlot const& slot) {
+  std::shared_ptr<Item>* item;
+  if (auto equipment = std::get_if<EquipmentSlot>(&slot)) item = &m_equipment[*equipment];
+  else if (auto position = std::get_if<BagSlot>(&slot)) {
+    auto bag = m_bags.ptr(position->first);
+    if (!bag) {
+      auto json = jsonFromInventorySlot(slot);
+      if (!json) return std::unexpected(std::move(json.error()));
+      auto diagnostic = json->repr();
+      if (!diagnostic) return std::unexpected(std::move(diagnostic.error()));
+      return std::unexpected(ItemException::format("Invalid inventory slot {}", *diagnostic));
+    }
+    auto result = (*bag)->at(position->second);
+    if (!result) return std::unexpected(std::move(result.error()));
+    item = *result;
+  } else item = std::holds_alternative<SwapSlot>(slot) ? &m_swapSlot : &m_trashSlot;
+  normalizeItem(*item);
+  return item;
 }
 
 void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
@@ -1262,90 +1440,80 @@ void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
     });
 }
 
-void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
-  if (!m_root->configuration()->getPath("inventory.pickupToActionBar").toBool())
-    return;
-
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
+  auto configuration = m_root->configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto config = (*configuration)->getPath("inventory.pickupToActionBar");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto enabled = config->toBool();
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  if (!*enabled) return {};
   auto items = itemsAt(slot);
-  if (items && !items->empty() && checkInventoryFilter(items, "autoAddToCustomBar"))
-    addToCustomBar(slot);
+  if (!items) return std::unexpected(std::move(items.error()));
+  if (*items && !(*items)->empty()) {
+    auto allowed = checkInventoryFilter(*items, "autoAddToCustomBar");
+    if (!allowed) return std::unexpected(std::move(allowed.error()));
+    if (*allowed) return addToCustomBar(slot);
+  }
+  return {};
 }
 
-void PlayerInventory::netElementsNeedLoad(bool) {
-  auto itemDatabase = m_root->itemDatabase();
-
-  auto deserializeItem = [&itemDatabase](NetElementData<ItemDescriptor>& netState, std::shared_ptr<Item>& item) {
-    if (netState.pullUpdated())
-      itemDatabase->loadItem(netState.get(), item);
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::netElementsNeedLoad(bool) {
+  auto database = m_root->itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto load = [&](NetElementData<ItemDescriptor>& state, std::shared_ptr<Item>& item) -> std::expected<void, StarException> {
+    if (state.pullUpdated()) {
+      auto result = (*database)->loadItem(state.get(), item);
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
+    return {};
   };
-
-  auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<std::shared_ptr<Item>>& itemList) {
-    for (std::size_t i = 0; i < netStatesList.size(); ++i)
-      deserializeItem(netStatesList[i], itemList[i]);
-  };
-
-  auto deserializeItemMap = [&](auto& netStatesMap, auto& itemMap) {
-    for (auto k : netStatesMap.keys())
-      deserializeItem(netStatesMap[k], itemMap[k]);
-  };
-
-  deserializeItemMap(m_equipmentNetState, m_equipment);
-
-  for (auto bagType : m_bagsNetState.keys())
-    deserializeItemList(m_bagsNetState[bagType], m_bags[bagType]->items());
-
-  deserializeItem(m_swapSlotNetState, m_swapSlot);
-  deserializeItem(m_trashSlotNetState, m_trashSlot);
-
+  for (auto& entry : m_equipmentNetState) {
+    auto result = load(entry.second, m_equipment[entry.first]);
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
+  for (auto& bag : m_bagsNetState) {
+    auto& items = m_bags[bag.first]->items();
+    for (std::size_t i = 0; i < bag.second.size(); ++i) {
+      auto result = load(bag.second[i], items[i]);
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
+  }
+  auto swap = load(m_swapSlotNetState, m_swapSlot);
+  if (!swap) return std::unexpected(std::move(swap.error()));
+  auto trash = load(m_trashSlotNetState, m_trashSlot);
+  if (!trash) return std::unexpected(std::move(trash.error()));
   m_currencies = m_currenciesNetState.get();
-
   m_customBarGroup = m_customBarGroupNetState.get();
-  m_customBarNetState.forEach([&](auto const& index, auto& ns) {
-      m_customBar.at(index) = ns.get();
-    });
-
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i)
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j)
+      m_customBar(i, j) = m_customBarNetState(i, j).get();
   m_selectedActionBar = m_selectedActionBarNetState.get();
-
-  deserializeItemMap(m_essentialNetState, m_essential);
-
-  cleanup();
+  for (auto& entry : m_essentialNetState) {
+    auto result = load(entry.second, m_essential[entry.first]);
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
+  return cleanup();
 }
 
-void PlayerInventory::netElementsNeedStore() {
-  cleanup();
-
-  auto serializeItem = [](NetElementData<ItemDescriptor>& netState, std::shared_ptr<Item>& item) {
-    netState.set(itemSafeDescriptor(item));
-  };
-
-  auto serializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<std::shared_ptr<Item>>& itemList) {
-    for (std::size_t i = 0; i < netStatesList.size(); ++i)
-      serializeItem(netStatesList[i], itemList[i]);
-  };
-
-  auto serializeItemMap = [&](auto& netStatesMap, auto& itemMap) {
-    for (auto k : netStatesMap.keys())
-      serializeItem(netStatesMap[k], itemMap[k]);
-  };
-
-  serializeItemMap(m_equipmentNetState, m_equipment);
-
-  for (auto bagType : m_bagsNetState.keys())
-    serializeItemList(m_bagsNetState[bagType], m_bags[bagType]->items());
-
-  serializeItem(m_swapSlotNetState, m_swapSlot);
-  serializeItem(m_trashSlotNetState, m_trashSlot);
-
+[[nodiscard]] std::expected<void, StarException> PlayerInventory::netElementsNeedStore() {
+  auto cleaned = cleanup();
+  if (!cleaned) return std::unexpected(std::move(cleaned.error()));
+  for (auto& entry : m_equipmentNetState) entry.second.set(itemSafeDescriptor(m_equipment.value(entry.first)));
+  for (auto& bag : m_bagsNetState) {
+    auto& items = m_bags[bag.first]->items();
+    for (std::size_t i = 0; i < bag.second.size(); ++i) bag.second[i].set(itemSafeDescriptor(items[i]));
+  }
+  m_swapSlotNetState.set(itemSafeDescriptor(m_swapSlot));
+  m_trashSlotNetState.set(itemSafeDescriptor(m_trashSlot));
   m_currenciesNetState.set(m_currencies);
-
   m_customBarGroupNetState.set(m_customBarGroup);
-  m_customBar.forEach([&](auto const& index, auto& cbl) {
-      m_customBarNetState.at(index).set(cbl);
-    });
-
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i)
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j)
+      m_customBarNetState(i, j).set(m_customBar(i, j));
   m_selectedActionBarNetState.set(m_selectedActionBar);
-
-  serializeItemMap(m_essentialNetState, m_essential);
+  for (auto& entry : m_essentialNetState) entry.second.set(itemSafeDescriptor(m_essential.value(entry.first)));
+  return {};
 }
 
 }

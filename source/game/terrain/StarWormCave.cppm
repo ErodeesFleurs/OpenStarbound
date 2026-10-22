@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 import star.json;
 import star.json_extra;
@@ -18,11 +19,12 @@ export namespace Star {
 
 class WormCaveSector {
 public:
-  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality);
+  [[nodiscard]] static std::expected<WormCaveSector, StarException> create(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality);
 
   float get(int x, int y);
 
 private:
+  WormCaveSector(int sectorSize, Vec2I sector) : m_sectorSize(sectorSize), m_sector(sector), m_values(sectorSize * sectorSize) {}
   bool inside(int x, int y);
   void set(int x, int y, float value);
 
@@ -37,9 +39,13 @@ class WormCaveSelector : public TerrainSelector {
 public:
   static char const* const Name;
 
-  WormCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<WormCaveSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  WormCaveSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters, int sectorSize) : TerrainSelector(Name, config, parameters), m_sectorSize(sectorSize) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
 private:
   int m_sectorSize;
@@ -52,8 +58,8 @@ namespace Star {
 
 char const* const WormCaveSelector::Name = "wormcave";
 
-WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality)
-  : m_sectorSize(sectorSize), m_sector(sector), m_values(sectorSize * sectorSize) {
+std::expected<WormCaveSector, StarException> WormCaveSector::create(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality) {
+  WormCaveSector result(sectorSize, sector);
   struct Worm {
     Vec2F pos;
     float angle;
@@ -64,37 +70,90 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
   };
   List<Worm> worms;
 
-  Vec2F numberOfWormsPerSectorRange = jsonToVec2F(config.get("numberOfWormsPerSectorRange"));
-  Vec2F wormSizeRange = jsonToVec2F(config.get("wormSizeRange"));
-  Vec2F wormLengthRange = jsonToVec2F(config.get("wormLengthRange"));
-  float wormTaperDistance = config.getFloat("wormTaperDistance");
-  Vec2F wormAngleRange = jsonToVec2F(config.get("wormAngleRange"));
-  float wormTurnChance = config.getFloat("wormTurnChance");
-  float wormTurnRate = config.getFloat("wormTurnRate");
-
-  float wormSpeed = config.getFloat("wormSpeed", 1);
+  auto readRange = [&](char const* name) -> std::expected<Vec2F, StarException> {
+    auto value = config.get(name);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return jsonToVec2F(*value);
+  };
+  auto countRange = readRange("numberOfWormsPerSectorRange");
+  if (!countRange)
+    return std::unexpected(std::move(countRange.error()));
+  Vec2F numberOfWormsPerSectorRange = *countRange;
+  auto sizeRange = readRange("wormSizeRange");
+  if (!sizeRange)
+    return std::unexpected(std::move(sizeRange.error()));
+  Vec2F wormSizeRange = *sizeRange;
+  auto lengthRange = readRange("wormLengthRange");
+  if (!lengthRange)
+    return std::unexpected(std::move(lengthRange.error()));
+  Vec2F wormLengthRange = *lengthRange;
+  auto taperDistance = config.getFloat("wormTaperDistance");
+  if (!taperDistance)
+    return std::unexpected(std::move(taperDistance.error()));
+  float wormTaperDistance = *taperDistance;
+  auto angleRange = readRange("wormAngleRange");
+  if (!angleRange)
+    return std::unexpected(std::move(angleRange.error()));
+  Vec2F wormAngleRange = *angleRange;
+  auto turnChance = config.getFloat("wormTurnChance");
+  if (!turnChance)
+    return std::unexpected(std::move(turnChance.error()));
+  float wormTurnChance = *turnChance;
+  auto turnRate = config.getFloat("wormTurnRate");
+  if (!turnRate)
+    return std::unexpected(std::move(turnRate.error()));
+  float wormTurnRate = *turnRate;
+  auto speed = config.getFloat("wormSpeed", 1);
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  float wormSpeed = *speed;
 
   float twoPi = std::numbers::pi * 2;
 
-  m_maxValue = wormSizeRange[1] / 2;
+  result.m_maxValue = wormSizeRange[1] / 2;
 
   // determine worms for the neighbouring sectors
-  int sectorRadius = m_sectorSize * config.getInt("sectorRadius");
-  for (int x = sector[0] - sectorRadius; x <= sector[0] + sectorRadius; x += m_sectorSize)
-    for (int y = sector[1] - sectorRadius; y <= sector[1] + sectorRadius; y += m_sectorSize) {
+  auto configuredRadius = config.getInt("sectorRadius");
+  if (!configuredRadius)
+    return std::unexpected(std::move(configuredRadius.error()));
+  int sectorRadius = sectorSize * *configuredRadius;
+  for (int x = sector[0] - sectorRadius; x <= sector[0] + sectorRadius; x += sectorSize)
+    for (int y = sector[1] - sectorRadius; y <= sector[1] + sectorRadius; y += sectorSize) {
       RandomSource rs(staticRandomU64(x, y, seed));
-      float numberOfWorms = rs.randf(numberOfWormsPerSectorRange[0], numberOfWormsPerSectorRange[1]) * commonality;
+      auto drawnCount = rs.randf(numberOfWormsPerSectorRange[0], numberOfWormsPerSectorRange[1]);
+      if (!drawnCount)
+        return std::unexpected(std::move(drawnCount.error()));
+      float numberOfWorms = *drawnCount * commonality;
       int intNumberOfWorms = (int)numberOfWorms;
       if (rs.randf() < (numberOfWorms - intNumberOfWorms))
         intNumberOfWorms++;
       for (int n = 0; n < intNumberOfWorms; ++n) {
         Worm worm;
-        worm.pos = Vec2F(x, y) + Vec2F(rs.randf(0, m_sectorSize), rs.randf(0, m_sectorSize));
-        worm.angle = rs.randf(wormAngleRange[0], wormAngleRange[1]);
-        worm.goalAngle = rs.randf(wormAngleRange[0], wormAngleRange[1]);
-        worm.size = rs.randf(wormSizeRange[0], wormSizeRange[1]) * commonality;
+        auto xOffset = rs.randf(0, sectorSize);
+        if (!xOffset)
+          return std::unexpected(std::move(xOffset.error()));
+        auto yOffset = rs.randf(0, sectorSize);
+        if (!yOffset)
+          return std::unexpected(std::move(yOffset.error()));
+        worm.pos = Vec2F(x, y) + Vec2F(*xOffset, *yOffset);
+        auto angle = rs.randf(wormAngleRange[0], wormAngleRange[1]);
+        if (!angle)
+          return std::unexpected(std::move(angle.error()));
+        worm.angle = *angle;
+        auto goalAngle = rs.randf(wormAngleRange[0], wormAngleRange[1]);
+        if (!goalAngle)
+          return std::unexpected(std::move(goalAngle.error()));
+        worm.goalAngle = *goalAngle;
+        auto size = rs.randf(wormSizeRange[0], wormSizeRange[1]);
+        if (!size)
+          return std::unexpected(std::move(size.error()));
+        worm.size = *size * commonality;
         worm.length = 0;
-        worm.goalLength = rs.randf(wormLengthRange[0], wormLengthRange[1]) * commonality;
+        auto length = rs.randf(wormLengthRange[0], wormLengthRange[1]);
+        if (!length)
+          return std::unexpected(std::move(length.error()));
+        worm.goalLength = *length * commonality;
         worms.append(worm);
       }
     }
@@ -125,9 +184,9 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
           if (m <= wormRadius) {
             int x = std::floor(dx + worm.pos[0]);
             int y = std::floor(dy + worm.pos[1]);
-            if (inside(x, y)) {
-              float v = get(x, y);
-              set(x, y, std::max(v, wormRadius - m));
+            if (result.inside(x, y)) {
+              float v = result.get(x, y);
+              result.set(x, y, std::max(v, wormRadius - m));
             }
           }
         }
@@ -162,6 +221,7 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
     if (idle)
       break;
   }
+  return result;
 }
 
 float WormCaveSector::get(int x, int y) {
@@ -186,17 +246,26 @@ void WormCaveSector::set(int x, int y, float value) {
   m_values[(x - m_sector[0]) + m_sectorSize * (y - m_sector[1])] = value;
 }
 
-WormCaveSelector::WormCaveSelector(Json const& config, TerrainSelectorParameters const& parameters)
-  : TerrainSelector(Name, config, parameters) {
-  m_sectorSize = config.getUInt("sectorSize", 64);
-  m_cache.setMaxSize(config.getUInt("lruCacheSize", 16));
+std::expected<std::shared_ptr<WormCaveSelector>, StarException> WormCaveSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
+  auto sectorSize = config.getUInt("sectorSize", 64);
+  if (!sectorSize)
+    return std::unexpected(std::move(sectorSize.error()));
+  auto result = std::make_shared<WormCaveSelector>(ConstructionKey{}, config, parameters, *sectorSize);
+  auto cacheSize = config.getUInt("lruCacheSize", 16);
+  if (!cacheSize)
+    return std::unexpected(std::move(cacheSize.error()));
+  result->m_cache.setMaxSize(*cacheSize);
+  return result;
 }
 
-float WormCaveSelector::get(int x, int y) const {
+std::expected<float, StarException> WormCaveSelector::get(int x, int y) const {
   Vec2I sector = Vec2I(x - pmod(x, m_sectorSize), y - pmod(y, m_sectorSize));
-  return m_cache.get(sector, [this](Vec2I const& sector) {
-      return WormCaveSector(m_sectorSize, sector, config, parameters.seed, parameters.commonality);
-    }).get(x, y);
+  auto cached = m_cache.get(sector, [this](Vec2I const& sector) {
+    return WormCaveSector::create(m_sectorSize, sector, config, parameters.seed, parameters.commonality);
+  });
+  if (!cached)
+    return std::unexpected(std::move(cached.error()));
+  return (*cached)->get(x, y);
 }
 
 }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.lua;
 
@@ -13,7 +14,7 @@ struct LuaConverter<Image> : LuaUserDataConverter<Image> {};
 
 template <>
 struct LuaUserDataMethods<Image> {
-  static LuaMethods<Image> make();
+  [[nodiscard]] static std::expected<LuaMethods<Image>, StarException> make();
 };
 
 }

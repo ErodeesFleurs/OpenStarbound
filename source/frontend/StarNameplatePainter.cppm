@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.game_types;
@@ -38,12 +39,14 @@ class GuiContext;
 
 class NameplatePainter {
 public:
-  NameplatePainter(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<NameplatePainter>, StarException> create(GuiContext& context);
 
-  void update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode);
-  void render();
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode);
+  [[nodiscard]] std::expected<void, StarException> render();
 
 private:
+  explicit NameplatePainter(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   struct Nametag {
     String name;
     std::optional<String> statusText;
@@ -54,7 +57,7 @@ private:
 
   TextPositioning namePosition(Vec2F bubblePosition) const;
   TextPositioning statusPosition(Vec2F bubblePosition) const;
-  RectF determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
+  [[nodiscard]] std::expected<RectF, StarException> determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
 
   GuiContext* m_guiContext;
 

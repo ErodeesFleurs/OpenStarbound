@@ -51,11 +51,19 @@ String printDuration(double time) {
   int numMilliseconds = std::round(std::fmod(time, 1.0) * 1000);
   milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
 
-  return String::joinWith(", ", hours, minutes, seconds, milliseconds);
+  String result;
+  for (auto const* component : {&hours, &minutes, &seconds, &milliseconds}) {
+    if (component->empty())
+      continue;
+    if (!result.empty())
+      result += ", ";
+    result += *component;
+  }
+  return result;
 }
 
 String printCurrentDateAndTime(String format) {
-  return printDateAndTime(epochTicks(), format);
+  return printDateAndTime(epochTicks(), std::move(format));
 }
 
 double ticksToSeconds(std::int64_t ticks, std::int64_t tickFrequency) {

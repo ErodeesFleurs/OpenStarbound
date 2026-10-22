@@ -37,10 +37,10 @@ public:
   virtual StringList assetPaths() const = 0;
 
   // Open the given path in this source and return an IODevicePtr to it.
-  virtual std::shared_ptr<IODevice> open(String const& path) = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<IODevice>, StarException> open(String const& path) = 0;
 
   // Read the entirety of the given path into a buffer.
-  virtual ByteArray read(String const& path) = 0;
+  [[nodiscard]] virtual std::expected<ByteArray, StarException> read(String const& path) = 0;
 };
 
 }

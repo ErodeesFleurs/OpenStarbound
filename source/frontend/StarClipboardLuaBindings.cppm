@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 
 namespace Star {
 class LuaCallbacks;
@@ -13,5 +14,5 @@ class Logger;
 export module star.clipboard_lua_bindings;
 
 export namespace Star::LuaBindings {
-LuaCallbacks makeClipboardCallbacks(Input& input, RootBase& root, Logger& logger, std::shared_ptr<ApplicationController> appController, bool alwaysAllow);
+[[nodiscard]] std::expected<LuaCallbacks, StarException> makeClipboardCallbacks(Input& input, RootBase& root, Logger& logger, std::shared_ptr<ApplicationController> appController, bool alwaysAllow);
 }

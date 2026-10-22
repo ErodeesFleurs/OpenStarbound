@@ -1,7 +1,22 @@
 module;
 import std;
 
+import star.format;
+
 namespace Star {
+
+template <typename Result>
+struct UniqueFunctionInvocationResult {
+  using Type = std::expected<std::conditional_t<std::is_reference_v<Result>,
+      std::add_pointer_t<std::remove_reference_t<Result>>, Result>, StarException>;
+};
+
+template <typename Value, typename Error>
+struct UniqueFunctionInvocationResult<std::expected<Value, Error>> {
+  static_assert(std::same_as<Error, StarException>,
+      "UniqueFunction callbacks must use StarException errors");
+  using Type = std::expected<Value, StarException>;
+};
 
 template <typename Signature>
 class UniqueFunction;
@@ -67,6 +82,10 @@ class UniqueFunction<Result(Args...)> {
   }
 
 public:
+  // Preserve an error-valued task's result instead of nesting expected values.
+  // Ordinary reference results use pointers so invocation failure is explicit.
+  using InvocationResult = typename UniqueFunctionInvocationResult<Result>::Type;
+
   UniqueFunction() noexcept = default;
   UniqueFunction(std::nullptr_t) noexcept {}
   UniqueFunction(UniqueFunction const&) = delete;
@@ -76,6 +95,8 @@ public:
     requires (!std::same_as<std::remove_cvref_t<Callable>, UniqueFunction>
         && std::is_constructible_v<std::decay_t<Callable>, Callable&&>
         && std::is_invocable_r_v<Result, std::decay_t<Callable>&, Args...>
+        && (!std::is_void_v<Result>
+            || !requires { typename std::remove_cvref_t<std::invoke_result_t<std::decay_t<Callable>&, Args...>>::error_type; })
         && (!std::is_reference_v<Result>
             || (std::is_reference_v<std::invoke_result_t<std::decay_t<Callable>&, Args...>>
                 && std::is_convertible_v<
@@ -116,10 +137,18 @@ public:
   ~UniqueFunction() { reset(); }
   explicit operator bool() const noexcept { return m_operations != nullptr; }
 
-  Result operator()(Args... args) {
+  [[nodiscard]] InvocationResult operator()(Args... args) {
     if (!m_operations)
-      throw std::bad_function_call();
-    return m_operations->invoke(m_storage, std::forward<Args>(args)...);
+      return std::unexpected(StarException("Cannot invoke an empty UniqueFunction"));
+    if constexpr (std::is_void_v<Result>) {
+      m_operations->invoke(m_storage, std::forward<Args>(args)...);
+      return {};
+    } else if constexpr (std::is_reference_v<Result>) {
+      auto&& result = m_operations->invoke(m_storage, std::forward<Args>(args)...);
+      return std::addressof(result);
+    } else {
+      return m_operations->invoke(m_storage, std::forward<Args>(args)...);
+    }
   }
 };
 

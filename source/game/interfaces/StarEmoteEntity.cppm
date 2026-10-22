@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -33,7 +34,7 @@ public:
     return Star::typeName<EmoteEntity>();
   }
 
-  virtual void playEmote(HumanoidEmote emote) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> playEmote(HumanoidEmote emote) = 0;
 };
 
 }

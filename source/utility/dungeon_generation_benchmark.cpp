@@ -1,4 +1,5 @@
 import star.json;
+import star.output_proxy;
 import star.native_runtime;
 import star.file;
 import star.xx_hash;
@@ -120,60 +121,102 @@ import star.celestial_database;
 import star.lexical_cast;
 using namespace Star;
 
-int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    unsigned repetitions = 5;
-    unsigned reportEvery = 1;
-    String dungeonWorldName = "outpost";
+[[nodiscard]]
+static std::expected<void, StarException> run(int argc, char** argv) {
+  auto nativeRuntime = NativeRuntime::create();
+  if (!nativeRuntime)
+    return std::unexpected(std::move(nativeRuntime.error()));
+  unsigned repetitions = 5;
+  unsigned reportEvery = 1;
+  String dungeonWorldName = "outpost";
 
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-    rootLoader.addParameter("dungeonWorld", "dungeonWorld", OptionParser::Optional, strf("dungeonWorld to test, default is {}", dungeonWorldName));
-    rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
-    rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
+  auto loader = RootLoader::create({{}, {}, {}, LogLevel::Error, false, {}});
+  if (!loader)
+    return std::unexpected(std::move(loader.error()));
+  auto& rootLoader = *loader;
+  auto worldParameter = rootLoader.addParameter("dungeonWorld", "dungeonWorld", OptionParser::Optional, strf("dungeonWorld to test, default is {}", dungeonWorldName));
+  if (!worldParameter)
+    return std::unexpected(std::move(worldParameter.error()));
+  auto repetitionsParameter = rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
+  if (!repetitionsParameter)
+    return std::unexpected(std::move(repetitionsParameter.error()));
+  auto reportParameter = rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
+  if (!reportParameter)
+    return std::unexpected(std::move(reportParameter.error()));
 
-    std::unique_ptr<::Star::Root> root;
-    OptionParser::Options options;
-    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+  auto initialized = rootLoader.commandInitOrDie(argc, argv);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto& [root, options] = *initialized;
 
-    coutf("Fully loading root...");
-    root->fullyLoad();
-    coutf(" done\n");
+  coutf("Fully loading root...");
+  auto loaded = root->fullyLoad();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  coutf(" done\n");
 
-    if (auto repetitionsOption = options.parameters.maybe("repetitions"))
-      repetitions = lexicalCast<unsigned>(repetitionsOption->first());
+  if (auto repetitionsOption = options.parameters.maybe("repetitions")) {
+    auto text = repetitionsOption->first();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto parsed = lexicalCast<unsigned>(**text);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    repetitions = *parsed;
+  }
+  if (auto reportEveryOption = options.parameters.maybe("reportevery")) {
+    auto text = reportEveryOption->first();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto parsed = lexicalCast<unsigned>(**text);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    reportEvery = *parsed;
+  }
+  if (auto dungeonWorldOption = options.parameters.maybe("dungeonWorld")) {
+    auto text = dungeonWorldOption->first();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    dungeonWorldName = **text;
+  }
 
-    if (auto reportEveryOption = options.parameters.maybe("reportevery"))
-      reportEvery = lexicalCast<unsigned>(reportEveryOption->first());
+  double start = Time::monotonicTime();
+  double lastReport = Time::monotonicTime();
+  coutf("testing {} generations of dungeonWorld {}\n", repetitions, dungeonWorldName);
 
-    if (auto dungeonWorldOption = options.parameters.maybe("dungeonWorld"))
-      dungeonWorldName = dungeonWorldOption->first();
-
-    double start = Time::monotonicTime();
-    double lastReport = Time::monotonicTime();
-
-    coutf("testing {} generations of dungeonWorld {}\n", repetitions, dungeonWorldName);
-
-    for (unsigned i = 0; i < repetitions; ++i) {
-      if (i > 0 && i % reportEvery == 0) {
-        float gps = reportEvery / (Time::monotonicTime() - lastReport);
-        lastReport = Time::monotonicTime();
-        coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
-      }
-
-      std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(*root, dungeonWorldName);
-      auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(*root, std::move(worldTemplate), File::ephemeralFile(root->random()));
-      worldServer.close();
+  for (unsigned i = 0; i < repetitions; ++i) {
+    if (i > 0 && i % reportEvery == 0) {
+      float gps = reportEvery / (Time::monotonicTime() - lastReport);
+      lastReport = Time::monotonicTime();
+      coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
     }
 
-    coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);
+    auto worldParameters = generateFloatingDungeonWorldParameters(*root, dungeonWorldName);
+    if (!worldParameters)
+      return std::unexpected(std::move(worldParameters.error()));
+    auto worldTemplate = WorldTemplate::create(*root, *worldParameters, SkyParameters(), 1234);
+    if (!worldTemplate)
+      return std::unexpected(std::move(worldTemplate.error()));
+    auto storage = File::ephemeralFile(root->random());
+    if (!storage)
+      return std::unexpected(std::move(storage.error()));
+    auto server = WorldServer::create(*root, std::move(*worldTemplate), *storage);
+    if (!server)
+      return std::unexpected(std::move(server.error()));
+    auto closed = (*server)->close();
+    if (!closed)
+      return std::unexpected(std::move(closed.error()));
+  }
 
-    return 0;
+  coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);
+  return {};
+}
 
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("Exception caught: {}\n", outputException(e, true));
+int main(int argc, char** argv) {
+  auto result = run(argc, argv);
+  if (!result) {
+    cerrf("Exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
     return 1;
   }
+  return 0;
 }

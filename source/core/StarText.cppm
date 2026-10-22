@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string_view;
 import star.unicode;
 import star.string;
@@ -28,8 +29,8 @@ struct TextStyle {
   Directives backDirectives;
 
   TextStyle() = default;
-  TextStyle(Json const& config);
-  TextStyle& loadJson(Json const& config);
+  [[nodiscard]] static std::expected<TextStyle, StarException> create(Json const& config);
+  [[nodiscard]] std::expected<TextStyle*, StarException> loadJson(Json const& config);
 };
 
 namespace Text {
@@ -43,9 +44,9 @@ namespace Text {
   String stripEscapeCodes(String const& s);
   inline bool isEscapeCode(Utf32Type c) { return c == CmdEsc || c == StartEsc; }
 
-  typedef std::function<bool(StringView text)> TextCallback;
-  typedef std::function<bool(StringView commands)> CommandsCallback;
-  bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
+  typedef std::function<std::expected<bool, StarException>(StringView text)> TextCallback;
+  typedef std::function<std::expected<bool, StarException>(StringView commands)> CommandsCallback;
+  [[nodiscard]] std::expected<bool, StarException> processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
 }
 
 }

@@ -50,7 +50,8 @@ struct LiquidSettings {
 
 class LiquidsDatabase {
 public:
-  LiquidsDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<MaterialDatabase const> const& materialDatabase);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<LiquidsDatabase>, StarException> create(std::shared_ptr<Assets const> const& assets, std::shared_ptr<MaterialDatabase const> const& materialDatabase);
 
   LiquidCellEngineParameters liquidEngineParameters() const;
   float backgroundDrain() const;
@@ -63,12 +64,18 @@ public:
   bool isLiquidName(String const& name) const;
   bool isValidLiquidId(LiquidId liquidId) const;
 
-  LiquidId liquidId(String const& str) const;
-  String liquidName(LiquidId liquidId) const;
-  String liquidDescription(LiquidId liquidId, String const& species) const;
-  String liquidDescription(LiquidId liquidId) const;
-  std::optional<String> liquidPath(LiquidId liquidId) const;
-  std::optional<Json> liquidConfig(LiquidId liquidId) const;
+  [[nodiscard]]
+  std::expected<LiquidId, StarException> liquidId(String const& str) const;
+  [[nodiscard]]
+  std::expected<String, StarException> liquidName(LiquidId liquidId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> liquidDescription(LiquidId liquidId, String const& species) const;
+  [[nodiscard]]
+  std::expected<String, StarException> liquidDescription(LiquidId liquidId) const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> liquidPath(LiquidId liquidId) const;
+  [[nodiscard]]
+  std::expected<std::optional<Json>, StarException> liquidConfig(LiquidId liquidId) const;
 
   // Returns null on EmptyLiquidId or invalid liquid id
   std::shared_ptr<LiquidSettings const> liquidSettings(LiquidId liquidId) const;
@@ -78,6 +85,7 @@ public:
   std::optional<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
 
 private:
+  LiquidsDatabase() = default;
   LiquidCellEngineParameters m_liquidEngineParameters;
   float m_backgroundDrain;
   List<std::shared_ptr<LiquidSettings const>> m_settings;

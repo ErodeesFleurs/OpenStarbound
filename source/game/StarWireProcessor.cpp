@@ -1,3 +1,4 @@
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -82,12 +83,13 @@ WireProcessor::WireProcessor(std::shared_ptr<WorldStorage> worldStorage) {
   m_worldStorage = worldStorage;
 }
 
-void WireProcessor::process() {
+std::expected<void, StarException> WireProcessor::process() {
   // First, populate all the working entities that are already live
-  m_worldStorage->entityMap()->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
-    if (auto wireEntity = as<WireEntity>(entity.get()))
-      populateWorking(wireEntity);
+  auto populated = m_worldStorage->entityMap()->forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+    if (auto wireEntity = as<WireEntity>(entity.get())) return populateWorking(wireEntity);
+    return {};
   });
+  if (!populated) return std::unexpected(std::move(populated.error()));
 
   // Then, scan the network of each entity in the working set.  This may, as a
   // side effect, load further unconnected wire entities. Because our policy is
@@ -99,41 +101,52 @@ void WireProcessor::process() {
   while (true) {
     std::size_t oldWorkingSize = m_workingWireEntities.size();
     for (auto const& p : m_workingWireEntities.keys()) {
-      if (!m_workingWireEntities.get(p).networkLoaded)
-        loadNetwork(p);
+      auto state = m_workingWireEntities.get(p);
+      if (!state) return std::unexpected(std::move(state.error()));
+      if (!(*state)->networkLoaded) {
+        if (auto r = loadNetwork(p); !r) return std::unexpected(std::move(r.error()));
+      }
     }
     if (m_workingWireEntities.size() == oldWorkingSize)
       break;
   }
 
-  for (auto const& p : m_workingWireEntities)
-    p.second.wireEntity->evaluate(this);
+  for (auto const& p : m_workingWireEntities) {
+    if (auto r = p.second.wireEntity->evaluate(this); !r) return std::unexpected(std::move(r.error()));
+  }
 
   m_workingWireEntities.clear();
+  return {};
 }
 
-bool WireProcessor::readInputConnection(WireConnection const& connection) {
-  if (auto wes = m_workingWireEntities.ptr(connection.entityLocation))
+std::expected<bool, StarException> WireProcessor::readInputConnection(WireConnection const& connection) {
+  if (auto wes = m_workingWireEntities.ptr(connection.entityLocation)) {
     return wes->outputStates.get(connection.nodeIndex);
+  }
   return false;
 }
 
-void WireProcessor::populateWorking(WireEntity* wireEntity) {
+std::expected<void, StarException> WireProcessor::populateWorking(WireEntity* wireEntity) {
   auto p = m_workingWireEntities.insert(wireEntity->tilePosition(), WireEntityState{nullptr, {}, false});
   if (!p.second) {
-    if (p.first->second.wireEntity != wireEntity)
-      wireEntity->root().logger().debug("Multiple wire entities share tile position: {}", wireEntity->position());
-    return;
+    if (p.first->second.wireEntity != wireEntity) {
+      if (auto r = wireEntity->root().logger().debug("Multiple wire entities share tile position: {}", wireEntity->position()); !r) return std::unexpected(std::move(r.error()));
+    }
+    return {};
   }
   auto& wes = p.first->second;
   wes.wireEntity = wireEntity;
   std::size_t outputNodeCount = wes.wireEntity->nodeCount(WireDirection::Output);
   wes.outputStates.resize(outputNodeCount);
-  for (std::size_t i = 0; i < outputNodeCount; ++i)
-    wes.outputStates[i] = wes.wireEntity->nodeState({WireDirection::Output, i});
+  for (std::size_t i = 0; i < outputNodeCount; ++i) {
+    auto state = wes.wireEntity->nodeState({WireDirection::Output, i});
+    if (!state) return std::unexpected(std::move(state.error()));
+    wes.outputStates[i] = *state;
+  }
+  return {};
 }
 
-void WireProcessor::loadNetwork(Vec2I tilePosition) {
+std::expected<void, StarException> WireProcessor::loadNetwork(Vec2I tilePosition) {
   HashSet<WorldStorage::Sector> networkSectors;
   std::optional<float> highestTtl;
 
@@ -141,8 +154,8 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
   // if that wire entity was found.
   // TODO: This is depth first recursive, because that is the simplest thing,
   // but if this causes issues with recursion depth it can be changed.
-  std::function<bool(Vec2I)> doLoad;
-  doLoad = [&](Vec2I const& pos) {
+  std::function<std::expected<bool, StarException>(Vec2I)> doLoad;
+  doLoad = [&](Vec2I const& pos) -> std::expected<bool, StarException> {
     auto sector = m_worldStorage->sectorForPosition(pos);
     if (!sector)
       return false;
@@ -154,11 +167,14 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
       else
         highestTtl = ttl;
     } else {
-      m_worldStorage->loadSector(*sector);
-      m_worldStorage->entityMap()->forEachEntity(RectF(*m_worldStorage->regionForSector(*sector)), [&](std::shared_ptr<Entity> const& entity) {
-          if (auto wireEntity = as<WireEntity>(entity.get()))
-            populateWorking(wireEntity);
-        });
+      if (auto r = m_worldStorage->loadSector(*sector); !r) return std::unexpected(std::move(r.error()));
+      auto region = m_worldStorage->regionForSector(*sector);
+      if (!region) return std::unexpected(StarException("Wire sector has no region"));
+      auto populated = m_worldStorage->entityMap()->forEachEntity(RectF(*region), [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+        if (auto wireEntity = as<WireEntity>(entity.get())) return populateWorking(wireEntity);
+        return {};
+      });
+      if (!populated) return std::unexpected(std::move(populated.error()));
     }
 
     auto wes = m_workingWireEntities.ptr(pos);
@@ -175,22 +191,32 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
     // the connection.
     std::size_t inboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Input);
     for (std::size_t i = 0; i < inboundNodeCount; ++i) {
-      for (auto const& connection : wes->wireEntity->connectionsForNode({WireDirection::Input, i})) {
-        if (!doLoad(connection.entityLocation))
-          wes->wireEntity->removeNodeConnection({WireDirection::Input, i}, connection);
+      auto connections = wes->wireEntity->connectionsForNode({WireDirection::Input, i});
+      if (!connections) return std::unexpected(std::move(connections.error()));
+      for (auto const& connection : *connections) {
+        auto loaded = doLoad(connection.entityLocation);
+        if (!loaded) return std::unexpected(std::move(loaded.error()));
+        if (!*loaded) {
+          if (auto r = wes->wireEntity->removeNodeConnection({WireDirection::Input, i}, connection); !r) return std::unexpected(std::move(r.error()));
+        }
       }
     }
     std::size_t outboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Output);
     for (std::size_t i = 0; i < outboundNodeCount; ++i) {
-      for (auto const& connection : wes->wireEntity->connectionsForNode({WireDirection::Output, i})) {
-        if (!doLoad(connection.entityLocation))
-          wes->wireEntity->removeNodeConnection({WireDirection::Output, i}, connection);
+      auto connections = wes->wireEntity->connectionsForNode({WireDirection::Output, i});
+      if (!connections) return std::unexpected(std::move(connections.error()));
+      for (auto const& connection : *connections) {
+        auto loaded = doLoad(connection.entityLocation);
+        if (!loaded) return std::unexpected(std::move(loaded.error()));
+        if (!*loaded) {
+          if (auto r = wes->wireEntity->removeNodeConnection({WireDirection::Output, i}, connection); !r) return std::unexpected(std::move(r.error()));
+        }
       }
     }
     return true;
   };
 
-  doLoad(tilePosition);
+  if (auto r = doLoad(tilePosition); !r) return std::unexpected(std::move(r.error()));
 
   // Set the sector ttl for the entire network to be equal to the highest
   // entry, so that the entire network either lives or dies together, but
@@ -199,6 +225,7 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
     for (auto const& sector : networkSectors)
       m_worldStorage->setSectorTimeToLive(sector, *highestTtl);
   }
+  return {};
 }
 
 }

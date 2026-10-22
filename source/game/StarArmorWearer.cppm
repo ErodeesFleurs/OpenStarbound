@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.list;
 import star.json;
@@ -34,17 +35,17 @@ class EffectEmitter;
 
 class ArmorWearer : public NetElementSyncGroup {
 public:
-  ArmorWearer(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<ArmorWearer>, StarException> create(Root& root);
 
   // returns true if movement parameters changed
-  bool setupHumanoid(Humanoid& humanoid, bool forceNude);
-  void effects(EffectEmitter& effectEmitter);
-  List<PersistentStatusEffect> statusEffects(bool cosmeticOnly = false) const;
+  [[nodiscard]] std::expected<bool, StarException> setupHumanoid(Humanoid& humanoid, bool forceNude);
+  [[nodiscard]] std::expected<void, StarException> effects(EffectEmitter& effectEmitter);
+  [[nodiscard]] std::expected<List<PersistentStatusEffect>, StarException> statusEffects(bool cosmeticOnly = false) const;
 
   void reset();
 
-  Json diskStore() const;
-  void diskLoad(Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
 
   bool setItem(std::uint8_t slot, std::shared_ptr<ArmorItem> item, bool visible = true);
   void setHeadItem(std::shared_ptr<HeadArmor> headItem);
@@ -81,9 +82,10 @@ public:
   std::shared_ptr<ArmorItem> cosmeticItem(std::uint8_t slot) const;
   ItemDescriptor cosmeticItemDescriptor(std::uint8_t slot) const;
 private:
+  explicit ArmorWearer(Root& root);
   Root& m_root;
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   struct Armor {
     std::shared_ptr<ArmorItem> item;

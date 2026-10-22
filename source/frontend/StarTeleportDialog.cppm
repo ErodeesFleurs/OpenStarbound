@@ -59,6 +59,7 @@ import star.celestial_coordinate;
 import star.warping;
 import star.player_universe_map;
 import star.bookmark_interface;
+import star.format;
 
 namespace Star {
 
@@ -74,19 +75,18 @@ public:
     return Star::typeName<TeleportDialog>();
   }
 
-  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
-      PaneManager* paneManager,
-      Json config,
-      EntityId sourceEntityId,
-      TeleportBookmark currentLocation);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeleportDialog>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
+      PaneManager* paneManager, Json config, EntityId sourceEntityId, TeleportBookmark currentLocation);
 
-  void tick(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
-  void selectDestination();
-  void teleport();
-  void editBookmark();
+  [[nodiscard]] std::expected<void, StarException> selectDestination();
+  [[nodiscard]] std::expected<void, StarException> teleport();
+  [[nodiscard]] std::expected<void, StarException> editBookmark();
 
 private:
+  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, PaneManager* paneManager, EntityId sourceEntityId, TeleportBookmark currentLocation);
+  [[nodiscard]] std::expected<void, StarException> initialize(Json config);
   EntityId m_sourceEntityId;
   std::shared_ptr<UniverseClient> m_client;
   PaneManager* m_paneManager;

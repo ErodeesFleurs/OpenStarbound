@@ -2,6 +2,7 @@ module;
 import star.type_identity;
 import star.xx_hash;
 import star.json;
+import star.format;
 import star.game_types;
 import star.string;
 import star.either;
@@ -151,21 +152,21 @@ public:
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   
-  UniverseClient(Root& root, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
+  [[nodiscard]] static std::expected<std::shared_ptr<UniverseClient>, StarException> create(Root& root, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
   ~UniverseClient() override;
 
   Root& root() const;
 
-  void setMainPlayer(std::shared_ptr<Player> player);
+  [[nodiscard]] std::expected<void, StarException> setMainPlayer(std::shared_ptr<Player> player);
   std::shared_ptr<Player> mainPlayer() const;
 
   // Returns error if connection failed
-  std::optional<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
+  [[nodiscard]] std::expected<std::optional<String>, StarException> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
   bool isConnected() const;
-  void disconnect();
+  [[nodiscard]] std::expected<void, StarException> disconnect();
   std::optional<String> disconnectReason() const;
   
-  unsigned connectionVersion();
+  [[nodiscard]] std::expected<unsigned, StarException> connectionVersion();
 
   // WorldClient may be null if the UniverseClient is not connected.
   std::shared_ptr<WorldClient> worldClient() const;
@@ -173,23 +174,23 @@ public:
 
   // Updates internal world client in addition to handling universe level
   // commands.
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
   std::optional<BeamUpRule> beamUpRule() const;
-  bool canBeamUp() const;
-  bool canBeamDown(bool deploy = false) const;
-  bool canBeamToTeamShip() const;
-  bool canTeleport() const;
+  [[nodiscard]] std::expected<bool, StarException> canBeamUp() const;
+  [[nodiscard]] std::expected<bool, StarException> canBeamDown(bool deploy = false) const;
+  [[nodiscard]] std::expected<bool, StarException> canBeamToTeamShip() const;
+  [[nodiscard]] std::expected<bool, StarException> canTeleport() const;
 
-  void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
-  void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
+  [[nodiscard]] std::expected<void, StarException> warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
+  [[nodiscard]] std::expected<void, StarException> flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
   std::shared_ptr<CelestialDatabase> celestialDatabase() override;
 
   CelestialCoordinate shipCoordinate() const;
 
   bool playerOnOwnShip() const;
-  bool playerIsOriginal() const;
+  [[nodiscard]] std::expected<bool, StarException> playerIsOriginal() const;
 
   WorldId playerWorld() const;
   bool isAdmin() const;
@@ -201,25 +202,25 @@ public:
   std::shared_ptr<Sky const> currentSky() const;
   bool flying() const;
 
-  void sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak = {}, std::optional<JsonObject> data = {});
+  [[nodiscard]] std::expected<void, StarException> sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak = {}, std::optional<JsonObject> data = {});
   List<ChatReceivedMessage> pullChatMessages();
 
   std::uint16_t players();
   std::uint16_t maxPlayers();
 
-  void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
-  void restartLua();
-  void startLuaScripts();
-  void stopLua();
+  [[nodiscard]] std::expected<void, StarException> setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+  [[nodiscard]] std::expected<void, StarException> restartLua();
+  [[nodiscard]] std::expected<void, StarException> startLuaScripts();
+  [[nodiscard]] std::expected<void, StarException> stopLua();
   std::shared_ptr<LuaRoot> luaRoot();
 
-  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
-  bool switchPlayer(Uuid const& uuid);
-  bool switchPlayer(std::size_t index);
-  bool switchPlayer(String const& name);
+  [[nodiscard]] std::expected<bool, StarException> reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
+  [[nodiscard]] std::expected<bool, StarException> switchPlayer(Uuid const& uuid);
+  [[nodiscard]] std::expected<bool, StarException> switchPlayer(std::size_t index);
+  [[nodiscard]] std::expected<bool, StarException> switchPlayer(String const& name);
 
   typedef std::function<void()> Callback;
-  typedef std::function<void(bool)> ReloadPlayerCallback;
+  typedef std::function<std::expected<void, StarException>(bool)> ReloadPlayerCallback;
   ReloadPlayerCallback& playerReloadPreCallback();
   ReloadPlayerCallback& playerReloadCallback();
 
@@ -234,25 +235,27 @@ public:
 
   std::shared_ptr<UniverseClient::ScriptComponent> scriptContext(String const& contextName);
   
-  void createCustomWorld(String const& name, Json templateData);
+  [[nodiscard]] std::expected<void, StarException> createCustomWorld(String const& name, Json templateData);
   
-  ClientSubWorldId createSubWorld();
-  void setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId = WorldId());
+  [[nodiscard]] std::expected<ClientSubWorldId, StarException> createSubWorld();
+  [[nodiscard]] std::expected<void, StarException> setSubWorldWorld(ClientSubWorldId subWorldId, WorldId worldId = WorldId());
   bool subWorldExistsOnWorld(WorldId worldId) const;
-  ClientSubWorldId getSubWorldOnWorld(WorldId worldId);
-  void destroySubWorldOnWorld(WorldId worldId);
+  [[nodiscard]] std::expected<ClientSubWorldId, StarException> getSubWorldOnWorld(WorldId worldId);
+  [[nodiscard]] std::expected<void, StarException> destroySubWorldOnWorld(WorldId worldId);
 
-  RpcPromise<Json> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
-  RpcPromise<Json> sendMainWorldMessage(String const& message, JsonArray const& args = {});
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendSubWorldOnWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendMainWorldMessage(String const& message, JsonArray const& args = {});
 
   bool paused() const;
   
-  void passMessage(Universe::Message&& message) override;
-  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] std::expected<void, StarException> passMessage(Universe::Message&& message) override;
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
   
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
 
 private:
+  explicit UniverseClient(Root& root);
+
   struct ServerInfo {
     std::uint16_t players;
     std::uint16_t maxPlayers;
@@ -260,8 +263,8 @@ private:
 
   void setPause(bool pause);
 
-  void handlePackets(List<std::shared_ptr<Packet>> const& packets);
-  void reset();
+  [[nodiscard]] std::expected<void, StarException> handlePackets(List<std::shared_ptr<Packet>> const& packets);
+  [[nodiscard]] std::expected<void, StarException> reset();
   
   Root& m_root;
 

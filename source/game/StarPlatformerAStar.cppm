@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.bi_map;
@@ -45,57 +46,57 @@ namespace PlatformerAStar {
 
   class PathFinder {
   public:
-    PathFinder(World* world,
+    [[nodiscard]] static std::expected<std::shared_ptr<PathFinder>, StarException> create(World* world,
         Vec2F searchFrom,
         Vec2F searchTo,
         ActorMovementParameters movementParameters,
         Parameters searchParameters = Parameters());
 
-    // Does not preserve current search state.
-    PathFinder(PathFinder const& rhs);
-    PathFinder& operator=(PathFinder const& rhs);
+    PathFinder(PathFinder const&) = delete;
+    PathFinder& operator=(PathFinder const&) = delete;
 
-    std::optional<bool> explore(std::optional<unsigned> maxExploreNodes = {});
+    [[nodiscard]] std::expected<std::optional<bool>, StarException> explore(std::optional<unsigned> maxExploreNodes = {});
     std::optional<Path> const& result() const;
 
   private:
+    PathFinder(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters);
     enum class BoundBoxKind { Full, Drop, Stand };
 
-    void initAStar();
+    [[nodiscard]] std::expected<void, StarException> initAStar();
 
     float heuristicCost(Vec2F const& fromPosition, Vec2F const& toPosition) const;
     Edge defaultCostEdge(Action action, Node const& source, Node const& target) const;
-    void neighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> neighbors(Node const& node, List<Edge>& neighbors) const;
 
-    void getDropNeighbors(Node const& node, List<Edge>& neighbors) const; // drop through a platform
-    void getWalkingNeighborsInDirection(Node const& node, List<Edge>& neighbors, float direction) const;
-    void getWalkingNeighbors(Node const& node, List<Edge>& neighbors) const;
-    void getFallingNeighbors(Node const& node, List<Edge>& neighbors) const; // freefall
-    void getJumpingNeighbors(Node const& node, List<Edge>& neighbors) const;
-    void getArcNeighbors(Node const& node, List<Edge>& neighbors) const;
-    void getSwimmingNeighbors(Node const& node, List<Edge>& neighbors) const;
-    void getFlyingNeighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> getDropNeighbors(Node const& node, List<Edge>& neighbors) const; // drop through a platform
+    [[nodiscard]] std::expected<void, StarException> getWalkingNeighborsInDirection(Node const& node, List<Edge>& neighbors, float direction) const;
+    [[nodiscard]] std::expected<void, StarException> getWalkingNeighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> getFallingNeighbors(Node const& node, List<Edge>& neighbors) const; // freefall
+    [[nodiscard]] std::expected<void, StarException> getJumpingNeighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> getArcNeighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> getSwimmingNeighbors(Node const& node, List<Edge>& neighbors) const;
+    [[nodiscard]] std::expected<void, StarException> getFlyingNeighbors(Node const& node, List<Edge>& neighbors) const;
 
-    void forEachArcVelocity(float yVelocity, std::function<void(Vec2F)> func) const;
-    void forEachArcNeighbor(Node const& node, float yVelocity, std::function<void(Node, bool)> func) const;
-    Vec2F acceleration(Vec2F pos) const;
-    Vec2F simulateArcCollision(Vec2F position, Vec2F velocity, float dt, bool& collidedX, bool& collidedY) const;
-    void simulateArc(Node const& node, std::function<void(Node, bool)> func) const;
+    [[nodiscard]] std::expected<void, StarException> forEachArcVelocity(float yVelocity, std::function<std::expected<void, StarException>(Vec2F)> func) const;
+    [[nodiscard]] std::expected<void, StarException> forEachArcNeighbor(Node const& node, float yVelocity, std::function<std::expected<void, StarException>(Node, bool)> func) const;
+    [[nodiscard]] std::expected<Vec2F, StarException> acceleration(Vec2F pos) const;
+    [[nodiscard]] std::expected<Vec2F, StarException> simulateArcCollision(Vec2F position, Vec2F velocity, float dt, bool& collidedX, bool& collidedY) const;
+    [[nodiscard]] std::expected<void, StarException> simulateArc(Node const& node, std::function<std::expected<void, StarException>(Node, bool)> func) const;
 
-    bool validPosition(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const;
-    bool onGround(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const; // Includes non-solids: platforms, objects, etc.
-    bool onSolidGround(Vec2F pos) const; // Includes only solids
-    bool inLiquid(Vec2F pos) const;
+    [[nodiscard]] std::expected<bool, StarException> validPosition(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const;
+    [[nodiscard]] std::expected<bool, StarException> onGround(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const; // Includes non-solids: platforms, objects, etc.
+    [[nodiscard]] std::expected<bool, StarException> onSolidGround(Vec2F pos) const; // Includes only solids
+    [[nodiscard]] std::expected<bool, StarException> inLiquid(Vec2F pos) const;
 
-    RectF boundBox(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const;
+    [[nodiscard]] std::expected<RectF, StarException> boundBox(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const;
     // Returns a rect that covers the tiles below the entity's feet if it was at
     // pos
-    RectI groundCollisionRect(Vec2F pos, BoundBoxKind boundKind) const;
+    [[nodiscard]] std::expected<RectI, StarException> groundCollisionRect(Vec2F pos, BoundBoxKind boundKind) const;
     // Returns a rect that covers a 1 tile wide space below the entity's feet at
     // node pos
-    Vec2I groundNodePosition(Vec2F pos) const;
+    [[nodiscard]] std::expected<Vec2I, StarException> groundNodePosition(Vec2F pos) const;
 
-    Vec2F roundToNode(Vec2F pos) const;
+    [[nodiscard]] std::expected<Vec2F, StarException> roundToNode(Vec2F pos) const;
     float distance(Vec2F a, Vec2F b) const;
 
     World* m_world;

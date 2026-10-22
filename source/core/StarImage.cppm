@@ -31,11 +31,11 @@ using ImageException = StarError<ImageExceptionTag, StarException>;
 // 0) defined to be the *lower left* corner.
 class Image {
 public:
-  static Image readPng(Logger& logger, std::shared_ptr<IODevice> device);
-  static bool isPng(std::shared_ptr<IODevice> device);
+  [[nodiscard]] static std::expected<Image, StarException> readPng(Logger& logger, std::shared_ptr<IODevice> device);
+  [[nodiscard]] static std::expected<bool, StarException> isPng(std::shared_ptr<IODevice> device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
-  static std::tuple<Vec2U, PixelFormat> readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device);
+  [[nodiscard]] static std::expected<std::tuple<Vec2U, PixelFormat>, StarException> readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device);
 
   static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
@@ -77,21 +77,19 @@ public:
   void fill(Vec4B const& c);
 
   // Fill a rectangle with a given color
-  void fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c);
-  void fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c);
+  [[nodiscard]] std::expected<void, StarException> fillRect(Vec2U const& pos, Vec2U const& size, Vec3B const& c);
+  [[nodiscard]] std::expected<void, StarException> fillRect(Vec2U const& pos, Vec2U const& size, Vec4B const& c);
 
-  // Color parameters / return values here are in whatever the internal format
-  // is.  Fourth byte, if missing or not provided, is assumed to be 255.  If
-  // the position is out of range, then throws an exception.
-  void set(Vec2U const& pos, Vec4B const& c);
-  void set(Vec2U const& pos, Vec3B const& c);
-  Vec4B get(Vec2U const& pos) const;
+  // Color values use the internal format. Missing alpha is 255.
+  // Invalid coordinates are recoverable errors.
+  [[nodiscard]] std::expected<void, StarException> set(Vec2U const& pos, Vec4B const& c);
+  [[nodiscard]] std::expected<void, StarException> set(Vec2U const& pos, Vec3B const& c);
+  [[nodiscard]] std::expected<Vec4B, StarException> get(Vec2U const& pos) const;
 
-  // Same as set / get, except color parameters / return values here are always
-  // RGB[A], and converts if necessary.
-  void setrgb(Vec2U const& pos, Vec4B const& c);
-  void setrgb(Vec2U const& pos, Vec3B const& c);
-  Vec4B getrgb(Vec2U const& pos) const;
+  // Same operations with RGB[A] color conversion.
+  [[nodiscard]] std::expected<void, StarException> setrgb(Vec2U const& pos, Vec4B const& c);
+  [[nodiscard]] std::expected<void, StarException> setrgb(Vec2U const& pos, Vec3B const& c);
+  [[nodiscard]] std::expected<Vec4B, StarException> getrgb(Vec2U const& pos) const;
 
   // Get pixel value, but if pos is out of the normal pixel range, it is
   // clamped back into the valid pixel range.  Returns (0, 0, 0, 0) if image is
@@ -100,12 +98,12 @@ public:
   Vec4B clamprgb(Vec2I const& pos) const;
 
   // x / y versions of set / get, for compatibility
-  void set(unsigned x, unsigned y, Vec4B const& c);
-  void set(unsigned x, unsigned y, Vec3B const& c);
-  Vec4B get(unsigned x, unsigned y) const;
-  void setrgb(unsigned x, unsigned y, Vec4B const& c);
-  void setrgb(unsigned x, unsigned y, Vec3B const& c);
-  Vec4B getrgb(unsigned x, unsigned y) const;
+  [[nodiscard]] std::expected<void, StarException> set(unsigned x, unsigned y, Vec4B const& c);
+  [[nodiscard]] std::expected<void, StarException> set(unsigned x, unsigned y, Vec3B const& c);
+  [[nodiscard]] std::expected<Vec4B, StarException> get(unsigned x, unsigned y) const;
+  [[nodiscard]] std::expected<void, StarException> setrgb(unsigned x, unsigned y, Vec4B const& c);
+  [[nodiscard]] std::expected<void, StarException> setrgb(unsigned x, unsigned y, Vec3B const& c);
+  [[nodiscard]] std::expected<Vec4B, StarException> getrgb(unsigned x, unsigned y) const;
   Vec4B clamp(int x, int y) const;
   Vec4B clamprgb(int x, int y) const;
 
@@ -123,24 +121,24 @@ public:
 
   // Called as callback(unsigned x, unsigned y, Vec4B const& pixel)
   template <typename CallbackType>
-  void forEachPixel(CallbackType&& callback) const;
+  [[nodiscard]] auto forEachPixel(CallbackType&& callback) const;
 
   // Called as callback(unsigned x, unsigned y, Vec4B& pixel)
   template <typename CallbackType>
-  void forEachPixel(CallbackType&& callback);
+  [[nodiscard]] auto forEachPixel(CallbackType&& callback);
 
   // Pixel rectangle, lower left position and size of rectangle.
-  Image subImage(Vec2U const& pos, Vec2U const& size) const;
+  [[nodiscard]] std::expected<Image, StarException> subImage(Vec2U const& pos, Vec2U const& size) const;
 
   // Copy given image into this one at pos
-  void copyInto(Vec2U const& pos, Image const& image);
+  [[nodiscard]] std::expected<void, StarException> copyInto(Vec2U const& pos, Image const& image);
   // Draw given image over this one at pos (with alpha composition)
-  void drawInto(Vec2U const& pos, Image const& image);
+  [[nodiscard]] std::expected<void, StarException> drawInto(Vec2U const& pos, Image const& image);
 
   // Convert this image into the given pixel format
   Image convert(PixelFormat pixelFormat) const;
 
-  void writePng(Logger& logger, std::shared_ptr<IODevice> device) const;
+  [[nodiscard]] std::expected<void, StarException> writePng(Logger& logger, std::shared_ptr<IODevice> device) const;
 
 private:
   std::uint8_t* m_data;
@@ -219,27 +217,27 @@ inline std::uint8_t* Image::data() {
   return m_data;
 }
 
-inline void Image::set(unsigned x, unsigned y, Vec4B const& c) {
+inline std::expected<void, StarException> Image::set(unsigned x, unsigned y, Vec4B const& c) {
   return set({x, y}, c);
 }
 
-inline void Image::set(unsigned x, unsigned y, Vec3B const& c) {
+inline std::expected<void, StarException> Image::set(unsigned x, unsigned y, Vec3B const& c) {
   return set({x, y}, c);
 }
 
-inline Vec4B Image::get(unsigned x, unsigned y) const {
+inline std::expected<Vec4B, StarException> Image::get(unsigned x, unsigned y) const {
   return get({x, y});
 }
 
-inline void Image::setrgb(unsigned x, unsigned y, Vec4B const& c) {
+inline std::expected<void, StarException> Image::setrgb(unsigned x, unsigned y, Vec4B const& c) {
   return setrgb({x, y}, c);
 }
 
-inline void Image::setrgb(unsigned x, unsigned y, Vec3B const& c) {
+inline std::expected<void, StarException> Image::setrgb(unsigned x, unsigned y, Vec3B const& c) {
   return setrgb({x, y}, c);
 }
 
-inline Vec4B Image::getrgb(unsigned x, unsigned y) const {
+inline std::expected<Vec4B, StarException> Image::getrgb(unsigned x, unsigned y) const {
   return getrgb({x, y});
 }
 
@@ -322,22 +320,45 @@ inline Vec3B Image::get24(unsigned x, unsigned y) const {
 }
 
 template <typename CallbackType>
-void Image::forEachPixel(CallbackType&& callback) const {
-  for (unsigned y = 0; y < m_height; y++) {
-    for (unsigned x = 0; x < m_width; x++)
-      callback(x, y, get(x, y));
+[[nodiscard]] auto Image::forEachPixel(CallbackType&& callback) const {
+  using Result = std::invoke_result_t<CallbackType&, unsigned, unsigned, Vec4B const&>;
+  for (unsigned y = 0; y < m_height; ++y) {
+    for (unsigned x = 0; x < m_width; ++x) {
+      Vec4B pixel = bytesPerPixel() == 4 ? get32(x, y) : Vec4B(get24(x, y), 255);
+      if constexpr (std::is_void_v<Result>)
+        callback(x, y, pixel);
+      else {
+        auto result = callback(x, y, pixel);
+        if (!result)
+          return Result(std::unexpected(std::move(result.error())));
+      }
+    }
   }
+  if constexpr (!std::is_void_v<Result>)
+    return Result{};
 }
 
 template <typename CallbackType>
-void Image::forEachPixel(CallbackType&& callback) {
-  for (unsigned y = 0; y < m_height; y++) {
-    for (unsigned x = 0; x < m_width; x++) {
-      Vec4B pixel = get(x, y);
-      callback(x, y, pixel);
-      set(x, y, pixel);
+[[nodiscard]] auto Image::forEachPixel(CallbackType&& callback) {
+  using Result = std::invoke_result_t<CallbackType&, unsigned, unsigned, Vec4B&>;
+  for (unsigned y = 0; y < m_height; ++y) {
+    for (unsigned x = 0; x < m_width; ++x) {
+      Vec4B pixel = bytesPerPixel() == 4 ? get32(x, y) : Vec4B(get24(x, y), 255);
+      if constexpr (std::is_void_v<Result>)
+        callback(x, y, pixel);
+      else {
+        auto result = callback(x, y, pixel);
+        if (!result)
+          return Result(std::unexpected(std::move(result.error())));
+      }
+      if (bytesPerPixel() == 4)
+        set32(x, y, pixel);
+      else
+        set24(x, y, pixel.vec3());
     }
   }
+  if constexpr (!std::is_void_v<Result>)
+    return Result{};
 }
 
 struct ImageView {

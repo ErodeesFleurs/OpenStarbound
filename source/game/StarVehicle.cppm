@@ -94,74 +94,78 @@ public:
     return Star::typeName<Vehicle>();
   }
 
-  Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicConfig);
+  [[nodiscard]] static std::expected<std::shared_ptr<Vehicle>, StarException> create(Root& rootContext, Json baseConfig, String path, Json dynamicConfig);
 
-  String name() const override;
+  [[nodiscard]] std::expected<String, StarException> name() const override;
 
   Json baseConfig() const;
   Json dynamicConfig() const;
 
-  Json diskStore() const;
-  void diskLoad(Json diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json diskStore);
 
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  List<DamageSource> damageSources() const override;
-  std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
+  [[nodiscard]] std::expected<std::optional<HitType>, StarException> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] std::expected<std::optional<PolyF>, StarException> hitPoly() const override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> selfDamageNotifications() override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
   RectF collisionArea() const override;
   Vec2F velocity() const;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  void render(RenderCallback* renderer) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderer) override;
 
-  void renderLightSources(RenderCallback* renderer) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderer) override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const override;
 
-  bool shouldDestroy() const override;
-  void destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   RectF interactiveBoundBox() const override;
   bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 
   std::size_t anchorCount() const override;
-  std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t positionIndex) const override;
-  void loungeControl(std::size_t positionIndex, LoungeControl loungeControl) override;
-  void loungeAim(std::size_t positionIndex, Vec2F const& aimPosition) override;
+  [[nodiscard]] std::expected<std::shared_ptr<LoungeAnchor const>, StarException> loungeAnchor(std::size_t positionIndex) const override;
+  [[nodiscard]] std::expected<void, StarException> loungeControl(std::size_t positionIndex, LoungeControl loungeControl) override;
+  [[nodiscard]] std::expected<void, StarException> loungeAim(std::size_t positionIndex, Vec2F const& aimPosition) override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
   std::size_t movingCollisionCount() const override;
-  std::optional<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
+  [[nodiscard]] std::expected<std::optional<PhysicsMovingCollision>, StarException> movingCollision(std::size_t positionIndex) const override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
   
   MovementController* movementController() override;
 
   void setPosition(Vec2F const& position);
 
 private:
+  [[nodiscard]] std::expected<std::size_t, StarException> loungeIndex(String const& name) const;
+  Vehicle(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(Root& rootContext, Json baseConfig, String path, Json dynamicConfig);
+
   struct MasterControlState {
     Set<ConnectionId> slavesHeld;
     bool masterHeld;
@@ -216,8 +220,8 @@ private:
 
   EntityRenderLayer renderLayer(VehicleLayer vehicleLayer) const;
 
-  LuaCallbacks makeVehicleCallbacks();
-  Json configValue(String const& name, Json def = {}) const;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeVehicleCallbacks();
+  [[nodiscard]] std::expected<Json, StarException> configValue(String const& name, Json def = {}) const;
 
   String m_typeName;
   Json m_baseConfig;
@@ -234,8 +238,8 @@ private:
 
   NetElementTopGroup m_netGroup;
   NetElementBool m_interactive;
-  MovementController m_movementController;
-  NetworkedAnimator m_networkedAnimator;
+  std::shared_ptr<MovementController> m_movementController;
+  std::shared_ptr<NetworkedAnimator> m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
   

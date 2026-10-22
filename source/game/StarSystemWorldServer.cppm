@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.map;
 import star.json;
@@ -41,31 +42,31 @@ struct Packet;
 class SystemWorldServer : public SystemWorld {
 public:
   // create new system world server
-  SystemWorldServer(Root& root, Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemWorldServer>, StarException> create(Root& root, Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
   // load system world server from storage
-  SystemWorldServer(Root& root, Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemWorldServer>, StarException> create(Root& root, Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
 
-  void setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
+  [[nodiscard]] std::expected<void, StarException> setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
 
   // null while flying, system coordinate when in space or at a system object
   // planet coordinates while orbiting a planet
   std::shared_ptr<SystemClientShip> clientShip(ConnectionId clientId) const;
-  SystemLocation clientShipLocation(ConnectionId clientId) const;
-  std::optional<std::pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
-  SkyParameters clientSkyParameters(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<SystemLocation, StarException> clientShipLocation(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<std::optional<std::pair<WarpAction, WarpMode>>, StarException> clientWarpAction(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<SkyParameters, StarException> clientSkyParameters(ConnectionId clientId) const;
 
   List<ConnectionId> clients() const;
-  void addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location);
-  void removeClientShip(ConnectionId clientId);
+  [[nodiscard]] std::expected<void, StarException> addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location);
+  [[nodiscard]] std::expected<void, StarException> removeClientShip(ConnectionId clientId);
   List<std::shared_ptr<SystemClientShip>> shipsAtLocation(SystemLocation const& location) const;
-  List<InstanceWorldId> activeInstanceWorlds() const;
+  [[nodiscard]] std::expected<List<InstanceWorldId>, StarException> activeInstanceWorlds() const;
 
   // removeObject queues up object for destruction, any ships at the location
   // are moved away
-  void removeObject(Uuid objectUuid);
-  bool addObject(std::shared_ptr<SystemObject> object, bool doRangeCheck = false);
+  [[nodiscard]] std::expected<void, StarException> removeObject(Uuid objectUuid);
+  [[nodiscard]] std::expected<bool, StarException> addObject(std::shared_ptr<SystemObject> object, bool doRangeCheck = false);
 
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
   List<std::shared_ptr<SystemObject>> objects() const override;
   List<Uuid> objectKeys() const override;
@@ -73,27 +74,27 @@ public:
 
   List<ConnectionId> pullShipFlights();
 
-  void handleIncomingPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
+  [[nodiscard]] std::expected<void, StarException> handleIncomingPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
   List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
   bool triggeredStorage();
-  Json diskStore();
+  [[nodiscard]] std::expected<Json, StarException> diskStore();
 
 private:
+  SystemWorldServer(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
   struct ClientNetVersions {
     HashMap<Uuid, std::uint64_t> ships;
     HashMap<Uuid, std::uint64_t> objects;
   };
 
-  void queueUpdatePackets();
-  void setClientShipDestination(ConnectionId clientId, SystemLocation const& destination);
+  [[nodiscard]] std::expected<void, StarException> queueUpdatePackets();
 
   // random position for new ships entering the system
-  void placeInitialObjects();
-  void spawnObjects();
-  Vec2F randomObjectSpawnPosition(RandomSource& rand) const;
+  [[nodiscard]] std::expected<void, StarException> placeInitialObjects();
+  [[nodiscard]] std::expected<void, StarException> spawnObjects();
+  [[nodiscard]] std::expected<Vec2F, StarException> randomObjectSpawnPosition(RandomSource& rand) const;
 
-  SkyParameters locationSkyParameters(SystemLocation const& location) const;
+  [[nodiscard]] std::expected<SkyParameters, StarException> locationSkyParameters(SystemLocation const& location) const;
 
   // setting this to true asynchronously triggers storage from the server thread
   bool m_triggerStorage{false};

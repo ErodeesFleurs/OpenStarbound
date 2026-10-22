@@ -145,37 +145,40 @@ struct MonsterVariant {
 
 class MonsterDatabase {
 public:
-  explicit MonsterDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<MonsterDatabase>, StarException> create(Root& root);
 
   void cleanup();
 
   StringList monsterTypes() const;
 
-  MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
-  MonsterVariant monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
+  [[nodiscard]] std::expected<MonsterVariant, StarException> randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
+  [[nodiscard]] std::expected<MonsterVariant, StarException> monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
 
-  ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
-  MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<MonsterVariant, StarException> readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
-  Json writeMonsterVariantToJson(MonsterVariant const& mVar) const;
-  MonsterVariant readMonsterVariantFromJson(Json const& variant) const;
+  [[nodiscard]] std::expected<Json, StarException> writeMonsterVariantToJson(MonsterVariant const& mVar) const;
+  [[nodiscard]] std::expected<MonsterVariant, StarException> readMonsterVariantFromJson(Json const& variant) const;
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  std::shared_ptr<Monster> createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const;
-  std::shared_ptr<Monster> diskLoadMonster(Json const& diskStore) const;
-  std::shared_ptr<Monster> netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Monster>, StarException> createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Monster>, StarException> diskLoadMonster(Json const& diskStore) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Monster>, StarException> netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> monsterPortrait(MonsterVariant const& variant) const;
 
-  std::pair<String, String> skillInfo(String const& skillName) const;
-  Json skillConfigParameter(String const& skillName, String const& configParameterName) const;
+  [[nodiscard]] std::expected<std::pair<String, String>, StarException> skillInfo(String const& skillName) const;
+  [[nodiscard]] std::expected<Json, StarException> skillConfigParameter(String const& skillName, String const& configParameterName) const;
 
-  ColorReplaceMap colorSwap(String const& setName, std::uint64_t seed) const;
+  [[nodiscard]] std::expected<ColorReplaceMap, StarException> colorSwap(String const& setName, std::uint64_t seed) const;
 
-  Json monsterConfig(String const& typeName) const;
+  [[nodiscard]] std::expected<Json, StarException> monsterConfig(String const& typeName) const;
 
 private:
+  explicit MonsterDatabase(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+
   struct MonsterType {
     String typeName;
     std::optional<String> shortDescription;
@@ -225,15 +228,15 @@ private:
 
   // Merges part configuration by the method specified in the part parameter
   // config.
-  static Json mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters);
+  [[nodiscard]] static std::expected<Json, StarException> mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters);
 
   // Merges final monster variant parameters together according to the
   // hard-coded variant merge rules (handles things like scripts which are
   // combined rather than overwritten)
-  static Json mergeFinalParameters(JsonArray const& parameters);
+  [[nodiscard]] static std::expected<Json, StarException> mergeFinalParameters(JsonArray const& parameters);
 
   // Reads common parameters out of parameters map
-  static void readCommonParameters(MonsterVariant& monsterVariant);
+  [[nodiscard]] static std::expected<void, StarException> readCommonParameters(MonsterVariant& monsterVariant);
 
   Root& m_root;
 
@@ -241,12 +244,12 @@ private:
   // MonsterPart needs to be be in a predictable order.
   typedef StringMap<StringMap<Map<String, MonsterPart>>> PartDirectory;
 
-  MonsterVariant produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const;
+  [[nodiscard]] std::expected<MonsterVariant, StarException> produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const;
 
   // Given a variant including parameters for baseSkills and specialSkills,
   // returns a variant containing a final 'skills' list of chosen skills, also
   // merges animation configs from skills together.
-  std::pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
+  [[nodiscard]] std::expected<std::pair<Json, Json>, StarException> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
 
   StringMap<MonsterType> m_monsterTypes;
   PartDirectory m_partDirectory;

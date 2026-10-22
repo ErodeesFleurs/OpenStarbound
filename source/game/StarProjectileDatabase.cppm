@@ -131,21 +131,22 @@ struct ProjectileConfig {
 
 class ProjectileDatabase {
 public:
-  explicit ProjectileDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<ProjectileDatabase>, StarException> create(Root& root);
 
   StringList allProjectileTypes() const;
   bool isProjectile(String const& typeName) const;
 
-  Json projectileConfig(String const& type) const;
+  [[nodiscard]] std::expected<Json, StarException> projectileConfig(String const& type) const;
 
-  String damageKindImage(String const& type) const;
-  float gravityMultiplier(String const& type) const;
+  [[nodiscard]] std::expected<String, StarException> damageKindImage(String const& type) const;
+  [[nodiscard]] std::expected<float, StarException> gravityMultiplier(String const& type) const;
 
-  std::shared_ptr<Projectile> createProjectile(String const& type, Json const& parameters = JsonObject()) const;
-  std::shared_ptr<Projectile> netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Projectile>, StarException> createProjectile(String const& type, Json const& parameters = JsonObject()) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Projectile>, StarException> netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
-  std::shared_ptr<ProjectileConfig> readConfig(String const& path);
+  explicit ProjectileDatabase(Root& root) : m_root(root) {}
+  [[nodiscard]] std::expected<std::shared_ptr<ProjectileConfig>, StarException> readConfig(String const& path);
 
   Root& m_root;
 

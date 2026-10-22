@@ -47,6 +47,7 @@ import star.pane_manager;
 import star.registered_pane_manager;
 import star.main_interface_types;
 
+import star.format;
 namespace Star {
 
 class Player;
@@ -61,15 +62,16 @@ public:
     return Star::typeName<StatusPane>();
   }
 
-  StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatusPane>, StarException> create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
 
-  virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
 protected:
-  virtual void renderImpl() override;
-  virtual void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
+  StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
   struct StatusEffectIndicator {
     String icon;
     std::optional<float> durationPercentage;

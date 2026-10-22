@@ -81,6 +81,7 @@ import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
+import star.output_proxy;
 import star.root;
 import star.status_effect_entity;
 import star.scripted_entity;
@@ -111,26 +112,37 @@ public:
     return Star::typeName<ObjectItem>();
   }
 
-  ObjectItem(Root& root, Json const& config, String const& directory, Json const& objectParameters);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ObjectItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& objectParameters);
   virtual ~ObjectItem() {}
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
 
   float cooldownTime() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  String objectName() const;
-  Json objectParameters() const;
+  [[nodiscard]]
+  std::expected<String, StarException> objectName() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> objectParameters() const;
 
-  bool placeInWorld(FireMode mode, bool shifting);
-  bool canPlace(bool shifting) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> placeInWorld(FireMode mode, bool shifting);
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlace(bool shifting) const;
 
 private:
+  explicit ObjectItem(Root& root) : Item(root), BeamItem(root) {}
   bool m_shifting;
 };
 
@@ -138,35 +150,67 @@ private:
 
 namespace Star {
 
-ObjectItem::ObjectItem(Root& root, Json const& config, String const& directory, Json const& objectParameters)
-  : Item(root, config, directory, objectParameters), FireableItem(config), BeamItem(root, config) {
-  setTwoHanded(config.getBool("twoHanded", true));
-
-  // Make sure that all script objects that have retainObjectParametersInItem
-  // start with a blank scriptStorage entry to help them stack properly.
-  if (instanceValue("retainObjectParametersInItem", false).toBool() && instanceValue("scriptStorage").isNull())
-    setInstanceValue("scriptStorage", JsonObject());
-  m_shifting = false;
+std::expected<std::shared_ptr<ObjectItem>, StarException> ObjectItem::create(Root& root, Json const& config, String const& directory, Json const& objectParameters) {
+  auto item = std::shared_ptr<ObjectItem>(new ObjectItem(root));
+  auto initialized = item->initialize(config, directory, objectParameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto fireable = item->initializeFireable(config);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = item->initializeBeam(config);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  auto twoHanded = config.getBool("twoHanded", true);
+  if (!twoHanded)
+    return std::unexpected(std::move(twoHanded.error()));
+  item->setTwoHanded(*twoHanded);
+  // Retained script storage participates in the existing item stacking contract.
+  auto retain = item->instanceValue("retainObjectParametersInItem", false).and_then([](Json const& value) { return value.toBool(); });
+  if (!retain)
+    return std::unexpected(std::move(retain.error()));
+  if (*retain) {
+    auto storage = item->instanceValue("scriptStorage");
+    if (!storage)
+      return std::unexpected(std::move(storage.error()));
+    if (storage->isNull()) {
+      auto stored = item->setInstanceValue("scriptStorage", JsonObject());
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+    }
+  }
+  item->m_shifting = false;
+  return item;
 }
 
-std::shared_ptr<Item> ObjectItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> ObjectItem::clone() const {
   return std::make_shared<ObjectItem>(*this);
 }
 
-void ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {
-  FireableItem::init(owner, hand);
-  BeamItem::init(owner, hand);
+std::expected<void, StarException> ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {
+  auto initialized = FireableItem::init(owner, hand);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return BeamItem::init(owner, hand);
 }
 
-void ObjectItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(dt, fireMode, shifting, moves);
-  BeamItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> ObjectItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto fireable = FireableItem::update(dt, fireMode, shifting, moves);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = BeamItem::update(dt, fireMode, shifting, moves);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
   setEnd(BeamItem::EndType::Object);
   m_shifting = shifting;
+  return {};
 }
 
-List<Drawable> ObjectItem::nonRotatedDrawables() const {
-  return beamDrawables(canPlace(m_shifting));
+std::expected<List<Drawable>, StarException> ObjectItem::nonRotatedDrawables() const {
+  auto placeable = canPlace(m_shifting);
+  if (!placeable)
+    return std::unexpected(std::move(placeable.error()));
+  return beamDrawables(*placeable);
 }
 
 float ObjectItem::cooldownTime() const {
@@ -174,61 +218,117 @@ float ObjectItem::cooldownTime() const {
   return 0.25f;
 }
 
-void ObjectItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> ObjectItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
-
-  if (placeInWorld(mode, shifting))
-    FireableItem::fire(mode, shifting, edgeTriggered);
+    return {};
+  auto placed = placeInWorld(mode, shifting);
+  if (!placed)
+    return std::unexpected(std::move(placed.error()));
+  if (*placed)
+    return FireableItem::fire(mode, shifting, edgeTriggered);
+  return {};
 }
 
-String ObjectItem::objectName() const {
-  return instanceValue("objectName", "<objectName missing>").toString();
+std::expected<String, StarException> ObjectItem::objectName() const {
+  return instanceValue("objectName", "<objectName missing>").and_then([](Json const& value) { return value.toString(); });
 }
 
-Json ObjectItem::objectParameters() const {
+std::expected<Json, StarException> ObjectItem::objectParameters() const {
   Json objectParameters = parameters().opt().value_or(JsonObject{});
   if (!initialized())
     return objectParameters;
-  return objectParameters.set("owner", jsonFromOptional(owner()->uniqueId()));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  return objectParameters.set("owner", jsonFromOptional((*itemOwner)->uniqueId()));
 }
 
-bool ObjectItem::placeInWorld(FireMode, bool shifting) {
+std::expected<bool, StarException> ObjectItem::placeInWorld(FireMode, bool shifting) {
   if (!initialized())
-    throw ItemException("ObjectItem not init'd properly, or user not recognized as Tool User.");
-
+    return std::unexpected(ItemException("ObjectItem not init'd properly, or user not recognized as Tool User."));
   if (!ready())
     return false;
-
-  if (!canPlace(shifting))
+  auto placeable = canPlace(shifting);
+  if (!placeable)
+    return std::unexpected(std::move(placeable.error()));
+  if (!*placeable)
     return false;
-
-  auto pos = Vec2I(owner()->aimPosition().floor());
-  auto objectDatabase = root().objectDatabase();
-  try {
-    if (auto object = objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
-      if (consume(1)) {
-        world()->addEntity(object);
-        return true;
-      }
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto aimPosition = (*itemOwner)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  auto pos = Vec2I(aimPosition->floor());
+  auto database = root().objectDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto attempted = [&]() -> std::expected<bool, StarException> {
+    auto name = objectName();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto parameters = objectParameters();
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    auto object = (*database)->createForPlacement(*itemWorld, *name, pos, (*itemOwner)->walkingDirection(), *parameters);
+    if (!object)
+      return std::unexpected(std::move(object.error()));
+    if (*object && consume(1)) {
+      auto added = (*itemWorld)->addEntity(*object);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return true;
     }
-  } catch (StarException const& e) {
-    root().logger().error("Failed to instantiate object for placement. {} {} : {}",
-        objectName(),
-        objectParameters().repr(0, true),
-        outputException(e, true));
-    return true;
-  }
-
-  return false;
+    return false;
+  }();
+  if (attempted)
+    return *attempted;
+  auto name = objectName();
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto parameters = objectParameters();
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  auto representation = parameters->repr(0, true);
+  if (!representation)
+    return std::unexpected(std::move(representation.error()));
+  auto logged = root().logger().error("Failed to instantiate object for placement. {} {} : {}",
+      *name, *representation, outputException(attempted.error(), true));
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  return true;
 }
 
-bool ObjectItem::canPlace(bool) const {
+std::expected<bool, StarException> ObjectItem::canPlace(bool) const {
   if (initialized()) {
-    if (owner()->isAdmin() || owner()->inToolRange()) {
-      auto pos = Vec2I(owner()->aimPosition().floor());
-      auto objectDatabase = root().objectDatabase();
-      return objectDatabase->canPlaceObject(world(), pos, objectName());
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    bool inRange = (*itemOwner)->isAdmin();
+    if (!inRange) {
+      auto range = (*itemOwner)->inToolRange();
+      if (!range)
+        return std::unexpected(std::move(range.error()));
+      inRange = *range;
+    }
+    if (inRange) {
+      auto aimPosition = (*itemOwner)->aimPosition();
+      if (!aimPosition)
+        return std::unexpected(std::move(aimPosition.error()));
+      auto pos = Vec2I(aimPosition->floor());
+      auto database = root().objectDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto itemWorld = world();
+      if (!itemWorld)
+        return std::unexpected(std::move(itemWorld.error()));
+      auto name = objectName();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      return (*database)->canPlaceObject(*itemWorld, pos, *name);
     }
   }
   return false;

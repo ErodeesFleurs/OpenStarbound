@@ -24,20 +24,20 @@ using PlayerTechException = StarError<PlayerTechExceptionTag, StarException>;
 class PlayerTech {
 public:
   PlayerTech(Root& root);
-  PlayerTech(Root& root, Json const& json);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerTech>, StarException> create(Root& root, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   bool isAvailable(String const& techModule) const;
   void makeAvailable(String const& techModule);
   void makeUnavailable(String const& techModule);
 
   bool isEnabled(String const& techModule) const;
-  void enable(String const& techModule);
+  [[nodiscard]] std::expected<void, StarException> enable(String const& techModule);
   void disable(String const& techModule);
 
   bool isEquipped(String const& techModule) const;
-  void equip(String const& techModule);
+  [[nodiscard]] std::expected<void, StarException> equip(String const& techModule);
   void unequip(String const& techModule);
 
   StringSet const& availableTechs() const;

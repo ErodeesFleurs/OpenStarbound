@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -66,8 +67,8 @@ import star.math_common;
 import star.pythonic;
 namespace Star {
 
-SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner)
-  : Widget(context), m_grid(std::make_shared<ImageWidget>(*this->context(), grid)),
+SliderBarWidget::SliderBarWidget(GuiContext& context)
+  : Widget(context),
     m_low(0),
     m_high(1),
     m_delta(1),
@@ -76,67 +77,101 @@ SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool s
     m_jogDragActive(false),
     m_enabled(true) {
 
-  auto assets = this->context()->root().assets();
-  auto imgMetadata = this->context()->root().imageMetadataDatabase();
+}
 
-  m_jog = std::make_shared<ButtonWidget>(*this->context());
-  m_jog->setImages(assets->json("/interface.config:slider.jog").toString());
+std::expected<std::shared_ptr<SliderBarWidget>, StarException> SliderBarWidget::create(GuiContext& context, String const& grid, bool showSpinner) {
+  auto slider = std::shared_ptr<SliderBarWidget>(new SliderBarWidget(context));
+  auto initialized = slider->initialize(grid, showSpinner);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return slider;
+}
+
+std::expected<void, StarException> SliderBarWidget::initialize(String const& grid, bool showSpinner) {
+  auto image = ImageWidget::create(*context(), grid);
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  m_grid = *image;
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto metadata = context()->root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto config = (*assets)->json("/interface.config:slider");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto jogImage = config->getString("jog");
+  if (!jogImage)
+    return std::unexpected(std::move(jogImage.error()));
+  auto jog = ButtonWidget::create(*context());
+  if (!jog)
+    return std::unexpected(std::move(jog.error()));
+  m_jog = *jog;
+  auto images = m_jog->setImages(*jogImage);
+  if (!images)
+    return std::unexpected(std::move(images.error()));
   m_jog->setPressedOffset({0, 0});
-
   if (showSpinner) {
-    GuiReader guiReader(*this->context());
-    guiReader.registerCallback("spinner.down", std::bind(&SliderBarWidget::leftCallback, this));
-    guiReader.registerCallback("spinner.up", std::bind(&SliderBarWidget::rightCallback, this));
-
-    float rightButtonOffset = imgMetadata->imageSize(assets->json("/interface.config:slider.leftBase").toString())[0];
-    rightButtonOffset += assets->json("/interface.config:slider.defaultPadding").toInt();
-
-    float gridOffset = rightButtonOffset;
-
-    rightButtonOffset += imgMetadata->imageSize(grid)[0];
-    rightButtonOffset += assets->json("/interface.config:slider.defaultPadding").toInt();
-
-    // TODO: Make spinners a thing already
-    Json config = Json::parse(strf(
-        R"SPINNER(
-          {{
-            "spinner" : {{
-              "type" : "spinner",
-              "leftBase" : "{}",
-              "leftHover" : "{}",
-              "rightBase" : "{}",
-              "rightHover" : "{}",
-              "position" : [0, 0],
-              "upOffset" : {}
-            }}
-          }}
-        )SPINNER",
-        assets->json("/interface.config:slider.leftBase").toString(),
-        assets->json("/interface.config:slider.leftHover").toString(),
-        assets->json("/interface.config:slider.rightBase").toString(),
-        assets->json("/interface.config:slider.rightHover").toString(),
-        rightButtonOffset));
-
-    guiReader.construct(config, this);
-
+    GuiReader reader(*context());
+    reader.registerCallback("spinner.down", [this](Widget*) { return leftCallback(); });
+    reader.registerCallback("spinner.up", [this](Widget*) { return rightCallback(); });
+    auto leftBase = config->getString("leftBase");
+    if (!leftBase)
+      return std::unexpected(std::move(leftBase.error()));
+    auto leftHover = config->getString("leftHover");
+    if (!leftHover)
+      return std::unexpected(std::move(leftHover.error()));
+    auto rightBase = config->getString("rightBase");
+    if (!rightBase)
+      return std::unexpected(std::move(rightBase.error()));
+    auto rightHover = config->getString("rightHover");
+    if (!rightHover)
+      return std::unexpected(std::move(rightHover.error()));
+    auto padding = config->getInt("defaultPadding");
+    if (!padding)
+      return std::unexpected(std::move(padding.error()));
+    auto leftSize = (*metadata)->imageSize(*leftBase);
+    if (!leftSize)
+      return std::unexpected(std::move(leftSize.error()));
+    auto gridSize = (*metadata)->imageSize(grid);
+    if (!gridSize)
+      return std::unexpected(std::move(gridSize.error()));
+    float gridOffset = (*leftSize)[0] + *padding;
+    float rightOffset = gridOffset + (*gridSize)[0] + *padding;
+    Json spinner = JsonObject{{"spinner", JsonObject{{"type", "spinner"},
+        {"leftBase", *leftBase}, {"leftHover", *leftHover},
+        {"rightBase", *rightBase}, {"rightHover", *rightHover},
+        {"position", JsonArray{0, 0}}, {"upOffset", rightOffset}}}};
+    auto constructed = reader.construct(spinner, this);
+    if (!constructed)
+      return std::unexpected(std::move(constructed.error()));
     m_grid->setPosition(Vec2I(gridOffset, 0));
-
-    m_leftButton = fetchChild<ButtonWidget>("spinner.down");
-    m_rightButton = fetchChild<ButtonWidget>("spinner.up");
+    auto left = fetchChild<ButtonWidget>("spinner.down");
+    if (!left)
+      return std::unexpected(std::move(left.error()));
+    auto right = fetchChild<ButtonWidget>("spinner.up");
+    if (!right)
+      return std::unexpected(std::move(right.error()));
+    m_leftButton = *left;
+    m_rightButton = *right;
   }
-
-  addChild("grid", m_grid);
-  addChild("jog", m_jog);
-
+  auto addedGrid = addChild("grid", m_grid);
+  if (!addedGrid)
+    return std::unexpected(std::move(addedGrid.error()));
+  auto addedJog = addChild("jog", m_jog);
+  if (!addedJog)
+    return std::unexpected(std::move(addedJog.error()));
   markAsContainer();
   disableScissoring();
+  return {};
 }
 
-void SliderBarWidget::setJogImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
-  m_jog->setImages(baseImage, hoverImage, pressedImage, disabledImage);
+std::expected<void, StarException> SliderBarWidget::setJogImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+  return m_jog->setImages(baseImage, hoverImage, pressedImage, disabledImage);
 }
 
-void SliderBarWidget::setRange(int low, int high, int delta) {
+std::expected<void, StarException> SliderBarWidget::setRange(int low, int high, int delta) {
   m_low = low;
   m_high = high;
   m_high = std::max(m_low + 1, m_high);
@@ -144,14 +179,14 @@ void SliderBarWidget::setRange(int low, int high, int delta) {
     m_delta = 1;
   else
     m_delta = delta;
-  setVal(m_val);
+  return setVal(m_val);
 }
 
-void SliderBarWidget::setRange(Vec2I const& range, int delta) {
-  setRange(range[0], range[1], delta);
+std::expected<void, StarException> SliderBarWidget::setRange(Vec2I const& range, int delta) {
+  return setRange(range[0], range[1], delta);
 }
 
-void SliderBarWidget::setVal(int val, bool callbackIfChanged) {
+std::expected<void, StarException> SliderBarWidget::setVal(int val, bool callbackIfChanged) {
   bool doCallback = false;
   if (m_callback && callbackIfChanged && m_val != val)
     doCallback = true;
@@ -163,7 +198,8 @@ void SliderBarWidget::setVal(int val, bool callbackIfChanged) {
   m_val = clamp(m_val, m_low, m_high);
 
   if (doCallback)
-    m_callback(this);
+    return m_callback(this);
+  return {};
 }
 
 int SliderBarWidget::val() const {
@@ -186,14 +222,16 @@ void SliderBarWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-void SliderBarWidget::update(float dt) {
+std::expected<void, StarException> SliderBarWidget::update(float dt) {
   float gridLow = m_grid->position()[0];
   float gridHigh = gridLow + m_grid->size()[0];
 
   if (m_jogDragActive) {
     auto clampedPos = clamp<float>(m_jogDragPos[0], gridLow, gridHigh);
     float clampedPercent = (clampedPos - gridLow) / (gridHigh - gridLow);
-    setVal(clampedPercent * (m_high - m_low), true);
+    auto changed = setVal(clampedPercent * (m_high - m_low), true);
+    if (!changed)
+      return std::unexpected(std::move(changed.error()));
   }
 
   if (m_updateJog) {
@@ -205,19 +243,23 @@ void SliderBarWidget::update(float dt) {
     m_updateJog = false;
   }
 
-  Widget::update(dt);
+  return Widget::update(dt);
 }
 
-bool SliderBarWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> SliderBarWidget::sendEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseButtonUpEvent>(event)) {
-    blur();
+    auto blurred = blur();
+    if (!blurred)
+      return std::unexpected(std::move(blurred.error()));
     m_jogDragActive = false;
   }
 
   if (m_enabled) {
     if (std::holds_alternative<MouseButtonDownEvent>(event)) {
       if (m_jog->inMember(*context()->mousePosition(event))) {
-        focus();
+        auto focused = focus();
+        if (!focused)
+          return std::unexpected(std::move(focused.error()));
         m_jogDragPos = *context()->mousePosition(event) - screenPosition();
         m_jogDragActive = true;
       }
@@ -232,12 +274,12 @@ bool SliderBarWidget::sendEvent(InputEvent const& event) {
   return Widget::sendEvent(event);
 }
 
-void SliderBarWidget::leftCallback() {
-  setVal(std::max(m_low, m_val - m_delta), true);
+std::expected<void, StarException> SliderBarWidget::leftCallback() {
+  return setVal(std::max(m_low, m_val - m_delta), true);
 }
 
-void SliderBarWidget::rightCallback() {
-  setVal(std::min(m_high, m_val + m_delta), true);
+std::expected<void, StarException> SliderBarWidget::rightCallback() {
+  return setVal(std::min(m_high, m_val + m_delta), true);
 }
 
 }

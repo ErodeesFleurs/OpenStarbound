@@ -34,21 +34,20 @@ struct VersionedJson {
   // Writes and reads a binary file containing a versioned json with a magic
   // header marking it as a starbound versioned json file.  Writes using a
   // safe write/flush/swap.
-  static VersionedJson readFile(String const& filename);
-  static void writeFile(VersionedJson const& versionedJson, String const& filename);
-  static void writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson);
-  static void readSubVersioning(DataStream& ds, VersionedJson& versionedJson);
+  [[nodiscard]] static std::expected<VersionedJson, StarException> readFile(String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeFile(VersionedJson const& versionedJson, String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson);
+  [[nodiscard]] static std::expected<void, StarException> readSubVersioning(DataStream& ds, VersionedJson& versionedJson);
 
   // Writes and reads a json containing a versioned json
   // This allows embedding versioned metadata within a file
-  static VersionedJson fromJson(Json const& source);
+  [[nodiscard]] static std::expected<VersionedJson, StarException> fromJson(Json const& source);
   Json toJson() const;
 
   bool empty() const;
 
-  // If the identifier does not match the given identifier, throws a
-  // VersionedJsonException.
-  void expectIdentifier(String const& expectedIdentifier) const;
+  // Returns a VersionedJsonException if the identifier does not match.
+  [[nodiscard]] std::expected<void, StarException> expectIdentifier(String const& expectedIdentifier) const;
 
   String identifier;
   VersionNumber version;
@@ -56,45 +55,46 @@ struct VersionedJson {
   StringMap<VersionNumber> subVersions;
 };
 
-DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson);
-DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson);
 
 class VersioningDatabase {
 public:
-  explicit VersioningDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<VersioningDatabase>, StarException> create(Root& root);
 
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
   // config file.
-  VersionedJson makeCurrentVersionedJson(String const& identifier, Json const& content) const;
+  [[nodiscard]] std::expected<VersionedJson, StarException> makeCurrentVersionedJson(String const& identifier, Json const& content) const;
 
   // Returns true if the version in this VersionedJson matches the configured
   // current version and does not need updating.
-  bool versionedJsonCurrent(VersionedJson const& versionedJson) const;
+  [[nodiscard]] std::expected<bool, StarException> versionedJsonCurrent(VersionedJson const& versionedJson) const;
 
-  // Brings the given versioned json up to the current configured latest
-  // version using update scripts.  If successful, returns the up to date
-  // VersionedJson, otherwise throws VersioningDatabaseException.
-  VersionedJson updateVersionedJson(VersionedJson const& versionedJson) const;
-  VersionedJson updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const;
+  // Brings versioned JSON up to the configured latest version using scripts.
+  // Script and upgrade failures are returned as VersioningDatabaseException.
+  [[nodiscard]] std::expected<VersionedJson, StarException> updateVersionedJson(VersionedJson const& versionedJson) const;
+  [[nodiscard]] std::expected<VersionedJson, StarException> updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const;
 
   // Convenience method, checkts the versionedJson expected identifier and then
   // brings the given versionedJson up to date and returns the content.
-  Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
-  Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
+  [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const;
 
 private:
+  explicit VersioningDatabase(Root& root) : m_root(root) {}
+  [[nodiscard]] std::expected<void, StarException> init();
   struct VersionUpdateScript {
     String script;
     VersionNumber fromVersion;
     VersionNumber toVersion;
   };
 
-  LuaCallbacks makeVersioningCallbacks(ItemDatabase const* itemCatalog) const;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeVersioningCallbacks(ItemDatabase const* itemCatalog) const;
 
   Root& m_root;
   mutable RecursiveMutex m_mutex;
-  mutable LuaRoot m_luaRoot;
+  std::shared_ptr<LuaRoot> m_luaRoot;
 
   StringMap<VersionNumber> m_currentVersions;
   StringMap<List<VersionUpdateScript>> m_versionUpdateScripts;

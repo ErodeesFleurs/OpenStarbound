@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -22,25 +23,26 @@ struct PlaceDungeonFlagAction {
 
 typedef std::variant<std::monostate, PlaceDungeonFlagAction> UniverseFlagAction;
 
-UniverseFlagAction parseUniverseFlagAction(Json const& json);
+[[nodiscard]] std::expected<UniverseFlagAction, StarException> parseUniverseFlagAction(Json const& json);
 
 class UniverseSettings {
 public:
-  explicit UniverseSettings(Root& root);
-  UniverseSettings(Root& root, Json const& json);
+  [[nodiscard]] static std::expected<std::shared_ptr<UniverseSettings>, StarException> create(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<UniverseSettings>, StarException> create(Root& root, Json const& json);
 
   Json toJson() const;
 
   Uuid uuid() const;
   StringSet flags() const;
-  void setFlag(String const& flag);
+  [[nodiscard]] std::expected<void, StarException> setFlag(String const& flag);
   std::optional<List<UniverseFlagAction>> pullPendingFlagActions();
   List<UniverseFlagAction> currentFlagActions() const;
   List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
   void resetFlags();
 
 private:
-  void loadFlagActions();
+  explicit UniverseSettings(Root& root);
+  [[nodiscard]] std::expected<void, StarException> loadFlagActions();
 
   Root& m_root;
 

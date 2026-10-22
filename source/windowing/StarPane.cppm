@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -65,7 +66,7 @@ enum class PaneAnchor {
   CenterRight,
   Center
 };
-extern EnumMap<PaneAnchor> const PaneAnchorNames;
+extern std::expected<EnumMap<PaneAnchor>, StarException> const PaneAnchorNames;
 
 class Pane : public Widget {
 public:
@@ -76,7 +77,7 @@ public:
     return Star::typeName<Pane>();
   }
 
-  Pane(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<Pane>, StarException> create(GuiContext& context);
 
   struct BGResult {
     String header;
@@ -84,8 +85,8 @@ public:
     String footer;
   };
 
-  virtual void displayed();
-  virtual void dismissed();
+  [[nodiscard]] virtual std::expected<void, StarException> displayed();
+  [[nodiscard]] virtual std::expected<void, StarException> dismissed();
 
   void dismiss();
   bool isDismissed() const;
@@ -96,13 +97,13 @@ public:
   // members are drawn strictly in the order they are added,
   // so add them in the correct order.
 
-  virtual bool sendEvent(InputEvent const& event);
-  virtual void setFocus(Widget const* focus);
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event);
+  [[nodiscard]] virtual std::expected<void, StarException> setFocus(Widget const* focus);
   virtual void removeFocus(Widget const* focus);
   virtual void removeFocus();
 
-  virtual void update(float dt);
-  virtual void tick(float dt);
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt);
+  [[nodiscard]] virtual std::expected<void, StarException> tick(float dt);
 
   bool dragActive() const;
   Vec2I dragMouseOrigin() const;
@@ -113,16 +114,16 @@ public:
   bool inDragArea(Vec2I const& position) const;
   Vec2I cursorRelativeToPane(Vec2I const& position) const;
 
-  void setBG(BGResult const& res);
-  void setBG(String const& header, String const& body = "", String const& footer = "");
+  [[nodiscard]] std::expected<void, StarException> setBG(BGResult const& res);
+  [[nodiscard]] std::expected<void, StarException> setBG(String const& header, String const& body = "", String const& footer = "");
   BGResult getBG() const;
 
   void lockPosition();
   void unlockPosition();
 
-  void setTitle(std::shared_ptr<Widget> icon, String const& title, String const& subTitle);
+  [[nodiscard]] std::expected<void, StarException> setTitle(std::shared_ptr<Widget> icon, String const& title, String const& subTitle);
   void setTitleString(String const& title, String const& subTitle);
-  void setTitleIcon(std::shared_ptr<Widget> icon);
+  [[nodiscard]] std::expected<void, StarException> setTitleIcon(std::shared_ptr<Widget> icon);
   String title() const;
   String subTitle() const;
   std::shared_ptr<Widget> titleIcon() const;
@@ -138,14 +139,16 @@ public:
 
   // If a tooltip popup should be created at the given mouse position, return a
   // new pane to be used as the tooltip.
-  virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition);
-  virtual std::optional<String> cursorOverride(Vec2I const& screenPosition);
-  virtual std::optional<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input);
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition);
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> cursorOverride(Vec2I const& screenPosition);
+  [[nodiscard]] virtual std::expected<std::optional<std::shared_ptr<Item>>, StarException> shiftItemFromInventory(std::shared_ptr<Item> const& input);
 
-  virtual LuaCallbacks makePaneCallbacks();
+  [[nodiscard]] virtual std::expected<LuaCallbacks, StarException> makePaneCallbacks();
 protected:
+  Pane(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initializePane();
   virtual std::shared_ptr<GuiReader> reader();
-  virtual void renderImpl();
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl();
 
   String m_bgHeader;
   String m_bgBody;
@@ -182,11 +185,13 @@ protected:
   List<std::pair<String, std::shared_ptr<AudioInstance>>> m_playingSounds;
 };
 
-// GCC 16 needs the existing key function in this complete-definition TU for RTTI.
-void Pane::displayed() {
+std::expected<void, StarException> Pane::displayed() {
+  auto shown = show();
+  if (!shown)
+    return std::unexpected(std::move(shown.error()));
   m_dismissed = false;
   m_hasDisplayed = true;
-  show();
+  return {};
 }
 
 }

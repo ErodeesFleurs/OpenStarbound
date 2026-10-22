@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.game_types;
@@ -66,7 +67,7 @@ enum class PaneLayer {
   // handled by GUI panes (such as wires)
   World
 };
-extern EnumMap<PaneLayer> const PaneLayerNames;
+extern std::expected<EnumMap<PaneLayer>, StarException> const PaneLayerNames;
 
 
 // This class handles a set of panes to be drawn as a collective windowing
@@ -74,32 +75,33 @@ extern EnumMap<PaneLayer> const PaneLayerNames;
 // layer contains a z-ordered list of panes to display.
 class PaneManager {
 public:
-  typedef std::function<void(std::shared_ptr<Pane> const&)> DismissCallback;
+  typedef std::function<std::expected<void, StarException>(std::shared_ptr<Pane> const&)> DismissCallback;
 
   PaneManager(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<PaneManager>, StarException> create(GuiContext& context);
 
   // Display a pane on any given layer.  The pane lifetime in this class is
   // only during display, once dismissed, the pane is forgotten completely.
-  void displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss = {});
+  [[nodiscard]] std::expected<void, StarException> displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss = {});
 
   bool isDisplayed(std::shared_ptr<Pane> const& pane) const;
 
   // Dismiss a given displayed pane.  Pane must already be displayed.
-  void dismissPane(std::shared_ptr<Pane> const& pane);
+  [[nodiscard]] std::expected<void, StarException> dismissPane(std::shared_ptr<Pane> const& pane);
 
   // Dismisses all panes in the given layers.
-  void dismissAllPanes(Set<PaneLayer> const& paneLayers);
-  void dismissAllPanes();
+  [[nodiscard]] std::expected<void, StarException> dismissAllPanes(Set<PaneLayer> const& paneLayers);
+  [[nodiscard]] std::expected<void, StarException> dismissAllPanes();
 
   std::shared_ptr<Pane> topPane(Set<PaneLayer> const& paneLayers) const;
   std::shared_ptr<Pane> topPane() const;
 
   // Brign an already displayed pane to the top of its layer.
-  void bringToTop(std::shared_ptr<Pane> const& pane);
+  [[nodiscard]] std::expected<void, StarException> bringToTop(std::shared_ptr<Pane> const& pane);
 
   // Position a pane adjacent to an anchor pane in a direction where
   // it will fit on the screen
-  void bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap);
+  [[nodiscard]] std::expected<void, StarException> bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap);
 
   std::shared_ptr<Pane> getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
   std::shared_ptr<Pane> getPaneAt(Vec2I const& position) const;
@@ -107,25 +109,28 @@ public:
 
   void setBackgroundWidget(std::shared_ptr<Widget> bg);
 
-  void dismissWhere(std::function<bool(std::shared_ptr<Pane> const&)> func);
+  [[nodiscard]] std::expected<void, StarException> dismissWhere(std::function<std::expected<bool, StarException>(std::shared_ptr<Pane> const&)> func);
 
   // Returns the pane/widget that has captured the keyboard, if any.
-  std::shared_ptr<Pane> keyboardCapturedPane() const;
-  std::shared_ptr<Widget> keyboardCapturedWidget() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> keyboardCapturedPane() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> keyboardCapturedWidget() const;
   // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
-  bool keyboardCapturedForTextInput() const;
+  [[nodiscard]] std::expected<bool, StarException> keyboardCapturedForTextInput() const;
 
-  bool sendInputEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<bool, StarException> sendInputEvent(InputEvent const& event);
 
-  void render();
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> render();
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
+
+protected:
+  [[nodiscard]] std::expected<void, StarException> initializePaneManager();
 
 private:
-  Vec2I windowSize() const;
-  Vec2I calculatePaneOffset(std::shared_ptr<Pane> const& pane) const;
-  Vec2I calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const;
-  bool dismiss(std::shared_ptr<Pane> const& pane);
+  [[nodiscard]] std::expected<Vec2I, StarException> windowSize() const;
+  [[nodiscard]] std::expected<Vec2I, StarException> calculatePaneOffset(std::shared_ptr<Pane> const& pane) const;
+  [[nodiscard]] std::expected<Vec2I, StarException> calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const;
+  [[nodiscard]] std::expected<bool, StarException> dismiss(std::shared_ptr<Pane> const& pane);
 
   GuiContext* m_context;
   float m_prevInterfaceScale;

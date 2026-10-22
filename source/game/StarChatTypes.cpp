@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.data_stream;
@@ -8,11 +9,11 @@ import star.chat_types;
 
 namespace Star {
 
-extern EnumMap<ChatSendMode> const ChatSendModeNames{
+extern std::expected<EnumMap<ChatSendMode>, StarException> const ChatSendModeNames = EnumMap<ChatSendMode>::create({
     {ChatSendMode::Broadcast, "Broadcast"},
     {ChatSendMode::Local, "Local"},
     {ChatSendMode::Party, "Party"}
-  };
+  });
 
 MessageContext::MessageContext() : mode() {}
 
@@ -20,7 +21,7 @@ MessageContext::MessageContext(Mode mode) : mode(mode) {}
 
 MessageContext::MessageContext(Mode mode, String const& channelName) : mode(mode), channelName(channelName) {}
 
-extern EnumMap<MessageContext::Mode> const MessageContextModeNames{
+extern std::expected<EnumMap<MessageContext::Mode>, StarException> const MessageContextModeNames = EnumMap<MessageContext::Mode>::create({
     {MessageContext::Mode::Local, "Local"},
     {MessageContext::Mode::Party, "Party"},
     {MessageContext::Mode::Broadcast, "Broadcast"},
@@ -28,20 +29,22 @@ extern EnumMap<MessageContext::Mode> const MessageContextModeNames{
     {MessageContext::Mode::CommandResult, "CommandResult"},
     {MessageContext::Mode::RadioMessage, "RadioMessage"},
     {MessageContext::Mode::World, "World"}
-  };
+  });
 
-DataStream& operator>>(DataStream& ds, MessageContext& messageContext) {
-  ds.read(messageContext.mode);
-  ds.read(messageContext.channelName);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, MessageContext& messageContext) {
+  auto mode = ds.read(messageContext.mode);
+  if (!mode) return std::unexpected(std::move(mode.error()));
+  auto channel = ds.read(messageContext.channelName);
+  if (!channel) return std::unexpected(std::move(channel.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, MessageContext const& messageContext) {
-  ds.write(messageContext.mode);
-  ds.write(messageContext.channelName);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, MessageContext const& messageContext) {
+  auto mode = ds.write(messageContext.mode);
+  if (!mode) return std::unexpected(std::move(mode.error()));
+  auto channel = ds.write(messageContext.channelName);
+  if (!channel) return std::unexpected(std::move(channel.error()));
+  return &ds;
 }
 
 ChatReceivedMessage::ChatReceivedMessage() : fromConnection() {}
@@ -52,23 +55,43 @@ ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fr
 ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait)
   : context(context), fromConnection(fromConnection), fromNick(fromNick), portrait(portrait), text(text) {}
 
-ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage() {
-  auto jContext = json.get("context");
-  context = MessageContext(
-    MessageContextModeNames.getLeft(jContext.getString("mode")),
-    jContext.getString("channelName", "")
-  );
-  fromConnection = json.getUInt("fromConnection", 0);
-  fromNick = json.getString("fromNick", "");
-  portrait = json.getString("portrait", "");
-  text = json.getString("text", "");
-  data = json.getObject("data", JsonObject());
+std::expected<ChatReceivedMessage, StarException> ChatReceivedMessage::create(Json const& json) {
+  ChatReceivedMessage message;
+  auto context = json.get("context");
+  if (!context) return std::unexpected(std::move(context.error()));
+  auto modeName = context->getString("mode");
+  if (!modeName) return std::unexpected(std::move(modeName.error()));
+  if (!MessageContextModeNames) return std::unexpected(MessageContextModeNames.error());
+  auto mode = MessageContextModeNames->getLeft(*modeName);
+  if (!mode) return std::unexpected(std::move(mode.error()));
+  auto channel = context->getString("channelName", "");
+  if (!channel) return std::unexpected(std::move(channel.error()));
+  message.context = MessageContext(**mode, *channel);
+  auto from = json.getUInt("fromConnection", 0);
+  if (!from) return std::unexpected(std::move(from.error()));
+  message.fromConnection = *from;
+  auto nick = json.getString("fromNick", "");
+  if (!nick) return std::unexpected(std::move(nick.error()));
+  message.fromNick = std::move(*nick);
+  auto portrait = json.getString("portrait", "");
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  message.portrait = std::move(*portrait);
+  auto text = json.getString("text", "");
+  if (!text) return std::unexpected(std::move(text.error()));
+  message.text = std::move(*text);
+  auto data = json.getObject("data", JsonObject());
+  if (!data) return std::unexpected(std::move(data.error()));
+  message.data = std::move(*data);
+  return message;
 }
 
-Json ChatReceivedMessage::toJson() const {
-  return JsonObject{
+std::expected<Json, StarException> ChatReceivedMessage::toJson() const {
+  if (!MessageContextModeNames) return std::unexpected(MessageContextModeNames.error());
+  auto mode = MessageContextModeNames->getRight(context.mode);
+  if (!mode) return std::unexpected(std::move(mode.error()));
+  return Json(JsonObject{
     {"context", JsonObject{
-      {"mode", MessageContextModeNames.getRight(context.mode)},
+      {"mode", **mode},
       {"channelName", context.channelName.empty() ? Json() : Json(context.channelName)}
     }},
     {"fromConnection", fromConnection},
@@ -76,30 +99,44 @@ Json ChatReceivedMessage::toJson() const {
     {"portrait", portrait.empty() ? Json() : portrait},
     {"text", text},
     {"data", data}
-  };
+  });
 }
 
 
-DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
-  ds.read(receivedMessage.context);
-  ds.read(receivedMessage.fromConnection);
-  ds.read(receivedMessage.fromNick);
-  ds.read(receivedMessage.portrait);
-  ds.read(receivedMessage.text);
-  if (ds.streamCompatibilityVersion() >= 5)
-    ds.read(receivedMessage.data);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
+  auto context = ds.read(receivedMessage.context);
+  if (!context) return std::unexpected(std::move(context.error()));
+  auto from = ds.read(receivedMessage.fromConnection);
+  if (!from) return std::unexpected(std::move(from.error()));
+  auto nick = ds.read(receivedMessage.fromNick);
+  if (!nick) return std::unexpected(std::move(nick.error()));
+  auto portrait = ds.read(receivedMessage.portrait);
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  auto text = ds.read(receivedMessage.text);
+  if (!text) return std::unexpected(std::move(text.error()));
+  if (ds.streamCompatibilityVersion() >= 5) {
+    auto data = ds.read(receivedMessage.data);
+    if (!data) return std::unexpected(std::move(data.error()));
+  }
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) {
-  ds.write(receivedMessage.context);
-  ds.write(receivedMessage.fromConnection);
-  ds.write(receivedMessage.fromNick);
-  ds.write(receivedMessage.portrait);
-  ds.write(receivedMessage.text);
-  if (ds.streamCompatibilityVersion() >= 5)
-    ds.write(receivedMessage.data);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) {
+  auto context = ds.write(receivedMessage.context);
+  if (!context) return std::unexpected(std::move(context.error()));
+  auto from = ds.write(receivedMessage.fromConnection);
+  if (!from) return std::unexpected(std::move(from.error()));
+  auto nick = ds.write(receivedMessage.fromNick);
+  if (!nick) return std::unexpected(std::move(nick.error()));
+  auto portrait = ds.write(receivedMessage.portrait);
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  auto text = ds.write(receivedMessage.text);
+  if (!text) return std::unexpected(std::move(text.error()));
+  if (ds.streamCompatibilityVersion() >= 5) {
+    auto data = ds.write(receivedMessage.data);
+    if (!data) return std::unexpected(std::move(data.error()));
+  }
+  return &ds;
 }
 
 }

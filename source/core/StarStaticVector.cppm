@@ -11,8 +11,7 @@ using StaticVectorSizeException = StarError<StaticVectorSizeExceptionTag, StarEx
 
 // Stack allocated vector of elements with a dynamic size which must be less
 // than a given maximum.  Acts like a vector with a built-in allocator of a
-// maximum size, throws bad_alloc on attempting to resize beyond the maximum
-// size.
+// maximum size. Capacity rejection is an explicit diagnostic.
 template <typename Element, std::size_t MaxSize>
 class StaticVector {
 public:
@@ -33,23 +32,31 @@ public:
   StaticVector(StaticVector const& other);
   StaticVector(StaticVector&& other);
   template <typename OtherElement, std::size_t OtherMaxSize>
-  StaticVector(StaticVector<OtherElement, OtherMaxSize> const& other);
+  [[nodiscard]]
+  static std::expected<StaticVector, StarException> create(StaticVector<OtherElement, OtherMaxSize> const& other);
   template <class Iterator>
-  StaticVector(Iterator first, Iterator last);
-  StaticVector(std::size_t size, Element const& value = Element());
-  StaticVector(std::initializer_list<Element> list);
+  [[nodiscard]]
+  static std::expected<StaticVector, StarException> create(Iterator first, Iterator last);
+  [[nodiscard]]
+  static std::expected<StaticVector, StarException> create(std::size_t size, Element const& value = Element());
+  [[nodiscard]]
+  static std::expected<StaticVector, StarException> create(std::initializer_list<Element> list);
   ~StaticVector();
 
   StaticVector& operator=(StaticVector const& other);
   StaticVector& operator=(StaticVector&& other);
-  StaticVector& operator=(std::initializer_list<Element> list);
+  [[nodiscard]]
+  std::expected<void, StarException> assign(std::initializer_list<Element> list);
 
   std::size_t size() const;
   bool empty() const;
-  void resize(std::size_t size, Element const& e = Element());
+  [[nodiscard]]
+  std::expected<void, StarException> resize(std::size_t size, Element const& e = Element());
 
-  reference at(std::size_t i);
-  const_reference at(std::size_t i) const;
+  [[nodiscard]]
+  std::expected<Element*, StarException> at(std::size_t i);
+  [[nodiscard]]
+  std::expected<Element const*, StarException> at(std::size_t i) const;
 
   reference operator[](std::size_t i);
   const_reference operator[](std::size_t i) const;
@@ -70,19 +77,26 @@ public:
   Element const* ptr() const;
   Element* ptr();
 
-  void push_back(Element e);
-  void pop_back();
+  [[nodiscard]]
+  std::expected<void, StarException> push_back(Element e);
+  [[nodiscard]]
+  std::expected<void, StarException> pop_back();
 
-  iterator insert(iterator pos, Element e);
+  [[nodiscard]]
+  std::expected<iterator, StarException> insert(iterator pos, Element e);
   template <typename Iterator>
-  iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, std::initializer_list<Element> list);
+  [[nodiscard]]
+  std::expected<iterator, StarException> insert(iterator pos, Iterator begin, Iterator end);
+  [[nodiscard]]
+  std::expected<iterator, StarException> insert(iterator pos, std::initializer_list<Element> list);
 
   template <typename... Args>
-  void emplace(iterator pos, Args&&... args);
+  [[nodiscard]]
+  std::expected<void, StarException> emplace(iterator pos, Args&&... args);
 
   template <typename... Args>
-  void emplace_back(Args&&... args);
+  [[nodiscard]]
+  std::expected<void, StarException> emplace_back(Args&&... args);
 
   void clear();
 
@@ -94,6 +108,15 @@ public:
   bool operator<(StaticVector const& other) const;
 
 private:
+  template <typename... Args>
+  void appendKnown(Args&&... args) {
+    std::construct_at(ptr() + m_size, std::forward<Args>(args)...);
+    ++m_size;
+  }
+  void discardBack() {
+    --m_size;
+    std::destroy_at(ptr() + m_size);
+  }
   std::size_t m_size;
   alignas(Element) std::byte m_elements[MaxSize ? MaxSize * sizeof(Element) : alignof(Element)];
 };
@@ -110,42 +133,45 @@ StaticVector<Element, MaxSize>::~StaticVector() {
 template <typename Element, std::size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector const& other)
   : StaticVector() {
-  insert(begin(), other.begin(), other.end());
+  for (auto const& e : other)
+    appendKnown(e);
 }
 
 template <typename Element, std::size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector&& other)
   : StaticVector() {
   for (auto& e : other)
-    emplace_back(std::move(e));
+    appendKnown(std::move(e));
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename OtherElement, std::size_t OtherMaxSize>
-StaticVector<Element, MaxSize>::StaticVector(StaticVector<OtherElement, OtherMaxSize> const& other)
-  : StaticVector() {
-  for (auto const& e : other)
-    emplace_back(e);
+auto StaticVector<Element, MaxSize>::create(StaticVector<OtherElement, OtherMaxSize> const& other) -> std::expected<StaticVector, StarException> {
+  return create(other.begin(), other.end());
 }
 
 template <typename Element, std::size_t MaxSize>
 template <class Iterator>
-StaticVector<Element, MaxSize>::StaticVector(Iterator first, Iterator last)
-  : StaticVector() {
-  insert(begin(), first, last);
+auto StaticVector<Element, MaxSize>::create(Iterator first, Iterator last) -> std::expected<StaticVector, StarException> {
+  StaticVector result;
+  auto inserted = result.insert(result.begin(), first, last);
+  if (!inserted)
+    return std::unexpected(std::move(inserted.error()));
+  return result;
 }
 
 template <typename Element, std::size_t MaxSize>
-StaticVector<Element, MaxSize>::StaticVector(std::size_t size, Element const& value)
-  : StaticVector() {
-  resize(size, value);
+auto StaticVector<Element, MaxSize>::create(std::size_t size, Element const& value) -> std::expected<StaticVector, StarException> {
+  StaticVector result;
+  auto resized = result.resize(size, value);
+  if (!resized)
+    return std::unexpected(std::move(resized.error()));
+  return result;
 }
 
 template <typename Element, std::size_t MaxSize>
-StaticVector<Element, MaxSize>::StaticVector(std::initializer_list<Element> list)
-  : StaticVector() {
-  for (auto const& e : list)
-    emplace_back(e);
+auto StaticVector<Element, MaxSize>::create(std::initializer_list<Element> list) -> std::expected<StaticVector, StarException> {
+  return create(list.begin(), list.end());
 }
 
 template <typename Element, std::size_t MaxSize>
@@ -157,9 +183,9 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector const& other) -> Sta
   for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = other[i];
   while (m_size < other.size())
-    emplace_back(other[m_size]);
+    appendKnown(other[m_size]);
   while (m_size > other.size())
-    pop_back();
+    discardBack();
 
   return *this;
 }
@@ -173,25 +199,25 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other) -> StaticVe
   for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = std::move(other[i]);
   while (m_size < other.size())
-    emplace_back(std::move(other[m_size]));
+    appendKnown(std::move(other[m_size]));
   while (m_size > other.size())
-    pop_back();
+    discardBack();
 
   return *this;
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::operator=(std::initializer_list<Element> list) -> StaticVector& {
+auto StaticVector<Element, MaxSize>::assign(std::initializer_list<Element> list) -> std::expected<void, StarException> {
   if (list.size() > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector assignment size {} out of range {}", list.size(), MaxSize);
+    return std::unexpected(StaticVectorSizeException::format("StaticVector assignment size {} out of range {}", list.size(), MaxSize));
   auto overlap = std::min(m_size, list.size());
   for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = list.begin()[i];
   while (m_size < list.size())
-    emplace_back(list.begin()[m_size]);
+    appendKnown(list.begin()[m_size]);
   while (m_size > list.size())
-    pop_back();
-  return *this;
+    discardBack();
+  return {};
 }
 
 template <typename Element, std::size_t MaxSize>
@@ -205,28 +231,28 @@ bool StaticVector<Element, MaxSize>::empty() const {
 }
 
 template <typename Element, std::size_t MaxSize>
-void StaticVector<Element, MaxSize>::resize(std::size_t size, Element const& e) {
+std::expected<void, StarException> StaticVector<Element, MaxSize>::resize(std::size_t size, Element const& e) {
   if (size > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::resize({}) out of range {}", m_size + size, MaxSize);
-
-  for (std::size_t i = m_size; i > size; --i)
-    pop_back();
-  for (std::size_t i = m_size; i < size; ++i)
-    emplace_back(e);
+    return std::unexpected(StaticVectorSizeException::format("StaticVector::resize({}) out of range {}", size, MaxSize));
+  while (m_size > size)
+    discardBack();
+  while (m_size < size)
+    appendKnown(e);
+  return {};
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(std::size_t i) -> reference {
+auto StaticVector<Element, MaxSize>::at(std::size_t i) -> std::expected<Element*, StarException> {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
-  return ptr()[i];
+    return std::unexpected(OutOfRangeException::format("out of range in StaticVector::at({})", i));
+  return ptr() + i;
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(std::size_t i) const -> const_reference {
+auto StaticVector<Element, MaxSize>::at(std::size_t i) const -> std::expected<Element const*, StarException> {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
-  return ptr()[i];
+    return std::unexpected(OutOfRangeException::format("out of range in StaticVector::at({})", i));
+  return ptr() + i;
 }
 
 template <typename Element, std::size_t MaxSize>
@@ -296,81 +322,83 @@ Element* StaticVector<Element, MaxSize>::ptr() {
 }
 
 template <typename Element, std::size_t MaxSize>
-void StaticVector<Element, MaxSize>::push_back(Element e) {
-  emplace_back(std::move(e));
+std::expected<void, StarException> StaticVector<Element, MaxSize>::push_back(Element e) {
+  return emplace_back(std::move(e));
 }
 
 template <typename Element, std::size_t MaxSize>
-void StaticVector<Element, MaxSize>::pop_back() {
+std::expected<void, StarException> StaticVector<Element, MaxSize>::pop_back() {
   if (m_size == 0)
-    throw OutOfRangeException("StaticVector::pop_back called on empty StaticVector");
-  --m_size;
-  std::destroy_at(ptr() + m_size);
+    return std::unexpected(OutOfRangeException("StaticVector::pop_back called on empty StaticVector"));
+  discardBack();
+  return {};
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::insert(iterator pos, Element e) -> iterator {
+auto StaticVector<Element, MaxSize>::insert(iterator pos, Element e) -> std::expected<iterator, StarException> {
   auto index = static_cast<std::size_t>(pos - ptr());
-  emplace(pos, std::move(e));
+  auto inserted = emplace(pos, std::move(e));
+  if (!inserted)
+    return std::unexpected(std::move(inserted.error()));
   return begin() + index;
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Iterator>
-auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator first, Iterator last) -> iterator {
+auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator first, Iterator last) -> std::expected<iterator, StarException> {
   auto index = static_cast<std::size_t>(pos - ptr());
   auto previousSize = size();
   if constexpr (std::forward_iterator<Iterator>) {
     if (static_cast<std::size_t>(std::distance(first, last)) > MaxSize - previousSize)
-      throw StaticVectorSizeException::format("StaticVector::insert would extend StaticVector beyond size {}", MaxSize);
+      return std::unexpected(StaticVectorSizeException::format("StaticVector::insert would extend StaticVector beyond size {}", MaxSize));
   }
-  try {
-    for (; first != last; ++first)
-      emplace_back(*first);
-  } catch (...) {
-    while (size() > previousSize)
-      pop_back();
-    throw;
+  for (; first != last; ++first) {
+    auto added = emplace_back(*first);
+    if (!added) {
+      while (size() > previousSize)
+        discardBack();
+      return std::unexpected(std::move(added.error()));
+    }
   }
   std::rotate(begin() + index, begin() + previousSize, end());
   return begin() + index;
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticVector<Element, MaxSize>::insert(iterator pos, std::initializer_list<Element> list) -> iterator {
+auto StaticVector<Element, MaxSize>::insert(iterator pos, std::initializer_list<Element> list) -> std::expected<iterator, StarException> {
   return insert(pos, list.begin(), list.end());
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename... Args>
-void StaticVector<Element, MaxSize>::emplace(iterator pos, Args&&... args) {
+std::expected<void, StarException> StaticVector<Element, MaxSize>::emplace(iterator pos, Args&&... args) {
   auto index = static_cast<std::size_t>(pos - ptr());
   if (m_size == MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::emplace would extend StaticVector beyond size {}", MaxSize);
+    return std::unexpected(StaticVectorSizeException::format("StaticVector::emplace would extend StaticVector beyond size {}", MaxSize));
   Element value(std::forward<Args>(args)...);
   if (index == size()) {
-    emplace_back(std::move(value));
-    return;
+    appendKnown(std::move(value));
+    return {};
   }
-  emplace_back(std::move(*(end() - 1)));
+  appendKnown(std::move(*(end() - 1)));
   std::move_backward(begin() + index, end() - 2, end() - 1);
   operator[](index) = std::move(value);
+  return {};
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename... Args>
-void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
-  if (m_size + 1 > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
-
-  std::construct_at(ptr() + m_size, std::forward<Args>(args)...);
-  ++m_size;
+std::expected<void, StarException> StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
+  if (m_size == MaxSize)
+    return std::unexpected(StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize));
+  appendKnown(std::forward<Args>(args)...);
+  return {};
 }
 
 template <typename Element, std::size_t MaxSize>
 void StaticVector<Element, MaxSize>::clear() {
   while (m_size != 0)
-    pop_back();
+    discardBack();
 }
 
 template <typename Element, std::size_t MaxSize>
@@ -378,7 +406,7 @@ auto StaticVector<Element, MaxSize>::erase(iterator pos) -> iterator {
   std::size_t index = pos - ptr();
   for (std::size_t i = index; i < m_size - 1; ++i)
     operator[](i) = std::move(operator[](i + 1));
-  pop_back();
+  discardBack();
   return pos;
 }
 
@@ -392,7 +420,7 @@ auto StaticVector<Element, MaxSize>::erase(iterator begin, iterator end) -> iter
   for (std::size_t i = endIndex; i < m_size; ++i)
     operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
   while (toRemove--)
-    pop_back();
+    discardBack();
   return begin;
 }
 

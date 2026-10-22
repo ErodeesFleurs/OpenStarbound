@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.stream_formatter;
 import star.hash;
@@ -26,15 +27,11 @@ enum class WarpMode : std::uint8_t {
   DeployOnly,
   BeamOrDeploy
 };
-extern EnumMap<WarpMode> const WarpModeNames;
+extern std::expected<EnumMap<WarpMode>, StarException> const WarpModeNames;
 
 struct InstanceWorldId {
-  friend DataStream& operator>>(DataStream& ds, InstanceWorldId& instanceWorldId);
-  friend DataStream& operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId);
-  friend std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
-  friend std::ostream& operator<<(std::ostream& os,
-      std::variant<std::monostate, CelestialWorldIdWrapper<CelestialCoordinate>, ClientShipWorldIdWrapper<Uuid>,
-          InstanceWorldId, CustomWorldIdWrapper<String>, ClientCustomWorldId> const& worldId);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InstanceWorldId& instanceWorldId);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId);
 
   String instance;
   std::optional<Uuid> uuid;
@@ -52,12 +49,12 @@ struct hash<InstanceWorldId> {
   std::size_t operator()(InstanceWorldId const& id) const;
 };
 
-DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
-DataStream& operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
 
 struct ClientCustomWorldId {
-  friend DataStream& operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
-  friend DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
   friend std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId);
 
   Uuid uuid;
@@ -74,8 +71,8 @@ struct hash<ClientCustomWorldId> {
   std::size_t operator()(ClientCustomWorldId const& id) const;
 };
 
-DataStream& operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
-DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId);
 
   template <typename BaseType>
   struct CelestialWorldIdWrapper : BaseType {
@@ -191,16 +188,14 @@ DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId)
   typedef CustomWorldIdWrapper<String> CustomWorldId;
 typedef std::variant<std::monostate, CelestialWorldId, ClientShipWorldId, InstanceWorldId, CustomWorldId, ClientCustomWorldId> WorldId;
 
-String printWorldId(WorldId const& worldId);
-WorldId parseWorldId(String const& printedId);
+// A negative instance level is reported rather than formatted as a valid world ID.
+[[nodiscard]] std::expected<String, StarException> printWorldId(WorldId const& worldId);
+[[nodiscard]] std::expected<WorldId, StarException> parseWorldId(String const& printedId);
 
-// Same as outputting printWorldId
 std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId);
-std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, CustomWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId);
-std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
 template <typename BaseType>
 struct SpawnTargetUniqueEntityWrapper : BaseType {
@@ -276,17 +271,17 @@ using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
 typedef std::variant<std::monostate, SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
 
 Json spawnTargetToJson(SpawnTarget spawnTarget);
-SpawnTarget spawnTargetFromJson(Json v);
+[[nodiscard]] std::expected<SpawnTarget, StarException> spawnTargetFromJson(Json v);
 
 String printSpawnTarget(SpawnTarget spawnTarget);
 
 struct WarpToWorld {
-  friend DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
-  friend DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
   WarpToWorld();
   explicit WarpToWorld(WorldId world, SpawnTarget spawn = {});
-  explicit WarpToWorld(Json v);
+  [[nodiscard]] static std::expected<WarpToWorld, StarException> create(Json v);
 
   WorldId world;
   SpawnTarget target;
@@ -294,7 +289,7 @@ struct WarpToWorld {
   bool operator==(WarpToWorld const& rhs) const;
   explicit operator bool() const;
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 };
 
 template <typename BaseType>
@@ -340,20 +335,20 @@ enum class WarpAlias {
 
 typedef std::variant<std::monostate, WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
 
-WarpAction parseWarpAction(String const& warpString);
-String printWarpAction(WarpAction const& warpAction);
-JsonObject warpActionToJson(WarpAction const& warpAction);
+[[nodiscard]] std::expected<WarpAction, StarException> parseWarpAction(String const& warpString);
+[[nodiscard]] std::expected<String, StarException> printWarpAction(WarpAction const& warpAction);
+[[nodiscard]] std::expected<JsonObject, StarException> warpActionToJson(WarpAction const& warpAction);
 
-DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
-DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, WarpToWorld& warpToWorld);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
 // Construct identity-bearing values from their wire fields, never a generated ID.
 template <>
-ClientShipWorldId DataStream::read<ClientShipWorldId>();
+[[nodiscard]] std::expected<ClientShipWorldId, StarException> DataStream::read<ClientShipWorldId>();
 template <>
-ClientCustomWorldId DataStream::read<ClientCustomWorldId>();
+[[nodiscard]] std::expected<ClientCustomWorldId, StarException> DataStream::read<ClientCustomWorldId>();
 template <>
-WarpToPlayer DataStream::read<WarpToPlayer>();
+[[nodiscard]] std::expected<WarpToPlayer, StarException> DataStream::read<WarpToPlayer>();
 
 }
 
@@ -369,21 +364,19 @@ export namespace Star {
 export extern "C++" {
 namespace Star {
   template <>
-  ClientShipWorldId DataStream::read<ClientShipWorldId>();
+  [[nodiscard]] std::expected<ClientShipWorldId, StarException> DataStream::read<ClientShipWorldId>();
   template <>
-  ClientCustomWorldId DataStream::read<ClientCustomWorldId>();
+  [[nodiscard]] std::expected<ClientCustomWorldId, StarException> DataStream::read<ClientCustomWorldId>();
   template <>
-  WarpToPlayer DataStream::read<WarpToPlayer>();
+  [[nodiscard]] std::expected<WarpToPlayer, StarException> DataStream::read<WarpToPlayer>();
 }
 }
 
 
 export template <> struct std::formatter<Star::CelestialWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::ClientShipWorldId> : Star::StreamFormatter {};
-export template <> struct std::formatter<Star::InstanceWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::CustomWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::ClientCustomWorldId> : Star::StreamFormatter {};
-export template <> struct std::formatter<Star::WarpToWorld> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::WarpMode;

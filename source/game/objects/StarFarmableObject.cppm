@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.type_identity;
 import star.json;
@@ -75,22 +76,23 @@ public:
     return Star::typeName<FarmableObject>();
   }
 
-  FarmableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<FarmableObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<bool, StarException> damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 
-  bool harvest();
+  [[nodiscard]] std::expected<bool, StarException> harvest();
   int stage() const;
 
 protected:
-  void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  [[nodiscard]] std::expected<void, StarException> readStoredData(Json const& diskStore) override;
+  [[nodiscard]] std::expected<Json, StarException> writeStoredData() const override;
 
 private:
-  void enterStage(int newStage);
+  explicit FarmableObject(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> enterStage(int newStage);
 
   int m_stage;
   int m_stageAlt;

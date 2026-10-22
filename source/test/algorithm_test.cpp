@@ -1,4 +1,5 @@
 import star.list;
+import star.format;
 
 import std;
 
@@ -55,6 +56,33 @@ TEST(ListPredicates, All) {
   EXPECT_FALSE(f.all());
 }
 
+TEST(ListPredicates, ExpectedBoolPayloadErrorsAndShortCircuit) {
+  List<std::expected<bool, StarException>> falseValues{false, false};
+  List<std::expected<bool, StarException>> trueValues{true, true};
+  EXPECT_EQ(falseValues.any(), false);
+  EXPECT_EQ(falseValues.all(), false);
+  EXPECT_EQ(trueValues.any(), true);
+  EXPECT_EQ(trueValues.all(), true);
+
+  List<std::expected<bool, StarException>> anyError{
+      false, std::unexpected(OutOfRangeException("any predicate marker", false)), true};
+  auto anyResult = anyError.any();
+  ASSERT_FALSE(anyResult);
+  EXPECT_TRUE(anyResult.error().is<OutOfRangeException>());
+  EXPECT_NE(std::string_view(anyResult.error().what()).find("any predicate marker"), std::string_view::npos);
+  // The false first payload settles all() before reaching the stored error.
+  EXPECT_EQ(anyError.all(), false);
+
+  List<std::expected<bool, StarException>> allError{
+      true, std::unexpected(OutOfRangeException("all predicate marker", false)), false};
+  auto allResult = allError.all();
+  ASSERT_FALSE(allResult);
+  EXPECT_TRUE(allResult.error().is<OutOfRangeException>());
+  EXPECT_NE(std::string_view(allResult.error().what()).find("all predicate marker"), std::string_view::npos);
+  // The true first payload settles any() before reaching the stored error.
+  EXPECT_EQ(allError.any(), true);
+}
+
 TEST(ContainerOperators, allTests) {
   List<bool> a{false, false, true, false};
   List<int> b{1, 1, 0, 1};
@@ -102,9 +130,9 @@ TEST(ListPredicates, NoncopyableExplicitBoolShortCircuit) {
 
   int visits = 0;
   LinkedList<Truth> values;
-  values.emplaceAppend(false, visits);
-  values.emplaceAppend(true, visits);
-  values.emplaceAppend(false, visits);
+  EXPECT_FALSE(values.emplaceAppend(false, visits).value);
+  EXPECT_TRUE(values.emplaceAppend(true, visits).value);
+  EXPECT_FALSE(values.emplaceAppend(false, visits).value);
   EXPECT_TRUE(values.any());
   EXPECT_EQ(visits, 2);
   visits = 0;
@@ -137,24 +165,28 @@ TEST(TupleSerialization, OrderedWireAndEnumWidths) {
   enum class Unsigned : std::uint32_t { High = 0x89abcdefu };
   auto values = std::tuple{Signed::Negative, std::uint16_t{0x1234}, Unsigned::High};
   DataStreamBuffer stream;
-  stream << values;
+  ASSERT_TRUE(stream << values);
   std::array<unsigned char, 7> expected{0xfe, 0x12, 0x34, 0x89, 0xab, 0xcd, 0xef};
   ASSERT_EQ(stream.size(), expected.size());
   for (std::size_t i = 0; i < expected.size(); ++i)
     EXPECT_EQ(static_cast<unsigned char>(stream.ptr()[i]), expected[i]);
 
-  stream.seek(0);
+  ASSERT_TRUE(stream.seek(0));
   decltype(values) restored{};
-  stream >> restored;
+  ASSERT_TRUE(stream >> restored);
   EXPECT_EQ(restored, values);
-  EXPECT_TRUE(stream.atEnd());
+  auto atEnd = stream.atEnd();
+  ASSERT_TRUE(atEnd);
+  EXPECT_TRUE(*atEnd);
 
   DataStreamBuffer empty;
   std::tuple<> emptyTuple;
-  empty << emptyTuple;
+  ASSERT_TRUE(empty << emptyTuple);
   EXPECT_TRUE(empty.empty());
-  empty >> emptyTuple;
-  EXPECT_EQ(empty.pos(), 0u);
+  ASSERT_TRUE(empty >> emptyTuple);
+  auto position = empty.pos();
+  ASSERT_TRUE(position);
+  EXPECT_EQ(*position, 0u);
 }
 
 TEST(ListFiltering, MoveOnlyValuesKeepStableOrder) {

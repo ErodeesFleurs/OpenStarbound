@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 
@@ -27,17 +28,19 @@ struct Achievement {
 
 class StatisticsDatabase {
 public:
-  explicit StatisticsDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatisticsDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<StatEvent> event(String const& eventName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<StatEvent>, StarException> event(String const& eventName) const;
 
-  std::shared_ptr<Achievement> achievement(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Achievement>, StarException> achievement(String const& name) const;
   StringList allAchievements() const;
   StringList achievementsForStat(String const& statName) const;
 
 private:
-  static std::shared_ptr<StatEvent> readEvent(Assets const& assets, String const& path);
-  static std::shared_ptr<Achievement> readAchievement(Assets const& assets, String const& path);
+  explicit StatisticsDatabase(Root& root);
+  [[nodiscard]] std::expected<void, StarException> load();
+  [[nodiscard]] static std::expected<std::shared_ptr<StatEvent>, StarException> readEvent(Assets const& assets, String const& path);
+  [[nodiscard]] static std::expected<std::shared_ptr<Achievement>, StarException> readAchievement(Assets const& assets, String const& path);
 
   Root& m_root;
   StringMap<String> m_eventPaths;

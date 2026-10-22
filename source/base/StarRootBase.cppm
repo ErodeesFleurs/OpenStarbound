@@ -17,8 +17,8 @@ using RootException = StarError<RootExceptionTag, StarException>;
 
 class RootBase {
 public:
-  virtual std::shared_ptr<Assets const> assets() = 0;
-  virtual std::shared_ptr<Configuration> configuration() = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Assets const>, StarException> assets() = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Configuration>, StarException> configuration() = 0;
   virtual ~RootBase() = default;
 protected:
   RootBase() = default;

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -33,11 +34,11 @@ private:
 
 class Songbook : public NetElementSyncGroup {
 public:
-  Songbook(Root& root, String const& species);
+  [[nodiscard]] static std::expected<std::shared_ptr<Songbook>, StarException> create(Root& root, String const& species);
   ~Songbook();
 
-  void update(EntityMode mode, World* world);
-  void render(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> update(EntityMode mode, World* world);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback);
 
   // instrument needs to tell the songbook what type it is, and needs to keep
   // calling it to signal
@@ -54,6 +55,7 @@ public:
   Json song() const;
 
 private:
+  Songbook(Root& root, String const& species);
   struct Note {
     String instrument;
     String file;
@@ -81,8 +83,8 @@ private:
   static double fundamentalFrequency(double p);
   static double fundamentalPitch(double p);
 
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   Root& m_root;
   SongbookSynchronization& m_synchronization;
@@ -111,15 +113,15 @@ private:
 
   List<std::shared_ptr<AudioInstance>> m_pendingAudio;
 
-  List<Note> parseABC(String const& abc);
+  [[nodiscard]] std::expected<List<Note>, StarException> parseABC(String const& abc);
 
   StringMap<Map<int, NoteMapping>> m_noteMapping;
 
-  NoteMapping& noteMapping(String const& instrument, String const& species, int note);
+  [[nodiscard]] std::expected<NoteMapping*, StarException> noteMapping(String const& instrument, String const& species, int note);
 
   StringMap<std::shared_ptr<Audio const>> m_uncompressedSamples;
 
-  void playback();
+  [[nodiscard]] std::expected<void, StarException> playback();
 
   NetElementData<Json> m_songNetState;
   NetElementInt m_timeSourceEpochNetState;

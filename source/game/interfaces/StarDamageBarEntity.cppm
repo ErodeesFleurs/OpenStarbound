@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -38,7 +39,7 @@ enum class DamageBarType : std::uint8_t {
   None,
   Special
 };
-extern EnumMap<DamageBarType> const DamageBarTypeNames;
+extern std::expected<EnumMap<DamageBarType>, StarException> const DamageBarTypeNames;
 
 class DamageBarEntity : public virtual PortraitEntity {
 public:
@@ -50,7 +51,7 @@ public:
   }
 
   virtual float health() const = 0;
-  virtual float maxHealth() const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> maxHealth() const = 0;
   virtual DamageBarType damageBar() const = 0;
 };
 

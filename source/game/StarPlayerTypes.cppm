@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.string;
@@ -14,14 +15,14 @@ enum class PlayerMode {
   Survival,
   Hardcore
 };
-extern EnumMap<PlayerMode> const PlayerModeNames;
+extern std::expected<EnumMap<PlayerMode>, StarException> const PlayerModeNames;
 
 enum class PlayerBusyState {
   None,
   Chatting,
   Menu
 };
-extern EnumMap<PlayerBusyState> const PlayerBusyStateNames;
+extern std::expected<EnumMap<PlayerBusyState>, StarException> const PlayerBusyStateNames;
 
 struct PlayerWarpRequest {
   String action;
@@ -31,7 +32,7 @@ struct PlayerWarpRequest {
 
 struct PlayerModeConfig {
   explicit PlayerModeConfig();
-  explicit PlayerModeConfig(Json config);
+  [[nodiscard]] static std::expected<PlayerModeConfig, StarException> create(Json config);
 
   bool hunger;
   bool allowBeamUpUnderground;
@@ -41,13 +42,11 @@ struct PlayerModeConfig {
 };
 
 struct ShipUpgrades {
-  friend DataStream& operator>>(DataStream& ds, ShipUpgrades& value);
-  friend DataStream& operator<<(DataStream& ds, ShipUpgrades const& value);
   explicit ShipUpgrades();
-  explicit ShipUpgrades(Json config);
+  [[nodiscard]] static std::expected<ShipUpgrades, StarException> create(Json config);
   Json toJson() const;
 
-  ShipUpgrades& apply(Json const& upgrades);
+  [[nodiscard]] std::expected<ShipUpgrades*, StarException> apply(Json const& upgrades);
 
   bool operator==(ShipUpgrades const& rhs) const;
 
@@ -59,8 +58,8 @@ struct ShipUpgrades {
   StringSet capabilities;
 };
 
-DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades);
-DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades);
 
 }
 
@@ -74,4 +73,6 @@ export namespace Star {
   using ::Star::PlayerWarpRequest;
   using ::Star::PlayerModeConfig;
   using ::Star::ShipUpgrades;
+  using ::Star::operator>>;
+  using ::Star::operator<<;
 }

@@ -21,15 +21,16 @@ struct ImageOperationExceptionTag {
 };
 using ImageOperationException = StarError<ImageOperationExceptionTag, StarException>;
 
-StringList colorDirectivesFromConfig(JsonArray const& directives);
-String paletteSwapDirectivesFromConfig(Json const& swaps);
+[[nodiscard]] std::expected<StringList, StarException> colorDirectivesFromConfig(JsonArray const& directives);
+[[nodiscard]] std::expected<String, StarException> paletteSwapDirectivesFromConfig(Json const& swaps);
 
 struct NullImageOperation {
   bool unloaded = false;
 };
 
 struct ErrorImageOperation {
-  std::variant<std::string, std::exception_ptr> cause;
+  StarException cause;
+  mutable bool reported = false;
 };
 
 struct HueShiftImageOperation {
@@ -150,7 +151,7 @@ typedef std::variant<NullImageOperation, ErrorImageOperation, HueShiftImageOpera
 ImageOperation imageOperationFromString(StringView string);
 String imageOperationToString(ImageOperation const& operation);
 
-void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter);
+[[nodiscard]] std::expected<void, StarException> parseImageOperations(StringView params, std::function<std::expected<void, StarException>(ImageOperation&&)> outputter);
 
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
@@ -163,11 +164,11 @@ void addImageOperationReferences(ImageOperation const& operation, StringList& ou
 
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
-typedef std::function<Image const*(String const& refName)> ImageReferenceCallback;
+typedef std::function<std::expected<Image const*, StarException>(String const& refName)> ImageReferenceCallback;
 
-void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
+[[nodiscard]] std::expected<void, StarException> processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 
-Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
+[[nodiscard]] std::expected<Image, StarException> processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 
 }
 

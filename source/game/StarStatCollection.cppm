@@ -1,5 +1,6 @@
 module;
 
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -23,7 +24,7 @@ namespace Star {
 // capable.
 class StatCollection : public NetElementSyncGroup {
 public:
-  explicit StatCollection(Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatCollection>, StarException> create(Json const& config);
 
   StringList statNames() const;
   float stat(String const& statName) const;
@@ -36,28 +37,28 @@ public:
   // Returns true if the resource is strictly greater than zero
   bool resourcePositive(String const& resourceName) const;
 
-  void setResource(String const& resourceName, float value);
-  void modifyResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<void, StarException> setResource(String const& resourceName, float value);
+  [[nodiscard]] std::expected<void, StarException> modifyResource(String const& resourceName, float amount);
 
   float giveResource(String const& resourceName, float amount);
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<bool, StarException> consumeResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<bool, StarException> overConsumeResource(String const& resourceName, float amount);
 
-  bool resourceLocked(String const& resourceName) const;
-  void setResourceLocked(String const& resourceName, bool locked);
+  [[nodiscard]] std::expected<bool, StarException> resourceLocked(String const& resourceName) const;
+  [[nodiscard]] std::expected<void, StarException> setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
-  void resetResource(String const& resourceName);
-  void resetAllResources();
+  [[nodiscard]] std::expected<void, StarException> resetResource(String const& resourceName);
+  [[nodiscard]] std::expected<void, StarException> resetAllResources();
 
-  std::optional<float> resourceMax(String const& resourceName) const;
-  std::optional<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourceMax(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] std::expected<float, StarException> setResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] std::expected<float, StarException> modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
-  StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
-  void setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers);
+  [[nodiscard]] std::expected<StatModifierGroupId, StarException> addStatModifierGroup(List<StatModifier> modifiers = {});
+  [[nodiscard]] std::expected<void, StarException> setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers);
   void removeStatModifierGroup(StatModifierGroupId modifierGroupId);
   void clearStatModifiers();
 
@@ -65,8 +66,9 @@ public:
   void tickSlave(float dt);
 
 private:
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  StatCollection() = default;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   StatSet m_stats;
   // Left value is a raw value, right value is a percentage.

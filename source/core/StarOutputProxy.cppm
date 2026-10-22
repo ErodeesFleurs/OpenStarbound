@@ -3,6 +3,7 @@ import std;
 import star.stream_formatter;
 import star.type_identity;
 import star.optional;
+import star.format;
 
 namespace Star {
 
@@ -30,17 +31,30 @@ namespace OutputAnyDetail {
   };
 
   template <typename T>
-  std::ostream& operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
+  decltype(auto) outputValue(std::ostream& os, T const& value) {
     using namespace Operator;
-    if constexpr (requires { outputOptional(wrapper.wrapped); })
-      return os << outputOptional(wrapper.wrapped);
+    if constexpr (requires { outputOptional(value); })
+      return os << outputOptional(value);
     else
-      return os << wrapper.wrapped;
+      return os << value;
+  }
+
+  template <typename T>
+    requires std::same_as<decltype(outputValue(std::declval<std::ostream&>(), std::declval<T const&>())), std::ostream&>
+  std::ostream& operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
+    return outputValue(os, wrapper.wrapped);
+  }
+
+  template <typename T>
+    requires std::same_as<decltype(outputValue(std::declval<std::ostream&>(), std::declval<T const&>())),
+        std::expected<std::ostream*, StarException>>
+  [[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
+    return outputValue(os, wrapper.wrapped);
   }
 }
 
-// Wraps a type so that is printable no matter what..  If no operator<< is
-// defined for a type, then will print <type [type name] at address: [address]>
+// Unprintable values use diagnostic type/address text; fallible printers retain
+// their checked result rather than being erased into a void callback.
 template <typename T>
 OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
   return OutputAnyDetail::Wrapper<T>{t};
@@ -49,14 +63,19 @@ OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
 struct OutputProxy {
   typedef std::function<void(std::ostream&)> PrintFunction;
 
-  OutputProxy(PrintFunction p)
-    : print(std::move(p)) {}
+  template <typename Printer>
+    requires std::invocable<Printer&, std::ostream&>
+        && (!requires { typename std::remove_cvref_t<std::invoke_result_t<Printer&, std::ostream&>>::error_type; })
+  OutputProxy(Printer&& printer)
+    : m_print(std::forward<Printer>(printer)) {}
 
-  PrintFunction print;
+private:
+  friend std::ostream& operator<<(std::ostream& os, OutputProxy const& p);
+  PrintFunction m_print;
 };
 
 inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
-  p.print(os);
+  p.m_print(os);
   return os;
 }
 

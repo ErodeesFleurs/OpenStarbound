@@ -4,6 +4,7 @@ import star.json;
 import star.string;
 import star.list;
 import star.lexical_cast;
+import star.format;
 
 import star.formatted_json;
 import star.json_path;
@@ -55,55 +56,55 @@ using InsertLocation = std::variant<std::monostate, AtBeginning, AtEnd, BeforeKe
 class JsonInputFormat {
 public:
   virtual ~JsonInputFormat() {}
-  virtual FormattedJson toJson(String const& input) const = 0;
-  virtual String fromJson(FormattedJson const& json) const = 0;
-  virtual FormattedJson getDefault() const = 0;
+  [[nodiscard]] virtual std::expected<FormattedJson, StarException> toJson(String const& input) const = 0;
+  [[nodiscard]] virtual std::expected<String, StarException> fromJson(FormattedJson const& json) const = 0;
+  [[nodiscard]] virtual std::expected<FormattedJson, StarException> getDefault() const = 0;
 };
 
 class GenericInputFormat : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> toJson(String const& input) const override;
+  [[nodiscard]] std::expected<String, StarException> fromJson(FormattedJson const& json) const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> getDefault() const override;
 };
 
 class CommaSeparatedStrings : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> toJson(String const& input) const override;
+  [[nodiscard]] std::expected<String, StarException> fromJson(FormattedJson const& json) const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> getDefault() const override;
 };
 
 class StringInputFormat : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> toJson(String const& input) const override;
+  [[nodiscard]] std::expected<String, StarException> fromJson(FormattedJson const& json) const override;
+  [[nodiscard]] std::expected<FormattedJson, StarException> getDefault() const override;
 };
 
 class Output {
 public:
   virtual ~Output() {}
-  virtual void out(FormattedJson const& json) = 0;
-  virtual void flush() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> out(FormattedJson const& json) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> flush() = 0;
 
-  std::function<void(FormattedJson const& json)> toFunction() {
-    return [this](FormattedJson const& json) { this->out(json); };
+  std::function<std::expected<void, StarException>(FormattedJson const&)> toFunction() {
+    return [this](FormattedJson const& json) { return this->out(json); };
   }
 };
 
 class OutputOnSeparateLines : public Output {
 public:
-  virtual void out(FormattedJson const& json) override;
-  virtual void flush() override;
+  [[nodiscard]] std::expected<void, StarException> out(FormattedJson const& json) override;
+  [[nodiscard]] std::expected<void, StarException> flush() override;
 };
 
 class ArrayOutput : public Output {
 public:
   ArrayOutput(bool unique) : m_unique(unique), m_results() {}
 
-  virtual void out(FormattedJson const& json) override;
-  virtual void flush() override;
+  [[nodiscard]] std::expected<void, StarException> out(FormattedJson const& json) override;
+  [[nodiscard]] std::expected<void, StarException> flush() override;
 
 private:
   bool m_unique;
@@ -143,9 +144,9 @@ struct ParsedArgs {
   Options options;
 };
 
-FormattedJson addOrSet(bool add, std::shared_ptr<JsonPath::Path> path, FormattedJson const& input, InsertLocation insertLocation, FormattedJson const& value);
-String reprWithLineEnding(FormattedJson const& json);
-StringList findFiles(Logger& logger, FindInput const& findArgs);
+[[nodiscard]] std::expected<FormattedJson, StarException> addOrSet(bool add, std::shared_ptr<JsonPath::Path> path, FormattedJson const& input, InsertLocation insertLocation, FormattedJson const& value);
+[[nodiscard]] std::expected<String, StarException> reprWithLineEnding(FormattedJson const& json);
+[[nodiscard]] std::expected<StringList, StarException> findFiles(Logger& logger, FindInput const& findArgs);
 
 }
 

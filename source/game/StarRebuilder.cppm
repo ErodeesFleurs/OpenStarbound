@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 import star.list;
 import star.json;
@@ -15,13 +16,16 @@ class ItemDatabase;
 
 class Rebuilder {
 public:
-  Rebuilder(Root& root, String const& id, ItemDatabase const* itemCatalog = nullptr);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<Rebuilder>, StarException> create(Root& root, String const& id, ItemDatabase const* itemCatalog = nullptr);
   ~Rebuilder() = default;
 
-  typedef std::function<String(Json const&)> AttemptCallback;
-  bool rebuild(Json store, String last_error, AttemptCallback attempt) const;
+  typedef std::function<std::expected<void, StarException>(Json const&)> AttemptCallback;
+  [[nodiscard]]
+  std::expected<bool, StarException> rebuild(Json store, StarException lastError, AttemptCallback attempt) const;
 
 private:
+  Rebuilder() = default;
   std::shared_ptr<LuaRoot> m_luaRoot;
   mutable RecursiveMutex m_luaMutex;
   std::shared_ptr<List<LuaContext>> m_contexts;

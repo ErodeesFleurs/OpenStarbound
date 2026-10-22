@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.list;
@@ -16,7 +17,7 @@ class Logger;
 struct Tile {
   String source, database, tileset, name;
   std::shared_ptr<Image const> image;
-  Tiled::Properties properties;
+  Json properties;
 };
 
 class TileDatabase {
@@ -38,7 +39,7 @@ public:
   Tileset(Logger& logger, String const& source, String const& name, std::shared_ptr<TileDatabase> const& database);
 
   void defineTile(std::shared_ptr<Tile> const& tile);
-  void exportTileset() const;
+  [[nodiscard]] std::expected<void, StarException> exportTileset() const;
 
   String name() const;
   std::shared_ptr<TileDatabase> database() const;
@@ -52,20 +53,20 @@ private:
   // Exports an image for each tile into its own file. Tiles can represent
   // objects with all different sizes, so we use Tiled's "collection of images"
   // tileset feature, which puts each image in its own file.
-  void exportTilesetImages(String const& exportDir) const;
+  [[nodiscard]] std::expected<void, StarException> exportTilesetImages(String const& exportDir) const;
 
   // Read the tileset from the given path, or create a new tileset root
   // structure if it doesn't already exist.
-  Json getTilesetJson(String const& tilesetPath) const;
+  [[nodiscard]] std::expected<Json, StarException> getTilesetJson(String const& tilesetPath) const;
 
   // Determine which tiles already exist in the tileset, returning a map
   // which contains the id of each named tile, and the next available Id after
   // the highest Id seen in the tileset.
-  std::pair<StringMap<std::size_t>, std::size_t> indexExistingTiles(Json tileset) const;
+  [[nodiscard]] std::expected<std::pair<StringMap<std::size_t>, std::size_t>, StarException> indexExistingTiles(Json tileset) const;
 
   // Update existing and insert new tile definitions in the tileProperties and
   // tileImages objects.
-  StringSet updateTiles(JsonObject& tileProperties,
+  [[nodiscard]] std::expected<StringSet, StarException> updateTiles(JsonObject& tileProperties,
       JsonObject& tileImages,
       StringMap<std::size_t> const& existingTiles,
       std::size_t& nextId,
@@ -74,7 +75,7 @@ private:
   // Mark the given tiles as 'invalid' so they can't be used. (Actually removing
   // them from the tileset would cause the tile indices to change and break
   // existing maps.)
-  void invalidateTiles(StringSet const& invalidTiles,
+  [[nodiscard]] std::expected<void, StarException> invalidateTiles(StringSet const& invalidTiles,
       StringMap<std::size_t> const& existingTiles,
       JsonObject& tileProperties,
       JsonObject& tileImages,
@@ -91,9 +92,9 @@ class TilesetUpdater {
 public:
   explicit TilesetUpdater(Logger& logger);
 
-  void defineAssetSource(String const& source);
+  [[nodiscard]] std::expected<void, StarException> defineAssetSource(String const& source);
   void defineTile(std::shared_ptr<Tile> const& tile);
-  void exportTilesets();
+  [[nodiscard]] std::expected<void, StarException> exportTilesets();
 
 private:
   std::shared_ptr<TileDatabase> const& getDatabase(std::shared_ptr<Tile> const& tile);

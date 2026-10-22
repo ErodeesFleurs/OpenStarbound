@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.json;
@@ -13,7 +14,7 @@ namespace Star {
 class PlayerBlueprints {
 public:
   PlayerBlueprints();
-  PlayerBlueprints(Json const& json);
+  [[nodiscard]] static std::expected<PlayerBlueprints, StarException> create(Json const& json);
 
   Json toJson() const;
 

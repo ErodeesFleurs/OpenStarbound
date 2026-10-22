@@ -4,12 +4,13 @@ import std;
 import star.string;
 import star.list;
 import star.json;
+import star.format;
 
 namespace Star {
 
 class Codex {
 public:
-  Codex(Json const& config, String const& path);
+  [[nodiscard]] static std::expected<std::shared_ptr<Codex>, StarException> create(Json const& config, String const& path);
   Json toJson() const;
 
   String id() const;
@@ -25,6 +26,7 @@ public:
   String filename() const;
 
 private:
+  Codex() = default;
   String m_id;
   String m_species;
   String m_title;

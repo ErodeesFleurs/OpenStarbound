@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -55,22 +56,24 @@ public:
     return Star::typeName<WirePane>();
   }
 
-  WirePane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
+  [[nodiscard]] static std::expected<std::shared_ptr<WirePane>, StarException> create(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
   virtual ~WirePane() {}
 
-  virtual void update(float dt) override;
-  virtual bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
+  [[nodiscard]] virtual std::expected<SwingResult, StarException> swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
   virtual bool connecting() override;
 
   virtual void reset();
 
 protected:
-  void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
-  void renderWire(Vec2F from, Vec2F to, Color baseColor);
+  WirePane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> renderWire(Vec2F from, Vec2F to, Color baseColor);
 
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<Player> m_player;

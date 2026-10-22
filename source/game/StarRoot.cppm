@@ -15,6 +15,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.string;
 import star.version;
 
@@ -117,7 +118,7 @@ public:
   // Initializes the starbound root object and does the initial load.  All of
   // the Root members will be just in time loaded as they are accessed, unless
   // fullyLoad is called beforehand.
-  Root(Settings settings);
+  [[nodiscard]] static std::expected<std::unique_ptr<Root>, StarException> create(Settings settings);
 
   Root(Root const&) = delete;
   Root& operator=(Root const&) = delete;
@@ -125,23 +126,23 @@ public:
   ~Root() override;
 
   // Clears existing Root members, allowing them to be loaded fresh from disk.
-  void reload();
+  [[nodiscard]] std::expected<void, StarException> reload();
 
   // Reloads with the given mod sources applied on top of the base mod source
   // specified in the settings.  Mods in the base mod source will override mods
   // in the given mod sources
-  void loadMods(StringList modDirectories, bool _reload = true);
+  [[nodiscard]] std::expected<void, StarException> loadMods(StringList modDirectories, bool _reload = true);
 
   // Ensures all Root members are loaded without waiting for them to be auto
   // loaded.
-  void fullyLoad();
+  [[nodiscard]] std::expected<void, StarException> fullyLoad();
 
   // Callbacks run synchronously on the reload/hotReload caller, not on the
   // maintenance thread. Retain the subscription; owners of raw-this callbacks
   // must disconnect before tearing down any state used by the callback.
   [[nodiscard]] ListenerSubscription registerReloadListener(std::weak_ptr<Listener> reloadListener);
 
-  void hotReload();
+  [[nodiscard]] std::expected<void, StarException> hotReload();
 
   // Translates the given path to be relative to the configured storage
   // location.
@@ -150,50 +151,47 @@ public:
   // All of the Root member accessors are safe to call at any time after Root
   // initialization, if they are not loaded they will load before returning.
 
-  std::shared_ptr<Assets const> assets() override;
-  std::shared_ptr<Configuration> configuration() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Assets const>, StarException> assets() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Configuration>, StarException> configuration() override;
 
-  std::shared_ptr<ObjectDatabase const> objectDatabase();
-  std::shared_ptr<PlantDatabase const> plantDatabase();
-  std::shared_ptr<ProjectileDatabase const> projectileDatabase();
-  std::shared_ptr<MonsterDatabase const> monsterDatabase();
-  std::shared_ptr<NpcDatabase const> npcDatabase();
-  std::shared_ptr<StagehandDatabase const> stagehandDatabase();
-  std::shared_ptr<VehicleDatabase const> vehicleDatabase();
-  std::shared_ptr<PlayerFactory const> playerFactory();
-
-  std::shared_ptr<EntityFactory const> entityFactory();
-
-  std::shared_ptr<PatternedNameGenerator const> nameGenerator();
-
-  std::shared_ptr<ItemDatabase const> itemDatabase();
-  std::shared_ptr<MaterialDatabase const> materialDatabase();
-  std::shared_ptr<TerrainDatabase const> terrainDatabase();
-  std::shared_ptr<BiomeDatabase const> biomeDatabase();
-  std::shared_ptr<LiquidsDatabase const> liquidsDatabase();
-  std::shared_ptr<StatusEffectDatabase const> statusEffectDatabase();
-  std::shared_ptr<DamageDatabase const> damageDatabase();
-  std::shared_ptr<ParticleDatabase const> particleDatabase();
-  std::shared_ptr<EffectSourceDatabase const> effectSourceDatabase();
-  std::shared_ptr<FunctionDatabase const> functionDatabase();
-  std::shared_ptr<TreasureDatabase const> treasureDatabase();
-  std::shared_ptr<DungeonDefinitions const> dungeonDefinitions();
-  std::shared_ptr<TilesetDatabase const> tilesetDatabase();
-  std::shared_ptr<StatisticsDatabase const> statisticsDatabase();
-  std::shared_ptr<EmoteProcessor const> emoteProcessor();
-  std::shared_ptr<SpeciesDatabase const> speciesDatabase();
-  std::shared_ptr<ImageMetadataDatabase const> imageMetadataDatabase();
-  std::shared_ptr<VersioningDatabase const> versioningDatabase();
-  std::shared_ptr<QuestTemplateDatabase const> questTemplateDatabase();
-  std::shared_ptr<AiDatabase const> aiDatabase();
-  std::shared_ptr<TechDatabase const> techDatabase();
-  std::shared_ptr<CodexDatabase const> codexDatabase();
-  std::shared_ptr<BehaviorDatabase const> behaviorDatabase();
-  std::shared_ptr<TenantDatabase const> tenantDatabase();
-  std::shared_ptr<DanceDatabase const> danceDatabase();
-  std::shared_ptr<SpawnTypeDatabase const> spawnTypeDatabase();
-  std::shared_ptr<RadioMessageDatabase const> radioMessageDatabase();
-  std::shared_ptr<CollectionDatabase const> collectionDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<ObjectDatabase const>, StarException> objectDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<PlantDatabase const>, StarException> plantDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<ProjectileDatabase const>, StarException> projectileDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<MonsterDatabase const>, StarException> monsterDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<NpcDatabase const>, StarException> npcDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<StagehandDatabase const>, StarException> stagehandDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<VehicleDatabase const>, StarException> vehicleDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<PlayerFactory const>, StarException> playerFactory();
+  [[nodiscard]] std::expected<std::shared_ptr<EntityFactory const>, StarException> entityFactory();
+  [[nodiscard]] std::expected<std::shared_ptr<PatternedNameGenerator const>, StarException> nameGenerator();
+  [[nodiscard]] std::expected<std::shared_ptr<ItemDatabase const>, StarException> itemDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<MaterialDatabase const>, StarException> materialDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainDatabase const>, StarException> terrainDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<BiomeDatabase const>, StarException> biomeDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<LiquidsDatabase const>, StarException> liquidsDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<StatusEffectDatabase const>, StarException> statusEffectDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<DamageDatabase const>, StarException> damageDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<ParticleDatabase const>, StarException> particleDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<EffectSourceDatabase const>, StarException> effectSourceDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<FunctionDatabase const>, StarException> functionDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<TreasureDatabase const>, StarException> treasureDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<DungeonDefinitions const>, StarException> dungeonDefinitions();
+  [[nodiscard]] std::expected<std::shared_ptr<TilesetDatabase const>, StarException> tilesetDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<StatisticsDatabase const>, StarException> statisticsDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<EmoteProcessor const>, StarException> emoteProcessor();
+  [[nodiscard]] std::expected<std::shared_ptr<SpeciesDatabase const>, StarException> speciesDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<ImageMetadataDatabase const>, StarException> imageMetadataDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<VersioningDatabase const>, StarException> versioningDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<QuestTemplateDatabase const>, StarException> questTemplateDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<AiDatabase const>, StarException> aiDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<TechDatabase const>, StarException> techDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<CodexDatabase const>, StarException> codexDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<BehaviorDatabase const>, StarException> behaviorDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<TenantDatabase const>, StarException> tenantDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<DanceDatabase const>, StarException> danceDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<SpawnTypeDatabase const>, StarException> spawnTypeDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<RadioMessageDatabase const>, StarException> radioMessageDatabase();
+  [[nodiscard]] std::expected<std::shared_ptr<CollectionDatabase const>, StarException> collectionDatabase();
 
   Settings& settings();
 
@@ -204,18 +202,20 @@ public:
   GameTiming& timing() { return m_timing; }
   Curve25519::KeySet const& identity() const { return m_identity; }
   SongbookSynchronization& songbookSynchronization() { return m_songbookSynchronization; }
-  WorkerPool& workers();
-  bool& humanoidHeadRotation();
+  [[nodiscard]] std::expected<WorkerPool*, StarException> workers();
+  [[nodiscard]] std::expected<bool*, StarException> humanoidHeadRotation();
 
 private:
-  StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
+  explicit Root(Settings settings);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<StringList, StarException> scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  std::shared_ptr<T> loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
   template <typename T>
-  std::shared_ptr<T> loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::shared_ptr<T>()> loadFunction);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction);
 
-  // m_configurationMutex must be held when calling
-  void writeConfig();
+  // m_configurationMutex must be held when calling.
+  [[nodiscard]] std::expected<void, StarException> writeConfig();
 
   // Services outlive the resource catalogs and all work borrowing them.
   Logger m_logger;
@@ -226,8 +226,10 @@ private:
   Curve25519::KeySet m_identity;
   SongbookSynchronization m_songbookSynchronization;
   WorkerPool m_workers;
-  std::once_flag m_workersStarted;
-  std::once_flag m_headRotationInitialized;
+  Mutex m_workersStartMutex;
+  bool m_workersStarted = false;
+  Mutex m_headRotationMutex;
+  bool m_headRotationInitialized = false;
   bool m_humanoidHeadRotation = true;
 
   Settings m_settings;
@@ -243,7 +245,7 @@ private:
   ThreadFunction<void> m_maintenanceThread;
   Mutex m_maintenanceStopMutex;
   ConditionVariable m_maintenanceStopCondition;
-  bool m_stopMaintenanceThread;
+  bool m_stopMaintenanceThread = false;
 
   std::shared_ptr<Assets> m_assets;
   Mutex m_assetsMutex;

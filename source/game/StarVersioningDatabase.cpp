@@ -18,6 +18,7 @@ import star.asset_path;
 import star.data_stream_extra;
 import star.data_stream_devices;
 import star.format;
+import star.output_proxy;
 import star.lexical_cast;
 import star.file;
 import star.logging;
@@ -31,8 +32,8 @@ import std;
 import star.optional;
 import star.string;
 import star.lua;
+import star.lua_root;
 import star.version;
-
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
@@ -49,335 +50,380 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.stored_functions;
-
 import star.versioning_database;
 import star.root_lua_bindings;
 import star.npc_database;
 import star.celestial_database;
-
-
 import star.byte_array;
 import star.algorithm;
-namespace Star {
 
+namespace Star {
 char const* const VersionedJson::Magic = "SBVJ01";
 std::size_t const VersionedJson::MagicStringSize = 6;
-
 VersionNumber const VersionedJson::SubVersioning = 1;
 
-VersionedJson VersionedJson::readFile(String const& filename) {
-  DataStreamIODevice ds(File::open(filename, IOMode::Read));
-
-  if (ds.readBytes(MagicStringSize) != ByteArray(Magic, MagicStringSize))
-    throw IOException(strf("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
-  auto versionedJson = ds.read<VersionedJson>();
-  readSubVersioning(ds, versionedJson);
-
-  return versionedJson;
+std::expected<VersionedJson, StarException> VersionedJson::readFile(String const& filename) {
+  auto file = File::open(filename, IOMode::Read);
+  if (!file) return std::unexpected(std::move(file.error()));
+  DataStreamIODevice ds(*file);
+  auto magic = ds.readBytes(MagicStringSize);
+  if (!magic) return std::unexpected(std::move(magic.error()));
+  if (*magic != ByteArray(Magic, MagicStringSize))
+    return std::unexpected(IOException::format("Wrong magic bytes at start of versioned json file, expected '{}'", Magic));
+  auto result = ds.read<VersionedJson>();
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto subVersions = readSubVersioning(ds, *result);
+  if (!subVersions) return std::unexpected(std::move(subVersions.error()));
+  return std::move(*result);
 }
-
-void VersionedJson::writeFile(VersionedJson const& versionedJson, String const& filename) {
+std::expected<void, StarException> VersionedJson::writeFile(VersionedJson const& versionedJson, String const& filename) {
   DataStreamBuffer ds;
-  ds.writeData(Magic, MagicStringSize);
-  ds.write(versionedJson);
-  writeSubVersioning(ds, versionedJson);
-  File::overwriteFileWithRename(ds.takeData(), filename);
+  auto magic = ds.writeData(Magic, MagicStringSize);
+  if (!magic) return std::unexpected(std::move(magic.error()));
+  auto written = ds.write(versionedJson);
+  if (!written) return std::unexpected(std::move(written.error()));
+  auto subVersions = writeSubVersioning(ds, versionedJson);
+  if (!subVersions) return std::unexpected(std::move(subVersions.error()));
+  return File::overwriteFileWithRename(ds.takeData(), filename);
 }
-
-void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
-  ds.write(VersionedJson::SubVersioning);
-  JsonObject subVersionsOut;
-  for (auto const& p : versionedJson.subVersions)
-    subVersionsOut.set(p.first, p.second);
-  ds.write(JsonObject{
-    {"subVersions", subVersionsOut}
-  });
+std::expected<void, StarException> VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
+  auto version = ds.write(SubVersioning);
+  if (!version) return std::unexpected(std::move(version.error()));
+  JsonObject subVersions;
+  for (auto const& pair : versionedJson.subVersions) subVersions.set(pair.first, pair.second);
+  return ds.write(JsonObject{{"subVersions", subVersions}});
 }
-void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
-  if (ds.atEnd())
-    return;
+std::expected<void, StarException> VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJson) {
+  auto end = ds.atEnd();
+  if (!end) return std::unexpected(std::move(end.error()));
+  if (*end) return {};
   VersionNumber extraVersioning = 0;
-  try {
-    ds.read(extraVersioning);
-  } catch (...) {
-  }
+  auto version = ds.read(extraVersioning);
+  // The historical reader tolerates an absent or unreadable optional trailer
+  // version, but does not tolerate malformed metadata once version 1 is read.
+  if (!version) return {};
   if (extraVersioning == 1) {
-    JsonObject source = ds.read<JsonObject>();
-    for (auto const& p : source.get("subVersions").toObject())
-      versionedJson.subVersions[p.first] = p.second.toUInt();
-  }
-}
-
-Json VersionedJson::toJson() const {
-  JsonObject subVersionsOut;
-  for (auto const& p : subVersions)
-    subVersionsOut.set(p.first, p.second);
-  return JsonObject{
-    {"id", identifier},
-    {"version", version},
-    {"content", content},
-    {"subVersions", subVersionsOut}
-  };
-}
-
-VersionedJson VersionedJson::fromJson(Json const& source) {
-  // Old versions of VersionedJson used '__' to distinguish between actual
-  // content and versioned content, but this is no longer necessary or
-  // relevant.
-  auto id = source.optString("id");
-  auto legacyId = source.optString("__id");
-  if (!id)
-    id = std::move(legacyId);
-  auto version = source.optUInt("version");
-  auto legacyVersion = source.optUInt("__version");
-  if (!version)
-    version = std::move(legacyVersion);
-  auto content = source.opt("content");
-  auto legacyContent = source.opt("__content");
-  if (!content)
-    content = std::move(legacyContent);
-  StringMap<VersionNumber> subVersions;
-  for (auto const& p : source.getObject("subVersions", JsonObject()))
-    subVersions[p.first] = p.second.toUInt();
-
-  return {id.value(), (VersionNumber)version.value(), content.value(), subVersions};
-}
-
-bool VersionedJson::empty() const {
-  return content.isNull();
-}
-
-void VersionedJson::expectIdentifier(String const& expectedIdentifier) const {
-  if (identifier != expectedIdentifier)
-    throw VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier);
-}
-
-
-DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
-  ds.read(versionedJson.identifier);
-  // This is a holdover from when the verison number was optional in
-  // VersionedJson.  We should convert versioned json binary files and the
-  // celestial chunk database and world storage to a new format eventually
-  versionedJson.version = ds.read<std::optional<VersionNumber>>().value_or(VersionNumber{});
-  ds.read(versionedJson.content);
-
-  // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
-  if (versionedJson.content.isType(Json::Type::Object) && versionedJson.content.contains("subVersions")) {
-    for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
-      versionedJson.subVersions[p.first] = p.second.toUInt();
-    versionedJson.content = versionedJson.content.eraseKey("subVersions");
-  }
-  return ds;
-}
-
-DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
-  ds.write(versionedJson.identifier);
-  ds.write(std::optional<VersionNumber>(versionedJson.version));
-  ds.write(versionedJson.content);
-  return ds;
-}
-
-VersioningDatabase::VersioningDatabase(Root& root) : m_root(root), m_luaRoot(root) {
-  auto assets = m_root.assets();
-
-  for (auto const& pair : assets->json("/versioning.config").iterateObject())
-    m_currentVersions[pair.first] = pair.second.toUInt();
-
-  for (auto const& pair : assets->json("/versioning/subVersioning.config").iterateObject())
-    for (auto const& p : pair.second.iterateObject())
-      m_currentSubVersions[pair.first][p.first] = p.second.toUInt();
-
-  for (auto const& scriptFile : assets->scan("/versioning/", ".lua")) {
-    try {
-      auto scriptParts = File::baseName(scriptFile).splitAny("_.");
-      if (scriptParts.size() == 4) {
-        String identifier = scriptParts.at(0);
-        VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
-        VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(2));
-
-        m_versionUpdateScripts[identifier.toLower()].append({scriptFile, fromVersion, toVersion});
-      } else if (scriptParts.size() == 6) {
-        String identifier = scriptParts.at(0);
-        VersionNumber atVersion = lexicalCast<VersionNumber>(scriptParts.at(1));
-        String subIdentifier = scriptParts.at(2);
-        VersionNumber fromVersion = lexicalCast<VersionNumber>(scriptParts.at(3));
-        VersionNumber toVersion = lexicalCast<VersionNumber>(scriptParts.at(4));
-
-        m_subVersionUpdateScripts[identifier.toLower()][atVersion][subIdentifier.toLower()].append({scriptFile, fromVersion, toVersion});
-      } else {
-        throw VersioningDatabaseException::format("Script file '{}' filename not of the form <identifier>_<fromversion>_<toversion>.lua or <identifier>_<atVersion>_<subIdentifier>_<fromSubVersion>_<toSubVersion>.lua", scriptFile);
-      }
-
-    } catch (StarException const&) {
-      throw VersioningDatabaseException::format("Error parsing version information from versioning script '{}'", scriptFile);
+    auto source = ds.read<JsonObject>();
+    if (!source) return std::unexpected(std::move(source.error()));
+    auto subVersions = Json(std::move(*source)).getObject("subVersions");
+    if (!subVersions) return std::unexpected(std::move(subVersions.error()));
+    for (auto const& pair : *subVersions) {
+      auto value = pair.second.toUInt();
+      if (!value) return std::unexpected(std::move(value.error()));
+      versionedJson.subVersions[pair.first] = *value;
     }
   }
-
-  // Sort each set of update scripts first by fromVersion, and then in
-  // *reverse* order of toVersion.  This way, the first matching script for a
-  // given fromVersion should take the json to the *furthest* toVersion.
-  for (auto& pair : m_versionUpdateScripts) {
-    pair.second.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
-      if (lhs.fromVersion != rhs.fromVersion)
-        return lhs.fromVersion < rhs.fromVersion;
-      else
-        return lhs.toVersion < rhs.toVersion;
-    });
+  return {};
+}
+Json VersionedJson::toJson() const {
+  JsonObject subVersionsOut;
+  for (auto const& pair : subVersions) subVersionsOut.set(pair.first, pair.second);
+  return JsonObject{{"id", identifier}, {"version", version}, {"content", content}, {"subVersions", subVersionsOut}};
+}
+std::expected<VersionedJson, StarException> VersionedJson::fromJson(Json const& source) {
+  // Legacy '__' fields remain readable; modern fields take precedence.
+  auto id = source.optString("id");
+  if (!id) return std::unexpected(std::move(id.error()));
+  auto legacyId = source.optString("__id");
+  if (!legacyId) return std::unexpected(std::move(legacyId.error()));
+  if (!*id) *id = std::move(*legacyId);
+  auto version = source.optUInt("version");
+  if (!version) return std::unexpected(std::move(version.error()));
+  auto legacyVersion = source.optUInt("__version");
+  if (!legacyVersion) return std::unexpected(std::move(legacyVersion.error()));
+  if (!*version) *version = std::move(*legacyVersion);
+  auto content = source.opt("content");
+  if (!content) return std::unexpected(std::move(content.error()));
+  auto legacyContent = source.opt("__content");
+  if (!legacyContent) return std::unexpected(std::move(legacyContent.error()));
+  if (!*content) *content = std::move(*legacyContent);
+  StringMap<VersionNumber> subVersions;
+  auto metadata = source.getObject("subVersions", JsonObject{});
+  if (!metadata) return std::unexpected(std::move(metadata.error()));
+  for (auto const& pair : *metadata) {
+    auto value = pair.second.toUInt();
+    if (!value) return std::unexpected(std::move(value.error()));
+    subVersions[pair.first] = *value;
   }
-  for (auto& p : m_subVersionUpdateScripts)
-    for (auto& version : p.second)
-      for (auto& pair : version.second) {
-        pair.second.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
-          if (lhs.fromVersion != rhs.fromVersion)
-            return lhs.fromVersion < rhs.fromVersion;
-          else
-            return lhs.toVersion < rhs.toVersion;
-        });
+  if (!*id || !*version || !*content)
+    return std::unexpected(VersionedJsonException("VersionedJson requires an identifier, version, and content"));
+  return VersionedJson{std::move(**id), static_cast<VersionNumber>(**version), std::move(**content), std::move(subVersions)};
+}
+bool VersionedJson::empty() const { return content.isNull(); }
+std::expected<void, StarException> VersionedJson::expectIdentifier(String const& expectedIdentifier) const {
+  if (identifier != expectedIdentifier)
+    return std::unexpected(VersionedJsonException::format("VersionedJson identifier mismatch, expected '{}' but got '{}'", expectedIdentifier, identifier));
+  return {};
+}
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, VersionedJson& versionedJson) {
+  auto id = ds.read(versionedJson.identifier);
+  if (!id) return std::unexpected(std::move(id.error()));
+  // Keep the legacy optional-version wire representation.
+  auto version = ds.read<std::optional<VersionNumber>>();
+  if (!version) return std::unexpected(std::move(version.error()));
+  versionedJson.version = version->value_or(VersionNumber{});
+  auto content = ds.read(versionedJson.content);
+  if (!content) return std::unexpected(std::move(content.error()));
+  // Older writers smuggled sub-version metadata into the payload.
+  if (versionedJson.content.isType(Json::Type::Object)) {
+    auto hasSubVersions = versionedJson.content.contains("subVersions");
+    if (!hasSubVersions) return std::unexpected(std::move(hasSubVersions.error()));
+    if (*hasSubVersions) {
+      auto metadata = versionedJson.content.getObject("subVersions", JsonObject{});
+      if (!metadata) return std::unexpected(std::move(metadata.error()));
+      for (auto const& pair : *metadata) {
+        auto value = pair.second.toUInt();
+        if (!value) return std::unexpected(std::move(value.error()));
+        versionedJson.subVersions[pair.first] = *value;
       }
-
-
-
+      auto stripped = versionedJson.content.eraseKey("subVersions");
+      if (!stripped) return std::unexpected(std::move(stripped.error()));
+      versionedJson.content = std::move(*stripped);
+    }
+  }
+  return &ds;
+}
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, VersionedJson const& versionedJson) {
+  auto id = ds.write(versionedJson.identifier);
+  if (!id) return std::unexpected(std::move(id.error()));
+  auto version = ds.write(std::optional<VersionNumber>(versionedJson.version));
+  if (!version) return std::unexpected(std::move(version.error()));
+  auto content = ds.write(versionedJson.content);
+  if (!content) return std::unexpected(std::move(content.error()));
+  return &ds;
 }
 
-VersionedJson VersioningDatabase::makeCurrentVersionedJson(String const& identifier, Json const& content) const {
-  RecursiveMutexLocker locker(m_mutex);
-  return VersionedJson{identifier, m_currentVersions.get(identifier), content, m_currentSubVersions.value(identifier)};
+std::expected<std::shared_ptr<VersioningDatabase>, StarException> VersioningDatabase::create(Root& root) {
+  auto result = std::shared_ptr<VersioningDatabase>(new VersioningDatabase(root));
+  auto initialized = result->init();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return result;
 }
-
-bool VersioningDatabase::versionedJsonCurrent(VersionedJson const& versionedJson) const {
-  RecursiveMutexLocker locker(m_mutex);
-  return (versionedJson.version == m_currentVersions.get(versionedJson.identifier))
-  && (versionedJson.subVersions == m_currentSubVersions.value(versionedJson.identifier));
-}
-
-VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson) const {
-  return updateVersionedJson(versionedJson, nullptr);
-}
-
-VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const {
-  RecursiveMutexLocker locker(m_mutex);
-
-  auto& root = m_root;
-  CelestialMasterDatabase celestialDatabase(root);
-
-  VersionedJson result = versionedJson;
-  std::optional<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
-  if (!targetVersion)
-    throw VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '{}'", versionedJson.identifier);
-
-  LuaCallbacks celestialCallbacks;
-  celestialCallbacks.registerCallback("parameters", [&celestialDatabase](Json const& coord) {
-      return celestialDatabase.parameters(CelestialCoordinate(coord))->diskStore();
-    });
-
-  auto invokeUpdate = [&](String const& script, Json const& content) {
-    auto scriptContext = m_luaRoot.createContext();
-    auto previousRoot = scriptContext.get("root");
-    auto previousVersioning = scriptContext.get("versioning");
-    auto restoreCallbacks = finally([&] {
-      scriptContext.set("root", previousRoot);
-      scriptContext.set("versioning", previousVersioning);
-    });
-    scriptContext.remove("root");
-    scriptContext.remove("versioning");
-    scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks(root, itemCatalog));
-    scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap()));
-    scriptContext.setCallbacks("celestial", celestialCallbacks);
-    scriptContext.setCallbacks("versioning", makeVersioningCallbacks(itemCatalog));
-    scriptContext.load(*root.assets()->bytes(script), script);
-    return scriptContext.invokePath<Json>("update", content);
+std::expected<void, StarException> VersioningDatabase::init() {
+  auto luaRoot = LuaRoot::create(m_root);
+  if (!luaRoot) return std::unexpected(std::move(luaRoot.error()));
+  m_luaRoot = std::move(*luaRoot);
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto versions = (*assets)->json("/versioning.config");
+  if (!versions) return std::unexpected(std::move(versions.error()));
+  auto entries = versions->iterateObject();
+  if (!entries) return std::unexpected(std::move(entries.error()));
+  for (auto const& pair : *entries) {
+    auto version = pair.second.toUInt();
+    if (!version) return std::unexpected(std::move(version.error()));
+    m_currentVersions[pair.first] = *version;
+  }
+  auto subVersions = (*assets)->json("/versioning/subVersioning.config");
+  if (!subVersions) return std::unexpected(std::move(subVersions.error()));
+  auto subEntries = subVersions->iterateObject();
+  if (!subEntries) return std::unexpected(std::move(subEntries.error()));
+  for (auto const& pair : *subEntries) {
+    auto identifiers = pair.second.iterateObject();
+    if (!identifiers) return std::unexpected(std::move(identifiers.error()));
+    for (auto const& entry : *identifiers) {
+      auto version = entry.second.toUInt();
+      if (!version) return std::unexpected(std::move(version.error()));
+      m_currentSubVersions[pair.first][entry.first] = *version;
+    }
+  }
+  auto scripts = (*assets)->scan("/versioning/", ".lua");
+  if (!scripts) return std::unexpected(std::move(scripts.error()));
+  for (auto const& script : *scripts) {
+    auto parse = [&]() -> std::expected<void, StarException> {
+      auto parts = File::baseName(script).splitAny("_.");
+      if (!parts) return std::unexpected(std::move(parts.error()));
+      if (parts->size() != 4 && parts->size() != 6)
+        return std::unexpected(VersioningDatabaseException::format("Script file '{}' filename not of the form <identifier>_<fromversion>_<toversion>.lua or <identifier>_<atVersion>_<subIdentifier>_<fromSubVersion>_<toSubVersion>.lua", script));
+      auto identifier = (*parts)[0].toLower();
+      if (!identifier) return std::unexpected(std::move(identifier.error()));
+      auto firstVersion = lexicalCast<VersionNumber>((*parts)[1]);
+      if (!firstVersion) return std::unexpected(std::move(firstVersion.error()));
+      if (parts->size() == 4) {
+        auto toVersion = lexicalCast<VersionNumber>((*parts)[2]);
+        if (!toVersion) return std::unexpected(std::move(toVersion.error()));
+        m_versionUpdateScripts[*identifier].append({script, *firstVersion, *toVersion});
+      } else {
+        auto subIdentifier = (*parts)[2].toLower();
+        if (!subIdentifier) return std::unexpected(std::move(subIdentifier.error()));
+        auto fromVersion = lexicalCast<VersionNumber>((*parts)[3]);
+        if (!fromVersion) return std::unexpected(std::move(fromVersion.error()));
+        auto toVersion = lexicalCast<VersionNumber>((*parts)[4]);
+        if (!toVersion) return std::unexpected(std::move(toVersion.error()));
+        m_subVersionUpdateScripts[*identifier][*firstVersion][*subIdentifier].append({script, *fromVersion, *toVersion});
+      }
+      return {};
+    }();
+    if (!parse)
+      return std::unexpected(VersioningDatabaseException(strf("Error parsing version information from versioning script '{}'", script), std::move(parse.error())));
+  }
+  // Preserve the existing stable selection order for matching upgrades.
+  auto order = [](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
+    if (lhs.fromVersion != rhs.fromVersion) return lhs.fromVersion < rhs.fromVersion;
+    return lhs.toVersion < rhs.toVersion;
   };
-
-  try {
-    for (auto const& updateScript : m_versionUpdateScripts.value(versionedJson.identifier.toLower())) {
-      for (auto const& subVersionScripts : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
-        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subVersionScripts.first);
-        for (auto const& subVersionUpdateScript : subVersionScripts.second) {
-          if (result.subVersions.value(subVersionScripts.first) >= targetSubVersion)
-            break;
-
-          if (subVersionUpdateScript.fromVersion == result.subVersions.value(subVersionScripts.first)) {
-            result.content = invokeUpdate(subVersionUpdateScript.script, result.content);
-            if (!result.content) {
-              throw VersioningDatabaseException::format(
-                  "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)",
-                  versionedJson.identifier, result.version, outputOptional(targetVersion), subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
-            }
-            root.logger().debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
-                versionedJson.identifier, subVersionScripts.first, result.subVersions.value(subVersionScripts.first), subVersionUpdateScript.toVersion);
-            result.subVersions[subVersionScripts.first] = subVersionUpdateScript.toVersion;
+  for (auto& pair : m_versionUpdateScripts) pair.second.sort(order);
+  for (auto& pair : m_subVersionUpdateScripts)
+    for (auto& version : pair.second)
+      for (auto& scripts : version.second) scripts.second.sort(order);
+  return {};
+}
+std::expected<VersionedJson, StarException> VersioningDatabase::makeCurrentVersionedJson(String const& identifier, Json const& content) const {
+  RecursiveMutexLocker locker(m_mutex);
+  auto version = m_currentVersions.get(identifier);
+  if (!version) return std::unexpected(std::move(version.error()));
+  return VersionedJson{identifier, **version, content, m_currentSubVersions.value(identifier)};
+}
+std::expected<bool, StarException> VersioningDatabase::versionedJsonCurrent(VersionedJson const& json) const {
+  RecursiveMutexLocker locker(m_mutex);
+  auto version = m_currentVersions.get(json.identifier);
+  if (!version) return std::unexpected(std::move(version.error()));
+  return json.version == **version && json.subVersions == m_currentSubVersions.value(json.identifier);
+}
+std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJson(VersionedJson const& json) const {
+  return updateVersionedJson(json, nullptr);
+}
+std::expected<VersionedJson, StarException> VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const {
+  RecursiveMutexLocker locker(m_mutex);
+  auto celestialDatabase = CelestialMasterDatabase::create(m_root);
+  if (!celestialDatabase) return std::unexpected(std::move(celestialDatabase.error()));
+  VersionedJson result = versionedJson;
+  auto targetVersion = m_currentVersions.maybe(versionedJson.identifier);
+  if (!targetVersion)
+    return std::unexpected(VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '{}'", versionedJson.identifier));
+  LuaCallbacks celestialCallbacks;
+  auto registered = celestialCallbacks.registerCallback("parameters", [&celestialDatabase](Json const& coordinate) -> std::expected<Json, StarException> {
+    auto coord = CelestialCoordinate::create(coordinate);
+    if (!coord) return std::unexpected(std::move(coord.error()));
+    auto parameters = (*celestialDatabase)->parameters(*coord);
+    if (!parameters) return std::unexpected(std::move(parameters.error()));
+    if (!*parameters)
+      return std::unexpected(VersioningDatabaseException("Missing celestial parameters in versioning script"));
+    return (*parameters)->diskStore();
+  });
+  if (!registered) return std::unexpected(std::move(registered.error()));
+  auto invokeUpdate = [&](String const& script, Json const& content) -> std::expected<Json, StarException> {
+    auto context = m_luaRoot->createContext();
+    if (!context) return std::unexpected(std::move(context.error()));
+    auto previousRoot = context->get("root");
+    if (!previousRoot) return std::unexpected(std::move(previousRoot.error()));
+    auto previousVersioning = context->get("versioning");
+    if (!previousVersioning) return std::unexpected(std::move(previousVersioning.error()));
+    auto invoked = [&]() -> std::expected<Json, StarException> {
+      auto removed = context->remove("root");
+      if (!removed) return std::unexpected(std::move(removed.error()));
+      removed = context->remove("versioning");
+      if (!removed) return std::unexpected(std::move(removed.error()));
+      auto callbacks = LuaBindings::makeRootCallbacks(m_root, itemCatalog);
+      if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+      auto installed = context->setCallbacks("root", *callbacks);
+      if (!installed) return std::unexpected(std::move(installed.error()));
+      auto utility = LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap());
+      if (!utility) return std::unexpected(std::move(utility.error()));
+      installed = context->setCallbacks("sb", *utility);
+      if (!installed) return std::unexpected(std::move(installed.error()));
+      installed = context->setCallbacks("celestial", celestialCallbacks);
+      if (!installed) return std::unexpected(std::move(installed.error()));
+      auto versioning = makeVersioningCallbacks(itemCatalog);
+      if (!versioning) return std::unexpected(std::move(versioning.error()));
+      installed = context->setCallbacks("versioning", *versioning);
+      if (!installed) return std::unexpected(std::move(installed.error()));
+      auto assets = m_root.assets();
+      if (!assets) return std::unexpected(std::move(assets.error()));
+      auto bytes = (*assets)->bytes(script);
+      if (!bytes) return std::unexpected(std::move(bytes.error()));
+      auto loaded = context->load(**bytes, script);
+      if (!loaded) return std::unexpected(std::move(loaded.error()));
+      return context->invokePath<Json>("update", content);
+    }();
+    // Both restorations run even if script execution or one restoration fails.
+    auto restoredRoot = context->set("root", *previousRoot);
+    auto restoredVersioning = context->set("versioning", *previousVersioning);
+    if (!restoredRoot) return std::unexpected(std::move(restoredRoot.error()));
+    if (!restoredVersioning) return std::unexpected(std::move(restoredVersioning.error()));
+    return invoked;
+  };
+  auto updated = [&]() -> std::expected<void, StarException> {
+    auto identifier = versionedJson.identifier.toLower();
+    if (!identifier) return std::unexpected(std::move(identifier.error()));
+    for (auto const& script : m_versionUpdateScripts.value(*identifier)) {
+      for (auto const& subScripts : m_subVersionUpdateScripts.value(*identifier).value(result.version)) {
+        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subScripts.first);
+        for (auto const& subScript : subScripts.second) {
+          if (result.subVersions.value(subScripts.first) >= targetSubVersion) break;
+          if (subScript.fromVersion == result.subVersions.value(subScripts.first)) {
+            auto content = invokeUpdate(subScript.script, result.content);
+            if (!content) return std::unexpected(std::move(content.error()));
+            result.content = std::move(*content);
+            if (!result.content)
+              return std::unexpected(VersioningDatabaseException::format("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)", versionedJson.identifier, result.version, outputOptional(targetVersion), subScripts.first, subScript.fromVersion, subScript.toVersion));
+            auto logged = m_root.logger().debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}", versionedJson.identifier, subScripts.first, result.subVersions.value(subScripts.first), subScript.toVersion);
+            if (!logged) return std::unexpected(std::move(logged.error()));
+            result.subVersions[subScripts.first] = subScript.toVersion;
           }
         }
       }
-
-      if (result.version >= *targetVersion)
-        break;
-
-      if (updateScript.fromVersion == result.version) {
-        result.content = invokeUpdate(updateScript.script, result.content);
-        if (!result.content) {
-          throw VersioningDatabaseException::format(
-              "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script from {} to {} returned null (un-upgradeable)",
-              versionedJson.identifier, result.version, outputOptional(targetVersion), updateScript.fromVersion, updateScript.toVersion);
-        }
-        root.logger().debug("Brought versionedJson '{}' from version {} to {}",
-            versionedJson.identifier, result.version, updateScript.toVersion);
-        result.version = updateScript.toVersion;
+      if (result.version >= *targetVersion) break;
+      if (script.fromVersion == result.version) {
+        auto content = invokeUpdate(script.script, result.content);
+        if (!content) return std::unexpected(std::move(content.error()));
+        result.content = std::move(*content);
+        if (!result.content)
+          return std::unexpected(VersioningDatabaseException::format("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script from {} to {} returned null (un-upgradeable)", versionedJson.identifier, result.version, outputOptional(targetVersion), script.fromVersion, script.toVersion));
+        auto logged = m_root.logger().debug("Brought versionedJson '{}' from version {} to {}", versionedJson.identifier, result.version, script.toVersion);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+        result.version = script.toVersion;
       }
     }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw VersioningDatabaseException(strf("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}",
-            versionedJson.identifier, result.version, outputOptional(targetVersion)), e);
-  }
-
-  if (result.version > *targetVersion) {
-    throw VersioningDatabaseException::format(
-        "VersionedJson with identifier '{}' and version {} is newer than current version of {}, cannot load",
-        versionedJson.identifier, result.version, outputOptional(targetVersion));
-  }
-
-  if (result.version != *targetVersion) {
-    throw VersioningDatabaseException::format(
-        "Could not bring VersionedJson with identifier '{}' and version {} forward to current version of {}, best version was {}",
-        versionedJson.identifier, result.version, outputOptional(targetVersion), result.version);
-  }
-
+    return {};
+  }();
+  if (!updated)
+    return std::unexpected(VersioningDatabaseException(strf("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}", versionedJson.identifier, result.version, outputOptional(targetVersion)), std::move(updated.error())));
+  if (result.version > *targetVersion)
+    return std::unexpected(VersioningDatabaseException::format("VersionedJson with identifier '{}' and version {} is newer than current version of {}, cannot load", versionedJson.identifier, result.version, outputOptional(targetVersion)));
+  if (result.version != *targetVersion)
+    return std::unexpected(VersioningDatabaseException::format("Could not bring VersionedJson with identifier '{}' and version {} forward to current version of {}, best version was {}", versionedJson.identifier, result.version, outputOptional(targetVersion), result.version));
   return result;
 }
-
-Json VersioningDatabase::loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const {
-  return loadVersionedJson(versionedJson, expectedIdentifier, nullptr);
+std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(VersionedJson const& json, String const& expectedIdentifier) const {
+  return loadVersionedJson(json, expectedIdentifier, nullptr);
 }
-
-Json VersioningDatabase::loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const {
-  versionedJson.expectIdentifier(expectedIdentifier);
-  if (versionedJsonCurrent(versionedJson))
-    return versionedJson.content;
-  return updateVersionedJson(versionedJson, itemCatalog).content;
+std::expected<Json, StarException> VersioningDatabase::loadVersionedJson(VersionedJson const& json, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const {
+  auto identifier = json.expectIdentifier(expectedIdentifier);
+  if (!identifier) return std::unexpected(std::move(identifier.error()));
+  auto current = versionedJsonCurrent(json);
+  if (!current) return std::unexpected(std::move(current.error()));
+  if (*current) return json.content;
+  auto updated = updateVersionedJson(json, itemCatalog);
+  if (!updated) return std::unexpected(std::move(updated.error()));
+  return std::move(updated->content);
 }
-
-LuaCallbacks VersioningDatabase::makeVersioningCallbacks(ItemDatabase const* itemCatalog) const {
-  LuaCallbacks versioningCallbacks;
-
-  versioningCallbacks.registerCallback("loadVersionedJson", [this, itemCatalog](String const& storagePath) {
-      try {
-        auto& root = m_root;
-        String filePath = File::fullPath(root.toStoragePath(storagePath));
-        String basePath = File::fullPath(root.toStoragePath("."));
-        if (!filePath.beginsWith(basePath))
-          throw VersioningDatabaseException::format(
-              "Cannot load external VersionedJson outside of the Root storage path");
-        auto loadedJson = VersionedJson::readFile(filePath);
-        return updateVersionedJson(loadedJson, itemCatalog).content;
-      } catch (IOException const& e) {
-        m_root.logger().debug(
-            "Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(e, false));
-        return Json();
-      }
-    });
-
-  return versioningCallbacks;
+std::expected<LuaCallbacks, StarException> VersioningDatabase::makeVersioningCallbacks(ItemDatabase const* itemCatalog) const {
+  LuaCallbacks callbacks;
+  auto registered = callbacks.registerCallback("loadVersionedJson", [this, itemCatalog](String const& storagePath) -> std::expected<Json, StarException> {
+    auto loaded = [&]() -> std::expected<Json, StarException> {
+      auto filePath = File::fullPath(m_root.toStoragePath(storagePath));
+      if (!filePath) return std::unexpected(std::move(filePath.error()));
+      auto basePath = File::fullPath(m_root.toStoragePath("."));
+      if (!basePath) return std::unexpected(std::move(basePath.error()));
+      auto withinStorage = filePath->beginsWith(*basePath);
+      if (!withinStorage) return std::unexpected(std::move(withinStorage.error()));
+      if (!*withinStorage)
+        return std::unexpected(VersioningDatabaseException("Cannot load external VersionedJson outside of the Root storage path"));
+      auto file = VersionedJson::readFile(*filePath);
+      if (!file) return std::unexpected(std::move(file.error()));
+      auto updated = updateVersionedJson(*file, itemCatalog);
+      if (!updated) return std::unexpected(std::move(updated.error()));
+      return std::move(updated->content);
+    }();
+    if (!loaded && loaded.error().is<IOException>()) {
+      auto logged = m_root.logger().debug("Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(ExceptionDiagnostic(loaded.error()), false));
+      if (!logged) return std::unexpected(std::move(logged.error()));
+      return Json();
+    }
+    return loaded;
+  });
+  if (!registered) return std::unexpected(std::move(registered.error()));
+  return callbacks;
 }
-
 }

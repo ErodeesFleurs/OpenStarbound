@@ -43,11 +43,11 @@ struct ActorMovementControllerExceptionTag {
 using ActorMovementControllerException = StarError<ActorMovementControllerExceptionTag, MovementControllerException>;
 
 struct ActorJumpProfile {
-  friend DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
-  friend DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
 
   ActorJumpProfile();
-  ActorJumpProfile(Json const& config);
+  [[nodiscard]] static std::expected<ActorJumpProfile, StarException> create(Json const& config);
 
   Json toJson() const;
 
@@ -69,25 +69,25 @@ struct ActorJumpProfile {
   std::optional<bool> collisionCancelled;
 };
 
-DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
-DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
 
 // A not-quite superset of MovementParameters, with some fields from
 // MovementParameters ignored because they make no sense, and other fields
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
-  friend DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
-  friend DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
 
   // Load sensible defaults from a config file.
-  static ActorMovementParameters sensibleDefaults(Root& root);
+  [[nodiscard]] static std::expected<ActorMovementParameters, StarException> sensibleDefaults(Root& root);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
   explicit ActorMovementParameters();
-  explicit ActorMovementParameters(Json const& config);
+  [[nodiscard]] static std::expected<ActorMovementParameters, StarException> create(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
@@ -149,8 +149,8 @@ struct ActorMovementParameters {
   std::optional<float> pathExploreRate;
 };
 
-DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
-DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
 
 // A set of normalized values that act as "modifiers" or "bonuses" to movement,
 // and can be combined sensibly.  A modifier of 0.0 represents a 0% change, a
@@ -158,11 +158,11 @@ DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementPa
 // a 20% decrease.  Also includes some flags that disable functionality
 // combined with logical OR.
 struct ActorMovementModifiers {
-  friend DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
-  friend DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
   explicit ActorMovementModifiers();
-  explicit ActorMovementModifiers(Json const& config);
+  [[nodiscard]] static std::expected<ActorMovementModifiers, StarException> create(Json const& config);
 
   Json toJson() const;
 
@@ -182,25 +182,24 @@ struct ActorMovementModifiers {
   bool facingSuppressed;
 };
 
-DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
-DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
 class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit ActorMovementController(Root& root);
-  ActorMovementController(Root& root, ActorMovementParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<ActorMovementController>, StarException> create(Root& root, ActorMovementParameters const& parameters = ActorMovementParameters());
 
   // Currently active parameters.
   ActorMovementParameters const& baseParameters() const;
 
   // Apply any set parameters from the given set on top of the current set.
-  void updateBaseParameters(ActorMovementParameters const& parameters);
+  [[nodiscard]] std::expected<void, StarException> updateBaseParameters(ActorMovementParameters const& parameters);
 
   // Reset the parameters from the sensible defaults, and apply the given
   // parameters (if any) on top of them.
-  void resetBaseParameters(ActorMovementParameters const& parameters = ActorMovementParameters());
+  [[nodiscard]] std::expected<void, StarException> resetBaseParameters(ActorMovementParameters const& parameters = ActorMovementParameters());
 
   // Currently active modifiers.
   ActorMovementModifiers const& baseModifiers() const;
@@ -213,16 +212,16 @@ public:
 
   // Stores and loads position, velocity, rotation, movingDirection,
   // facingDirection, and crouching
-  Json storeState() const;
-  void loadState(Json const& state);
+  [[nodiscard]] std::expected<Json, StarException> storeState() const;
+  [[nodiscard]] std::expected<void, StarException> loadState(Json const& state);
 
   // Optionaly anchor this ActorMovementController to the given
   // AnchorableEntity.  position, rotation, and facing direction will be set
   // based on the entity anchor alone every tick, and on slaved
   // ActorMovementControllers it will be updated based on the actual slave-side
   // AnchorableEntity state.
-  void setAnchorState(EntityAnchorState anchorState);
-  void resetAnchorState();
+  [[nodiscard]] std::expected<void, StarException> setAnchorState(EntityAnchorState anchorState);
+  [[nodiscard]] std::expected<void, StarException> resetAnchorState();
   std::optional<EntityAnchorState> anchorState() const;
   std::shared_ptr<EntityAnchor const> entityAnchor() const;
 
@@ -272,8 +271,8 @@ public:
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
 
-  std::optional<std::pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
-  std::optional<std::pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
+  [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, bool>>, StarException> pathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
+  [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, bool>>, StarException> controlPathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
 
   // Used for user controller input.
   void setMoveSpeedMultiplier(float multiplier = 1.0f);
@@ -283,12 +282,13 @@ public:
 
   // Integrates the ActorMovementController and applies all
   // the control data and clears it for the next step.
-  void tickMaster(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickMaster(float dt);
 
-  void tickSlave(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickSlave(float dt);
 
 
 private:
+  explicit ActorMovementController(Root& root);
   struct ApproachVelocityCommand {
     Vec2F targetVelocity;
     float maxControlForce;
@@ -301,8 +301,8 @@ private:
     bool positiveOnly;
   };
 
-  void applyMCParameters(ActorMovementParameters const& parameters);
-  void doSetAnchorState(std::optional<EntityAnchorState> anchorState);
+  [[nodiscard]] std::expected<void, StarException> applyMCParameters(ActorMovementParameters const& parameters);
+  [[nodiscard]] std::expected<void, StarException> doSetAnchorState(std::optional<EntityAnchorState> anchorState);
 
   ActorMovementParameters m_baseParameters;
   ActorMovementModifiers m_baseModifiers;
@@ -376,14 +376,14 @@ public:
   std::optional<PlatformerAStar::Action> curAction() const;
 
   // return true for reaching goal, false for failing to find path, nothing for running
-  std::optional<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
-  std::optional<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
+  [[nodiscard]] std::expected<std::optional<bool>, StarException> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
+  [[nodiscard]] std::expected<std::optional<bool>, StarException> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
 private:
-  bool validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
-  bool movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
+  [[nodiscard]] std::expected<bool, StarException> validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
+  [[nodiscard]] std::expected<bool, StarException> movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
 
 private:
-  bool onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
+  [[nodiscard]] std::expected<bool, StarException> onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
 
   World* m_world;
   PlatformerAStar::Parameters m_parameters;

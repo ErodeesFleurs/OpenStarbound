@@ -46,20 +46,20 @@ public:
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  void blankNetDelta(float interpolationTime = 0.0f) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
-  void writeValue(DataStream& ds, T t) const;
-  T readValue(DataStream& ds) const;
+  [[nodiscard]] std::expected<void, StarException> writeValue(DataStream& ds, T t) const;
+  [[nodiscard]] std::expected<T, StarException> readValue(DataStream& ds) const;
 
   T interpolate() const;
 
@@ -147,89 +147,97 @@ void NetElementFloating<T>::initNetVersion(NetElementVersion const* version) {
 }
 
 template <typename T>
-void NetElementFloating<T>::enableNetInterpolation(float extrapolationHint) {
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::enableNetInterpolation(float extrapolationHint) {
   m_extrapolation = extrapolationHint;
   if (!m_interpolationDataPoints) {
     m_interpolationDataPoints.emplace();
     m_interpolationDataPoints->append({0.0f, m_value});
   }
+  return {};
 }
 
 template <typename T>
-void NetElementFloating<T>::disableNetInterpolation() {
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::disableNetInterpolation() {
   if (m_interpolationDataPoints) {
-    m_value = m_interpolationDataPoints->last().second;
+    m_value = m_interpolationDataPoints->back().second;
     m_interpolationDataPoints.reset();
   }
+  return {};
 }
 
 template <typename T>
-void NetElementFloating<T>::tickNetInterpolation(float dt) {
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::tickNetInterpolation(float dt) {
   if (m_interpolationDataPoints) {
     for (auto& p : *m_interpolationDataPoints)
       p.first -= dt;
 
     while (m_interpolationDataPoints->size() > 2 && (*m_interpolationDataPoints)[1].first <= 0.0f)
-      m_interpolationDataPoints->removeFirst();
+      m_interpolationDataPoints->pop_front();
 
     m_value = interpolate();
   }
+  return {};
 }
 
 template <typename T>
-void NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return {};
   if (m_interpolationDataPoints)
-    writeValue(ds, m_interpolationDataPoints->last().second);
+    return writeValue(ds, m_interpolationDataPoints->back().second);
   else
-    writeValue(ds, m_value);
+    return writeValue(ds, m_value);
 }
 
 template <typename T>
-void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  m_value = readValue(ds);
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
+  auto result = readValue(ds);
+  if (!result) return std::unexpected(std::move(result.error()));
+  m_value = *result;
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
     m_interpolationDataPoints->clear();
     m_interpolationDataPoints->append({0.0f, m_value});
   }
+  return {};
 }
 
 template <typename T>
-bool NetElementFloating<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+[[nodiscard]] std::expected<bool, StarException> NetElementFloating<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
-  if (m_interpolationDataPoints)
-    writeValue(ds, m_interpolationDataPoints->last().second);
-  else
-    writeValue(ds, m_value);
+  auto result = m_interpolationDataPoints
+      ? writeValue(ds, m_interpolationDataPoints->back().second) : writeValue(ds, m_value);
+  if (!result) return std::unexpected(std::move(result.error()));
 
   return true;
 }
 
 template <typename T>
-void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   ((void)(rules));
-  T t = readValue(ds);
+  auto result = readValue(ds);
+  if (!result) return std::unexpected(std::move(result.error()));
+  T t = *result;
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
-    if (interpolationTime < m_interpolationDataPoints->last().first)
+    if (interpolationTime < m_interpolationDataPoints->back().first)
       m_interpolationDataPoints->clear();
     m_interpolationDataPoints->append({interpolationTime, t});
     m_value = interpolate();
   } else {
     m_value = t;
   }
+  return {};
 }
 
 template <typename T>
-void NetElementFloating<T>::blankNetDelta(float interpolationTime) {
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::blankNetDelta(float interpolationTime) {
   if (m_interpolationDataPoints) {
-    auto lastPoint = m_interpolationDataPoints->last();
+    auto lastPoint = m_interpolationDataPoints->back();
     float lastTime = lastPoint.first;
     lastPoint.first = interpolationTime;
     if (interpolationTime < lastTime)
@@ -239,29 +247,34 @@ void NetElementFloating<T>::blankNetDelta(float interpolationTime) {
 
     m_value = interpolate();
   }
+  return {};
 }
 
 template <typename T>
-void NetElementFloating<T>::writeValue(DataStream& ds, T t) const {
-  if (m_fixedPointBase)
-    ds.writeVlqI(std::round(t / *m_fixedPointBase));
-  else
-    ds.write(t);
+[[nodiscard]] std::expected<void, StarException> NetElementFloating<T>::writeValue(DataStream& ds, T t) const {
+  if (m_fixedPointBase) {
+    auto value = std::round(t / *m_fixedPointBase);
+    if (!std::isfinite(value) || value < static_cast<T>(std::numeric_limits<std::int64_t>::min())
+        || value >= -static_cast<T>(std::numeric_limits<std::int64_t>::min()))
+      return std::unexpected(StepStreamException("Fixed point value outside signed VLQ range"));
+    return ds.viwrite(static_cast<std::int64_t>(value));
+  }
+  return ds.write(t);
 }
 
 template <typename T>
-T NetElementFloating<T>::readValue(DataStream& ds) const {
-  T t;
-  if (m_fixedPointBase)
-    t = ds.readVlqI() * *m_fixedPointBase;
-  else
-    ds.read(t);
-  return t;
+[[nodiscard]] std::expected<T, StarException> NetElementFloating<T>::readValue(DataStream& ds) const {
+  if (m_fixedPointBase) {
+    auto result = ds.readVlqI();
+    if (!result) return std::unexpected(std::move(result.error()));
+    return *result * *m_fixedPointBase;
+  }
+  return ds.read<T>();
 }
 
 template <typename T>
 T NetElementFloating<T>::interpolate() const {
-  auto& dataPoints = m_interpolationDataPoints.value();
+  auto& dataPoints = *m_interpolationDataPoints;
 
   float ipos = inverseLinearInterpolateUpper(dataPoints.begin(), dataPoints.end(), 0.0f,
       [](float lhs, auto const& rhs) {

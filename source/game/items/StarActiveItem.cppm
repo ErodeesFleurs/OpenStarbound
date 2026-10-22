@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -123,20 +124,19 @@ public:
     return Star::typeName<ActiveItem>();
   }
 
-  ActiveItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
-  ActiveItem(ActiveItem const& rhs);
+  [[nodiscard]] static std::expected<std::shared_ptr<ActiveItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<DamageSource> damageSources() const override;
-  List<PolyF> shieldPolys() const override;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
+  [[nodiscard]] std::expected<List<PolyF>, StarException> shieldPolys() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
 
   bool holdingItem() const;
   std::optional<String> backArmFrame() const;
@@ -149,28 +149,33 @@ public:
   std::optional<Direction> facingDirection() const;
 
   // Hand drawables are in hand-space, everything else is in world space.
-  List<Drawable> handDrawables() const;
-  List<std::pair<Drawable, std::optional<EntityRenderLayer>>> entityDrawables() const;
-  List<LightSource> lights() const;
-  List<std::shared_ptr<AudioInstance>> pullNewAudios();
-  List<Particle> pullNewParticles();
+  [[nodiscard]] std::expected<List<Drawable>, StarException> handDrawables() const;
+  [[nodiscard]] std::expected<List<std::pair<Drawable, std::optional<EntityRenderLayer>>>, StarException> entityDrawables() const;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lights() const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<AudioInstance>>, StarException> pullNewAudios();
+  [[nodiscard]] std::expected<List<Particle>, StarException> pullNewParticles();
 
   std::optional<String> cursor() const;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
-  float durabilityStatus() override;
+  [[nodiscard]] std::expected<float, StarException> durabilityStatus() override;
 
 private:
-  Vec2F armPosition(Vec2F const& offset) const;
-  Vec2F handPosition(Vec2F const& offset) const;
+  explicit ActiveItem(Root& root) : Item(root), m_script(root), m_scriptedAnimator(root) {}
+  [[nodiscard]]
+  std::expected<Vec2F, StarException> armPosition(Vec2F const& offset) const;
+  [[nodiscard]]
+  std::expected<Vec2F, StarException> handPosition(Vec2F const& offset) const;
 
-  LuaCallbacks makeActiveItemCallbacks();
-  LuaCallbacks makeScriptedAnimationCallbacks();
+  [[nodiscard]]
+  std::expected<LuaCallbacks, StarException> makeActiveItemCallbacks();
+  [[nodiscard]]
+  std::expected<LuaCallbacks, StarException> makeScriptedAnimationCallbacks();
 
   mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
 
-  NetworkedAnimator m_itemAnimator;
+  std::shared_ptr<NetworkedAnimator> m_itemAnimator;
   NetworkedAnimator::DynamicTarget m_itemAnimatorDynamicTarget;
 
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;

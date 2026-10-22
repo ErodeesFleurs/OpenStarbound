@@ -18,18 +18,22 @@ using UuidException = StarError<UuidExceptionTag, StarException>;
 
 inline constexpr std::size_t UuidSize = 16;
 
+class Uuid;
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Uuid& uuid);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Uuid const& uuid);
+
 class Uuid {
 public:
-  friend DataStream& operator>>(DataStream& ds, Uuid& uuid);
-  friend DataStream& operator<<(DataStream& ds, Uuid const& uuid);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Uuid& uuid);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Uuid const& uuid);
   friend struct hash<Uuid>;
 
   // An explicitly unfilled identity for wire staging, never identity generation.
   static Uuid nil() { return Uuid(NilTag{}); }
 
   explicit Uuid(RandomService& random);
-  explicit Uuid(ByteArray const& bytes);
-  explicit Uuid(String const& hex);
+  [[nodiscard]] static std::expected<Uuid, StarException> create(ByteArray const& bytes);
+  [[nodiscard]] static std::expected<Uuid, StarException> create(String const& hex);
 
   char const* ptr() const;
   ByteArray bytes() const;
@@ -54,12 +58,10 @@ struct hash<Uuid> {
   std::size_t operator()(Uuid const& u) const;
 };
 
-DataStream& operator>>(DataStream& ds, Uuid& uuid);
-DataStream& operator<<(DataStream& ds, Uuid const& uuid);
 
 // Decode directly without generating a throwaway random identity.
 template <>
-Uuid DataStream::read<Uuid>();
+[[nodiscard]] std::expected<Uuid, StarException> DataStream::read<Uuid>();
 
 }
 
@@ -73,7 +75,7 @@ export namespace Star {
 export extern "C++" {
 namespace Star {
   template <>
-  Uuid DataStream::read<Uuid>();
+  [[nodiscard]] std::expected<Uuid, StarException> DataStream::read<Uuid>();
 }
 }
 

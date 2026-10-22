@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -194,19 +195,25 @@ import star.image_metadata_database;
 
 namespace Star {
 
-StatusPane::StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) : Pane(guiContext) {
-  m_paneManager = paneManager;
-  m_client = client;
-  m_player = m_client->mainPlayer();
+StatusPane::StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client)
+  : Pane(guiContext), m_paneManager(paneManager), m_client(std::move(client)), m_player(m_client->mainPlayer()) {}
 
-  auto assets = context()->root().assets();
-
-  GuiReader reader(*context());
-  reader.construct(assets->json("/interface/windowconfig/statuspane.config:paneLayout"), this);
-  disableScissoring();
+std::expected<std::shared_ptr<StatusPane>, StarException> StatusPane::create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) {
+  auto pane = std::shared_ptr<StatusPane>(new StatusPane(guiContext, paneManager, std::move(client)));
+  auto base = pane->initializePane();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto assets = guiContext.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto layout = (*assets)->json("/interface/windowconfig/statuspane.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  GuiReader reader(guiContext);
+  auto constructed = reader.construct(*layout, pane.get());
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
+  pane->disableScissoring();
+  return pane;
 }
 
-std::shared_ptr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
+std::expected<std::shared_ptr<Pane>, StarException> StatusPane::createTooltip(Vec2I const& screenPosition) {
   auto interfaceScale = context()->interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {
@@ -214,59 +221,79 @@ std::shared_ptr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
         return SimpleTooltipBuilder::buildTooltip(*context(), indicator.label);
     }
   }
-  return {};
+  return std::shared_ptr<Pane>{};
 }
 
-void StatusPane::renderImpl() {
-  Pane::renderImpl();
-
+std::expected<void, StarException> StatusPane::renderImpl() {
+  auto rendered = Pane::renderImpl();
+  if (!rendered) return std::unexpected(std::move(rendered.error()));
   auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
   auto interfaceScale = context()->interfaceScale();
   auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
-
-  String statusIconDarkenImage = assets->json("/interface.config:statusIconDarkenImage").toString();
-
+  if (!imageMetadataDatabase) return std::unexpected(std::move(imageMetadataDatabase.error()));
+  auto darkenConfig = (*assets)->json("/interface.config:statusIconDarkenImage");
+  if (!darkenConfig) return std::unexpected(std::move(darkenConfig.error()));
+  auto statusIconDarkenImage = darkenConfig->toString();
+  if (!statusIconDarkenImage) return std::unexpected(std::move(statusIconDarkenImage.error()));
   for (auto const& entry : m_statusIndicators) {
     String image = entry.icon;
     if (entry.durationPercentage) {
-      int imageHeight = imageMetadataDatabase->imageSize(image)[1];
+      auto imageSize = (*imageMetadataDatabase)->imageSize(image);
+      if (!imageSize) return std::unexpected(std::move(imageSize.error()));
+      int imageHeight = (*imageSize)[1];
       int yOffset = -(int)(*entry.durationPercentage * imageHeight);
       image += "?" + imageOperationToString(BlendImageOperation{
-                         BlendImageOperation::Multiply, {statusIconDarkenImage}, Vec2I(0, yOffset)});
+                         BlendImageOperation::Multiply, {*statusIconDarkenImage}, Vec2I(0, yOffset)});
     }
-    context()->drawQuad(image, entry.screenRect.min(), interfaceScale);
+    auto drawn = context()->drawQuad(image, entry.screenRect.min(), interfaceScale);
+    if (!drawn) return std::unexpected(std::move(drawn.error()));
   }
+  return {};
 }
 
-void StatusPane::update(float dt) {
-  Pane::update(dt);
-
+std::expected<void, StarException> StatusPane::update(float dt) {
+  auto updated = Pane::update(dt);
+  if (!updated) return std::unexpected(std::move(updated.error()));
   auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
   auto interfaceScale = context()->interfaceScale();
-  int roundWindowHeight = std::ceil(windowHeight() / interfaceScale) * interfaceScale;
-
+  auto height = windowHeight();
+  if (!height) return std::unexpected(std::move(height.error()));
+  int roundWindowHeight = std::ceil(*height / interfaceScale) * interfaceScale;
   auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
+  if (!imageMetadataDatabase) return std::unexpected(std::move(imageMetadataDatabase.error()));
   auto statusEffectDatabase = context()->root().statusEffectDatabase();
-
-  Vec2I statusIconOffset = jsonToVec2I(assets->json("/interface.config:statusIconPos"));
-  Vec2I statusIconPos = Vec2I(statusIconOffset[0] * interfaceScale, roundWindowHeight - statusIconOffset[1] * interfaceScale);
-  Vec2I statusIconShift = jsonToVec2I(assets->json("/interface.config:statusIconShift")) * interfaceScale;
-
+  if (!statusEffectDatabase) return std::unexpected(std::move(statusEffectDatabase.error()));
+  auto offsetConfig = (*assets)->json("/interface.config:statusIconPos");
+  if (!offsetConfig) return std::unexpected(std::move(offsetConfig.error()));
+  auto statusIconOffset = jsonToVec2I(*offsetConfig);
+  if (!statusIconOffset) return std::unexpected(std::move(statusIconOffset.error()));
+  Vec2I statusIconPos = Vec2I((*statusIconOffset)[0] * interfaceScale, roundWindowHeight - (*statusIconOffset)[1] * interfaceScale);
+  auto shiftConfig = (*assets)->json("/interface.config:statusIconShift");
+  if (!shiftConfig) return std::unexpected(std::move(shiftConfig.error()));
+  auto shift = jsonToVec2I(*shiftConfig);
+  if (!shift) return std::unexpected(std::move(shift.error()));
+  Vec2I statusIconShift = *shift * interfaceScale;
   RectF boundRect = RectF::null();
-
+  auto summary = m_player->activeUniqueStatusEffectSummary();
+  if (!summary) return std::unexpected(std::move(summary.error()));
   m_statusIndicators.clear();
-  for (auto const& pair : m_player->activeUniqueStatusEffectSummary()) {
-    auto effectConfig = statusEffectDatabase->uniqueEffectConfig(pair.first);
-    if (effectConfig.icon) {
-      RectF rect = RectF::withSize(Vec2F(statusIconPos), Vec2F(imageMetadataDatabase->imageSize(*effectConfig.icon)) * interfaceScale);
+  for (auto const& pair : *summary) {
+    auto effectConfig = (*statusEffectDatabase)->uniqueEffectConfig(pair.first);
+    if (!effectConfig) return std::unexpected(std::move(effectConfig.error()));
+    if (effectConfig->icon) {
+      auto imageSize = (*imageMetadataDatabase)->imageSize(*effectConfig->icon);
+      if (!imageSize) return std::unexpected(std::move(imageSize.error()));
+      RectF rect = RectF::withSize(Vec2F(statusIconPos), Vec2F(*imageSize) * interfaceScale);
       boundRect.combine(rect);
-      m_statusIndicators.append(StatusEffectIndicator{*effectConfig.icon, pair.second, effectConfig.label, rect});
+      m_statusIndicators.append(StatusEffectIndicator{*effectConfig->icon, pair.second, effectConfig->label, rect});
       statusIconPos += statusIconShift;
     }
   }
-
   setPosition(Vec2I::round(boundRect.min() / interfaceScale));
   setSize(Vec2I::round(boundRect.size() / interfaceScale));
+  return {};
 }
 
 }

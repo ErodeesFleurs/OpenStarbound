@@ -21,6 +21,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 
 import star.mixer;
@@ -42,44 +43,63 @@ TileDrawer* RenderCallback::tileDrawer() const {
   return nullptr;
 }
 
-void RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {
+std::expected<void, StarException> RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {
   for (auto& drawable : drawables) {
     drawable.translate(translate);
-    addDrawable(std::move(drawable), renderLayer);
+    auto result = addDrawable(std::move(drawable), renderLayer);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void RenderCallback::addLightSources(List<LightSource> lightSources, Vec2F translate) {
+std::expected<void, StarException> RenderCallback::addLightSources(List<LightSource> lightSources, Vec2F translate) {
   for (auto& lightSource : lightSources) {
     lightSource.translate(translate);
-    addLightSource(std::move(lightSource));
+    auto result = addLightSource(std::move(lightSource));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void RenderCallback::addParticles(List<Particle> particles, Vec2F translate) {
+std::expected<void, StarException> RenderCallback::addParticles(List<Particle> particles, Vec2F translate) {
   for (auto& particle : particles) {
     particle.translate(translate);
-    addParticle(std::move(particle));
+    auto result = addParticle(std::move(particle));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void RenderCallback::addAudios(List<std::shared_ptr<AudioInstance>> audios, Vec2F translate) {
+std::expected<void, StarException> RenderCallback::addAudios(List<std::shared_ptr<AudioInstance>> audios, Vec2F translate) {
   for (auto& audio : audios) {
     audio->translate(translate);
-    addAudio(std::move(audio));
+    auto result = addAudio(std::move(audio));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void RenderCallback::addTilePreviews(List<PreviewTile> previews) {
-  for (auto& preview : previews)
-    addTilePreview(std::move(preview));
+std::expected<void, StarException> RenderCallback::addTilePreviews(List<PreviewTile> previews) {
+  for (auto& preview : previews) {
+    auto result = addTilePreview(std::move(preview));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void RenderCallback::addOverheadBars(List<OverheadBar> bars, Vec2F translate) {
+std::expected<void, StarException> RenderCallback::addOverheadBars(List<OverheadBar> bars, Vec2F translate) {
   for (auto& bar : bars) {
     bar.entityPosition += translate;
-    addOverheadBar(std::move(bar));
+    auto result = addOverheadBar(std::move(bar));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
 }

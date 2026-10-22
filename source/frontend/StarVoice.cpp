@@ -58,15 +58,15 @@ constexpr std::uint16_t VOICE_VERSION = 1;
 import star.math_common;
 namespace Star {
 
-extern EnumMap<VoiceInputMode> const VoiceInputModeNames{
+extern std::expected<EnumMap<VoiceInputMode>, StarException> const VoiceInputModeNames = EnumMap<VoiceInputMode>::create({
   {VoiceInputMode::VoiceActivity, "VoiceActivity"},
   {VoiceInputMode::PushToTalk, "PushToTalk"}
-};
+});
 
-extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
+extern std::expected<EnumMap<VoiceChannelMode>, StarException> const VoiceChannelModeNames = EnumMap<VoiceChannelMode>::create({
   {VoiceChannelMode::Mono, "Mono"},
   {VoiceChannelMode::Stereo, "Stereo"}
-};
+});
 
 inline float getAudioChunkLoudness(std::int16_t* data, std::size_t samples, float volume) {
   if (!samples)
@@ -103,16 +103,22 @@ class VoiceAudioStream {
 public:
   // TODO: This should really be a ring buffer instead.
   std::queue<std::int16_t> samples;
-  SDL_AudioStream* sdlAudioStreamMono;
-  SDL_AudioStream* sdlAudioStreamStereo;
+  SDL_AudioStream* sdlAudioStreamMono = nullptr;
+  SDL_AudioStream* sdlAudioStreamStereo = nullptr;
   Mutex mutex;
 
-  VoiceAudioStream() {
+  [[nodiscard]] static std::expected<std::shared_ptr<VoiceAudioStream>, StarException> create() {
+    auto audio = std::make_shared<VoiceAudioStream>();
     SDL_AudioSpec srcSpec = {SDL_AUDIO_S16LE, 1, 48000};
     SDL_AudioSpec dstSpec = {SDL_AUDIO_S16,   1, 44100};
-    sdlAudioStreamMono = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    audio->sdlAudioStreamMono = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    if (!audio->sdlAudioStreamMono)
+      return std::unexpected(VoiceException::format("Could not create mono audio stream: {}", SDL_GetError()));
     srcSpec.channels = dstSpec.channels = 2;
-    sdlAudioStreamStereo = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    audio->sdlAudioStreamStereo = SDL_CreateAudioStream(&srcSpec, &dstSpec);
+    if (!audio->sdlAudioStreamStereo)
+      return std::unexpected(VoiceException::format("Could not create stereo audio stream: {}", SDL_GetError()));
+    return audio;
   }
   ~VoiceAudioStream() {
     SDL_DestroyAudioStream(sdlAudioStreamMono);
@@ -128,23 +134,44 @@ public:
     return sample;
   }
 
-  std::size_t resample(std::int16_t* in, std::size_t inSamples, std::vector<std::int16_t>& out, bool mono) {
+  [[nodiscard]] std::expected<void, StarException> resample(std::int16_t* in, std::size_t inSamples, std::vector<std::int16_t>& out, bool mono) {
     SDL_AudioStream* stream = mono ? sdlAudioStreamMono : sdlAudioStreamStereo;
-    SDL_PutAudioStreamData(stream, in, inSamples * sizeof(std::int16_t));
-    if (int available = SDL_GetAudioStreamAvailable(stream)) {
-      out.resize(available / 2);
-      SDL_GetAudioStreamData(stream, out.data(), available);
-      return available;
+    if (!SDL_PutAudioStreamData(stream, in, inSamples * sizeof(std::int16_t)))
+      return std::unexpected(VoiceException::format("Could not resample voice data: {}", SDL_GetError()));
+    int available = SDL_GetAudioStreamAvailable(stream);
+    if (available < 0)
+      return std::unexpected(VoiceException::format("Could not inspect resampled voice data: {}", SDL_GetError()));
+    out.resize(available / sizeof(std::int16_t));
+    if (available) {
+      int received = SDL_GetAudioStreamData(stream, out.data(), available);
+      if (received < 0)
+        return std::unexpected(VoiceException::format("Could not read resampled voice data: {}", SDL_GetError()));
+      out.resize(received / sizeof(std::int16_t));
     }
-    return 0;
+    return {};
   }
 };
 
 Voice::Speaker::Speaker(SpeakerId id)
-  : decoderMono  (createDecoder(1), opus_decoder_destroy)
-  , decoderStereo(createDecoder(2), opus_decoder_destroy) {
+  : decoderMono(nullptr, opus_decoder_destroy), decoderStereo(nullptr, opus_decoder_destroy) {
   speakerId = id;
-  audioStream = std::make_shared<VoiceAudioStream>();
+}
+
+std::expected<std::shared_ptr<Voice::Speaker>, StarException> Voice::Speaker::create(SpeakerId id) {
+  auto speaker = std::shared_ptr<Speaker>(new Speaker(id));
+  auto mono = createDecoder(1);
+  if (!mono)
+    return std::unexpected(std::move(mono.error()));
+  speaker->decoderMono = std::move(*mono);
+  auto stereo = createDecoder(2);
+  if (!stereo)
+    return std::unexpected(std::move(stereo.error()));
+  speaker->decoderStereo = std::move(*stereo);
+  auto stream = VoiceAudioStream::create();
+  if (!stream)
+    return std::unexpected(std::move(stream.error()));
+  speaker->audioStream = std::move(*stream);
+  return speaker;
 }
 
 Json Voice::Speaker::toJson() const {
@@ -163,13 +190,24 @@ Json Voice::Speaker::toJson() const {
 Voice::Voice(Root& root, std::shared_ptr<ApplicationController> appController)
   : m_root(root), m_encoder(nullptr, opus_encoder_destroy) {
 
-  m_clientSpeaker = std::make_shared<Speaker>(m_speakerId);
   m_inputMode = VoiceInputMode::PushToTalk;
   m_channelMode = VoiceChannelMode::Mono;
   m_applicationController = appController;
 
-  m_stopThread = false;
-  m_thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), this);
+}
+
+std::expected<std::shared_ptr<Voice>, StarException> Voice::create(Root& root, std::shared_ptr<ApplicationController> appController) {
+  auto voice = std::shared_ptr<Voice>(new Voice(root, std::move(appController)));
+  auto speaker = Speaker::create(voice->m_speakerId);
+  if (!speaker)
+    return std::unexpected(std::move(speaker.error()));
+  voice->m_clientSpeaker = std::move(*speaker);
+  voice->m_stopThread = false;
+  auto thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), voice.get());
+  if (!thread)
+    return std::unexpected(std::move(thread.error()));
+  voice->m_thread = std::move(*thread);
+  return voice;
 }
 
 Voice::~Voice() {
@@ -182,16 +220,26 @@ Voice::~Voice() {
     m_threadCond.broadcast();
   }
 
-  m_thread.finish();
-
-  if (m_nextSaveTime)
-    save();
+  if (m_thread) {
+    if (auto result = m_thread.finish(); !result) {
+      auto logged = m_root.logger().error("Voice: Error finishing capture thread: {}", result.error().what());
+      if (!logged) EmergencyLog::error("Voice: Error logging capture thread failure: {}", logged.error().what());
+    }
+  }
+  if (m_nextSaveTime) {
+    if (auto result = save(); !result) {
+      auto logged = m_root.logger().error("Voice: Error saving settings: {}", result.error().what());
+      if (!logged) EmergencyLog::error("Voice: Error logging save failure: {}", logged.error().what());
+    }
+  }
 }
 
-void Voice::init() {
-  resetEncoder();
+std::expected<void, StarException> Voice::init() {
+  if (auto result = resetEncoder(); !result)
+    return result;
   if (shouldEnableInput())
-    openDevice();
+    return openDevice();
+  return {};
 }
 
 
@@ -203,62 +251,81 @@ inline bool change(T& value, T newValue, bool& out) {
   return changed;
 }
 
-void Voice::loadJson(Json const& config, bool skipSave) {
-  // Not all keys are required
-
-  bool changed = false;
-  bool shouldResetDevice = false;
-  {
-    bool enabled = shouldEnableInput();
-    m_enabled      = config.getBool("enabled", m_enabled);
-    m_inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
-    if (shouldEnableInput() != enabled)
-      shouldResetDevice = changed = true;
+std::expected<void, StarException> Voice::loadJson(Json const& config, bool skipSave) {
+  auto enabled = config.getBool("enabled", m_enabled);
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  auto inputEnabled = config.getBool("inputEnabled", m_inputEnabled);
+  if (!inputEnabled) return std::unexpected(std::move(inputEnabled.error()));
+  auto deviceName = config.optString("deviceName");
+  if (!deviceName) return std::unexpected(std::move(deviceName.error()));
+  auto threshold = config.getFloat("threshold", m_threshold);
+  if (!threshold) return std::unexpected(std::move(threshold.error()));
+  auto inputVolume = config.getFloat("inputVolume", m_inputVolume);
+  if (!inputVolume) return std::unexpected(std::move(inputVolume.error()));
+  auto outputVolume = config.getFloat("outputVolume", m_outputVolume);
+  if (!outputVolume) return std::unexpected(std::move(outputVolume.error()));
+  auto loopback = config.getBool("loopback", m_loopback);
+  if (!loopback) return std::unexpected(std::move(loopback.error()));
+  auto inputModeName = config.optString("inputMode");
+  if (!inputModeName) return std::unexpected(std::move(inputModeName.error()));
+  auto channelModeName = config.optString("channelMode");
+  if (!channelModeName) return std::unexpected(std::move(channelModeName.error()));
+  auto inputMode = m_inputMode;
+  if (*inputModeName) {
+    if (!VoiceInputModeNames) return std::unexpected(VoiceInputModeNames.error());
+    auto parsed = VoiceInputModeNames->getLeft(**inputModeName);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    inputMode = **parsed;
   }
-
-  if (config.contains("deviceName") // Make sure null-type key exists
-  && change(m_deviceName, config.optString("deviceName"), changed))
-    shouldResetDevice = true;
-
-  m_threshold = config.getFloat("threshold", m_threshold);
-  m_inputAmplitude = perceptualToAmplitude(
-    m_inputVolume = config.getFloat("inputVolume", m_inputVolume));
-  m_outputAmplitude = perceptualToAmplitude(
-    m_outputVolume = config.getFloat("outputVolume", m_outputVolume));
-  
-  if (change(m_loopback, config.getBool("loopback", m_loopback), changed))
-    m_clientSpeaker->playing = false;
-
-  if (auto inputMode = config.optString("inputMode")) {
-    if (change(m_inputMode, VoiceInputModeNames.getLeft(*inputMode), changed))
-      m_lastInputTime = 0;
+  auto channelMode = m_channelMode;
+  if (*channelModeName) {
+    if (!VoiceChannelModeNames) return std::unexpected(VoiceChannelModeNames.error());
+    auto parsed = VoiceChannelModeNames->getLeft(**channelModeName);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    channelMode = **parsed;
   }
-
-  bool shouldResetEncoder = false;
-  if (auto channelMode = config.optString("channelMode")) {
-    if (change(m_channelMode, VoiceChannelModeNames.getLeft(*channelMode), changed)) {
-      closeDevice();
-      shouldResetEncoder = true;
-      shouldResetDevice = true;
+  auto bitrate = config.opt("bitrate");
+  if (!bitrate) return std::unexpected(std::move(bitrate.error()));
+  unsigned newBitrate = m_bitrate;
+  if (*bitrate) {
+    newBitrate = 0;
+    if ((**bitrate).canConvert(Json::Type::Int)) {
+      auto value = (**bitrate).toUInt();
+      if (!value) return std::unexpected(std::move(value.error()));
+      newBitrate = clamp((unsigned)*value, 6000u, 510000u);
     }
   }
-
-  // not saving this setting to disk, as it's just for audiophiles
-  // don't want someone fudging their bitrate from the intended defaults and forgetting
-  if (auto bitrate = config.opt("bitrate")) {
-    unsigned newBitrate = bitrate->canConvert(Json::Type::Int)
-      ? clamp((unsigned)bitrate->toUInt(), 6000u, 510000u) : 0;
-    shouldResetEncoder |= change(m_bitrate, newBitrate, changed);
+  bool changed = false;
+  bool wasEnabled = shouldEnableInput();
+  m_enabled = *enabled;
+  m_inputEnabled = *inputEnabled;
+  bool shouldResetDevice = wasEnabled != shouldEnableInput();
+  changed |= shouldResetDevice;
+  auto hasDeviceName = config.contains("deviceName");
+  if (!hasDeviceName) return std::unexpected(std::move(hasDeviceName.error()));
+  if (*hasDeviceName && change(m_deviceName, std::move(*deviceName), changed))
+    shouldResetDevice = true;
+  m_threshold = *threshold;
+  m_inputAmplitude = perceptualToAmplitude(m_inputVolume = *inputVolume);
+  m_outputAmplitude = perceptualToAmplitude(m_outputVolume = *outputVolume);
+  if (change(m_loopback, *loopback, changed))
+    m_clientSpeaker->playing = false;
+  if (change(m_inputMode, inputMode, changed))
+    m_lastInputTime = 0;
+  bool shouldResetEncoder = change(m_bitrate, newBitrate, changed);
+  if (change(m_channelMode, channelMode, changed)) {
+    closeDevice();
+    shouldResetEncoder = shouldResetDevice = true;
   }
-
-  if (shouldResetEncoder)
-    resetEncoder();
-
-  if (shouldResetDevice)
-    resetDevice();
-
+  if (shouldResetEncoder) {
+    if (auto result = resetEncoder(); !result) return result;
+  }
+  if (shouldResetDevice) {
+    if (auto result = resetDevice(); !result) return result;
+  }
   if (changed && !skipSave)
     scheduleSave();
+  return {};
 }
 
 
@@ -271,15 +338,18 @@ Json Voice::saveJson() const {
     {"threshold",    m_threshold},
     {"inputVolume",  m_inputVolume},
     {"outputVolume", m_outputVolume},
-    {"inputMode",    VoiceInputModeNames.getRight(m_inputMode)},
-    {"channelMode",  VoiceChannelModeNames.getRight(m_channelMode)},
+    {"inputMode",    m_inputMode == VoiceInputMode::PushToTalk ? "PushToTalk" : "VoiceActivity"},
+    {"channelMode",  m_channelMode == VoiceChannelMode::Mono ? "Mono" : "Stereo"},
     {"loopback",     m_loopback},
     {"version",      1}
   };
 }
 
-void Voice::save() const {
-  m_root.configuration()->set("voice", saveJson());
+std::expected<void, StarException> Voice::save() const {
+  auto configuration = m_root.configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  return (*configuration)->set("voice", saveJson());
 }
 
 void Voice::scheduleSave() {
@@ -299,15 +369,15 @@ std::shared_ptr<Voice::Speaker> Voice::localSpeaker() {
   return m_clientSpeaker;
 }
 
-std::shared_ptr<Voice::Speaker> Voice::speaker(SpeakerId speakerId) {
+std::expected<std::shared_ptr<Voice::Speaker>, StarException> Voice::speaker(SpeakerId speakerId) {
   if (m_speakerId == speakerId)
     return m_clientSpeaker;
-  else {
-    if (std::shared_ptr<Speaker> const* ptr = m_speakers.ptr(speakerId))
-      return *ptr;
-    else
-      return m_speakers.emplace(speakerId, std::make_shared<Speaker>(speakerId)).first->second;
-  }
+  if (auto ptr = m_speakers.ptr(speakerId))
+    return *ptr;
+  auto created = Speaker::create(speakerId);
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  return m_speakers.emplace(speakerId, std::move(*created)).first->second;
 }
 
 HashMap<Voice::SpeakerId, std::shared_ptr<Voice::Speaker>>& Voice::speakers() {
@@ -463,13 +533,17 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
   }
 }
 
-void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
+std::expected<void, StarException> Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   for (auto& entry : m_speakers) {
     if (std::shared_ptr<Speaker>& speaker = entry.second) {
-      Vec2F newChannelVolumes = positionalAttenuationFunction ? Vec2F{
-          1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
-          1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
-      } : Vec2F{1.0f, 1.0f};
+      Vec2F newChannelVolumes{1.0f, 1.0f};
+      if (positionalAttenuationFunction) {
+        auto left = positionalAttenuationFunction(0, speaker->position, 1.0f);
+        if (!left) return std::unexpected(std::move(left.error()));
+        auto right = positionalAttenuationFunction(1, speaker->position, 1.0f);
+        if (!right) return std::unexpected(std::move(right.error()));
+        newChannelVolumes = Vec2F{1.0f - *left, 1.0f - *right};
+      }
       {
         MutexLocker locker(speaker->mutex);
         speaker->channelVolumes = newChannelVolumes;
@@ -487,18 +561,20 @@ void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFun
 
   if (m_nextSaveTime && Time::monotonicMilliseconds() > m_nextSaveTime) {
     m_nextSaveTime = 0;
-    save();
+    if (auto result = save(); !result)
+      return result;
   }
+  return {};
 }
 
 
-void Voice::setDeviceName(std::optional<String> deviceName) {
+std::expected<void, StarException> Voice::setDeviceName(std::optional<String> deviceName) {
   if (m_deviceName == deviceName)
-    return;
-
-  m_deviceName = deviceName;
+    return {};
+  m_deviceName = std::move(deviceName);
   if (m_deviceOpen)
-    openDevice();
+    return openDevice();
+  return {};
 }
 
 StringList Voice::availableDevices() {
@@ -514,9 +590,10 @@ StringList Voice::availableDevices() {
   return list;
 }
 
-int Voice::send(DataStreamBuffer& out, std::size_t budget) {
+std::expected<int, StarException> Voice::send(DataStreamBuffer& out, std::size_t budget) {
   out.setByteOrder(ByteOrder::LittleEndian);
-  out.write<std::uint16_t>(VOICE_VERSION);
+  if (auto result = out.write<std::uint16_t>(VOICE_VERSION); !result)
+    return std::unexpected(std::move(result.error()));
 
   MutexLocker encodeLock(m_encodeMutex);
 
@@ -529,57 +606,76 @@ int Voice::send(DataStreamBuffer& out, std::size_t budget) {
   encodeLock.unlock();
 
   for (auto& chunk : encodedChunks) {
-    out.write<std::uint32_t>(chunk.size());
-    out.writeBytes(chunk);
+    if (auto result = out.write<std::uint32_t>(chunk.size()); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = out.writeBytes(chunk); !result)
+      return std::unexpected(std::move(result.error()));
     if (budget && (budget -= std::min<std::size_t>(budget, chunk.size())) == 0)
       break;
   }
 
   m_lastSentTime = Time::monotonicMilliseconds();
-  if (m_loopback)
-    receive(m_clientSpeaker, { out.ptr(), out.size() });
+  if (m_loopback) {
+    auto received = receive(m_clientSpeaker, { out.ptr(), out.size() });
+    if (!received) return std::unexpected(std::move(received.error()));
+  }
   return 1;
 }
 
-bool Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
+std::expected<bool, StarException> Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
   if (!m_enabled || !speaker || view.empty())
     return false;
 
-  try {
+  auto decoded = decode(speaker, view);
+  if (!decoded) {
+    auto logged = m_root.logger().error("Voice: Error receiving voice data for speaker #{} ('{}'): {}", speaker->speakerId, speaker->name, decoded.error().what());
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    return false;
+  }
+  return *decoded;
+}
+
+std::expected<bool, StarException> Voice::decode(std::shared_ptr<Speaker> const& speaker, std::string_view view) {
     DataStreamExternalBuffer reader(view.data(), view.size());
     reader.setByteOrder(ByteOrder::LittleEndian);
-
-    if (reader.read<std::uint16_t>() > VOICE_VERSION)
+    auto version = reader.read<std::uint16_t>();
+    if (!version) return std::unexpected(std::move(version.error()));
+    if (*version > VOICE_VERSION)
       return false;
-
-    std::uint32_t opusLength = 0;
-    while (!reader.atEnd()) {
-      reader >> opusLength;
-      if (reader.pos() + opusLength > reader.size())
-        throw VoiceException(std::string("Opus packet length goes past end of buffer", sizeof("Opus packet length goes past end of buffer") - 1), false);
-      auto opusData = (unsigned char*)reader.ptr() + reader.pos();
-      reader.seek(opusLength, IOSeek::Relative);
-
+    while (true) {
+      auto atEnd = reader.atEnd();
+      if (!atEnd) return std::unexpected(std::move(atEnd.error()));
+      if (*atEnd) break;
+      auto opusLength = reader.read<std::uint32_t>();
+      if (!opusLength) return std::unexpected(std::move(opusLength.error()));
+      auto position = reader.pos();
+      if (!position) return std::unexpected(std::move(position.error()));
+      if (*position > reader.size() || *opusLength > reader.size() - *position)
+        return std::unexpected(VoiceException("Opus packet length goes past end of buffer", false));
+      auto opusData = reinterpret_cast<unsigned char const*>(reader.ptr()) + *position;
+      if (auto result = reader.seek(*opusLength, IOSeek::Relative); !result)
+        return std::unexpected(std::move(result.error()));
+      if (!*opusLength)
+        return std::unexpected(VoiceException("Empty Opus packet", false));
       int channels = opus_packet_get_nb_channels(opusData);
       if (channels == OPUS_INVALID_PACKET)
         continue;
-
       bool mono = channels == 1;
       OpusDecoder* decoder = mono ? speaker->decoderMono.get() : speaker->decoderStereo.get();
-      int samples = opus_decoder_get_nb_samples(decoder, opusData, opusLength);
+      int samples = opus_decoder_get_nb_samples(decoder, opusData, *opusLength);
       if (samples < 0)
-        throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
+        return std::unexpected(VoiceException::format("Decoder error: {}", opus_strerror(samples)));
 
       m_decodeBuffer.resize(samples * (std::size_t)channels);
 
-      int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(std::int16_t), 0);
-      if (decodedSamples <= 0) {
-        if (decodedSamples < 0)
-          throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
+      int decodedSamples = opus_decode(decoder, opusData, *opusLength, m_decodeBuffer.data(), samples, 0);
+      if (decodedSamples < 0)
+        return std::unexpected(VoiceException::format("Decoder error: {}", opus_strerror(decodedSamples)));
+      if (!decodedSamples)
         return true;
-      }
-
-      speaker->audioStream->resample(m_decodeBuffer.data(), (std::size_t)decodedSamples * channels, m_resampleBuffer, mono);
+      auto resampled = speaker->audioStream->resample(m_decodeBuffer.data(), (std::size_t)decodedSamples * channels, m_resampleBuffer, mono);
+      if (!resampled)
+        return std::unexpected(std::move(resampled.error()));
 
       {
         MutexLocker lock(speaker->audioStream->mutex);
@@ -612,52 +708,54 @@ bool Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
       playSpeaker(speaker, channels);
     }
     return true;
-  }
-  catch (StarException const& e) {
-    m_root.logger().error("Voice: Error receiving voice data for speaker #{} ('{}'): {}", speaker->speakerId, speaker->name, e.what());
-    return false;
-  }
 }
 
 void Voice::setInput(bool input) {
   m_lastInputTime = (m_deviceOpen && input) ? Time::monotonicMilliseconds() + 1000 : 0;
 }
 
-OpusDecoder* Voice::createDecoder(int channels) {
+std::expected<std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)>, StarException> Voice::createDecoder(int channels) {
   int error;
   OpusDecoder* decoder = opus_decoder_create(VOICE_SAMPLE_RATE, channels, &error);
   if (error != OPUS_OK)
-    throw VoiceException::format("Could not create decoder: {}", opus_strerror(error));
+    return std::unexpected(VoiceException::format("Could not create decoder: {}", opus_strerror(error)));
   else
-    return decoder;
+    return std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)>(decoder, opus_decoder_destroy);
 }
 
-OpusEncoder* Voice::createEncoder(int channels) {
+std::expected<std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>, StarException> Voice::createEncoder(int channels) {
   int error;
   OpusEncoder* encoder = opus_encoder_create(VOICE_SAMPLE_RATE, channels, OPUS_APPLICATION_AUDIO, &error);
   if (error != OPUS_OK)
-    throw VoiceException::format("Could not create encoder: {}", opus_strerror(error));
+    return std::unexpected(VoiceException::format("Could not create encoder: {}", opus_strerror(error)));
   else
-    return encoder;
+    return std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>(encoder, opus_encoder_destroy);
 }
 
-void Voice::resetEncoder() {
+std::expected<void, StarException> Voice::resetEncoder() {
   int channels = encoderChannels();
   MutexLocker locker(m_threadMutex);
-  m_encoder.reset(createEncoder(channels));
+  auto created = createEncoder(channels);
+  if (!created) return std::unexpected(std::move(created.error()));
+  auto encoder = std::move(*created);
   int bitrate = m_bitrate > 0 ? (int)m_bitrate : (channels == 2 ? 50000 : 24000);
-  opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(bitrate));
+  int error = opus_encoder_ctl(encoder.get(), OPUS_SET_BITRATE(bitrate));
+  if (error != OPUS_OK)
+    return std::unexpected(VoiceException::format("Could not configure encoder: {}", opus_strerror(error)));
+  m_encoder = std::move(encoder);
+  return {};
 }
 
-void Voice::resetDevice() {
+std::expected<void, StarException> Voice::resetDevice() {
   closeDevice();
   if (shouldEnableInput())
-    openDevice();
+    return openDevice();
+  return {};
 }
 
-void Voice::openDevice() {
+std::expected<void, StarException> Voice::openDevice() {
   if (m_deviceOpen)
-    return;
+    return {};
   closeDevice();
 
   std::uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;
@@ -673,7 +771,7 @@ void Voice::openDevice() {
       SDL_free(devices);
     }
   }
-  m_applicationController->openAudioInputDevice(
+  auto opened = m_applicationController->openAudioInputDevice(
     deviceId,
     VOICE_SAMPLE_RATE,
     m_deviceChannels = encoderChannels(),
@@ -681,8 +779,12 @@ void Voice::openDevice() {
       readAudioData(stream, len);
     }
   );
+  if (!opened) return std::unexpected(std::move(opened.error()));
+  if (!*opened)
+    return std::unexpected(VoiceException::format("Could not open input device: {}", SDL_GetError()));
 
   m_deviceOpen = true;
+  return {};
 }
 
 void Voice::closeDevice() {
@@ -708,15 +810,15 @@ bool Voice::playSpeaker(std::shared_ptr<Speaker> const& speaker, int) {
   return true;
 }
 
-void Voice::thread() {
+std::expected<void, StarException> Voice::thread() {
   while (true) {
     MutexLocker locker(m_threadMutex);
     if (m_stopThread)
-      return;
+      return {};
 
     m_threadCond.wait(m_threadMutex);
     if (m_stopThread)
-      return;
+      return {};
 
     {
       MutexLocker locker(m_captureMutex);
@@ -740,7 +842,8 @@ void Voice::thread() {
             samples[i] *= m_inputAmplitude;
         }
 
-        if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
+        int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size());
+        if (encodedSize > 0) {
           if (encodedSize == 1)
             continue;
 
@@ -755,8 +858,10 @@ void Voice::thread() {
           }
 
         }
-        else if (encodedSize < 0)
-          m_root.logger().error("Voice: Opus encode error {}", opus_strerror(encodedSize));
+        else if (encodedSize < 0) {
+          auto logged = m_root.logger().error("Voice: Opus encode error {}", opus_strerror(encodedSize));
+          if (!logged) return std::unexpected(std::move(logged.error()));
+        }
       }
     }
 
@@ -765,7 +870,7 @@ void Voice::thread() {
     locker.unlock();
     Thread::yield();
   }
-  return;
+  return {};
 }
 
 }// namespace Star

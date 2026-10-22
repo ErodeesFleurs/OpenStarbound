@@ -114,14 +114,14 @@ namespace Star {
 void* operator new(std::size_t size) {
   auto ptr = Star::malloc(size);
   if (!ptr)
-    throw std::bad_alloc();
+    std::terminate();
   return ptr;
 }
 
 void* operator new[](std::size_t size) {
   auto ptr = Star::malloc(size);
   if (!ptr)
-    throw std::bad_alloc();
+    std::terminate();
   return ptr;
 }
 

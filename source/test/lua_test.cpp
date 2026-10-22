@@ -17,16 +17,39 @@ import star.math_common;
 import star.algorithm;
 using namespace Star;
 
+namespace {
+template <typename T, typename U>
+void expectLuaAlternative(std::expected<LuaValue, StarException> result, U const& expected) {
+  ASSERT_TRUE(result) << result.error().what();
+  auto value = std::get_if<T>(&*result);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, expected);
+}
+
+void expectLuaNil(std::expected<LuaValue, StarException> result) {
+  ASSERT_TRUE(result) << result.error().what();
+  if (!std::holds_alternative<LuaNilType>(*result)) {
+    auto rendered = printLuaValue(*result);
+    ASSERT_TRUE(rendered) << rendered.error().what();
+    ADD_FAILURE() << "Expected Lua nil; actual result: " << *rendered;
+  }
+}
+}
+
 TEST(LuaTest, BasicGetSet) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       data1 = 1.0
       data2 = 3.0 > 2.0
       data3 = "hello"
-    )SCRIPT");
+    )SCRIPT")));
 
-  luaContext.set("data4", 4.0);
+  ASSERT_TRUE((luaContext.set("data4", 4.0)));
 
   EXPECT_EQ(luaContext.get<double>("data1"), 1.0);
   EXPECT_EQ(luaContext.get<bool>("data2"), true);
@@ -35,24 +58,32 @@ TEST(LuaTest, BasicGetSet) {
 }
 
 TEST(LuaTest, TableReferences) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       table = {foo=1, bar=2}
       tableRef = table
-    )SCRIPT");
+    )SCRIPT")));
 
-  auto table = luaContext.get<LuaTable>("table");
-  auto tableRef1 = luaContext.get<LuaTable>("tableRef");
+  auto tableResult = luaContext.get<LuaTable>("table");
+  ASSERT_TRUE(tableResult);
+  auto table = std::move(*tableResult);
+  auto tableRef1Result = luaContext.get<LuaTable>("tableRef");
+  ASSERT_TRUE(tableRef1Result);
+  auto tableRef1 = std::move(*tableRef1Result);
   auto tableRef2 = table;
 
   EXPECT_EQ(table.get<double>("foo"), 1.0);
   EXPECT_EQ(table.get<double>("bar"), 2.0);
 
-  table.set("baz", 3.0);
+  ASSERT_TRUE((table.set("baz", 3.0)));
   EXPECT_EQ(tableRef1.get<double>("baz"), 3.0);
 
-  tableRef1.set("baf", 4.0);
+  ASSERT_TRUE((tableRef1.set("baf", 4.0)));
   EXPECT_EQ(table.get<double>("baf"), 4.0);
   EXPECT_EQ(tableRef2.get<double>("baf"), 4.0);
 }
@@ -61,9 +92,13 @@ TEST(LuaTest, FunctionCallTest) {
   std::weak_ptr<int> destructionObserver;
 
   {
-    auto luaEngine = LuaEngine::create();
-    LuaContext luaContext = luaEngine->createContext();
-    luaContext.load(R"SCRIPT(
+    auto luaEngineResult = LuaEngine::create();
+    ASSERT_TRUE(luaEngineResult);
+    auto& luaEngine = *luaEngineResult;
+    auto luaContextResult = luaEngine->createContext();
+    ASSERT_TRUE(luaContextResult);
+    auto luaContext = std::move(*luaContextResult);
+    ASSERT_TRUE((luaContext.load(R"SCRIPT(
         function testFunc(arg1, arg2)
           return callback(3) + arg1 + arg2
         end
@@ -71,13 +106,17 @@ TEST(LuaTest, FunctionCallTest) {
         function testEmpty()
           return emptyCallback()
         end
-      )SCRIPT");
+      )SCRIPT")));
 
     auto toDestruct = std::make_shared<int>();
     destructionObserver = toDestruct;
-    luaContext.set("callback", luaEngine->createFunction([toDestruct](double n) { return n * 2; }));
+    auto callbackResult1 = luaEngine->createFunction([toDestruct](double n) { return n * 2; });
+    ASSERT_TRUE(callbackResult1);
+    ASSERT_TRUE((luaContext.set("callback", *callbackResult1)));
 
-    luaContext.set("emptyCallback", luaEngine->createFunction([]() { return "heyooo"; }));
+    auto callbackResult2 = luaEngine->createFunction([]() { return "heyooo"; });
+    ASSERT_TRUE(callbackResult2);
+    ASSERT_TRUE((luaContext.set("emptyCallback", *callbackResult2)));
 
     EXPECT_EQ(luaContext.invokePath<double>("testFunc", 5.0, 10.0), 21.0);
     EXPECT_EQ(luaContext.invokePath<String>("emptyCallback"), "heyooo");
@@ -87,10 +126,14 @@ TEST(LuaTest, FunctionCallTest) {
 }
 
 TEST(LuaTest, CoroutineTest) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
 
-  luaContext.load(R"SCRIPT(
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       function accumulate(sum)
         return sum + callback(coroutine.yield(sum))
       end
@@ -104,14 +147,20 @@ TEST(LuaTest, CoroutineTest) {
       end
 
       co = coroutine.create(run)
-    )SCRIPT");
+    )SCRIPT")));
 
-  luaContext.set("callback", luaEngine->createFunction([](double num) { return num * 2; }));
+  auto callbackResult3 = luaEngine->createFunction([](double num) { return num * 2; });
+  ASSERT_TRUE(callbackResult3);
+  ASSERT_TRUE((luaContext.set("callback", *callbackResult3)));
 
-  LuaThread thread = luaEngine->createThread();
+  auto threadResult = luaEngine->createThread();
+  ASSERT_TRUE(threadResult);
+  auto thread = std::move(*threadResult);
   EXPECT_EQ(thread.status(), LuaThread::Status::Dead);
-  LuaFunction func = luaContext.get<LuaFunction>("run");
-  thread.pushFunction(func);
+  auto funcResult = luaContext.get<LuaFunction>("run");
+  ASSERT_TRUE(funcResult);
+  auto func = std::move(*funcResult);
+  ASSERT_TRUE((thread.pushFunction(func)));
   EXPECT_EQ(thread.status(), LuaThread::Status::Active);
   EXPECT_EQ(thread.resume<double>(), 0.0);
   EXPECT_EQ(thread.resume<double>(1.0), 2.0);
@@ -121,12 +170,18 @@ TEST(LuaTest, CoroutineTest) {
   // manually created threads are empty after execution is finished
   EXPECT_EQ(thread.status(), LuaThread::Status::Dead);
 
-  thread.pushFunction(func);
+  ASSERT_TRUE((thread.pushFunction(func)));
   EXPECT_EQ(thread.resume<double>(), 0.0);
   EXPECT_EQ(thread.resume<double>(1.0), 2.0);
-  EXPECT_THROW(thread.pushFunction(func), LuaException); // pushing function to suspended or errored thread
+  {
+    auto failure = thread.pushFunction(func);
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  }; // pushing function to suspended or errored thread
 
-  auto coroutine = luaContext.get<LuaThread>("co");
+  auto coroutineResult = luaContext.get<LuaThread>("co");
+  ASSERT_TRUE(coroutineResult);
+  auto coroutine = std::move(*coroutineResult);
   EXPECT_EQ(coroutine.status(), LuaThread::Status::Active);
   EXPECT_EQ(coroutine.resume<double>(), 0.0);
   EXPECT_EQ(coroutine.resume<double>(1.0), 2.0);
@@ -134,31 +189,54 @@ TEST(LuaTest, CoroutineTest) {
   EXPECT_EQ(coroutine.resume<double>(5.0), 18.0);
   EXPECT_EQ(coroutine.resume<double>(7.0), 32.0);
   EXPECT_EQ(coroutine.status(), LuaThread::Status::Dead);
-  EXPECT_THROW(coroutine.resume(), LuaException);
+  {
+    auto failure = coroutine.resume();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
   EXPECT_EQ(coroutine.status(), LuaThread::Status::Dead);
 
-  LuaThread thread2 = luaEngine->createThread();
+  auto thread2Result = luaEngine->createThread();
+  ASSERT_TRUE(thread2Result);
+  auto thread2 = std::move(*thread2Result);
   EXPECT_EQ(thread2.status(), LuaThread::Status::Dead);
-  thread2.pushFunction(func);
+  ASSERT_TRUE((thread2.pushFunction(func)));
   EXPECT_EQ(thread2.status(), LuaThread::Status::Active);
   EXPECT_EQ(thread2.resume<double>(), 0.0);
   EXPECT_EQ(thread2.resume<double>(1.0), 2.0);
-  EXPECT_THROW(thread2.resume<String>("not_a_number"), LuaException);
+  {
+    auto failure = thread2.resume<String>("not_a_number");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
   EXPECT_EQ(thread2.status(), LuaThread::Status::Error);
-  EXPECT_THROW(thread2.resume(), LuaException);
+  {
+    auto failure = thread2.resume();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
   EXPECT_EQ(thread2.status(), LuaThread::Status::Error);
 }
 
 template <typename T>
-bool roundTripEqual(LuaContext const& context, T t) {
-  return context.invokePath<T>("roundTrip", t) == t;
+testing::AssertionResult roundTripEqual(LuaContext const& context, T t) {
+  auto result = context.invokePath<T>("roundTrip", t);
+  if (!result)
+    return testing::AssertionFailure() << result.error().what();
+  if (*result != t)
+    return testing::AssertionFailure() << "Lua round trip returned a different value";
+  return testing::AssertionSuccess();
 }
 
 TEST(LuaTest, Converters) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
 
-  luaContext.load( R"SCRIPT(
+  ASSERT_TRUE((luaContext.load( R"SCRIPT(
       function makeVec()
         return {1, 2}
       end
@@ -170,7 +248,7 @@ TEST(LuaTest, Converters) {
       function roundTrip(ret)
         return ret
       end
-    )SCRIPT");
+    )SCRIPT")));
 
   auto vecCompare = Vec2F(1.0f, 2.0f);
   auto polyCompare = PolyF({Vec2F(1.0f, 2.0f), Vec2F(3.0f, 4.0f), Vec2F(5.0f, 6.0f)});
@@ -193,22 +271,44 @@ TEST(LuaTest, Converters) {
 }
 
 TEST(LuaTest, OptionalConversionDistinguishesNilFromFailure) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
-  auto nil = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("nil"));
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  auto nilValue = context.eval<LuaValue>("nil");
+  ASSERT_TRUE(nilValue);
+  auto nil = engine->luaMaybeTo<std::optional<int>>(*nilValue);
   ASSERT_TRUE(nil);
-  EXPECT_FALSE(*nil);
-  auto number = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("17"));
+  ASSERT_TRUE(*nil);
+  EXPECT_FALSE(**nil);
+  auto numberValue = context.eval<LuaValue>("17");
+  ASSERT_TRUE(numberValue);
+  auto number = engine->luaMaybeTo<std::optional<int>>(*numberValue);
+  ASSERT_TRUE(number);
   ASSERT_TRUE(number);
   ASSERT_TRUE(*number);
-  EXPECT_EQ(**number, 17);
-  auto boolean = engine->luaMaybeTo<std::optional<bool>>(context.eval<LuaValue>("false"));
+  ASSERT_TRUE(**number);
+  EXPECT_EQ(***number, 17);
+  auto booleanValue = context.eval<LuaValue>("false");
+  ASSERT_TRUE(booleanValue);
+  auto boolean = engine->luaMaybeTo<std::optional<bool>>(*booleanValue);
+  ASSERT_TRUE(boolean);
   ASSERT_TRUE(boolean);
   ASSERT_TRUE(*boolean);
-  EXPECT_FALSE(**boolean);
-  auto invalid = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("{}"));
-  EXPECT_FALSE(invalid);
-  EXPECT_THROW(context.eval<std::optional<int>>("{}"), LuaConversionException);
+  ASSERT_TRUE(**boolean);
+  EXPECT_FALSE(***boolean);
+  auto invalidValue = context.eval<LuaValue>("{}");
+  ASSERT_TRUE(invalidValue);
+  auto invalid = engine->luaMaybeTo<std::optional<int>>(*invalidValue);
+  ASSERT_TRUE(invalid);
+  EXPECT_FALSE(*invalid);
+  {
+    auto failure = context.eval<std::optional<int>>("{}");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaConversionException>());
+  };
 }
 
 struct TestUserData1 {
@@ -228,46 +328,70 @@ struct LuaConverter<TestUserData2> : LuaUserDataConverter<TestUserData2> {};
 }
 
 TEST(LuaTest, UserDataTest) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
 
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(
       R"SCRIPT(
         function doit(ref)
           global = ref
         end
-      )SCRIPT");
+      )SCRIPT")));
 
-  auto userdata1 = luaEngine->createUserData(TestUserData1{1});
-  auto userdata2 = luaEngine->createUserData(TestUserData2{2});
+  auto userdata1Result = luaEngine->createUserData(TestUserData1{1});
+  ASSERT_TRUE(userdata1Result);
+  auto userdata1 = std::move(*userdata1Result);
+  auto userdata2Result = luaEngine->createUserData(TestUserData2{2});
+  ASSERT_TRUE(userdata2Result);
+  auto userdata2 = std::move(*userdata2Result);
 
-  luaContext.invokePath("doit", userdata1);
-  auto userdata3 = luaContext.get<LuaUserData>("global");
+  ASSERT_TRUE((luaContext.invokePath("doit", userdata1)));
+  auto userdata3Result = luaContext.get<LuaUserData>("global");
+  ASSERT_TRUE(userdata3Result);
+  auto userdata3 = std::move(*userdata3Result);
 
-  EXPECT_TRUE(userdata2.is<TestUserData2>());
-  EXPECT_FALSE(userdata2.is<TestUserData1>());
+  EXPECT_EQ(userdata2.is<TestUserData2>(), true);
+  EXPECT_EQ(userdata2.is<TestUserData1>(), false);
 
-  EXPECT_TRUE(userdata1.is<TestUserData1>());
-  EXPECT_FALSE(userdata1.is<TestUserData2>());
+  EXPECT_EQ(userdata1.is<TestUserData1>(), true);
+  EXPECT_EQ(userdata1.is<TestUserData2>(), false);
 
-  EXPECT_TRUE(userdata3.is<TestUserData1>());
-  EXPECT_FALSE(userdata3.is<TestUserData2>());
+  EXPECT_EQ(userdata3.is<TestUserData1>(), true);
+  EXPECT_EQ(userdata3.is<TestUserData2>(), false);
 
-  EXPECT_EQ(userdata1.get<TestUserData1>().field, 1);
-  EXPECT_EQ(userdata2.get<TestUserData2>().field, 2);
-  EXPECT_EQ(userdata3.get<TestUserData1>().field, 1);
+  auto data1 = userdata1.get<TestUserData1>();
+  auto data2 = userdata2.get<TestUserData2>();
+  auto data3 = userdata3.get<TestUserData1>();
+  ASSERT_TRUE(data1);
+  ASSERT_TRUE(data2);
+  ASSERT_TRUE(data3);
+  EXPECT_EQ((*data1)->field, 1);
+  EXPECT_EQ((*data2)->field, 2);
+  EXPECT_EQ((*data3)->field, 1);
 
-  userdata1.get<TestUserData1>().field = 3;
-  EXPECT_EQ(userdata1.get<TestUserData1>().field, 3);
-  EXPECT_EQ(userdata3.get<TestUserData1>().field, 3);
+  (*data1)->field = 3;
+  EXPECT_EQ((*data1)->field, 3);
+  EXPECT_EQ((*data3)->field, 3);
 
-  luaContext.invokePath("doit", TestUserData1());
-  auto userdata4 = luaContext.get("global");
-  EXPECT_TRUE(luaEngine->luaMaybeTo<TestUserData1>(userdata4).has_value());
+  ASSERT_TRUE((luaContext.invokePath("doit", TestUserData1())));
+  auto userdata4Result = luaContext.get("global");
+  ASSERT_TRUE(userdata4Result);
+  auto userdata4 = std::move(*userdata4Result);
+  auto convertedUserdata = luaEngine->luaMaybeTo<TestUserData1>(userdata4);
+  ASSERT_TRUE(convertedUserdata);
+  EXPECT_TRUE(*convertedUserdata);
 
-  luaContext.invokePath("doit", "notuserdata");
-  auto notuserdata = luaContext.get("global");
-  EXPECT_FALSE(luaEngine->luaMaybeTo<TestUserData1>(notuserdata).has_value());
+  ASSERT_TRUE((luaContext.invokePath("doit", "notuserdata")));
+  auto notuserdataResult = luaContext.get("global");
+  ASSERT_TRUE(notuserdataResult);
+  auto notuserdata = std::move(*notuserdataResult);
+  auto rejectedUserdata = luaEngine->luaMaybeTo<TestUserData1>(notuserdata);
+  ASSERT_TRUE(rejectedUserdata);
+  EXPECT_FALSE(*rejectedUserdata);
 }
 
 namespace Star {
@@ -276,95 +400,130 @@ struct LuaConverter<Vec3F> : LuaUserDataConverter<Vec3F> {};
 
 template <>
 struct LuaUserDataMethods<Vec3F> {
-  static LuaMethods<Vec3F> make() {
+  [[nodiscard]] static std::expected<LuaMethods<Vec3F>, StarException> make() {
     LuaMethods<Vec3F> methods;
-    methods.registerMethodWithSignature<float, Vec3F const&>("magnitude", std::mem_fn(&Vec3F::magnitude));
+    auto registered = methods.registerMethodWithSignature<float, Vec3F const&>("magnitude", std::mem_fn(&Vec3F::magnitude));
+    if (!registered)
+      return std::unexpected(std::move(registered.error()));
     return methods;
   }
 };
 }
 
 TEST(LuaTest, UserMethodTest) {
-  auto luaEngine = LuaEngine::create();
-  luaEngine->setGlobal("vec3", luaEngine->createFunctionWithSignature<Vec3F, float, float, float>(construct<Vec3F>()));
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto callbackResult4 = luaEngine->createFunctionWithSignature<Vec3F, float, float, float>(construct<Vec3F>());
+  ASSERT_TRUE(callbackResult4);
+  ASSERT_TRUE((luaEngine->setGlobal("vec3", *callbackResult4)));
 
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       v = vec3(3, 2, 1)
       function testMagnitude(v2)
         return v:magnitude() + v2:magnitude()
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  float magnitude = luaContext.invokePath<float>("testMagnitude", Vec3F(5, 5, 5));
+  auto magnitudeResult = luaContext.invokePath<float>("testMagnitude", Vec3F(5, 5, 5));
+  ASSERT_TRUE(magnitudeResult);
+  auto magnitude = std::move(*magnitudeResult);
   EXPECT_TRUE(std::fabs(magnitude - (Vec3F(3, 2, 1).magnitude() + Vec3F(5, 5, 5).magnitude())) < 0.00001f);
 }
 
 TEST(LuaTest, GlobalTest) {
-  auto luaEngine = LuaEngine::create();
-  luaEngine->setGlobal("globalfoo", LuaInt(42));
-  EXPECT_EQ(std::get<LuaInt>(luaEngine->getGlobal("globalfoo")), 42);
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  ASSERT_TRUE((luaEngine->setGlobal("globalfoo", LuaInt(42))));
+  expectLuaAlternative<LuaInt>(luaEngine->getGlobal("globalfoo"), 42);
 
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       function test()
         return globalfoo
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test")), 42);
+  expectLuaAlternative<LuaInt>(luaContext.invokePath("test"), 42);
 }
 
 TEST(LuaTest, ArgTest) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
 
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       function test()
         callback("2", 3, nil)
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  luaContext.set("callback",
-      luaEngine->createFunction([](LuaFloat n, LuaString s, LuaBoolean b, LuaValue o) {
+  auto callbackResult5 = luaEngine->createFunction([](LuaFloat n, LuaString s, LuaBoolean b, LuaValue o) {
         EXPECT_EQ(n, 2.0);
-        EXPECT_EQ(s, String("3"));
+        EXPECT_EQ(s.toString(), String("3"));
         EXPECT_EQ(b, false);
         EXPECT_TRUE(std::holds_alternative<LuaNilType>(o));
-      }));
+      });
+  ASSERT_TRUE(callbackResult5);
+  ASSERT_TRUE((luaContext.set("callback",
+      *callbackResult5)));
 
-  luaContext.invokePath("test");
+  ASSERT_TRUE((luaContext.invokePath("test")));
 }
 
 TEST(LuaTest, ArrayTest) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       function test()
         return {2, 4, 6, 8, 10}
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  auto arrayTable = std::get<LuaTable>(luaContext.invokePath("test"));
+  auto arrayValue = luaContext.invokePath("test");
+  ASSERT_TRUE(arrayValue);
+  auto arrayTablePointer = std::get_if<LuaTable>(&*arrayValue);
+  ASSERT_NE(arrayTablePointer, nullptr);
+  auto& arrayTable = *arrayTablePointer;
 
   EXPECT_EQ(arrayTable.length(), 5);
-  EXPECT_EQ(std::get<LuaInt>(arrayTable.get(2)), 4);
-  EXPECT_EQ(std::get<LuaInt>(arrayTable.get(5)), 10);
+  expectLuaAlternative<LuaInt>(arrayTable.get(2), 4);
+  expectLuaAlternative<LuaInt>(arrayTable.get(5), 10);
 
   List<std::pair<int, int>> values;
-  arrayTable.iterate([&values](LuaValue const& key, LuaValue const& value) {
-    auto ikey = std::get<LuaInt>(key);
-    auto ivalue = std::get<LuaInt>(value);
-    values.append({ikey, ivalue});
-  });
+  ASSERT_TRUE((arrayTable.iterate([&values](LuaValue const& key, LuaValue const& value) -> std::expected<void, StarException> {
+    auto ikey = std::get_if<LuaInt>(&key);
+    auto ivalue = std::get_if<LuaInt>(&value);
+    if (!ikey || !ivalue)
+      return std::unexpected(LuaConversionException("Expected integer array key and value"));
+    values.append({*ikey, *ivalue});
+    return {};
+  })));
   List<std::pair<int, int>> compare = {{1, 2}, {2, 4}, {3, 6}, {4, 8}, {5, 10}};
   EXPECT_EQ(values, compare);
 }
 
 TEST(LuaTest, PathTest) {
-  auto luaEngine = LuaEngine::create();
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.load(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       foo = {
           bar = {
             baz = 1
@@ -374,31 +533,35 @@ TEST(LuaTest, PathTest) {
       function test()
         return foo.bar.baf
       end
-    )SCRIPT");
+    )SCRIPT")));
 
   EXPECT_EQ(luaContext.containsPath("foo.bar.baz"), true);
-  EXPECT_EQ(std::get<LuaInt>(luaContext.getPath("foo.bar.baz")), 1);
+  expectLuaAlternative<LuaInt>(luaContext.getPath("foo.bar.baz"), 1);
   EXPECT_EQ(luaContext.containsPath("foo.nothing.at.all"), false);
 
-  luaContext.setPath("foo.bar.baf", LuaInt(5));
-  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test")), 5);
+  ASSERT_TRUE((luaContext.setPath("foo.bar.baf", LuaInt(5))));
+  expectLuaAlternative<LuaInt>(luaContext.invokePath("test"), 5);
 
-  luaContext.setPath("new.table.value", LuaInt(5));
-  EXPECT_EQ(std::get<LuaInt>(luaContext.getPath("new.table.value")), 5);
+  ASSERT_TRUE((luaContext.setPath("new.table.value", LuaInt(5))));
+  expectLuaAlternative<LuaInt>(luaContext.getPath("new.table.value"), 5);
 }
 
 TEST(LuaTest, CallbackTest) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
 
   LuaCallbacks callbacks;
-  callbacks.registerCallback("add", [](LuaInt a, LuaInt b) { return a + b; });
-  callbacks.registerCallbackWithSignature<LuaInt, LuaInt, LuaInt>("subtract", [](int a, int b) { return a - b; });
-  callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", std::bind([](int a, int b) { return a * b; }, 2, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, LuaValue>("nothing", [](LuaValue v) { return v; });
+  ASSERT_TRUE((callbacks.registerCallback("add", [](LuaInt a, LuaInt b) { return a + b; })));
+  ASSERT_TRUE((callbacks.registerCallbackWithSignature<LuaInt, LuaInt, LuaInt>("subtract", [](int a, int b) { return a - b; })));
+  ASSERT_TRUE((callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", std::bind([](int a, int b) { return a * b; }, 2, std::placeholders::_1))));
+  ASSERT_TRUE((callbacks.registerCallbackWithSignature<void, LuaValue>("nothing", [](LuaValue v) { return v; })));
 
-  LuaContext luaContext = luaEngine->createContext();
-  luaContext.setCallbacks("callbacks", callbacks);
-  luaContext.load(R"SCRIPT(
+  auto luaContextResult = luaEngine->createContext();
+  ASSERT_TRUE(luaContextResult);
+  auto luaContext = std::move(*luaContextResult);
+  ASSERT_TRUE((luaContext.setCallbacks("callbacks", callbacks)));
+  ASSERT_TRUE((luaContext.load(R"SCRIPT(
       function test1()
         return callbacks.multiply2(callbacks.add(5, 10) + callbacks.subtract(3, 10))
       end
@@ -406,27 +569,39 @@ TEST(LuaTest, CallbackTest) {
       function test2()
         return callbacks.nothing(1)
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test1")), 16);
-  EXPECT_TRUE(std::holds_alternative<LuaNilType>(luaContext.invokePath("test2")));
+  expectLuaAlternative<LuaInt>(luaContext.invokePath("test1"), 16);
+  expectLuaNil(luaContext.invokePath("test2"));
 }
 
 TEST(LuaTest, VariableParameters) {
-  auto luaEngine = LuaEngine::create();
-  auto context1 = luaEngine->createContext();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto context1Result = luaEngine->createContext();
+  ASSERT_TRUE(context1Result);
+  auto context1 = std::move(*context1Result);
 
-  context1.load(R"SCRIPT(
+  ASSERT_TRUE((context1.load(R"SCRIPT(
       function variableArgsCount(...)
         local arg = {...}
         return #arg
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  auto res1 = context1.invokePath<int>("variableArgsCount");
-  auto res2 = context1.invokePath<int>("variableArgsCount", 1);
-  auto res3 = context1.invokePath<int>("variableArgsCount", 1, 1);
-  auto res4 = context1.invokePath<int>("variableArgsCount", 1, 1, 1);
+  auto res1Result = context1.invokePath<int>("variableArgsCount");
+  ASSERT_TRUE(res1Result);
+  auto res1 = std::move(*res1Result);
+  auto res2Result = context1.invokePath<int>("variableArgsCount", 1);
+  ASSERT_TRUE(res2Result);
+  auto res2 = std::move(*res2Result);
+  auto res3Result = context1.invokePath<int>("variableArgsCount", 1, 1);
+  ASSERT_TRUE(res3Result);
+  auto res3 = std::move(*res3Result);
+  auto res4Result = context1.invokePath<int>("variableArgsCount", 1, 1, 1);
+  ASSERT_TRUE(res4Result);
+  auto res4 = std::move(*res4Result);
 
   EXPECT_EQ(res1, 0);
   EXPECT_EQ(res2, 1);
@@ -435,8 +610,10 @@ TEST(LuaTest, VariableParameters) {
 }
 
 TEST(LuaTest, Scope) {
-  auto luaEngine = LuaEngine::create();
-  auto script1 = luaEngine->compile(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto script1Result = luaEngine->compile(R"SCRIPT(
       function create(param)
         local self = {}
         local foo = param
@@ -452,8 +629,10 @@ TEST(LuaTest, Scope) {
         return self
       end
     )SCRIPT");
+  ASSERT_TRUE(script1Result);
+  auto script1 = std::move(*script1Result);
 
-  auto script2 = luaEngine->compile(R"SCRIPT(
+  auto script2Result = luaEngine->compile(R"SCRIPT(
       function init()
         obj = create(param)
       end
@@ -462,130 +641,178 @@ TEST(LuaTest, Scope) {
         return obj.get()
       end
     )SCRIPT");
+  ASSERT_TRUE(script2Result);
+  auto script2 = std::move(*script2Result);
 
-  auto context1 = luaEngine->createContext();
-  context1.load(script1);
-  context1.load(script2);
+  auto context1Result = luaEngine->createContext();
+  ASSERT_TRUE(context1Result);
+  auto context1 = std::move(*context1Result);
+  ASSERT_TRUE((context1.load(script1)));
+  ASSERT_TRUE((context1.load(script2)));
 
-  auto context2 = luaEngine->createContext();
-  context2.load(script1);
-  context2.load(script2);
+  auto context2Result = luaEngine->createContext();
+  ASSERT_TRUE(context2Result);
+  auto context2 = std::move(*context2Result);
+  ASSERT_TRUE((context2.load(script1)));
+  ASSERT_TRUE((context2.load(script2)));
 
-  context1.setPath("param", 1);
-  context1.invokePath("init");
+  ASSERT_TRUE((context1.setPath("param", 1)));
+  ASSERT_TRUE((context1.invokePath("init")));
 
-  context2.setPath("param", 2);
-  context2.invokePath("init");
+  ASSERT_TRUE((context2.setPath("param", 2)));
+  ASSERT_TRUE((context2.invokePath("init")));
 
   EXPECT_EQ(context1.invokePath<int>("produce"), 1);
   EXPECT_EQ(context2.invokePath<int>("produce"), 2);
 
-  context1.setPath("param", 2);
-  context1.invokePath("init");
+  ASSERT_TRUE((context1.setPath("param", 2)));
+  ASSERT_TRUE((context1.invokePath("init")));
 
-  context2.setPath("param", 1);
-  context2.invokePath("init");
+  ASSERT_TRUE((context2.setPath("param", 1)));
+  ASSERT_TRUE((context2.invokePath("init")));
 
   EXPECT_EQ(context1.invokePath<int>("produce"), 2);
   EXPECT_EQ(context2.invokePath<int>("produce"), 1);
 }
 
 TEST(LuaTest, Scope2) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
 
-  auto context1 = luaEngine->createContext();
-  context1.load(R"SCRIPT(
+  auto context1Result = luaEngine->createContext();
+  ASSERT_TRUE(context1Result);
+  auto context1 = std::move(*context1Result);
+  ASSERT_TRUE((context1.load(R"SCRIPT(
       function init1()
         global = {}
         global.val = 10
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  auto context2 = luaEngine->createContext();
-  context2.load(R"SCRIPT(
+  auto context2Result = luaEngine->createContext();
+  ASSERT_TRUE(context2Result);
+  auto context2 = std::move(*context2Result);
+  ASSERT_TRUE((context2.load(R"SCRIPT(
       function init2()
         global = {}
         global.val = 20
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_TRUE(context1.contains("init1"));
-  EXPECT_TRUE(context2.contains("init2"));
-  EXPECT_FALSE(context1.contains("init2"));
-  EXPECT_FALSE(context2.contains("init1"));
+  EXPECT_EQ(context1.contains("init1"), true);
+  EXPECT_EQ(context2.contains("init2"), true);
+  EXPECT_EQ(context1.contains("init2"), false);
+  EXPECT_EQ(context2.contains("init1"), false);
 
-  context1.invokePath("init1");
+  ASSERT_TRUE((context1.invokePath("init1")));
   EXPECT_EQ(context1.getPath<int>("global.val"), 10);
 
-  EXPECT_TRUE(std::holds_alternative<LuaNilType>(context2.getPath("global")));
+  expectLuaNil(context2.getPath("global"));
 
-  context2.invokePath("init2");
+  ASSERT_TRUE((context2.invokePath("init2")));
   EXPECT_EQ(context2.getPath<int>("global.val"), 20);
 
   EXPECT_EQ(context1.getPath<int>("global.val"), 10);
 }
 
 TEST(LuaTest, MetaTable) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
 
-  auto context = luaEngine->createContext();
-  context.load(R"SCRIPT(
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.load(R"SCRIPT(
       function add(a, b)
         return a + b
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  auto mt = luaEngine->createTable();
-  mt.set("__add",
-      luaEngine->createFunction([](LuaEngine& engine, LuaTable const& a, LuaTable const& b) {
-        return engine.createArrayTable(
-            std::initializer_list<double>{a.get<double>(1) + b.get<double>(1), a.get<double>(2) + b.get<double>(2)});
-      }));
-  mt.set("test", "hello");
+  auto mtResult = luaEngine->createTable();
+  ASSERT_TRUE(mtResult);
+  auto mt = std::move(*mtResult);
+  auto callbackResult6 = luaEngine->createFunction([](LuaEngine& engine, LuaTable const& a, LuaTable const& b) -> std::expected<LuaTable, StarException> {
+        auto ax = a.get<double>(1);
+        if (!ax) return std::unexpected(std::move(ax.error()));
+        auto ay = a.get<double>(2);
+        if (!ay) return std::unexpected(std::move(ay.error()));
+        auto bx = b.get<double>(1);
+        if (!bx) return std::unexpected(std::move(bx.error()));
+        auto by = b.get<double>(2);
+        if (!by) return std::unexpected(std::move(by.error()));
+        return engine.createArrayTable(std::initializer_list<double>{*ax + *bx, *ay + *by});
+      });
+  ASSERT_TRUE(callbackResult6);
+  ASSERT_TRUE((mt.set("__add",
+      *callbackResult6)));
+  ASSERT_TRUE((mt.set("test", "hello")));
 
-  auto t1 = luaEngine->createArrayTable(std::initializer_list<double>{1, 2});
-  t1.setMetatable(mt);
+  auto t1Result = luaEngine->createArrayTable(std::initializer_list<double>{1, 2});
+  ASSERT_TRUE(t1Result);
+  auto t1 = std::move(*t1Result);
+  ASSERT_TRUE(t1.setMetatable(mt));
 
-  auto t2 = luaEngine->createArrayTable(std::initializer_list<double>{5, 6});
-  t2.setMetatable(mt);
+  auto t2Result = luaEngine->createArrayTable(std::initializer_list<double>{5, 6});
+  ASSERT_TRUE(t2Result);
+  auto t2 = std::move(*t2Result);
+  ASSERT_TRUE(t2.setMetatable(mt));
 
-  auto tr = context.invokePath<LuaTable>("add", t1, t2);
+  auto trResult = context.invokePath<LuaTable>("add", t1, t2);
+  ASSERT_TRUE(trResult);
+  auto tr = std::move(*trResult);
   EXPECT_EQ(tr.get<double>(1), 6);
   EXPECT_EQ(tr.get<double>(2), 8);
-  EXPECT_EQ(t1.getMetatable()->get<String>("test"), "hello");
-  EXPECT_EQ(t2.getMetatable()->get<String>("test"), "hello");
+  auto metatable1 = t1.getMetatable();
+  ASSERT_TRUE(metatable1);
+  ASSERT_TRUE(*metatable1);
+  EXPECT_EQ((*metatable1)->get<String>("test"), "hello");
+  auto metatable2 = t2.getMetatable();
+  ASSERT_TRUE(metatable2);
+  ASSERT_TRUE(*metatable2);
+  EXPECT_EQ((*metatable2)->get<String>("test"), "hello");
 }
 
 TEST(LuaTest, Integers) {
-  auto luaEngine = LuaEngine::create();
-  auto context = luaEngine->createContext();
-  context.load(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.load(R"SCRIPT(
       n1 = 0
       n2 = 1
       n3 = 1.0
       n4 = 1.1
       n5 = 5.0
       n6 = 5
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_EQ(std::get<LuaInt>(context.get("n1")), 0);
-  EXPECT_EQ(std::get<LuaInt>(context.get("n2")), 1);
-  EXPECT_EQ(std::get<LuaFloat>(context.get("n3")), 1.0);
-  EXPECT_EQ(std::get<LuaFloat>(context.get("n4")), 1.1);
-  EXPECT_EQ(std::get<LuaFloat>(context.get("n5")), 5.0);
-  EXPECT_EQ(std::get<LuaInt>(context.get("n6")), 5);
+  expectLuaAlternative<LuaInt>(context.get("n1"), 0);
+  expectLuaAlternative<LuaInt>(context.get("n2"), 1);
+  expectLuaAlternative<LuaFloat>(context.get("n3"), 1.0);
+  expectLuaAlternative<LuaFloat>(context.get("n4"), 1.1);
+  expectLuaAlternative<LuaFloat>(context.get("n5"), 5.0);
+  expectLuaAlternative<LuaInt>(context.get("n6"), 5);
 }
 
 TEST(LuaTest, Require) {
-  auto luaEngine = LuaEngine::create();
-  auto context = luaEngine->createContext();
-  context.setRequireFunction([](LuaContext& context, LuaString const& arg) {
-      context.set(arg, context.createFunction([arg]() {
-          return arg;
-        }));
-    });
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.setRequireFunction([](LuaContext& context, LuaString const& arg) -> std::expected<void, StarException> {
+      auto callback = context.createFunction([arg]() { return arg; });
+      if (!callback)
+        return std::unexpected(std::move(callback.error()));
+      return context.set(arg, *callback);
+    })));
 
-  context.load(R"SCRIPT(
+  ASSERT_TRUE((context.load(R"SCRIPT(
       require "a"
       require "b"
       require "c"
@@ -593,32 +820,40 @@ TEST(LuaTest, Require) {
       function res()
         return a() .. b() .. c()
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_EQ(context.invokePath<LuaString>("res"), String("abc"));
+  auto required = context.invokePath<LuaString>("res");
+  ASSERT_TRUE(required);
+  EXPECT_EQ(required->toString(), String("abc"));
 
   // The require function above stored closures that capture a Lua reference
   // (LuaString), and such a closure keeps the engine alive from inside its own
   // Lua state: the state would never be destroyed and everything it allocated
   // leaks (LeakSanitizer reports ~22KB for this test alone).  Drop the globals
   // and collect before the engine goes out of scope.
-  context.load("a = nil b = nil c = nil res = nil");
-  luaEngine->collectGarbage();
+  ASSERT_TRUE((context.load("a = nil b = nil c = nil res = nil")));
+  ASSERT_TRUE(luaEngine->collectGarbage());
 }
 
 TEST(LuaTest, Eval) {
-  auto luaEngine = LuaEngine::create();
-  auto context = luaEngine->createContext();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
 
-  context.eval("i = 3");
+  ASSERT_TRUE((context.eval("i = 3")));
   // Make sure statements and expressions both work in eval.
   EXPECT_EQ(context.eval<int>("i + 1"), 4);
   EXPECT_EQ(context.eval<int>("return i + 1"), 4);
 }
 
 TEST(LuaTest, Multi) {
-  auto luaEngine = LuaEngine::create();
-  auto script = luaEngine->compile(R"SCRIPT(
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto scriptResult = luaEngine->compile(R"SCRIPT(
       function entry()
         return callbacks.func(2, 4)
       end
@@ -631,36 +866,44 @@ TEST(LuaTest, Multi) {
         return sum
       end
     )SCRIPT");
+  ASSERT_TRUE(scriptResult);
+  auto script = std::move(*scriptResult);
 
-  auto context1 = luaEngine->createContext();
-  auto context2 = luaEngine->createContext();
-  auto context3 = luaEngine->createContext();
+  auto context1Result = luaEngine->createContext();
+  ASSERT_TRUE(context1Result);
+  auto context1 = std::move(*context1Result);
+  auto context2Result = luaEngine->createContext();
+  ASSERT_TRUE(context2Result);
+  auto context2 = std::move(*context2Result);
+  auto context3Result = luaEngine->createContext();
+  ASSERT_TRUE(context3Result);
+  auto context3 = std::move(*context3Result);
 
-  context1.load(script);
-  context2.load(script);
-  context3.load(script);
+  ASSERT_TRUE((context1.load(script)));
+  ASSERT_TRUE((context2.load(script)));
+  ASSERT_TRUE((context3.load(script)));
 
   LuaCallbacks addCallbacks;
-  addCallbacks.registerCallback("func",
+  ASSERT_TRUE((addCallbacks.registerCallback("func",
       [](LuaVariadic<int> const& args) -> int {
         int sum = 0.0;
         for (auto arg : args)
           sum += arg;
         return sum;
-      });
+      })));
 
   LuaCallbacks multCallbacks;
-  multCallbacks.registerCallback("func",
+  ASSERT_TRUE((multCallbacks.registerCallback("func",
       [](LuaVariadic<int> const& args) -> int {
         int mult = 1.0;
         for (auto arg : args)
           mult *= arg;
         return mult;
-      });
+      })));
 
-  context1.setCallbacks("callbacks", addCallbacks);
-  context2.setCallbacks("callbacks", multCallbacks);
-  context3.setCallbacks("callbacks", addCallbacks);
+  ASSERT_TRUE((context1.setCallbacks("callbacks", addCallbacks)));
+  ASSERT_TRUE((context2.setCallbacks("callbacks", multCallbacks)));
+  ASSERT_TRUE((context3.setCallbacks("callbacks", addCallbacks)));
 
   EXPECT_EQ(context1.invokePath<int>("entry"), 6);
   EXPECT_EQ(context2.invokePath<int>("entry"), 8);
@@ -670,8 +913,10 @@ TEST(LuaTest, Multi) {
   EXPECT_EQ(context3.invokePath<int>("entry"), 6);
   EXPECT_EQ(context1.invokePath<int>("entry"), 6);
 
-  auto context4 = luaEngine->createContext();
-  context4.load(R"SCRIPT(
+  auto context4Result = luaEngine->createContext();
+  ASSERT_TRUE(context4Result);
+  auto context4 = std::move(*context4Result);
+  ASSERT_TRUE((context4.load(R"SCRIPT(
       function sum(...)
         local args = {...}
         local sum = 0
@@ -693,7 +938,7 @@ TEST(LuaTest, Multi) {
       function emptycallbacktest(...)
         return emptycallback()
       end
-    )SCRIPT");
+    )SCRIPT")));
   EXPECT_EQ(context4.invokePath<int>("sum", LuaVariadic<int>{1, 2, 3}), 6);
   EXPECT_EQ(context4.invokePath<int>("sum", 5, LuaVariadic<int>{1, 2, 3}, 10), 21);
   EXPECT_EQ(context4.invokePath<LuaVariadic<int>>("mreturn", 1, 2, 3), LuaVariadic<int>({1, 2, 3}));
@@ -701,30 +946,42 @@ TEST(LuaTest, Multi) {
   int a;
   float b;
   String c;
-  luaTie(a, b, c) = context4.invokePath<LuaTupleReturn<int, float, String>>("mreturn", 1, 2.0f, "foo");
+  auto tupleResult1 = context4.invokePath<LuaTupleReturn<int, float, String>>("mreturn", 1, 2.0f, "foo");
+  ASSERT_TRUE(tupleResult1);
+  luaTie(a, b, c) = std::move(*tupleResult1);
   EXPECT_EQ(a, 1);
   EXPECT_EQ(b, 2.0f);
   EXPECT_EQ(c, "foo");
 
-  context4.set("callback", context4.createFunction([]() { return luaTupleReturn(5, 10); }));
+  auto callbackResult7 = context4.createFunction([]() { return luaTupleReturn(5, 10); });
+  ASSERT_TRUE(callbackResult7);
+  ASSERT_TRUE((context4.set("callback", *callbackResult7)));
 
-  context4.set("emptycallback", context4.createFunction([]() { return luaTupleReturn(); }));
+  auto callbackResult8 = context4.createFunction([]() { return luaTupleReturn(); });
+  ASSERT_TRUE(callbackResult8);
+  ASSERT_TRUE((context4.set("emptycallback", *callbackResult8)));
 
   int d;
   int e;
-  luaTie(d, e) = context4.invokePath<LuaTupleReturn<int, int>>("callbacktest");
+  auto tupleResult2 = context4.invokePath<LuaTupleReturn<int, int>>("callbacktest");
+  ASSERT_TRUE(tupleResult2);
+  luaTie(d, e) = std::move(*tupleResult2);
   EXPECT_EQ(d, 5);
   EXPECT_EQ(e, 10);
 
-  EXPECT_TRUE(std::holds_alternative<LuaNilType>(context4.invokePath("emptycallbacktest")));
+  expectLuaNil(context4.invokePath("emptycallbacktest"));
 }
 
 TEST(LuaTest, Limits) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
   luaEngine->setInstructionLimit(500000);
   luaEngine->setRecursionLimit(64);
-  auto context = luaEngine->createContext();
-  context.load(R"SCRIPT(
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.load(R"SCRIPT(
       function toinfinityandbeyond()
         while true do
         end
@@ -734,13 +991,17 @@ TEST(LuaTest, Limits) {
         for i = 0, 50000 do
         end
       end
-    )SCRIPT");
+    )SCRIPT")));
 
   // Make sure infinite loops trigger the instruction limit.
-  EXPECT_THROW(context.invokePath("toinfinityandbeyond"), LuaInstructionLimitReached);
+  {
+    auto failure = context.invokePath("toinfinityandbeyond");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaInstructionLimitReached>());
+  };
 
   // Make sure the instruction count is reset after each call.
-  context.invokePath("toabignumberandthenstop");
+  ASSERT_TRUE((context.invokePath("toabignumberandthenstop")));
 
   auto infLoop = R"SCRIPT(
         while true do
@@ -749,19 +1010,35 @@ TEST(LuaTest, Limits) {
 
   // Make sure loading code into context with infinite loops in their
   // evaluation triggers instruction limit.
-  EXPECT_THROW(context.load(infLoop), LuaInstructionLimitReached);
+  {
+    auto failure = context.load(infLoop);
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaInstructionLimitReached>());
+  };
 
   // And the same for eval
-  EXPECT_THROW(context.eval(infLoop), LuaInstructionLimitReached);
+  {
+    auto failure = context.eval(infLoop);
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaInstructionLimitReached>());
+  };
 
-  auto call1 = [&context]() { context.invokePath("call2"); };
+  auto call1 = [&context]() { return context.invokePath("call2"); };
 
-  auto call2 = [&context]() { context.invokePath("call1"); };
+  auto call2 = [&context]() { return context.invokePath("call1"); };
 
-  context.set("call1", context.createFunction(call1));
-  context.set("call2", context.createFunction(call2));
+  auto callbackResult9 = context.createFunction(call1);
+  ASSERT_TRUE(callbackResult9);
+  ASSERT_TRUE((context.set("call1", *callbackResult9)));
+  auto callbackResult10 = context.createFunction(call2);
+  ASSERT_TRUE(callbackResult10);
+  ASSERT_TRUE((context.set("call2", *callbackResult10)));
 
-  EXPECT_THROW(context.invokePath("call1"), LuaRecursionLimitReached);
+  {
+    auto failure = context.invokePath("call1");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaRecursionLimitReached>());
+  };
 
   // Make sure the context still functions properly after these previous
   // errors.
@@ -769,122 +1046,212 @@ TEST(LuaTest, Limits) {
 }
 
 TEST(LuaTest, Errors) {
-  auto luaEngine = LuaEngine::create();
-  auto context = luaEngine->createContext();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
 
-  EXPECT_THROW(context.eval("while true do"), LuaIncompleteStatementException);
-  context.setPath("val", 1.0);
-  EXPECT_THROW(context.getPath<Vec2D>("val"), LuaConversionException);
-  EXPECT_EQ(luaEngine->luaMaybeTo<RectF>(context.get("val")), std::optional<RectF>());
+  {
+    auto failure = context.eval("while true do");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaIncompleteStatementException>());
+  };
+  ASSERT_TRUE((context.setPath("val", 1.0)));
+  {
+    auto failure = context.getPath<Vec2D>("val");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaConversionException>());
+  };
+  auto val = context.get("val");
+  ASSERT_TRUE(val);
+  auto rect = luaEngine->luaMaybeTo<RectF>(*val);
+  ASSERT_TRUE(rect);
+  EXPECT_FALSE(*rect);
 
-  context.set("throwException", luaEngine->createFunction([]() {
-      throw StarException("lua caught the exception!");
-    }));
+  auto callbackResult11 = luaEngine->createFunction([]() -> std::expected<void, StarException> {
+      return std::unexpected(StarException("lua caught the error!"));
+    });
+  ASSERT_TRUE(callbackResult11);
+  ASSERT_TRUE((context.set("throwException", *callbackResult11)));
 
-  context.load(R"SCRIPT(
+  ASSERT_TRUE((context.load(R"SCRIPT(
       function throwError()
         return throwException()
       end
       function catchError()
         return pcall(throwException)
       end
-    )SCRIPT");
+    )SCRIPT")));
 
-  EXPECT_THROW(context.invokePath("throwError"), LuaException);
+  {
+    auto failure = context.invokePath("throwError");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
 
   bool status;
   LuaValue error;
-  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("catchError");
+  auto tupleResult3 = context.invokePath<LuaTupleReturn<bool, LuaValue>>("catchError");
+  ASSERT_TRUE(tupleResult3);
+  luaTie(status, error) = std::move(*tupleResult3);
   EXPECT_EQ(status, false);
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("lua caught the exception"));
+  auto errorText = luaEngine->luaTo<String>(error);
+  ASSERT_TRUE(errorText);
+  EXPECT_EQ(errorText->contains("lua caught the error"), true);
 }
 
-TEST(LuaTest, ExceptionDiagnosticsLeaveBothCBoundariesClean) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
+TEST(LuaTest, ErrorDiagnosticsLeaveBothCBoundariesClean) {
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
   std::weak_ptr<int> wrappedLifetime;
   std::weak_ptr<int> requireLifetime;
-  struct OwnedException : IOException {
-    OwnedException(std::string message, std::shared_ptr<int> lifetime)
-      : IOException(std::move(message),
-            std::make_exception_ptr(std::runtime_error("Lua third party cause"))),
-        lifetime(std::move(lifetime)) {}
-    std::shared_ptr<int> lifetime;
-  };
-  context.set("failWrapped", engine->createFunction([&]() {
+  auto callbackResult12 = engine->createFunction([&]() -> std::expected<void, StarException> {
     auto lifetime = std::make_shared<int>(1);
     wrappedLifetime = lifetime;
-    throw OwnedException("wrapped callback failure", std::move(lifetime));
-  }));
-  context.set("failThirdParty", engine->createFunction([]() {
-    throw std::runtime_error("direct Lua third party failure");
-  }));
-  context.setRequireFunction([&](LuaContext&, LuaString const&) {
+    return std::unexpected(IOException("wrapped callback failure",
+        ExceptionDiagnostic(StarException("Lua callback cause"))));
+  });
+  ASSERT_TRUE(callbackResult12);
+  ASSERT_TRUE((context.set("failWrapped", *callbackResult12)));
+  ASSERT_TRUE((context.setRequireFunction([&](LuaContext&, LuaString const&) -> std::expected<void, StarException> {
     auto lifetime = std::make_shared<int>(2);
     requireLifetime = lifetime;
-    throw OwnedException("require callback failure", std::move(lifetime));
-  });
-  context.load(R"SCRIPT(
+    return std::unexpected(IOException("require callback failure",
+        ExceptionDiagnostic(StarException("Lua callback cause"))));
+  })));
+  ASSERT_TRUE((context.load(R"SCRIPT(
     function captureWrapped() return pcall(failWrapped) end
-    function captureThirdParty() return pcall(failThirdParty) end
     function captureRequire() return pcall(require, "broken") end
     function healthy(value) return value * 3 end
-  )SCRIPT");
+  )SCRIPT")));
 
   bool status;
   LuaValue error;
-  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureWrapped");
+  auto tupleResult4 = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureWrapped");
+  ASSERT_TRUE(tupleResult4);
+  luaTie(status, error) = std::move(*tupleResult4);
   EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("(IOException) wrapped callback failure"));
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("Caused by: std::exception: Lua third party cause"));
+  auto wrappedText = engine->luaTo<String>(error);
+  ASSERT_TRUE(wrappedText);
+  EXPECT_EQ(wrappedText->contains("(IOException) wrapped callback failure"), true);
+  EXPECT_EQ(wrappedText->contains("Caused by:"), true);
+  EXPECT_EQ(wrappedText->contains("Lua callback cause"), true);
   EXPECT_TRUE(wrappedLifetime.expired());
-  EXPECT_FALSE(std::current_exception());
   EXPECT_EQ(context.invokePath<int>("healthy", 7), 21);
 
-  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureThirdParty");
+  auto tupleResult5 = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureRequire");
+  ASSERT_TRUE(tupleResult5);
+  luaTie(status, error) = std::move(*tupleResult5);
   EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("std::exception: direct Lua third party failure"));
-  EXPECT_FALSE(std::current_exception());
-  EXPECT_EQ(context.invokePath<int>("healthy", 8), 24);
-
-  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureRequire");
-  EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("(IOException) require callback failure"));
-  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("Caused by: std::exception: Lua third party cause"));
+  auto requireText = engine->luaTo<String>(error);
+  ASSERT_TRUE(requireText);
+  EXPECT_EQ(requireText->contains("(IOException) require callback failure"), true);
+  EXPECT_EQ(requireText->contains("Caused by:"), true);
+  EXPECT_EQ(requireText->contains("Lua callback cause"), true);
   EXPECT_TRUE(requireLifetime.expired());
-  EXPECT_FALSE(std::current_exception());
   EXPECT_EQ(context.invokePath<int>("healthy", 9), 27);
 
-  // Lua errors not caught by pcall still propagate as the project's exception.
-  EXPECT_THROW(context.load("failWrapped()"), LuaException);
+  // Lua errors not caught by pcall still return the project's error value.
+  {
+    auto failure = context.load("failWrapped()");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
   EXPECT_TRUE(wrappedLifetime.expired());
   EXPECT_EQ(context.invokePath<int>("healthy", 10), 30);
 }
 
 TEST(LuaTest, GarbageCollection) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
 
   auto ptr = std::make_shared<int>(5);
   engine->setAutoGarbageCollection(false);
-  context.setPath("ref", context.createUserData(ptr));
+  {
+    auto userdata = context.createUserData(ptr);
+    ASSERT_TRUE(userdata);
+    ASSERT_TRUE(context.setPath("ref", *userdata));
+  }
   EXPECT_EQ(ptr.use_count(), 2);
-  context.setPath("ref", LuaNil);
+  ASSERT_TRUE((context.setPath("ref", LuaNil)));
   EXPECT_EQ(ptr.use_count(), 2);
-  engine->collectGarbage();
+  ASSERT_TRUE(engine->collectGarbage());
   EXPECT_EQ(ptr.use_count(), 1);
 }
 
+TEST(LuaTest, GarbageCollectionErrorPreservesContextAndReleasesUserData) {
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  engine->setAutoGarbageCollection(false);
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+
+  auto resource = std::make_shared<int>(7);
+  std::weak_ptr<int> lifetime = resource;
+  {
+    auto userdata = context.createUserData(resource);
+    ASSERT_TRUE(userdata);
+    ASSERT_TRUE(context.setPath("trackedResource", *userdata));
+  }
+  ASSERT_TRUE(context.load(R"SCRIPT(
+    do
+      local doomed = {resource = trackedResource}
+      setmetatable(doomed, {
+        __gc = function(object)
+          object.resource = nil
+          error("lua-gc-finalizer-recovery-marker")
+        end
+      })
+    end
+    trackedResource = nil
+  )SCRIPT"));
+  resource.reset();
+  EXPECT_FALSE(lifetime.expired());
+
+  auto collection = engine->collectGarbage();
+  ASSERT_FALSE(collection);
+  EXPECT_TRUE(collection.error().is<LuaException>());
+  EXPECT_NE(std::string_view(collection.error().what()).find("lua-gc-finalizer-recovery-marker"),
+      std::string_view::npos);
+  EXPECT_EQ(context.eval<int>("6 * 7"), 42);
+
+  // The failed finalizer can leave other pending finalizers for the next
+  // collection; a further cycle reclaims objects retained during finalization.
+  ASSERT_TRUE(engine->collectGarbage());
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_TRUE(lifetime.expired());
+}
+
 TEST(LuaTest, IntTest) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
-  context.setPath("test", (std::uint64_t)-1);
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.setPath("test", (std::uint64_t)-1)));
   EXPECT_EQ(context.getPath<std::uint64_t>("test"), (std::uint64_t)-1);
 }
 
 TEST(LuaTest, VariantTest) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
 
   using IntOrString = std::variant<int, String>;
 
@@ -898,26 +1265,36 @@ TEST(LuaTest, VariantTest) {
 
   EXPECT_EQ(context.eval<MIntOrString>("'foo'"), MIntOrString(String("foo")));
   EXPECT_EQ(context.eval<MIntOrString>("'1'"), MIntOrString(std::optional<int>(1)));
-  auto nil = engine->luaMaybeTo<MIntOrString>(context.eval<LuaValue>("nil"));
+  auto nilValue = context.eval<LuaValue>("nil");
+  ASSERT_TRUE(nilValue);
+  auto nil = engine->luaMaybeTo<MIntOrString>(*nilValue);
   ASSERT_TRUE(nil);
-  EXPECT_TRUE(std::holds_alternative<std::monostate>(*nil));
-  context.set("variantNil", MIntOrString{});
-  EXPECT_TRUE(context.eval<bool>("variantNil == nil"));
+  ASSERT_TRUE(*nil);
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(**nil));
+  ASSERT_TRUE((context.set("variantNil", MIntOrString{})));
+  EXPECT_EQ(context.eval<bool>("variantNil == nil"), true);
 
   using OptionalOrString = std::variant<std::optional<int>, String>;
-  auto optionalNil = engine->luaMaybeTo<OptionalOrString>(context.eval<LuaValue>("nil"));
+  auto optionalNilValue = context.eval<LuaValue>("nil");
+  ASSERT_TRUE(optionalNilValue);
+  auto optionalNil = engine->luaMaybeTo<OptionalOrString>(*optionalNilValue);
   ASSERT_TRUE(optionalNil);
-  ASSERT_TRUE(std::holds_alternative<std::optional<int>>(*optionalNil));
-  EXPECT_FALSE(std::get<std::optional<int>>(*optionalNil));
+  ASSERT_TRUE(*optionalNil);
+  ASSERT_TRUE(std::holds_alternative<std::optional<int>>(**optionalNil));
+  EXPECT_FALSE(std::get<std::optional<int>>(**optionalNil));
 }
 
 TEST(LuaTest, ProfilingTest) {
-  auto luaEngine = LuaEngine::create();
+  auto luaEngineResult = LuaEngine::create();
+  ASSERT_TRUE(luaEngineResult);
+  auto& luaEngine = *luaEngineResult;
   luaEngine->setProfilingEnabled(true);
   luaEngine->setInstructionMeasureInterval(1000);
 
-  auto context = luaEngine->createContext();
-  context.eval(R"SCRIPT(
+  auto contextResult = luaEngine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
+  ASSERT_TRUE((context.eval(R"SCRIPT(
       function function1()
         for i = 1, 1000 do
         end
@@ -938,7 +1315,7 @@ TEST(LuaTest, ProfilingTest) {
         function2()
         function3()
       end
-    )SCRIPT");
+    )SCRIPT")));
 
   StringSet names;
   List<LuaProfileEntry> profile = luaEngine->getProfile();
@@ -951,66 +1328,91 @@ TEST(LuaTest, ProfilingTest) {
 }
 
 TEST(LuaTest, PromiseUserdataObservesSharedOutcome) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
   auto [promise, keeper] = RpcPromise<Json>::createPair();
-  context.setPath("promise", promise);
-  context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper));
-  EXPECT_FALSE(context.eval<bool>("promise:finished()"));
-  EXPECT_FALSE(context.eval<bool>("promise:succeeded()"));
-  EXPECT_TRUE(context.eval<bool>("promise:result() == nil and promise:error() == nil"));
-  context.load("keeper:fulfill({answer = 42})");
-  EXPECT_TRUE(context.eval<bool>("promise:finished() and promise:succeeded()"));
+  ASSERT_TRUE((context.setPath("promise", promise)));
+  ASSERT_TRUE((context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper))));
+  EXPECT_EQ(context.eval<bool>("promise:finished()"), false);
+  EXPECT_EQ(context.eval<bool>("promise:succeeded()"), false);
+  EXPECT_EQ(context.eval<bool>("promise:result() == nil and promise:error() == nil"), true);
+  ASSERT_TRUE((context.load("keeper:fulfill({answer = 42})")));
+  EXPECT_EQ(context.eval<bool>("promise:finished() and promise:succeeded()"), true);
   EXPECT_EQ(context.eval<Json>("promise:result()"), JsonObject({{"answer", 42}}));
-  EXPECT_TRUE(context.eval<bool>("promise:error() == nil"));
-  EXPECT_EQ(promise.result()->getInt("answer"), 42);
-  EXPECT_THROW(context.load("keeper:fail('second resolution')"), LuaException);
-  context.load("keeper = nil promise = nil");
-  engine->collectGarbage();
-  EXPECT_TRUE(promise.succeeded());
+  EXPECT_EQ(context.eval<bool>("promise:error() == nil"), true);
+  auto promiseResult = promise.result();
+  ASSERT_TRUE(promiseResult);
+  ASSERT_TRUE(*promiseResult);
+  EXPECT_EQ((**promiseResult).getInt("answer"), 42);
+  {
+    auto failure = context.load("keeper:fail('second resolution')");
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().is<LuaException>());
+  };
+  ASSERT_TRUE((context.load("keeper = nil promise = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_EQ(promise.succeeded(), true);
 }
 
 TEST(LuaTest, PromiseKeeperGarbageCollectionFailsOnlyLastOwner) {
-  auto engine = LuaEngine::create();
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
   engine->setAutoGarbageCollection(false);
-  auto context = engine->createContext();
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
   auto [promise, keeper] = RpcPromise<Json>::createPair();
   auto automatic = std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper);
-  context.setPath("keeper", automatic);
-  context.setPath("promise", promise);
-  context.load("alias = keeper keeper = nil");
+  ASSERT_TRUE((context.setPath("keeper", automatic)));
+  ASSERT_TRUE((context.setPath("promise", promise)));
+  ASSERT_TRUE((context.load("alias = keeper keeper = nil")));
   automatic.reset();
-  engine->collectGarbage();
-  EXPECT_FALSE(promise.finished());
-  context.load("alias = nil");
-  engine->collectGarbage();
-  EXPECT_TRUE(promise.failed());
-  EXPECT_EQ(*promise.error(), "Keeper destroyed");
-  EXPECT_TRUE(context.eval<bool>("promise:finished() and not promise:succeeded()"));
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_EQ(promise.finished(), false);
+  ASSERT_TRUE((context.load("alias = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_EQ(promise.failed(), true);
+  auto promiseError = promise.error();
+  ASSERT_TRUE(promiseError);
+  ASSERT_TRUE(*promiseError);
+  EXPECT_EQ(**promiseError, "Keeper destroyed");
+  EXPECT_EQ(context.eval<bool>("promise:finished() and not promise:succeeded()"), true);
   EXPECT_EQ(context.eval<String>("promise:error()"), "Keeper destroyed");
-  context.load("promise = nil");
-  engine->collectGarbage();
+  ASSERT_TRUE((context.load("promise = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
 }
 
 TEST(LuaTest, PromiseKeeperCollectionPreservesChainAndFailure) {
-  auto engine = LuaEngine::create();
-  auto context = engine->createContext();
+  auto engineResult = LuaEngine::create();
+  ASSERT_TRUE(engineResult);
+  auto& engine = *engineResult;
+  auto contextResult = engine->createContext();
+  ASSERT_TRUE(contextResult);
+  auto context = std::move(*contextResult);
   auto [source, sourceKeeper] = RpcPromise<Json>::createPair();
   auto [promise, keeper] = RpcPromise<Json>::createPair();
-  context.setPath("source", source);
-  context.setPath("promise", promise);
-  context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper));
-  context.load("keeper:chain(source) keeper = nil");
-  engine->collectGarbage();
-  EXPECT_FALSE(promise.finished());
-  sourceKeeper.fulfill(JsonArray{1, 2, 3});
+  ASSERT_TRUE((context.setPath("source", source)));
+  ASSERT_TRUE((context.setPath("promise", promise)));
+  ASSERT_TRUE((context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper))));
+  ASSERT_TRUE((context.load("keeper:chain(source) keeper = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_EQ(promise.finished(), false);
+  ASSERT_TRUE((sourceKeeper.fulfill(JsonArray{1, 2, 3})));
   EXPECT_EQ(context.eval<Json>("promise:result()"), JsonArray({1, 2, 3}));
 
   auto [failed, failedKeeper] = RpcPromise<Json>::createPair();
-  context.setPath("failedKeeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(failedKeeper));
-  context.load("failedKeeper:fail('from Lua') failedKeeper = nil");
-  engine->collectGarbage();
-  EXPECT_EQ(*failed.error(), "from Lua");
-  context.load("source = nil promise = nil");
-  engine->collectGarbage();
+  ASSERT_TRUE((context.setPath("failedKeeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(failedKeeper))));
+  ASSERT_TRUE((context.load("failedKeeper:fail('from Lua') failedKeeper = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
+  auto failedError = failed.error();
+  ASSERT_TRUE(failedError);
+  ASSERT_TRUE(*failedError);
+  EXPECT_EQ(**failedError, "from Lua");
+  ASSERT_TRUE((context.load("source = nil promise = nil")));
+  ASSERT_TRUE(engine->collectGarbage());
 }

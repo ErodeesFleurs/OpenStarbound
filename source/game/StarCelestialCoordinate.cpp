@@ -42,38 +42,71 @@ CelestialCoordinate::CelestialCoordinate(Vec3I location, int planetaryOrbitNumbe
     m_planetaryOrbitNumber(planetaryOrbitNumber),
     m_satelliteOrbitNumber(satelliteOrbitNumber) {}
 
-CelestialCoordinate::CelestialCoordinate(Json const& variant) : CelestialCoordinate() {
+std::expected<CelestialCoordinate, StarException> CelestialCoordinate::create(Json const& variant) {
+  CelestialCoordinate coordinate;
   if (variant.isType(Json::Type::String)) {
-    String id = variant.toString();
-    if (!id.empty() && !id.equalsIgnoreCase("null")) {
-      try {
-        auto plist = id.splitAny(" _:");
-
-        m_location[0] = lexicalCast<int>(plist.at(0));
-        m_location[1] = lexicalCast<int>(plist.at(1));
-        m_location[2] = lexicalCast<int>(plist.at(2));
-
-        if (plist.size() > 3)
-          m_planetaryOrbitNumber = lexicalCast<int>(plist.at(3));
-        if (plist.size() > 4)
-          m_satelliteOrbitNumber = lexicalCast<int>(plist.at(4));
-
-        if (m_planetaryOrbitNumber <= 0)
-          throw CelestialException(strf("Planetary body number out of range in '{}'", id));
-        if (m_satelliteOrbitNumber < 0)
-          throw CelestialException(strf("Satellite body number out of range in '{}'", id));
-      } catch (StarException const& e) {
-        throw CelestialException(strf("Error parsing CelestialCoordinate from '{}'", id), e);
-      }
+    auto text = variant.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto nullName = text->equalsIgnoreCase("null");
+    if (!nullName)
+      return std::unexpected(std::move(nullName.error()));
+    if (!text->empty() && !*nullName) {
+      auto parse = [&]() -> std::expected<void, StarException> {
+        auto parts = text->splitAny(" _:");
+        if (!parts)
+          return std::unexpected(std::move(parts.error()));
+        if (parts->size() < 3)
+          return std::unexpected(CelestialException("CelestialCoordinate requires at least three location components"));
+        for (std::size_t i = 0; i != 3; ++i) {
+          auto value = lexicalCast<int>((*parts)[i]);
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          coordinate.m_location[i] = *value;
+        }
+        if (parts->size() > 3) {
+          auto value = lexicalCast<int>((*parts)[3]);
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          coordinate.m_planetaryOrbitNumber = *value;
+        }
+        if (parts->size() > 4) {
+          auto value = lexicalCast<int>((*parts)[4]);
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          coordinate.m_satelliteOrbitNumber = *value;
+        }
+        if (coordinate.m_planetaryOrbitNumber <= 0)
+          return std::unexpected(CelestialException(strf("Planetary body number out of range in '{}'", *text)));
+        if (coordinate.m_satelliteOrbitNumber < 0)
+          return std::unexpected(CelestialException(strf("Satellite body number out of range in '{}'", *text)));
+        return {};
+      };
+      auto parsed = parse();
+      if (!parsed)
+        return std::unexpected(CelestialException(strf("Error parsing CelestialCoordinate from '{}'", *text), parsed.error()));
     }
   } else if (variant.isType(Json::Type::Object)) {
-    m_location = jsonToVec3I(variant.get("location"));
-    m_planetaryOrbitNumber = variant.getInt("planet", 0);
-    m_satelliteOrbitNumber = variant.getInt("satellite", 0);
+    auto locationJson = variant.get("location");
+    if (!locationJson)
+      return std::unexpected(std::move(locationJson.error()));
+    auto location = jsonToVec3I(*locationJson);
+    if (!location)
+      return std::unexpected(std::move(location.error()));
+    auto planet = variant.getInt("planet", 0);
+    if (!planet)
+      return std::unexpected(std::move(planet.error()));
+    auto satellite = variant.getInt("satellite", 0);
+    if (!satellite)
+      return std::unexpected(std::move(satellite.error()));
+    coordinate.m_location = *location;
+    coordinate.m_planetaryOrbitNumber = *planet;
+    coordinate.m_satelliteOrbitNumber = *satellite;
   } else if (!variant.isNull()) {
-    throw CelestialException(
-        strf("Improper variant type {} trying to convert to SystemCoordinate", variant.typeName()));
+    return std::unexpected(CelestialException(
+        strf("Improper variant type {} trying to convert to SystemCoordinate", variant.typeName())));
   }
+  return coordinate;
 }
 
 bool CelestialCoordinate::isNull() const {
@@ -96,44 +129,44 @@ Vec3I CelestialCoordinate::location() const {
   return m_location;
 }
 
-CelestialCoordinate CelestialCoordinate::system() const {
+std::expected<CelestialCoordinate, StarException> CelestialCoordinate::system() const {
   if (isNull())
-    throw CelestialException("CelestialCoordinate::system() called on null coordinate");
+    return std::unexpected(CelestialException("CelestialCoordinate::system() called on null coordinate"));
   return CelestialCoordinate(m_location, 0, 0);
 }
 
-CelestialCoordinate CelestialCoordinate::planet() const {
+std::expected<CelestialCoordinate, StarException> CelestialCoordinate::planet() const {
   if (isPlanetaryBody())
     return *this;
   if (isSatelliteBody())
     return CelestialCoordinate(m_location, m_planetaryOrbitNumber, 0);
-  throw CelestialException("CelestialCoordinate::planet() called on null or system coordinate type");
+  return std::unexpected(CelestialException("CelestialCoordinate::planet() called on null or system coordinate type"));
 }
 
-int CelestialCoordinate::orbitNumber() const {
+std::expected<int, StarException> CelestialCoordinate::orbitNumber() const {
   if (isSatelliteBody())
     return m_satelliteOrbitNumber;
   if (isPlanetaryBody())
     return m_planetaryOrbitNumber;
   if (isSystem())
     return 0;
-  throw CelestialException("CelestialCoordinate::orbitNumber() called on null coordinate");
+  return std::unexpected(CelestialException("CelestialCoordinate::orbitNumber() called on null coordinate"));
 }
 
-CelestialCoordinate CelestialCoordinate::parent() const {
+std::expected<CelestialCoordinate, StarException> CelestialCoordinate::parent() const {
   if (isSatelliteBody())
     return CelestialCoordinate(m_location, m_planetaryOrbitNumber, 0);
   if (isPlanetaryBody())
     return CelestialCoordinate(m_location, 0, 0);
-  throw CelestialException("CelestialCoordinate::parent() called on null or system coordinate");
+  return std::unexpected(CelestialException("CelestialCoordinate::parent() called on null or system coordinate"));
 }
 
-CelestialCoordinate CelestialCoordinate::child(int orbitNumber) const {
+std::expected<CelestialCoordinate, StarException> CelestialCoordinate::child(int orbitNumber) const {
   if (isSystem())
     return CelestialCoordinate(m_location, orbitNumber, 0);
   if (isPlanetaryBody())
     return CelestialCoordinate(m_location, m_planetaryOrbitNumber, orbitNumber);
-  throw CelestialException("CelestialCoordinate::child called on null or satellite coordinate");
+  return std::unexpected(CelestialException("CelestialCoordinate::child called on null or satellite coordinate"));
 }
 
 Json CelestialCoordinate::toJson() const {
@@ -155,7 +188,9 @@ double CelestialCoordinate::distance(CelestialCoordinate const& rhs) const {
 }
 
 String CelestialCoordinate::filename() const {
-  return id().replace(":", "_");
+  auto filename = id().utf8();
+  std::replace(filename.begin(), filename.end(), ':', '_');
+  return filename;
 }
 
 CelestialCoordinate::operator bool() const {
@@ -193,20 +228,32 @@ std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord) {
   return os;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialCoordinate& coordinate) {
-  ds.read(coordinate.m_location);
-  ds.read(coordinate.m_planetaryOrbitNumber);
-  ds.read(coordinate.m_satelliteOrbitNumber);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate) {
+  CelestialCoordinate decoded;
+  auto location = ds.read(decoded.m_location);
+  if (!location)
+    return std::unexpected(std::move(location.error()));
+  auto planet = ds.read(decoded.m_planetaryOrbitNumber);
+  if (!planet)
+    return std::unexpected(std::move(planet.error()));
+  auto satellite = ds.read(decoded.m_satelliteOrbitNumber);
+  if (!satellite)
+    return std::unexpected(std::move(satellite.error()));
+  coordinate = std::move(decoded);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialCoordinate const& coordinate) {
-  ds.write(coordinate.m_location);
-  ds.write(coordinate.m_planetaryOrbitNumber);
-  ds.write(coordinate.m_satelliteOrbitNumber);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate) {
+  auto location = ds.write(coordinate.m_location);
+  if (!location)
+    return std::unexpected(std::move(location.error()));
+  auto planet = ds.write(coordinate.m_planetaryOrbitNumber);
+  if (!planet)
+    return std::unexpected(std::move(planet.error()));
+  auto satellite = ds.write(coordinate.m_satelliteOrbitNumber);
+  if (!satellite)
+    return std::unexpected(std::move(satellite.error()));
+  return &ds;
 }
 
 }

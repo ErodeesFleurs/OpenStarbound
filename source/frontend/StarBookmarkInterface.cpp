@@ -81,76 +81,118 @@ import star.button_widget;
 import star.image_widget;
 import star.text_box_widget;
 import star.label_widget;
+import star.format;
 
 namespace Star {
 
-EditBookmarkDialog::EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap) : Pane(guiContext) {
-  m_playerUniverseMap = playerUniverseMap;
+EditBookmarkDialog::EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap)
+  : Pane(guiContext), m_playerUniverseMap(std::move(playerUniverseMap)), m_isNew(true) {}
 
-  GuiReader reader(*context());
-  auto assets = context()->root().assets();
-  reader.registerCallback("ok", [this](Widget*) { ok(); });
-  reader.registerCallback("remove", [this](Widget*) { remove(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-  reader.registerCallback("name", [](Widget*) {});
-  reader.construct(assets->json("/interface/windowconfig/editbookmark.config:paneLayout"), this);
-  dismiss();
+std::expected<std::shared_ptr<EditBookmarkDialog>, StarException> EditBookmarkDialog::create(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap) {
+  auto pane = std::shared_ptr<EditBookmarkDialog>(new EditBookmarkDialog(guiContext, std::move(playerUniverseMap)));
+  auto base = pane->initializePane();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return pane;
 }
 
-void EditBookmarkDialog::setBookmark(TeleportBookmark bookmark) {
-  m_bookmark = bookmark;
+std::expected<void, StarException> EditBookmarkDialog::initialize() {
+  GuiReader reader(*context());
+  auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  reader.registerCallback("ok", [this](Widget*) { return ok(); });
+  reader.registerCallback("remove", [this](Widget*) { return remove(); });
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { close(); return {}; });
+  reader.registerCallback("name", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  auto layout = (*assets)->json("/interface/windowconfig/editbookmark.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
+  dismiss();
+  return {};
+}
 
+std::expected<void, StarException> EditBookmarkDialog::setBookmark(TeleportBookmark bookmark) {
+  auto bookmarks = m_playerUniverseMap->teleportBookmarks();
+  if (!bookmarks) return std::unexpected(std::move(bookmarks.error()));
+  m_bookmark = bookmark;
   m_isNew = true;
-  for (auto& existing : m_playerUniverseMap->teleportBookmarks()) {
+  for (auto const& existing : *bookmarks) {
     if (existing == bookmark) {
       m_bookmark.bookmarkName = existing.bookmarkName;
       m_isNew = false;
     }
   }
+  return {};
 }
 
-void EditBookmarkDialog::show() {
-  Pane::show();
+std::expected<void, StarException> EditBookmarkDialog::show() {
+  auto shown = Pane::show();
+  if (!shown) return std::unexpected(std::move(shown.error()));
 
-  if (m_isNew) {
-    fetchChild<LabelWidget>("lblTitle")->setText("NEW BOOKMARK");
-    fetchChild<ButtonWidget>("remove")->hide();
-  } else {
-    fetchChild<LabelWidget>("lblTitle")->setText("EDIT BOOKMARK");
-    fetchChild<ButtonWidget>("remove")->show();
-  }
-
-  auto assets = context()->root().assets();
-  fetchChild<ImageWidget>("imgIcon")->setImage(strf("/interface/bookmarks/icons/{}.png", m_bookmark.icon));
-
-  fetchChild<LabelWidget>("lblPlanetName")->setText(m_bookmark.targetName);
-  fetchChild<TextBoxWidget>("name")->setText(m_bookmark.bookmarkName, false);
-  fetchChild<TextBoxWidget>("name")->focus();
+  auto titleWidget = fetchChild<LabelWidget>("lblTitle");
+  if (!titleWidget) return std::unexpected(std::move(titleWidget.error()));
+  auto title = (*titleWidget)->setText(m_isNew ? "NEW BOOKMARK" : "EDIT BOOKMARK");
+  if (!title) return std::unexpected(std::move(title.error()));
+  auto removeWidget = fetchChild<ButtonWidget>("remove");
+  if (!removeWidget) return std::unexpected(std::move(removeWidget.error()));
+  auto removeVisibility = (*removeWidget)->setVisibility(!m_isNew);
+  if (!removeVisibility) return std::unexpected(std::move(removeVisibility.error()));
+  auto iconWidget = fetchChild<ImageWidget>("imgIcon");
+  if (!iconWidget) return std::unexpected(std::move(iconWidget.error()));
+  auto icon = (*iconWidget)->setImage(strf("/interface/bookmarks/icons/{}.png", m_bookmark.icon));
+  if (!icon) return std::unexpected(std::move(icon.error()));
+  auto planetNameWidget = fetchChild<LabelWidget>("lblPlanetName");
+  if (!planetNameWidget) return std::unexpected(std::move(planetNameWidget.error()));
+  auto planetName = (*planetNameWidget)->setText(m_bookmark.targetName);
+  if (!planetName) return std::unexpected(std::move(planetName.error()));
+  auto nameWidget = fetchChild<TextBoxWidget>("name");
+  if (!nameWidget) return std::unexpected(std::move(nameWidget.error()));
+  auto name = (*nameWidget)->setText(m_bookmark.bookmarkName, false);
+  if (!name) return std::unexpected(std::move(name.error()));
+  return (*nameWidget)->focus();
 }
 
-void EditBookmarkDialog::ok() {
-  m_bookmark.bookmarkName = fetchChild<TextBoxWidget>("name")->getText();
+std::expected<void, StarException> EditBookmarkDialog::ok() {
+  auto name = fetchChild<TextBoxWidget>("name");
+  if (!name) return std::unexpected(std::move(name.error()));
+  m_bookmark.bookmarkName = (*name)->getText();
   if (m_bookmark.bookmarkName.empty())
     m_bookmark.bookmarkName = m_bookmark.targetName;
-  if (!m_isNew)
-    m_playerUniverseMap->removeTeleportBookmark(m_bookmark);
-  m_playerUniverseMap->addTeleportBookmark(m_bookmark);
+  if (!m_isNew) {
+    auto removed = m_playerUniverseMap->removeTeleportBookmark(m_bookmark);
+    if (!removed) return std::unexpected(std::move(removed.error()));
+  }
+  auto added = m_playerUniverseMap->addTeleportBookmark(m_bookmark);
+  if (!added) return std::unexpected(std::move(added.error()));
   dismiss();
+  return {};
 }
 
-void EditBookmarkDialog::remove() {
-  m_playerUniverseMap->removeTeleportBookmark(m_bookmark);
+std::expected<void, StarException> EditBookmarkDialog::remove() {
+  auto removed = m_playerUniverseMap->removeTeleportBookmark(m_bookmark);
+  if (!removed) return std::unexpected(std::move(removed.error()));
   dismiss();
+  return {};
 }
 
 void EditBookmarkDialog::close() {
   dismiss();
 }
 
-void setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark) {
-  entry->fetchChild<LabelWidget>("name")->setText(bookmark.bookmarkName);
-  entry->fetchChild<LabelWidget>("planetName")->setText(bookmark.targetName);
-  entry->fetchChild<ImageWidget>("icon")->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));
+std::expected<void, StarException> setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark) {
+  auto nameWidget = entry->fetchChild<LabelWidget>("name");
+  if (!nameWidget) return std::unexpected(std::move(nameWidget.error()));
+  auto name = (*nameWidget)->setText(bookmark.bookmarkName);
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto planetNameWidget = entry->fetchChild<LabelWidget>("planetName");
+  if (!planetNameWidget) return std::unexpected(std::move(planetNameWidget.error()));
+  auto planetName = (*planetNameWidget)->setText(bookmark.targetName);
+  if (!planetName) return std::unexpected(std::move(planetName.error()));
+  auto iconWidget = entry->fetchChild<ImageWidget>("icon");
+  if (!iconWidget) return std::unexpected(std::move(iconWidget.error()));
+  return (*iconWidget)->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));
 }
 
 }

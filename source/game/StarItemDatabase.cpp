@@ -122,9 +122,11 @@ import star.versioning_database;
 
 import star.math_common;
 import star.algorithm;
+import star.output_proxy;
+
 namespace Star {
 
-extern EnumMap<ItemType> const ItemTypeNames{
+extern std::expected<EnumMap<ItemType>, StarException> const ItemTypeNames = EnumMap<ItemType>::create({
   {ItemType::Generic, "generic"},
   {ItemType::LiquidItem, "liquid"},
   {ItemType::MaterialItem, "material"},
@@ -150,7 +152,7 @@ extern EnumMap<ItemType> const ItemTypeNames{
   {ItemType::UnlockItem, "unlockitem"},
   {ItemType::ActiveItem, "activeitem"},
   {ItemType::AugmentItem, "augmentitem"}
-};
+});
 
 std::uint64_t ItemDatabase::getCountOfItem(List<std::shared_ptr<Item>> const& bag, ItemDescriptor const& item, bool exactMatch) {
   auto normalizedBag = normalizeBag(bag);
@@ -158,12 +160,9 @@ std::uint64_t ItemDatabase::getCountOfItem(List<std::shared_ptr<Item>> const& ba
 }
 
 std::uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, std::uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch) {
-  ItemDescriptor matchItem = exactMatch ? item.singular() : ItemDescriptor(item.name(), 1);
-  if (!bag.contains(matchItem)) {
-    return 0;
-  } else {
-    return bag.get(matchItem);
-  }
+  ItemDescriptor matchItem = exactMatch ? item.singular() : ItemDescriptor(item.name(), 1, JsonObject(), {});
+  auto found = bag.find(matchItem);
+  return found == bag.end() ? 0 : found->second;
 }
 
 HashMap<ItemDescriptor, std::uint64_t> ItemDatabase::normalizeBag(List<std::shared_ptr<Item>> const& bag) {
@@ -172,10 +171,10 @@ HashMap<ItemDescriptor, std::uint64_t> ItemDatabase::normalizeBag(List<std::shar
     if (!item)
       continue;
 
-    normalizedBag[ItemDescriptor(item->name(), 1)] += item->count();
+    normalizedBag[ItemDescriptor(item->name(), 1, JsonObject(), {})] += item->count();
 
-    if (!item->parameters().toObject().empty())
-      normalizedBag[ItemDescriptor(item->name(), 1, item->parameters())] += item->count();
+    if (item->parameters() != Json(JsonObject()))
+      normalizedBag[item->descriptor().singular()] += item->count();
   }
 
   return normalizedBag;
@@ -208,8 +207,14 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, std:
   return res;
 }
 
-String ItemDatabase::guiFilterString(std::shared_ptr<Item> const& item) {
-  return (item->name() + item->friendlyName() + item->description()).toLower().splitAny(" ,.?*\\+/|\t").join("");
+std::expected<String, StarException> ItemDatabase::guiFilterString(std::shared_ptr<Item> const& item) {
+  auto lowered = (item->name() + item->friendlyName() + item->description()).toLower();
+  if (!lowered)
+    return std::unexpected(std::move(lowered.error()));
+  auto split = lowered->splitAny(" ,.?*\\+/|\t");
+  if (!split)
+    return std::unexpected(std::move(split.error()));
+  return split->join("");
 }
 
 bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& availableIngredients, StringMap<std::uint64_t> const& availableCurrencies) {
@@ -219,7 +224,7 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   }
 
   for (auto const& input : recipe.inputs) {
-    ItemDescriptor matchInput = recipe.matchInputParameters ? input.singular() : ItemDescriptor(input.name(), 1);
+    ItemDescriptor matchInput = recipe.matchInputParameters ? input.singular() : ItemDescriptor(input.name(), 1, JsonObject(), {});
     if (availableIngredients.value(matchInput) < input.count())
       return false;
   }
@@ -227,17 +232,36 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   return true;
 }
 
-ItemDatabase::ItemDatabase(Root& root)
-  : m_root(root), m_luaRoot(std::make_shared<LuaRoot>(root)),
-    m_itemCache(root.random()) {
-  scanItems();
-  addObjectItems();
-  addCodexes();
-  // Builders below can query the complete base catalog without re-entering
-  // Root's still-unpublished ItemDatabase loader.
-  m_rebuilder = std::make_shared<Rebuilder>(root, "item", this);
-  scanRecipes();
-  addBlueprints();
+ItemDatabase::ItemDatabase(Root& root) : m_root(root), m_itemCache(root.random()) {}
+
+std::expected<std::shared_ptr<ItemDatabase>, StarException> ItemDatabase::create(Root& root) {
+  auto database = std::shared_ptr<ItemDatabase>(new ItemDatabase(root));
+  auto luaRoot = LuaRoot::create(root);
+  if (!luaRoot)
+    return std::unexpected(std::move(luaRoot.error()));
+  database->m_luaRoot = std::move(*luaRoot);
+  auto scanned = database->scanItems();
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
+  auto objects = database->addObjectItems();
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  auto codexes = database->addCodexes();
+  if (!codexes)
+    return std::unexpected(std::move(codexes.error()));
+  // Builders can query the complete base catalog without re-entering Root's
+  // still-unpublished ItemDatabase loader.
+  auto rebuilder = Rebuilder::create(root, "item", database.get());
+  if (!rebuilder)
+    return std::unexpected(std::move(rebuilder.error()));
+  database->m_rebuilder = std::move(*rebuilder);
+  auto recipes = database->scanRecipes();
+  if (!recipes)
+    return std::unexpected(std::move(recipes.error()));
+  auto blueprints = database->addBlueprints();
+  if (!blueprints)
+    return std::unexpected(std::move(blueprints.error()));
+  return database;
 }
 
 void ItemDatabase::cleanup() {
@@ -250,26 +274,36 @@ void ItemDatabase::cleanup() {
 }
 
 
-ItemDescriptor ItemDatabase::loadDescriptor(Json const& store) const {
-  return ItemDescriptor::loadStore(*m_root.versioningDatabase(), store);
-}
-std::shared_ptr<Item> ItemDatabase::diskLoad(Json const& diskStore) const {
-  if (diskStore) {
-    return item(loadDescriptor(diskStore));
-  } else {
-    return {};
-  }
+std::expected<ItemDescriptor, StarException> ItemDatabase::loadDescriptor(Json const& store) const {
+  auto versioning = m_root.versioningDatabase();
+  if (!versioning)
+    return std::unexpected(std::move(versioning.error()));
+  return ItemDescriptor::loadStore(**versioning, store);
 }
 
-std::shared_ptr<Item> ItemDatabase::fromJson(Json const& spec) const {
-  return item(ItemDescriptor(spec));
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::diskLoad(Json const& diskStore) const {
+  if (!diskStore)
+    return std::shared_ptr<Item>();
+  auto descriptor = loadDescriptor(diskStore);
+  if (!descriptor)
+    return std::unexpected(std::move(descriptor.error()));
+  return item(std::move(*descriptor));
 }
 
-Json ItemDatabase::diskStore(std::shared_ptr<Item const> const& itemPtr) const {
-  if (itemPtr)
-    return itemPtr->descriptor().diskStore(*m_root.versioningDatabase());
-  else
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::fromJson(Json const& spec) const {
+  auto descriptor = ItemDescriptor::create(spec);
+  if (!descriptor)
+    return std::unexpected(std::move(descriptor.error()));
+  return item(std::move(*descriptor));
+}
+
+std::expected<Json, StarException> ItemDatabase::diskStore(std::shared_ptr<Item const> const& itemPtr) const {
+  if (!itemPtr)
     return Json();
+  auto versioning = m_root.versioningDatabase();
+  if (!versioning)
+    return std::unexpected(std::move(versioning.error()));
+  return itemPtr->descriptor().diskStore(**versioning);
 }
 
 Json ItemDatabase::toJson(std::shared_ptr<Item const> const& itemPtr) const {
@@ -283,72 +317,112 @@ bool ItemDatabase::hasItem(String const& itemName) const {
   return m_items.contains(itemName);
 }
 
-ItemType ItemDatabase::itemType(String const& itemName) const {
-  return itemData(itemName).type;
+std::expected<ItemType, StarException> ItemDatabase::itemType(String const& itemName) const {
+  auto data = itemData(itemName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return (*data)->type;
 }
 
-String ItemDatabase::itemFriendlyName(String const& itemName) const {
-  return itemData(itemName).friendlyName;
+std::expected<String, StarException> ItemDatabase::itemFriendlyName(String const& itemName) const {
+  auto data = itemData(itemName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return (*data)->friendlyName;
 }
 
-StringSet ItemDatabase::itemTags(String const& itemName) const {
-  return itemData(itemName).itemTags;
+std::expected<StringSet, StarException> ItemDatabase::itemTags(String const& itemName) const {
+  auto data = itemData(itemName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return (*data)->itemTags;
 }
 
-ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, std::optional<float> level, std::optional<std::uint64_t> seed) const {
-  auto const& data = itemData(itemName);
-
+std::expected<ItemDatabase::ItemConfig, StarException> ItemDatabase::itemConfig(String const& itemName, Json parameters, std::optional<float> level, std::optional<std::uint64_t> seed) const {
+  auto data = itemData(itemName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
   ItemConfig itemConfig;
-  if (data.assetsConfig)
-    itemConfig.config = m_root.assets()->json(*data.assetsConfig);
-  itemConfig.directory = data.directory;
-  itemConfig.config = jsonMerge(itemConfig.config, data.customConfig);
-  itemConfig.parameters = parameters;
-
-  if (auto builder = itemConfig.config.optString("builder")) {
-    RecursiveMutexLocker locker(m_luaMutex);
-    auto context = m_luaRoot->createContext(*builder);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap()));
-    luaTie(itemConfig.config, itemConfig.parameters) = context.invokePath<LuaTupleReturn<Json, Json>>(
-        "build", itemConfig.directory, itemConfig.config, itemConfig.parameters, level, seed);
+  if ((*data)->assetsConfig) {
+    auto assets = m_root.assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto config = (*assets)->json(*(*data)->assetsConfig);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    itemConfig.config = std::move(*config);
   }
-
+  itemConfig.directory = (*data)->directory;
+  itemConfig.config = jsonMerge(itemConfig.config, (*data)->customConfig);
+  itemConfig.parameters = std::move(parameters);
+  auto builder = itemConfig.config.optString("builder");
+  if (!builder)
+    return std::unexpected(std::move(builder.error()));
+  if (*builder) {
+    RecursiveMutexLocker locker(m_luaMutex);
+    auto context = m_luaRoot->createContext(**builder);
+    if (!context)
+      return std::unexpected(std::move(context.error()));
+    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, this);
+    if (!rootCallbacks)
+      return std::unexpected(std::move(rootCallbacks.error()));
+    auto setRoot = context->setCallbacks("root", *rootCallbacks);
+    if (!setRoot)
+      return std::unexpected(std::move(setRoot.error()));
+    auto utilityCallbacks = LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap());
+    if (!utilityCallbacks)
+      return std::unexpected(std::move(utilityCallbacks.error()));
+    auto setUtility = context->setCallbacks("sb", *utilityCallbacks);
+    if (!setUtility)
+      return std::unexpected(std::move(setUtility.error()));
+    auto built = context->invokePath<LuaTupleReturn<Json, Json>>(
+        "build", itemConfig.directory, itemConfig.config, itemConfig.parameters, level, seed);
+    if (!built)
+      return std::unexpected(std::move(built.error()));
+    itemConfig.config = std::move(std::get<0>(*built));
+    itemConfig.parameters = std::move(std::get<1>(*built));
+  }
   return itemConfig;
 }
 
-std::optional<String> ItemDatabase::itemFile(String const& itemName) const {
-  if (!hasItem(itemName)) {
-    return {};
-  }
-  auto const& data = itemData(itemName);
-  return data.directory + data.filename;
+std::expected<std::optional<String>, StarException> ItemDatabase::itemFile(String const& itemName) const {
+  if (!hasItem(itemName))
+    return std::optional<String>();
+  auto data = itemData(itemName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return std::optional<String>((*data)->directory + (*data)->filename);
 }
 
-std::shared_ptr<Item> ItemDatabase::itemShared(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed) const {
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::itemShared(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed) const {
   if (!descriptor)
-    return {};
-
-  ItemCacheEntry entry{ descriptor, level, seed };
+    return std::shared_ptr<Item>();
+  ItemCacheEntry entry{descriptor, level, seed};
   MutexLocker locker(m_cacheMutex);
-  if (std::shared_ptr<Item>* cached = m_itemCache.ptr(entry))
-    return *cached;
-  else {
-    locker.unlock();
-
-    std::shared_ptr<Item> item = tryCreateItem(descriptor, level, seed);
-    std::get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
-
-    locker.lock();
-    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> std::shared_ptr<Item> { return std::move(item); });
-  }
+  auto cached = m_itemCache.ptr(entry);
+  if (!cached)
+    return std::unexpected(std::move(cached.error()));
+  if (*cached)
+    return **cached;
+  locker.unlock();
+  auto created = tryCreateItem(descriptor, level, seed);
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto builtSeed = (*created)->parameters().optUInt("seed");
+  if (!builtSeed)
+    return std::unexpected(std::move(builtSeed.error()));
+  std::get<2>(entry) = *builtSeed;
+  locker.lock();
+  auto stored = m_itemCache.get(entry, [&](ItemCacheEntry const&) -> std::shared_ptr<Item> { return std::move(*created); });
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  return **stored;
 }
 
-std::shared_ptr<Item> ItemDatabase::item(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::item(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
-    return {};
-  else
-    return tryCreateItem(descriptor, level, seed, ignoreInvalid);
+    return std::shared_ptr<Item>();
+  return tryCreateItem(descriptor, level, seed, ignoreInvalid);
 }
 
 bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
@@ -413,10 +487,11 @@ std::uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, std::uint6
   }
 
   for (auto const& input : recipe.inputs) {
-    if (!bag.contains(input.singular()))
+    auto found = bag.find(input.singular());
+    if (found == bag.end())
       return 0;
     else if (input.count() > 0)
-      res = std::min(bag.get(input.singular()) / input.count(), res);
+      res = std::min(found->second / input.count(), res);
   }
 
   return res;
@@ -454,37 +529,81 @@ ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<
   return result;
 }
 
-ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
-  ItemRecipe res;
-  try {
-    res.currencyInputs = jsonToMapV<StringMap<std::uint64_t>>(config.get("currencyInputs", JsonObject()), std::mem_fn(&Json::toUInt));
-
-    // parse currency items into currency inputs
-    for (auto input : config.getArray("input")) {
-      auto id = ItemDescriptor(input);
-      if (itemType(id.name()) == ItemType::CurrencyItem) {
-        auto currencyItem = as<CurrencyItem>(itemShared(id, {}, {}));
+std::expected<ItemRecipe, StarException> ItemDatabase::parseRecipe(Json const& config) const {
+  auto parsed = [&]() -> std::expected<ItemRecipe, StarException> {
+    ItemRecipe res;
+    auto currencies = config.get("currencyInputs", JsonObject()).and_then([](Json const& value) {
+      return jsonToMapV<StringMap<std::uint64_t>>(value, [](Json const& entry) { return entry.toUInt(); });
+    });
+    if (!currencies)
+      return std::unexpected(std::move(currencies.error()));
+    res.currencyInputs = std::move(*currencies);
+    auto inputs = config.getArray("input");
+    if (!inputs)
+      return std::unexpected(std::move(inputs.error()));
+    for (auto const& input : *inputs) {
+      auto id = ItemDescriptor::create(input);
+      if (!id)
+        return std::unexpected(std::move(id.error()));
+      auto type = itemType(id->name());
+      if (!type)
+        return std::unexpected(std::move(type.error()));
+      if (*type == ItemType::CurrencyItem) {
+        auto shared = itemShared(*id, {}, {});
+        if (!shared)
+          return std::unexpected(std::move(shared.error()));
+        auto currencyItem = as<CurrencyItem>(*shared);
         res.currencyInputs[currencyItem->currencyType()] += currencyItem->totalValue();
       } else {
-        res.inputs.push_back(id);
+        res.inputs.append(std::move(*id));
       }
     }
-
-    res.output = ItemDescriptor(config.get("output"));
-    res.duration = config.getFloat("duration", m_root.assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
-    res.groups = StringSet::from(jsonToStringList(config.get("groups", JsonArray())));
-    if (auto item = ItemDatabase::itemShared(res.output, {}, {})) {
-      res.outputRarity = item->rarity();
-      res.guiFilterString = guiFilterString(item);
+    auto outputConfig = config.get("output");
+    if (!outputConfig)
+      return std::unexpected(std::move(outputConfig.error()));
+    auto output = ItemDescriptor::create(*outputConfig);
+    if (!output)
+      return std::unexpected(std::move(output.error()));
+    res.output = std::move(*output);
+    auto assets = m_root.assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto defaultDuration = (*assets)->json("/items/defaultParameters.config:defaultCraftDuration").and_then([](Json const& value) { return value.toFloat(); });
+    if (!defaultDuration)
+      return std::unexpected(std::move(defaultDuration.error()));
+    auto duration = config.getFloat("duration", *defaultDuration);
+    if (!duration)
+      return std::unexpected(std::move(duration.error()));
+    res.duration = *duration;
+    auto groups = config.get("groups", JsonArray()).and_then([](Json const& value) { return jsonToStringSet(value); });
+    if (!groups)
+      return std::unexpected(std::move(groups.error()));
+    res.groups = std::move(*groups);
+    auto outputItem = itemShared(res.output, {}, {});
+    if (!outputItem)
+      return std::unexpected(std::move(outputItem.error()));
+    if (*outputItem) {
+      res.outputRarity = (*outputItem)->rarity();
+      auto filter = guiFilterString(*outputItem);
+      if (!filter)
+        return std::unexpected(std::move(filter.error()));
+      res.guiFilterString = std::move(*filter);
     }
-    res.collectables = jsonToMapV<StringMap<String>>(config.get("collectables", JsonObject()), std::mem_fn(&Json::toString));
-    res.matchInputParameters = config.getBool("matchInputParameters", false);
-
-  } catch (JsonException const& e) {
-    throw RecipeException(strf("Recipe missing required ingredient: {}", outputException(e, false)));
-  }
-
-  return res;
+    auto collectables = config.get("collectables", JsonObject()).and_then([](Json const& value) {
+      return jsonToMapV<StringMap<String>>(value, [](Json const& entry) { return entry.toString(); });
+    });
+    if (!collectables)
+      return std::unexpected(std::move(collectables.error()));
+    res.collectables = std::move(*collectables);
+    auto match = config.getBool("matchInputParameters", false);
+    if (!match)
+      return std::unexpected(std::move(match.error()));
+    res.matchInputParameters = *match;
+    return res;
+  }();
+  if (!parsed && parsed.error().is<JsonException>())
+    return std::unexpected(RecipeException("Recipe missing required ingredient", ExceptionDiagnostic(parsed.error())));
+  return parsed;
 }
 
 HashSet<ItemRecipe> const& ItemDatabase::allRecipes() const {
@@ -500,58 +619,120 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
   return res;
 }
 
-std::shared_ptr<Item> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
-  if (item) {
-    RecursiveMutexLocker locker(m_luaMutex);
-    LuaBaseComponent script(m_root);
-    script.removeCallbacks("root");
-    script.addCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
-    script.setLuaRoot(m_luaRoot);
-    script.setScripts(augment->augmentScripts());
-    script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
-    script.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, augment, std::placeholders::_1, std::placeholders::_2)));
-    script.init();
-    auto luaResult = script.invoke<LuaTupleReturn<Json, std::optional<std::uint64_t>>>("apply", item->descriptor().toJson());
-    script.uninit();
-    locker.unlock();
-
-    if (luaResult) {
-      if (!std::get<0>(*luaResult).isNull()) {
-        augment->take(std::get<1>(*luaResult).value_or(1));
-        return ItemDatabase::item(ItemDescriptor(std::get<0>(*luaResult)), {}, {}, false);
-      }
-    }
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
+  if (!item)
+    return item;
+  RecursiveMutexLocker locker(m_luaMutex);
+  LuaBaseComponent script(m_root);
+  auto setup = [&]() -> std::expected<void, StarException> {
+    auto removed = script.removeCallbacks("root");
+    if (!removed)
+      return std::unexpected(std::move(removed.error()));
+    auto rootCallbacks = LuaBindings::makeRootCallbacks(m_root, this);
+    if (!rootCallbacks)
+      return std::unexpected(std::move(rootCallbacks.error()));
+    if (auto added = script.addCallbacks("root", std::move(*rootCallbacks)); !added)
+      return std::unexpected(std::move(added.error()));
+    if (auto set = script.setLuaRoot(m_luaRoot); !set)
+      return std::unexpected(std::move(set.error()));
+    auto scripts = augment->augmentScripts();
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    if (auto set = script.setScripts(std::move(*scripts)); !set)
+      return std::unexpected(std::move(set.error()));
+    auto itemCallbacks = LuaBindings::makeItemCallbacks(augment);
+    if (!itemCallbacks)
+      return std::unexpected(std::move(itemCallbacks.error()));
+    if (auto added = script.addCallbacks("item", std::move(*itemCallbacks)); !added)
+      return std::unexpected(std::move(added.error()));
+    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, augment, std::placeholders::_1, std::placeholders::_2));
+    if (!configCallbacks)
+      return std::unexpected(std::move(configCallbacks.error()));
+    return script.addCallbacks("config", std::move(*configCallbacks));
+  }();
+  if (!setup)
+    return std::unexpected(std::move(setup.error()));
+  auto initialized = script.init();
+  if (!initialized) {
+    auto cleaned = script.uninit();
+    if (!cleaned)
+      return std::unexpected(cleaned.error().withContext(printException(initialized.error(), true)));
+    return std::unexpected(std::move(initialized.error()));
   }
-
+  auto luaResult = script.invoke<LuaTupleReturn<Json, std::optional<std::uint64_t>>>("apply", item->descriptor().toJson());
+  auto cleaned = script.uninit();
+  locker.unlock();
+  if (!luaResult) {
+    if (!cleaned)
+      return std::unexpected(cleaned.error().withContext(printException(luaResult.error(), true)));
+    return std::unexpected(std::move(luaResult.error()));
+  }
+  if (!cleaned)
+    return std::unexpected(std::move(cleaned.error()));
+  if (*luaResult && !std::get<0>(**luaResult).isNull()) {
+    auto taken = augment->take(std::get<1>(**luaResult).value_or(1));
+    if (!taken)
+      return std::unexpected(std::move(taken.error()));
+    auto descriptor = ItemDescriptor::create(std::get<0>(**luaResult));
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    return ItemDatabase::item(std::move(*descriptor), {}, {}, false);
+  }
   return item;
 }
 
-bool ItemDatabase::ageItem(std::shared_ptr<Item>& item, double aging) const {
+std::expected<bool, StarException> ItemDatabase::ageItem(std::shared_ptr<Item>& item, double aging) const {
   if (!item)
     return false;
-
-  auto const& itemData = ItemDatabase::itemData(item->name());
-  if (itemData.agingScripts.empty())
+  auto data = itemData(item->name());
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  if ((*data)->agingScripts.empty())
     return false;
-
   ItemDescriptor original = item->descriptor();
-
   RecursiveMutexLocker locker(m_luaMutex);
   LuaBaseComponent script(m_root);
-  script.removeCallbacks("root");
-  script.addCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
-  script.setLuaRoot(m_luaRoot);
-  script.setScripts(itemData.agingScripts);
-  script.init();
-  auto aged = script.invoke<Json>("ageItem", original.toJson(), aging).transform(construct<ItemDescriptor>());
-  script.uninit();
+  auto removed = script.removeCallbacks("root");
+  if (!removed)
+    return std::unexpected(std::move(removed.error()));
+  auto callbacks = LuaBindings::makeRootCallbacks(m_root, this);
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  if (auto added = script.addCallbacks("root", std::move(*callbacks)); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto set = script.setLuaRoot(m_luaRoot); !set)
+    return std::unexpected(std::move(set.error()));
+  if (auto set = script.setScripts((*data)->agingScripts); !set)
+    return std::unexpected(std::move(set.error()));
+  auto initialized = script.init();
+  if (!initialized) {
+    auto cleaned = script.uninit();
+    if (!cleaned)
+      return std::unexpected(cleaned.error().withContext(printException(initialized.error(), true)));
+    return std::unexpected(std::move(initialized.error()));
+  }
+  auto agedJson = script.invoke<Json>("ageItem", original.toJson(), aging);
+  auto cleaned = script.uninit();
   locker.unlock();
-
-  if (aged && *aged != original) {
-    item = ItemDatabase::item(*aged, {}, {}, false);
+  if (!agedJson) {
+    if (!cleaned)
+      return std::unexpected(cleaned.error().withContext(printException(agedJson.error(), true)));
+    return std::unexpected(std::move(agedJson.error()));
+  }
+  if (!cleaned)
+    return std::unexpected(std::move(cleaned.error()));
+  if (!*agedJson)
+    return false;
+  auto aged = ItemDescriptor::create(**agedJson);
+  if (!aged)
+    return std::unexpected(std::move(aged.error()));
+  if (*aged != original) {
+    auto replacement = ItemDatabase::item(*aged, {}, {}, false);
+    if (!replacement)
+      return std::unexpected(std::move(replacement.error()));
+    item = std::move(*replacement);
     return true;
   }
-
   return false;
 }
 
@@ -559,338 +740,451 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-std::shared_ptr<Item> ItemDatabase::createItem(ItemType type, ItemConfig const& config) const {
-  if (type == ItemType::Generic) {
-    return std::make_shared<GenericItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::LiquidItem) {
-    return std::make_shared<LiquidItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::MaterialItem) {
-    return std::make_shared<MaterialItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ObjectItem) {
-    return std::make_shared<ObjectItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::CurrencyItem) {
-    return std::make_shared<CurrencyItem>(m_root, config.config, config.directory);
-  } else if (type == ItemType::MiningTool) {
-    return std::make_shared<MiningTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Flashlight) {
-    return std::make_shared<Flashlight>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::WireTool) {
-    return std::make_shared<WireTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::BeamMiningTool) {
-    return std::make_shared<BeamMiningTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::PaintingBeamTool) {
-    return std::make_shared<PaintingBeamTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::TillingTool) {
-    return std::make_shared<TillingTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::HarvestingTool) {
-    return std::make_shared<HarvestingTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::HeadArmor) {
-    return std::make_shared<HeadArmor>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ChestArmor) {
-    return std::make_shared<ChestArmor>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::LegsArmor) {
-    return std::make_shared<LegsArmor>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::BackArmor) {
-    return std::make_shared<BackArmor>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Consumable) {
-    return std::make_shared<ConsumableItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Blueprint) {
-    return std::make_shared<BlueprintItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::Codex) {
-    return std::make_shared<CodexItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::InspectionTool) {
-    return std::make_shared<InspectionTool>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::InstrumentItem) {
-    return std::make_shared<InstrumentItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ThrownItem) {
-    return std::make_shared<ThrownItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::UnlockItem) {
-    return std::make_shared<UnlockItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::ActiveItem) {
-    return std::make_shared<ActiveItem>(m_root, config.config, config.directory, config.parameters);
-  } else if (type == ItemType::AugmentItem) {
-    return std::make_shared<AugmentItem>(m_root, config.config, config.directory, config.parameters);
-  } else {
-    throw ItemException(strf("Unknown item type {}", (int)type));
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::createItem(ItemType type, ItemConfig const& config) const {
+  switch (type) {
+  case ItemType::Generic: return GenericItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::LiquidItem: return LiquidItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::MaterialItem: return MaterialItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::ObjectItem: return ObjectItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::CurrencyItem: return CurrencyItem::create(m_root, config.config, config.directory);
+  case ItemType::MiningTool: return MiningTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::Flashlight: return Flashlight::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::WireTool: return WireTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::BeamMiningTool: return BeamMiningTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::PaintingBeamTool: return PaintingBeamTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::TillingTool: return TillingTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::HarvestingTool: return HarvestingTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::HeadArmor: return HeadArmor::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::ChestArmor: return ChestArmor::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::LegsArmor: return LegsArmor::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::BackArmor: return BackArmor::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::Consumable: return ConsumableItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::Blueprint: return BlueprintItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::Codex: return CodexItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::InspectionTool: return InspectionTool::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::InstrumentItem: return InstrumentItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::ThrownItem: return ThrownItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::UnlockItem: return UnlockItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::ActiveItem: return ActiveItem::create(m_root, config.config, config.directory, config.parameters);
+  case ItemType::AugmentItem: return AugmentItem::create(m_root, config.config, config.directory, config.parameters);
+  default: return std::unexpected(ItemException::format("Unknown item type {}", (int)type));
   }
 }
 
-std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
-  std::shared_ptr<Item> result;
-  ItemDescriptor newDescriptor = descriptor;
-
-  try {
-    if (newDescriptor.name() == "perfectlygenericitem" && newDescriptor.parameters().contains("genericItemStorage"))
-      newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
-    result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
-    result->setCount(descriptor.count());
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    if (!ignoreInvalid) {
-      bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
-        try {
-          ItemDescriptor newDescriptor(store);
-          result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
-          result->setCount(newDescriptor.count());
-        }
-        catch (std::exception const&) {
-          ExceptionDiagnostic const e(std::current_exception());
-          return strf("{}", outputException(e, false));
-        }
-        return {};
-      });
-
-      if (!success) {
-        if (descriptor.name() == "perfectlygenericitem") {
-          m_root.logger().error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
-          result->setCount(descriptor.count());
-        } else {
-          m_root.logger().error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
-            {"genericItemStorage", descriptor.toJson().eraseKey("count")},
-            {"shortdescription", descriptor.name()},
-            {"description", "Reinstall the parent mod to return this item to normal"}
-          }), {}, {}));
-          result->setCount(descriptor.count());
-        }
+std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
+  auto instantiate = [&](ItemDescriptor const& current) -> std::expected<std::shared_ptr<Item>, StarException> {
+    auto data = m_items.get(current.name());
+    if (!data)
+      return std::unexpected(std::move(data.error()));
+    auto config = itemConfig(current.name(), current.parameters(), level, seed);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    return createItem((*data)->type, *config);
+  };
+  auto initial = [&]() -> std::expected<std::shared_ptr<Item>, StarException> {
+    ItemDescriptor current = descriptor;
+    if (current.name() == "perfectlygenericitem") {
+      auto hasStored = current.parameters().contains("genericItemStorage");
+      if (!hasStored)
+        return std::unexpected(std::move(hasStored.error()));
+      if (*hasStored) {
+        auto stored = current.parameters().get("genericItemStorage");
+        if (!stored)
+          return std::unexpected(std::move(stored.error()));
+        auto restored = ItemDescriptor::create(*stored);
+        if (!restored)
+          return std::unexpected(std::move(restored.error()));
+        current = std::move(*restored);
       }
-    } else
-      throw;
+    }
+    auto result = instantiate(current);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    (*result)->setCount(descriptor.count());
+    return result;
+  }();
+  if (initial || ignoreInvalid)
+    return initial;
+  StarException originalError = std::move(initial.error());
+  std::shared_ptr<Item> result;
+  auto rebuilt = m_rebuilder->rebuild(descriptor.toJson(), originalError, [&](Json const& store) -> std::expected<void, StarException> {
+    auto recoveredDescriptor = ItemDescriptor::create(store);
+    if (!recoveredDescriptor)
+      return std::unexpected(std::move(recoveredDescriptor.error()));
+    auto recovered = instantiate(*recoveredDescriptor);
+    if (!recovered)
+      return std::unexpected(std::move(recovered.error()));
+    (*recovered)->setCount(recoveredDescriptor->count());
+    result = std::move(*recovered);
+    return {};
+  });
+  if (!rebuilt)
+    return std::unexpected(std::move(rebuilt.error()));
+  if (*rebuilt)
+    return result;
+  auto descriptorText = descriptor.toJson().repr();
+  if (!descriptorText)
+    return std::unexpected(std::move(descriptorText.error()));
+  auto logged = descriptor.name() == "perfectlygenericitem"
+      ? m_root.logger().error("Could not re-instantiate item '{}'. {}", *descriptorText, outputException(originalError, false))
+      : m_root.logger().error("Could not instantiate item '{}'. {}", *descriptorText, outputException(originalError, false));
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  auto fallbackData = itemData("perfectlygenericitem");
+  if (!fallbackData)
+    return std::unexpected(std::move(fallbackData.error()));
+  Json fallbackParameters = descriptor.parameters();
+  std::optional<float> fallbackLevel = level;
+  std::optional<std::uint64_t> fallbackSeed = seed;
+  if (descriptor.name() != "perfectlygenericitem") {
+    auto stored = descriptor.toJson().eraseKey("count");
+    if (!stored)
+      return std::unexpected(std::move(stored.error()));
+    fallbackParameters = JsonObject{
+      {"genericItemStorage", std::move(*stored)},
+      {"shortdescription", descriptor.name()},
+      {"description", "Reinstall the parent mod to return this item to normal"}
+    };
+    fallbackLevel.reset();
+    fallbackSeed.reset();
   }
-  return result;
+  auto fallbackConfig = itemConfig("perfectlygenericitem", std::move(fallbackParameters), fallbackLevel, fallbackSeed);
+  if (!fallbackConfig)
+    return std::unexpected(std::move(fallbackConfig.error()));
+  auto fallback = createItem((*fallbackData)->type, *fallbackConfig);
+  if (!fallback)
+    return std::unexpected(std::move(fallback.error()));
+  (*fallback)->setCount(descriptor.count());
+  return fallback;
 }
 
-ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
+std::expected<ItemDatabase::ItemData const*, StarException> ItemDatabase::itemData(String const& name) const {
   if (auto p = m_items.ptr(name))
-    return *p;
-  throw ItemException::format("No such item '{}'", name);
+    return p;
+  return std::unexpected(ItemException::format("No such item '{}'", name));
 }
 
-ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
+std::expected<ItemRecipe, StarException> ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
   ItemRecipe res;
   res.inputs = std::move(inputs);
   res.output = std::move(output);
   res.duration = duration;
   res.groups = std::move(groups);
-  if (auto item = ItemDatabase::itemShared(res.output, {}, {})) {
-    res.outputRarity = item->rarity();
-    res.guiFilterString = guiFilterString(item);
+  auto item = itemShared(res.output, {}, {});
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  if (*item) {
+    res.outputRarity = (*item)->rarity();
+    auto filter = guiFilterString(*item);
+    if (!filter)
+      return std::unexpected(std::move(filter.error()));
+    res.guiFilterString = std::move(*filter);
   }
   return res;
 }
 
-void ItemDatabase::addItemSet(ItemType type, String const& extension) {
+std::expected<void, StarException> ItemDatabase::addItemSet(ItemType type, String const& extension) {
   auto assets = m_root.assets();
-  for (auto& file : assets->scanExtension(extension)) {
-    ItemData data;
-    try {
-      auto config = assets->json(file);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension(extension);
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto loaded = [&]() -> std::expected<ItemData, StarException> {
+      auto config = (*assets)->json(file);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      ItemData data;
       data.type = type;
       data.assetsConfig = file;
-      data.name = config.get("itemName").toString();
-      data.friendlyName = config.getString("shortdescription", {});
-      data.itemTags = config.opt("itemTags").transform(jsonToStringSet).value_or(StringSet{});
-      data.agingScripts = config.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList{});
+      auto name = config->get("itemName").and_then([](Json const& value) { return value.toString(); });
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      data.name = std::move(*name);
+      auto friendlyName = config->getString("shortdescription", {});
+      if (!friendlyName)
+        return std::unexpected(std::move(friendlyName.error()));
+      data.friendlyName = std::move(*friendlyName);
+      auto tags = config->get("itemTags", JsonArray{}).and_then([](Json const& value) { return jsonToStringSet(value); });
+      if (!tags)
+        return std::unexpected(std::move(tags.error()));
+      data.itemTags = std::move(*tags);
+      auto scripts = config->get("itemAgingScripts", JsonArray{}).and_then([](Json const& value) { return jsonToStringList(value); });
+      if (!scripts)
+        return std::unexpected(std::move(scripts.error()));
       data.directory = AssetPath::directory(file);
       data.filename = AssetPath::filename(file);
-
-      data.agingScripts = data.agingScripts.transformed(std::bind(&AssetPath::relativeTo, data.directory, std::placeholders::_1));
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw ItemException(strf("Could not load item asset {}", file), e);
-    }
-
-    if (m_items.contains(data.name))
-      throw ItemException(strf("Duplicate item name '{}' found", data.name));
-
-    m_items[data.name] = data;
+      for (auto const& script : *scripts)
+        data.agingScripts.append(AssetPath::relativeTo(data.directory, script));
+      return data;
+    }();
+    if (!loaded)
+      return std::unexpected(ItemException(strf("Could not load item asset {}", file), ExceptionDiagnostic(loaded.error())));
+    if (m_items.contains(loaded->name))
+      return std::unexpected(ItemException::format("Duplicate item name '{}' found", loaded->name));
+    m_items[loaded->name] = std::move(*loaded);
   }
+  return {};
 }
 
-void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objectConfig) {
-  auto assets = m_root.assets();
-
+std::expected<void, StarException> ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objectConfig) {
   ItemData data;
   data.type = ItemType::ObjectItem;
-  data.name = objectConfig.get("objectName").toString();
-  data.friendlyName = objectConfig.getString("shortdescription", {});
-  data.itemTags = objectConfig.opt("itemTags").transform(jsonToStringSet).value_or(StringSet{});
-  data.agingScripts = objectConfig.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList{});
+  auto name = objectConfig.get("objectName").and_then([](Json const& value) { return value.toString(); });
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  data.name = std::move(*name);
+  auto friendlyName = objectConfig.getString("shortdescription", {});
+  if (!friendlyName)
+    return std::unexpected(std::move(friendlyName.error()));
+  data.friendlyName = std::move(*friendlyName);
+  auto tags = objectConfig.get("itemTags", JsonArray{}).and_then([](Json const& value) { return jsonToStringSet(value); });
+  if (!tags)
+    return std::unexpected(std::move(tags.error()));
+  data.itemTags = std::move(*tags);
+  auto scripts = objectConfig.get("itemAgingScripts", JsonArray{}).and_then([](Json const& value) { return jsonToStringList(value); });
+  if (!scripts)
+    return std::unexpected(std::move(scripts.error()));
+  data.agingScripts = std::move(*scripts);
   data.directory = AssetPath::directory(objectPath);
   data.filename = AssetPath::filename(objectPath);
-  JsonObject customConfig = objectConfig.toObject();
+  auto configObject = objectConfig.toObject();
+  if (!configObject)
+    return std::unexpected(std::move(configObject.error()));
+  auto customConfig = std::move(*configObject);
   if (!customConfig.contains("inventoryIcon")) {
-    customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
-    m_root.logger().warn("Missing inventoryIcon for {}, using default", data.name);
+    auto assets = m_root.assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto icon = (*assets)->json("/objects/defaultParameters.config:missingIcon");
+    if (!icon)
+      return std::unexpected(std::move(icon.error()));
+    customConfig["inventoryIcon"] = std::move(*icon);
+    auto logged = m_root.logger().warn("Missing inventoryIcon for {}, using default", data.name);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
   }
   customConfig["itemName"] = data.name;
   if (!customConfig.contains("tooltipKind"))
     customConfig["tooltipKind"] = "object";
-
   if (!customConfig.contains("printable"))
     customConfig["printable"] = customConfig.contains("price");
-
-  // Don't inherit object scripts. this is kind of a crappy solution to prevent
-  // ObjectItems (which are firable and therefore scripted) from trying to
-  // execute scripts intended for objects
+  // Object scripts cannot run in the fireable ObjectItem's script context.
   customConfig.remove("scripts");
-
   data.customConfig = std::move(customConfig);
-
   if (m_items.contains(data.name))
-    throw ItemException(strf("Object drop '{}' shares name with existing item", data.name));
-
+    return std::unexpected(ItemException::format("Object drop '{}' shares name with existing item", data.name));
   m_items[data.name] = std::move(data);
+  return {};
 }
 
-void ItemDatabase::scanItems() {
+std::expected<void, StarException> ItemDatabase::scanItems() {
   auto assets = m_root.assets();
-
-  List<std::pair<ItemType, String>> itemSets;
-  auto scanItemType = [&itemSets, assets](ItemType type, String const& extension) {
-    itemSets.append(std::make_pair(type, extension));
-    assets->queueJsons(assets->scanExtension(extension));
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  List<std::pair<ItemType, String>> itemSets{
+    {ItemType::Generic, "item"},
+    {ItemType::LiquidItem, "liqitem"},
+    {ItemType::MaterialItem, "matitem"},
+    {ItemType::MiningTool, "miningtool"},
+    {ItemType::Flashlight, "flashlight"},
+    {ItemType::WireTool, "wiretool"},
+    {ItemType::BeamMiningTool, "beamaxe"},
+    {ItemType::TillingTool, "tillingtool"},
+    {ItemType::PaintingBeamTool, "painttool"},
+    {ItemType::HarvestingTool, "harvestingtool"},
+    {ItemType::HeadArmor, "head"},
+    {ItemType::ChestArmor, "chest"},
+    {ItemType::LegsArmor, "legs"},
+    {ItemType::BackArmor, "back"},
+    {ItemType::CurrencyItem, "currency"},
+    {ItemType::Consumable, "consumable"},
+    {ItemType::Blueprint, "blueprint"},
+    {ItemType::InspectionTool, "inspectiontool"},
+    {ItemType::InstrumentItem, "instrument"},
+    {ItemType::ThrownItem, "thrownitem"},
+    {ItemType::UnlockItem, "unlock"},
+    {ItemType::ActiveItem, "activeitem"},
+    {ItemType::AugmentItem, "augment"}
   };
-
-  scanItemType(ItemType::Generic, "item");
-  scanItemType(ItemType::LiquidItem, "liqitem");
-  scanItemType(ItemType::MaterialItem, "matitem");
-  scanItemType(ItemType::MiningTool, "miningtool");
-  scanItemType(ItemType::Flashlight, "flashlight");
-  scanItemType(ItemType::WireTool, "wiretool");
-  scanItemType(ItemType::BeamMiningTool, "beamaxe");
-  scanItemType(ItemType::TillingTool, "tillingtool");
-  scanItemType(ItemType::PaintingBeamTool, "painttool");
-  scanItemType(ItemType::HarvestingTool, "harvestingtool");
-  scanItemType(ItemType::HeadArmor, "head");
-  scanItemType(ItemType::ChestArmor, "chest");
-  scanItemType(ItemType::LegsArmor, "legs");
-  scanItemType(ItemType::BackArmor, "back");
-  scanItemType(ItemType::CurrencyItem, "currency");
-  scanItemType(ItemType::Consumable, "consumable");
-  scanItemType(ItemType::Blueprint, "blueprint");
-  scanItemType(ItemType::InspectionTool, "inspectiontool");
-  scanItemType(ItemType::InstrumentItem, "instrument");
-  scanItemType(ItemType::ThrownItem, "thrownitem");
-  scanItemType(ItemType::UnlockItem, "unlock");
-  scanItemType(ItemType::ActiveItem, "activeitem");
-  scanItemType(ItemType::AugmentItem, "augment");
-
-  for (auto const& itemset : itemSets)
-    addItemSet(itemset.first, itemset.second);
-}
-
-void ItemDatabase::addObjectItems() {
-  auto objectDatabase = m_root.objectDatabase();
-
-  for (auto const& objectName : objectDatabase->allObjects()) {
-    auto objectConfig = objectDatabase->getConfig(objectName);
-
-    if (objectConfig->hasObjectItem)
-      addObjectDropItem(objectConfig->path, objectConfig->config);
+  for (auto const& itemSet : itemSets) {
+    auto files = (*assets)->scanExtension(itemSet.second);
+    if (!files)
+      return std::unexpected(std::move(files.error()));
+    auto queued = (*assets)->queueJsons(**files);
+    if (!queued)
+      return std::unexpected(std::move(queued.error()));
   }
+  for (auto const& itemSet : itemSets) {
+    auto added = addItemSet(itemSet.first, itemSet.second);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+  }
+  return {};
 }
 
-void ItemDatabase::scanRecipes() {
-  auto assets = m_root.assets();
-
-  auto& files = assets->scanExtension("recipe");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    try {
-      m_recipes.add(parseRecipe(assets->json(file)));
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      m_root.logger().error("Could not load recipe {}: {}", file, outputException(e, false));
+std::expected<void, StarException> ItemDatabase::addObjectItems() {
+  auto objects = m_root.objectDatabase();
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  for (auto const& objectName : (*objects)->allObjects()) {
+    auto config = (*objects)->getConfig(objectName);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if ((*config)->hasObjectItem) {
+      auto added = addObjectDropItem((*config)->path, (*config)->config);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
     }
   }
+  return {};
 }
 
-void ItemDatabase::addBlueprints() {
+std::expected<void, StarException> ItemDatabase::scanRecipes() {
   auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("recipe");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = (*assets)->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto recipe = (*assets)->json(file).and_then([&](Json const& config) { return parseRecipe(config); });
+    if (recipe) {
+      m_recipes.add(std::move(*recipe));
+    } else {
+      auto logged = m_root.logger().error("Could not load recipe {}: {}", file, outputException(recipe.error(), false));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+    }
+  }
+  return {};
+}
 
+std::expected<void, StarException> ItemDatabase::addBlueprints() {
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   for (auto const& recipe : m_recipes) {
     auto baseDesc = recipe.output;
     auto baseItem = itemShared(baseDesc, {}, {});
-
-    String blueprintName = strf("{}-recipe", baseItem->name());
+    if (!baseItem)
+      return std::unexpected(std::move(baseItem.error()));
+    String blueprintName = strf("{}-recipe", (*baseItem)->name());
     if (m_items.contains(blueprintName))
       continue;
-
-    try {
-      ItemData blueprintData;
-
-      blueprintData.type = ItemType::Blueprint;
-      JsonObject configInfo;
-      configInfo["recipe"] = baseDesc.singular().toJson();
-
-      String description = assets->json("/blueprint.config:description").toString();
-      description = description.replace("<item>", baseItem->friendlyName());
-      configInfo["description"] = Json(description);
-
-      String shortDesc = assets->json("/blueprint.config:shortdescription").toString();
-      shortDesc = shortDesc.replace("<item>", baseItem->friendlyName());
-      configInfo["shortdescription"] = Json(shortDesc);
-
-      configInfo["category"] = assets->json("/blueprint.config:category").toString();
-
-      blueprintData.name = blueprintName;
-      blueprintData.friendlyName = shortDesc;
-      configInfo["itemName"] = blueprintData.name;
-
-      if (baseItem->instanceValue("inventoryIcon", false))
-        configInfo["inventoryIcon"] = baseItem->instanceValue("inventoryIcon");
-
-      configInfo["rarity"] = RarityNames.getRight(baseItem->rarity());
-
-      configInfo["price"] = baseItem->price();
-
-      blueprintData.customConfig = std::move(configInfo);
-      blueprintData.directory = itemData(baseDesc.name()).directory;
-
-      m_items[blueprintData.name] = blueprintData;
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      m_root.logger().error("Could not create blueprint item from recipe: {}", outputException(e, false));
+    auto created = [&]() -> std::expected<void, StarException> {
+      ItemData data;
+      data.type = ItemType::Blueprint;
+      JsonObject config;
+      config["recipe"] = baseDesc.singular().toJson();
+      auto description = (*assets)->json("/blueprint.config:description").and_then([](Json const& value) { return value.toString(); });
+      if (!description)
+        return std::unexpected(std::move(description.error()));
+      auto replacedDescription = description->replace("<item>", (*baseItem)->friendlyName());
+      if (!replacedDescription)
+        return std::unexpected(std::move(replacedDescription.error()));
+      config["description"] = std::move(*replacedDescription);
+      auto shortDescription = (*assets)->json("/blueprint.config:shortdescription").and_then([](Json const& value) { return value.toString(); });
+      if (!shortDescription)
+        return std::unexpected(std::move(shortDescription.error()));
+      auto replacedShortDescription = shortDescription->replace("<item>", (*baseItem)->friendlyName());
+      if (!replacedShortDescription)
+        return std::unexpected(std::move(replacedShortDescription.error()));
+      data.friendlyName = std::move(*replacedShortDescription);
+      config["shortdescription"] = data.friendlyName;
+      auto category = (*assets)->json("/blueprint.config:category").and_then([](Json const& value) { return value.toString(); });
+      if (!category)
+        return std::unexpected(std::move(category.error()));
+      config["category"] = std::move(*category);
+      data.name = blueprintName;
+      config["itemName"] = data.name;
+      auto icon = (*baseItem)->instanceValue("inventoryIcon", false);
+      if (!icon)
+        return std::unexpected(std::move(icon.error()));
+      if (*icon) {
+        auto inventoryIcon = (*baseItem)->instanceValue("inventoryIcon");
+        if (!inventoryIcon)
+          return std::unexpected(std::move(inventoryIcon.error()));
+        config["inventoryIcon"] = std::move(*inventoryIcon);
+      }
+      if (!RarityNames)
+        return std::unexpected(RarityNames.error());
+      auto rarity = RarityNames->getRight((*baseItem)->rarity());
+      if (!rarity)
+        return std::unexpected(std::move(rarity.error()));
+      config["rarity"] = **rarity;
+      config["price"] = (*baseItem)->price();
+      data.customConfig = std::move(config);
+      auto baseData = itemData(baseDesc.name());
+      if (!baseData)
+        return std::unexpected(std::move(baseData.error()));
+      data.directory = (*baseData)->directory;
+      m_items[data.name] = std::move(data);
+      return {};
+    }();
+    if (!created) {
+      auto logged = m_root.logger().error("Could not create blueprint item from recipe: {}", outputException(created.error(), false));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
     }
   }
+  return {};
 }
 
-void ItemDatabase::addCodexes() {
+std::expected<void, StarException> ItemDatabase::addCodexes() {
   auto assets = m_root.assets();
-  auto codexConfig = assets->json("/codex.config");
-
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto codexConfig = (*assets)->json("/codex.config");
+  if (!codexConfig)
+    return std::unexpected(std::move(codexConfig.error()));
   auto codexDatabase = m_root.codexDatabase();
-  for (auto const& codexPair : codexDatabase->codexes()) {
+  if (!codexDatabase)
+    return std::unexpected(std::move(codexDatabase.error()));
+  for (auto const& codexPair : (*codexDatabase)->codexes()) {
     String codexItemName = strf("{}-codex", codexPair.second->id());
     if (m_items.contains(codexItemName)) {
-      m_root.logger().warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
+      auto logged = m_root.logger().warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
       continue;
     }
-
-    try {
-      ItemData codexItemData;
-
-      codexItemData.type = ItemType::Codex;
-      codexItemData.name = codexItemName;
-      codexItemData.friendlyName = codexPair.second->title();
-      codexItemData.directory = codexPair.second->directory();
-      codexItemData.filename = codexPair.second->filename();
-      auto customConfig = jsonMerge(codexConfig.get("defaultItemConfig"), codexPair.second->itemConfig()).toObject();
-      customConfig["itemName"] = codexItemName;
-      customConfig["codexId"] = codexPair.second->id();
-      customConfig["shortdescription"] = codexPair.second->title();
-      customConfig["description"] = codexPair.second->description();
-      customConfig["codexIcon"] = codexPair.second->icon();
-      codexItemData.customConfig = customConfig;
-
-      m_items[codexItemName] = codexItemData;
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      m_root.logger().error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
+    auto created = [&]() -> std::expected<void, StarException> {
+      ItemData data;
+      data.type = ItemType::Codex;
+      data.name = codexItemName;
+      data.friendlyName = codexPair.second->title();
+      data.directory = codexPair.second->directory();
+      data.filename = codexPair.second->filename();
+      auto defaults = codexConfig->get("defaultItemConfig");
+      if (!defaults)
+        return std::unexpected(std::move(defaults.error()));
+      auto merged = jsonMerge(*defaults, codexPair.second->itemConfig()).toObject();
+      if (!merged)
+        return std::unexpected(std::move(merged.error()));
+      auto config = std::move(*merged);
+      config["itemName"] = codexItemName;
+      config["codexId"] = codexPair.second->id();
+      config["shortdescription"] = codexPair.second->title();
+      config["description"] = codexPair.second->description();
+      config["codexIcon"] = codexPair.second->icon();
+      data.customConfig = std::move(config);
+      m_items[codexItemName] = std::move(data);
+      return {};
+    }();
+    if (!created) {
+      auto logged = m_root.logger().error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(created.error(), false));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
     }
   }
+  return {};
 }
 
 }

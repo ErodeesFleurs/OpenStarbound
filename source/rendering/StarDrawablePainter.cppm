@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.string;
@@ -26,7 +27,7 @@ class DrawablePainter {
 public:
   DrawablePainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<AssetTextureGroup> textureGroup);
 
-  void drawDrawable(Drawable const& drawable);
+  [[nodiscard]] std::expected<void, StarException> drawDrawable(Drawable const& drawable);
 
   void cleanup(std::int64_t textureTimeout);
 

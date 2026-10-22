@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.ordered_map;
@@ -136,22 +137,22 @@ public:
   };
 
   // Creates a blank world with the given size
-  WorldTemplate(Root& root, Vec2U const& size);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldTemplate>, StarException> create(Root& root, Vec2U const& size);
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldTemplate>, StarException> create(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldTemplate>, StarException> create(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
   // Load a world template from the given stored data.
-  WorldTemplate(Root& root, Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldTemplate>, StarException> create(Root& root, Json const& store);
 
-  Json store() const;
+  [[nodiscard]] std::expected<Json, StarException> store() const;
 
   std::optional<CelestialParameters> const& celestialParameters() const;
   std::shared_ptr<VisitableWorldParameters const> worldParameters() const;
   SkyParameters skyParameters() const;
   std::shared_ptr<WorldLayout> worldLayout() const;
 
-  void setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters);
+  [[nodiscard]] std::expected<void, StarException> setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters);
   void setWorldLayout(std::shared_ptr<WorldLayout> newLayout);
   void setSkyParameters(SkyParameters newParameters);
 
@@ -175,7 +176,7 @@ public:
   // acceptable player start area.  The block returned will be an empty block
   // above a terrain block, in a region of free space.  If no such block can be
   // found or the player start search region is not specified, returns nothing.
-  std::optional<Vec2I> findSensiblePlayerStart() const;
+  [[nodiscard]] std::expected<std::optional<Vec2I>, StarException> findSensiblePlayerStart() const;
 
   // Add either a solid region hint or a space region hint for the given
   // polygonal region.  Blending size and weighting is configured in the
@@ -184,40 +185,38 @@ public:
   void addCustomSpaceRegion(PolyF poly);
   void clearCustomTerrains();
 
-  List<RectI> previewAddBiomeRegion(Vec2I const& position, int width);
-  List<RectI> previewExpandBiomeRegion(Vec2I const& position, int newWidth);
+  [[nodiscard]] std::expected<List<RectI>, StarException> previewAddBiomeRegion(Vec2I const& position, int width);
+  [[nodiscard]] std::expected<List<RectI>, StarException> previewExpandBiomeRegion(Vec2I const& position, int newWidth);
 
-  void addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width);
-  void expandBiomeRegion(Vec2I const& position, int newWidth);
+  [[nodiscard]] std::expected<void, StarException> addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width);
+  [[nodiscard]] std::expected<void, StarException> expandBiomeRegion(Vec2I const& position, int newWidth);
 
-  List<Dungeon> dungeons() const;
+  [[nodiscard]] std::expected<List<Dungeon>, StarException> dungeons() const;
 
   // Is this tile block naturally outside the terrain?
-  bool isOutside(int x, int y) const;
+  [[nodiscard]] std::expected<bool, StarException> isOutside(int x, int y) const;
   // Is this integral region of blocks outside the terrain?
-  bool isOutside(RectI const& region) const;
+  [[nodiscard]] std::expected<bool, StarException> isOutside(RectI const& region) const;
 
-  BlockInfo blockInfo(int x, int y) const;
+  [[nodiscard]] std::expected<BlockInfo, StarException> blockInfo(int x, int y) const;
 
-  // partial blockinfo that doesn't use terrain selectors
-  BlockInfo blockBiomeInfo(int x, int y) const;
+  // Partial blockinfo that doesn't use terrain selectors.
+  [[nodiscard]] std::expected<BlockInfo, StarException> blockBiomeInfo(int x, int y) const;
 
-  BiomeIndex blockBiomeIndex(int x, int y) const;
-  BiomeIndex environmentBiomeIndex(int x, int y) const;
-  std::shared_ptr<Biome const> biome(BiomeIndex biomeIndex) const;
+  [[nodiscard]] std::expected<BiomeIndex, StarException> blockBiomeIndex(int x, int y) const;
+  [[nodiscard]] std::expected<BiomeIndex, StarException> environmentBiomeIndex(int x, int y) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Biome const>, StarException> biome(BiomeIndex biomeIndex) const;
 
-  std::shared_ptr<Biome const> blockBiome(int x, int y) const;
-  std::shared_ptr<Biome const> environmentBiome(int x, int y) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Biome const>, StarException> blockBiome(int x, int y) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Biome const>, StarException> environmentBiome(int x, int y) const;
 
-  MaterialId biomeMaterial(BiomeIndex biomeIndex, int x, int y) const;
 
-  // Returns the material and mod hue shift that should be applied to the given
-  // material and mod for this biome.
-  MaterialHue biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const;
-  MaterialHue biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const;
+  // Material and mod hue shifts for this biome.
+  [[nodiscard]] std::expected<MaterialHue, StarException> biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const;
+  [[nodiscard]] std::expected<MaterialHue, StarException> biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const;
 
-  std::shared_ptr<AmbientNoisesDescription> ambientNoises(int x, int y) const;
-  std::shared_ptr<AmbientNoisesDescription> musicTrack(int x, int y) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> ambientNoises(int x, int y) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> musicTrack(int x, int y) const;
 
   StringList environmentStatusEffects(int x, int y) const;
   bool breathable(int x, int y) const;
@@ -225,17 +224,17 @@ public:
   WeatherPool weathers() const;
 
   List<WeatherDomain> const& weatherDomains() const;
-  WeatherDomain const* weatherDomain(String const& name) const;
-  WeatherLayer const* weatherLayerAt(Vec2I const& position) const;
+  [[nodiscard]] std::expected<WeatherDomain const*, StarException> weatherDomain(String const& name) const;
+  [[nodiscard]] std::expected<WeatherLayer const*, StarException> weatherLayerAt(Vec2I const& position) const;
 
   // Return potential items that would spawn at the given block.
-	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;
-  PotentialBiomeItems potentialBiomeItemsAt(int x, int y) const;
+  [[nodiscard]] std::expected<void, StarException> addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;
+  [[nodiscard]] std::expected<PotentialBiomeItems, StarException> potentialBiomeItemsAt(int x, int y) const;
 
   // Return only the potential items that can spawn at the given block.
-	List<BiomeItemPlacement> validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const;
+  [[nodiscard]] std::expected<List<BiomeItemPlacement>, StarException> validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const;
 
-  float gravity() const;
+  [[nodiscard]] std::expected<float, StarException> gravity() const;
   float threatLevel() const;
 
   // For consistently seeding object generation at this position
@@ -250,13 +249,14 @@ private:
 
   WorldTemplate(Root& root);
 
-  void determineWorldName();
-  void setupWeatherDomains();
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> determineWorldName();
+  [[nodiscard]] std::expected<void, StarException> setupWeatherDomains();
 
-  std::pair<float, float> customTerrainWeighting(int x, int y) const;
+  [[nodiscard]] std::expected<std::pair<float, float>, StarException> customTerrainWeighting(int x, int y) const;
 
   // Calculates block info and adds to cache
-  BlockInfo getBlockInfo(std::uint32_t x, std::uint32_t y) const;
+  [[nodiscard]] std::expected<BlockInfo, StarException> getBlockInfo(std::uint32_t x, std::uint32_t y) const;
 
   Json m_templateConfig;
   float m_customTerrainBlendSize;

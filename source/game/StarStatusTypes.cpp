@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -14,91 +15,85 @@ bool StatBaseMultiplier::operator==(StatBaseMultiplier const& rhs) const {
   return std::tie(statName, baseMultiplier) == std::tie(rhs.statName, rhs.baseMultiplier);
 }
 
-DataStream& operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier) {
-  ds >> baseMultiplier.statName;
-  ds >> baseMultiplier.baseMultiplier;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value) {
+  return ds >> value.statName >> value.baseMultiplier;
 }
 
-DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier) {
-  ds << baseMultiplier.statName;
-  ds << baseMultiplier.baseMultiplier;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value) {
+  return ds << value.statName << value.baseMultiplier;
 }
 
 bool StatValueModifier::operator==(StatValueModifier const& rhs) const {
   return std::tie(statName, value) == std::tie(rhs.statName, rhs.value);
 }
 
-DataStream& operator>>(DataStream& ds, StatValueModifier& valueModifier) {
-  ds >> valueModifier.statName;
-  ds >> valueModifier.value;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& value) {
+  return ds >> value.statName >> value.value;
 }
 
-DataStream& operator<<(DataStream& ds, StatValueModifier const& valueModifier) {
-  ds << valueModifier.statName;
-  ds << valueModifier.value;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& value) {
+  return ds << value.statName << value.value;
 }
 
 bool StatEffectiveMultiplier::operator==(StatEffectiveMultiplier const& rhs) const {
   return std::tie(statName, effectiveMultiplier) == std::tie(rhs.statName, rhs.effectiveMultiplier);
 }
 
-DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier) {
-  ds >> effectiveMultiplier.statName;
-  ds >> effectiveMultiplier.effectiveMultiplier;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value) {
+  return ds >> value.statName >> value.effectiveMultiplier;
 }
 
-DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier) {
-  ds << effectiveMultiplier.statName;
-  ds << effectiveMultiplier.effectiveMultiplier;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value) {
+  return ds << value.statName << value.effectiveMultiplier;
 }
 
-StatModifier jsonToStatModifier(Json const& config) {
-  String statName = config.getString("stat");
-  if (auto baseMultiplier = config.optFloat("baseMultiplier")) {
-    return StatModifier(StatBaseMultiplier{statName, *baseMultiplier});
-  } else if (auto amount = config.optFloat("amount")) {
-    return StatModifier(StatValueModifier{statName, *amount});
-  } else if (auto effectiveMultiplier = config.optFloat("effectiveMultiplier")) {
-    return StatModifier(StatEffectiveMultiplier{statName, *effectiveMultiplier});
-  } else {
-    throw JsonException("Could not find 'baseMultiplier' or 'effectiveMultiplier' or 'amount' element in stat effect config");
-  }
+std::expected<StatModifier, StarException> jsonToStatModifier(Json const& config) {
+  auto statName = config.getString("stat");
+  if (!statName) return std::unexpected(std::move(statName.error()));
+  auto baseMultiplier = config.optFloat("baseMultiplier");
+  if (!baseMultiplier) return std::unexpected(std::move(baseMultiplier.error()));
+  if (*baseMultiplier)
+    return StatModifier(StatBaseMultiplier{std::move(*statName), **baseMultiplier});
+  auto amount = config.optFloat("amount");
+  if (!amount) return std::unexpected(std::move(amount.error()));
+  if (*amount)
+    return StatModifier(StatValueModifier{std::move(*statName), **amount});
+  auto effectiveMultiplier = config.optFloat("effectiveMultiplier");
+  if (!effectiveMultiplier) return std::unexpected(std::move(effectiveMultiplier.error()));
+  if (*effectiveMultiplier)
+    return StatModifier(StatEffectiveMultiplier{std::move(*statName), **effectiveMultiplier});
+  return std::unexpected(JsonException("Could not find 'baseMultiplier' or 'effectiveMultiplier' or 'amount' element in stat effect config"));
 }
 
-Json jsonFromStatModifier(StatModifier const& modifier) {
-  if (auto baseMultiplier = std::get_if<StatBaseMultiplier>(&modifier)) {
-    return JsonObject{{"stat", baseMultiplier->statName}, {"baseMultiplier", baseMultiplier->baseMultiplier}};
-  } else if (auto valueModifier = std::get_if<StatValueModifier>(&modifier)) {
-    return JsonObject{{"stat", valueModifier->statName}, {"amount", valueModifier->value}};
-  } else if (auto effectiveMultiplier = std::get_if<StatEffectiveMultiplier>(&modifier)) {
-    return JsonObject{{"stat", effectiveMultiplier->statName}, {"effectiveMultiplier", effectiveMultiplier->effectiveMultiplier}};
-  } else {
-    throw JsonException("No 'baseMultiplier', 'amount', or 'effectiveMultiplier' member found in json");
-  }
+std::expected<Json, StarException> jsonFromStatModifier(StatModifier const& modifier) {
+  if (auto value = std::get_if<StatBaseMultiplier>(&modifier))
+    return JsonObject{{"stat", value->statName}, {"baseMultiplier", value->baseMultiplier}};
+  if (auto value = std::get_if<StatValueModifier>(&modifier))
+    return JsonObject{{"stat", value->statName}, {"amount", value->value}};
+  if (auto value = std::get_if<StatEffectiveMultiplier>(&modifier))
+    return JsonObject{{"stat", value->statName}, {"effectiveMultiplier", value->effectiveMultiplier}};
+  return std::unexpected(JsonException("No 'baseMultiplier', 'amount', or 'effectiveMultiplier' member found in json"));
 }
 
-PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config) {
+std::expected<PersistentStatusEffect, StarException> jsonToPersistentStatusEffect(Json const& config) {
   if (config.isType(Json::Type::String)) {
-    return UniqueStatusEffect(config.toString());
-  } else if (config.isType(Json::Type::Object)) {
-    return jsonToStatModifier(config);
-  } else {
-    throw JsonException("Json is wrong type for persistent stat effect config");
+    auto name = config.toString();
+    if (!name) return std::unexpected(std::move(name.error()));
+    return PersistentStatusEffect(std::move(*name));
   }
+  if (config.isType(Json::Type::Object)) {
+    auto modifier = jsonToStatModifier(config);
+    if (!modifier) return std::unexpected(std::move(modifier.error()));
+    return PersistentStatusEffect(std::move(*modifier));
+  }
+  return std::unexpected(JsonException("Json is wrong type for persistent stat effect config"));
 }
 
-Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect) {
+std::expected<Json, StarException> jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect) {
   if (auto uniqueStatusEffect = std::get_if<UniqueStatusEffect>(&effect))
     return Json(*uniqueStatusEffect);
-  else if (auto statModifier = std::get_if<StatModifier>(&effect))
+  if (auto statModifier = std::get_if<StatModifier>(&effect))
     return jsonFromStatModifier(*statModifier);
-
   return Json();
 }
 
@@ -106,28 +101,28 @@ bool EphemeralStatusEffect::operator==(EphemeralStatusEffect const& rhs) const {
   return std::tie(uniqueEffect, duration) == std::tie(rhs.uniqueEffect, rhs.duration);
 }
 
-DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect) {
-  ds >> ephemeralStatusEffect.uniqueEffect;
-  ds >> ephemeralStatusEffect.duration;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value) {
+  return ds >> value.uniqueEffect >> value.duration;
 }
 
-DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralStatusEffect) {
-  ds << ephemeralStatusEffect.uniqueEffect;
-  ds << ephemeralStatusEffect.duration;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value) {
+  return ds << value.uniqueEffect << value.duration;
 }
 
-EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config) {
+std::expected<EphemeralStatusEffect, StarException> jsonToEphemeralStatusEffect(Json const& config) {
   if (config.isType(Json::Type::String)) {
-    return EphemeralStatusEffect{UniqueStatusEffect(config.toString()), {}};
-  } else if (config.isType(Json::Type::Object)) {
-    String effectName = config.getString("effect");
-    std::optional<float> duration = config.optFloat("duration");
-    return EphemeralStatusEffect{UniqueStatusEffect(effectName), duration};
-  } else {
-    throw JsonException("Json is wrong type for ephemeral stat effect config");
+    auto name = config.toString();
+    if (!name) return std::unexpected(std::move(name.error()));
+    return EphemeralStatusEffect{std::move(*name), {}};
   }
+  if (config.isType(Json::Type::Object)) {
+    auto name = config.getString("effect");
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto duration = config.optFloat("duration");
+    if (!duration) return std::unexpected(std::move(duration.error()));
+    return EphemeralStatusEffect{std::move(*name), *duration};
+  }
+  return std::unexpected(JsonException("Json is wrong type for ephemeral stat effect config"));
 }
 
 Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect) {

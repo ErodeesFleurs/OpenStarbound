@@ -18,6 +18,7 @@ import star.unique_function;
 import star.thread;
 import star.string;
 import star.format;
+import star.output_proxy;
 import star.time;
 import star.logging;
 
@@ -33,35 +34,22 @@ namespace Star {
 struct ThreadImpl {
   static void* runThread(void* data) {
     ThreadImpl* ptr = static_cast<ThreadImpl*>(data);
-    try {
 #ifdef STAR_SYSTEM_MACOS
-      // ensure the name is under the max allowed
-      char tname[MaxThreadNameLength];
-      std::snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
-
-      pthread_setname_np(tname);
+    char tname[MaxThreadNameLength];
+    std::snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
+    pthread_setname_np(tname);
 #endif
-      ptr->function();
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      if (ptr->name.empty())
-        EmergencyLog::error("Exception caught in Thread: {}", outputException(e, true));
-      else
-        EmergencyLog::error("Exception caught in Thread {}: {}", ptr->name, outputException(e, true));
-    } catch (...) {
-      if (ptr->name.empty())
-        EmergencyLog::error("Unknown exception caught in Thread");
-      else
-        EmergencyLog::error("Unknown exception caught in Thread {}", ptr->name);
-    }
+    auto result = ptr->function();
+    if (!result)
+      EmergencyLog::error("Thread {} failed: {}", ptr->name, outputException(ExceptionDiagnostic(result.error()), true));
     ptr->stopped = true;
     return nullptr;
   }
 
-  ThreadImpl(UniqueFunction<void()> function, String name)
+  ThreadImpl(UniqueFunction<std::expected<void, StarException>()> function, String name)
     : function(std::move(function)), name(std::move(name)), stopped(true), joined(true) {}
 
-  bool start() {
+  [[nodiscard]] std::expected<bool, StarException> start() {
     MutexLocker mutexLocker(mutex);
     if (!joined)
       return false;
@@ -72,7 +60,7 @@ struct ThreadImpl {
     if (ret != 0) {
       stopped = true;
       joined = true;
-      throw StarException(strf("Failed to create thread, error {}", ret));
+      return std::unexpected(StarException(strf("Failed to create thread, error {}", ret)));
     }
 
     // ensure the name is under the max allowed
@@ -89,18 +77,18 @@ struct ThreadImpl {
     return true;
   }
 
-  bool join() {
+  [[nodiscard]] std::expected<bool, StarException> join() {
     MutexLocker mutexLocker(mutex);
     if (joined)
       return false;
     int ret = pthread_join(pthread, NULL);
     if (ret != 0)
-      throw StarException(strf("Failed to join thread, error {}", ret));
+      return std::unexpected(StarException(strf("Failed to join thread, error {}", ret)));
     joined = true;
     return true;
   }
 
-  UniqueFunction<void()> function;
+  UniqueFunction<std::expected<void, StarException>()> function;
   String name;
   pthread_t pthread;
   std::atomic<bool> stopped;
@@ -109,20 +97,20 @@ struct ThreadImpl {
 };
 
 struct ThreadFunctionImpl : ThreadImpl {
-  ThreadFunctionImpl(UniqueFunction<void()> function, String name)
+  ThreadFunctionImpl(UniqueFunction<std::expected<void, StarException>()> function, String name)
     : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
 
-  UniqueFunction<void()> wrapFunction(UniqueFunction<void()> function) {
-    return [function = std::move(function), this]() mutable {
-      try {
-        function();
-      } catch (...) {
-        exception = std::current_exception();
-      }
+  UniqueFunction<std::expected<void, StarException>()> wrapFunction(
+      UniqueFunction<std::expected<void, StarException>()> function) {
+    return [function = std::move(function), this]() mutable -> std::expected<void, StarException> {
+      auto result = function();
+      if (!result)
+        error = std::move(result.error());
+      return {};
     };
   }
 
-  std::exception_ptr exception;
+  std::optional<StarException> error;
 };
 
 struct MutexImpl {
@@ -268,30 +256,44 @@ void Thread::yield() {
   sched_yield();
 }
 
-unsigned Thread::numberOfProcessors() {
+std::expected<unsigned, StarException> Thread::numberOfProcessors() {
   long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
   if (nprocs < 1)
-    throw StarException(strf("Could not determine number of CPUs online: {}\n", std::strerror(errno)));
-  return nprocs;
+    return std::unexpected(StarException(strf("Could not determine number of CPUs online: {}\n", std::strerror(errno))));
+  return static_cast<unsigned>(nprocs);
 }
 
 Thread::Thread(String const& name) {
   m_impl.reset(new ThreadImpl([this]() {
-      run();
+      return run();
     }, name));
 }
 
 Thread::Thread(Thread&&) = default;
 
-Thread::~Thread() {}
+Thread::~Thread() {
+  if (m_impl && !isJoined()) {
+    EmergencyLog::error("Thread {} destroyed without joining", name());
+    fatalError("Cannot destroy an unjoined thread", false);
+  }
+}
 
-Thread& Thread::operator=(Thread&&) = default;
+Thread& Thread::operator=(Thread&& other) {
+  if (this != &other) {
+    if (m_impl && !isJoined()) {
+      EmergencyLog::error("Thread {} overwritten without joining", name());
+      fatalError("Cannot overwrite an unjoined thread", false);
+    }
+    m_impl = std::move(other.m_impl);
+  }
+  return *this;
+}
 
-bool Thread::start() {
+std::expected<bool, StarException> Thread::start() {
   return m_impl->start();
 }
 
-bool Thread::join() {
+std::expected<bool, StarException> Thread::join() {
   return m_impl->join();
 }
 
@@ -311,24 +313,48 @@ ThreadFunction<void>::ThreadFunction() {}
 
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
-ThreadFunction<void>::ThreadFunction(UniqueFunction<void()> function, String const& name) {
-  m_impl.reset(new ThreadFunctionImpl(std::move(function), name));
-  m_impl->start();
+std::expected<ThreadFunction<void>, StarException> ThreadFunction<void>::create(
+    UniqueFunction<std::expected<void, StarException>()> function, String const& name) {
+  ThreadFunction result;
+  result.m_impl = std::make_unique<ThreadFunctionImpl>(std::move(function), name);
+  auto started = result.m_impl->start();
+  if (!started)
+    return std::unexpected(std::move(started.error()));
+  return result;
 }
 
 ThreadFunction<void>::~ThreadFunction() {
-  finish();
+  auto result = finish();
+  if (!result)
+    EmergencyLog::error("Thread function {} failed during destruction: {}", name(), outputException(ExceptionDiagnostic(result.error()), true));
+  if (!isFinished())
+    fatalError("Cannot destroy an unjoined thread function", false);
 }
 
-ThreadFunction<void>& ThreadFunction<void>::operator=(ThreadFunction&&) = default;
-
-void ThreadFunction<void>::finish() {
-  if (m_impl) {
-    m_impl->join();
-
-    if (m_impl->exception)
-      std::rethrow_exception(std::exchange(m_impl->exception, {}));
+ThreadFunction<void>& ThreadFunction<void>::operator=(ThreadFunction&& other) {
+  if (this != &other) {
+    auto result = finish();
+    if (!result)
+      EmergencyLog::error("Thread function {} failed during reassignment: {}", name(), outputException(ExceptionDiagnostic(result.error()), true));
+    if (!isFinished())
+      fatalError("Cannot overwrite an unjoined thread function", false);
+    m_impl = std::move(other.m_impl);
   }
+  return *this;
+}
+
+std::expected<void, StarException> ThreadFunction<void>::finish() {
+  if (m_impl) {
+    auto joined = m_impl->join();
+    if (!joined)
+      return std::unexpected(std::move(joined.error()));
+    if (m_impl->error) {
+      auto error = std::move(*m_impl->error);
+      m_impl->error.reset();
+      return std::unexpected(std::move(error));
+    }
+  }
+  return {};
 }
 
 bool ThreadFunction<void>::isFinished() const {

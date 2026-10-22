@@ -1,6 +1,7 @@
 module;
 #include "GL/glew.h"
 import std;
+import star.format;
 import star.json;
 import star.byte_array;
 import star.string;
@@ -30,7 +31,7 @@ enum class BoolSettingMode {
   FromSetting,
   Disabled
 };
-extern EnumMap<BoolSettingMode> const BoolSettingModeNames;
+extern std::expected<EnumMap<BoolSettingMode>, StarException> const BoolSettingModeNames;
 
 bool settingModeValue(BoolSettingMode const& mode, bool const& setting);
 
@@ -38,52 +39,54 @@ bool settingModeValue(BoolSettingMode const& mode, bool const& setting);
 // active during construction, destruction, and all method calls.
 class OpenGlRenderer : public Renderer {
 public:
-  explicit OpenGlRenderer(Logger& logger);
+  [[nodiscard]] static std::expected<std::shared_ptr<OpenGlRenderer>, StarException> create(Logger& logger);
   ~OpenGlRenderer();
 
   String rendererId() const override;
   Vec2U screenSize() const override;
 
-  void loadConfig(Json const& config) override;
-  void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
+  [[nodiscard]] std::expected<void, StarException> loadConfig(Json const& config) override;
+  [[nodiscard]] std::expected<void, StarException> loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
 
-  void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
-  void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
+  [[nodiscard]] std::expected<void, StarException> setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
+  [[nodiscard]] std::expected<void, StarException> setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
   std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
   std::optional<std::uint8_t> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
-  void setEffectTexture(String const& textureName, ImageView const& image) override;
+  [[nodiscard]] std::expected<void, StarException> setEffectTexture(String const& textureName, ImageView const& image) override;
 
-  void setScissorRect(std::optional<RectI> const& scissorRect) override;
+  [[nodiscard]] std::expected<void, StarException> setScissorRect(std::optional<RectI> const& scissorRect) override;
 
-  bool switchEffectConfig(String const& name) override;
+  [[nodiscard]] std::expected<bool, StarException> switchEffectConfig(String const& name) override;
 
-  TexturePtr createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
+  [[nodiscard]] std::expected<TexturePtr, StarException> createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
   void setSizeLimitEnabled(bool enabled) override;
   void setMultiTexturingEnabled(bool enabled) override;
-  void setMultiSampling(unsigned multiSampling) override;
-  void setMainHDR(bool enabled) override;
-  std::shared_ptr<TextureGroup> createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
-  std::shared_ptr<RenderBuffer> createRenderBuffer() override;
+  [[nodiscard]] std::expected<void, StarException> setMultiSampling(unsigned multiSampling) override;
+  [[nodiscard]] std::expected<void, StarException> setMainHDR(bool enabled) override;
+  [[nodiscard]] std::expected<std::shared_ptr<TextureGroup>, StarException> createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
+  [[nodiscard]] std::expected<std::shared_ptr<RenderBuffer>, StarException> createRenderBuffer() override;
 
   List<RenderPrimitive>& immediatePrimitives() override;
   void render(RenderPrimitive primitive) override;
-  void renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation) override;
+  [[nodiscard]] std::expected<void, StarException> renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation) override;
 
-  void flush(Mat3F const& transformation) override;
+  [[nodiscard]] std::expected<void, StarException> flush(Mat3F const& transformation) override;
 
-  void setScreenSize(Vec2U screenSize);
+  [[nodiscard]] std::expected<void, StarException> setScreenSize(Vec2U screenSize);
 
-  void startFrame();
-  void finishFrame();
+  [[nodiscard]] std::expected<void, StarException> startFrame();
+  [[nodiscard]] std::expected<void, StarException> finishFrame();
 
 private:
+  explicit OpenGlRenderer(Logger& logger);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   struct GlTextureAtlasSet : public TextureAtlasSet<GLuint> {
   public:
     GlTextureAtlasSet(unsigned atlasNumCells);
 
-    GLuint createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) override;
+    [[nodiscard]] std::expected<GLuint, StarException> createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) override;
     void destroyAtlasTexture(GLuint const& glTexture) override;
-    void copyAtlasPixels(GLuint const& glTexture, Vec2U const& bottomLeft, Image const& image) override;
+    [[nodiscard]] std::expected<void, StarException> copyAtlasPixels(GLuint const& glTexture, Vec2U const& bottomLeft, Image const& image) override;
 
     TextureFiltering textureFiltering;
   };
@@ -93,7 +96,7 @@ private:
     ~GlTextureGroup();
 
     TextureFiltering filtering() const override;
-    TexturePtr create(Image const& texture) override;
+    [[nodiscard]] std::expected<TexturePtr, StarException> create(Image const& texture) override;
 
     GlTextureAtlasSet textureAtlasSet;
   };
@@ -198,10 +201,10 @@ private:
       std::size_t vertexCount = 0;
     };
 
-    GlRenderBuffer();
+    GlRenderBuffer() = default;
     ~GlRenderBuffer();
 
-    void set(List<RenderPrimitive>& primitives) override;
+    [[nodiscard]] std::expected<void, StarException> set(List<RenderPrimitive>& primitives) override;
 
     RefPtr<GlTexture> whiteTexture;
     ByteArray accumulationBuffer;
@@ -247,10 +250,11 @@ private:
     bool blitted = false;
     bool justSwapped = false;
     
-    void makeAlt(Vec2U const& screenSize = Vec2U(256, 256));
-    void swap();
-    
-    GlFrameBuffer(Json const& config);
+    [[nodiscard]] std::expected<void, StarException> makeAlt(Vec2U const& screenSize = Vec2U(256, 256));
+    [[nodiscard]] std::expected<void, StarException> swap();
+
+    [[nodiscard]] static std::expected<RefPtr<GlFrameBuffer>, StarException> create(Json const& config);
+    GlFrameBuffer() = default;
     ~GlFrameBuffer();
   };
 
@@ -272,22 +276,23 @@ private:
   };
 
   static bool logGlErrorSummary(String prefix);
-  static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data);
+  [[nodiscard]] static std::expected<void, StarException> checkGlError(char const* operation);
+  [[nodiscard]] static std::expected<void, StarException> uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data);
 
   
-  static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
+  [[nodiscard]] static std::expected<RefPtr<GlLoneTexture>, StarException> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
-  std::shared_ptr<GlRenderBuffer> createGlRenderBuffer();
+  [[nodiscard]] std::expected<std::shared_ptr<GlRenderBuffer>, StarException> createGlRenderBuffer();
 
-  void flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
+  [[nodiscard]] std::expected<void, StarException> flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
 
-  void renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
+  [[nodiscard]] std::expected<void, StarException> renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F const& transformation);
 
   void setupGlUniforms(Effect& effect, Vec2U screenSize);
 
-  RefPtr<OpenGlRenderer::GlFrameBuffer> getGlFrameBuffer(String const& id);
-  void blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer, bool const& useAlt = false);
-  void switchGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
+  [[nodiscard]] std::expected<RefPtr<OpenGlRenderer::GlFrameBuffer>, StarException> getGlFrameBuffer(String const& id);
+  [[nodiscard]] std::expected<void, StarException> blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer, bool const& useAlt = false);
+  [[nodiscard]] std::expected<void, StarException> switchGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
 
   Logger& m_logger;
   Vec2U m_screenSize;
@@ -306,7 +311,7 @@ private:
   Json m_config;
 
   StringMap<Effect> m_effects;
-  Effect* m_currentEffect;
+  Effect* m_currentEffect = nullptr;
 
   StringMap<RefPtr<GlFrameBuffer>> m_frameBuffers;
   RefPtr<GlFrameBuffer> m_currentFrameBuffer;

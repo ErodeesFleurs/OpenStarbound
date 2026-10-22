@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.byte_array;
@@ -95,7 +96,7 @@ class ClientContext;
 
 class SystemWorldClient : public SystemWorld {
 public:
-  SystemWorldClient(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> clientContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemWorldClient>, StarException> create(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> clientContext);
 
   CelestialCoordinate currentSystem() const;
 
@@ -104,7 +105,7 @@ public:
   SystemLocation shipDestination() const;
   bool flying() const;
 
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
   List<std::shared_ptr<SystemObject>> objects() const override;
   List<Uuid> objectKeys() const override;
@@ -116,11 +117,12 @@ public:
   Uuid spawnObject(String typeName, std::optional<Vec2F> position = {}, std::optional<Uuid> const& uuid = {}, JsonObject parameters = {});
 
   // returns whether the packet was handled
-  bool handleIncomingPacket(std::shared_ptr<Packet> packet);
+  [[nodiscard]] std::expected<bool, StarException> handleIncomingPacket(std::shared_ptr<Packet> packet);
   List<std::shared_ptr<Packet>> pullOutgoingPackets();
 private:
-  std::shared_ptr<SystemObject> netLoadObject(ByteArray netStore);
-  std::shared_ptr<SystemClientShip> netLoadShip(ByteArray netStore);
+  SystemWorldClient(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap);
+  [[nodiscard]] std::expected<std::shared_ptr<SystemObject>, StarException> netLoadObject(ByteArray netStore);
+  [[nodiscard]] std::expected<std::shared_ptr<SystemClientShip>, StarException> netLoadShip(ByteArray netStore);
 
   // m_ship can be a null pointer, indicating that the system is not initialized
   std::shared_ptr<SystemClientShip> m_ship;

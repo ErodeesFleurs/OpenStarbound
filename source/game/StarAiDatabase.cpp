@@ -40,52 +40,136 @@ import star.animation;
 
 namespace Star {
 
-AiDatabase::AiDatabase(Root& root) : m_animationConfig(root) {
+AiDatabase::AiDatabase(Animation staticAnimation, Animation scanlineAnimation)
+  : m_animationConfig(std::move(staticAnimation), std::move(scanlineAnimation)) {}
+
+std::expected<std::shared_ptr<AiDatabase>, StarException> AiDatabase::create(Root& root) {
+  auto defaultStatic = Animation::create(root);
+  if (!defaultStatic)
+    return std::unexpected(std::move(defaultStatic.error()));
+  auto defaultScanline = Animation::create(root);
+  if (!defaultScanline)
+    return std::unexpected(std::move(defaultScanline.error()));
+  auto result = std::shared_ptr<AiDatabase>(new AiDatabase(std::move(*defaultStatic), std::move(*defaultScanline)));
   auto assets = root.assets();
-  auto config = assets->json("/ai/ai.config");
-
-  auto& missions = assets->scanExtension("aimission");
-  assets->queueJsons(missions);
-
-  for (auto const& file : missions) {
-    if (auto config = assets->json(file)) {
-      auto mission = parseMission(config);
-      m_missions[mission.missionName] = mission;
-    }
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/ai/ai.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto missions = (*assets)->scanExtension("aimission");
+  if (!missions)
+    return std::unexpected(std::move(missions.error()));
+  auto queued = (*assets)->queueJsons(**missions);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **missions) {
+    auto const& file = assetFile.string();
+    auto missionConfig = (*assets)->json(file);
+    if (!missionConfig)
+      return std::unexpected(std::move(missionConfig.error()));
+    if (!*missionConfig)
+      continue;
+    auto mission = parseMission(*missionConfig);
+    if (!mission)
+      return std::unexpected(std::move(mission.error()));
+    result->m_missions[mission->missionName] = std::move(*mission);
   }
-
-  for (auto const& speciesPair : config.get("species").iterateObject())
-    m_speciesParameters[speciesPair.first] = parseSpeciesParameters(speciesPair.second);
-
-  for (auto const& p : config.get("shipStatus").iterateObject())
-    m_shipStatus[lexicalCast<unsigned>(p.first)] = parseSpeech(p.second);
-
-  m_noMissionsSpeech = parseSpeech(config.get("noMissionsSpeech"));
-  m_noCrewSpeech = parseSpeech(config.get("noCrewSpeech"));
-
-  m_animationConfig.charactersPerSecond = config.getFloat("charactersPerSecond");
-  m_animationConfig.defaultAnimation = config.getString("defaultAnimation");
-  m_animationConfig.staticAnimation = Animation(root, "/ai/ai.config:staticAnimation");
-  m_animationConfig.staticOpacity = config.getFloat("staticOpacity");
-  m_animationConfig.scanlineAnimation = Animation(root, "/ai/ai.config:scanlineAnimation");
-  m_animationConfig.scanlineOpacity = config.getFloat("scanlineOpacity");
-
-  // Preserve the default animation's RNG draw when inserting a new entry.
-  for (auto const& pair : config.get("aiAnimations").iterateObject())
-    m_animationConfig.aiAnimations.try_emplace(pair.first, root).first->second = Animation(root, pair.second, "/ai/");
+  auto species = config->get("species").and_then([](Json const& value) { return value.iterateObject(); });
+  if (!species)
+    return std::unexpected(std::move(species.error()));
+  for (auto const& pair : *species) {
+    auto parameters = parseSpeciesParameters(pair.second);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    result->m_speciesParameters[pair.first] = std::move(*parameters);
+  }
+  auto statuses = config->get("shipStatus").and_then([](Json const& value) { return value.iterateObject(); });
+  if (!statuses)
+    return std::unexpected(std::move(statuses.error()));
+  for (auto const& pair : *statuses) {
+    auto level = lexicalCast<unsigned>(pair.first);
+    if (!level)
+      return std::unexpected(std::move(level.error()));
+    auto speech = parseSpeech(pair.second);
+    if (!speech)
+      return std::unexpected(std::move(speech.error()));
+    result->m_shipStatus[*level] = std::move(*speech);
+  }
+  auto noMissionsConfig = config->get("noMissionsSpeech");
+  if (!noMissionsConfig)
+    return std::unexpected(std::move(noMissionsConfig.error()));
+  auto noMissions = parseSpeech(*noMissionsConfig);
+  if (!noMissions)
+    return std::unexpected(std::move(noMissions.error()));
+  result->m_noMissionsSpeech = std::move(*noMissions);
+  auto noCrewConfig = config->get("noCrewSpeech");
+  if (!noCrewConfig)
+    return std::unexpected(std::move(noCrewConfig.error()));
+  auto noCrew = parseSpeech(*noCrewConfig);
+  if (!noCrew)
+    return std::unexpected(std::move(noCrew.error()));
+  result->m_noCrewSpeech = std::move(*noCrew);
+  auto charactersPerSecond = config->getFloat("charactersPerSecond");
+  if (!charactersPerSecond)
+    return std::unexpected(std::move(charactersPerSecond.error()));
+  result->m_animationConfig.charactersPerSecond = *charactersPerSecond;
+  auto defaultAnimation = config->getString("defaultAnimation");
+  if (!defaultAnimation)
+    return std::unexpected(std::move(defaultAnimation.error()));
+  result->m_animationConfig.defaultAnimation = std::move(*defaultAnimation);
+  auto staticAnimation = Animation::create(root, "/ai/ai.config:staticAnimation");
+  if (!staticAnimation)
+    return std::unexpected(std::move(staticAnimation.error()));
+  result->m_animationConfig.staticAnimation = std::move(*staticAnimation);
+  auto staticOpacity = config->getFloat("staticOpacity");
+  if (!staticOpacity)
+    return std::unexpected(std::move(staticOpacity.error()));
+  result->m_animationConfig.staticOpacity = *staticOpacity;
+  auto scanlineAnimation = Animation::create(root, "/ai/ai.config:scanlineAnimation");
+  if (!scanlineAnimation)
+    return std::unexpected(std::move(scanlineAnimation.error()));
+  result->m_animationConfig.scanlineAnimation = std::move(*scanlineAnimation);
+  auto scanlineOpacity = config->getFloat("scanlineOpacity");
+  if (!scanlineOpacity)
+    return std::unexpected(std::move(scanlineOpacity.error()));
+  result->m_animationConfig.scanlineOpacity = *scanlineOpacity;
+  auto animations = config->get("aiAnimations").and_then([](Json const& value) { return value.iterateObject(); });
+  if (!animations)
+    return std::unexpected(std::move(animations.error()));
+  for (auto const& pair : *animations) {
+    // Preserve the old default construction's RNG draw before replacement.
+    if (!result->m_animationConfig.aiAnimations.contains(pair.first)) {
+      auto initial = Animation::create(root);
+      if (!initial)
+        return std::unexpected(std::move(initial.error()));
+      result->m_animationConfig.aiAnimations.try_emplace(pair.first, std::move(*initial));
+    }
+    auto animation = Animation::create(root, pair.second, "/ai/");
+    if (!animation)
+      return std::unexpected(std::move(animation.error()));
+    auto existing = result->m_animationConfig.aiAnimations.ptr(pair.first);
+    if (!existing)
+      return std::unexpected(AiException("AI animation publication failed"));
+    *existing = std::move(*animation);
+  }
+  return result;
 }
 
-AiMission AiDatabase::mission(String const& missionName) const {
-  return m_missions.get(missionName);
+std::expected<AiMission, StarException> AiDatabase::mission(String const& missionName) const {
+  auto mission = m_missions.get(missionName);
+  if (!mission)
+    return std::unexpected(std::move(mission.error()));
+  return **mission;
 }
 
-AiSpeech AiDatabase::shipStatus(unsigned shipLevel) const {
+std::expected<AiSpeech, StarException> AiDatabase::shipStatus(unsigned shipLevel) const {
   // Find the first open speech set at this ship level or below.
   auto i = m_shipStatus.upper_bound(shipLevel);
   if (i != m_shipStatus.begin() && (--i)->first <= shipLevel)
     return i->second;
 
-  return {};
+  return AiSpeech{};
 }
 
 AiSpeech AiDatabase::noCrewSpeech() const {
@@ -96,21 +180,33 @@ AiSpeech AiDatabase::noMissionsSpeech() const {
   return m_noMissionsSpeech;
 }
 
-String AiDatabase::portraitImage(String const& species, String const& frame) const {
-  return strf("/ai/{}:{}", m_speciesParameters.get(species).portraitFrames, frame);
+std::expected<String, StarException> AiDatabase::portraitImage(String const& species, String const& frame) const {
+  auto parameters = m_speciesParameters.get(species);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  return strf("/ai/{}:{}", (*parameters)->portraitFrames, frame);
 }
 
-Animation AiDatabase::animation(String const& species, String const& animationName) const {
-  auto faceAnimation = m_animationConfig.aiAnimations.get(animationName);
-  faceAnimation.setTag("image", m_speciesParameters.get(species).aiFrames);
-  return faceAnimation;
+std::expected<Animation, StarException> AiDatabase::animation(String const& species, String const& animationName) const {
+  auto configured = m_animationConfig.aiAnimations.get(animationName);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
+  auto animation = **configured;
+  auto parameters = m_speciesParameters.get(species);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  animation.setTag("image", (*parameters)->aiFrames);
+  return animation;
 }
 
-Animation AiDatabase::staticAnimation(String const& species) const {
-  auto staticAnimation = m_animationConfig.staticAnimation;
-  staticAnimation.setTag("image", m_speciesParameters.get(species).staticFrames);
-  staticAnimation.setColor(Color::rgbaf(1.0f, 1.0f, 1.0f, m_animationConfig.staticOpacity));
-  return staticAnimation;
+std::expected<Animation, StarException> AiDatabase::staticAnimation(String const& species) const {
+  auto animation = m_animationConfig.staticAnimation;
+  auto parameters = m_speciesParameters.get(species);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  animation.setTag("image", (*parameters)->staticFrames);
+  animation.setColor(Color::rgbaf(1.0f, 1.0f, 1.0f, m_animationConfig.staticOpacity));
+  return animation;
 }
 
 Animation AiDatabase::scanlineAnimation() const {
@@ -127,32 +223,79 @@ String AiDatabase::defaultAnimation() const {
   return m_animationConfig.defaultAnimation;
 }
 
-AiSpeech AiDatabase::parseSpeech(Json const& v) {
-  return AiSpeech{v.getString("animation"), v.getString("text"), v.getFloat("speedModifier", 1.0f)};
+std::expected<AiSpeech, StarException> AiDatabase::parseSpeech(Json const& v) {
+  auto animation = v.getString("animation");
+  if (!animation)
+    return std::unexpected(std::move(animation.error()));
+  auto text = v.getString("text");
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto speed = v.getFloat("speedModifier", 1.0f);
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  return AiSpeech{*animation, *text, *speed};
 }
 
-AiDatabase::AiSpeciesParameters AiDatabase::parseSpeciesParameters(Json const& v) {
-  AiSpeciesParameters species;
-  species.aiFrames = v.getString("aiFrames");
-  species.portraitFrames = v.getString("portraitFrames");
-  species.staticFrames = v.getString("staticFrames");
-  return species;
+std::expected<AiDatabase::AiSpeciesParameters, StarException> AiDatabase::parseSpeciesParameters(Json const& v) {
+  auto aiFrames = v.getString("aiFrames");
+  if (!aiFrames)
+    return std::unexpected(std::move(aiFrames.error()));
+  auto portraitFrames = v.getString("portraitFrames");
+  if (!portraitFrames)
+    return std::unexpected(std::move(portraitFrames.error()));
+  auto staticFrames = v.getString("staticFrames");
+  if (!staticFrames)
+    return std::unexpected(std::move(staticFrames.error()));
+  return AiSpeciesParameters{*aiFrames, *portraitFrames, *staticFrames};
 }
 
-AiSpeciesMissionText AiDatabase::parseSpeciesMissionText(Json const& vm) {
-  return AiSpeciesMissionText{
-      vm.getString("buttonText"), vm.getString("repeatButtonText"), parseSpeech(vm.get("selectSpeech", {}))};
+std::expected<AiSpeciesMissionText, StarException> AiDatabase::parseSpeciesMissionText(Json const& vm) {
+  auto button = vm.getString("buttonText");
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  auto repeat = vm.getString("repeatButtonText");
+  if (!repeat)
+    return std::unexpected(std::move(repeat.error()));
+  auto speechConfig = vm.get("selectSpeech", {});
+  if (!speechConfig)
+    return std::unexpected(std::move(speechConfig.error()));
+  auto speech = parseSpeech(*speechConfig);
+  if (!speech)
+    return std::unexpected(std::move(speech.error()));
+  return AiSpeciesMissionText{*button, *repeat, *speech};
 }
 
-AiMission AiDatabase::parseMission(Json const& vm) {
+std::expected<AiMission, StarException> AiDatabase::parseMission(Json const& vm) {
+  auto name = vm.getString("missionName");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto world = vm.getString("missionWorld");
+  if (!world)
+    return std::unexpected(std::move(world.error()));
+  auto warpAnimation = vm.optString("warpAnimation");
+  if (!warpAnimation)
+    return std::unexpected(std::move(warpAnimation.error()));
+  auto warpDeploy = vm.optBool("warpDeploy");
+  if (!warpDeploy)
+    return std::unexpected(std::move(warpDeploy.error()));
+  auto icon = vm.getString("icon");
+  if (!icon)
+    return std::unexpected(std::move(icon.error()));
   AiMission mission;
-  mission.missionName = vm.getString("missionName");
-  mission.missionUniqueWorld = vm.getString("missionWorld");
-  mission.warpAnimation = vm.optString("warpAnimation");
-  mission.warpDeploy = vm.optBool("warpDeploy");
-  mission.icon = AssetPath::relativeTo("/ai/", vm.getString("icon"));
-  for (auto const& textPair : vm.get("speciesText").iterateObject())
-    mission.speciesText[textPair.first] = parseSpeciesMissionText(textPair.second);
+  mission.missionName = std::move(*name);
+  mission.missionUniqueWorld = std::move(*world);
+  mission.warpAnimation = std::move(*warpAnimation);
+  mission.warpDeploy = *warpDeploy;
+  mission.icon = AssetPath::relativeTo("/ai/", *icon);
+  auto texts = vm.get("speciesText").and_then([](Json const& value) { return value.iterateObject(); });
+  if (!texts)
+    return std::unexpected(std::move(texts.error()));
+  for (auto const& pair : *texts) {
+    auto text = parseSpeciesMissionText(pair.second);
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    mission.speciesText[pair.first] = std::move(*text);
+  }
   return mission;
 }
 

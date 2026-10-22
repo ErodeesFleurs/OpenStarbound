@@ -34,7 +34,8 @@ Color const Color::DarkGreen = Color::rgba(0, 128, 0, 255);
 Color const Color::Pink = Color::rgba(255, 162, 187, 255);
 Color const Color::Clear = Color::rgba(0, 0, 0, 0);
 
-CaseInsensitiveStringMap<Color> const Color::NamedColors{
+[[nodiscard]] static std::expected<CaseInsensitiveStringMap<Color>, StarException> makeNamedColors() {
+  std::pair<char const*, Color> const entries[]{
   {"red", Color::Red},
   {"orange", Color::Orange},
   {"yellow", Color::Yellow},
@@ -55,7 +56,19 @@ CaseInsensitiveStringMap<Color> const Color::NamedColors{
   {"darkgreen", Color::DarkGreen},
   {"pink", Color::Pink},
   {"clear", Color::Clear}
-};
+  };
+  CaseInsensitiveStringMap<Color> result;
+  result.reserve(std::size(entries));
+  for (auto const& [name, color] : entries) {
+    auto key = CaseInsensitiveString::create(String(name));
+    if (!key)
+      return std::unexpected(std::move(key.error()));
+    result[std::move(*key)] = color;
+  }
+  return result;
+}
+
+std::expected<CaseInsensitiveStringMap<Color>, StarException> const Color::NamedColors = makeNamedColors();
 
 Color Color::rgbf(const Vec3F& c) {
   return rgbaf(c[0], c[1], c[2], 1.0f);
@@ -221,16 +234,18 @@ Color Color::gray(std::uint8_t g) {
 
 Color::Color() {}
 
-Color::Color(StringView name) {
+std::expected<Color, StarException> Color::create(StringView name) {
   if (name.utf8().rfind('#', 0) == 0)
-    *this = fromHex(name.utf8().substr(1));
-  else {
-    auto i = NamedColors.find(name);
-    if (i != NamedColors.end())
-      *this = i->second;
-    else
-      throw ColorException(strf("Named color {} not found", name), false);
-  }
+    return fromHex(name.utf8().substr(1));
+  if (!NamedColors)
+    return std::unexpected(NamedColors.error());
+  auto key = CaseInsensitiveStringView::create(name.utf8());
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  auto i = NamedColors->find(*key);
+  if (i != NamedColors->end())
+    return i->second;
+  return std::unexpected(ColorException(strf("Named color {} not found", name), false));
 }
 
 float Color::redF() const {
@@ -310,8 +325,11 @@ std::uint32_t Color::toUint32() const {
   return val;
 }
 
-Color Color::fromHex(StringView s) {
-  return Color::rgba(hexToVec4B(s));
+std::expected<Color, StarException> Color::fromHex(StringView s) {
+  auto bytes = hexToVec4B(s);
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  return Color::rgba(*bytes);
 }
 
 Vec4B Color::toRgba() const {
@@ -609,30 +627,26 @@ Vec4B Color::hueShiftVec4B(Vec4B color, float hue) {
   }
 }
 
-Vec4B Color::hexToVec4B(StringView s) {
-  Array<std::uint8_t, 4> cbytes;
-
-  if (s.utf8Size() == 3) {
-    nibbleDecode({s.utf8Ptr(), 3}, {(char*)cbytes.data(), 4});
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 4) {
-    nibbleDecode({s.utf8Ptr(), 4}, {(char*)cbytes.data(), 4});
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = (cbytes[3] << 4) | cbytes[3];
-  } else if (s.utf8Size() == 6) {
-    hexDecode({s.utf8Ptr(), 6}, {(char*)cbytes.data(), 4});
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 8) {
-    hexDecode({s.utf8Ptr(), 8}, {(char*)cbytes.data(), 4});
+std::expected<Vec4B, StarException> Color::hexToVec4B(StringView s) {
+  Array<std::uint8_t, 4> cbytes{};
+  std::expected<std::size_t, StarException> decoded;
+  if (s.utf8Size() == 3 || s.utf8Size() == 4) {
+    decoded = nibbleDecode({s.utf8Ptr(), s.utf8Size()}, {(char*)cbytes.data(), 4});
+    if (!decoded)
+      return std::unexpected(std::move(decoded.error()));
+    for (std::size_t i = 0; i < s.utf8Size(); ++i)
+      cbytes[i] = (cbytes[i] << 4) | cbytes[i];
+    if (s.utf8Size() == 3)
+      cbytes[3] = 255;
+  } else if (s.utf8Size() == 6 || s.utf8Size() == 8) {
+    decoded = hexDecode({s.utf8Ptr(), s.utf8Size()}, {(char*)cbytes.data(), 4});
+    if (!decoded)
+      return std::unexpected(std::move(decoded.error()));
+    if (s.utf8Size() == 6)
+      cbytes[3] = 255;
   } else {
-    throw ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false);
+    return std::unexpected(ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false));
   }
-
   return Vec4B(std::move(cbytes));
 }
 

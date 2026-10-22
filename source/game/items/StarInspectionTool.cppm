@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -109,28 +110,40 @@ public:
     std::optional<EntityId> entityId = {};
   };
 
-  InspectionTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<InspectionTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]]
+  std::expected<List<LightSource>, StarException> lightSources() const;
 
-  float inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
+  [[nodiscard]]
+  std::expected<float, StarException> inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
 
   List<InspectionResult> pullInspectionResults();
 
 private:
-  InspectionResult inspect(Vec2F const& position);
+  explicit InspectionTool(Root& root) : Item(root) {}
+  [[nodiscard]]
+  std::expected<InspectionResult, StarException> inspect(Vec2F const& position);
 
-  float inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
-  float pointInspectionLevel(Vec2F const& position) const;
-  bool hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
+  [[nodiscard]]
+  std::expected<float, StarException> inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
+  [[nodiscard]]
+  std::expected<float, StarException> pointInspectionLevel(Vec2F const& position) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
 
-  String inspectionFailureText(String const& failureType, String const& species) const;
+  [[nodiscard]]
+  std::expected<String, StarException> inspectionFailureText(String const& failureType, String const& species) const;
 
   float m_currentAngle;
   Vec2F m_currentPosition;
@@ -161,73 +174,162 @@ private:
 
 namespace Star {
 
-InspectionTool::InspectionTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters) {
-  m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_handPosition = jsonToVec2F(instanceValue("handPosition"));
-  m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
-  m_lightColor = jsonToColor(instanceValue("lightColor"));
-  m_beamWidth = instanceValue("beamLevel").toFloat();
-  m_ambientFactor = instanceValue("beamAmbience").toFloat();
-
-  m_showHighlights = instanceValue("showHighlights").toBool();
-  m_allowScanning = instanceValue("allowScanning").toBool();
-  m_requireLineOfSight = instanceValue("requireLineOfSight", true) == Json(true);
-  m_inspectionAngles = jsonToVec2F(instanceValue("inspectionAngles"));
-  m_inspectionRanges = jsonToVec2F(instanceValue("inspectionRanges"));
-  m_ambientInspectionRadius = instanceValue("ambientInspectionRadius").toFloat();
-  m_fullInspectionSpaces = instanceValue("fullInspectionSpaces").toUInt();
-  m_minimumInspectionLevel = instanceValue("minimumInspectionLevel").toFloat();
-  if (auto typeFilter = instanceValue("inspectableTypeFilter"); typeFilter.isType(Json::Type::Array)) {
-    m_inspectableTypeFilter.emplace();
-    for (auto& str : typeFilter.toArray()) {
-      if (!str.isType(Json::Type::String))
+std::expected<std::shared_ptr<InspectionTool>, StarException> InspectionTool::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<InspectionTool>(new InspectionTool(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  item->m_image = AssetPath::relativeTo(directory, *image);
+  for (auto const& [key, target] : {std::pair{"handPosition", &item->m_handPosition}, std::pair{"lightPosition", &item->m_lightPosition}}) {
+    auto value = item->instanceValue(key).and_then(jsonToVec2F);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  auto color = item->instanceValue("lightColor").and_then(jsonToColor);
+  if (!color)
+    return std::unexpected(std::move(color.error()));
+  item->m_lightColor = *color;
+  for (auto const& [key, target] : {std::pair{"beamLevel", &item->m_beamWidth}, std::pair{"beamAmbience", &item->m_ambientFactor}}) {
+    auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  for (auto const& [key, target] : {std::pair{"showHighlights", &item->m_showHighlights}, std::pair{"allowScanning", &item->m_allowScanning}}) {
+    auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toBool(); });
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  auto lineOfSight = item->instanceValue("requireLineOfSight", true);
+  if (!lineOfSight)
+    return std::unexpected(std::move(lineOfSight.error()));
+  item->m_requireLineOfSight = *lineOfSight == Json(true);
+  for (auto const& [key, target] : {std::pair{"inspectionAngles", &item->m_inspectionAngles}, std::pair{"inspectionRanges", &item->m_inspectionRanges}}) {
+    auto value = item->instanceValue(key).and_then(jsonToVec2F);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  auto ambient = item->instanceValue("ambientInspectionRadius").and_then([](Json const& value) { return value.toFloat(); });
+  if (!ambient)
+    return std::unexpected(std::move(ambient.error()));
+  item->m_ambientInspectionRadius = *ambient;
+  auto spaces = item->instanceValue("fullInspectionSpaces").and_then([](Json const& value) { return value.toUInt(); });
+  if (!spaces)
+    return std::unexpected(std::move(spaces.error()));
+  item->m_fullInspectionSpaces = *spaces;
+  auto minimum = item->instanceValue("minimumInspectionLevel").and_then([](Json const& value) { return value.toFloat(); });
+  if (!minimum)
+    return std::unexpected(std::move(minimum.error()));
+  item->m_minimumInspectionLevel = *minimum;
+  auto filter = item->instanceValue("inspectableTypeFilter");
+  if (!filter)
+    return std::unexpected(std::move(filter.error()));
+  if (filter->isType(Json::Type::Array)) {
+    auto values = filter->toArray();
+    if (!values)
+      return std::unexpected(std::move(values.error()));
+    item->m_inspectableTypeFilter.emplace();
+    for (auto const& value : *values) {
+      if (!value.isType(Json::Type::String))
         continue;
-      if (auto entityType = EntityTypeNames.leftPtr(str.toString()))
-        m_inspectableTypeFilter->add(*entityType);
+      auto name = value.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (!EntityTypeNames)
+        return std::unexpected(EntityTypeNames.error());
+      auto type = EntityTypeNames->leftPtr(*name);
+      if (!type)
+        return std::unexpected(std::move(type.error()));
+      if (*type)
+        item->m_inspectableTypeFilter->add(**type);
     }
   }
-
-  m_lastFireMode = FireMode::None;
+  item->m_lastFireMode = FireMode::None;
+  return item;
 }
 
-std::shared_ptr<Item> InspectionTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> InspectionTool::clone() const {
   return std::make_shared<InspectionTool>(*this);
 }
 
-void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
-  m_currentAngle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
-  m_currentPosition = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
+std::expected<void, StarException> InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemHand = hand();
+  if (!itemHand)
+    return std::unexpected(std::move(itemHand.error()));
+  auto aimPosition = (*itemOwner)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  m_currentAngle = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).angle();
+  auto position = (*itemOwner)->handPosition(*itemHand, m_lightPosition - m_handPosition);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  m_currentPosition = (*itemOwner)->position() + *position;
   root().spatialLogger().logPoint("world", m_currentPosition, {0, 0, 255, 255});
-
-  if (fireMode != m_lastFireMode) {
-    if (fireMode != FireMode::None)
-      m_inspectionResults.append(inspect(owner()->aimPosition()));
+  if (fireMode != m_lastFireMode && fireMode != FireMode::None) {
+    auto inspectionPosition = (*itemOwner)->aimPosition();
+    if (!inspectionPosition)
+      return std::unexpected(std::move(inspectionPosition.error()));
+    auto result = inspect(*inspectionPosition);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    m_inspectionResults.append(std::move(*result));
   }
-
   m_lastFireMode = fireMode;
+  return {};
 }
 
-List<Drawable> InspectionTool::drawables() const {
-  return {Drawable::makeImage(*root().imageMetadataDatabase(), m_image, 1.0f / TilePixels, true, -m_handPosition)};
+std::expected<List<Drawable>, StarException> InspectionTool::drawables() const {
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto drawable = Drawable::makeImage(**metadata, m_image, 1.0f / TilePixels, true, -m_handPosition);
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  return List<Drawable>{std::move(*drawable)};
 }
 
-List<LightSource> InspectionTool::lightSources() const {
+std::expected<List<LightSource>, StarException> InspectionTool::lightSources() const {
   if (!initialized())
-    return {};
-
-  float angle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
+    return List<LightSource>{};
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemHand = hand();
+  if (!itemHand)
+    return std::unexpected(std::move(itemHand.error()));
+  auto aimPosition = (*itemOwner)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  float angle = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).angle();
+  auto position = (*itemOwner)->handPosition(*itemHand, m_lightPosition - m_handPosition);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
+  lightSource.position = (*itemOwner)->position() + *position;
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;
-  return {std::move(lightSource)};
+  return List<LightSource>{std::move(lightSource)};
 }
 
-float InspectionTool::inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
+std::expected<float, StarException> InspectionTool::inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
   if (m_showHighlights)
     return inspectionLevel(inspectable);
   return 0;
@@ -237,7 +339,7 @@ List<InspectionTool::InspectionResult> InspectionTool::pullInspectionResults() {
   return Star::take(m_inspectionResults);
 }
 
-float InspectionTool::inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
+std::expected<float, StarException> InspectionTool::inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
@@ -253,9 +355,16 @@ float InspectionTool::inspectionLevel(std::shared_ptr<InspectableEntity> const& 
       spaceSet.add(tileEntity->tilePosition() + space);
 
     for (auto space : spaceSet) {
-      float pointLevel = pointInspectionLevel(centerOfTile(space));
-      if (pointLevel > 0 && hasLineOfSight(space, spaceSet))
-        totalLevel += pointLevel;
+      auto pointLevel = pointInspectionLevel(centerOfTile(space));
+      if (!pointLevel)
+        return std::unexpected(std::move(pointLevel.error()));
+      if (*pointLevel > 0) {
+        auto lineOfSight = hasLineOfSight(space, spaceSet);
+        if (!lineOfSight)
+          return std::unexpected(std::move(lineOfSight.error()));
+        if (*lineOfSight)
+          totalLevel += *pointLevel;
+      }
     }
     return clamp(totalLevel / std::min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
   }
@@ -263,8 +372,11 @@ float InspectionTool::inspectionLevel(std::shared_ptr<InspectableEntity> const& 
     return pointInspectionLevel(inspectable->position());
 }
 
-float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
-  Vec2F gdiff = world()->geometry().diff(position, m_currentPosition);
+std::expected<float, StarException> InspectionTool::pointInspectionLevel(Vec2F const& position) const {
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  Vec2F gdiff = (*itemWorld)->geometry().diff(position, m_currentPosition);
   float gdist = gdiff.magnitude();
   float angleFactor = (std::abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
   float distFactor = (gdist - m_inspectionRanges[0]) / (m_inspectionRanges[1] - m_inspectionRanges[0]);
@@ -272,99 +384,140 @@ float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
   return 1 - clamp(std::max(distFactor, std::min(ambientFactor, angleFactor)), 0.0f, 1.0f);
 }
 
-bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
+std::expected<bool, StarException> InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
   if (!m_requireLineOfSight)
     return true;
-  auto collisions = world()->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
-  for (auto collision : collisions) {
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto collisions = (*itemWorld)->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
+  if (!collisions)
+    return std::unexpected(std::move(collisions.error()));
+  for (auto collision : *collisions) {
     if (collision != position && !targetSpaces.contains(collision))
       return false;
   }
   return true;
 }
 
-InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
+std::expected<InspectionTool::InspectionResult, StarException> InspectionTool::inspect(Vec2F const& position) {
   auto assets = root().assets();
-  auto species = owner()->species();
-
-  // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
-  // is above the minimum threshold
-  auto check = [&](std::shared_ptr<InspectableEntity> entity) -> std::optional<InspectionTool::InspectionResult> {
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto species = (*itemOwner)->species();
+  auto check = [&](std::shared_ptr<InspectableEntity> const& entity) -> std::expected<std::optional<InspectionResult>, StarException> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
-    if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
-      if (m_allowScanning)
-        return InspectionResult{entity->inspectionDescription(species).value_or(String{}), entity->inspectionLogName(), entity->entityId()};
-      else
-        return InspectionResult{entity->inspectionDescription(species).value_or(String{}), {}, {}};
+    if (entity->inspectable()) {
+      auto level = inspectionLevel(entity);
+      if (!level)
+        return std::unexpected(std::move(level.error()));
+      if (*level >= m_minimumInspectionLevel) {
+        auto description = entity->inspectionDescription(species);
+        if (!description)
+          return std::unexpected(std::move(description.error()));
+        if (m_allowScanning) {
+          auto logName = entity->inspectionLogName();
+          if (!logName)
+            return std::unexpected(std::move(logName.error()));
+          return InspectionResult{description->value_or(String{}), std::move(*logName), entity->entityId()};
+        }
+        return InspectionResult{description->value_or(String{}), {}, {}};
+      }
     }
     return {};
   };
-
-
-  WorldGeometry geometry = world()->geometry();
-  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](std::shared_ptr<InspectableEntity> const& entity) {
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  WorldGeometry geometry = (*itemWorld)->geometry();
+  auto candidates = (*itemWorld)->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](std::shared_ptr<InspectableEntity> const& entity) -> std::expected<bool, StarException> {
     if (entity->entityType() == EntityType::Object)
       return false;
-    else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))
+    auto contained = geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position);
+    if (!contained)
+      return std::unexpected(std::move(contained.error()));
+    if (!*contained)
       return false;
-    else {
-      auto hitPoly = entity->hitPoly();
-      return hitPoly && geometry.polyContains(*hitPoly, position);
-    }
-  })) {
-    if (auto result = check(entity))
-      return *result;
+    auto hitPoly = entity->hitPoly();
+    if (!hitPoly)
+      return std::unexpected(std::move(hitPoly.error()));
+    if (!*hitPoly)
+      return false;
+    return geometry.polyContains(**hitPoly, position);
+  });
+  if (!candidates)
+    return std::unexpected(std::move(candidates.error()));
+  for (auto const& entity : *candidates) {
+    auto result = check(entity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    if (*result)
+      return std::move(**result);
   }
-
-  for (auto& entity : world()->atTile<InspectableEntity>(Vec2I::floor(position))) {
-    if (auto result = check(entity))
-      return *result;
+  auto atTile = (*itemWorld)->atTile<InspectableEntity>(Vec2I::floor(position));
+  if (!atTile)
+    return std::unexpected(std::move(atTile.error()));
+  for (auto const& entity : *atTile) {
+    auto result = check(entity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    if (*result)
+      return std::move(**result);
   }
-
-  // check the inspection level at the selected tile
-  if (!hasLineOfSight(Vec2I::floor(position)) || pointInspectionLevel(centerOfTile(position)) < m_minimumInspectionLevel)
-    return {inspectionFailureText("outOfRangeText", species), {}};
-
-  // check the tile for foreground mod or material
-  MaterialId fgMaterial = world()->material(Vec2I::floor(position), TileLayer::Foreground);
-  MaterialId fgMod = world()->mod(Vec2I(position.floor()), TileLayer::Foreground);
+  auto lineOfSight = hasLineOfSight(Vec2I::floor(position));
+  if (!lineOfSight)
+    return std::unexpected(std::move(lineOfSight.error()));
+  bool outOfRange = !*lineOfSight;
+  if (!outOfRange) {
+    auto level = pointInspectionLevel(centerOfTile(position));
+    if (!level)
+      return std::unexpected(std::move(level.error()));
+    outOfRange = *level < m_minimumInspectionLevel;
+  }
+  if (outOfRange)
+    return inspectionFailureText("outOfRangeText", species).transform([](String message) { return InspectionResult{std::move(message), {}}; });
+  MaterialId fgMaterial = (*itemWorld)->material(Vec2I::floor(position), TileLayer::Foreground);
+  MaterialId fgMod = (*itemWorld)->mod(Vec2I(position.floor()), TileLayer::Foreground);
   auto materialDatabase = root().materialDatabase();
+  if (!materialDatabase)
+    return std::unexpected(std::move(materialDatabase.error()));
   if (isRealMaterial(fgMaterial)) {
-    if (isRealMod(fgMod))
-      return {materialDatabase->modDescription(fgMod, species), {}};
-    else
-      return {materialDatabase->materialDescription(fgMaterial, species), {}};
+    auto description = isRealMod(fgMod) ? (*materialDatabase)->modDescription(fgMod, species) : (*materialDatabase)->materialDescription(fgMaterial, species);
+    return std::move(description).transform([](String message) { return InspectionResult{std::move(message), {}}; });
   }
-
-  // check for liquid at the tile
-  auto liquidLevel = world()->liquidLevel(Vec2I::floor(position));
+  auto liquidLevel = (*itemWorld)->liquidLevel(Vec2I::floor(position));
   auto liquidsDatabase = root().liquidsDatabase();
+  if (!liquidsDatabase)
+    return std::unexpected(std::move(liquidsDatabase.error()));
   if (liquidLevel.liquid != EmptyLiquidId)
-    return {liquidsDatabase->liquidDescription(liquidLevel.liquid, species), {}};
-
-  // check the tile for background mod or material
-  MaterialId bgMaterial = world()->material(Vec2I::floor(position), TileLayer::Background);
-  MaterialId bgMod = world()->mod(Vec2I(position.floor()), TileLayer::Background);
+    return (*liquidsDatabase)->liquidDescription(liquidLevel.liquid, species).transform([](String message) { return InspectionResult{std::move(message), {}}; });
+  MaterialId bgMaterial = (*itemWorld)->material(Vec2I::floor(position), TileLayer::Background);
+  MaterialId bgMod = (*itemWorld)->mod(Vec2I(position.floor()), TileLayer::Background);
   if (isRealMaterial(bgMaterial)) {
-    if (isRealMod(bgMod))
-      return {materialDatabase->modDescription(bgMod, species), {}};
-    else
-      return {materialDatabase->materialDescription(bgMaterial, species), {}};
+    auto description = isRealMod(bgMod) ? (*materialDatabase)->modDescription(bgMod, species) : (*materialDatabase)->materialDescription(bgMaterial, species);
+    return std::move(description).transform([](String message) { return InspectionResult{std::move(message), {}}; });
   }
-
-  // at this point you're just staring into the void
-  return {inspectionFailureText("nothingThereText", species), {}};
+  return inspectionFailureText("nothingThereText", species).transform([](String message) { return InspectionResult{std::move(message), {}}; });
 }
 
-String InspectionTool::inspectionFailureText(String const& failureType, String const& species) const {
-  JsonArray textOptions;
-  Json nothingThere = instanceValue(failureType);
-  if (nothingThere.contains(species))
-    textOptions = nothingThere.getArray(species);
-  else
-    textOptions = nothingThere.getArray("default");
-  return textOptions.wrap(root().random().randu64()).toString();
+std::expected<String, StarException> InspectionTool::inspectionFailureText(String const& failureType, String const& species) const {
+  auto nothingThere = instanceValue(failureType);
+  if (!nothingThere)
+    return std::unexpected(std::move(nothingThere.error()));
+  auto contains = nothingThere->contains(species);
+  if (!contains)
+    return std::unexpected(std::move(contains.error()));
+  auto options = nothingThere->getArray(*contains ? species : String("default"));
+  if (!options)
+    return std::unexpected(std::move(options.error()));
+  auto option = options->wrap(root().random().randu64());
+  if (!option)
+    return std::unexpected(std::move(option.error()));
+  return (*option)->toString();
 }
 
 }

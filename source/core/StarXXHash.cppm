@@ -6,6 +6,7 @@ module;
 import std;
 import star.string;
 import star.byte_array;
+import star.format;
 
 
 import star.bytes;
@@ -194,8 +195,12 @@ inline void xxHash3Push(XXHash3& hash, char const* str) {
   hash.push(str, std::strlen(str));
 }
 
-inline void xxHash3Push(XXHash3& hash, String const& str) {
-  hash.push(str.utf8Ptr(), str.size());
+[[nodiscard]] inline std::expected<void, StarException> xxHash3Push(XXHash3& hash, String const& str) {
+  auto size = str.size();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  hash.push(str.utf8Ptr(), *size);
+  return {};
 }
 
 inline XXHash32::XXHash32(std::uint32_t seed) {

@@ -81,21 +81,21 @@ double staticRandomDoubleRange(double min, double max, T const& d, TL const&... 
 }
 
 template <typename Container, typename T, typename... TL>
-typename Container::value_type& staticRandomFrom(Container& container, T const& d, TL const&... rest) {
+[[nodiscard]] std::expected<typename Container::value_type*, StarException> staticRandomFrom(Container& container, T const& d, TL const&... rest) {
   if (container.empty())
-    throw StarException::format("staticRandomFrom called on an empty container");
+    return std::unexpected(StarException::format("staticRandomFrom called on an empty container"));
   auto i = container.begin();
   std::advance(i, staticRandomI32Range(0, (std::int32_t)(container.size() - 1), d, rest...));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container, typename T, typename... TL>
-typename Container::value_type const& staticRandomFrom(Container const& container, T const& d, TL const&... rest) {
+[[nodiscard]] std::expected<typename Container::value_type const*, StarException> staticRandomFrom(Container const& container, T const& d, TL const&... rest) {
   if (container.empty())
-    throw StarException::format("staticRandomFrom called on an empty container");
+    return std::unexpected(StarException::format("staticRandomFrom called on an empty container"));
   auto i = container.begin();
   std::advance(i, staticRandomI32Range(0, (std::int32_t)(container.size() - 1), d, rest...));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container, typename T, typename... TL>

@@ -57,7 +57,12 @@ import star.canvas_widget;
 
 import star.math_common;
 import star.algorithm;
+import star.format;
 namespace Star {
+
+std::expected<std::shared_ptr<CanvasWidget>, StarException> CanvasWidget::create(GuiContext& context) {
+  return std::shared_ptr<CanvasWidget>(new CanvasWidget(context));
+}
 
 CanvasWidget::CanvasWidget(GuiContext& context) : Widget(context) {
   m_ignoreInterfaceScale = m_captureKeyboard = m_captureMouse = false;
@@ -151,7 +156,7 @@ List<CanvasWidget::KeyEvent> CanvasWidget::pullKeyEvents() {
   return take(m_keyEvents);
 }
 
-bool CanvasWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> CanvasWidget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
@@ -188,38 +193,46 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
   return Widget::sendEvent(event);
 }
 
-KeyboardCaptureMode CanvasWidget::keyboardCaptureMode() const {
+std::expected<KeyboardCaptureMode, StarException> CanvasWidget::keyboardCaptureMode() const {
   return m_captureKeyboard ? KeyboardCaptureMode::KeyEvents : KeyboardCaptureMode::None;
 }
 
-void CanvasWidget::renderImpl() {
-  auto renderingOffset = Vec2F(screenPosition());
-
+std::expected<void, StarException> CanvasWidget::renderImpl() {
+  auto offset = Vec2F(screenPosition());
   for (auto const& op : m_renderOps) {
-    if (auto args = std::get_if<ImageOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderImage, this, renderingOffset), *args);
-    if (auto args = std::get_if<ImageRectOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderImageRect, this, renderingOffset), *args);
-    if (auto args = std::get_if<DrawableOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderDrawable, this, renderingOffset), *args);
-    if (auto args = std::get_if<TiledImageOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderTiledImage, this, renderingOffset), *args);
-    if (auto args = std::get_if<LineOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderLine, this, renderingOffset), *args);
-    if (auto args = std::get_if<RectOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderRect, this, renderingOffset), *args);
-    if (auto args = std::get_if<PolyOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderPoly, this, renderingOffset), *args);
-    if (auto args = std::get_if<TrianglesOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderTriangles, this, renderingOffset), *args);
-    if (auto args = std::get_if<TextOp>(&op))
-      std::apply(std::bind_front(&CanvasWidget::renderText, this, renderingOffset), *args);
+    auto result = std::visit([&](auto const& args) -> std::expected<void, StarException> {
+      using T = std::remove_cvref_t<decltype(args)>;
+      if constexpr (std::is_same_v<T, ImageOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderImage, this, offset), args);
+      else if constexpr (std::is_same_v<T, ImageRectOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderImageRect, this, offset), args);
+      else if constexpr (std::is_same_v<T, DrawableOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderDrawable, this, offset), args);
+      else if constexpr (std::is_same_v<T, TiledImageOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderTiledImage, this, offset), args);
+      else if constexpr (std::is_same_v<T, LineOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderLine, this, offset), args);
+      else if constexpr (std::is_same_v<T, RectOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderRect, this, offset), args);
+      else if constexpr (std::is_same_v<T, PolyOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderPoly, this, offset), args);
+      else if constexpr (std::is_same_v<T, TrianglesOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderTriangles, this, offset), args);
+      else if constexpr (std::is_same_v<T, TextOp>)
+        return std::apply(std::bind_front(&CanvasWidget::renderText, this, offset), args);
+      else
+        return {};
+    }, op);
+    if (!result) return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {
-  auto& context = (*this->context());
-  auto texSize = Vec2F(context.textureSize(texName));
+std::expected<void, StarException> CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {
+  auto& context = *this->context();
+  auto textureSize = context.textureSize(texName);
+  if (!textureSize) return std::unexpected(std::move(textureSize.error()));
+  auto texSize = Vec2F(*textureSize);
   Vec2F pos = centered ? (position - scale * texSize / 2.0f) : position;
 
   RectF screenCoords;
@@ -228,31 +241,29 @@ void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texNa
   else
     screenCoords = RectF::withSize(renderingOffset * context.interfaceScale() + pos * context.interfaceScale(), texSize * scale * context.interfaceScale());
 
-  context.drawQuad(texName, screenCoords, color);
+  return context.drawQuad(texName, screenCoords, color);
 }
 
-void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = (*this->context());
+std::expected<void, StarException> CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
+  auto& context = *this->context();
   if (m_ignoreInterfaceScale)
-    context.drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
-  else
-    context.drawQuad(texName, texCoords, screenCoords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+    return context.drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
+  return context.drawQuad(texName, texCoords, screenCoords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
 }
 
-void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
-  auto& context = (*this->context());
+std::expected<void, StarException> CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
+  auto& context = *this->context();
   if (m_ignoreInterfaceScale)
-    context.drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
-  else {
-    drawable.scale(context.interfaceScale());
-    context.drawDrawable(std::move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
-  }
+    return context.drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
+  drawable.scale(context.interfaceScale());
+  return context.drawDrawable(std::move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
 }
 
-void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = (*this->context());
-
-  Vec2F texSize = Vec2F(context.textureSize(texName));
+std::expected<void, StarException> CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
+  auto& context = *this->context();
+  auto textureSize = context.textureSize(texName);
+  if (!textureSize) return std::unexpected(std::move(textureSize.error()));
+  Vec2F texSize(*textureSize);
   Vec2F texScaledSize = texSize * textureScale;
   Vec2I textureCount = Vec2I::ceil(screenCoords.size().piecewiseDivide(texScaledSize)) + Vec2I(2, 2);
   Vec2F screenLowerLeft = screenCoords.min() - Vec2F(pfmod<double>(texScaledSize[0] - offset[0], texScaledSize[0]), pfmod<double>(texScaledSize[1] - offset[1], texScaledSize[1]));
@@ -273,45 +284,43 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
       if (limitedScreenRect.isEmpty())
         continue;
 
-      if (m_ignoreInterfaceScale)
-        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset), color);
-      else
-        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context.interfaceScale()), color);
+      auto result = m_ignoreInterfaceScale
+        ? context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset), color)
+        : context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context.interfaceScale()), color);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
   }
+  return {};
 }
 
-void CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
-  auto& context = (*this->context());
+std::expected<void, StarException> CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
+  auto& context = *this->context();
   if (m_ignoreInterfaceScale)
-    context.drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
+    return context.drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
   else {
-    context.drawLine(
+    return context.drawLine(
       renderingOffset * context.interfaceScale() + begin * context.interfaceScale(),
       renderingOffset * context.interfaceScale() + end * context.interfaceScale(),
       color, lineWidth);
   }
 }
 
-void CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color) {
-  auto& context = (*this->context());
-
+std::expected<void, StarException> CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color) {
+  auto& context = *this->context();
   if (m_ignoreInterfaceScale)
-    context.drawQuad(coords.translated(renderingOffset), color);
-  else
-    context.drawQuad(coords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+    return context.drawQuad(coords.translated(renderingOffset), color);
+  return context.drawQuad(coords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
 }
 
-void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth) {
-  auto& context = (*this->context());
+std::expected<void, StarException> CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth) {
+  auto& context = *this->context();
   poly.translate(renderingOffset);
   if (m_ignoreInterfaceScale)
-    context.drawPolyLines(poly, color, lineWidth);
-  else
-    context.drawInterfacePolyLines(poly, color, lineWidth);
+    return context.drawPolyLines(poly, color, lineWidth);
+  return context.drawInterfacePolyLines(poly, color, lineWidth);
 }
 
-void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
+std::expected<void, StarException> CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
   auto& context = (*this->context());
   auto translated = triangles.transformed([&renderingOffset](std::tuple<Vec2F, Vec2F, Vec2F> const& poly) {
       return std::tuple<Vec2F, Vec2F, Vec2F>(std::get<0>(poly) + renderingOffset,
@@ -319,23 +328,21 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple
         std::get<2>(poly) + renderingOffset);
     });
   if (m_ignoreInterfaceScale)
-    context.drawTriangles(translated, color);
-  else
-    context.drawInterfaceTriangles(translated, color);
+    return context.drawTriangles(translated, color);
+  return context.drawInterfaceTriangles(translated, color);
 }
 
-void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style) {
-  auto& context = (*this->context());
-  context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
-
+std::expected<void, StarException> CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style) {
+  auto& context = *this->context();
+  auto applied = context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
+  if (!applied) return std::unexpected(std::move(applied.error()));
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
-  if (m_ignoreInterfaceScale)
-    context.renderText(s, translatedPosition);
-  else
-    context.renderInterfaceText(s, translatedPosition);
-
-  context.clearTextStyle();
+  auto result = m_ignoreInterfaceScale ? context.renderText(s, translatedPosition) : context.renderInterfaceText(s, translatedPosition);
+  auto cleared = context.clearTextStyle();
+  if (!result) return std::unexpected(std::move(result.error()));
+  if (!cleared) return std::unexpected(std::move(cleared.error()));
+  return {};
 }
 
 }

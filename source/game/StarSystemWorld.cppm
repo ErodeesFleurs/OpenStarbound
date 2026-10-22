@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.map;
@@ -50,9 +51,9 @@ class SystemObject;
 struct SystemObjectConfig;
 
 struct CelestialOrbit {
-  friend DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit);
-  friend DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit);
-  static CelestialOrbit fromJson(Json const& json);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialOrbit& orbit);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialOrbit const& orbit);
+  [[nodiscard]] static std::expected<CelestialOrbit, StarException> fromJson(Json const& json);
   Json toJson() const;
 
   CelestialCoordinate target;
@@ -60,21 +61,21 @@ struct CelestialOrbit {
   double enterTime;
   Vec2F enterPosition;
 
-  void write(DataStream& ds) const;
-  void read(DataStream& ds);
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds);
 
   bool operator==(CelestialOrbit const& rhs) const;
 };
-DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit);
-DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialOrbit& orbit);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialOrbit const& orbit);
 
 // in transit, at a planet, orbiting a planet,, at a system object, or at a vector position
 typedef std::variant<std::monostate, CelestialCoordinate, CelestialOrbit, Uuid, Vec2F> SystemLocation;
 Json jsonFromSystemLocation(SystemLocation const& location);
-SystemLocation jsonToSystemLocation(Json const& json);
+[[nodiscard]] std::expected<SystemLocation, StarException> jsonToSystemLocation(Json const& json);
 
 struct SystemWorldConfig {
-  static SystemWorldConfig fromJson(Json const& config);
+  [[nodiscard]] static std::expected<SystemWorldConfig, StarException> fromJson(Json const& config);
 
   float starGravitationalConstant;
   float planetGravitationalConstant;
@@ -114,28 +115,29 @@ public:
   SystemWorldConfig const& systemConfig() const;
   double time() const;
   Vec3I location() const;
-  List<CelestialCoordinate> planets() const;
+  [[nodiscard]] std::expected<List<CelestialCoordinate>, StarException> planets() const;
 
-  std::uint64_t coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
-  float planetOrbitDistance(CelestialCoordinate const& coord) const;
+  [[nodiscard]] std::expected<std::uint64_t, StarException> coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
+  [[nodiscard]] std::expected<float, StarException> planetOrbitDistance(CelestialCoordinate const& coord) const;
   // assumes circular orbit
   float orbitInterval(float distance, bool isMoon) const;
-  Vec2F orbitPosition(CelestialOrbit const& orbit) const;
-  float clusterSize(CelestialCoordinate const& planet) const;
-  float planetSize(CelestialCoordinate const& planet) const;
-  Vec2F planetPosition(CelestialCoordinate const& planet) const;
-  std::optional<Vec2F> systemLocationPosition(SystemLocation const& position) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> orbitPosition(CelestialOrbit const& orbit) const;
+  [[nodiscard]] std::expected<float, StarException> clusterSize(CelestialCoordinate const& planet) const;
+  [[nodiscard]] std::expected<float, StarException> planetSize(CelestialCoordinate const& planet) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> planetPosition(CelestialCoordinate const& planet) const;
+  [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> systemLocationPosition(SystemLocation const& position) const;
   Vec2F randomArrivalPosition() const;
-  std::optional<WarpAction> objectWarpAction(Uuid const& uuid) const;
+  [[nodiscard]] std::expected<std::optional<WarpAction>, StarException> objectWarpAction(Uuid const& uuid) const;
 
   virtual List<std::shared_ptr<SystemObject>> objects() const = 0;
   virtual List<Uuid> objectKeys() const = 0;
   virtual std::shared_ptr<SystemObject> getObject(Uuid const& uuid) const = 0;
 
-  SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
-  static Json systemObjectTypeConfig(Root& root, String const& typeName);
+  [[nodiscard]] std::expected<SystemObjectConfig, StarException> systemObjectConfig(String const& name, Uuid const& uuid) const;
+  [[nodiscard]] static std::expected<Json, StarException> systemObjectTypeConfig(Root& root, String const& typeName);
 
 protected:
+  [[nodiscard]] std::expected<void, StarException> initialize();
   Vec3I m_location;
   std::shared_ptr<CelestialDatabase> m_celestialDatabase;
 
@@ -166,11 +168,9 @@ class SystemObject {
   Root& m_root;
   Root& root() const { return m_root; }
 public:
-  SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
-  SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters = {});
-  SystemObject(Root& root, SystemWorld* system, Json const& diskStore);
-
-  void init();
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemObject>, StarException> create(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemObject>, StarException> create(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemObject>, StarException> create(Root& root, SystemWorld* system, Json const& diskStore);
 
   Uuid uuid() const;
   String name() const;
@@ -180,7 +180,7 @@ public:
   WarpAction warpAction() const;
   std::optional<float> threatLevel() const;
   SkyParameters skyParameters() const;
-  JsonObject parameters() const;
+  [[nodiscard]] std::expected<JsonObject, StarException> parameters() const;
 
   bool shouldDestroy() const;
 
@@ -188,15 +188,17 @@ public:
   std::optional<CelestialCoordinate> orbitTarget() const;
   std::optional<CelestialOrbit> orbit() const;
 
-  void clientUpdate(float dt);
-  void serverUpdate(SystemWorldServer* system, float dt);
+  [[nodiscard]] std::expected<void, StarException> clientUpdate(float dt);
+  [[nodiscard]] std::expected<void, StarException> serverUpdate(SystemWorldServer* system, float dt);
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
-  void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
-  ByteArray netStore() const;
-  Json diskStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore() const;
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
 private:
+  SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters);
+  [[nodiscard]] std::expected<void, StarException> init();
 
   void setPosition(Vec2F const& position);
 
@@ -217,8 +219,8 @@ private:
 
 class SystemClientShip {
 public:
-  SystemClientShip(SystemWorld* world, Uuid uuid, float speed, SystemLocation const& position);
-  SystemClientShip(SystemWorld* world, Uuid uuid, SystemLocation const& position);
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemClientShip>, StarException> create(SystemWorld* world, Uuid uuid, float speed, SystemLocation const& position);
+  [[nodiscard]] static std::expected<std::shared_ptr<SystemClientShip>, StarException> create(SystemWorld* world, Uuid uuid, SystemLocation const& position);
 
   Uuid uuid() const;
   Vec2F position() const;
@@ -226,19 +228,20 @@ public:
   SystemLocation destination() const;
   void setDestination(SystemLocation const& destination);
   void setSpeed(float speed);
-  void startFlying();
 
   bool flying() const;
 
   // update is only called on master
-  void clientUpdate(float dt);
-  void serverUpdate(SystemWorld* system, float dt);
+  [[nodiscard]] std::expected<void, StarException> clientUpdate(float dt);
+  [[nodiscard]] std::expected<void, StarException> serverUpdate(SystemWorld* system, float dt);
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
-  void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
-  ByteArray netStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore() const;
 private:
+  explicit SystemClientShip(Uuid uuid);
+  [[nodiscard]] std::expected<void, StarException> initialize(SystemWorld* system, float speed, SystemLocation const& position);
   struct ClientShipConfig {
     float orbitDistance;
     float departTime;

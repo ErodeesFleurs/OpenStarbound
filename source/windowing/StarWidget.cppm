@@ -32,7 +32,7 @@ enum class KeyboardCaptureMode {
   TextInput
 };
 
-typedef std::function<void(Widget*)> WidgetCallbackFunc;
+typedef std::function<std::expected<void, StarException>(Widget*)> WidgetCallbackFunc;
 
 class Widget {
 public:
@@ -51,8 +51,8 @@ public:
   Widget(Widget const& copy) = delete;
   Widget& operator=(Widget const&) = delete;
 
-  virtual void render(RectI const& region) final;
-  virtual void update(float dt);
+  [[nodiscard]] virtual std::expected<void, StarException> render(RectI const& region) final;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt);
 
   GuiContext* context() const;
 
@@ -75,17 +75,17 @@ public:
 
   virtual bool inMember(Vec2I const& position) const;
 
-  virtual bool sendEvent(InputEvent const& event);
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event);
 
-  virtual void show();
-  virtual void hide();
+  [[nodiscard]] virtual std::expected<void, StarException> show();
+  [[nodiscard]] virtual std::expected<void, StarException> hide();
   virtual bool visibility() const;
-  virtual void toggleVisibility();
-  virtual void setVisibility(bool visibility);
+  [[nodiscard]] virtual std::expected<void, StarException> toggleVisibility();
+  [[nodiscard]] virtual std::expected<void, StarException> setVisibility(bool visibility);
 
-  virtual void mouseOver();
-  virtual void mouseOut();
-  virtual void mouseReturnStillDown();
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOver();
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOut();
+  [[nodiscard]] virtual std::expected<void, StarException> mouseReturnStillDown();
   virtual void setMouseTransparent(bool transparent);
   virtual bool mouseTransparent();
 
@@ -93,9 +93,9 @@ public:
 
   virtual bool interactive() const;
 
-  virtual bool hasFocus() const;
-  virtual void focus();
-  virtual void blur();
+  [[nodiscard]] virtual std::expected<bool, StarException> hasFocus() const;
+  [[nodiscard]] virtual std::expected<void, StarException> focus();
+  [[nodiscard]] virtual std::expected<void, StarException> blur();
 
   virtual Widget* parent() const;
   virtual void setParent(Widget* parent);
@@ -103,58 +103,60 @@ public:
   virtual Pane const* window() const;
   virtual Pane* window();
 
-  virtual void addChild(String const& name, std::shared_ptr<Widget> member);
-  virtual void addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at);
+  [[nodiscard]] virtual std::expected<void, StarException> addChild(String const& name, std::shared_ptr<Widget> member);
+  [[nodiscard]] virtual std::expected<void, StarException> addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at);
   virtual bool removeChild(Widget* member);
   virtual bool removeChild(String const& name);
   virtual bool removeChildAt(std::size_t at);
   virtual std::shared_ptr<Widget> getChildAt(Vec2I const& pos);
-  virtual bool containsChild(String const& name);
-  virtual std::shared_ptr<Widget> fetchChild(String const& name);
+  [[nodiscard]] virtual std::expected<bool, StarException> containsChild(String const& name);
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Widget>, StarException> fetchChild(String const& name);
   template <typename WidgetType>
-  std::shared_ptr<WidgetType> fetchChild(String const& name);
+  [[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> fetchChild(String const& name);
+  template <typename WidgetType = Widget>
+  [[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> requireChild(String const& name);
 
-  virtual std::shared_ptr<Widget> findChild(String const& name);
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Widget>, StarException> findChild(String const& name);
   template <typename WidgetType>
-  std::shared_ptr<WidgetType> findChild(String const& name);
+  [[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> findChild(String const& name);
 
   std::shared_ptr<Widget> childPtr(Widget const* widget) const;
 
   virtual std::size_t numChildren() const;
-  virtual std::shared_ptr<Widget> getChildNum(std::size_t num) const;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Widget>, StarException> getChildNum(std::size_t num) const;
   template <typename WidgetType>
-  std::shared_ptr<WidgetType> getChildNum(std::size_t num) const;
+  [[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> getChildNum(std::size_t num) const;
   virtual void removeAllChildren();
 
   virtual String const& name() const;
   virtual void setName(String const& name);
   String fullName() const;
 
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
-  Vec2I windowSize() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
+  [[nodiscard]] std::expected<Vec2I, StarException> windowSize() const;
   virtual Vec2I screenPosition() const;
   void disableScissoring();
   void enableScissoring();
   void determineSizeFromChildren();
   void markAsContainer();
 
-  virtual std::shared_ptr<Widget> keyboardCapturer() const;
-  virtual KeyboardCaptureMode keyboardCaptureMode() const;
-  virtual std::optional<std::pair<RectI, int>> keyboardCaptureArea() const;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Widget>, StarException> keyboardCapturer() const;
+  [[nodiscard]] virtual std::expected<KeyboardCaptureMode, StarException> keyboardCaptureMode() const;
+  [[nodiscard]] virtual std::expected<std::optional<std::pair<RectI, int>>, StarException> keyboardCaptureArea() const;
 
   void setData(Json const& data);
   Json const& data();
 
-  bool setLabel(String const& name, String const& value);
+  [[nodiscard]] std::expected<bool, StarException> setLabel(String const& name, String const& value);
 
 protected:
   friend std::ostream& operator<<(std::ostream& os, Widget const& widget);
   String toStringImpl(int indentLevel) const;
 
-  virtual void renderImpl();
-  virtual void drawChildren();
-  bool setupDrawRegion(RectI const& region);
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl();
+  [[nodiscard]] virtual std::expected<void, StarException> drawChildren();
+  [[nodiscard]] std::expected<bool, StarException> setupDrawRegion(RectI const& region);
   virtual RectI getScissorRect() const;
   virtual RectI noScissor() const;
 
@@ -184,18 +186,40 @@ protected:
 std::ostream& operator<<(std::ostream& os, Widget const& widget);
 
 template <typename WidgetType>
-std::shared_ptr<WidgetType> Widget::getChildNum(std::size_t num) const {
-  return as<WidgetType>(getChildNum(num));
+[[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> Widget::getChildNum(std::size_t num) const {
+  auto child = getChildNum(num);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  return as<WidgetType>(*child);
 }
 
 template <typename WidgetType>
-std::shared_ptr<WidgetType> Widget::fetchChild(String const& name) {
-  return as<WidgetType>(fetchChild(name));
+[[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> Widget::fetchChild(String const& name) {
+  auto child = fetchChild(name);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  return as<WidgetType>(*child);
 }
 
 template <typename WidgetType>
-std::shared_ptr<WidgetType> Widget::findChild(String const& name) {
-  return as<WidgetType>(findChild(name));
+[[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> Widget::requireChild(String const& name) {
+  auto child = fetchChild(name);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  if (!*child)
+    return std::unexpected(GuiException::format("Required widget '{}' is missing", name));
+  auto typed = as<WidgetType>(*child);
+  if (!typed)
+    return std::unexpected(GuiException::format("Required widget '{}' has an incompatible type", name));
+  return typed;
+}
+
+template <typename WidgetType>
+[[nodiscard]] std::expected<std::shared_ptr<WidgetType>, StarException> Widget::findChild(String const& name) {
+  auto child = findChild(name);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  return as<WidgetType>(*child);
 }
 
 }

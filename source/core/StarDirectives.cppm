@@ -69,8 +69,7 @@ public:
   bool empty() const;
   operator bool() const;
 
-  Shared const& operator*() const;
-  Shared const* operator->() const;
+  [[nodiscard]] std::expected<Shared const*, StarException> get() const;
 
   bool equals(Directives const& other) const;
   bool equals(String const& string) const;
@@ -80,8 +79,8 @@ public:
   bool operator!=(Directives const& other) const;
   bool operator!=(String const& string) const;
 
-  friend DataStream& operator>>(DataStream& ds, Directives& directives);
-  friend DataStream& operator<<(DataStream& ds, Directives const& directives);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Directives const& directives);
 
   //friend bool operator==(Directives const& d1, String const& d2);
   //friend bool operator==(Directives const& directives, String const& string);
@@ -114,14 +113,14 @@ public:
   String toString() const;
   void addToString(String& string) const;
 
-  typedef std::function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
-  typedef std::function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
+  template <typename Callback>
+  [[nodiscard]] auto forEach(Callback&& callback) const;
 
-  void forEach(DirectivesCallback callback) const;
-  bool forEachAbortable(AbortableDirectivesCallback callback) const;
+  template <typename Callback>
+  [[nodiscard]] auto forEachAbortable(Callback&& callback) const;
 
-  Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
-  void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
+  [[nodiscard]] std::expected<Image, StarException> applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
+  [[nodiscard]] std::expected<void, StarException> applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
   
   std::size_t hash() const;
   const List<Directives>& list() const;
@@ -129,14 +128,19 @@ public:
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
   friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
 
-  friend DataStream& operator>>(DataStream& ds, DirectivesGroup& directives);
-  friend DataStream& operator<<(DataStream& ds, DirectivesGroup const& directives);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
   List<Directives> m_directives;
   std::size_t m_count = 0;
 };
+
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Directives const& directives);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directives);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directives);
 
 template <>
 struct hash<DirectivesGroup> {
@@ -145,13 +149,52 @@ struct hash<DirectivesGroup> {
 
 typedef DirectivesGroup ImageDirectives;
 
-inline Directives::Shared const& Directives::operator*() const {
-  return *m_shared;
-}
-inline Directives::Shared const* Directives::operator->() const {
+inline std::expected<Directives::Shared const*, StarException> Directives::get() const {
   if (!m_shared)
-    throw DirectivesException("Directives::operator-> nullptr");
+    return std::unexpected(DirectivesException("Empty directives have no shared data"));
   return m_shared.get();
+}
+
+template <typename Callback>
+[[nodiscard]] auto DirectivesGroup::forEach(Callback&& callback) const {
+  using Result = std::invoke_result_t<Callback&, Directives::Entry const&, Directives const&>;
+  for (auto const& directives : m_directives) {
+    if (!directives)
+      continue;
+    for (auto const& entry : directives.m_shared->entries) {
+      if constexpr (std::is_void_v<Result>)
+        callback(entry, directives);
+      else {
+        auto result = callback(entry, directives);
+        if (!result)
+          return Result(std::unexpected(std::move(result.error())));
+      }
+    }
+  }
+  if constexpr (!std::is_void_v<Result>)
+    return Result{};
+}
+
+template <typename Callback>
+[[nodiscard]] auto DirectivesGroup::forEachAbortable(Callback&& callback) const {
+  using Result = std::invoke_result_t<Callback&, Directives::Entry const&, Directives const&>;
+  for (auto const& directives : m_directives) {
+    if (!directives)
+      continue;
+    for (auto const& entry : directives.m_shared->entries) {
+      auto result = callback(entry, directives);
+      if constexpr (std::is_same_v<Result, bool>) {
+        if (!result)
+          return false;
+      } else {
+        if (!result)
+          return Result(std::unexpected(std::move(result.error())));
+        if (!*result)
+          return Result(false);
+      }
+    }
+  }
+  return Result(true);
 }
 
 }

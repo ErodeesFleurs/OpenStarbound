@@ -33,7 +33,7 @@ import star.root_loader;
 
 namespace Star {
 
-Json const BaseAssetsSettings = Json::parseJson(R"JSON(
+std::expected<Json, StarException> const BaseAssetsSettings = Json::parseJson(R"JSON(
     {
       "assetTimeToLive" : 30,
 
@@ -63,7 +63,7 @@ Json const BaseAssetsSettings = Json::parseJson(R"JSON(
     }
   )JSON");
 
-Json const BaseDefaultConfiguration = Json::parseJson(R"JSON(
+std::expected<Json, StarException> const BaseDefaultConfiguration = Json::parseJson(R"JSON(
     {
       "configurationVersion" : {
         "basic" : 2
@@ -145,109 +145,161 @@ R"JSON(
     }
   )JSON");
 
-RootLoader::RootLoader(Defaults defaults) {
-  String baseConfigFile;
-  std::optional<String> userConfigFile;
+RootLoader::RootLoader(Defaults defaults) : m_defaults(std::move(defaults)) {}
 
-  addParameter("bootconfig", "bootconfig", Optional,
-      strf("Boot time configuration file, defaults to sbinit.config"));
-  addParameter("logfile", "logfile", Optional,
-      strf("Log to the given logfile relative to the root directory, defaults to {}",
-        defaults.logFile ? *defaults.logFile : "no log file"));
-  addParameter("loglevel", "level", Optional,
-      strf("Sets the logging level (debug|info|warn|error), defaults to {}",
-        LogLevelNames.getRight(defaults.logLevel)));
-  addSwitch("quiet", strf("Do not log to stdout, defaults to {}", defaults.quiet));
-  addSwitch("verbose", strf("Log to stdout, defaults to {}", !defaults.quiet));
-  addSwitch("runtimeconfig",
-      strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
-        defaults.runtimeConfigFile ? *defaults.runtimeConfigFile : "no storage file"));
-  m_defaults = std::move(defaults);
+std::expected<RootLoader, StarException> RootLoader::create(Defaults defaults) {
+  RootLoader loader(std::move(defaults));
+  auto base = loader.initialize();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto boot = loader.addParameter("bootconfig", "bootconfig", Optional,
+    "Boot time configuration file, defaults to sbinit.config");
+  if (!boot) return std::unexpected(std::move(boot.error()));
+  auto logfile = loader.addParameter("logfile", "logfile", Optional,
+    strf("Log to the given logfile relative to the root directory, defaults to {}",
+      loader.m_defaults.logFile ? *loader.m_defaults.logFile : "no log file"));
+  if (!logfile) return std::unexpected(std::move(logfile.error()));
+  if (!LogLevelNames) return std::unexpected(LogLevelNames.error());
+  auto levelName = LogLevelNames->getRight(loader.m_defaults.logLevel);
+  if (!levelName) return std::unexpected(std::move(levelName.error()));
+  auto loglevel = loader.addParameter("loglevel", "level", Optional,
+    strf("Sets the logging level (debug|info|warn|error), defaults to {}", **levelName));
+  if (!loglevel) return std::unexpected(std::move(loglevel.error()));
+  auto quiet = loader.addSwitch("quiet", strf("Do not log to stdout, defaults to {}", loader.m_defaults.quiet));
+  if (!quiet) return std::unexpected(std::move(quiet.error()));
+  auto verbose = loader.addSwitch("verbose", strf("Log to stdout, defaults to {}", !loader.m_defaults.quiet));
+  if (!verbose) return std::unexpected(std::move(verbose.error()));
+  auto runtime = loader.addSwitch("runtimeconfig",
+    strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
+      loader.m_defaults.runtimeConfigFile ? *loader.m_defaults.runtimeConfigFile : "no storage file"));
+  if (!runtime) return std::unexpected(std::move(runtime.error()));
+  return loader;
 }
 
-std::pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
+std::expected<std::pair<Root::Settings, RootLoader::Options>, StarException> RootLoader::parseOrDie(
     StringList const& cmdLineArguments) const {
   auto options = VersionOptionParser::parseOrDie(cmdLineArguments);
-  return {rootSettingsForOptions(options), options};
+  if (!options) return std::unexpected(std::move(options.error()));
+  auto settings = rootSettingsForOptions(*options);
+  if (!settings) return std::unexpected(std::move(settings.error()));
+  return std::pair{std::move(*settings), std::move(*options)};
 }
 
-std::pair<std::unique_ptr<Root>, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
-  auto p = parseOrDie(cmdLineArguments);
-  auto root = std::make_unique<Root>(p.first);
-  return {std::move(root), p.second};
+std::expected<std::pair<std::unique_ptr<Root>, RootLoader::Options>, StarException> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
+  auto parsed = parseOrDie(cmdLineArguments);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto root = Root::create(std::move(parsed->first));
+  if (!root) return std::unexpected(std::move(root.error()));
+  return std::pair{std::move(*root), std::move(parsed->second)};
 }
 
-std::pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
+std::expected<std::pair<Root::Settings, RootLoader::Options>, StarException> RootLoader::commandParseOrDie(int argc, char** argv) {
   auto options = VersionOptionParser::commandParseOrDie(argc, argv);
-  return {rootSettingsForOptions(options), options};
+  if (!options) return std::unexpected(std::move(options.error()));
+  auto settings = rootSettingsForOptions(*options);
+  if (!settings) return std::unexpected(std::move(settings.error()));
+  return std::pair{std::move(*settings), std::move(*options)};
 }
 
-std::pair<std::unique_ptr<Root>, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
-  auto p = commandParseOrDie(argc, argv);
-  auto root = std::make_unique<Root>(p.first);
-  return {std::move(root), p.second};
+std::expected<std::pair<std::unique_ptr<Root>, RootLoader::Options>, StarException> RootLoader::commandInitOrDie(int argc, char** argv) {
+  auto parsed = commandParseOrDie(argc, argv);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto root = Root::create(std::move(parsed->first));
+  if (!root) return std::unexpected(std::move(root.error()));
+  return std::pair{std::move(*root), std::move(parsed->second)};
 }
 
-Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const {
-  try {
+std::expected<Root::Settings, StarException> RootLoader::rootSettingsForOptions(Options const& options) const {
+  auto loadSettings = [&]() -> std::expected<Root::Settings, StarException> {
+    if (!BaseAssetsSettings) return std::unexpected(BaseAssetsSettings.error());
+    if (!BaseDefaultConfiguration) return std::unexpected(BaseDefaultConfiguration.error());
     String bootConfigFile = options.parameters.value("bootconfig").maybeFirst().value_or("sbinit.config");
-    Json bootConfig = Json::parseJson(File::readFileString(bootConfigFile));
-
-    Json assetsSettings = jsonMerge(
-        BaseAssetsSettings,
-        m_defaults.additionalAssetsSettings,
-        bootConfig.get("assetsSettings", {})
-      );
+    auto contents = File::readFileString(bootConfigFile);
+    if (!contents) return std::unexpected(std::move(contents.error()));
+    auto boot = Json::parseJson(*contents);
+    if (!boot) return std::unexpected(std::move(boot.error()));
+    auto extraAssets = boot->get("assetsSettings", {});
+    if (!extraAssets) return std::unexpected(std::move(extraAssets.error()));
+    Json assetsSettings = jsonMerge(*BaseAssetsSettings, m_defaults.additionalAssetsSettings, *extraAssets);
 
     Root::Settings rootSettings;
-    rootSettings.assetsSettings.assetTimeToLive = assetsSettings.getInt("assetTimeToLive");
-    rootSettings.assetsSettings.audioDecompressLimit = assetsSettings.getFloat("audioDecompressLimit");
-    rootSettings.assetsSettings.workerPoolSize = assetsSettings.getUInt("workerPoolSize");
-    rootSettings.assetsSettings.missingImage = assetsSettings.optString("missingImage");
-    rootSettings.assetsSettings.missingAudio = assetsSettings.optString("missingAudio");
-    rootSettings.assetsSettings.pathIgnore = jsonToStringList(assetsSettings.get("pathIgnore"));
-    rootSettings.assetsSettings.digestIgnore = jsonToStringList(assetsSettings.get("digestIgnore"));
-
-    rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories", JsonArray()));
-    rootSettings.assetSources     = jsonToStringList(bootConfig.get("assetSources",     JsonArray()));
-
-    rootSettings.defaultConfiguration = jsonMerge(
-        BaseDefaultConfiguration,
-        m_defaults.additionalDefaultConfiguration,
-        bootConfig.get("defaultConfiguration", {})
-      );
-
-    rootSettings.storageDirectory = bootConfig.getString("storageDirectory");
-    rootSettings.logDirectory = bootConfig.optString("logDirectory");
+    auto ttl = assetsSettings.getInt("assetTimeToLive");
+    if (!ttl) return std::unexpected(std::move(ttl.error()));
+    rootSettings.assetsSettings.assetTimeToLive = *ttl;
+    auto decompress = assetsSettings.getFloat("audioDecompressLimit");
+    if (!decompress) return std::unexpected(std::move(decompress.error()));
+    rootSettings.assetsSettings.audioDecompressLimit = *decompress;
+    auto poolSize = assetsSettings.getUInt("workerPoolSize");
+    if (!poolSize) return std::unexpected(std::move(poolSize.error()));
+    rootSettings.assetsSettings.workerPoolSize = *poolSize;
+    auto missingImage = assetsSettings.optString("missingImage");
+    if (!missingImage) return std::unexpected(std::move(missingImage.error()));
+    rootSettings.assetsSettings.missingImage = std::move(*missingImage);
+    auto missingAudio = assetsSettings.optString("missingAudio");
+    if (!missingAudio) return std::unexpected(std::move(missingAudio.error()));
+    rootSettings.assetsSettings.missingAudio = std::move(*missingAudio);
+    auto pathIgnore = assetsSettings.get("pathIgnore");
+    if (!pathIgnore) return std::unexpected(std::move(pathIgnore.error()));
+    auto paths = jsonToStringList(*pathIgnore);
+    if (!paths) return std::unexpected(std::move(paths.error()));
+    rootSettings.assetsSettings.pathIgnore = std::move(*paths);
+    auto digestIgnore = assetsSettings.get("digestIgnore");
+    if (!digestIgnore) return std::unexpected(std::move(digestIgnore.error()));
+    auto digests = jsonToStringList(*digestIgnore);
+    if (!digests) return std::unexpected(std::move(digests.error()));
+    rootSettings.assetsSettings.digestIgnore = std::move(*digests);
+    auto directories = boot->get("assetDirectories", JsonArray());
+    if (!directories) return std::unexpected(std::move(directories.error()));
+    auto directoryList = jsonToStringList(*directories);
+    if (!directoryList) return std::unexpected(std::move(directoryList.error()));
+    rootSettings.assetDirectories = std::move(*directoryList);
+    auto sources = boot->get("assetSources", JsonArray());
+    if (!sources) return std::unexpected(std::move(sources.error()));
+    auto sourceList = jsonToStringList(*sources);
+    if (!sourceList) return std::unexpected(std::move(sourceList.error()));
+    rootSettings.assetSources = std::move(*sourceList);
+    auto extraDefaults = boot->get("defaultConfiguration", {});
+    if (!extraDefaults) return std::unexpected(std::move(extraDefaults.error()));
+    rootSettings.defaultConfiguration = jsonMerge(*BaseDefaultConfiguration, m_defaults.additionalDefaultConfiguration, *extraDefaults);
+    auto storage = boot->getString("storageDirectory");
+    if (!storage) return std::unexpected(std::move(storage.error()));
+    rootSettings.storageDirectory = std::move(*storage);
+    auto logDirectory = boot->optString("logDirectory");
+    if (!logDirectory) return std::unexpected(std::move(logDirectory.error()));
+    rootSettings.logDirectory = std::move(*logDirectory);
     rootSettings.logFile = options.parameters.value("logfile").maybeFirst();
     if (!rootSettings.logFile)
       rootSettings.logFile = m_defaults.logFile;
-    rootSettings.logFileBackups = bootConfig.getUInt("logFileBackups", 10);
-    rootSettings.includeUGC = bootConfig.getBool("includeUGC", true);
+    auto backups = boot->getUInt("logFileBackups", 10);
+    if (!backups) return std::unexpected(std::move(backups.error()));
+    rootSettings.logFileBackups = *backups;
+    auto ugc = boot->getBool("includeUGC", true);
+    if (!ugc) return std::unexpected(std::move(ugc.error()));
+    rootSettings.includeUGC = *ugc;
 
-    if (auto ll = options.parameters.value("loglevel").maybeFirst())
-      rootSettings.logLevel = LogLevelNames.getLeft(*ll);
-    else
+    if (auto level = options.parameters.value("loglevel").maybeFirst()) {
+      if (!LogLevelNames) return std::unexpected(LogLevelNames.error());
+      auto parsed = LogLevelNames->getLeft(*level);
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      rootSettings.logLevel = **parsed;
+    } else {
       rootSettings.logLevel = m_defaults.logLevel;
-
+    }
     if (options.switches.contains("quiet"))
       rootSettings.quiet = true;
     else if (options.switches.contains("verbose"))
       rootSettings.quiet = false;
     else
       rootSettings.quiet = m_defaults.quiet;
-
-    if (auto rc = options.parameters.value("runtimeconfig").maybeFirst())
-      rootSettings.runtimeConfigFile = *rc;
+    if (auto runtime = options.parameters.value("runtimeconfig").maybeFirst())
+      rootSettings.runtimeConfigFile = *runtime;
     else
       rootSettings.runtimeConfigFile = m_defaults.runtimeConfigFile;
-
     return rootSettings;
-
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw StarException("Could not perform initial Root load", e);
-  }
+  };
+  auto settings = loadSettings();
+  if (!settings)
+    return std::unexpected(settings.error().withContext("Could not perform initial Root load"));
+  return settings;
 }
 
 }

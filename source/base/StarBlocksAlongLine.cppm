@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 
 import star.vector;
 
@@ -10,7 +11,9 @@ namespace Star {
 // Returns false immediately when the callback returns false for any cell,
 // returns true after iterating through every cell otherwise.
 template <typename Scalar>
-bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, std::function<bool(int, int)> callback) {
+[[nodiscard]] std::expected<bool, StarException> forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, std::function<std::expected<bool, StarException>(int, int)> callback) {
+  if (!callback)
+    return std::unexpected(StarException("Empty block traversal callback"));
   Vector<Scalar, 2> remote = origin + dxdy;
 
   double dx = dxdy[0];
@@ -29,12 +32,16 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
   if (dx == 0) {
     if (oyfloor < ryfloor) {
       for (int i = oyfloor; i <= ryfloor; ++i) {
-        if (!callback(oxfloor, i))
+        auto visited = callback(oxfloor, i);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+        if (!*visited)
           return false;
       }
     } else {
       for (int i = oyfloor; i >= ryfloor; --i) {
-        if (!callback(oxfloor, i))
+        auto visited = callback(oxfloor, i);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+        if (!*visited)
           return false;
       }
     }
@@ -43,12 +50,16 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
   } else if (dy == 0) {
     if (oxfloor < rxfloor) {
       for (int i = oxfloor; i <= rxfloor; ++i) {
-        if (!callback(i, oyfloor))
+        auto visited = callback(i, oyfloor);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+        if (!*visited)
           return false;
       }
     } else {
       for (int i = oxfloor; i >= rxfloor; --i) {
-        if (!callback(i, oyfloor))
+        auto visited = callback(i, oyfloor);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+        if (!*visited)
           return false;
       }
     }
@@ -83,7 +94,9 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
     }
 
     for (; n > 0; --n) {
-      if (!callback(x, y))
+      auto visited = callback(x, y);
+      if (!visited) return std::unexpected(std::move(visited.error()));
+      if (!*visited)
         return false;
 
       if (error > 0) {

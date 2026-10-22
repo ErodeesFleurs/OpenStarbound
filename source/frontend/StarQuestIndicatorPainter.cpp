@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.game_types;
@@ -161,58 +162,80 @@ QuestIndicatorPainter::QuestIndicatorPainter(GuiContext& context, std::shared_pt
   m_client = client;
 }
 
-std::shared_ptr<Animation> indicatorAnimation(Root& root, String indicatorPath) {
+[[nodiscard]] std::expected<std::shared_ptr<Animation>, StarException> indicatorAnimation(Root& root, String indicatorPath) {
   auto assets = root.assets();
-  return std::make_shared<Animation>(root, assets->json(indicatorPath), indicatorPath);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json(indicatorPath);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto animation = Animation::create(root, *config, indicatorPath);
+  if (!animation)
+    return std::unexpected(std::move(animation.error()));
+  return std::make_shared<Animation>(std::move(*animation));
 }
 
-void QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera) {
+std::expected<void, StarException> QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera) {
   m_camera = camera;
 
   auto& foundIndicators = m_foundIndicators;
   foundIndicators.clear();
-  for (auto const& entity : world->query<Entity>(camera.worldScreenRect())) {
-    auto indicator = m_client->questManager()->getQuestIndicator(entity);
-    if (!indicator) continue;
-
+  auto entities = world->query<Entity>(camera.worldScreenRect());
+  if (!entities)
+    return std::unexpected(std::move(entities.error()));
+  for (auto const& entity : *entities) {
+    auto found = m_client->questManager()->getQuestIndicator(entity);
+    if (!found)
+      return std::unexpected(std::move(found.error()));
+    if (!*found)
+      continue;
+    auto const& indicator = **found;
     foundIndicators.insert(entity->entityId());
-    Vec2F screenPos = camera.worldToScreen(indicator->worldPosition);
+    Vec2F screenPos = camera.worldToScreen(indicator.worldPosition);
 
     if (auto currentIndicator = m_indicators.ptr(entity->entityId())) {
       currentIndicator->screenPos = screenPos;
-      if (currentIndicator->indicatorName == indicator->indicatorImage) {
+      if (currentIndicator->indicatorName == indicator.indicatorImage) {
         currentIndicator->animation->update(dt);
       } else {
-        currentIndicator->indicatorName = indicator->indicatorImage;
-        currentIndicator->animation = indicatorAnimation(m_guiContext->root(), indicator->indicatorImage);
+        auto animation = indicatorAnimation(m_guiContext->root(), indicator.indicatorImage);
+        if (!animation)
+          return std::unexpected(std::move(animation.error()));
+        currentIndicator->indicatorName = indicator.indicatorImage;
+        currentIndicator->animation = std::move(*animation);
       }
     } else {
-      m_indicators[entity->entityId()] = Indicator {
-          entity->entityId(),
-          screenPos,
-          indicator->indicatorImage,
-          indicatorAnimation(m_guiContext->root(), indicator->indicatorImage)
-        };
+      auto animation = indicatorAnimation(m_guiContext->root(), indicator.indicatorImage);
+      if (!animation)
+        return std::unexpected(std::move(animation.error()));
+      m_indicators[entity->entityId()] = Indicator{
+          entity->entityId(), screenPos, indicator.indicatorImage, std::move(*animation)};
     }
   }
 
   std::erase_if(static_cast<Map<EntityId, Indicator>::Base&>(m_indicators), [&foundIndicators](auto const& indicator) {
     return !foundIndicators.contains(indicator.first);
   });
+  return {};
 }
 
-Drawable QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
+std::expected<Drawable, StarException> QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
   return animation->drawable(pixelRatio);
 }
 
-void QuestIndicatorPainter::render() {
+std::expected<void, StarException> QuestIndicatorPainter::render() {
   auto& context = *m_guiContext;
 
   for (auto const& indicator : m_indicators | std::views::values) {
-    Drawable drawable = indicator.render(m_camera.pixelRatio());
-    drawable.fullbright = true;
-    context.drawDrawable(drawable, Vec2F(indicator.screenPos), 1, Vec4B(255, 255, 255, 255));
+    auto drawable = indicator.render(m_camera.pixelRatio());
+    if (!drawable)
+      return std::unexpected(std::move(drawable.error()));
+    drawable->fullbright = true;
+    auto drawn = context.drawDrawable(*drawable, Vec2F(indicator.screenPos), 1, Vec4B(255, 255, 255, 255));
+    if (!drawn)
+      return std::unexpected(std::move(drawn.error()));
   }
+  return {};
 }
 
 }

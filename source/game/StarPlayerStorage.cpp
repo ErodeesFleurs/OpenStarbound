@@ -1,3 +1,4 @@
+import star.output_proxy;
 import star.memory;
 import std;
 import star.xx_hash;
@@ -126,94 +127,195 @@ import star.entity_factory;
 
 namespace Star {
 
-PlayerStorage::PlayerStorage(Root& root, String const& storageDir) : m_root(root) {
+PlayerStorage::PlayerStorage(Root& root) : m_root(root) {}
+
+std::expected<std::shared_ptr<PlayerStorage>, StarException> PlayerStorage::create(Root& root, String const& storageDir) {
+  auto storage = std::shared_ptr<PlayerStorage>(new PlayerStorage(root));
+  auto initialized = storage->initialize(storageDir);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  storage->m_initialized = true;
+  return storage;
+}
+
+std::expected<void, StarException> PlayerStorage::initialize(String const& storageDir) {
   m_storageDirectory = storageDir;
   m_backupDirectory = File::relativeTo(m_storageDirectory, "backup");
-  if (!File::isDirectory(m_storageDirectory)) {
-    m_root.logger().info("Creating player storage directory");
-    File::makeDirectory(m_storageDirectory);
-    return;
+  auto directory = File::isDirectory(m_storageDirectory);
+  if (!directory)
+    return std::unexpected(std::move(directory.error()));
+  if (!*directory) {
+    auto logged = m_root.logger().info("Creating player storage directory");
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+    return File::makeDirectory(m_storageDirectory);
   }
 
   auto configuration = m_root.configuration();
-  if (configuration->get("clearPlayerFiles").toBool()) {
-    m_root.logger().info("Clearing all player files");
-    for (auto file : File::dirList(m_storageDirectory)) {
-      if (!file.second)
-        File::remove(File::relativeTo(m_storageDirectory, file.first));
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto clearSetting = (*configuration)->get("clearPlayerFiles");
+  if (!clearSetting)
+    return std::unexpected(std::move(clearSetting.error()));
+  auto clearPlayerFiles = clearSetting->toBool();
+  if (!clearPlayerFiles)
+    return std::unexpected(std::move(clearPlayerFiles.error()));
+  auto files = File::dirList(m_storageDirectory);
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  if (*clearPlayerFiles) {
+    auto logged = m_root.logger().info("Clearing all player files");
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+    for (auto const& file : *files) {
+      if (!file.second) {
+        auto removed = File::remove(File::relativeTo(m_storageDirectory, file.first));
+        if (!removed)
+          return std::unexpected(std::move(removed.error()));
+      }
     }
   } else {
-    auto versioningDatabase = m_root.versioningDatabase();
     auto entityFactory = m_root.entityFactory();
-
-    for (auto file : File::dirList(m_storageDirectory)) {
+    if (!entityFactory)
+      return std::unexpected(std::move(entityFactory.error()));
+    for (auto const& file : *files) {
       if (file.second)
+        continue;
+      auto playerSuffix = file.first.endsWith(".player");
+      if (!playerSuffix)
+        return std::unexpected(std::move(playerSuffix.error()));
+      if (!*playerSuffix)
         continue;
 
       String filename = File::relativeTo(m_storageDirectory, file.first);
-      if (filename.endsWith(".player")) {
-        try {
-          auto json = VersionedJson::readFile(filename);
-          Uuid uuid(json.content.getString("uuid"));
-          if (m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0))) {
-            auto& playerCacheData = m_savedPlayersCache[uuid];
-            playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
-          } else {
-            m_root.logger().warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
-          }
-        } catch (std::exception const&) {
-          ExceptionDiagnostic const e(std::current_exception());
-          m_root.logger().error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
+      std::optional<std::pair<Uuid, String const*>> duplicate;
+      auto loaded = [&]() -> std::expected<void, StarException> {
+        auto json = VersionedJson::readFile(filename);
+        if (!json)
+          return std::unexpected(std::move(json.error()));
+        auto uuidText = json->content.getString("uuid");
+        if (!uuidText)
+          return std::unexpected(std::move(uuidText.error()));
+        auto uuid = Uuid::create(*uuidText);
+        if (!uuid)
+          return std::unexpected(std::move(uuid.error()));
+        auto parts = file.first.rsplit('.', 1);
+        if (!parts)
+          return std::unexpected(std::move(parts.error()));
+        auto basename = parts->at(0);
+        if (!basename)
+          return std::unexpected(std::move(basename.error()));
+        if (m_playerFileNames.insert(*uuid, **basename)) {
+          auto data = (*entityFactory)->loadVersionedJson(*json, EntityType::Player);
+          if (!data)
+            return std::unexpected(std::move(data.error()));
+          m_savedPlayersCache[*uuid] = std::move(*data);
+        } else {
+          auto existing = m_playerFileNames.getRight(*uuid);
+          if (!existing)
+            return std::unexpected(std::move(existing.error()));
+          duplicate = std::pair{*uuid, *existing};
         }
+        return {};
+      }();
+      if (!loaded) {
+        auto logged = m_root.logger().error("Error loading player file, ignoring! {} : {}", filename,
+            outputException(ExceptionDiagnostic(loaded.error()), false));
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+      } else if (duplicate) {
+        auto logged = m_root.logger().warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})",
+            file.first, *duplicate->second, duplicate->first.hex());
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
       }
     }
 
-    // Remove all the player entries that are missing player data or fail to
-    // load.
+    // Quarantine malformed saves from the visible cache, retaining their files.
     for (auto it = m_savedPlayersCache.begin(); it != m_savedPlayersCache.end();) {
       auto& entry = *it;
       if (entry.second.isNull()) {
         it = m_savedPlayersCache.erase(it);
+        continue;
+      }
+      auto validated = [&]() -> std::expected<void, StarException> {
+        auto entity = (*entityFactory)->diskLoadEntity(EntityType::Player, entry.second);
+        if (!entity)
+          return std::unexpected(std::move(entity.error()));
+        auto player = convert<Player>(*entity);
+        if (!player)
+          return std::unexpected(std::move(player.error()));
+        auto playerUuid = (*player)->uuid();
+        if (!playerUuid)
+          return std::unexpected(std::move(playerUuid.error()));
+        if (*playerUuid != entry.first)
+          return std::unexpected(PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex())));
+        return {};
+      }();
+      if (!validated) {
+        auto fileName = uuidFileName(entry.first);
+        if (!fileName)
+          return std::unexpected(std::move(fileName.error()));
+        String uuidHex = entry.first.hex();
+        auto logged = uuidHex == **fileName
+            ? m_root.logger().error("Failed to validate player with uuid {} : {}", uuidHex,
+                outputException(ExceptionDiagnostic(validated.error()), true))
+            : m_root.logger().error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, **fileName,
+                outputException(ExceptionDiagnostic(validated.error()), true));
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+        it = m_savedPlayersCache.erase(it);
       } else {
-        try {
-          auto entityFactory = m_root.entityFactory();
-          auto player = as<Player>(entityFactory->diskLoadEntity(EntityType::Player, entry.second));
-          if (player->uuid() != entry.first)
-            throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
-        } catch (StarException const& e) {
-          auto& fileName = uuidFileName(entry.first);
-          String uuidHex = entry.first.hex();
-          if (uuidHex == fileName)
-            m_root.logger().error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
-          else
-            m_root.logger().error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, fileName, outputException(e, true));
-          it = m_savedPlayersCache.erase(it);
-          continue;
-        }
         ++it;
       }
     }
   }
 
-  try {
-    String filename = File::relativeTo(m_storageDirectory, "metadata");
-    m_metadata = Json::parseJson(File::readFileString(filename)).toObject();
-
-    if (auto order = m_metadata.value("order")) {
-      for (auto const& jUuid : order.iterateArray()) {
-        auto entry = m_savedPlayersCache.find(Uuid(jUuid.toString()));
+  auto metadata = [&]() -> std::expected<void, StarException> {
+    auto contents = File::readFileString(File::relativeTo(m_storageDirectory, "metadata"));
+    if (!contents)
+      return std::unexpected(std::move(contents.error()));
+    auto json = Json::parseJson(*contents);
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto object = json->toObject();
+    if (!object)
+      return std::unexpected(std::move(object.error()));
+    m_metadata = std::move(*object);
+    auto order = json->get("order", Json());
+    if (!order)
+      return std::unexpected(std::move(order.error()));
+    if (!order->isNull()) {
+      auto entries = order->iterateArray();
+      if (!entries)
+        return std::unexpected(std::move(entries.error()));
+      for (auto const& jUuid : *entries) {
+        auto text = jUuid.toString();
+        if (!text)
+          return std::unexpected(std::move(text.error()));
+        auto uuid = Uuid::create(*text);
+        if (!uuid)
+          return std::unexpected(std::move(uuid.error()));
+        auto entry = m_savedPlayersCache.find(*uuid);
         if (entry != m_savedPlayersCache.end())
           m_savedPlayersCache.toBack(entry);
       }
     }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_root.logger().warn("Error loading player storage metadata file, resetting: {}", outputException(e, false));
-  }
+    return {};
+  }();
+  if (!metadata)
+    return m_root.logger().warn("Error loading player storage metadata file, resetting: {}",
+        outputException(ExceptionDiagnostic(metadata.error()), false));
+  return {};
 }
 
 PlayerStorage::~PlayerStorage() {
-  writeMetadata();
+  if (m_initialized) {
+    auto written = writeMetadata();
+    if (!written)
+      EmergencyLog::error("Error saving player storage metadata: {}",
+          outputException(ExceptionDiagnostic(written.error()), false));
+  }
 }
 
 std::size_t PlayerStorage::playerCount() const {
@@ -224,75 +326,102 @@ std::size_t PlayerStorage::playerCount() const {
 std::optional<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
   RecursiveMutexLocker locker(m_mutex);
   if (index < m_savedPlayersCache.size())
-    return m_savedPlayersCache.keyAt(index);
+    return std::next(m_savedPlayersCache.begin(), index)->first;
   else
     return {};
 }
 
-std::optional<Uuid> PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) {
-  String cleanMatch = Text::stripEscapeCodes(name).toLower();
+std::expected<std::optional<Uuid>, StarException> PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) {
+  auto cleanMatch = Text::stripEscapeCodes(name).toLower();
+  if (!cleanMatch)
+    return std::unexpected(std::move(cleanMatch.error()));
   std::optional<Uuid> uuid;
-
   RecursiveMutexLocker locker(m_mutex);
-
   std::size_t longest = std::numeric_limits<std::size_t>::max();
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;
-    else if (auto name = cache.second.optQueryString("identity.name")) {
-      auto cleanName = Text::stripEscapeCodes(*name).toLower();
-      auto len = cleanName.size();
-      if (len < longest && cleanName.utf8().rfind(cleanMatch.utf8()) == 0) {
-        longest = len;
-        uuid = cache.first;
-      }
+    auto playerName = cache.second.optQueryString("identity.name");
+    if (!playerName)
+      return std::unexpected(std::move(playerName.error()));
+    if (!*playerName)
+      continue;
+    auto cleanName = Text::stripEscapeCodes(**playerName).toLower();
+    if (!cleanName)
+      return std::unexpected(std::move(cleanName.error()));
+    auto len = cleanName->size();
+    if (!len)
+      return std::unexpected(std::move(len.error()));
+    if (*len < longest && cleanName->utf8().rfind(cleanMatch->utf8()) == 0) {
+      longest = *len;
+      uuid = cache.first;
     }
   }
-
   return uuid;
 }
 
-List<Uuid> PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) {
-  String cleanMatch = Text::stripEscapeCodes(name).toLower();
-  List<Uuid> list = {};
-
+std::expected<List<Uuid>, StarException> PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) {
+  auto cleanMatch = Text::stripEscapeCodes(name).toLower();
+  if (!cleanMatch)
+    return std::unexpected(std::move(cleanMatch.error()));
+  List<Uuid> list;
   RecursiveMutexLocker locker(m_mutex);
-
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;
-    else if (auto name = cache.second.optQueryString("identity.name")) {
-      auto cleanName = Text::stripEscapeCodes(*name).toLower();
-      if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != NPos) {
-        list.append(cache.first);
-      }
-    }
+    auto playerName = cache.second.optQueryString("identity.name");
+    if (!playerName)
+      return std::unexpected(std::move(playerName.error()));
+    if (!*playerName)
+      continue;
+    auto cleanName = Text::stripEscapeCodes(**playerName).toLower();
+    if (!cleanName)
+      return std::unexpected(std::move(cleanName.error()));
+    if (cleanMatch->empty() || cleanName->utf8().rfind(cleanMatch->utf8()) != NPos)
+      list.append(cache.first);
   }
-
   return list;
 }
 
 
-Json PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
+std::expected<Json, StarException> PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
   auto entityFactory = m_root.entityFactory();
-  auto versioningDatabase = m_root.versioningDatabase();
-
+  if (!entityFactory)
+    return std::unexpected(std::move(entityFactory.error()));
   RecursiveMutexLocker locker(m_mutex);
-
-  auto uuid = player->uuid();
-
+  auto playerUuid = player->uuid();
+  if (!playerUuid)
+    return std::unexpected(std::move(playerUuid.error()));
+  auto uuid = *playerUuid;
   auto& playerCacheData = m_savedPlayersCache[uuid];
-  if (!m_playerFileNames.hasLeftValue(uuid))
-    m_playerFileNames.insert(uuid, uuid.hex());
-  auto newPlayerData = player->diskStore();
-  if (playerCacheData != newPlayerData) {
-    playerCacheData = newPlayerData;
-    VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
-    auto fileName = strf("{}.player", uuidFileName(uuid));
-    VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, fileName));
-    m_root.logger().debug("Saved player {} to {}", Text::stripEscapeCodes(player->name()), fileName);
+  if (!m_playerFileNames.hasLeftValue(uuid)) {
+    auto added = m_playerFileNames.add(uuid, uuid.hex());
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
-  return newPlayerData;
+  auto newPlayerData = player->diskStore();
+  if (!newPlayerData)
+    return std::unexpected(std::move(newPlayerData.error()));
+  if (playerCacheData != *newPlayerData) {
+    playerCacheData = *newPlayerData;
+    auto versionedJson = (*entityFactory)->storeVersionedJson(EntityType::Player, playerCacheData);
+    if (!versionedJson)
+      return std::unexpected(std::move(versionedJson.error()));
+    auto basename = uuidFileName(uuid);
+    if (!basename)
+      return std::unexpected(std::move(basename.error()));
+    auto fileName = strf("{}.player", **basename);
+    auto written = VersionedJson::writeFile(*versionedJson, File::relativeTo(m_storageDirectory, fileName));
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+    auto playerName = player->name();
+    if (!playerName)
+      return std::unexpected(std::move(playerName.error()));
+    auto logged = m_root.logger().debug("Saved player {} to {}", Text::stripEscapeCodes(*playerName), fileName);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+  }
+  return std::move(*newPlayerData);
 }
 
 std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
@@ -303,142 +432,196 @@ std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
     return {};
 }
 
-Json PlayerStorage::getPlayerData(Uuid const& uuid) {
+std::expected<Json, StarException> PlayerStorage::getPlayerData(Uuid const& uuid) {
   auto data = maybeGetPlayerData(uuid);
   if (!data)
-    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
-  else
-    return *data;
+    return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
+  return *data;
 }
 
-std::shared_ptr<Player> PlayerStorage::loadPlayer(Uuid const& uuid) {
+std::expected<std::shared_ptr<Player>, StarException> PlayerStorage::loadPlayer(Uuid const& uuid) {
   auto playerCacheData = getPlayerData(uuid);
+  if (!playerCacheData)
+    return std::unexpected(std::move(playerCacheData.error()));
   auto entityFactory = m_root.entityFactory();
-  try {
-    auto player = convert<Player>(entityFactory->diskLoadEntity(EntityType::Player, playerCacheData));
-    if (player->uuid() != uuid)
-      throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", uuid.hex()));
-    return player;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_root.logger().error("Error loading player file, ignoring! {}", outputException(e, false));
-    RecursiveMutexLocker locker(m_mutex);
-    m_savedPlayersCache.remove(uuid);
-    return {};
-  }
+  if (!entityFactory)
+    return std::unexpected(std::move(entityFactory.error()));
+  auto loaded = [&]() -> std::expected<std::shared_ptr<Player>, StarException> {
+    auto entity = (*entityFactory)->diskLoadEntity(EntityType::Player, *playerCacheData);
+    if (!entity)
+      return std::unexpected(std::move(entity.error()));
+    auto player = convert<Player>(*entity);
+    if (!player)
+      return std::unexpected(std::move(player.error()));
+    auto playerUuid = (*player)->uuid();
+    if (!playerUuid)
+      return std::unexpected(std::move(playerUuid.error()));
+    if (*playerUuid != uuid)
+      return std::unexpected(PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", uuid.hex())));
+    return std::move(*player);
+  }();
+  if (loaded)
+    return std::move(*loaded);
+  auto logged = m_root.logger().error("Error loading player file, ignoring! {}", outputException(ExceptionDiagnostic(loaded.error()), false));
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  RecursiveMutexLocker locker(m_mutex);
+  m_savedPlayersCache.remove(uuid);
+  return std::shared_ptr<Player>();
 }
 
-void PlayerStorage::deletePlayer(Uuid const& uuid) {
+std::expected<void, StarException> PlayerStorage::deletePlayer(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
   if (!m_savedPlayersCache.contains(uuid))
-    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
-
+    return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
   m_savedPlayersCache.remove(uuid);
-
   auto uuidHex = uuid.hex();
   auto storagePrefix = File::relativeTo(m_storageDirectory, uuidHex);
   auto backupPrefix = File::relativeTo(m_backupDirectory, uuidHex);
-
-  auto removeIfExists = [](String const& prefix, String const& suffix) {
-    if (File::exists(prefix + suffix)) {
-      File::remove(prefix + suffix);
-    }
+  auto removeIfExists = [](String const& prefix, String const& suffix) -> std::expected<void, StarException> {
+    auto exists = File::exists(prefix + suffix);
+    if (!exists)
+      return std::unexpected(std::move(exists.error()));
+    if (*exists)
+      return File::remove(prefix + suffix);
+    return {};
   };
-
-  removeIfExists(storagePrefix, ".player");
-  removeIfExists(storagePrefix, ".shipworld");
-
+  for (auto const& suffix : {".player", ".shipworld"}) {
+    auto removed = removeIfExists(storagePrefix, suffix);
+    if (!removed)
+      return std::unexpected(std::move(removed.error()));
+  }
   auto configuration = m_root.configuration();
-  unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
-
-  for (unsigned i = 1; i <= playerBackupFileCount; ++i) {
-    removeIfExists(backupPrefix, strf(".player.bak{}", i));
-    removeIfExists(backupPrefix, strf(".shipworld.bak{}", i));
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto setting = (*configuration)->get("playerBackupFileCount");
+  if (!setting)
+    return std::unexpected(std::move(setting.error()));
+  auto playerBackupFileCount = setting->toUInt();
+  if (!playerBackupFileCount)
+    return std::unexpected(std::move(playerBackupFileCount.error()));
+  for (unsigned i = 1, count = static_cast<unsigned>(*playerBackupFileCount); i <= count; ++i) {
+    for (auto const& extension : {"player", "shipworld"}) {
+      auto removed = removeIfExists(backupPrefix, strf(".{}.bak{}", extension, i));
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+    }
   }
-}
-
-WorldChunks PlayerStorage::loadShipData(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
-  if (!m_savedPlayersCache.contains(uuid))
-    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
-
-  String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
-  try {
-    if (File::exists(filename))
-      return WorldStorage::getWorldChunksFromFile(m_root.logger(), filename);
-  } catch (StarException const& e) {
-    m_root.logger().error("Failed to load shipworld file, removing {} : {}", filename, outputException(e, false));
-    File::remove(filename);
-  }
-
   return {};
 }
 
-void PlayerStorage::applyShipUpdates(Uuid const& uuid, WorldChunks const& updates) {
+std::expected<WorldChunks, StarException> PlayerStorage::loadShipData(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
   if (!m_savedPlayersCache.contains(uuid))
-    throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
-
-  if (updates.empty())
-    return;
-  String filePath = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
-  WorldStorage::applyWorldChunksUpdateToFile(m_root.logger(), filePath, updates);
+    return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
+  auto basename = uuidFileName(uuid);
+  if (!basename)
+    return std::unexpected(std::move(basename.error()));
+  String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", **basename));
+  auto exists = File::exists(filename);
+  if (!exists)
+    return std::unexpected(std::move(exists.error()));
+  if (*exists) {
+    auto chunks = WorldStorage::getWorldChunksFromFile(m_root.logger(), filename);
+    if (chunks)
+      return std::move(*chunks);
+    auto logged = m_root.logger().error("Failed to load shipworld file, removing {} : {}", filename,
+        outputException(ExceptionDiagnostic(chunks.error()), false));
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+    auto removed = File::remove(filename);
+    if (!removed)
+      return std::unexpected(std::move(removed.error()));
+  }
+  return WorldChunks();
 }
 
-void PlayerStorage::moveToFront(Uuid const& uuid) {
-  m_savedPlayersCache.toFront(uuid);
-  writeMetadata();
-}
-
-void PlayerStorage::backupCycle(Uuid const& uuid) {
+std::expected<void, StarException> PlayerStorage::applyShipUpdates(Uuid const& uuid, WorldChunks const& updates) {
   RecursiveMutexLocker locker(m_mutex);
-
-  auto configuration = m_root.configuration();
-  unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
-  auto& fileName = uuidFileName(uuid);
-
-  auto path = [&](String const& dir, String const& extension) {
-    return File::relativeTo(dir, strf("{}.{}", fileName, extension));
-  };
-
-  if (!File::isDirectory(m_backupDirectory))
-    File::makeDirectory(m_backupDirectory);
-
-  File::backupFileInSequence(path(m_storageDirectory, "player"), path(m_backupDirectory, "player"), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(path(m_storageDirectory, "shipworld"), path(m_backupDirectory, "shipworld"), playerBackupFileCount, ".bak");
-  File::backupFileInSequence(path(m_storageDirectory, "metadata"), path(m_backupDirectory, "metadata"), playerBackupFileCount, ".bak");
+  if (!m_savedPlayersCache.contains(uuid))
+    return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
+  if (updates.empty())
+    return {};
+  auto basename = uuidFileName(uuid);
+  if (!basename)
+    return std::unexpected(std::move(basename.error()));
+  String filePath = File::relativeTo(m_storageDirectory, strf("{}.shipworld", **basename));
+  return WorldStorage::applyWorldChunksUpdateToFile(m_root.logger(), filePath, updates);
 }
 
-void PlayerStorage::setMetadata(String key, Json value) {
+std::expected<void, StarException> PlayerStorage::moveToFront(Uuid const& uuid) {
+  auto moved = m_savedPlayersCache.toFront(uuid);
+  if (!moved)
+    return std::unexpected(std::move(moved.error()));
+  return writeMetadata();
+}
+
+std::expected<void, StarException> PlayerStorage::backupCycle(Uuid const& uuid) {
+  RecursiveMutexLocker locker(m_mutex);
+  auto configuration = m_root.configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto setting = (*configuration)->get("playerBackupFileCount");
+  if (!setting)
+    return std::unexpected(std::move(setting.error()));
+  auto playerBackupFileCount = setting->toUInt();
+  if (!playerBackupFileCount)
+    return std::unexpected(std::move(playerBackupFileCount.error()));
+  auto fileName = uuidFileName(uuid);
+  if (!fileName)
+    return std::unexpected(std::move(fileName.error()));
+  auto path = [&](String const& dir, String const& extension) {
+    return File::relativeTo(dir, strf("{}.{}", **fileName, extension));
+  };
+  auto directory = File::isDirectory(m_backupDirectory);
+  if (!directory)
+    return std::unexpected(std::move(directory.error()));
+  if (!*directory) {
+    auto created = File::makeDirectory(m_backupDirectory);
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+  }
+  for (auto const& extension : {"player", "shipworld", "metadata"}) {
+    auto backedUp = File::backupFileInSequence(path(m_storageDirectory, extension), path(m_backupDirectory, extension),
+        static_cast<unsigned>(*playerBackupFileCount), ".bak");
+    if (!backedUp)
+      return std::unexpected(std::move(backedUp.error()));
+  }
+  return {};
+}
+
+std::expected<void, StarException> PlayerStorage::setMetadata(String key, Json value) {
   auto& val = m_metadata[std::move(key)];
   if (val != value) {
     val = std::move(value);
-    writeMetadata();
+    return writeMetadata();
   }
+  return {};
 }
 
-Json PlayerStorage::getMetadata(String const& key) {
-  return m_metadata.value(key);
+std::expected<Json, StarException> PlayerStorage::getMetadata(String const& key) {
+  return Json(m_metadata).get(key, {});
 }
 
-String const& PlayerStorage::uuidFileName(Uuid const& uuid) {
+std::expected<String const*, StarException> PlayerStorage::uuidFileName(Uuid const& uuid) {
   if (auto fileName = m_playerFileNames.rightPtr(uuid))
-    return *fileName;
-  else {
-    m_playerFileNames.insert(uuid, uuid.hex());
-    return *m_playerFileNames.rightPtr(uuid);
-  }
+    return fileName;
+  auto added = m_playerFileNames.add(uuid, uuid.hex());
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return m_playerFileNames.rightPtr(uuid);
 }
 
-void PlayerStorage::writeMetadata() {
+std::expected<void, StarException> PlayerStorage::writeMetadata() {
   JsonArray order;
   for (auto const& p : m_savedPlayersCache)
     order.append(p.first.hex());
-
   m_metadata["order"] = std::move(order);
-
   String filename = File::relativeTo(m_storageDirectory, "metadata");
-  File::overwriteFileWithRename(Json(m_metadata).printJson(0), filename);
+  auto contents = Json(m_metadata).printJson(0);
+  if (!contents)
+    return std::unexpected(std::move(contents.error()));
+  return File::overwriteFileWithRename(*contents, filename);
 }
 
 }

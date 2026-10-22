@@ -33,6 +33,7 @@ import star.string;
 import star.ordered_set;
 import std;
 import star.format;
+import star.output_proxy;
 import star.version;
 import star.logging;
 import star.listener;
@@ -91,33 +92,54 @@ String const InboundNode = "/tilesets/inboundnode.png";
 String const OutboundNode = "/tilesets/outboundnode.png";
 Vec3B const SourceLiquidBorderColor(0x80, 0x80, 0x00);
 
-void scanMaterials(Root& root, TilesetUpdater& updater) {
-  auto materials = root.materialDatabase();
-
+[[nodiscard]]
+std::expected<void, StarException> scanMaterials(Root& root, TilesetUpdater& updater) {
+  auto materialsResult = root.materialDatabase();
+  if (!materialsResult)
+    return std::unexpected(std::move(materialsResult.error()));
+  auto materials = *materialsResult;
+  auto assetsResult = root.assets();
+  if (!assetsResult)
+    return std::unexpected(std::move(assetsResult.error()));
+  auto assets = *assetsResult;
   for (String materialName : materials->materialNames()) {
-    MaterialId id = materials->materialId(materialName);
-    std::optional<String> path = materials->materialPath(id);
+    auto id = materials->materialId(materialName);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    auto path = materials->materialPath(*id);
     if (!path)
+      return std::unexpected(std::move(path.error()));
+    if (!*path)
       continue;
-    String source = root.assets()->assetSource(*path);
-
-    auto renderProfile = materials->materialRenderProfile(id);
-    if (renderProfile == nullptr)
+    auto source = assets->assetSource(**path);
+    if (!source)
+      return std::unexpected(std::move(source.error()));
+    auto renderProfile = materials->materialRenderProfile(*id);
+    if (!renderProfile)
       continue;
-
-    String tileset = materials->materialCategory(id);
-    String imagePath = renderProfile->pieceImage(renderProfile->representativePiece, 0);
-    std::shared_ptr<::Star::Image const> image = root.assets()->image(imagePath);
-
-    Tiled::Properties properties;
-    properties.set("material", materialName);
-    properties.set("//name", materialName);
-    properties.set("//shortdescription", materials->materialShortDescription(id));
-    properties.set("//description", materials->materialDescription(id));
-
-    auto tile = std::make_shared<Tile>(Tile{source, "materials", tileset.toLower(), materialName, image, properties});
-    updater.defineTile(tile);
+    auto tileset = materials->materialCategory(*id);
+    if (!tileset)
+      return std::unexpected(std::move(tileset.error()));
+    auto imagePath = renderProfile->pieceImage(renderProfile->representativePiece, 0);
+    if (!imagePath)
+      return std::unexpected(std::move(imagePath.error()));
+    auto image = assets->image(*imagePath);
+    if (!image)
+      return std::unexpected(std::move(image.error()));
+    auto shortDescription = materials->materialShortDescription(*id);
+    if (!shortDescription)
+      return std::unexpected(std::move(shortDescription.error()));
+    auto description = materials->materialDescription(*id);
+    if (!description)
+      return std::unexpected(std::move(description.error()));
+    Json properties = JsonObject{{"material", materialName}, {"//name", materialName},
+        {"//shortdescription", *shortDescription}, {"//description", *description}};
+    auto category = tileset->toLower();
+    if (!category)
+      return std::unexpected(std::move(category.error()));
+    updater.defineTile(std::make_shared<Tile>(Tile{*source, "materials", *category, materialName, *image, properties}));
   }
+  return {};
 }
 
 // imagePosition might not be aligned to a whole number, i.e. the image origin
@@ -137,48 +159,83 @@ Vec2U objectPositionPadding(Vec2I imagePosition) {
   return Vec2U(padX, padY);
 }
 
-StringSet categorizeObject(Root& root, String const& objectName, Vec2U imageSize) {
+[[nodiscard]]
+std::expected<StringSet, StarException> categorizeObject(Root& root, String const& objectName, Vec2U imageSize) {
   if (imageSize[0] >= 256 || imageSize[1] >= 256)
     return StringSet{"huge-objects"};
-
   auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   auto objects = root.objectDatabase();
-
-  Json defaultCategories = assets->json("/objects/defaultCategories.config");
-
-  auto objectConfig = objects->getConfig(objectName);
-
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  auto defaults = (*assets)->json("/objects/defaultCategories.config");
+  if (!defaults)
+    return std::unexpected(std::move(defaults.error()));
+  auto config = (*objects)->getConfig(objectName);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
   StringSet categories;
-  if (objectConfig->category != defaultCategories.getString("category"))
-    categories.insert("objects-by-category/" + objectConfig->category);
-  for (String const& tag : objectConfig->colonyTags)
+  auto category = defaults->getString("category");
+  if (!category)
+    return std::unexpected(std::move(category.error()));
+  if ((*config)->category != *category)
+    categories.insert("objects-by-category/" + (*config)->category);
+  for (auto const& tag : (*config)->colonyTags)
     categories.insert("objects-by-colonytag/" + tag);
-  if (objectConfig->type != defaultCategories.getString("objectType"))
-    categories.insert("objects-by-type/" + objectConfig->type);
-  if (objectConfig->race != defaultCategories.getString("race"))
-    categories.insert("objects-by-race/" + objectConfig->race);
-
-  if (categories.size() == 0)
+  auto type = defaults->getString("objectType");
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  if ((*config)->type != *type)
+    categories.insert("objects-by-type/" + (*config)->type);
+  auto race = defaults->getString("race");
+  if (!race)
+    return std::unexpected(std::move(race.error()));
+  if ((*config)->race != *race)
+    categories.insert("objects-by-race/" + (*config)->race);
+  if (categories.empty())
     categories.insert("objects-uncategorized");
-
-  return transform<StringSet>(categories, [](String const& category) { return category.toLower(); });
-}
-
-void drawNodes(Assets const& assets, std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
-  std::shared_ptr<::Star::Image const> nodeImage = assets.image(nodeImagePath);
-  for (Json const& node : nodes) {
-    Vec2I nodePos = jsonToVec2I(node) * TilePixels + Vec2I(0, TilePixels - nodeImage->height());
-    Vec2U nodeImagePos = Vec2U(nodePos - imagePosition);
-    image->drawInto(nodeImagePos, *nodeImage);
+  StringSet result;
+  for (auto const& entry : categories) {
+    auto lowered = entry.toLower();
+    if (!lowered)
+      return std::unexpected(std::move(lowered.error()));
+    result.insert(std::move(*lowered));
   }
+  return result;
 }
 
-void defineObjectOrientation(Root& root, TilesetUpdater& updater,
+[[nodiscard]]
+std::expected<void, StarException> drawNodes(Assets const& assets, std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
+  auto nodeImage = assets.image(nodeImagePath);
+  if (!nodeImage)
+    return std::unexpected(std::move(nodeImage.error()));
+  for (Json const& node : nodes) {
+    auto position = jsonToVec2I(node);
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    Vec2I nodePos = *position * TilePixels + Vec2I(0, TilePixels - (*nodeImage)->height());
+    Vec2U nodeImagePos = Vec2U(nodePos - imagePosition);
+    auto drawn = image->drawInto(nodeImagePos, **nodeImage);
+    if (!drawn)
+      return std::unexpected(std::move(drawn.error()));
+  }
+  return {};
+}
+
+[[nodiscard]]
+std::expected<void, StarException> defineObjectOrientation(Root& root, TilesetUpdater& updater,
     String const& objectName,
     List<std::shared_ptr<::Star::ObjectOrientation>> const& orientations,
     int orientationIndex) {
-  auto assets = root.assets();
-  auto objects = root.objectDatabase();
+  auto assetsResult = root.assets();
+  if (!assetsResult)
+    return std::unexpected(std::move(assetsResult.error()));
+  auto assets = *assetsResult;
+  auto objectsResult = root.objectDatabase();
+  if (!objectsResult)
+    return std::unexpected(std::move(objectsResult.error()));
+  auto objects = *objectsResult;
 
   std::shared_ptr<::Star::ObjectOrientation> orientation = orientations[orientationIndex];
 
@@ -187,9 +244,12 @@ void defineObjectOrientation(Root& root, TilesetUpdater& updater,
   List<std::shared_ptr<::Star::Image const>> layers;
   unsigned width = 0, height = 0;
   for (auto const& imageLayer : orientation->imageLayers) {
-    String imageName = AssetPath::join(imageLayer.imagePart().image).replaceTags(StringMap<String>{}, true, "default");
-
-    std::shared_ptr<::Star::Image const> image = assets->image(imageName);
+    auto path = AssetPath::join(imageLayer.imagePart().image);
+    String imageName = path.replaceTags(StringMap<String>{}, true, "default");
+    auto loaded = assets->image(imageName);
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+    auto image = *loaded;
     layers.append(image);
     width = std::max(width, image->width());
     height = std::max(height, image->height());
@@ -205,32 +265,55 @@ void defineObjectOrientation(Root& root, TilesetUpdater& updater,
   std::shared_ptr<::Star::Image> combinedImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
   combinedImage->fill(Vec4B(0, 0, 0, 0));
   for (std::shared_ptr<::Star::Image const> const& layer : layers) {
-    combinedImage->drawInto(imagePadding, *layer);
+    auto drawn = combinedImage->drawInto(imagePadding, *layer);
+    if (!drawn)
+      return std::unexpected(std::move(drawn.error()));
   }
 
   // Overlay the image with the wiring nodes:
   auto objectConfig = objects->getConfig(objectName);
-
-  drawNodes(*assets, combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode);
-  drawNodes(*assets, combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode);
-
-  std::shared_ptr<::Star::Object> example = objects->createObject(objectName);
-
-  Tiled::Properties properties;
-  properties.set("object", objectName);
-  properties.set("imagePositionX", imagePosition.x());
-  properties.set("imagePositionY", imagePosition.y());
-  properties.set("//shortdescription", example->shortDescription());
-  properties.set("//description", example->description());
-
+  if (!objectConfig)
+    return std::unexpected(std::move(objectConfig.error()));
+  auto inputNodes = (*objectConfig)->config.getArray("inputNodes", {});
+  if (!inputNodes)
+    return std::unexpected(std::move(inputNodes.error()));
+  auto inputsDrawn = drawNodes(*assets, combinedImage, imagePosition, *inputNodes, InboundNode);
+  if (!inputsDrawn)
+    return std::unexpected(std::move(inputsDrawn.error()));
+  auto outputNodes = (*objectConfig)->config.getArray("outputNodes", {});
+  if (!outputNodes)
+    return std::unexpected(std::move(outputNodes.error()));
+  auto outputsDrawn = drawNodes(*assets, combinedImage, imagePosition, *outputNodes, OutboundNode);
+  if (!outputsDrawn)
+    return std::unexpected(std::move(outputsDrawn.error()));
+  auto example = objects->createObject(objectName);
+  if (!example)
+    return std::unexpected(std::move(example.error()));
+  auto shortDescription = (*example)->shortDescription();
+  if (!shortDescription)
+    return std::unexpected(std::move(shortDescription.error()));
+  auto description = (*example)->description();
+  if (!description)
+    return std::unexpected(std::move(description.error()));
+  JsonObject properties{{"object", objectName},
+      {"imagePositionX", toString(imagePosition.x())},
+      {"imagePositionY", toString(imagePosition.y())},
+      {"//shortdescription", *shortDescription}, {"//description", *description}};
   if (orientation->directionAffinity.has_value()) {
     Direction direction = *orientation->directionAffinity;
     if (orientation->flipImages)
       direction = -direction;
-    properties.set("tilesetDirection", DirectionNames.getRight(direction));
+    if (!DirectionNames)
+      return std::unexpected(DirectionNames.error());
+    auto directionName = DirectionNames->getRight(direction);
+    if (!directionName)
+      return std::unexpected(std::move(directionName.error()));
+    properties["tilesetDirection"] = **directionName;
   }
 
-  StringSet tilesets = categorizeObject(root, objectName, imageSize);
+  auto tilesets = categorizeObject(root, objectName, imageSize);
+  if (!tilesets)
+    return std::unexpected(std::move(tilesets.error()));
 
   // tileName becomes part of the filename for the tile's image. Different
   // orientations require different images, so the tileName must be different
@@ -238,101 +321,128 @@ void defineObjectOrientation(Root& root, TilesetUpdater& updater,
   String tileName = objectName;
   if (orientationIndex != 0)
     tileName += "_orientation" + toString(orientationIndex);
-  properties.set("//name", tileName);
-
-  String source = assets->assetSource(objectConfig->path);
-
-  for (String const& tileset : tilesets) {
-    std::shared_ptr<::Star::Tile> tile = std::make_shared<Tile>(Tile{source, "objects", tileset, tileName, combinedImage, properties});
+  properties["//name"] = tileName;
+  auto source = assets->assetSource((*objectConfig)->path);
+  if (!source)
+    return std::unexpected(std::move(source.error()));
+  for (String const& tileset : *tilesets) {
+    std::shared_ptr<::Star::Tile> tile = std::make_shared<Tile>(Tile{*source, "objects", tileset, tileName, combinedImage, properties});
     updater.defineTile(tile);
   }
+  return {};
 }
 
-void scanObjects(Root& root, TilesetUpdater& updater) {
+[[nodiscard]]
+std::expected<void, StarException> scanObjects(Root& root, TilesetUpdater& updater) {
   auto objects = root.objectDatabase();
-
-  for (String const& objectName : objects->allObjects()) {
-    auto orientations = objects->getOrientations(objectName);
-    if (orientations.size() < 1) {
-      root.logger().warn("Object {} has no orientations and will not be exported", objectName);
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  for (String const& objectName : (*objects)->allObjects()) {
+    auto orientations = (*objects)->getOrientations(objectName);
+    if (!orientations)
+      return std::unexpected(std::move(orientations.error()));
+    if ((*orientations)->empty()) {
+      auto warning = root.logger().warn("Object {} has no orientations and will not be exported", objectName);
+      if (!warning)
+        return std::unexpected(std::move(warning.error()));
       continue;
     }
-
-    // Always export the first orientation
-    std::shared_ptr<::Star::ObjectOrientation> orientation = orientations[0];
-    defineObjectOrientation(root, updater, objectName, orientations, 0);
-
-    // If there are more than 2 orientations or the imagePositions are different
-    // then horizontal flipping in the editor is not enough to get all the
-    // orientations and display them correctly, so we export each orientation
-    // as a separate tile.
-    for (unsigned i = 1; i < orientations.size(); ++i) {
-      if (i >= 2 || orientation->imagePosition != orientations[i]->imagePosition)
-        defineObjectOrientation(root, updater, objectName, orientations, i);
+    auto orientation = (**orientations)[0];
+    auto first = defineObjectOrientation(root, updater, objectName, **orientations, 0);
+    if (!first)
+      return std::unexpected(std::move(first.error()));
+    for (unsigned i = 1; i < (*orientations)->size(); ++i) {
+      if (i >= 2 || orientation->imagePosition != (**orientations)[i]->imagePosition) {
+        auto exported = defineObjectOrientation(root, updater, objectName, **orientations, i);
+        if (!exported)
+          return std::unexpected(std::move(exported.error()));
+      }
     }
   }
+  return {};
 }
 
-void scanLiquids(Root& root, TilesetUpdater& updater) {
+[[nodiscard]]
+std::expected<void, StarException> scanLiquids(Root& root, TilesetUpdater& updater) {
   auto liquids = root.liquidsDatabase();
+  if (!liquids)
+    return std::unexpected(std::move(liquids.error()));
   auto assets = root.assets();
-
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   Vec2U imageSize(TilePixels, TilePixels);
-
-  for (auto liquid : liquids->allLiquidSettings()) {
-    std::shared_ptr<::Star::Image> image = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
+  for (auto liquid : (*liquids)->allLiquidSettings()) {
+    auto image = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
     image->fill(liquid->liquidColor);
-
-    String assetSource = assets->assetSource(liquid->path);
-
-    Tiled::Properties properties;
-    properties.set("liquid", liquid->name);
-    properties.set("//name", liquid->name);
-    auto tile = std::make_shared<Tile>(Tile{assetSource, "liquids", "liquids", liquid->name, image, properties});
-    updater.defineTile(tile);
-
-    std::shared_ptr<::Star::Image> sourceImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
-    sourceImage->copyInto(Vec2U(), *image.get());
-    sourceImage->fillRect(Vec2U(), Vec2U(image->width(), 1), SourceLiquidBorderColor);
-    sourceImage->fillRect(Vec2U(), Vec2U(1, image->height()), SourceLiquidBorderColor);
-
+    auto assetSource = (*assets)->assetSource(liquid->path);
+    if (!assetSource)
+      return std::unexpected(std::move(assetSource.error()));
+    JsonObject properties{{"liquid", liquid->name}, {"//name", liquid->name}};
+    updater.defineTile(std::make_shared<Tile>(Tile{*assetSource, "liquids", "liquids", liquid->name, image, properties}));
+    auto sourceImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
+    auto copied = sourceImage->copyInto(Vec2U(), *image);
+    if (!copied)
+      return std::unexpected(std::move(copied.error()));
+    auto horizontal = sourceImage->fillRect(Vec2U(), Vec2U(image->width(), 1), SourceLiquidBorderColor);
+    if (!horizontal)
+      return std::unexpected(std::move(horizontal.error()));
+    auto vertical = sourceImage->fillRect(Vec2U(), Vec2U(1, image->height()), SourceLiquidBorderColor);
+    if (!vertical)
+      return std::unexpected(std::move(vertical.error()));
     String sourceName = liquid->name + "_source";
-    properties.set("source", true);
-    properties.set("//name", sourceName);
-    properties.set("//shortdescription", "Endless " + liquid->name);
-    auto sourceTile = std::make_shared<Tile>(Tile{assetSource, "liquids", "liquids", sourceName, sourceImage, properties});
-    updater.defineTile(sourceTile);
+    properties["source"] = "true";
+    properties["//name"] = sourceName;
+    properties["//shortdescription"] = "Endless " + liquid->name;
+    updater.defineTile(std::make_shared<Tile>(Tile{*assetSource, "liquids", "liquids", sourceName, sourceImage, properties}));
   }
+  return {};
 }
 
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-
-    rootLoader.setSummary("Updates Tiled JSON tilesets in unpacked assets directories");
-
-    std::unique_ptr<::Star::Root> root;
-    OptionParser::Options options;
-    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
-
-    TilesetUpdater updater(root->logger());
-
-    for (String source : root->assets()->assetSources()) {
-      root->logger().info("Assets source: \"{}\"", source);
-      updater.defineAssetSource(source);
-    }
-
-    scanMaterials(*root, updater);
-    scanObjects(*root, updater);
-    scanLiquids(*root, updater);
-
-    updater.exportTilesets();
-
-    return 0;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("exception caught: {}\n", outputException(e, true));
+  auto nativeRuntime = NativeRuntime::create();
+  if (!nativeRuntime) {
+    cerrf("exception caught: {}\n", outputException(ExceptionDiagnostic(nativeRuntime.error()), true));
     return 1;
   }
+  auto run = [&]() -> std::expected<int, StarException> {
+    auto rootLoader = RootLoader::create({{}, {}, {}, LogLevel::Error, false, {}});
+    if (!rootLoader)
+      return std::unexpected(std::move(rootLoader.error()));
+    rootLoader->setSummary("Updates Tiled JSON tilesets in unpacked assets directories");
+    auto initialized = rootLoader->commandInitOrDie(argc, argv);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    auto& root = initialized->first;
+    TilesetUpdater updater(root->logger());
+    auto assets = root->assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    for (String source : (*assets)->assetSources()) {
+      auto logged = root->logger().info("Assets source: \"{}\"", source);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      auto defined = updater.defineAssetSource(source);
+      if (!defined)
+        return std::unexpected(std::move(defined.error()));
+    }
+    auto materials = scanMaterials(*root, updater);
+    if (!materials)
+      return std::unexpected(std::move(materials.error()));
+    auto objects = scanObjects(*root, updater);
+    if (!objects)
+      return std::unexpected(std::move(objects.error()));
+    auto liquids = scanLiquids(*root, updater);
+    if (!liquids)
+      return std::unexpected(std::move(liquids.error()));
+    auto exported = updater.exportTilesets();
+    if (!exported)
+      return std::unexpected(std::move(exported.error()));
+    return 0;
+  };
+  auto result = run();
+  if (!result) {
+    cerrf("exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
+    return 1;
+  }
+  return *result;
 }

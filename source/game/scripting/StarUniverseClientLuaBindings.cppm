@@ -1,4 +1,6 @@
 module;
+import std;
+import star.format;
 
 namespace Star {
 class LuaCallbacks;
@@ -9,6 +11,6 @@ class Root;
 export module star.universe_client_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makeUniverseClientThreadCallbacks(Root& root, UniverseClient* universe); // thread-safe callbacks
-  LuaCallbacks makeUniverseClientCallbacks(Root& root, UniverseClient* universe); // non-thread-safe callbacks
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeUniverseClientThreadCallbacks(Root& root, UniverseClient* universe); // thread-safe callbacks
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeUniverseClientCallbacks(Root& root, UniverseClient* universe); // non-thread-safe callbacks
 }

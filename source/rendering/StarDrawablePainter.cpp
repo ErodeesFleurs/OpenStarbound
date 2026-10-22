@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.optional;
 import star.json;
 import star.string;
@@ -30,7 +31,7 @@ DrawablePainter::DrawablePainter(std::shared_ptr<Renderer> renderer, std::shared
   m_textureGroup = std::move(textureGroup);
 }
 
-void DrawablePainter::drawDrawable(Drawable const& drawable) {
+std::expected<void, StarException> DrawablePainter::drawDrawable(Drawable const& drawable) {
   Vec4B color = drawable.color.toRgba();
   auto& primitives = m_renderer->immediatePrimitives();
 
@@ -57,7 +58,10 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
     primitives.emplace_back(std::in_place_type_t<RenderPoly>(), poly.vertexes(), color, 0.0f);
 
   } else if (auto imagePart = std::get_if<Drawable::ImagePart>(&drawable.part)) {
-    TexturePtr texture = m_textureGroup->loadTexture(imagePart->image);
+    auto loaded = m_textureGroup->loadTexture(imagePart->image);
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+    TexturePtr texture = std::move(*loaded);
 
     Vec2F position = drawable.position;
     Vec2F textureSize(texture->size());
@@ -76,6 +80,7 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
         upperLeft,  Vec2F{0, textureSize[1]},
       color, param1);
   }
+  return {};
 }
 
 void DrawablePainter::cleanup(std::int64_t textureTimeout) {

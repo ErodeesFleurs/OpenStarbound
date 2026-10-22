@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -12,16 +13,19 @@ import star.stat_set;
 
 namespace Star {
 
-void StatSet::addStat(String statName, float baseValue) {
-  if (!m_baseStats.insert(std::move(statName), baseValue).second)
-    throw StatusException::format("Added duplicate stat named '{}' in StatSet", statName);
+std::expected<void, StarException> StatSet::addStat(String statName, float baseValue) {
+  if (m_baseStats.contains(statName))
+    return std::unexpected(StatusException::format("Added duplicate stat named '{}' in StatSet", statName));
+  m_baseStats.insert(std::move(statName), baseValue);
   update(0.0f);
+  return {};
 }
 
-void StatSet::removeStat(String const& statName) {
+std::expected<void, StarException> StatSet::removeStat(String const& statName) {
   if (!m_baseStats.remove(statName))
-    throw StatusException::format("No such base stat '{}' in StatSet", statName);
+    return std::unexpected(StatusException::format("No such base stat '{}' in StatSet", statName));
   update(0.0f);
+  return {};
 }
 
 StringList StatSet::baseStatNames() const {
@@ -32,54 +36,60 @@ bool StatSet::isBaseStat(String const& statName) const {
   return m_baseStats.contains(statName);
 }
 
-float StatSet::statBaseValue(String const& statName) const {
+std::expected<float, StarException> StatSet::statBaseValue(String const& statName) const {
   if (auto s = m_baseStats.ptr(statName))
     return *s;
-  throw StatusException::format("No such base stat '{}' in StatSet", statName);
+  return std::unexpected(StatusException::format("No such base stat '{}' in StatSet", statName));
 }
 
-void StatSet::setStatBaseValue(String const& statName, float value) {
+std::expected<void, StarException> StatSet::setStatBaseValue(String const& statName, float value) {
   if (auto s = m_baseStats.ptr(statName)) {
     if (*s != value) {
       *s = value;
       update(0.0f);
     }
-  } else {
-    throw StatusException::format("No such base stat '{}' in StatSet", statName);
+    return {};
   }
+  return std::unexpected(StatusException::format("No such base stat '{}' in StatSet", statName));
 }
 
-StatModifierGroupId StatSet::addStatModifierGroup(List<StatModifier> modifiers) {
+std::expected<StatModifierGroupId, StarException> StatSet::addStatModifierGroup(List<StatModifier> modifiers) {
   bool empty = modifiers.empty();
   auto id = m_statModifierGroups.add(std::move(modifiers));
+  if (!id) return std::unexpected(std::move(id.error()));
   if (!empty)
     update(0.0f);
-  return id;
+  return *id;
 }
 
 List<StatModifierGroupId> StatSet::statModifierGroupIds() const {
   return m_statModifierGroups.keys();
 }
 
-List<StatModifier> StatSet::statModifierGroup(StatModifierGroupId modifierGroupId) const {
-  return m_statModifierGroups.get(modifierGroupId);
+std::expected<List<StatModifier>, StarException> StatSet::statModifierGroup(StatModifierGroupId modifierGroupId) const {
+  auto group = m_statModifierGroups.get(modifierGroupId);
+  if (!group) return std::unexpected(std::move(group.error()));
+  return **group;
 }
 
-void StatSet::addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
+std::expected<void, StarException> StatSet::addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
   bool empty = modifiers.empty();
-  m_statModifierGroups.add(groupId, std::move(modifiers));
+  auto added = m_statModifierGroups.add(groupId, std::move(modifiers));
+  if (!added) return std::unexpected(std::move(added.error()));
   if (!empty)
     update(0.0f);
+  return {};
 }
 
-bool StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
-  auto& list = m_statModifierGroups.get(groupId);
+std::expected<bool, StarException> StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
+  auto group = m_statModifierGroups.get(groupId);
+  if (!group) return std::unexpected(std::move(group.error()));
+  auto& list = **group;
   if (list != modifiers) {
     list = std::move(modifiers);
     update(0.0f);
     return true;
   }
-
   return false;
 }
 
@@ -126,28 +136,34 @@ float StatSet::statEffectiveValue(String const& statName) const {
     return 0.0f;
 }
 
-void StatSet::addResource(String resourceName, std::variant<std::monostate, String, float> max, std::variant<std::monostate, String, float> delta) {
-  auto pair = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
-  if (!pair.second)
-    throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
+std::expected<void, StarException> StatSet::addResource(String resourceName, std::variant<std::monostate, String, float> max, std::variant<std::monostate, String, float> delta) {
+  if (m_resources.contains(resourceName))
+    return std::unexpected(StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName));
+  m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
   update(0.0f);
+  return {};
 }
 
-void StatSet::removeResource(String const& resourceName) {
+std::expected<void, StarException> StatSet::removeResource(String const& resourceName) {
   if (!m_resources.remove(resourceName))
-    throw StatusException::format("No such resource named '{}' in StatSet", resourceName);
+    return std::unexpected(StatusException::format("No such resource named '{}' in StatSet", resourceName));
+  return {};
 }
 
 StringList StatSet::resourceNames() const {
   return m_resources.keys();
 }
 
-std::variant<std::monostate, String, float> StatSet::resourceMax(String const& resourceName) const {
-  return getResource(resourceName).max;
+std::expected<std::variant<std::monostate, String, float>, StarException> StatSet::resourceMax(String const& resourceName) const {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->max;
 }
 
-std::variant<std::monostate, String, float> StatSet::resourceDelta(String const& resourceName) const {
-  return getResource(resourceName).delta;
+std::expected<std::variant<std::monostate, String, float>, StarException> StatSet::resourceDelta(String const& resourceName) const {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->delta;
 }
 
 bool StatSet::isResource(String const& resourceName) const {
@@ -160,13 +176,16 @@ float StatSet::resourceValue(String const& resourceName) const {
   return 0.0f;
 }
 
-float StatSet::setResourceValue(String const& resourceName, float value) {
-  return getResource(resourceName).setValue(value);
+std::expected<float, StarException> StatSet::setResourceValue(String const& resourceName, float value) {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->setValue(value);
 }
 
-float StatSet::modifyResourceValue(String const& resourceName, float amount) {
-  auto& resource = getResource(resourceName);
-  return resource.setValue(resource.value + amount);
+std::expected<float, StarException> StatSet::modifyResourceValue(String const& resourceName, float amount) {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->setValue((*resource)->value + amount);
 }
 
 float StatSet::giveResourceValue(String const& resourceName, float amount) {
@@ -178,46 +197,55 @@ float StatSet::giveResourceValue(String const& resourceName, float amount) {
   return 0;
 }
 
-bool StatSet::consumeResourceValue(String const& resourceName, float amount) {
+std::expected<bool, StarException> StatSet::consumeResourceValue(String const& resourceName, float amount) {
   return consumeResourceValue(resourceName, amount, false);
 }
 
-bool StatSet::overConsumeResourceValue(String const& resourceName, float amount) {
+std::expected<bool, StarException> StatSet::overConsumeResourceValue(String const& resourceName, float amount) {
   return consumeResourceValue(resourceName, amount, true);
 }
 
-bool StatSet::resourceLocked(String const& resourceName) const {
-  return getResource(resourceName).locked;
+std::expected<bool, StarException> StatSet::resourceLocked(String const& resourceName) const {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->locked;
 }
 
-void StatSet::setResourceLocked(String const& resourceName, bool locked) {
-  getResource(resourceName).locked = locked;
+std::expected<void, StarException> StatSet::setResourceLocked(String const& resourceName, bool locked) {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  (*resource)->locked = locked;
+  return {};
 }
 
-std::optional<float> StatSet::resourceMaxValue(String const& resourceName) const {
-  return getResource(resourceName).maxValue;
+std::expected<std::optional<float>, StarException> StatSet::resourceMaxValue(String const& resourceName) const {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  return (*resource)->maxValue;
 }
 
-std::optional<float> StatSet::resourcePercentage(String const& resourceName) const {
-  auto const& resource = getResource(resourceName);
-  if (!resource.maxValue)
-    return {};
-  return resource.value / *resource.maxValue;
+std::expected<std::optional<float>, StarException> StatSet::resourcePercentage(String const& resourceName) const {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  if (!(*resource)->maxValue)
+    return std::optional<float>{};
+  return (*resource)->value / *(*resource)->maxValue;
 }
 
-float StatSet::setResourcePercentage(String const& resourceName, float resourcePercentage) {
-  auto& resource = getResource(resourceName);
-  if (!resource.maxValue)
-    throw StatusException::format("setResourcePersentage called on resource '{}' which has no maximum", resourceName);
-  return resource.setValue(resourcePercentage * *resource.maxValue);
+std::expected<float, StarException> StatSet::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  if (!(*resource)->maxValue)
+    return std::unexpected(StatusException::format("setResourcePersentage called on resource '{}' which has no maximum", resourceName));
+  return (*resource)->setValue(resourcePercentage * *(*resource)->maxValue);
 }
 
-float StatSet::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
-  auto& resource = getResource(resourceName);
-  if (!resource.maxValue)
-    throw StatusException::format(
-        "modifyResourcePercentage called on resource '{}' which has no maximum", resourceName);
-  return resource.setValue(resource.value + resourcePercentage * *resource.maxValue);
+std::expected<float, StarException> StatSet::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+  auto resource = getResource(resourceName);
+  if (!resource) return std::unexpected(std::move(resource.error()));
+  if (!(*resource)->maxValue)
+    return std::unexpected(StatusException::format("modifyResourcePercentage called on resource '{}' which has no maximum", resourceName));
+  return (*resource)->setValue((*resource)->value + resourcePercentage * *(*resource)->maxValue);
 }
 
 void StatSet::update(float dt) {
@@ -307,21 +335,21 @@ float StatSet::Resource::setValue(float v) {
   return value;
 }
 
-StatSet::Resource const& StatSet::getResource(String const& resourceName) const {
+std::expected<StatSet::Resource const*, StarException> StatSet::getResource(String const& resourceName) const {
   if (auto r = m_resources.ptr(resourceName))
-    return *r;
-  throw StatusException::format("No such resource '{}' in StatSet", resourceName);
+    return r;
+  return std::unexpected(StatusException::format("No such resource '{}' in StatSet", resourceName));
 }
 
-StatSet::Resource& StatSet::getResource(String const& resourceName) {
+std::expected<StatSet::Resource*, StarException> StatSet::getResource(String const& resourceName) {
   if (auto r = m_resources.ptr(resourceName))
-    return *r;
-  throw StatusException::format("No such resource '{}' in StatSet", resourceName);
+    return r;
+  return std::unexpected(StatusException::format("No such resource '{}' in StatSet", resourceName));
 }
 
-bool StatSet::consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) {
+std::expected<bool, StarException> StatSet::consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) {
   if (amount < 0.0f)
-    throw StatusException::format("StatSet, consumeResource called with negative amount '{}' {}", resourceName, amount);
+    return std::unexpected(StatusException::format("StatSet, consumeResource called with negative amount '{}' {}", resourceName, amount));
 
   if (auto r = m_resources.ptr(resourceName)) {
     if (r->locked)

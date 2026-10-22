@@ -36,20 +36,28 @@ namespace Star {
 
 ContainerInteractor::ContainerInteractor(Root& root) : m_root(&root) {}
 
-void ContainerInteractor::openContainer(std::shared_ptr<ContainerEntity> containerEntity) {
-  if (m_openContainer && m_openContainer->inWorld())
-    m_openContainer->containerClose();
+std::expected<void, StarException> ContainerInteractor::openContainer(std::shared_ptr<ContainerEntity> containerEntity) {
+  if (m_openContainer && m_openContainer->inWorld()) {
+    auto closed = m_openContainer->containerClose();
+    if (!closed)
+      return std::unexpected(std::move(closed.error()));
+  }
   m_openContainer = std::move(containerEntity);
   if (m_openContainer) {
     if constexpr (Star::DebugEnabled) {
       Star::starAssertFailed((m_openContainer->inWorld()));
     }
-    m_openContainer->containerOpen();
+    auto opened = m_openContainer->containerOpen();
+    if (!opened) {
+      m_openContainer.reset();
+      return std::unexpected(std::move(opened.error()));
+    }
   }
+  return {};
 }
 
-void ContainerInteractor::closeContainer() {
-  openContainer({});
+std::expected<void, StarException> ContainerInteractor::closeContainer() {
+  return openContainer({});
 }
 
 bool ContainerInteractor::containerOpen() const {
@@ -74,61 +82,109 @@ std::shared_ptr<ContainerEntity> const& ContainerInteractor::openContainer() con
   return m_openContainer;
 }
 
-List<ContainerResult> ContainerInteractor::pullContainerResults() {
-  List<List<std::shared_ptr<Item>>> results;
-  eraseWhere(m_pendingResults, [&results](auto& promise) {
-      if (auto res = promise.result())
-        results.append(takeOptional(res));
-      return promise.finished();
-    });
+std::expected<List<ContainerResult>, StarException> ContainerInteractor::pullContainerResults() {
+  List<ContainerResult> results;
+  for (auto it = m_pendingResults.begin(); it != m_pendingResults.end();) {
+    auto result = it->result();
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    auto finished = it->finished();
+    if (!finished)
+      return std::unexpected(std::move(finished.error()));
+    if (*result)
+      results.append(std::move(**result));
+    if (*finished)
+      it = m_pendingResults.erase(it);
+    else
+      ++it;
+  }
   return results;
 }
 
-void ContainerInteractor::swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items) {
-  if (auto container = openContainer())
-    m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
+std::expected<void, StarException> ContainerInteractor::swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items) {
+  if (auto container = openContainer()) {
+    auto promise = container->swapItems(slot, items);
+    if (!promise)
+      return std::unexpected(std::move(promise.error()));
+    auto wrapped = promise->wrap(resultFromItem);
+    if (!wrapped)
+      return std::unexpected(std::move(wrapped.error()));
+    m_pendingResults.append(std::move(*wrapped));
+  }
+  return {};
 }
 
-void ContainerInteractor::addToContainer(std::shared_ptr<Item> const& items) {
-  if (auto container = openContainer())
-    m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
+std::expected<void, StarException> ContainerInteractor::addToContainer(std::shared_ptr<Item> const& items) {
+  if (auto container = openContainer()) {
+    auto promise = container->addItems(items);
+    if (!promise)
+      return std::unexpected(std::move(promise.error()));
+    auto wrapped = promise->wrap(resultFromItem);
+    if (!wrapped)
+      return std::unexpected(std::move(wrapped.error()));
+    m_pendingResults.append(std::move(*wrapped));
+  }
+  return {};
 }
 
-void ContainerInteractor::takeFromContainerSlot(std::size_t slot, std::size_t count) {
-  if (auto container = openContainer())
-    m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
+std::expected<void, StarException> ContainerInteractor::takeFromContainerSlot(std::size_t slot, std::size_t count) {
+  if (auto container = openContainer()) {
+    auto promise = container->takeItems(slot, count);
+    if (!promise)
+      return std::unexpected(std::move(promise.error()));
+    auto wrapped = promise->wrap(resultFromItem);
+    if (!wrapped)
+      return std::unexpected(std::move(wrapped.error()));
+    m_pendingResults.append(std::move(*wrapped));
+  }
+  return {};
 }
 
-void ContainerInteractor::applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment) {
-  if (auto container = openContainer())
-    m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
+std::expected<void, StarException> ContainerInteractor::applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment) {
+  if (auto container = openContainer()) {
+    auto promise = container->applyAugment(slot, augment);
+    if (!promise)
+      return std::unexpected(std::move(promise.error()));
+    auto wrapped = promise->wrap(resultFromItem);
+    if (!wrapped)
+      return std::unexpected(std::move(wrapped.error()));
+    m_pendingResults.append(std::move(*wrapped));
+  }
+  return {};
 }
 
-void ContainerInteractor::startCraftingInContainer() {
+std::expected<void, StarException> ContainerInteractor::startCraftingInContainer() {
   if (auto container = openContainer())
-    container->startCrafting();
+    return container->startCrafting();
+  return {};
 }
 
-void ContainerInteractor::stopCraftingInContainer() {
+std::expected<void, StarException> ContainerInteractor::stopCraftingInContainer() {
   if (auto container = openContainer())
-    container->stopCrafting();
+    return container->stopCrafting();
+  return {};
 }
 
-void ContainerInteractor::burnContainer() {
+std::expected<void, StarException> ContainerInteractor::burnContainer() {
   if (auto container = openContainer())
-    container->burnContainerContents();
+    return container->burnContainerContents();
+  return {};
 }
 
-void ContainerInteractor::clearContainer() {
-  if (auto container = openContainer())
-    m_pendingResults.append(container->clearContainer());
+std::expected<void, StarException> ContainerInteractor::clearContainer() {
+  if (auto container = openContainer()) {
+    auto promise = container->clearContainer();
+    if (!promise)
+      return std::unexpected(std::move(promise.error()));
+    m_pendingResults.append(std::move(*promise));
+  }
+  return {};
 }
 
-ContainerResult ContainerInteractor::resultFromItem(std::shared_ptr<Item> const& item) {
+std::expected<ContainerResult, StarException> ContainerInteractor::resultFromItem(std::shared_ptr<Item> const& item) {
   if (item)
-    return {item};
-  else
-    return {};
+    return ContainerResult{item};
+  return ContainerResult{};
 }
 
 }

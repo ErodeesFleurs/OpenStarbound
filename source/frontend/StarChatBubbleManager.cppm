@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.game_types;
@@ -41,16 +42,18 @@ class StoredFunction;
 
 class ChatBubbleManager {
 public:
-  ChatBubbleManager(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<ChatBubbleManager>, StarException> create(GuiContext& context);
 
-  void setCamera(WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> setCamera(WorldCamera const& camera);
 
-  void addChatActions(List<ChatAction> chatActions, bool silent = false);
+  [[nodiscard]] std::expected<void, StarException> addChatActions(List<ChatAction> chatActions, bool silent = false);
 
-  void update(float dt, std::shared_ptr<WorldClient> world);
-  void render();
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::shared_ptr<WorldClient> world);
+  [[nodiscard]] std::expected<void, StarException> render();
 
 private:
+  explicit ChatBubbleManager(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   typedef std::tuple<String, Vec2F> BubbleImage;
   typedef std::tuple<String, TextStyle, bool, Vec2F> BubbleText;
 
@@ -78,11 +81,11 @@ private:
 
   // Calculate the alpha for a speech bubble based on distance from player to
   // edge of screen
-  std::uint8_t calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const;
+  [[nodiscard]] std::expected<std::uint8_t, StarException> calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const;
 
-  RectF bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio);
-  void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
-  void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
+  [[nodiscard]] std::expected<RectF, StarException> bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio);
+  [[nodiscard]] std::expected<void, StarException> drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
+  [[nodiscard]] std::expected<void, StarException> drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
   GuiContext* m_guiContext;
 

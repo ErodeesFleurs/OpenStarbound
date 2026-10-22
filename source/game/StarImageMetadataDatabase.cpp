@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.rect;
 import star.thread;
@@ -52,40 +53,57 @@ ImageMetadataDatabase::ImageMetadataDatabase(Root& root)
   m_regionCache.setTimeToLive(timeToLive);
 }
 
-Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
+std::expected<Vec2U, StarException> ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
-  if (auto cached = m_sizeCache.ptr(path))
-    return *cached;
-
+  auto cached = m_sizeCache.ptr(path);
+  if (!cached)
+    return std::unexpected(std::move(cached.error()));
+  if (*cached)
+    return **cached;
   locker.unlock();
-  Vec2U size = calculateImageSize(path);
-
+  auto size = calculateImageSize(path);
+  if (!size)
+    return std::unexpected(std::move(size.error()));
   locker.lock();
-  m_sizeCache.set(path, size);
-  return size;
+  auto stored = m_sizeCache.set(path, *size);
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  return *size;
 }
 
-List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
+std::expected<List<Vec2I>, StarException> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
   SpacesEntry key = std::make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   MutexLocker locker(m_mutex);
-  if (auto cached = m_spacesCache.ptr(key)) {
-    return *cached;
-  }
+  auto cached = m_spacesCache.ptr(key);
+  if (!cached)
+    return std::unexpected(std::move(cached.error()));
+  if (*cached)
+    return **cached;
 
   auto filteredPath = filterProcessing(path);
   SpacesEntry filteredKey = std::make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
 
-  if (auto cached = m_spacesCache.ptr(filteredKey)) {
-    m_spacesCache.set(key, *cached);
-    return *cached;
+  auto filteredCached = m_spacesCache.ptr(filteredKey);
+  if (!filteredCached)
+    return std::unexpected(std::move(filteredCached.error()));
+  if (*filteredCached) {
+    auto stored = m_spacesCache.set(key, **filteredCached);
+    if (!stored)
+      return std::unexpected(std::move(stored.error()));
+    return **filteredCached;
   }
 
   locker.unlock();
 
-  auto image = m_root.assets()->image(filteredPath);
-  int imageWidth = image->width();
-  int imageHeight = image->height();
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto image = (*assets)->image(filteredPath);
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  int imageWidth = (*image)->width();
+  int imageHeight = (*image)->height();
 
   Vec2I min((position / TilePixels).floor());
   Vec2I max(((Vec2F(imageWidth, imageHeight) + position) / TilePixels).ceil());
@@ -109,7 +127,10 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
           if (xpixel < 0 || xpixel >= imageWidth)
             continue;
 
-          if (image->get(xpixel, ypixel)[3] > 0)
+          auto pixel = (*image)->get(xpixel, ypixel);
+          if (!pixel)
+            return std::unexpected(std::move(pixel.error()));
+          if ((*pixel)[3] > 0)
             fillRatio += 1.0f / square(TilePixels);
         }
       }
@@ -120,36 +141,56 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   }
 
   locker.lock();
-  m_spacesCache.set(key, spaces);
-  m_spacesCache.set(filteredKey, spaces);
+  auto stored = m_spacesCache.set(key, spaces);
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  auto filteredStored = m_spacesCache.set(filteredKey, spaces);
+  if (!filteredStored)
+    return std::unexpected(std::move(filteredStored.error()));
 
   return spaces;
 }
 
-RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
+std::expected<RectU, StarException> ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
   
-  if (auto cached = m_regionCache.ptr(path)) {
-    return *cached;
-  }
+  auto cached = m_regionCache.ptr(path);
+  if (!cached)
+    return std::unexpected(std::move(cached.error()));
+  if (*cached)
+    return **cached;
 
   auto filteredPath = filterProcessing(path);
-  if (auto cached = m_regionCache.ptr(filteredPath)) {
-    m_regionCache.set(path, *cached);
-    return *cached;
+  auto filteredCached = m_regionCache.ptr(filteredPath);
+  if (!filteredCached)
+    return std::unexpected(std::move(filteredCached.error()));
+  if (*filteredCached) {
+    auto stored = m_regionCache.set(path, **filteredCached);
+    if (!stored)
+      return std::unexpected(std::move(stored.error()));
+    return **filteredCached;
   }
 
   locker.unlock();
-  auto image = m_root.assets()->image(filteredPath);
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto image = (*assets)->image(filteredPath);
+  if (!image)
+    return std::unexpected(std::move(image.error()));
   RectU region = RectU::null();
-  image->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) {
+  (*image)->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) {
     if (pixel[3] > 0)
       region.combine(RectU::withSize({x, y}, {1, 1}));
   });
 
   locker.lock();
-  m_regionCache.set(path, region);
-  m_regionCache.set(filteredPath, region);
+  auto stored = m_regionCache.set(path, region);
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  auto filteredStored = m_regionCache.set(filteredPath, region);
+  if (!filteredStored)
+    return std::unexpected(std::move(filteredStored.error()));
 
   return region;
 }
@@ -177,7 +218,7 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
           std::holds_alternative<ScanLinesImageOperation>(operation)          ||
           std::holds_alternative<SetColorImageOperation>(operation))) {
       filtered += "?";
-      filtered += entry.string(*directives);
+      filtered += entry.string(*directives.m_shared);
     }
     });
 
@@ -185,47 +226,65 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
   return newPath;
 }
 
-Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
-  // Carefully calculate an image's size while trying not to actually load it.
-  // In error cases, this will fall back to calling Assets::image, so that image
-  // can possibly produce a missing image asset or properly report the error.
-
+std::expected<Vec2U, StarException> ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   auto assets = m_root.assets();
-
-  auto fallback = [&assets, &path]() {
-    return assets->image(path)->size();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto fallback = [&assets, &path]() -> std::expected<Vec2U, StarException> {
+    auto image = (*assets)->image(path);
+    if (!image)
+      return std::unexpected(std::move(image.error()));
+    return (*image)->size();
   };
-
-  if (!assets->assetExists(path.basePath)) {
+  auto exists = (*assets)->assetExists(path.basePath);
+  if (!exists)
+    return std::unexpected(std::move(exists.error()));
+  if (!*exists)
     return fallback();
-  }
-
   Vec2U imageSize;
   if (path.subPath) {
-    auto frames = assets->imageFrames(path.basePath);
+    auto frames = (*assets)->imageFrames(path.basePath);
     if (!frames)
+      return std::unexpected(std::move(frames.error()));
+    if (!*frames)
       return fallback();
-
-    if (auto rect = frames->getRect(*path.subPath))
-      imageSize = rect->size();
+    auto rect = (*frames)->getRect(*path.subPath);
+    if (!rect)
+      return std::unexpected(std::move(rect.error()));
+    if (*rect)
+      imageSize = (**rect).size();
     else
       return fallback();
   } else {
-    // We ensure that the base image size is cached even when given directives,
-    // so we don't have to call Image::readPngMetadata on the same file more
-    // than once.
     MutexLocker locker(m_mutex);
-    if (auto size = m_sizeCache.ptr(path.basePath)) {
-      imageSize = *size;
+    auto size = m_sizeCache.ptr(path.basePath);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    if (*size) {
+      imageSize = **size;
     } else {
       locker.unlock();
-      auto file = assets->openFile(path.basePath);
-      if (Image::isPng(file))
-        imageSize = std::get<0>(Image::readPngMetadata(m_root.logger(), file));
-      else
-        imageSize = fallback();
+      auto file = (*assets)->openFile(path.basePath);
+      if (!file)
+        return std::unexpected(std::move(file.error()));
+      auto png = Image::isPng(*file);
+      if (!png)
+        return std::unexpected(std::move(png.error()));
+      if (*png) {
+        auto metadata = Image::readPngMetadata(m_root.logger(), *file);
+        if (!metadata)
+          return std::unexpected(std::move(metadata.error()));
+        imageSize = std::get<0>(*metadata);
+      } else {
+        auto size = fallback();
+        if (!size)
+          return std::unexpected(std::move(size.error()));
+        imageSize = *size;
+      }
       locker.lock();
-      m_sizeCache.set(path.basePath, imageSize);
+      auto stored = m_sizeCache.set(path.basePath, imageSize);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
     }
   }
 
@@ -264,7 +323,14 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
     }
 
     void operator()(ScaleImageOperation const& sio) {
-      imageSize = Vec2U::round(vmult(Vec2F(imageSize), sio.scale));
+      auto size = vmult(Vec2F(imageSize), sio.scale);
+      if (!std::isfinite(size[0]) || !std::isfinite(size[1]) || size[0] <= 0 || size[1] <= 0
+          || static_cast<double>(size[0]) > std::numeric_limits<unsigned>::max()
+          || static_cast<double>(size[1]) > std::numeric_limits<unsigned>::max()) {
+        hasError = true;
+      } else {
+        imageSize = Vec2U::round(size);
+      }
     }
 
     void operator()(CropImageOperation const& cio) {

@@ -55,27 +55,22 @@ std::size_t const DefinitionsCacheSize = 20;
 
 namespace Dungeon {
 
-  extern EnumMap<Dungeon::Direction> const DungeonDirectionNames{
+  extern std::expected<EnumMap<Dungeon::Direction>, StarException> const DungeonDirectionNames = EnumMap<Dungeon::Direction>::create({
       {Dungeon::Direction::Left, "left"},
       {Dungeon::Direction::Right, "right"},
       {Dungeon::Direction::Up, "up"},
       {Dungeon::Direction::Down, "down"},
       {Dungeon::Direction::Unknown, "unknown"},
       {Dungeon::Direction::Any, "any"},
-  };
+  });
 
-  Direction flipDirection(Direction direction) {
-    if (direction == Direction::Left)
-      return Direction::Right;
-    if (direction == Direction::Right)
-      return Direction::Left;
-    if (direction == Direction::Up)
-      return Direction::Down;
-    if (direction == Direction::Down)
-      return Direction::Up;
-    if (direction == Direction::Any)
-      return Direction::Any;
-    throw DungeonException("Invalid direction");
+  [[nodiscard]] std::expected<Direction, StarException> flipDirection(Direction direction) {
+    if (direction == Direction::Left) return Direction::Right;
+    if (direction == Direction::Right) return Direction::Left;
+    if (direction == Direction::Up) return Direction::Down;
+    if (direction == Direction::Down) return Direction::Up;
+    if (direction == Direction::Any) return Direction::Any;
+    return std::unexpected(DungeonException("Invalid direction"));
   }
 
   MaterialId biomeMaterialForJson(int variant) {
@@ -95,80 +90,109 @@ namespace Dungeon {
     return Biome5MaterialId;
   }
 
-  std::shared_ptr<Connector const> chooseOption(List<std::shared_ptr<Connector const>>& options, RandomSource& rnd) {
+  [[nodiscard]] std::expected<std::shared_ptr<Connector const>, StarException> chooseOption(List<std::shared_ptr<Connector const>>& options, RandomSource& rnd) {
     float distribution = 0;
     for (std::size_t i = 0; i < options.size(); i++)
       distribution += options[i]->part()->chance();
     float pick = rnd.randf() * distribution;
     for (std::size_t i = 0; i < options.size(); i++) {
       pick -= options[i]->part()->chance();
-      if (pick <= 0)
-        return options.takeAt(i);
+      if (pick <= 0) return options.takeAt(i);
     }
-    // float rounding is always fun
+    // Preserve the final-option float rounding fallback.
     return options.takeAt(options.size() - 1);
   }
 
-  DoNotConnectToPartRule::DoNotConnectToPartRule(Json const& rule) {
-    for (auto entry : rule.toArray()[1].toArray())
-      m_partNames.add(entry.toString());
+  std::expected<std::shared_ptr<MaxSpawnCountRule>, StarException> MaxSpawnCountRule::create(Json const& rule) {
+    auto settings = rule.get(1);
+    if (!settings) return std::unexpected(std::move(settings.error()));
+    auto count = settings->getInt(0);
+    if (!count) return std::unexpected(std::move(count.error()));
+    auto result = std::shared_ptr<MaxSpawnCountRule>(new MaxSpawnCountRule);
+    result->m_maxCount = *count;
+    return result;
   }
 
-  DoNotCombineWithRule::DoNotCombineWithRule(Json const& rule) {
-    for (auto part : rule.toArray()[1].toArray())
-      m_parts.add(part.toString());
-  }
-
-  List<std::shared_ptr<Rule const>> Rule::readRules(Root& root, Json const& rules) {
-    List<std::shared_ptr<Rule const>> result;
-    for (auto const& list : rules.iterateArray()) {
-      std::optional<std::shared_ptr<Rule const>> rule = Rule::parse(root, list);
-      if (rule.has_value())
-        result.push_back(*rule);
+  std::expected<std::shared_ptr<DoNotConnectToPartRule>, StarException> DoNotConnectToPartRule::create(Json const& rule) {
+    auto entries = rule.getArray(1);
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    auto result = std::shared_ptr<DoNotConnectToPartRule>(new DoNotConnectToPartRule);
+    for (auto const& entry : *entries) {
+      auto name = entry.toString();
+      if (!name) return std::unexpected(std::move(name.error()));
+      result->m_partNames.add(std::move(*name));
     }
     return result;
   }
 
-  List<std::shared_ptr<Brush const>> Brush::readBrushes(Root& root, Json const& brushes) {
-    List<std::shared_ptr<Brush const>> result;
-    for (auto const& list : brushes.iterateArray())
-      result.push_back(Brush::parse(root, list));
+  std::expected<std::shared_ptr<DoNotCombineWithRule>, StarException> DoNotCombineWithRule::create(Json const& rule) {
+    auto entries = rule.getArray(1);
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    auto result = std::shared_ptr<DoNotCombineWithRule>(new DoNotCombineWithRule);
+    for (auto const& entry : *entries) {
+      auto name = entry.toString();
+      if (!name) return std::unexpected(std::move(name.error()));
+      result->m_parts.add(std::move(*name));
+    }
     return result;
   }
 
-  std::optional<std::shared_ptr<Rule const>> Rule::parse(Root& root, Json const& rule) {
-    String key = rule.getString(0);
-    if (key == "worldGenMustContainLiquid")
-      return as<Rule>(std::make_shared<const WorldGenMustContainLiquidRule>());
-    if (key == "worldGenMustNotContainLiquid")
-      return as<Rule>(std::make_shared<const WorldGenMustNotContainLiquidRule>());
+  std::expected<List<std::shared_ptr<Rule const>>, StarException> Rule::readRules(Root& root, Json const& rules) {
+    List<std::shared_ptr<Rule const>> result;
+    auto entries = rules.iterateArray();
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto rule = Rule::parse(root, entry);
+      if (!rule) return std::unexpected(std::move(rule.error()));
+      if (*rule) result.push_back(**rule);
+    }
+    return result;
+  }
 
-    if (key == "worldGenMustContainSolidForeground")
-      return as<Rule>(std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Foreground));
-    if (key == "worldGenMustContainAirForeground")
-      return as<Rule>(std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Foreground));
+  std::expected<List<std::shared_ptr<Brush const>>, StarException> Brush::readBrushes(Root& root, Json const& brushes) {
+    List<std::shared_ptr<Brush const>> result;
+    auto entries = brushes.iterateArray();
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto brush = Brush::parse(root, entry);
+      if (!brush) return std::unexpected(std::move(brush.error()));
+      result.push_back(std::move(*brush));
+    }
+    return result;
+  }
 
-    if (key == "worldGenMustContainSolidBackground")
-      return as<Rule>(std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Background));
-    if (key == "worldGenMustContainAirBackground")
-      return as<Rule>(std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Background));
-
-    if (key == "allowOverdrawing")
-      return as<Rule>(std::make_shared<const AllowOverdrawingRule>());
-    if (key == "ignorePartMaximumRule")
-      return as<Rule>(std::make_shared<const IgnorePartMaximumRule>());
-    if (key == "maxSpawnCount")
-      return as<Rule>(std::make_shared<const MaxSpawnCountRule>(rule));
-    if (key == "doNotConnectToPart")
-      return as<Rule>(std::make_shared<const DoNotConnectToPartRule>(rule));
-    if (key == "doNotCombineWith")
-      return as<Rule>(std::make_shared<const DoNotCombineWithRule>(rule));
-
-    root.logger().error("Unknown dungeon rule: {}", key);
+  std::expected<std::optional<std::shared_ptr<Rule const>>, StarException> Rule::parse(Root& root, Json const& rule) {
+    auto key = rule.getString(0);
+    if (!key) return std::unexpected(std::move(key.error()));
+    if (*key == "worldGenMustContainLiquid") return std::make_shared<const WorldGenMustContainLiquidRule>();
+    if (*key == "worldGenMustNotContainLiquid") return std::make_shared<const WorldGenMustNotContainLiquidRule>();
+    if (*key == "worldGenMustContainSolidForeground") return std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Foreground);
+    if (*key == "worldGenMustContainAirForeground") return std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Foreground);
+    if (*key == "worldGenMustContainSolidBackground") return std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Background);
+    if (*key == "worldGenMustContainAirBackground") return std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Background);
+    if (*key == "allowOverdrawing") return std::make_shared<const AllowOverdrawingRule>();
+    if (*key == "ignorePartMaximumRule") return std::make_shared<const IgnorePartMaximumRule>();
+    if (*key == "maxSpawnCount") {
+      auto result = MaxSpawnCountRule::create(rule);
+      if (!result) return std::unexpected(std::move(result.error()));
+      return std::optional<std::shared_ptr<Rule const>>(std::move(*result));
+    }
+    if (*key == "doNotConnectToPart") {
+      auto result = DoNotConnectToPartRule::create(rule);
+      if (!result) return std::unexpected(std::move(result.error()));
+      return std::optional<std::shared_ptr<Rule const>>(std::move(*result));
+    }
+    if (*key == "doNotCombineWith") {
+      auto result = DoNotCombineWithRule::create(rule);
+      if (!result) return std::unexpected(std::move(result.error()));
+      return std::optional<std::shared_ptr<Rule const>>(std::move(*result));
+    }
+    auto logged = root.logger().error("Unknown dungeon rule: {}", *key);
+    if (!logged) return std::unexpected(std::move(logged.error()));
     return std::optional<std::shared_ptr<Rule const>>();
   }
 
-  bool Rule::checkTileCanPlace(Vec2I, DungeonGeneratorWriter*) const {
+  std::expected<bool, StarException> Rule::checkTileCanPlace(Vec2I, DungeonGeneratorWriter*) const {
     return true;
   }
 
@@ -204,142 +228,215 @@ namespace Dungeon {
     return false;
   }
 
-  std::shared_ptr<Brush const> parseFrontBrush(Json const& brush) {
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseFrontBrush(Json const& brush) {
     String material;
     std::optional<String> mod;
     std::optional<float> hueshift, modhueshift;
     std::optional<MaterialColorVariant> colorVariant;
-
     if (brush.isType(Json::Type::Object)) {
-      material = brush.getString("material");
-      mod = brush.optString("mod");
-      hueshift = brush.optFloat("hueshift");
-      modhueshift = brush.optFloat("modhueshift");
-      colorVariant = brush.optFloat("colorVariant");
+      auto m = brush.getString("material");
+      if (!m) return std::unexpected(std::move(m.error()));
+      material = std::move(*m);
+      auto md = brush.optString("mod");
+      if (!md) return std::unexpected(std::move(md.error()));
+      mod = std::move(*md);
+      auto hue = brush.optFloat("hueshift");
+      if (!hue) return std::unexpected(std::move(hue.error()));
+      hueshift = *hue;
+      auto modHue = brush.optFloat("modhueshift");
+      if (!modHue) return std::unexpected(std::move(modHue.error()));
+      modhueshift = *modHue;
+      auto color = brush.optFloat("colorVariant");
+      if (!color) return std::unexpected(std::move(color.error()));
+      colorVariant = *color;
     } else {
-      material = brush.getString(1);
-      if (brush.size() > 2)
-        mod = brush.getString(2);
+      auto m = brush.getString(1);
+      if (!m) return std::unexpected(std::move(m.error()));
+      material = std::move(*m);
+      auto size = brush.size();
+      if (!size) return std::unexpected(std::move(size.error()));
+      if (*size > 2) {
+        auto md = brush.getString(2);
+        if (!md) return std::unexpected(std::move(md.error()));
+        mod = std::move(*md);
+      }
     }
     return std::make_shared<const FrontBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
-  std::shared_ptr<Brush const> parseBackBrush(Json const& brush) {
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseBackBrush(Json const& brush) {
     String material;
     std::optional<String> mod;
     std::optional<float> hueshift, modhueshift;
     std::optional<MaterialColorVariant> colorVariant;
-
     if (brush.isType(Json::Type::Object)) {
-      material = brush.getString("material");
-      mod = brush.optString("mod");
-      hueshift = brush.optFloat("hueshift");
-      modhueshift = brush.optFloat("modhueshift");
-      colorVariant = brush.optFloat("colorVariant");
+      auto m = brush.getString("material");
+      if (!m) return std::unexpected(std::move(m.error()));
+      material = std::move(*m);
+      auto md = brush.optString("mod");
+      if (!md) return std::unexpected(std::move(md.error()));
+      mod = std::move(*md);
+      auto hue = brush.optFloat("hueshift");
+      if (!hue) return std::unexpected(std::move(hue.error()));
+      hueshift = *hue;
+      auto modHue = brush.optFloat("modhueshift");
+      if (!modHue) return std::unexpected(std::move(modHue.error()));
+      modhueshift = *modHue;
+      auto color = brush.optFloat("colorVariant");
+      if (!color) return std::unexpected(std::move(color.error()));
+      colorVariant = *color;
     } else {
-      material = brush.getString(1);
-      if (brush.size() > 2)
-        mod = brush.getString(2);
+      auto m = brush.getString(1);
+      if (!m) return std::unexpected(std::move(m.error()));
+      material = std::move(*m);
+      auto size = brush.size();
+      if (!size) return std::unexpected(std::move(size.error()));
+      if (*size > 2) {
+        auto md = brush.getString(2);
+        if (!md) return std::unexpected(std::move(md.error()));
+        mod = std::move(*md);
+      }
     }
     return std::make_shared<const BackBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
-  std::shared_ptr<Brush const> parseObjectBrush(Json const& brush) {
-    String object;
-    Star::Direction direction;
-    Json parameters;
-
-    object = brush.getString(1);
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseObjectBrush(Json const& brush) {
+    auto object = brush.getString(1);
+    if (!object) return std::unexpected(std::move(object.error()));
+    auto size = brush.size();
+    if (!size) return std::unexpected(std::move(size.error()));
     JsonObject settings;
-    if (brush.size() > 2)
-      settings = brush.getObject(2);
-    if (settings.contains("direction"))
-      direction = DirectionNames.getLeft(settings.get("direction").toString());
-    else
-      direction = Star::Direction::Left;
-
-    if (settings.contains("parameters"))
-      parameters = settings.get("parameters");
-    return std::make_shared<const ObjectBrush>(object, direction, parameters);
+    if (*size > 2) {
+      auto s = brush.getObject(2);
+      if (!s) return std::unexpected(std::move(s.error()));
+      settings = std::move(*s);
+    }
+    Star::Direction direction = Star::Direction::Left;
+    if (auto d = settings.maybe("direction")) {
+      auto name = d->toString();
+      if (!name) return std::unexpected(std::move(name.error()));
+      if (!DirectionNames) return std::unexpected(DirectionNames.error());
+      auto parsed = DirectionNames->getLeft(*name);
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      direction = **parsed;
+    }
+    Json parameters = settings.value("parameters");
+    return std::make_shared<const ObjectBrush>(*object, direction, parameters);
   }
 
-  std::shared_ptr<Brush const> parseSurfaceBrush(Json const& brush) {
-    Json settings = Json::ofType(Json::Type::Object);
-    if (brush.size() > 1)
-      settings = brush.get(1);
-    return std::make_shared<const SurfaceBrush>(settings.optInt("variant"), settings.optString("mod"));
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseSurfaceBrush(Json const& brush) {
+    Json settings = JsonObject{};
+    auto size = brush.size();
+    if (!size) return std::unexpected(std::move(size.error()));
+    if (*size > 1) {
+      auto value = brush.get(1);
+      if (!value) return std::unexpected(std::move(value.error()));
+      settings = std::move(*value);
+    }
+    auto variant = settings.optInt("variant");
+    if (!variant) return std::unexpected(std::move(variant.error()));
+    auto mod = settings.optString("mod");
+    if (!mod) return std::unexpected(std::move(mod.error()));
+    return std::make_shared<const SurfaceBrush>(*variant, *mod);
   }
 
-  std::shared_ptr<Brush const> parseSurfaceBackgroundBrush(Json const& brush) {
-    Json settings = Json::ofType(Json::Type::Object);
-    if (brush.size() > 1)
-      settings = brush.get(1);
-    return std::make_shared<const SurfaceBackgroundBrush>(settings.optInt("variant"), settings.optString("mod"));
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseSurfaceBackgroundBrush(Json const& brush) {
+    Json settings = JsonObject{};
+    auto size = brush.size();
+    if (!size) return std::unexpected(std::move(size.error()));
+    if (*size > 1) {
+      auto value = brush.get(1);
+      if (!value) return std::unexpected(std::move(value.error()));
+      settings = std::move(*value);
+    }
+    auto variant = settings.optInt("variant");
+    if (!variant) return std::unexpected(std::move(variant.error()));
+    auto mod = settings.optString("mod");
+    if (!mod) return std::unexpected(std::move(mod.error()));
+    return std::make_shared<const SurfaceBackgroundBrush>(*variant, *mod);
   }
 
-  std::shared_ptr<Brush const> parseWireBrush(Json const& brush) {
-    Json settings = brush.get(1);
-    String group = settings.getString("group");
-    bool local = settings.getBool("local", true);
-    return std::make_shared<const WireBrush>(group, local);
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseWireBrush(Json const& brush) {
+    auto settings = brush.get(1);
+    if (!settings) return std::unexpected(std::move(settings.error()));
+    auto group = settings->getString("group");
+    if (!group) return std::unexpected(std::move(group.error()));
+    auto local = settings->getBool("local", true);
+    if (!local) return std::unexpected(std::move(local.error()));
+    return std::make_shared<const WireBrush>(*group, *local);
   }
 
-  std::shared_ptr<Brush const> parseItemBrush(Json const& brush) {
-    ItemDescriptor item(brush.getString(1), 1);
-    return std::make_shared<const ItemBrush>(item);
+  [[nodiscard]] std::expected<std::shared_ptr<Brush const>, StarException> parseItemBrush(Json const& brush) {
+    auto name = brush.getString(1);
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto item = ItemDescriptor::create(*name, 1, Json());
+    if (!item) return std::unexpected(std::move(item.error()));
+    return std::make_shared<const ItemBrush>(*item);
   }
 
-  std::shared_ptr<Brush const> Brush::parse(Root& root, Json const& brush) {
-    String key = brush.getString(0);
-    if (key == "clear")
-      return as<const Brush>(std::make_shared<ClearBrush>());
-
-    if (key == "front")
-      return parseFrontBrush(brush);
-    if (key == "back")
-      return parseBackBrush(brush);
-    if (key == "object")
-      return parseObjectBrush(brush);
-    if (key == "biomeitems")
-      return as<Brush>(std::make_shared<BiomeItemsBrush>());
-    if (key == "biometree")
-      return as<Brush>(std::make_shared<BiomeTreeBrush>());
-    if (key == "item")
-      return parseItemBrush(brush);
-    if (key == "npc")
-      return as<Brush>(std::make_shared<NpcBrush>(root, brush.get(1)));
-    if (key == "stagehand")
-      return as<Brush>(std::make_shared<StagehandBrush>(brush.get(1)));
-    if (key == "random")
-      return as<Brush>(std::make_shared<RandomBrush>(root, brush));
-    if (key == "surface")
-      return parseSurfaceBrush(brush);
-    if (key == "surfacebackground")
-      return parseSurfaceBackgroundBrush(brush);
-    if (key == "liquid")
-      return as<Brush>(std::make_shared<LiquidBrush>(brush.getString(1), 1.0f, brush.getBool(2, false)));
-    if (key == "wire")
-      return parseWireBrush(brush);
-    if (key == "playerstart")
-      return as<Brush>(std::make_shared<PlayerStartBrush>());
-    throw DungeonException::format("Unknown dungeon brush: {}", key);
+  std::expected<std::shared_ptr<Brush const>, StarException> Brush::parse(Root& root, Json const& brush) {
+    auto key = brush.getString(0);
+    if (!key) return std::unexpected(std::move(key.error()));
+    if (*key == "clear") return std::make_shared<ClearBrush>();
+    if (*key == "front") return parseFrontBrush(brush);
+    if (*key == "back") return parseBackBrush(brush);
+    if (*key == "object") return parseObjectBrush(brush);
+    if (*key == "biomeitems") return std::make_shared<BiomeItemsBrush>();
+    if (*key == "biometree") return std::make_shared<BiomeTreeBrush>();
+    if (*key == "item") return parseItemBrush(brush);
+    if (*key == "npc") {
+      auto definition = brush.get(1);
+      if (!definition) return std::unexpected(std::move(definition.error()));
+      auto result = NpcBrush::create(root, *definition);
+      if (!result) return std::unexpected(std::move(result.error()));
+      return std::shared_ptr<Brush const>(std::move(*result));
+    }
+    if (*key == "stagehand") {
+      auto definition = brush.get(1);
+      if (!definition) return std::unexpected(std::move(definition.error()));
+      return std::make_shared<StagehandBrush>(*definition);
+    }
+    if (*key == "random") {
+      auto result = RandomBrush::create(root, brush);
+      if (!result) return std::unexpected(std::move(result.error()));
+      return std::shared_ptr<Brush const>(std::move(*result));
+    }
+    if (*key == "surface") return parseSurfaceBrush(brush);
+    if (*key == "surfacebackground") return parseSurfaceBackgroundBrush(brush);
+    if (*key == "liquid") {
+      auto name = brush.getString(1);
+      if (!name) return std::unexpected(std::move(name.error()));
+      auto source = brush.getBool(2, false);
+      if (!source) return std::unexpected(std::move(source.error()));
+      return std::make_shared<LiquidBrush>(*name, 1.0f, *source);
+    }
+    if (*key == "wire") return parseWireBrush(brush);
+    if (*key == "playerstart") return std::make_shared<PlayerStartBrush>();
+    return std::unexpected(DungeonException::format("Unknown dungeon brush: {}", *key));
   }
 
-  RandomBrush::RandomBrush(Root& root, Json const& brush) {
-    JsonArray options = brush.getArray(1);
-    for (auto const& option : options)
-      m_brushes.append(Brush::parse(root, option));
-    m_seed = root.random().randi64();
+  std::expected<std::shared_ptr<RandomBrush>, StarException> RandomBrush::create(Root& root, Json const& brush) {
+    auto options = brush.getArray(1);
+    if (!options) return std::unexpected(std::move(options.error()));
+    auto result = std::shared_ptr<RandomBrush>(new RandomBrush);
+    for (auto const& option : *options) {
+      auto parsed = Brush::parse(root, option);
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      result->m_brushes.append(std::move(*parsed));
+    }
+    result->m_seed = root.random().randi64();
+    return result;
   }
 
-  void RandomBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> RandomBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    if (m_brushes.empty()) return std::unexpected(DungeonException("Random brush has no options"));
     std::size_t rnd = (std::size_t)staticRandomI32(m_seed, position[0], position[1]);
-    m_brushes[rnd % m_brushes.size()]->paint(position, phase, writer);
+    return m_brushes[rnd % m_brushes.size()]->paint(position, phase, writer);
   }
 
-  void ClearBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> ClearBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::ClearPhase)
-      return;
+      return {};
 
     // TODO: delete objects too?
     writer->setLiquid(position, LiquidStore(EmptyLiquidId, 0.0f, 0.0f, false));
@@ -347,6 +444,7 @@ namespace Dungeon {
     writer->setBackgroundMaterial(position, EmptyMaterialId, 0, DefaultMaterialColorVariant);
     writer->setForegroundMod(position, NoModId, 0);
     writer->setBackgroundMod(position, NoModId, 0);
+    return {};
   }
 
   FrontBrush::FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant) {
@@ -357,23 +455,24 @@ namespace Dungeon {
     m_materialColorVariant = colorVariant.value_or(DefaultMaterialColorVariant);
   }
 
-  void FrontBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    if (phase != Phase::WallPhase)
-      return;
-
-    auto materialDatabase = writer->root().materialDatabase();
-    MaterialId material = materialDatabase->materialId(m_material);
-
+  std::expected<void, StarException> FrontBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    if (phase != Phase::WallPhase) return {};
+    auto database = writer->root().materialDatabase();
+    if (!database) return std::unexpected(std::move(database.error()));
+    auto material = (*database)->materialId(m_material);
+    if (!material) return std::unexpected(std::move(material.error()));
     ModId mod = NoModId;
-    if (m_mod)
-      mod = materialDatabase->modId(*m_mod);
-
-    if (isSolidColliding(materialDatabase->materialCollisionKind(material)))
-      writer->setLiquid(position, LiquidStore(EmptyLiquidId, 0.0f, 0.0f, false));
-    writer->setForegroundMaterial(position, material, m_materialHue, m_materialColorVariant);
-    if (isRealMod(mod)) {
-      writer->setForegroundMod(position, mod, m_modHue);
+    if (m_mod) {
+      auto id = (*database)->modId(*m_mod);
+      if (!id) return std::unexpected(std::move(id.error()));
+      mod = *id;
     }
+    auto collision = (*database)->materialCollisionKind(*material);
+    if (!collision) return std::unexpected(std::move(collision.error()));
+    if (isSolidColliding(*collision)) writer->setLiquid(position, LiquidStore(EmptyLiquidId, 0.0f, 0.0f, false));
+    writer->setForegroundMaterial(position, *material, m_materialHue, m_materialColorVariant);
+    if (isRealMod(mod)) writer->setForegroundMod(position, mod, m_modHue);
+    return {};
   }
 
   BackBrush::BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant) {
@@ -384,21 +483,21 @@ namespace Dungeon {
     m_materialColorVariant = colorVariant.value_or(DefaultMaterialColorVariant);
   }
 
-  void BackBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    if (phase != Phase::WallPhase)
-      return;
-
-    auto materialDatabase = writer->root().materialDatabase();
-    MaterialId material = materialDatabase->materialId(m_material);
-
+  std::expected<void, StarException> BackBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    if (phase != Phase::WallPhase) return {};
+    auto database = writer->root().materialDatabase();
+    if (!database) return std::unexpected(std::move(database.error()));
+    auto material = (*database)->materialId(m_material);
+    if (!material) return std::unexpected(std::move(material.error()));
     ModId mod = NoModId;
-    if (m_mod)
-      mod = materialDatabase->modId(*m_mod);
-
-    writer->setBackgroundMaterial(position, material, m_materialHue, m_materialColorVariant);
-    if (isRealMod(mod)) {
-      writer->setBackgroundMod(position, mod, m_modHue);
+    if (m_mod) {
+      auto id = (*database)->modId(*m_mod);
+      if (!id) return std::unexpected(std::move(id.error()));
+      mod = *id;
     }
+    writer->setBackgroundMaterial(position, *material, m_materialHue, m_materialColorVariant);
+    if (isRealMod(mod)) writer->setBackgroundMod(position, mod, m_modHue);
+    return {};
   }
 
   ObjectBrush::ObjectBrush(String const& object, Star::Direction direction, Json const& parameters) {
@@ -407,10 +506,11 @@ namespace Dungeon {
     m_parameters = parameters;
   }
 
-  void ObjectBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> ObjectBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::ObjectPhase)
-      return;
+      return {};
     writer->placeObject(position, m_object, m_direction, m_parameters);
+    return {};
   }
 
   VehicleBrush::VehicleBrush(String const& vehicle, Json const& parameters) {
@@ -418,71 +518,88 @@ namespace Dungeon {
     m_parameters = parameters;
   }
 
-  void VehicleBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> VehicleBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::ObjectPhase)
-      return;
+      return {};
     writer->placeVehicle(Vec2F(position), m_vehicle, m_parameters);
+    return {};
   }
 
-  void BiomeItemsBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> BiomeItemsBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::BiomeItemsPhase)
-      return;
+      return {};
     writer->placeSurfaceBiomeItems(position);
+    return {};
   }
 
-  void BiomeTreeBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> BiomeTreeBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::BiomeTreesPhase)
-      return;
+      return {};
     writer->placeBiomeTree(position);
+    return {};
   }
 
   ItemBrush::ItemBrush(ItemDescriptor const& item) : m_item(item) {}
 
-  void ItemBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> ItemBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::ItemPhase)
-      return;
+      return {};
     writer->addDrop(Vec2F(position), m_item);
+    return {};
   }
 
-  NpcBrush::NpcBrush(Root& root, Json const& brush) {
-    m_npc = brush;
-    auto map = m_npc.toObject();
-    if (map.value("seed") == Json("stable"))
-      map["seed"] = root.random().randu64();
-    m_npc = map;
+  std::expected<std::shared_ptr<NpcBrush>, StarException> NpcBrush::create(Root& root, Json const& brush) {
+    auto map = brush.toObject();
+    if (!map) return std::unexpected(std::move(map.error()));
+    if (map->value("seed") == Json("stable")) (*map)["seed"] = root.random().randu64();
+    auto result = std::shared_ptr<NpcBrush>(new NpcBrush);
+    result->m_npc = std::move(*map);
+    return result;
   }
 
-  void NpcBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    if (phase != Phase::NpcPhase)
-      return;
-
-    if (m_npc.contains("species")) {
-      // interpret species as a comma separated list of unquoted strings
-      StringList speciesOptions = m_npc.get("species").toString().replace(" ", "").split(",");
-      writer->spawnNpc(Vec2F(position), m_npc.set("species", writer->root().random().randFrom(speciesOptions)));
+  std::expected<void, StarException> NpcBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    if (phase != Phase::NpcPhase) return {};
+    auto hasSpecies = m_npc.contains("species");
+    if (!hasSpecies) return std::unexpected(std::move(hasSpecies.error()));
+    if (*hasSpecies) {
+      // Preserve comma-separated unquoted species and the original draw.
+      auto species = m_npc.getString("species");
+      if (!species) return std::unexpected(std::move(species.error()));
+      auto compact = species->replace(" ", "");
+      if (!compact) return std::unexpected(std::move(compact.error()));
+      auto options = compact->split(",");
+      if (!options) return std::unexpected(std::move(options.error()));
+      auto chosen = writer->root().random().randFrom(*options);
+      if (!chosen) return std::unexpected(std::move(chosen.error()));
+      auto npc = m_npc.set("species", **chosen);
+      if (!npc) return std::unexpected(std::move(npc.error()));
+      writer->spawnNpc(Vec2F(position), *npc);
     } else {
       writer->spawnNpc(Vec2F(position), m_npc);
     }
+    return {};
   }
 
   StagehandBrush::StagehandBrush(Json const& definition) {
     m_definition = definition;
   }
 
-  void StagehandBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> StagehandBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::NpcPhase)
-      return;
+      return {};
     writer->spawnStagehand(Vec2F(position), m_definition);
+    return {};
   }
 
   DungeonIdBrush::DungeonIdBrush(DungeonId dungeonId) {
     m_dungeonId = dungeonId;
   }
 
-  void DungeonIdBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> DungeonIdBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::DungeonIdPhase)
-      return;
+      return {};
     writer->setDungeonId(position, m_dungeonId);
+    return {};
   }
 
   SurfaceBrush::SurfaceBrush(std::optional<int> variant, std::optional<String> mod) {
@@ -490,21 +607,23 @@ namespace Dungeon {
     m_mod = mod;
   }
 
-  void SurfaceBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> SurfaceBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase == Phase::WallPhase) {
       writer->setForegroundMaterial(position, biomeMaterialForJson(m_variant), 0, DefaultMaterialColorVariant);
       writer->setBackgroundMaterial(position, biomeMaterialForJson(m_variant), 0, DefaultMaterialColorVariant);
     }
     if (phase == Phase::ModsPhase) {
-      if (m_mod.has_value()) {
-        auto materialDatabase = writer->root().materialDatabase();
-        writer->setForegroundMod(position, materialDatabase->modId(*m_mod), 0);
-      } else {
-        if (writer->needsForegroundBiomeMod(position)) {
-          writer->setForegroundMod(position, BiomeModId, 0);
-        }
+      if (m_mod) {
+        auto database = writer->root().materialDatabase();
+        if (!database) return std::unexpected(std::move(database.error()));
+        auto mod = (*database)->modId(*m_mod);
+        if (!mod) return std::unexpected(std::move(mod.error()));
+        writer->setForegroundMod(position, *mod, 0);
+      } else if (writer->needsForegroundBiomeMod(position)) {
+        writer->setForegroundMod(position, BiomeModId, 0);
       }
     }
+    return {};
   }
 
   SurfaceBackgroundBrush::SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod) {
@@ -512,69 +631,74 @@ namespace Dungeon {
     m_mod = mod;
   }
 
-  void SurfaceBackgroundBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> SurfaceBackgroundBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase == Phase::WallPhase) {
       writer->setBackgroundMaterial(position, biomeMaterialForJson(m_variant), 0, DefaultMaterialColorVariant);
     }
     if (phase == Phase::ModsPhase) {
-      if (m_mod.has_value()) {
-        auto materialDatabase = writer->root().materialDatabase();
-        writer->setBackgroundMod(position, materialDatabase->modId(*m_mod), 0);
-      } else {
-        if (writer->needsBackgroundBiomeMod(position)) {
-          writer->setBackgroundMod(position, BiomeModId, 0);
-        }
+      if (m_mod) {
+        auto database = writer->root().materialDatabase();
+        if (!database) return std::unexpected(std::move(database.error()));
+        auto mod = (*database)->modId(*m_mod);
+        if (!mod) return std::unexpected(std::move(mod.error()));
+        writer->setBackgroundMod(position, *mod, 0);
+      } else if (writer->needsBackgroundBiomeMod(position)) {
+        writer->setBackgroundMod(position, BiomeModId, 0);
       }
     }
+    return {};
   }
 
   LiquidBrush::LiquidBrush(String const& liquidName, float quantity, bool source)
     : m_liquid(liquidName), m_quantity(quantity), m_source(source) {}
 
-  void LiquidBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    auto liquidsDatabase = writer->root().liquidsDatabase();
-    LiquidId liquidId = liquidsDatabase->liquidId(m_liquid);
-    LiquidStore liquid(liquidId, m_quantity, 1.0f, m_source);
-    if (phase == Phase::WallPhase) {
-      writer->requestLiquid(position, liquid);
-    }
+  std::expected<void, StarException> LiquidBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    auto database = writer->root().liquidsDatabase();
+    if (!database) return std::unexpected(std::move(database.error()));
+    auto id = (*database)->liquidId(m_liquid);
+    if (!id) return std::unexpected(std::move(id.error()));
+    LiquidStore liquid(*id, m_quantity, 1.0f, m_source);
+    if (phase == Phase::WallPhase) writer->requestLiquid(position, liquid);
+    return {};
   }
 
-  void WireBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+  std::expected<void, StarException> WireBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
     if (phase != Phase::WirePhase)
-      return;
+      return {};
     writer->requestWire(position, m_wireGroup, m_partLocal);
+    return {};
   }
 
-  void PlayerStartBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    if (phase == Phase::NpcPhase)
-      writer->setPlayerStart(Vec2F(position));
+  std::expected<void, StarException> PlayerStartBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    if (phase == Phase::NpcPhase) return writer->setPlayerStart(Vec2F(position));
+    return {};
   }
 
   InvalidBrush::InvalidBrush(std::optional<String> nameHint) : m_nameHint(nameHint) {}
 
-  void InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter* writer) const {
-    if (m_nameHint)
-      writer->root().logger().error("Invalid tile '{}'", *m_nameHint);
-    else
-      writer->root().logger().error("Invalid tile");
+  std::expected<void, StarException> InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter* writer) const {
+    if (m_nameHint) return writer->root().logger().error("Invalid tile '{}'", *m_nameHint);
+    return writer->root().logger().error("Invalid tile");
   }
 
-  bool Tile::canPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
-    if (writer->otherDungeonPresent(position))
-      return false;
-    else if (position[1] < 0)
-      return false;
-    for (std::size_t i = 0; i < rules.size(); i++)
-      if (!rules[i]->checkTileCanPlace(position, writer))
-        return false;
+  std::expected<bool, StarException> Tile::canPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
+    auto other = writer->otherDungeonPresent(position);
+    if (!other) return std::unexpected(std::move(other.error()));
+    if (*other || position[1] < 0) return false;
+    for (auto const& rule : rules) {
+      auto allowed = rule->checkTileCanPlace(position, writer);
+      if (!allowed) return std::unexpected(std::move(allowed.error()));
+      if (!*allowed) return false;
+    }
     return true;
   }
 
-  void Tile::place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    for (std::size_t i = 0; i < brushes.size(); i++) {
-      brushes[i]->paint(position, phase, writer);
+  std::expected<void, StarException> Tile::place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
+    for (auto const& brush : brushes) {
+      auto result = brush->paint(position, phase, writer);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
+    return {};
   }
 
   bool Tile::usesPlaces() const {
@@ -615,41 +739,80 @@ namespace Dungeon {
     return false;
   }
 
-  std::shared_ptr<Part const> parsePart(Root& root, DungeonDefinition* dungeon, Json const& definition, std::optional<std::shared_ptr<ImageTileset const>> tileset) {
-    String kind = definition.get("def").getString(0);
-    if (kind == "image") {
-      if (!tileset.has_value())
-        throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
-      return std::make_shared<const Part>(root, dungeon, definition, std::make_shared<ImagePartReader>(root, *tileset));
-    } else if (kind == "tmx")
-      return std::make_shared<const Part>(root, dungeon, definition, std::make_shared<TMXPartReader>(root));
-    throw DungeonException::format("Unknown dungeon part kind: {}", kind);
+  [[nodiscard]] std::expected<std::shared_ptr<Part const>, StarException> parsePart(Root& root, DungeonDefinition* dungeon, Json const& definition, std::optional<std::shared_ptr<ImageTileset const>> tileset) {
+    auto def = definition.get("def");
+    if (!def) return std::unexpected(std::move(def.error()));
+    auto kind = def->getString(0);
+    if (!kind) return std::unexpected(std::move(kind.error()));
+    std::shared_ptr<PartReader> reader;
+    if (*kind == "image") {
+      if (!tileset) return std::unexpected(DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file"));
+      reader = std::make_shared<ImagePartReader>(root, *tileset);
+    } else if (*kind == "tmx") {
+      reader = std::make_shared<TMXPartReader>(root);
+    } else {
+      return std::unexpected(DungeonException::format("Unknown dungeon part kind: {}", *kind));
+    }
+    auto part = Part::create(root, dungeon, definition, std::move(reader));
+    if (!part) return std::unexpected(std::move(part.error()));
+    return std::shared_ptr<Part const>(std::move(*part));
   }
 
-  Part::Part(Root& root, DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader) : m_root(root) {
-    m_dungeon = dungeon;
-    m_name = part.getString("name");
-    m_rules = Rule::readRules(root, part.get("rules"));
-    m_chance = part.getFloat("chance", 1);
-    if (m_chance <= 0)
-      m_chance = 0.0001f;
-    m_markDungeonId = part.getBool("markDungeonId", true);
-    m_overrideAllowAlways = part.getBool("overrideAllowAlways", false);
-    m_minimumThreatLevel = part.optFloat("minimumThreatLevel");
-    m_maximumThreatLevel = part.optFloat("maximumThreatLevel");
-    m_clearAnchoredObjects = part.getBool("clearAnchoredObjects", true);
-
-    m_reader = reader;
-    Json const& def = part.get("def");
-    if (def.get(1).type() == Json::Type::String) {
-      reader->readAsset(AssetPath::relativeTo(dungeon->directory(), def.get(1).toString()));
+  std::expected<std::shared_ptr<Part>, StarException> Part::create(Root& root, DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader) {
+    auto result = std::shared_ptr<Part>(new Part(root));
+    result->m_dungeon = dungeon;
+    auto name = part.getString("name");
+    if (!name) return std::unexpected(std::move(name.error()));
+    result->m_name = std::move(*name);
+    auto ruleJson = part.get("rules");
+    if (!ruleJson) return std::unexpected(std::move(ruleJson.error()));
+    auto rules = Rule::readRules(root, *ruleJson);
+    if (!rules) return std::unexpected(std::move(rules.error()));
+    result->m_rules = std::move(*rules);
+    auto chance = part.getFloat("chance", 1);
+    if (!chance) return std::unexpected(std::move(chance.error()));
+    result->m_chance = *chance <= 0 ? 0.0001f : *chance;
+    auto mark = part.getBool("markDungeonId", true);
+    if (!mark) return std::unexpected(std::move(mark.error()));
+    result->m_markDungeonId = *mark;
+    auto always = part.getBool("overrideAllowAlways", false);
+    if (!always) return std::unexpected(std::move(always.error()));
+    result->m_overrideAllowAlways = *always;
+    auto minimum = part.optFloat("minimumThreatLevel");
+    if (!minimum) return std::unexpected(std::move(minimum.error()));
+    result->m_minimumThreatLevel = *minimum;
+    auto maximum = part.optFloat("maximumThreatLevel");
+    if (!maximum) return std::unexpected(std::move(maximum.error()));
+    result->m_maximumThreatLevel = *maximum;
+    auto clear = part.getBool("clearAnchoredObjects", true);
+    if (!clear) return std::unexpected(std::move(clear.error()));
+    result->m_clearAnchoredObjects = *clear;
+    result->m_reader = reader;
+    auto def = part.get("def");
+    if (!def) return std::unexpected(std::move(def.error()));
+    auto assetDefinitions = def->get(1);
+    if (!assetDefinitions) return std::unexpected(std::move(assetDefinitions.error()));
+    if (assetDefinitions->type() == Json::Type::String) {
+      auto asset = assetDefinitions->toString();
+      if (!asset) return std::unexpected(std::move(asset.error()));
+      auto loaded = reader->readAsset(AssetPath::relativeTo(dungeon->directory(), *asset));
+      if (!loaded) return std::unexpected(std::move(loaded.error()));
     } else {
-      for (auto const& asset : def.get(1).iterateArray())
-        reader->readAsset(AssetPath::relativeTo(dungeon->directory(), asset.toString()));
+      auto assets = assetDefinitions->iterateArray();
+      if (!assets) return std::unexpected(std::move(assets.error()));
+      for (auto const& definition : *assets) {
+        auto asset = definition.toString();
+        if (!asset) return std::unexpected(std::move(asset.error()));
+        auto loaded = reader->readAsset(AssetPath::relativeTo(dungeon->directory(), *asset));
+        if (!loaded) return std::unexpected(std::move(loaded.error()));
+      }
     }
-    m_size = m_reader->size();
-    scanConnectors();
-    scanAnchor();
+    result->m_size = result->m_reader->size();
+    auto connectors = result->scanConnectors();
+    if (!connectors) return std::unexpected(std::move(connectors.error()));
+    auto anchor = result->scanAnchor();
+    if (!anchor) return std::unexpected(std::move(anchor.error()));
+    return result;
   }
 
   String const& Part::name() const {
@@ -684,11 +847,11 @@ namespace Dungeon {
     return m_clearAnchoredObjects;
   }
 
-  int Part::placementLevelConstraint() const {
+  std::expected<int, StarException> Part::placementLevelConstraint() const {
     Vec2I air = {0, size().y()};
     Vec2I ground = {0, 0};
     Vec2I liquid = {0, 0};
-    m_reader->forEachTile([&ground, &air, &liquid](Vec2I tilePos, Tile const& tile) -> bool {
+    auto visited = m_reader->forEachTile([&ground, &air, &liquid](Vec2I tilePos, Tile const& tile) -> std::expected<bool, StarException> {
       for (auto const& rule : tile.rules) {
         if (is<WorldGenMustContainSolidRule>(rule) && tilePos.y() > ground.y()) {
           ground = tilePos;
@@ -702,12 +865,13 @@ namespace Dungeon {
       }
       return false;
     });
+    if (!visited) return std::unexpected(std::move(visited.error()));
     ground[1] = std::max(ground[1], liquid[1]);
     if (air.y() < ground.y())
-      throw DungeonException::format(
+      return std::unexpected(DungeonException::format(
         "Invalid ground vs air contraint! Ground {} can't be above air {}"
         " (try moving your 'require there be air here' anchors above any other 'require there be (something) here' anchors.)",
-        ground, air);
+        ground, air));
     return air.y();
   }
 
@@ -746,89 +910,80 @@ namespace Dungeon {
     return true;
   }
 
-  bool Part::collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const {
-    if (m_overrideAllowAlways)
-      return true;
-
+  std::expected<bool, StarException> Part::collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const {
+    if (m_overrideAllowAlways) return true;
     bool result = false;
-    m_reader->forEachTile([this, &result, pos, &places](Vec2I tilePos, Tile const& tile) -> bool {
-      if (tile.collidesWithPlaces())
-        if (places.contains(pos + tilePos)) {
-          this->root().logger().debug("Tile collided with place at {}", pos + tilePos);
-          result = true;
-          return true;
-        }
+    auto visited = m_reader->forEachTile([this, &result, pos, &places](Vec2I tilePos, Tile const& tile) -> std::expected<bool, StarException> {
+      if (tile.collidesWithPlaces() && places.contains(pos + tilePos)) {
+        auto logged = this->root().logger().debug("Tile collided with place at {}", pos + tilePos);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+        result = true;
+        return true;
+      }
       return false;
     });
-
+    if (!visited) return std::unexpected(std::move(visited.error()));
     return result;
   }
 
-  bool Part::canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const {
-    if (m_overrideAllowAlways)
-      return true;
-
-    // Speed up repeated failing calls by first checking the tile that failed
-    // last time (if it did).
+  std::expected<bool, StarException> Part::canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const {
+    if (m_overrideAllowAlways) return true;
     bool result = true;
-    m_reader->forEachTile([&result, pos, writer](Vec2I tilePos, Tile const& tile) -> bool {
-      Vec2I position = pos + tilePos;
-      if (!tile.canPlace(position, writer)) {
+    auto visited = m_reader->forEachTile([&result, pos, writer](Vec2I tilePos, Tile const& tile) -> std::expected<bool, StarException> {
+      auto allowed = tile.canPlace(pos + tilePos, writer);
+      if (!allowed) return std::unexpected(std::move(allowed.error()));
+      if (!*allowed) {
         result = false;
         return true;
       }
       return false;
     });
-
+    if (!visited) return std::unexpected(std::move(visited.error()));
     return result;
   }
 
-  void Part::place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const {
-    placePhase(pos, Phase::ClearPhase, places, writer);
-    placePhase(pos, Phase::WallPhase, places, writer);
-    placePhase(pos, Phase::ModsPhase, places, writer);
-    placePhase(pos, Phase::ObjectPhase, places, writer);
-    placePhase(pos, Phase::BiomeTreesPhase, places, writer);
-    placePhase(pos, Phase::BiomeItemsPhase, places, writer);
-    placePhase(pos, Phase::WirePhase, places, writer);
-    placePhase(pos, Phase::ItemPhase, places, writer);
-    placePhase(pos, Phase::NpcPhase, places, writer);
-    placePhase(pos, Phase::DungeonIdPhase, places, writer);
+  std::expected<void, StarException> Part::place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const {
+    for (auto phase : {Phase::ClearPhase, Phase::WallPhase, Phase::ModsPhase, Phase::ObjectPhase,
+        Phase::BiomeTreesPhase, Phase::BiomeItemsPhase, Phase::WirePhase, Phase::ItemPhase, Phase::NpcPhase, Phase::DungeonIdPhase}) {
+      auto painted = placePhase(pos, phase, places, writer);
+      if (!painted) return std::unexpected(std::move(painted.error()));
+    }
+    return {};
   }
 
-  void Part::forEachTile(TileCallback const& callback) const {
-    m_reader->forEachTile(callback);
+  std::expected<void, StarException> Part::forEachTile(TileCallback const& callback) const {
+    return m_reader->forEachTile(callback);
   }
 
-  void Part::placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const {
-    m_reader->forEachTile([this, &places, pos, phase, writer](Vec2I tilePos, Tile const& tile) -> bool {
+  std::expected<void, StarException> Part::placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const {
+    return m_reader->forEachTile([this, &places, pos, phase, writer](Vec2I tilePos, Tile const& tile) -> std::expected<bool, StarException> {
       Vec2I position = pos + tilePos;
       if (tile.collidesWithPlaces() || !places.contains(position)) {
-        try {
-          tile.place(position, phase, writer);
-        } catch (std::exception const&) {
-          this->root().logger().error("Error at map position {}:", tilePos);
-          throw;
+        auto painted = tile.place(position, phase, writer);
+        if (!painted) {
+          auto logged = this->root().logger().error("Error at map position {}:", tilePos);
+          if (!logged) return std::unexpected(std::move(logged.error()));
+          return std::unexpected(std::move(painted.error()));
         }
       }
       return false;
     });
   }
 
-  bool Part::tileUsesPlaces(Vec2I pos) const {
+  std::expected<bool, StarException> Part::tileUsesPlaces(Vec2I pos) const {
     bool result = false;
-    m_reader->forEachTileAt(pos,
-        [&result](Vec2I, Tile const& tile) -> bool {
-          if (tile.usesPlaces()) {
-            result = true;
-            return true;
-          }
-          return false;
-        });
+    auto visited = m_reader->forEachTileAt(pos, [&result](Vec2I, Tile const& tile) -> std::expected<bool, StarException> {
+      if (tile.usesPlaces()) {
+        result = true;
+        return true;
+      }
+      return false;
+    });
+    if (!visited) return std::unexpected(std::move(visited.error()));
     return result;
   }
 
-  Direction Part::pickByEdge(Vec2I position, Vec2U size) const {
+  std::expected<Direction, StarException> Part::pickByEdge(Vec2I position, Vec2U size) const {
     int dxa = position[0];
     int dxb = size[0] - position[0];
     int dya = position[1];
@@ -843,70 +998,60 @@ namespace Dungeon {
       return Direction::Down;
     if (dyb == m)
       return Direction::Up;
-    throw DungeonException("Ambiguous direction");
+    return std::unexpected(DungeonException("Ambiguous direction"));
   }
 
-  Direction Part::pickByNeighbours(Vec2I pos) const {
+  std::expected<Direction, StarException> Part::pickByNeighbours(Vec2I pos) const {
     int x = pos.x(), y = pos.y();
-
-    // if on a border use that, corners use the left/right direction
-    if (x == 0)
-      return Direction::Left;
-    if (x == (int)size().x() - 1)
-      return Direction::Right;
-    if (y == 0)
-      return Direction::Down;
-    if (y == (int)size().y() - 1)
-      return Direction::Up;
-
-    // scans around the connector, the direction where it finds a solid is where
-    // it assume the
-    // connection comes from
-
-    if (tileUsesPlaces({x + 1, y}) && !tileUsesPlaces({x - 1, y}))
-      return Direction::Left;
-
-    if (tileUsesPlaces({x - 1, y}) && !tileUsesPlaces({x + 1, y}))
-      return Direction::Right;
-
-    if (tileUsesPlaces({x, y + 1}) && !tileUsesPlaces({x, y - 1}))
-      return Direction::Down;
-
-    if (tileUsesPlaces({x, y - 1}) && !tileUsesPlaces({x, y + 1}))
-      return Direction::Up;
-
+    if (x == 0) return Direction::Left;
+    if (x == (int)size().x() - 1) return Direction::Right;
+    if (y == 0) return Direction::Down;
+    if (y == (int)size().y() - 1) return Direction::Up;
+    // Preserve the directional scan order and short-circuit tile inspection.
+    for (auto const& check : {std::pair{Vec2I{1, 0}, Direction::Left}, std::pair{Vec2I{-1, 0}, Direction::Right},
+        std::pair{Vec2I{0, 1}, Direction::Down}, std::pair{Vec2I{0, -1}, Direction::Up}}) {
+      auto near = tileUsesPlaces(pos + check.first);
+      if (!near) return std::unexpected(std::move(near.error()));
+      if (*near) {
+        auto opposite = tileUsesPlaces(pos - check.first);
+        if (!opposite) return std::unexpected(std::move(opposite.error()));
+        if (!*opposite) return check.second;
+      }
+    }
     return Direction::Unknown;
   }
 
-  void Part::scanConnectors() {
-    try {
-      m_reader->forEachTile([this](Vec2I position, Tile const& tile) -> bool {
-        if (tile.connector.has_value()) {
-          auto d = tile.connector->direction;
-          if (d == Direction::Unknown)
-            d = pickByNeighbours(position);
-          if (d == Direction::Unknown)
-            d = pickByEdge(position, m_size);
-          this->root().logger().debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
-          m_connections.append(std::make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
+  std::expected<void, StarException> Part::scanConnectors() {
+    auto visited = m_reader->forEachTile([this](Vec2I position, Tile const& tile) -> std::expected<bool, StarException> {
+      if (tile.connector) {
+        auto direction = tile.connector->direction;
+        if (direction == Direction::Unknown) {
+          auto picked = pickByNeighbours(position);
+          if (!picked) return std::unexpected(std::move(picked.error()));
+          direction = *picked;
         }
-
-        return false;
-      });
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw DungeonException(strf("Exception {} in connector {}", outputException(e, true), m_name));
-    }
+        if (direction == Direction::Unknown) {
+          auto picked = pickByEdge(position, m_size);
+          if (!picked) return std::unexpected(std::move(picked.error()));
+          direction = *picked;
+        }
+        auto logged = this->root().logger().debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)direction);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+        m_connections.append(std::make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, direction, position));
+      }
+      return false;
+    });
+    if (!visited) return std::unexpected(DungeonException(strf("Exception in connector {}", m_name), ExceptionDiagnostic(visited.error())));
+    return {};
   }
 
-  void Part::scanAnchor() {
+  std::expected<void, StarException> Part::scanAnchor() {
     int cx, cy, cc;
     cx = cy = cc = 0;
     int lowestAir = m_size[1];
     int highestGound = -1;
     int highestLiquid = -1;
-    try {
-      m_reader->forEachTile([&](Vec2I pos, Tile const& tile) -> bool {
+    auto visited = m_reader->forEachTile([&](Vec2I pos, Tile const& tile) -> std::expected<bool, StarException> {
         int x = pos.x(), y = pos.y();
         if (tile.collidesWithPlaces()) {
           cx += x;
@@ -927,10 +1072,7 @@ namespace Dungeon {
         }
         return false;
       });
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw DungeonException(strf("Exception {} in part {}", outputException(e, true), m_name));
-    }
+    if (!visited) return std::unexpected(DungeonException(strf("Exception in part {}", m_name), ExceptionDiagnostic(visited.error())));
 
     highestGound = std::max(highestGound, highestLiquid);
     if (highestGound == -1)
@@ -951,35 +1093,40 @@ namespace Dungeon {
       cy = highestGound + 1;
 
     m_anchorPoint = {cx, cy};
+    return {};
   }
 
-  bool WorldGenMustContainSolidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
+  std::expected<bool, StarException> WorldGenMustContainSolidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
     return writer->checkSolid(position, layer);
   }
 
-  bool WorldGenMustContainAirRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
+  std::expected<bool, StarException> WorldGenMustContainAirRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
     return writer->checkOpen(position, layer);
   }
   
-  bool WorldGenMustContainLiquidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter * writer) const {
+  std::expected<bool, StarException> WorldGenMustContainLiquidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter * writer) const {
     return writer->checkLiquid(position);
   }
 
-  bool WorldGenMustNotContainLiquidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter * writer) const {
-    return !writer->checkLiquid(position);
+  std::expected<bool, StarException> WorldGenMustNotContainLiquidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
+    auto liquid = writer->checkLiquid(position);
+    if (!liquid) return std::unexpected(std::move(liquid.error()));
+    return !*liquid;
   }
 
   Connector::Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset)
     : m_value(value), m_forwardOnly(forwardOnly), m_direction(direction), m_offset(offset), m_part(part) {}
 
-  bool Connector::connectsTo(std::shared_ptr<Connector const> connector) const {
+  std::expected<bool, StarException> Connector::connectsTo(std::shared_ptr<Connector const> connector) const {
     if (m_forwardOnly)
       return false;
     if (m_value != connector->m_value)
       return false;
     if (m_direction == Direction::Any || connector->m_direction == Direction::Any)
       return true;
-    if (m_direction != flipDirection(connector->m_direction))
+    auto flipped = flipDirection(connector->m_direction);
+    if (!flipped) return std::unexpected(std::move(flipped.error()));
+    if (m_direction != *flipped)
       return false;
     return true;
   }
@@ -1123,28 +1270,30 @@ namespace Dungeon {
     markPosition(position);
   }
 
-  void DungeonGeneratorWriter::setPlayerStart(Vec2F const& startPosition) {
-    m_facade->setPlayerStart(startPosition);
+  std::expected<void, StarException> DungeonGeneratorWriter::setPlayerStart(Vec2F const& startPosition) {
+    return m_facade->setPlayerStart(startPosition);
   }
 
-  bool DungeonGeneratorWriter::checkSolid(Vec2I position, TileLayer layer) {
+  std::expected<bool, StarException> DungeonGeneratorWriter::checkSolid(Vec2I position, TileLayer layer) {
     if (m_terrainMarkingSurfaceLevel)
       return position.y() < *m_terrainMarkingSurfaceLevel;
     return m_facade->checkSolid(position, layer);
   }
 
-  bool DungeonGeneratorWriter::checkOpen(Vec2I position, TileLayer layer) {
+  std::expected<bool, StarException> DungeonGeneratorWriter::checkOpen(Vec2I position, TileLayer layer) {
     if (m_terrainMarkingSurfaceLevel)
       return position.y() >= *m_terrainMarkingSurfaceLevel;
     return m_facade->checkOpen(position, layer);
   }
 
-  bool DungeonGeneratorWriter::checkLiquid(Vec2I const& position) {
+  std::expected<bool, StarException> DungeonGeneratorWriter::checkLiquid(Vec2I const& position) {
     return m_facade->checkOceanLiquid(position);
   }
 
-  bool DungeonGeneratorWriter::otherDungeonPresent(Vec2I position) {
-    return m_facade->getDungeonIdAt(position) != NoDungeonId;
+  std::expected<bool, StarException> DungeonGeneratorWriter::otherDungeonPresent(Vec2I position) {
+    auto id = m_facade->getDungeonIdAt(position);
+    if (!id) return std::unexpected(std::move(id.error()));
+    return *id != NoDungeonId;
   }
 
   void DungeonGeneratorWriter::setDungeonId(Vec2I const& pos, DungeonId dungeonId) {
@@ -1161,8 +1310,8 @@ namespace Dungeon {
       m_dungeonIds[pos] = *m_markDungeonId;
   }
 
-  void DungeonGeneratorWriter::clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) {
-    m_facade->clearTileEntities(bounds, positions, clearAnchoredObjects);
+  std::expected<void, StarException> DungeonGeneratorWriter::clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) {
+    return m_facade->clearTileEntities(bounds, positions, clearAnchoredObjects);
   }
 
   void DungeonGeneratorWriter::finishPart() {
@@ -1177,7 +1326,7 @@ namespace Dungeon {
     m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
   }
 
-  void DungeonGeneratorWriter::flushLiquid() {
+  std::expected<void, StarException> DungeonGeneratorWriter::flushLiquid() {
     // For each liquid type, find each contiguous region of liquid, then
     // pressurize that region based on the highest position in the region
 
@@ -1189,7 +1338,9 @@ namespace Dungeon {
       auto& unpressurized = liquidPair.second;
       while (!unpressurized.empty()) {
         // Start with the first unpressurized block as the open set.
-        Vec2I firstBlock = unpressurized.takeFirst();
+        auto first = unpressurized.takeFirst();
+        if (!first) return std::unexpected(std::move(first.error()));
+        Vec2I firstBlock = *first;
         List<Vec2I> openSet = {firstBlock};
         Set<Vec2I> contiguousRegion = {firstBlock};
 
@@ -1225,9 +1376,10 @@ namespace Dungeon {
       setLiquid(p.first, p.second);
 
     m_pendingLiquids.clear();
+    return {};
   }
 
-  void DungeonGeneratorWriter::flush() {
+  std::expected<void, StarException> DungeonGeneratorWriter::flush() {
     auto geometry = m_facade->getWorldGeometry();
     auto displace = [&](Vec2I pos) -> Vec2I { return geometry.xwrap(pos); };
     auto displaceF = [&](Vec2F pos) -> Vec2F { return geometry.xwrap(pos); };
@@ -1235,7 +1387,7 @@ namespace Dungeon {
     PolyF::VertexList terrainBlendingVertexes;
     PolyF::VertexList spaceBlendingVertexes;
     for (auto bb : m_boundingBoxes) {
-      m_facade->markRegion(bb);
+      if (auto applied = m_facade->markRegion(bb); !applied) return std::unexpected(std::move(applied.error()));
 
       if (m_terrainMarkingSurfaceLevel) {
         // Mark the regions of the dungeon above the dungeon surface as needing
@@ -1261,74 +1413,75 @@ namespace Dungeon {
     }
 
     if (!terrainBlendingVertexes.empty())
-      m_facade->markTerrain(PolyF::convexHull(terrainBlendingVertexes));
+      if (auto applied = m_facade->markTerrain(PolyF::convexHull(terrainBlendingVertexes)); !applied) return std::unexpected(std::move(applied.error()));
     if (!spaceBlendingVertexes.empty())
-      m_facade->markSpace(PolyF::convexHull(spaceBlendingVertexes));
+      if (auto applied = m_facade->markSpace(PolyF::convexHull(spaceBlendingVertexes)); !applied) return std::unexpected(std::move(applied.error()));
 
     for (auto iter = m_backgroundMaterial.begin(); iter != m_backgroundMaterial.end(); iter++)
-      m_facade->setBackgroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
+      if (auto applied = m_facade->setBackgroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant); !applied) return std::unexpected(std::move(applied.error()));
     for (auto iter = m_foregroundMaterial.begin(); iter != m_foregroundMaterial.end(); iter++)
-      m_facade->setForegroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
+      if (auto applied = m_facade->setForegroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant); !applied) return std::unexpected(std::move(applied.error()));
     for (auto iter = m_foregroundMod.begin(); iter != m_foregroundMod.end(); iter++)
-      m_facade->setForegroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
+      if (auto applied = m_facade->setForegroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift); !applied) return std::unexpected(std::move(applied.error()));
     for (auto iter = m_backgroundMod.begin(); iter != m_backgroundMod.end(); iter++)
-      m_facade->setBackgroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
+      if (auto applied = m_facade->setBackgroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift); !applied) return std::unexpected(std::move(applied.error()));
 
     List<Vec2I> sortedPositions = m_objects.keys();
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
     for (auto pos : sortedPositions) {
       auto& object = m_objects[pos];
-      m_facade->placeObject(displace(pos), object.objectName, object.direction, object.parameters);
+      if (auto applied = m_facade->placeObject(displace(pos), object.objectName, object.direction, object.parameters); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     for (auto entry : m_vehicles) {
       String vehicleName;
       Json parameters;
       std::tie(vehicleName, parameters) = entry.second;
-      m_facade->placeVehicle(displaceF(entry.first), vehicleName, parameters);
+      if (auto applied = m_facade->placeVehicle(displaceF(entry.first), vehicleName, parameters); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     sortedPositions = List<Vec2I>::from(m_biomeTrees);
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
     for (auto pos : sortedPositions) {
-      m_facade->placeBiomeTree(pos);
+      if (auto applied = m_facade->placeBiomeTree(pos); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     sortedPositions = List<Vec2I>::from(m_biomeItems);
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
     for (auto pos : sortedPositions) {
-      m_facade->placeSurfaceBiomeItems(pos);
+      if (auto applied = m_facade->placeSurfaceBiomeItems(pos); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     for (auto& npc : m_npcs) {
-      m_facade->spawnNpc(displaceF(npc.first), npc.second);
+      if (auto applied = m_facade->spawnNpc(displaceF(npc.first), npc.second); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     for (auto& stagehand : m_stagehands) {
-      m_facade->spawnStagehand(displaceF(stagehand.first), stagehand.second);
+      if (auto applied = m_facade->spawnStagehand(displaceF(stagehand.first), stagehand.second); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     for (auto& wires : m_globalWires) {
       List<Vec2I> wireGroup;
       for (auto& pos : wires.second)
         wireGroup.append(displace(pos));
-      m_facade->connectWireGroup(wireGroup);
+      if (auto applied = m_facade->connectWireGroup(wireGroup); !applied) return std::unexpected(std::move(applied.error()));
     }
     for (auto& wires : m_localWires) {
       List<Vec2I> wireGroup;
       for (auto& pos : wires)
         wireGroup.append(displace(pos));
-      m_facade->connectWireGroup(wireGroup);
+      if (auto applied = m_facade->connectWireGroup(wireGroup); !applied) return std::unexpected(std::move(applied.error()));
     }
 
     for (auto iter = m_drops.begin(); iter != m_drops.end(); iter++)
-      m_facade->addDrop(displaceF(iter->first), iter->second);
+      if (auto applied = m_facade->addDrop(displaceF(iter->first), iter->second); !applied) return std::unexpected(std::move(applied.error()));
 
     for (auto iter = m_liquids.begin(); iter != m_liquids.end(); iter++)
-      m_facade->setLiquid(displace(iter->first), iter->second);
+      if (auto applied = m_facade->setLiquid(displace(iter->first), iter->second); !applied) return std::unexpected(std::move(applied.error()));
 
     for (auto const& dungeonId : m_dungeonIds)
-      m_facade->setDungeonIdAt(dungeonId.first, dungeonId.second);
+      if (auto applied = m_facade->setDungeonIdAt(dungeonId.first, dungeonId.second); !applied) return std::unexpected(std::move(applied.error()));
+    return {};
   }
 
   List<RectI> DungeonGeneratorWriter::boundingBoxes() const {
@@ -1358,72 +1511,126 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions(Root& root) : m_root(root), m_paths(), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
-  auto assets = this->root().assets();
+DungeonDefinitions::DungeonDefinitions(Root& root) : m_root(root), m_definitionCache(DefinitionsCacheSize) {}
 
-  for (auto& file : assets->scan(".dungeon")) {
-    Json dungeon = assets->json(file);
-    m_paths.insert(dungeon.get("metadata").getString("name"), file);
+std::expected<std::shared_ptr<DungeonDefinitions>, StarException> DungeonDefinitions::create(Root& root) {
+  auto result = std::shared_ptr<DungeonDefinitions>(new DungeonDefinitions(root));
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scan(".dungeon");
+  if (!files) return std::unexpected(std::move(files.error()));
+  for (auto const& file : *files) {
+    auto dungeon = (*assets)->json(file);
+    if (!dungeon) return std::unexpected(std::move(dungeon.error()));
+    auto metadata = dungeon->get("metadata");
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    auto name = metadata->getString("name");
+    if (!name) return std::unexpected(std::move(name.error()));
+    result->m_paths.insert(*name, file);
   }
+  return result;
 }
 
-std::shared_ptr<DungeonDefinition const> DungeonDefinitions::get(String const& name) const {
+std::expected<std::shared_ptr<DungeonDefinition const>, StarException> DungeonDefinitions::get(String const& name) const {
   MutexLocker locker(m_cacheMutex);
-  return m_definitionCache.get(name,
-      [this](String const& name) -> std::shared_ptr<DungeonDefinition> {
-        if (auto path = m_paths.maybe(name))
-          return readDefinition(*path);
-        throw DungeonException::format("Unknown dungeon: '{}'", name);
-      });
+  auto definition = m_definitionCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<DungeonDefinition>, StarException> {
+    if (auto path = m_paths.maybe(name)) return readDefinition(*path);
+    return std::unexpected(DungeonException::format("Unknown dungeon: '{}'", name));
+  });
+  if (!definition) return std::unexpected(std::move(definition.error()));
+  return std::shared_ptr<DungeonDefinition const>(**definition);
 }
 
-JsonObject DungeonDefinitions::getMetadata(String const& name) const {
+std::expected<JsonObject, StarException> DungeonDefinitions::getMetadata(String const& name) const {
   auto definition = get(name);
-  return definition->metadata();
+  if (!definition) return std::unexpected(std::move(definition.error()));
+  return (*definition)->metadata();
 }
 
-std::shared_ptr<DungeonDefinition> DungeonDefinitions::readDefinition(String const& path) const {
-  try {
+std::expected<std::shared_ptr<DungeonDefinition>, StarException> DungeonDefinitions::readDefinition(String const& path) const {
+  auto load = [&]() -> std::expected<std::shared_ptr<DungeonDefinition>, StarException> {
     auto assets = this->root().assets();
-    return std::make_shared<DungeonDefinition>(this->root(), assets->json(path).toObject(), AssetPath::directory(path));
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
-  }
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto json = (*assets)->json(path);
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto definition = json->toObject();
+    if (!definition) return std::unexpected(std::move(definition.error()));
+    return DungeonDefinition::create(this->root(), *definition, AssetPath::directory(path));
+  };
+  auto result = load();
+  if (!result) return std::unexpected(DungeonException(strf("Error loading dungeon '{}'", path), ExceptionDiagnostic(result.error())));
+  return result;
 }
 
-DungeonDefinition::DungeonDefinition(Root& root, JsonObject const& definition, String const& directory) : m_root(root) {
-  m_directory = directory;
-  m_metadata = definition.get("metadata").toObject();
-  m_name = m_metadata.get("name").toString();
-  m_displayName = m_metadata.contains("displayName") ? m_metadata.get("displayName").toString() : "";
-  m_species = m_metadata.get("species").toString();
-  m_isProtected = m_metadata.contains("protected") ? m_metadata.get("protected").toBool() : false;
-  if (m_metadata.contains("rules"))
-    m_rules = Dungeon::Rule::readRules(root, m_metadata.get("rules"));
-
-  m_maxRadius = m_metadata.value("maxRadius", 100).toInt();
-  m_maxParts = m_metadata.value("maxParts", 100).toInt();
-  m_extendSurfaceFreeSpace = m_metadata.value("extendSurfaceFreeSpace", 0).toInt();
-
-  m_anchors = jsonToStringList(m_metadata.get("anchor"));
-
-  auto tileset = definition.maybe("tiles").transform([&root](Json const& tileset) {
-      return std::make_shared<const Dungeon::ImageTileset>(root, tileset);
-    });
-
-  for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    std::shared_ptr<Dungeon::Part const> part = parsePart(root, this, partsDefMap, tileset);
-    if (m_parts.contains(part->name()))
-      throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
-    m_parts.insert(part->name(), part);
+std::expected<std::shared_ptr<DungeonDefinition>, StarException> DungeonDefinition::create(Root& root, JsonObject const& definition, String const& directory) {
+  auto result = std::shared_ptr<DungeonDefinition>(new DungeonDefinition(root));
+  result->m_directory = directory;
+  auto metadataValue = definition.get("metadata");
+  if (!metadataValue) return std::unexpected(std::move(metadataValue.error()));
+  Json const& metadataJson = **metadataValue;
+  auto metadata = metadataJson.toObject();
+  if (!metadata) return std::unexpected(std::move(metadata.error()));
+  result->m_metadata = std::move(*metadata);
+  auto name = metadataJson.getString("name");
+  if (!name) return std::unexpected(std::move(name.error()));
+  result->m_name = std::move(*name);
+  auto displayName = result->m_metadata.value("displayName", "").toString();
+  if (!displayName) return std::unexpected(std::move(displayName.error()));
+  result->m_displayName = std::move(*displayName);
+  auto species = metadataJson.getString("species");
+  if (!species) return std::unexpected(std::move(species.error()));
+  result->m_species = std::move(*species);
+  auto protectedValue = result->m_metadata.value("protected", false).toBool();
+  if (!protectedValue) return std::unexpected(std::move(protectedValue.error()));
+  result->m_isProtected = *protectedValue;
+  if (auto ruleJson = result->m_metadata.maybe("rules")) {
+    auto rules = Dungeon::Rule::readRules(root, *ruleJson);
+    if (!rules) return std::unexpected(std::move(rules.error()));
+    result->m_rules = std::move(*rules);
   }
-
-  if (m_metadata.contains("gravity"))
-    m_gravity = m_metadata.get("gravity").toFloat();
-
-  if (m_metadata.contains("breathable"))
-    m_breathable = m_metadata.get("breathable").toBool();
+  auto radius = result->m_metadata.value("maxRadius", 100).toInt();
+  if (!radius) return std::unexpected(std::move(radius.error()));
+  result->m_maxRadius = *radius;
+  auto maxParts = result->m_metadata.value("maxParts", 100).toInt();
+  if (!maxParts) return std::unexpected(std::move(maxParts.error()));
+  result->m_maxParts = *maxParts;
+  auto freeSpace = result->m_metadata.value("extendSurfaceFreeSpace", 0).toInt();
+  if (!freeSpace) return std::unexpected(std::move(freeSpace.error()));
+  result->m_extendSurfaceFreeSpace = *freeSpace;
+  auto anchorJson = metadataJson.get("anchor");
+  if (!anchorJson) return std::unexpected(std::move(anchorJson.error()));
+  auto anchors = jsonToStringList(*anchorJson);
+  if (!anchors) return std::unexpected(std::move(anchors.error()));
+  result->m_anchors = std::move(*anchors);
+  std::optional<std::shared_ptr<Dungeon::ImageTileset const>> tileset;
+  if (auto tiles = definition.maybe("tiles")) {
+    auto loaded = Dungeon::ImageTileset::create(root, *tiles);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    tileset = std::move(*loaded);
+  }
+  auto partsValue = definition.get("parts");
+  if (!partsValue) return std::unexpected(std::move(partsValue.error()));
+  auto parts = (*partsValue)->iterateArray();
+  if (!parts) return std::unexpected(std::move(parts.error()));
+  for (auto const& partJson : *parts) {
+    auto part = parsePart(root, result.get(), partJson, tileset);
+    if (!part) return std::unexpected(std::move(part.error()));
+    if (result->m_parts.contains((*part)->name()))
+      return std::unexpected(DungeonException::format("Duplicate dungeon part name: {}", (*part)->name()));
+    auto const& partName = (*part)->name();
+    result->m_parts.insert(partName, std::move(*part));
+  }
+  if (auto gravityJson = result->m_metadata.maybe("gravity")) {
+    auto gravity = gravityJson->toFloat();
+    if (!gravity) return std::unexpected(std::move(gravity.error()));
+    result->m_gravity = *gravity;
+  }
+  if (auto breathableJson = result->m_metadata.maybe("breathable")) {
+    auto breathable = breathableJson->toBool();
+    if (!breathable) return std::unexpected(std::move(breathable.error()));
+    result->m_breathable = *breathable;
+  }
+  return result;
 }
 
 JsonObject DungeonDefinition::metadata() const {
@@ -1478,39 +1685,58 @@ int DungeonDefinition::extendSurfaceFreeSpace() const {
   return m_extendSurfaceFreeSpace;
 }
 
-DungeonGenerator::DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId)
-  : m_root(root), m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
-  m_def = this->root().dungeonDefinitions()->get(dungeonName);
+DungeonGenerator::DungeonGenerator(Root& root, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId)
+  : m_root(root), m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {}
+
+std::expected<std::shared_ptr<DungeonGenerator>, StarException> DungeonGenerator::create(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId) {
+  auto definitions = root.dungeonDefinitions();
+  if (!definitions) return std::unexpected(std::move(definitions.error()));
+  auto definition = (*definitions)->get(dungeonName);
+  if (!definition) return std::unexpected(std::move(definition.error()));
+  auto result = std::shared_ptr<DungeonGenerator>(new DungeonGenerator(root, seed, threatLevel, dungeonId));
+  result->m_def = std::move(*definition);
+  return result;
 }
 
-std::optional<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
+std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
   String name = m_def->name();
-  try {
+  auto generate = [&]() -> std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> {
     Dungeon::DungeonGeneratorWriter writer(this->root(), facade, markSurfaceAndTerrain ? position[1] : std::optional<int>(), m_def->extendSurfaceFreeSpace());
-
-    this->root().logger().debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
-
-    std::shared_ptr<Dungeon::Part const> anchor = pickAnchor();
-    if (!anchor) {
-      this->root().logger().error("No valid anchor piece found for dungeon {} at {}", name, position);
-      return {};
+    auto logged = forcePlacement ? this->root().logger().debug("Forcing generation of dungeon {}", name) : this->root().logger().debug("Generating dungeon {}", name);
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    auto anchor = pickAnchor();
+    if (!anchor) return std::unexpected(std::move(anchor.error()));
+    if (!*anchor) {
+      auto logged = this->root().logger().error("No valid anchor piece found for dungeon {} at {}", name, position);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+      return std::optional<std::pair<List<RectI>, Set<Vec2I>>>();
     }
-
-    auto pos = position + Vec2I(0, -anchor->placementLevelConstraint());
-    if (forcePlacement || anchor->canPlace(pos, &writer)) {
-      this->root().logger().info("Placing dungeon {} at {}", name, position);
-      return buildDungeon(anchor, pos, &writer, forcePlacement);
-    } else {
-      this->root().logger().debug("Failed to place dungeon {} at {}", name, position);
-      return {};
+    auto constraint = (*anchor)->placementLevelConstraint();
+    if (!constraint) return std::unexpected(std::move(constraint.error()));
+    auto pos = position + Vec2I(0, -*constraint);
+    bool allowed = forcePlacement;
+    if (!allowed) {
+      auto canPlace = (*anchor)->canPlace(pos, &writer);
+      if (!canPlace) return std::unexpected(std::move(canPlace.error()));
+      allowed = *canPlace;
     }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw DungeonException(strf("Error generating dungeon named '{}'", name), e);
-  }
+    if (allowed) {
+      auto logged = this->root().logger().info("Placing dungeon {} at {}", name, position);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+      auto built = buildDungeon(*anchor, pos, &writer, forcePlacement);
+      if (!built) return std::unexpected(std::move(built.error()));
+      return std::optional<std::pair<List<RectI>, Set<Vec2I>>>(std::move(*built));
+    }
+    auto failed = this->root().logger().debug("Failed to place dungeon {} at {}", name, position);
+    if (!failed) return std::unexpected(std::move(failed.error()));
+    return std::optional<std::pair<List<RectI>, Set<Vec2I>>>();
+  };
+  auto result = generate();
+  if (!result) return std::unexpected(DungeonException(strf("Error generating dungeon named '{}'", name), ExceptionDiagnostic(result.error())));
+  return result;
 }
 
-std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
+std::expected<std::pair<List<RectI>, Set<Vec2I>>, StarException> DungeonGenerator::buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
   writer->reset();
 
   Deque<std::pair<Dungeon::Part const*, Vec2I>> openSet;
@@ -1519,27 +1745,28 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
   Set<Vec2I> preserveTiles;
   int piecesPlaced = 0;
 
-  this->root().logger().debug("Placing dungeon entrance at {}", basePos);
+  if (auto logged = this->root().logger().debug("Placing dungeon entrance at {}", basePos); !logged) return std::unexpected(std::move(logged.error()));
 
-  auto placePart = [&](Dungeon::Part const* part, Vec2I const& placePos) {
+  auto placePart = [&](Dungeon::Part const* part, Vec2I const& placePos) -> std::expected<void, StarException> {
       Set<Vec2I> clearTileEntityPositions;
-      part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
+      auto cleared = part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> std::expected<bool, StarException> {
           if (tile.modifiesPlaces())
             clearTileEntityPositions.insert(writer->wrapPosition(placePos + tilePos));
           return false;
         });
+      if (!cleared) return std::unexpected(std::move(cleared.error()));
       auto partBounds = RectI::withSize(placePos, Vec2I(part->size()));
-      writer->clearTileEntities(partBounds, clearTileEntityPositions, part->clearAnchoredObjects());
+      if (auto result = writer->clearTileEntities(partBounds, clearTileEntityPositions, part->clearAnchoredObjects()); !result) return std::unexpected(std::move(result.error()));
 
       if (part->markDungeonId())
         writer->setMarkDungeonId(m_dungeonId);
       else
         writer->setMarkDungeonId({});
 
-      part->place(placePos, preserveTiles, writer);
+      if (auto result = part->place(placePos, preserveTiles, writer); !result) return std::unexpected(std::move(result.error()));
       writer->finishPart();
 
-      part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
+      auto marked = part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> std::expected<bool, StarException> {
           if (tile.usesPlaces())
             preserveTiles.insert(placePos + tilePos);
           if (tile.modifiesPlaces())
@@ -1547,33 +1774,41 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
           return false;
         });
 
+      if (!marked) return std::unexpected(std::move(marked.error()));
       openSet.append({part, placePos});
 
       placementCounter[part->name()]++;
       piecesPlaced++;
 
-      this->root().logger().debug("placed {}", part->name());
+      if (auto logged = this->root().logger().debug("placed {}", part->name()); !logged) return std::unexpected(std::move(logged.error()));
+      return {};
     };
 
-  placePart(anchor.get(), basePos);
+  auto placedAnchor = placePart(anchor.get(), basePos);
+  if (!placedAnchor) return std::unexpected(std::move(placedAnchor.error()));
 
   Vec2I origin = basePos + Vec2I(anchor->size()) / 2;
 
   Set<Vec2I> closedConnectors;
   while (openSet.size()) {
-    Dungeon::Part const* parentPart = openSet.first().first;
-    Vec2I parentPos = openSet.first().second;
-    openSet.takeFirst();
-    this->root().logger().debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size());
+    auto next = openSet.takeFirst();
+    if (!next) return std::unexpected(std::move(next.error()));
+    Dungeon::Part const* parentPart = next->first;
+    Vec2I parentPos = next->second;
+    if (auto logged = this->root().logger().debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size()); !logged) return std::unexpected(std::move(logged.error()));
     for (std::size_t i = 0; i < parentPart->connections().size(); i++) {
       auto connector = parentPart->connections()[i];
       Vec2I connectorPos = parentPos + connector->offset();
       if (closedConnectors.contains(connectorPos))
         continue;
-      List<std::shared_ptr<Dungeon::Connector const>> options = findConnectablePart(connector);
+      auto foundOptions = findConnectablePart(connector);
+      if (!foundOptions) return std::unexpected(std::move(foundOptions.error()));
+      auto options = std::move(*foundOptions);
       while (options.size()) {
-        std::shared_ptr<Dungeon::Connector const> option = chooseOption(options, m_rand);
-        this->root().logger().debug("Trying part {}", option->part()->name());
+        auto chosenOption = chooseOption(options, m_rand);
+        if (!chosenOption) return std::unexpected(std::move(chosenOption.error()));
+        auto option = std::move(*chosenOption);
+        if (auto logged = this->root().logger().debug("Trying part {}", option->part()->name()); !logged) return std::unexpected(std::move(logged.error()));
         Vec2I partPos = connectorPos - option->offset() + option->positionAdjustment();
         Vec2I optionPos = connectorPos + option->positionAdjustment();
         if (!option->part()->ignoresPartMaximum()) {
@@ -1581,70 +1816,84 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
             continue;
 
           if ((partPos - origin).magnitude() > m_def->maxRadius()) {
-            this->root().logger().debug("out of range. {} ... {}", partPos, origin);
+            if (auto logged = this->root().logger().debug("out of range. {} ... {}", partPos, origin); !logged) return std::unexpected(std::move(logged.error()));
             continue;
           }
         }
         if (!option->part()->allowsPlacement(placementCounter[option->part()->name()])) {
-          this->root().logger().debug("part failed in allowsPlacement");
+          if (auto logged = this->root().logger().debug("part failed in allowsPlacement"); !logged) return std::unexpected(std::move(logged.error()));
           continue;
         }
         if (!option->part()->checkPartCombinationsAllowed(placementCounter)) {
-          this->root().logger().debug("part failed in checkPartCombinationsAllowed");
+          if (auto logged = this->root().logger().debug("part failed in checkPartCombinationsAllowed"); !logged) return std::unexpected(std::move(logged.error()));
           continue;
         }
-        if (option->part()->collidesWithPlaces(partPos, preserveTiles)) {
-          this->root().logger().debug("part failed in collidesWithPlaces");
+        auto collides = option->part()->collidesWithPlaces(partPos, preserveTiles);
+        if (!collides) return std::unexpected(std::move(collides.error()));
+        if (*collides) {
+          if (auto logged = this->root().logger().debug("part failed in collidesWithPlaces"); !logged) return std::unexpected(std::move(logged.error()));
           continue;
         }
         if (option->part()->minimumThreatLevel() && m_threatLevel < *option->part()->minimumThreatLevel()) {
-          this->root().logger().debug("part failed in minimumThreatLevel");
+          if (auto logged = this->root().logger().debug("part failed in minimumThreatLevel"); !logged) return std::unexpected(std::move(logged.error()));
           continue;
         }
         if (option->part()->maximumThreatLevel() && m_threatLevel > *option->part()->maximumThreatLevel()) {
-          this->root().logger().debug("part failed in maximumThreatLevel");
+          if (auto logged = this->root().logger().debug("part failed in maximumThreatLevel"); !logged) return std::unexpected(std::move(logged.error()));
           continue;
         }
-        if (forcePlacement || option->part()->canPlace(partPos, writer)) {
-          placePart(option->part(), partPos);
+        bool allowed = forcePlacement;
+        if (!allowed) {
+          auto canPlace = option->part()->canPlace(partPos, writer);
+          if (!canPlace) return std::unexpected(std::move(canPlace.error()));
+          allowed = *canPlace;
+        }
+        if (allowed) {
+          auto placed = placePart(option->part(), partPos);
+          if (!placed) return std::unexpected(std::move(placed.error()));
           closedConnectors.add(connectorPos);
           closedConnectors.add(optionPos);
           break;
         } else {
-          this->root().logger().debug("part failed in canPlace");
+          if (auto logged = this->root().logger().debug("part failed in canPlace"); !logged) return std::unexpected(std::move(logged.error()));
         }
       }
     }
   }
-  this->root().logger().debug("Settling dungeon water.");
-  writer->flushLiquid();
-  this->root().logger().debug("Flushing dungeon into the worldgen.");
-  writer->flush();
+  if (auto logged = this->root().logger().debug("Settling dungeon water."); !logged) return std::unexpected(std::move(logged.error()));
+  if (auto result = writer->flushLiquid(); !result) return std::unexpected(std::move(result.error()));
+  if (auto logged = this->root().logger().debug("Flushing dungeon into the worldgen."); !logged) return std::unexpected(std::move(logged.error()));
+  if (auto result = writer->flush(); !result) return std::unexpected(std::move(result.error()));
 
-  return {writer->boundingBoxes(), modifiedTiles};
+  return std::pair{writer->boundingBoxes(), std::move(modifiedTiles)};
 }
 
-std::shared_ptr<Dungeon::Part const> DungeonGenerator::pickAnchor() {
-  auto validAnchors = m_def->anchors().filtered([this](String const& anchorName) {
-    auto anchorPart = m_def->parts().get(anchorName);
-    return (!anchorPart->minimumThreatLevel() || m_threatLevel >= *anchorPart->minimumThreatLevel())
-        && (!anchorPart->maximumThreatLevel() || m_threatLevel <= *anchorPart->maximumThreatLevel());
-  });
-
-  if (validAnchors.empty())
-    return {};
-
-  return m_def->parts().get(m_rand.randFrom(validAnchors));
+std::expected<std::shared_ptr<Dungeon::Part const>, StarException> DungeonGenerator::pickAnchor() {
+  List<String> validAnchors;
+  for (auto const& name : m_def->anchors()) {
+    auto part = m_def->parts().get(name);
+    if (!part) return std::unexpected(std::move(part.error()));
+    auto const& anchor = **part;
+    if ((!anchor->minimumThreatLevel() || m_threatLevel >= *anchor->minimumThreatLevel())
+        && (!anchor->maximumThreatLevel() || m_threatLevel <= *anchor->maximumThreatLevel()))
+      validAnchors.append(name);
+  }
+  if (validAnchors.empty()) return std::shared_ptr<Dungeon::Part const>();
+  auto name = m_rand.randFrom(validAnchors);
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto part = m_def->parts().get(**name);
+  if (!part) return std::unexpected(std::move(part.error()));
+  return **part;
 }
 
-List<std::shared_ptr<Dungeon::Connector const>> DungeonGenerator::findConnectablePart(std::shared_ptr<Dungeon::Connector const> connector) const {
+std::expected<List<std::shared_ptr<Dungeon::Connector const>>, StarException> DungeonGenerator::findConnectablePart(std::shared_ptr<Dungeon::Connector const> connector) const {
   List<std::shared_ptr<Dungeon::Connector const>> result;
   for (auto const& partPair : m_def->parts()) {
-    if (partPair.second->doesNotConnectTo(connector->part()))
-      continue;
+    if (partPair.second->doesNotConnectTo(connector->part())) continue;
     for (auto const& connection : partPair.second->connections()) {
-      if (connection->connectsTo(connector))
-        result.append(connection);
+      auto connects = connection->connectsTo(connector);
+      if (!connects) return std::unexpected(std::move(connects.error()));
+      if (*connects) result.append(connection);
     }
   }
   return result;

@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.casting;
@@ -48,13 +49,14 @@ public:
     return Star::typeName<PopupInterface>();
   }
 
-  PopupInterface(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<PopupInterface>, StarException> create(GuiContext& guiContext);
 
   virtual ~PopupInterface() {}
 
-  void displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound = {});
+  [[nodiscard]] std::expected<void, StarException> displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound = {});
 
 private:
+  explicit PopupInterface(GuiContext& guiContext);
 };
 
 }

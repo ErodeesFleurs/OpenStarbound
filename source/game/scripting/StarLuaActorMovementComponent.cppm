@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.lua;
 import star.json;
 import star.game_types;
@@ -12,42 +13,29 @@ import star.lua_game_converters;
 import star.movement_controller_lua_bindings;
 import star.math_common;
 import star.algorithm;
+import star.output_proxy;
 
 namespace Star {
 
 class Root;
 
-// Wraps a LuaUpdatableComponent to handle the particularly tricky case of
-// maintaining ActorMovementController controls when we do not call the script
-// update every tick.
+// Holds actor controls between script updates, including the update-error path.
 template <typename Base>
 class LuaActorMovementComponent : public Base {
 public:
   explicit LuaActorMovementComponent(Root& root);
-
-  void addActorMovementCallbacks(ActorMovementController* actorMovementController);
-  void removeActorMovementCallbacks();
-
-  // If true, then the controls are automatically cleared on script update.
-  // Defaults to true
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller);
+  [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks();
   bool autoClearControls() const;
-  void setAutoClearControls(bool autoClearControls);
-
-  // Updates the lua script component and applies held controls.  If no script
-  // update is scheduled this tick, then the controls from the last update will
-  // be held and not cleared.  If a script update is scheduled this tick, then
-  // the controls will be cleared only if autoClearControls is set to true.
+  void setAutoClearControls(bool enabled);
   template <typename Ret = LuaValue, typename... V>
-  std::optional<Ret> update(V&&... args);
-
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args);
 private:
-  void performControls();
+  [[nodiscard]] std::expected<void, StarException> performControls();
   void clearControls();
-
-  ActorMovementController* m_movementController;
-  bool m_autoClearControls = false;
-
-  float m_controlRotation;
+  ActorMovementController* m_movementController = nullptr;
+  bool m_autoClearControls = true;
+  float m_controlRotation = 0.0f;
   Vec2F m_controlAcceleration;
   Vec2F m_controlForce;
   std::optional<std::tuple<Vec2F, float>> m_controlApproachVelocity;
@@ -61,279 +49,235 @@ private:
   std::optional<bool> m_controlJump;
   bool m_controlHoldJump = false;
   std::optional<Vec2F> m_controlFly;
-
   bool m_resetPathMove = false;
   std::optional<std::pair<Vec2F, bool>> m_controlPathMove;
   std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
 };
 
 template <typename Base>
-LuaActorMovementComponent<Base>::LuaActorMovementComponent(Root& root)
-  : Base(root), m_autoClearControls(true),
-    m_controlRotation(0.0f),
-    m_controlDown(false),
-    m_controlCrouch(false),
-    m_controlHoldJump(false) {}
+LuaActorMovementComponent<Base>::LuaActorMovementComponent(Root& root) : Base(root) {}
 
 template <typename Base>
-void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* actorMovementController) {
-  m_movementController = actorMovementController;
-  if (m_movementController) {
-    // inherit base mcontroller callbacks so that we have some consistency and don't need to have duplicate definitions here
-    LuaCallbacks callbacks = LuaBindings::makeMovementControllerCallbacks(m_movementController);
-
-    // replace callbacks that need to set a value here that probably shouldn't be done with virtual function overrides
-    callbacks.removeCallback("setVelocity");
-    callbacks.registerCallback("setVelocity", [this](Vec2F const& vel) {
-      m_resetPathMove = true;
-      m_movementController->setVelocity(vel);
-    });
-    callbacks.removeCallback("setXVelocity");
-    callbacks.registerCallback("setXVelocity", [this](float xVel) {
-        m_resetPathMove = true;
-        m_movementController->setXVelocity(xVel);
-      });
-    callbacks.removeCallback("setYVelocity");
-    callbacks.registerCallback("setYVelocity", [this](float yVel) {
-        m_resetPathMove = true;
-        m_movementController->setYVelocity(yVel);
-      });
-    callbacks.removeCallback("addMomentum");
-    callbacks.registerCallback("addMomentum", [this](Vec2F const& momentum) {
-        m_resetPathMove = true;
-        m_movementController->addMomentum(momentum);
-      });
-
-    callbacks.removeCallback("setRotation");
-    callbacks.registerCallback("setRotation", [this](float rotation) {
-        m_resetPathMove = true;
-        m_movementController->setRotation(rotation);
-      });
-
-    callbacks.removeCallback("setRotation");
-    callbacks.registerCallback("setRotation", [this](float rotation) {
-        m_resetPathMove = true;
-        m_movementController->setRotation(rotation);
-      });
-
-    // The actual actor specific callbacks
-    callbacks.registerCallback("setAnchorState", [this](EntityId anchorableEntity, std::size_t anchorPosition) {
-        m_movementController->setAnchorState({anchorableEntity, anchorPosition});
-      });
-
-    callbacks.registerCallback("resetAnchorState", [this]() {
-        m_movementController->resetAnchorState();
-      });
-
-    callbacks.registerCallback("anchorState", [this]() {
-        if (auto anchorState = m_movementController->anchorState())
-          return LuaVariadic<LuaValue>{LuaInt(anchorState->entityId), LuaInt(anchorState->positionIndex)};
-        return LuaVariadic<LuaValue>();
-      });
-
-    callbacks.registerCallback("baseParameters", [this]() {
-        return m_movementController->baseParameters();
-      });
-
-    callbacks.registerCallback("walking", [this]() {
-        return m_movementController->walking();
-      });
-
-    callbacks.registerCallback("running", [this]() {
-        return m_movementController->running();
-      });
-
-    callbacks.registerCallback("movingDirection", [this]() {
-        return numericalDirection(m_movementController->movingDirection());
-      });
-
-    callbacks.registerCallback("facingDirection", [this]() {
-        return numericalDirection(m_movementController->facingDirection());
-      });
-
-    callbacks.registerCallback("crouching", [this]() {
-        return m_movementController->crouching();
-      });
-
-    callbacks.registerCallback("flying", [this]() {
-        return m_movementController->flying();
-      });
-
-    callbacks.registerCallback("falling", [this]() {
-        return m_movementController->falling();
-      });
-
-    callbacks.registerCallback("canJump", [this]() {
-        return m_movementController->canJump();
-      });
-    callbacks.registerCallback("jumping", [this]() {
-        return m_movementController->jumping();
-      });
-
-    callbacks.registerCallback("groundMovement", [this]() {
-        return m_movementController->groundMovement();
-      });
-
-    callbacks.registerCallback("liquidMovement", [this]() {
-        return m_movementController->liquidMovement();
-      });
-
-    callbacks.registerCallback("controlRotation", [this](float rotation) {
-        m_controlRotation += rotation;
-      });
-
-    callbacks.registerCallback("controlAcceleration", [this](Vec2F const& accel) {
-        m_controlAcceleration += accel;
-      });
-
-    callbacks.registerCallback("controlForce", [this](Vec2F const& force) {
-        m_controlForce += force;
-      });
-
-    callbacks.registerCallback("controlApproachVelocity", [this](Vec2F const& arg1, float arg2) {
-        m_controlApproachVelocity.emplace(std::make_tuple(arg1, arg2));
-      });
-
-    callbacks.registerCallback("controlApproachVelocityAlongAngle", [this](float angle, float targetVelocity, float maxControlForce, bool positiveOnly) {
-        m_controlApproachVelocityAlongAngle.emplace(std::make_tuple(angle, targetVelocity, maxControlForce, positiveOnly));
-      });
-
-    callbacks.registerCallback("controlApproachXVelocity", [this](float targetXVelocity, float maxControlForce) {
-        m_controlApproachVelocityAlongAngle.emplace(std::make_tuple(0.0f, targetXVelocity, maxControlForce, false));
-      });
-
-    callbacks.registerCallback("controlApproachYVelocity", [this](float targetYVelocity, float maxControlForce) {
-        m_controlApproachVelocityAlongAngle.emplace(
-            std::make_tuple(std::numbers::pi / 2.0f, targetYVelocity, maxControlForce, false));
-      });
-
-    callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& arg1) {
-        m_controlParameters = m_controlParameters.value_or(ActorMovementParameters{}).merge(arg1);
-      });
-
-    callbacks.registerCallback("controlModifiers", [this](ActorMovementModifiers const& arg1) {
-        m_controlModifiers = m_controlModifiers.value_or(ActorMovementModifiers{}).combine(arg1);
-      });
-
-    callbacks.registerCallback("controlMove", [this](std::optional<float> const& arg1, std::optional<bool> const& arg2) {
-        if (auto direction = directionOf(arg1.value_or(float{})))
-          m_controlMove.emplace(std::make_tuple(*direction, arg2.value_or(true)));
-      });
-
-    callbacks.registerCallback("controlFace", [this](std::optional<float> const& arg1) {
-        if (auto direction = directionOf(arg1.value_or(float{})))
-          m_controlFace = *direction;
-      });
-
-    callbacks.registerCallback("controlDown", [this]() {
-        m_controlDown = true;
-      });
-
-    callbacks.registerCallback("controlCrouch", [this]() {
-        m_controlCrouch = true;
-      });
-
-    callbacks.registerCallback("controlJump", [this](bool arg1) {
-        m_controlJump = arg1;
-      });
-
-    callbacks.registerCallback("controlHoldJump", [this]() {
-        m_controlHoldJump = true;
-      });
-
-    callbacks.registerCallback("controlFly", [this](Vec2F const& arg1) {
-        m_controlFly = arg1;
-      });
-
-    callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, std::optional<bool> run, std::optional<PlatformerAStar::Parameters> parameters) -> std::optional<bool> {
-        if (m_pathMoveResult && m_pathMoveResult->first == position) {
-          return std::exchange(m_pathMoveResult, std::nullopt).transform([](std::pair<Vec2F, bool> const& p) { return p.second; });
-        } else {
-          m_pathMoveResult.reset();
-          auto result = m_movementController->pathMove(position, run.value_or(false), parameters);
-          if (!result.has_value())
-            m_controlPathMove = std::pair<Vec2F, bool>(position, run.value_or(false));
-          return result.transform([](std::pair<Vec2F, bool> const& p) { return p.second; });
-        }
-      });
-
-    callbacks.registerCallback("pathfinding", [this]() -> bool {
-        return m_movementController->pathfinding();
-      });
-
-    callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaActorMovementComponent::autoClearControls, this));
-    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaActorMovementComponent::setAutoClearControls, this));
-    callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaActorMovementComponent::clearControls, this));
-
-    Base::addCallbacks("mcontroller", callbacks);
-
-  } else {
-    Base::removeCallbacks("mcontroller");
+[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* controller) {
+  if (!controller)
+    return removeActorMovementCallbacks();
+  auto built = LuaBindings::makeMovementControllerCallbacks(controller);
+  if (!built)
+    return std::unexpected(std::move(built.error()));
+  auto callbacks = std::move(*built);
+  callbacks.removeCallback("setVelocity");
+  if (auto result = callbacks.registerCallback("setVelocity", [this](Vec2F const& velocity) {
+    m_resetPathMove = true;
+    m_movementController->setVelocity(velocity);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  callbacks.removeCallback("setXVelocity");
+  if (auto result = callbacks.registerCallback("setXVelocity", [this](float velocity) {
+    m_resetPathMove = true;
+    m_movementController->setXVelocity(velocity);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  callbacks.removeCallback("setYVelocity");
+  if (auto result = callbacks.registerCallback("setYVelocity", [this](float velocity) {
+    m_resetPathMove = true;
+    m_movementController->setYVelocity(velocity);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  callbacks.removeCallback("addMomentum");
+  if (auto result = callbacks.registerCallback("addMomentum", [this](Vec2F const& momentum) {
+    m_resetPathMove = true;
+    m_movementController->addMomentum(momentum);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  callbacks.removeCallback("setRotation");
+  if (auto result = callbacks.registerCallback("setRotation", [this](float rotation) {
+    m_resetPathMove = true;
+    m_movementController->setRotation(rotation);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setAnchorState", [this](EntityId entity, std::size_t position) {
+    return m_movementController->setAnchorState({entity, position});
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("resetAnchorState", [this]() { return m_movementController->resetAnchorState(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("anchorState", [this]() {
+    if (auto state = m_movementController->anchorState())
+      return LuaVariadic<LuaValue>{LuaInt(state->entityId), LuaInt(state->positionIndex)};
+    return LuaVariadic<LuaValue>{};
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("baseParameters", [this]() { return m_movementController->baseParameters(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("walking", [this]() { return m_movementController->walking(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("running", [this]() { return m_movementController->running(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("movingDirection", [this]() { return numericalDirection(m_movementController->movingDirection()); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("facingDirection", [this]() { return numericalDirection(m_movementController->facingDirection()); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("crouching", [this]() { return m_movementController->crouching(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("flying", [this]() { return m_movementController->flying(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("falling", [this]() { return m_movementController->falling(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("canJump", [this]() { return m_movementController->canJump(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("jumping", [this]() { return m_movementController->jumping(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("groundMovement", [this]() { return m_movementController->groundMovement(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("liquidMovement", [this]() { return m_movementController->liquidMovement(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlRotation", [this](float rotation) { m_controlRotation += rotation; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlAcceleration", [this](Vec2F const& acceleration) { m_controlAcceleration += acceleration; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlForce", [this](Vec2F const& force) { m_controlForce += force; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlApproachVelocity", [this](Vec2F const& velocity, float force) {
+    m_controlApproachVelocity.emplace(velocity, force);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlApproachVelocityAlongAngle", [this](float angle, float velocity, float force, bool positive) {
+    m_controlApproachVelocityAlongAngle.emplace(angle, velocity, force, positive);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlApproachXVelocity", [this](float velocity, float force) {
+    m_controlApproachVelocityAlongAngle.emplace(0.0f, velocity, force, false);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlApproachYVelocity", [this](float velocity, float force) {
+    m_controlApproachVelocityAlongAngle.emplace(std::numbers::pi / 2.0f, velocity, force, false);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& parameters) {
+    m_controlParameters = m_controlParameters.value_or(ActorMovementParameters{}).merge(parameters);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlModifiers", [this](ActorMovementModifiers const& modifiers) {
+    m_controlModifiers = m_controlModifiers.value_or(ActorMovementModifiers{}).combine(modifiers);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlMove", [this](std::optional<float> const& direction, std::optional<bool> const& run) {
+    if (auto value = directionOf(direction.value_or(float{})))
+      m_controlMove.emplace(*value, run.value_or(true));
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlFace", [this](std::optional<float> const& direction) {
+    if (auto value = directionOf(direction.value_or(float{})))
+      m_controlFace = *value;
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlDown", [this]() { m_controlDown = true; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlCrouch", [this]() { m_controlCrouch = true; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlJump", [this](bool jump) { m_controlJump = jump; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlHoldJump", [this]() { m_controlHoldJump = true; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlFly", [this](Vec2F const& velocity) { m_controlFly = velocity; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, std::optional<bool> run, std::optional<PlatformerAStar::Parameters> parameters) -> std::expected<std::optional<bool>, StarException> {
+    if (m_pathMoveResult && m_pathMoveResult->first == position)
+      return std::exchange(m_pathMoveResult, std::nullopt).transform([](auto const& result) { return result.second; });
+    m_pathMoveResult.reset();
+    auto result = m_movementController->pathMove(position, run.value_or(false), parameters);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    if (!*result)
+      m_controlPathMove = std::pair<Vec2F, bool>(position, run.value_or(false));
+    return result->transform([](auto const& value) { return value.second; });
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("pathfinding", [this]() { return m_movementController->pathfinding(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaActorMovementComponent::autoClearControls, this)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaActorMovementComponent::setAutoClearControls, this)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaActorMovementComponent::clearControls, this)); !result)
+    return std::unexpected(std::move(result.error()));
+  auto previous = m_movementController;
+  m_movementController = controller;
+  if (auto added = Base::addCallbacks("mcontroller", std::move(callbacks)); !added) {
+    m_movementController = previous;
+    return std::unexpected(std::move(added.error()));
   }
+  return {};
 }
 
 template <typename Base>
-void LuaActorMovementComponent<Base>::removeActorMovementCallbacks() {
-  addActorMovementCallbacks(nullptr);
+[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::removeActorMovementCallbacks() {
+  auto removed = Base::removeCallbacks("mcontroller");
+  if (!removed)
+    return std::unexpected(std::move(removed.error()));
+  m_movementController = nullptr;
+  return {};
 }
 
 template <typename Base>
-bool LuaActorMovementComponent<Base>::autoClearControls() const {
-  return m_autoClearControls;
-}
+bool LuaActorMovementComponent<Base>::autoClearControls() const { return m_autoClearControls; }
 
 template <typename Base>
-void LuaActorMovementComponent<Base>::setAutoClearControls(bool autoClearControls) {
-  m_autoClearControls = autoClearControls;
-}
+void LuaActorMovementComponent<Base>::setAutoClearControls(bool enabled) { m_autoClearControls = enabled; }
 
 template <typename Base>
 template <typename Ret, typename... V>
-std::optional<Ret> LuaActorMovementComponent<Base>::update(V&&... args) {
-  if (Base::updateReady()) {
-    if (m_autoClearControls)
-      clearControls();
+[[nodiscard]] std::expected<std::optional<Ret>, StarException> LuaActorMovementComponent<Base>::update(V&&... args) {
+  if (Base::updateReady() && m_autoClearControls)
+    clearControls();
+  auto result = Base::template update<Ret>(std::forward<V>(args)...);
+  auto controls = performControls();
+  if (!controls) {
+    if (!result)
+      return std::unexpected(controls.error().withContext(strf("Original Lua movement update failure: {}", outputException(result.error(), true))));
+    return std::unexpected(std::move(controls.error()));
   }
-  std::optional<Ret> ret = Base::template update<Ret>(std::forward<V>(args)...);
-  performControls();
-  return ret;
+  return result;
 }
 
 template <typename Base>
-void LuaActorMovementComponent<Base>::performControls() {
-  if (m_movementController) {
-    m_movementController->controlRotation(m_controlRotation);
-    m_movementController->controlAcceleration(m_controlAcceleration);
-    m_movementController->controlForce(m_controlForce);
-    if (m_controlApproachVelocity)
-      std::apply(std::bind_front(&ActorMovementController::controlApproachVelocity, m_movementController), *m_controlApproachVelocity);
-    if (m_controlApproachVelocityAlongAngle)
-      std::apply(std::bind_front(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController), *m_controlApproachVelocityAlongAngle);
-    if (m_controlParameters)
-      m_movementController->controlParameters(*m_controlParameters);
-    if (m_controlModifiers)
-      m_movementController->controlModifiers(*m_controlModifiers);
-    if (m_controlMove)
-      std::apply(std::bind_front(&ActorMovementController::controlMove, m_movementController), *m_controlMove);
-    if (m_controlFace)
-      m_movementController->controlFace(*m_controlFace);
-    if (m_controlDown)
-      m_movementController->controlDown();
-    if (m_controlCrouch)
-      m_movementController->controlCrouch();
-    if (m_controlJump)
-      m_movementController->controlJump(*m_controlJump);
-    if (m_controlHoldJump && !m_movementController->onGround())
-      m_movementController->controlJump();
-    if (m_controlFly)
-      m_movementController->controlFly(*m_controlFly);
-
-    // some action was taken that has priority over pathing, setting position or velocity
-    if (m_resetPathMove)
-      m_controlPathMove = {};
-    if (m_controlPathMove && !m_pathMoveResult.has_value())
-      m_pathMoveResult = m_movementController->controlPathMove(m_controlPathMove->first, m_controlPathMove->second);
+[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::performControls() {
+  if (!m_movementController)
+    return {};
+  m_movementController->controlRotation(m_controlRotation);
+  m_movementController->controlAcceleration(m_controlAcceleration);
+  m_movementController->controlForce(m_controlForce);
+  if (m_controlApproachVelocity)
+    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocity, m_movementController), *m_controlApproachVelocity);
+  if (m_controlApproachVelocityAlongAngle)
+    std::apply(std::bind_front(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController), *m_controlApproachVelocityAlongAngle);
+  if (m_controlParameters)
+    m_movementController->controlParameters(*m_controlParameters);
+  if (m_controlModifiers)
+    m_movementController->controlModifiers(*m_controlModifiers);
+  if (m_controlMove)
+    std::apply(std::bind_front(&ActorMovementController::controlMove, m_movementController), *m_controlMove);
+  if (m_controlFace)
+    m_movementController->controlFace(*m_controlFace);
+  if (m_controlDown)
+    m_movementController->controlDown();
+  if (m_controlCrouch)
+    m_movementController->controlCrouch();
+  if (m_controlJump)
+    m_movementController->controlJump(*m_controlJump);
+  if (m_controlHoldJump && !m_movementController->onGround())
+    m_movementController->controlJump();
+  if (m_controlFly)
+    m_movementController->controlFly(*m_controlFly);
+  if (m_resetPathMove)
+    m_controlPathMove.reset();
+  if (m_controlPathMove && !m_pathMoveResult) {
+    auto result = m_movementController->controlPathMove(m_controlPathMove->first, m_controlPathMove->second);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    m_pathMoveResult = std::move(*result);
   }
+  return {};
 }
 
 template <typename Base>
@@ -341,25 +285,23 @@ void LuaActorMovementComponent<Base>::clearControls() {
   m_controlRotation = {};
   m_controlAcceleration = {};
   m_controlForce = {};
-  m_controlApproachVelocity = {};
-  m_controlApproachVelocityAlongAngle = {};
-  m_controlParameters = {};
-  m_controlModifiers = {};
-  m_controlMove = {};
-  m_controlFace = {};
-  m_controlDown = {};
-  m_controlCrouch = {};
-  m_controlJump = {};
-  m_controlHoldJump = {};
-  m_controlFly = {};
-
+  m_controlApproachVelocity.reset();
+  m_controlApproachVelocityAlongAngle.reset();
+  m_controlParameters.reset();
+  m_controlModifiers.reset();
+  m_controlMove.reset();
+  m_controlFace.reset();
+  m_controlDown = false;
+  m_controlCrouch = false;
+  m_controlJump.reset();
+  m_controlHoldJump = false;
+  m_controlFly.reset();
   m_resetPathMove = false;
-  // Clear path move result one clear after controlPathMove is no longer called
-  // to keep the result available for the following update
-  if (!m_controlPathMove.has_value())
-    m_pathMoveResult = {};
-  m_controlPathMove = {};
+  if (!m_controlPathMove)
+    m_pathMoveResult.reset();
+  m_controlPathMove.reset();
 }
+
 }
 
 export module star.lua_actor_movement_component;

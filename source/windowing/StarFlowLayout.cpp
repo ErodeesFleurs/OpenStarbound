@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.vector;
 import star.casting;
@@ -58,8 +59,10 @@ namespace Star {
 
 FlowLayout::FlowLayout(GuiContext& context) : Layout(context), m_wrap(true) {}
 
-void FlowLayout::update(float dt) {
-  Layout::update(dt);
+std::expected<void, StarException> FlowLayout::update(float dt) {
+  auto updated = Layout::update(dt);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
 
   int consumedWidth = 0;
   int rowHeight = 0;
@@ -77,6 +80,7 @@ void FlowLayout::update(float dt) {
     consumedWidth += child->size()[0] + m_spacing[0];
     currentOffset[0] = consumedWidth;
   }
+  return {};
 }
 
 void FlowLayout::setSpacing(Vec2I const& spacing) {

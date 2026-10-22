@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.ordered_map;
@@ -77,45 +78,48 @@ class Player;
 
 class PlayerStorage {
 public:
-  PlayerStorage(Root& root, String const& storageDir);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerStorage>, StarException> create(Root& root, String const& storageDir);
   ~PlayerStorage();
 
   std::size_t playerCount() const;
   // Returns nothing if index is out of bounds.
   std::optional<Uuid> playerUuidAt(std::size_t index);
   // Returns nothing if name doesn't match a player.
-  std::optional<Uuid> playerUuidByName(String const& name, std::optional<Uuid> except = {});
+  [[nodiscard]] std::expected<std::optional<Uuid>, StarException> playerUuidByName(String const& name, std::optional<Uuid> except = {});
   // Returns nothing if name doesn't match a player.
-  List<Uuid> playerUuidListByName(String const& name, std::optional<Uuid> except = {});
+  [[nodiscard]] std::expected<List<Uuid>, StarException> playerUuidListByName(String const& name, std::optional<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
-  Json savePlayer(std::shared_ptr<Player> const& player);
+  [[nodiscard]] std::expected<Json, StarException> savePlayer(std::shared_ptr<Player> const& player);
 
   std::optional<Json> maybeGetPlayerData(Uuid const& uuid);
-  Json getPlayerData(Uuid const& uuid);
-  std::shared_ptr<Player> loadPlayer(Uuid const& uuid);
-  void deletePlayer(Uuid const& uuid);
+  [[nodiscard]] std::expected<Json, StarException> getPlayerData(Uuid const& uuid);
+  [[nodiscard]] std::expected<std::shared_ptr<Player>, StarException> loadPlayer(Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> deletePlayer(Uuid const& uuid);
 
-  WorldChunks loadShipData(Uuid const& uuid);
-  void applyShipUpdates(Uuid const& uuid, WorldChunks const& updates);
+  [[nodiscard]] std::expected<WorldChunks, StarException> loadShipData(Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> applyShipUpdates(Uuid const& uuid, WorldChunks const& updates);
 
   // Move the given player to the top of the player ordering.
-  void moveToFront(Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> moveToFront(Uuid const& uuid);
 
   // Copy all the player relevant files for this uuid into .bak1 .bak2 etc
   // files for however many backups are configured
-  void backupCycle(Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> backupCycle(Uuid const& uuid);
 
   // Get / Set PlayerStorage global metadata
-  void setMetadata(String key, Json value);
-  Json getMetadata(String const& key);
+  [[nodiscard]] std::expected<void, StarException> setMetadata(String key, Json value);
+  [[nodiscard]] std::expected<Json, StarException> getMetadata(String const& key);
 
 private:
+  explicit PlayerStorage(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize(String const& storageDir);
   Root& m_root;
-  String const& uuidFileName(Uuid const& uuid);
-  void writeMetadata();
+  [[nodiscard]] std::expected<String const*, StarException> uuidFileName(Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> writeMetadata();
 
   mutable RecursiveMutex m_mutex;
+  bool m_initialized = false;
   String m_storageDirectory;
   String m_backupDirectory;
   OrderedHashMap<Uuid, Json> m_savedPlayersCache;

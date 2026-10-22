@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.vector;
@@ -58,22 +59,23 @@ public:
     return Star::typeName<ScriptPane>();
   }
 
-  ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScriptPane>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
 
-  void displayed() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
-  void tick(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
-  bool openWithInventory() const;
-  bool closeWithInventory() const;
+  [[nodiscard]] std::expected<bool, StarException> openWithInventory() const;
+  [[nodiscard]] std::expected<bool, StarException> closeWithInventory() const;
 
   EntityId sourceEntityId() const;
 
-  LuaCallbacks makePaneCallbacks() override;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makePaneCallbacks() override;
 private:
+  ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, EntityId sourceEntityId);
   std::shared_ptr<UniverseClient> m_client;
   EntityId m_sourceEntityId;
 };

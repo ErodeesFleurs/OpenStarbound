@@ -8,13 +8,13 @@ import star.map;
 import star.format;
 import star.list;
 import star.logging;
+import star.output_proxy;
 import star.rpc_promise;
 import star.configuration;
 import star.worker_pool;
 import star.lua_game_converters;
 import star.root;
 import star.http_client;
-
 import star.lua_http_bindings;
 
 namespace Star {
@@ -24,110 +24,142 @@ struct LuaHttpResponse {
   String body;
 };
 
-// Userdata polls only its originating session. The promise survives its owner,
-// and stop() settles it before that session's Root can be destroyed.
 struct LuaHttpRequest {
   std::weak_ptr<LuaHttpSession> session;
   RpcPromise<LuaHttpResponse> promise;
-
-  void poll() const {
+  [[nodiscard]] std::expected<void, StarException> poll() const {
     if (auto owner = session.lock())
-      owner->poll();
+      return owner->poll();
+    return {};
   }
 };
 
 namespace {
 
-String extractDomain(String const& url) {
-  const std::size_t end = url.find("://");
-  if (end == NPos)
+[[nodiscard]] std::expected<String, StarException> extractDomain(String const& url) {
+  auto scheme = url.find("://");
+  if (!scheme)
+    return std::unexpected(std::move(scheme.error()));
+  if (*scheme == NPos)
     return url;
-
-  const std::size_t domainStart = end + 3;
-  const std::size_t pathStart = url.find('/', domainStart);
-  const std::size_t portStart = url.find(':', domainStart);
-
-  std::size_t domainEnd = NPos;
-  if (pathStart != NPos && portStart != NPos)
-    domainEnd = std::min(pathStart, portStart);
-  else if (pathStart != NPos)
-    domainEnd = pathStart;
-  else if (portStart != NPos)
-    domainEnd = portStart;
-
-  if (domainEnd == NPos)
-    return url.substr(domainStart);
-  return url.substr(domainStart, domainEnd - domainStart);
+  auto start = *scheme + 3;
+  auto path = url.find('/', start);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  auto port = url.find(':', start);
+  if (!port)
+    return std::unexpected(std::move(port.error()));
+  std::size_t end = NPos;
+  if (*path != NPos && *port != NPos)
+    end = std::min(*path, *port);
+  else if (*path != NPos)
+    end = *path;
+  else if (*port != NPos)
+    end = *port;
+  return end == NPos ? url.substr(start) : url.substr(start, end - start);
 }
 
 }
 
 struct LuaHttpSession::Impl {
   struct PendingHttpRequest {
+    std::uint64_t id;
     HttpRequest httpRequest;
     RpcPromiseKeeper<LuaHttpResponse> rpcKeeper;
     String domain;
   };
-
   struct AsyncHttpRequest {
     WorkerPoolPromise<HttpResponse> workerPromise;
     RpcPromiseKeeper<LuaHttpResponse> rpcKeeper;
   };
 
-  explicit Impl(Root& root) : root(root) {}
+  Impl(Root& root, std::unique_ptr<HttpClient> client) : root(root), httpClient(std::move(client)) {}
 
-  // Called with mutex held, so stop cannot race a new submission or settlement.
-  bool isTrustedDomain(String const& domain) const {
+  [[nodiscard]] std::expected<bool, StarException> isTrustedDomain(String const& domain) const {
     if (stopped)
       return false;
     auto config = root.configuration();
-    if (auto trustedSites = config->getPath("safe.luaHttp.trustedSites").optArray()) {
-      for (auto const& site : *trustedSites) {
-        if (site.toString() == domain)
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto sites = (*config)->getPath("safe.luaHttp.trustedSites");
+    if (!sites)
+      return std::unexpected(std::move(sites.error()));
+    auto array = sites->optArray();
+    if (!array)
+      return std::unexpected(std::move(array.error()));
+    if (*array) {
+      for (auto const& site : **array) {
+        auto value = site.toString();
+        if (!value)
+          return std::unexpected(std::move(value.error()));
+        if (*value == domain)
           return true;
       }
     }
     return false;
   }
 
-  void executeHttpRequest(HttpRequest const& request, RpcPromiseKeeper<LuaHttpResponse> keeper) {
-    try {
-      auto workerPromise = httpClient.requestAsync(request);
-      asyncRequests.add(nextRequestId++, {std::move(workerPromise), keeper});
-    } catch (std::exception const& e) {
-      keeper.fail(strf("HTTP request failed: {}", e.what()));
-    } catch (...) {
-      keeper.fail("HTTP request failed: unknown exception");
+  // Transport and worker failures are ordinary failed Lua promises, as before.
+  [[nodiscard]] std::expected<void, StarException> executeHttpRequest(HttpRequest const& request, RpcPromiseKeeper<LuaHttpResponse> keeper) {
+    auto promise = httpClient->requestAsync(request);
+    auto added = asyncRequests.add(nextRequestId++, {std::move(promise), keeper});
+    if (!added) {
+      if (auto failed = keeper.fail(strf("HTTP request failed: {}", added.error().what())); !failed)
+        return std::unexpected(failed.error().withContext(strf("Original HTTP submission failure: {}", outputException(added.error(), true))));
     }
+    return {};
   }
 
-  RpcPromise<LuaHttpResponse> request(HttpRequest request) {
+  [[nodiscard]] std::expected<RpcPromise<LuaHttpResponse>, StarException> request(HttpRequest request) {
     auto [promise, keeper] = RpcPromise<LuaHttpResponse>::createPair();
     auto domain = extractDomain(request.url);
-
-    // Serialize callback removal with notification, but release the state lock
-    // before calling UI code: a handler may deliver its trust reply immediately.
+    if (!domain)
+      return std::unexpected(std::move(domain.error()));
     RecursiveMutexLocker callbackLock(callbackMutex);
     MutexLocker lock(mutex);
     if (stopped) {
-      keeper.fail("HTTP session stopped");
-    } else if (isTrustedDomain(domain)) {
-      executeHttpRequest(request, keeper);
+      if (auto failed = keeper.fail("HTTP session stopped"); !failed)
+        return std::unexpected(std::move(failed.error()));
     } else {
-      pendingRequests.append({std::move(request), keeper, domain});
-      auto callback = trustRequestCallback;
-      if (callback) {
-        lock.unlock();
-        callback(domain);
+      auto trusted = isTrustedDomain(*domain);
+      if (!trusted)
+        return std::unexpected(std::move(trusted.error()));
+      if (*trusted) {
+        if (auto executed = executeHttpRequest(request, keeper); !executed)
+          return std::unexpected(std::move(executed.error()));
       } else {
-        root.logger().warn("HTTP request to untrusted domain '{}' but no trust dialog handler available", domain);
+        auto callback = trustRequestCallback;
+        if (!callback) {
+          if (auto logged = root.logger().warn("HTTP request to untrusted domain '{}' but no trust dialog handler available", *domain); !logged)
+            return std::unexpected(std::move(logged.error()));
+        }
+        auto id = nextRequestId++;
+        pendingRequests.append({id, std::move(request), keeper, *domain});
+        if (callback) {
+          lock.unlock();
+          auto notified = callback(*domain);
+          if (!notified) {
+            // A synchronous reply may already have removed this request.
+            MutexLocker stateLock(mutex);
+            for (auto it = pendingRequests.begin(); it != pendingRequests.end(); ++it) {
+              if (it->id == id) {
+                auto failed = it->rpcKeeper.fail(strf("HTTP request failed: {}", notified.error().what()));
+                pendingRequests.erase(it);
+                if (!failed)
+                  return std::unexpected(failed.error().withContext(strf("Original HTTP trust callback failure: {}", outputException(notified.error(), true))));
+                break;
+              }
+            }
+            return std::unexpected(std::move(notified.error()));
+          }
+        }
       }
     }
     return promise;
   }
 
   Root& root;
-  HttpClient httpClient;
+  std::unique_ptr<HttpClient> httpClient;
   RecursiveMutex callbackMutex;
   LuaBindings::HttpTrustRequestCallback trustRequestCallback;
   Mutex mutex;
@@ -137,10 +169,18 @@ struct LuaHttpSession::Impl {
   bool stopped = false;
 };
 
-LuaHttpSession::LuaHttpSession(Root& root) : m_impl(std::make_unique<Impl>(root)) {}
+LuaHttpSession::LuaHttpSession(std::unique_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+
+std::expected<std::shared_ptr<LuaHttpSession>, StarException> LuaHttpSession::create(Root& root) {
+  auto client = HttpClient::create();
+  if (!client)
+    return std::unexpected(std::move(client.error()));
+  return std::shared_ptr<LuaHttpSession>(new LuaHttpSession(std::make_unique<Impl>(root, std::move(*client))));
+}
 
 LuaHttpSession::~LuaHttpSession() {
-  stop();
+  if (auto result = stop(); !result)
+    EmergencyLog::error("Error stopping Lua HTTP session: {}", outputException(result.error(), true));
 }
 
 void LuaHttpSession::setHttpTrustRequestCallback(LuaBindings::HttpTrustRequestCallback callback) {
@@ -155,26 +195,35 @@ void LuaHttpSession::clearHttpTrustRequestCallback() {
   m_impl->trustRequestCallback = {};
 }
 
-void LuaHttpSession::handleHttpTrustReply(String const& domain, bool allowed) {
+std::expected<void, StarException> LuaHttpSession::handleHttpTrustReply(String const& domain, bool allowed) {
   MutexLocker lock(m_impl->mutex);
   if (m_impl->stopped)
-    return;
-
+    return {};
+  std::optional<StarException> error;
   auto& pending = m_impl->pendingRequests;
-  auto firstRemoved = std::remove_if(pending.begin(), pending.end(), [&](auto& request) {
-    if (request.domain != domain)
-      return false;
-    if (allowed)
-      m_impl->executeHttpRequest(request.httpRequest, request.rpcKeeper);
-    else
-      request.rpcKeeper.fail(strf("HTTP request to domain '{}' denied by user", domain));
-    return true;
-  });
-  pending.erase(firstRemoved, pending.end());
+  for (auto it = pending.begin(); it != pending.end();) {
+    if (it->domain != domain) {
+      ++it;
+      continue;
+    }
+    auto result = allowed ? m_impl->executeHttpRequest(it->httpRequest, it->rpcKeeper)
+                          : it->rpcKeeper.fail(strf("HTTP request to domain '{}' denied by user", domain));
+    if (!result) {
+      if (!error)
+        error = std::move(result.error());
+      else
+        EmergencyLog::error("Error settling HTTP trust reply: {}", outputException(result.error(), true));
+    }
+    it = pending.erase(it);
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void LuaHttpSession::poll() {
+std::expected<void, StarException> LuaHttpSession::poll() {
   MutexLocker lock(m_impl->mutex);
+  std::optional<StarException> error;
   auto& requests = m_impl->asyncRequests;
   for (auto it = requests.begin(); it != requests.end();) {
     auto& request = it->second;
@@ -182,87 +231,125 @@ void LuaHttpSession::poll() {
       ++it;
       continue;
     }
-
-    try {
-      auto& response = request.workerPromise.get();
-      if (!response.error.empty())
-        request.rpcKeeper.fail(strf("HTTP request failed: {}", response.error));
+    auto response = request.workerPromise.get();
+    std::expected<void, StarException> settled;
+    if (!response)
+      settled = request.rpcKeeper.fail(strf("HTTP request exception: {}", response.error().what()));
+    else if (!(**response).error.empty())
+      settled = request.rpcKeeper.fail(strf("HTTP request failed: {}", (**response).error));
+    else
+      settled = request.rpcKeeper.fulfill({(**response).statusCode, std::move((**response).body)});
+    if (!settled) {
+      if (!error)
+        error = std::move(settled.error());
       else
-        request.rpcKeeper.fulfill({response.statusCode, std::move(response.body)});
-    } catch (std::exception const& e) {
-      request.rpcKeeper.fail(strf("HTTP request exception: {}", e.what()));
-    } catch (...) {
-      request.rpcKeeper.fail("HTTP request exception: unknown exception");
+        EmergencyLog::error("Error settling HTTP response: {}", outputException(settled.error(), true));
     }
     it = requests.erase(it);
   }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void LuaHttpSession::stop() {
-  // Waiting for this lock also waits for any in-flight trust notification, so
-  // the caller may safely destroy the UI after stop returns.
+std::expected<void, StarException> LuaHttpSession::stop() {
   RecursiveMutexLocker callbackLock(m_impl->callbackMutex);
+  std::optional<StarException> error;
+  auto remember = [&](std::expected<void, StarException> result) {
+    if (!result) {
+      if (!error)
+        error = std::move(result.error());
+      else
+        EmergencyLog::error("Error stopping Lua HTTP request: {}", outputException(result.error(), true));
+    }
+  };
   {
     MutexLocker lock(m_impl->mutex);
     if (!m_impl->stopped) {
       m_impl->stopped = true;
       m_impl->trustRequestCallback = {};
       for (auto& request : m_impl->pendingRequests)
-        request.rpcKeeper.fail("HTTP session stopped");
+        remember(request.rpcKeeper.fail("HTTP session stopped"));
       m_impl->pendingRequests.clear();
       for (auto& [id, request] : m_impl->asyncRequests)
-        request.rpcKeeper.fail("HTTP session stopped");
+        remember(request.rpcKeeper.fail("HTTP session stopped"));
       m_impl->asyncRequests.clear();
     }
   }
-  m_impl->httpClient.stop();
+  remember(m_impl->httpClient->stop());
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
 template <>
 struct LuaConverter<LuaHttpResponse> {
-  static LuaValue from(LuaEngine& engine, LuaHttpResponse const& response) {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaHttpResponse const& response) {
     auto table = engine.createTable();
-    table.set("status", response.statusCode);
-    table.set("body", response.body);
-    return table;
+    if (!table)
+      return std::unexpected(std::move(table.error()));
+    if (auto result = table->set("status", response.statusCode); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = table->set("body", response.body); !result)
+      return std::unexpected(std::move(result.error()));
+    return std::move(*table);
   }
-
-  static std::optional<LuaHttpResponse> to(LuaEngine& /*engine*/, LuaValue const& v) {
-    if (auto table = std::get_if<LuaTable>(&v)) {
+  [[nodiscard]] static std::expected<std::optional<LuaHttpResponse>, StarException> to(LuaEngine&, LuaValue const& value) {
+    if (auto table = std::get_if<LuaTable>(&value)) {
+      auto status = table->get<std::optional<int>>("status");
+      if (!status)
+        return std::unexpected(std::move(status.error()));
       LuaHttpResponse response;
-      response.statusCode = table->get<std::optional<int>>("status").value_or(0);
-      if (table->contains("body"))
-        response.body = table->get<String>("body");
-      return response;
+      response.statusCode = status->value_or(0);
+      auto hasBody = table->contains("body");
+      if (!hasBody)
+        return std::unexpected(std::move(hasBody.error()));
+      if (*hasBody) {
+        auto body = table->get<String>("body");
+        if (!body)
+          return std::unexpected(std::move(body.error()));
+        response.body = std::move(*body);
+      }
+      return std::optional<LuaHttpResponse>(std::move(response));
     }
-    return {};
+    return std::optional<LuaHttpResponse>{};
   }
 };
 
 template <>
 struct LuaUserDataMethods<LuaHttpRequest> {
-  static LuaMethods<LuaHttpRequest> make() {
+  [[nodiscard]] static std::expected<LuaMethods<LuaHttpRequest>, StarException> make() {
     LuaMethods<LuaHttpRequest> methods;
-    methods.registerMethod("finished", [](LuaHttpRequest const& request) {
-      request.poll();
+    if (auto registered = methods.registerMethod("finished", [](LuaHttpRequest const& request) -> std::expected<bool, StarException> {
+      if (auto polled = request.poll(); !polled)
+        return std::unexpected(std::move(polled.error()));
       return request.promise.finished();
-    });
-    methods.registerMethod("succeeded", [](LuaHttpRequest const& request) {
-      request.poll();
+    }); !registered)
+      return std::unexpected(std::move(registered.error()));
+    if (auto registered = methods.registerMethod("succeeded", [](LuaHttpRequest const& request) -> std::expected<bool, StarException> {
+      if (auto polled = request.poll(); !polled)
+        return std::unexpected(std::move(polled.error()));
       return request.promise.succeeded();
-    });
-    methods.registerMethod("failed", [](LuaHttpRequest const& request) {
-      request.poll();
+    }); !registered)
+      return std::unexpected(std::move(registered.error()));
+    if (auto registered = methods.registerMethod("failed", [](LuaHttpRequest const& request) -> std::expected<bool, StarException> {
+      if (auto polled = request.poll(); !polled)
+        return std::unexpected(std::move(polled.error()));
       return request.promise.failed();
-    });
-    methods.registerMethod("result", [](LuaHttpRequest const& request) {
-      request.poll();
+    }); !registered)
+      return std::unexpected(std::move(registered.error()));
+    if (auto registered = methods.registerMethod("result", [](LuaHttpRequest const& request) -> std::expected<std::optional<LuaHttpResponse>, StarException> {
+      if (auto polled = request.poll(); !polled)
+        return std::unexpected(std::move(polled.error()));
       return request.promise.result();
-    });
-    methods.registerMethod("error", [](LuaHttpRequest const& request) {
-      request.poll();
+    }); !registered)
+      return std::unexpected(std::move(registered.error()));
+    if (auto registered = methods.registerMethod("error", [](LuaHttpRequest const& request) -> std::expected<std::optional<String>, StarException> {
+      if (auto polled = request.poll(); !polled)
+        return std::unexpected(std::move(polled.error()));
       return request.promise.error();
-    });
+    }); !registered)
+      return std::unexpected(std::move(registered.error()));
     return methods;
   }
 };
@@ -270,83 +357,104 @@ struct LuaUserDataMethods<LuaHttpRequest> {
 template <>
 struct LuaConverter<LuaHttpRequest> : LuaUserDataConverter<LuaHttpRequest> {};
 
-LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled) {
   if (!session)
-    throw std::invalid_argument("HTTP callbacks require an owning LuaHttpSession");
-
+    return std::unexpected(LuaException("HTTP callbacks require an owning LuaHttpSession"));
   LuaCallbacks callbacks;
   std::weak_ptr<LuaHttpSession> weakSession = session;
-  callbacks.registerCallback("available", [enabled]() { return enabled; });
-
+  if (auto result = callbacks.registerCallback("available", [enabled]() { return enabled; }); !result)
+    return std::unexpected(std::move(result.error()));
   auto requestForMethod = [weakSession, enabled](LuaEngine& engine, String const& method, String const& url, std::optional<LuaTable> const& options) -> LuaHttpRequest {
     if (!enabled)
       return {weakSession, RpcPromise<LuaHttpResponse>::createFailed("luaHttp disabled by configuration")};
     auto owner = weakSession.lock();
     if (!owner)
       return {weakSession, RpcPromise<LuaHttpResponse>::createFailed("HTTP session stopped")};
-
-    try {
+    auto prepared = [&]() -> std::expected<HttpRequest, StarException> {
       HttpRequest request;
       request.method = method;
       request.url = url;
       if (options) {
-        auto const& optTable = *options;
-        if (optTable.contains("headers")) {
-          auto headersValue = optTable.get("headers");
-          if (auto headersTable = std::get_if<LuaTable>(&headersValue)) {
-            headersTable->iterate([&](LuaValue key, LuaValue value) {
-              if (auto keyStr = std::get_if<LuaString>(&key)) {
-                if (auto valStr = std::get_if<LuaString>(&value))
-                  request.headers[keyStr->toString()] = valStr->toString();
-                else
-                  request.headers[keyStr->toString()] = engine.luaTo<String>(value);
+        auto headers = options->get("headers");
+        if (!headers)
+          return std::unexpected(std::move(headers.error()));
+        if (auto table = std::get_if<LuaTable>(&*headers)) {
+          if (auto iterated = table->iterate([&](LuaValue key, LuaValue value) -> std::expected<void, StarException> {
+            if (auto name = std::get_if<LuaString>(&key)) {
+              if (auto text = std::get_if<LuaString>(&value))
+                request.headers[name->toString()] = text->toString();
+              else {
+                auto converted = engine.luaTo<String>(value);
+                if (!converted)
+                  return std::unexpected(std::move(converted.error()));
+                request.headers[name->toString()] = std::move(*converted);
               }
-            });
-          }
+            }
+            return {};
+          }); !iterated)
+            return std::unexpected(std::move(iterated.error()));
         }
-        if (optTable.contains("body")) {
-          auto bodyValue = optTable.get("body");
-          if (auto strValue = std::get_if<LuaString>(&bodyValue))
-            request.body = strValue->toString();
-          else
-            request.body = engine.luaTo<Json>(bodyValue).repr();
+        auto body = options->get("body");
+        if (!body)
+          return std::unexpected(std::move(body.error()));
+        if (auto text = std::get_if<LuaString>(&*body)) {
+          request.body = text->toString();
+        } else if (!std::holds_alternative<LuaNilType>(*body)) {
+          auto json = engine.luaTo<Json>(*body);
+          if (!json)
+            return std::unexpected(std::move(json.error()));
+          auto printed = json->repr();
+          if (!printed)
+            return std::unexpected(std::move(printed.error()));
+          request.body = std::move(*printed);
         }
-        if (optTable.contains("timeout"))
-          request.timeout = optTable.get<int>("timeout");
+        auto timeout = options->get<std::optional<int>>("timeout");
+        if (!timeout)
+          return std::unexpected(std::move(timeout.error()));
+        if (*timeout)
+          request.timeout = **timeout;
       }
-      return {weakSession, owner->m_impl->request(std::move(request))};
-    } catch (std::exception const& e) {
-      return {weakSession, RpcPromise<LuaHttpResponse>::createFailed(strf("HTTP request failed: {}", e.what()))};
-    } catch (...) {
-      return {weakSession, RpcPromise<LuaHttpResponse>::createFailed("HTTP request failed: unknown exception")};
-    }
+      return request;
+    }();
+    if (!prepared)
+      return {weakSession, RpcPromise<LuaHttpResponse>::createFailed(strf("HTTP request failed: {}", prepared.error().what()))};
+    auto promise = owner->m_impl->request(std::move(*prepared));
+    if (!promise)
+      return {weakSession, RpcPromise<LuaHttpResponse>::createFailed(strf("HTTP request failed: {}", promise.error().what()))};
+    return {weakSession, std::move(*promise)};
   };
-
-  callbacks.registerCallback("createRequest", [requestForMethod](LuaEngine& engine, String const& method, String const& url, std::optional<LuaTable> const& options) {
+  if (auto result = callbacks.registerCallback("createRequest", [requestForMethod](LuaEngine& engine, String const& method, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, method, url, options);
-  });
-  callbacks.registerCallback("get", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("get", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "GET", url, options);
-  });
-  callbacks.registerCallback("post", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("post", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "POST", url, options);
-  });
-  callbacks.registerCallback("put", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("put", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "PUT", url, options);
-  });
-  callbacks.registerCallback("delete", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("delete", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "DELETE", url, options);
-  });
-  callbacks.registerCallback("patch", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("patch", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "PATCH", url, options);
-  });
-  callbacks.registerCallback("isTrusted", [weakSession](String const& domain) {
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("isTrusted", [weakSession](String const& domain) -> std::expected<bool, StarException> {
     if (auto owner = weakSession.lock()) {
       MutexLocker lock(owner->m_impl->mutex);
       return owner->m_impl->isTrustedDomain(domain);
     }
     return false;
-  });
+  }); !result)
+    return std::unexpected(std::move(result.error()));
   return callbacks;
 }
 

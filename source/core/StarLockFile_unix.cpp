@@ -2,6 +2,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 import std;
 import star.format;
 import star.string;
@@ -9,85 +11,94 @@ import star.lock_file;
 import star.thread;
 import star.time;
 
-
 namespace Star {
 
 std::int64_t const LockFile::MaximumSleepMillis;
 
-std::optional<LockFile> LockFile::acquireLock(String const& filename, std::int64_t lockTimeout) {
-  LockFile lock(std::move(filename));
-  if (lock.lock(lockTimeout))
-    return lock;
-  return {};
+std::expected<std::optional<LockFile>, StarException> LockFile::acquireLock(String const& filename, std::int64_t timeout) {
+  LockFile file(filename);
+  auto locked = file.lock(timeout);
+  if (!locked)
+    return std::unexpected(std::move(locked.error()));
+  if (*locked)
+    return std::optional<LockFile>(std::move(file));
+  return std::optional<LockFile>();
 }
 
-LockFile::LockFile(String const& filename) : m_filename(std::move(filename)) {}
+LockFile::LockFile(String const& filename) : m_filename(filename) {}
 
-LockFile::LockFile(LockFile&& lockFile) {
-  operator=(std::move(lockFile));
-}
+LockFile::LockFile(LockFile&& file)
+  : m_filename(std::move(file.m_filename)), m_handle(std::move(file.m_handle)) {}
 
 LockFile::~LockFile() {
-  unlock();
+  auto result = unlock();
+  if (!result)
+    std::fprintf(stderr, "Error unlocking file during destruction: %s\n", result.error().what());
 }
 
-LockFile& LockFile::operator=(LockFile&& lockFile) {
-  m_filename = std::move(lockFile.m_filename);
-  m_handle = std::move(lockFile.m_handle);
-
+LockFile& LockFile::operator=(LockFile&& file) {
+  if (this != &file) {
+    auto released = unlock();
+    if (!released)
+      std::fprintf(stderr, "Error unlocking file during move assignment: %s\n", released.error().what());
+    m_filename = std::move(file.m_filename);
+    m_handle = std::move(file.m_handle);
+  }
   return *this;
 }
 
-bool LockFile::lock(std::int64_t timeout) {
-  auto doFLock = [](String const& filename, bool block) -> std::shared_ptr<int> {
-    int fd = open(filename.utf8Ptr(), O_RDONLY | O_CREAT, 0644);
-    if (fd < 0)
-      throw StarException(strf("Could not open lock file {}, {}\n", filename, std::strerror(errno)));
-
-    int ret;
-    if (block)
-      ret = flock(fd, LOCK_EX);
-    else
-      ret = flock(fd, LOCK_EX | LOCK_NB);
-
-    if (ret != 0) {
-      close(fd);
-      if (errno != EWOULDBLOCK)
-        throw StarException(strf("Could not lock file {}, {}\n", filename, std::strerror(errno)));
-      return {};
-    }
-
-    return std::make_shared<int>(fd);
-  };
-
-  if (timeout < 0) {
-    m_handle = doFLock(m_filename, true);
+std::expected<bool, StarException> LockFile::lock(std::int64_t timeout) {
+  if (m_handle)
     return true;
-  } else if (timeout == 0) {
-    m_handle = doFLock(m_filename, false);
-    return (bool)m_handle;
-  } else {
-    std::int64_t startTime = Time::monotonicMilliseconds();
-    while (true) {
-      m_handle = doFLock(m_filename, false);
-      if (m_handle)
-        return true;
-
-      if (Time::monotonicMilliseconds() - startTime > timeout)
+  auto acquire = [this](bool block) -> std::expected<bool, StarException> {
+    int fd = ::open(m_filename.utf8Ptr(), O_RDONLY | O_CREAT, 0644);
+    if (fd < 0)
+      return std::unexpected(StarException::format("Could not open lock file {}, {}", m_filename, std::strerror(errno)));
+    if (::flock(fd, LOCK_EX | (block ? 0 : LOCK_NB)) != 0) {
+      int error = errno;
+      if (::close(fd) < 0) {
+        auto closeError = errno;
+        if (error == EWOULDBLOCK)
+          return std::unexpected(StarException::format("Could not close unavailable lock file {}, {}", m_filename, std::strerror(closeError)));
+        std::fprintf(stderr, "Error closing failed lock acquisition: %s\n", std::strerror(closeError));
+      }
+      if (error == EWOULDBLOCK)
         return false;
-
-      Thread::sleep(std::min(timeout / 4, MaximumSleepMillis));
+      return std::unexpected(StarException::format("Could not lock file {}, {}", m_filename, std::strerror(error)));
     }
+    m_handle = std::make_shared<int>(fd);
+    return true;
+  };
+  if (timeout <= 0)
+    return acquire(timeout < 0);
+  auto start = Time::monotonicMilliseconds();
+  while (true) {
+    auto acquired = acquire(false);
+    if (!acquired)
+      return std::unexpected(std::move(acquired.error()));
+    if (*acquired)
+      return true;
+    if (Time::monotonicMilliseconds() - start > timeout)
+      return false;
+    Thread::sleep(std::min(timeout / 4, MaximumSleepMillis));
   }
 }
 
-void LockFile::unlock() {
-  if (m_handle) {
-    int fd = *(int*)m_handle.get();
-    unlink(m_filename.utf8Ptr());
-    close(fd);
-    m_handle.reset();
+std::expected<void, StarException> LockFile::unlock() {
+  auto handle = std::exchange(m_handle, {});
+  if (!handle)
+    return {};
+  int fd = *static_cast<int*>(handle.get());
+  int unlinkError = ::unlink(m_filename.utf8Ptr()) < 0 ? errno : 0;
+  int closeError = ::close(fd) < 0 ? errno : 0;
+  if (unlinkError) {
+    if (closeError)
+      std::fprintf(stderr, "Error closing lock file after unlink failure: %s\n", std::strerror(closeError));
+    return std::unexpected(StarException::format("Could not unlink lock file {}, {}", m_filename, std::strerror(unlinkError)));
   }
+  if (closeError)
+    return std::unexpected(StarException::format("Could not close lock file {}, {}", m_filename, std::strerror(closeError)));
+  return {};
 }
 
 bool LockFile::isLocked() const {

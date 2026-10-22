@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.json;
 import star.byte_array;
@@ -13,11 +14,22 @@ namespace Star {
 
 PlayerBlueprints::PlayerBlueprints() {}
 
-PlayerBlueprints::PlayerBlueprints(Json const& variant) {
-  m_knownBlueprints =
-      transform<HashSet<ItemDescriptor>>(variant.get("knownBlueprints").toArray(), construct<ItemDescriptor>());
-  m_newBlueprints =
-      transform<HashSet<ItemDescriptor>>(variant.get("newBlueprints").toArray(), construct<ItemDescriptor>());
+std::expected<PlayerBlueprints, StarException> PlayerBlueprints::create(Json const& json) {
+  PlayerBlueprints blueprints;
+  for (auto const& field : {
+      std::pair{"knownBlueprints", &blueprints.m_knownBlueprints},
+      std::pair{"newBlueprints", &blueprints.m_newBlueprints}}) {
+    auto entries = json.getArray(field.first);
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto descriptor = ItemDescriptor::create(entry);
+      if (!descriptor)
+        return std::unexpected(std::move(descriptor.error()));
+      field.second->add(std::move(*descriptor));
+    }
+  }
+  return blueprints;
 }
 
 Json PlayerBlueprints::toJson() const {

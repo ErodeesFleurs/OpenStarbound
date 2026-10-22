@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -59,41 +60,43 @@ public:
     return Star::typeName<ListWidget>();
   }
 
-  ListWidget(GuiContext& context, Json const& schema);
-  ListWidget(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<ListWidget>, StarException> create(GuiContext& context, Json const& schema);
+  [[nodiscard]] static std::expected<std::shared_ptr<ListWidget>, StarException> create(GuiContext& context);
 
   RectI relativeBoundRect() const override;
 
   // Callback is called when the selection changes
   void setCallback(WidgetCallbackFunc callback);
 
-  bool sendEvent(InputEvent const& event) override;
-  void setSchema(Json const& schema);
-  std::shared_ptr<Widget> constructWidget();
-  std::shared_ptr<Widget> addItem();
-  std::shared_ptr<Widget> addItem(std::size_t at);
-  std::shared_ptr<Widget> addItem(std::shared_ptr<Widget> existingItem);
-  void removeItem(std::size_t at);
-  void removeItem(std::shared_ptr<Widget> item);
-  void clear();
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> setSchema(Json const& schema);
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> constructWidget();
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> addItem();
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> addItem(std::size_t at);
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> addItem(std::shared_ptr<Widget> existingItem);
+  [[nodiscard]] std::expected<void, StarException> removeItem(std::size_t at);
+  [[nodiscard]] std::expected<void, StarException> removeItem(std::shared_ptr<Widget> item);
+  [[nodiscard]] std::expected<void, StarException> clear();
   std::size_t selectedItem() const;
   std::size_t itemPosition(std::shared_ptr<Widget> item) const;
   std::shared_ptr<Widget> itemAt(std::size_t n) const;
   std::shared_ptr<Widget> selectedWidget() const;
   List<std::shared_ptr<Widget>> const& list() const;
   std::size_t listSize() const;
-  void setEnabled(std::size_t pos, bool enabled);
-  void setHovered(std::size_t pos, bool hovered);
-  void setSelected(std::size_t pos);
-  void clearSelected();
-  void setSelectedWidget(std::shared_ptr<Widget> selected);
+  [[nodiscard]] std::expected<void, StarException> setEnabled(std::size_t pos, bool enabled);
+  [[nodiscard]] std::expected<void, StarException> setHovered(std::size_t pos, bool hovered);
+  [[nodiscard]] std::expected<void, StarException> setSelected(std::size_t pos);
+  [[nodiscard]] std::expected<void, StarException> clearSelected();
+  [[nodiscard]] std::expected<void, StarException> setSelectedWidget(std::shared_ptr<Widget> selected);
 
   void registerMemberCallback(String const& name, WidgetCallbackFunc const& callback);
 
   void setFillDown(bool fillDown);
-  void setColumns(std::uint64_t columns);
+  [[nodiscard]] std::expected<void, StarException> setColumns(std::uint64_t columns);
 
 private:
+  explicit ListWidget(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> setBackground(std::size_t pos, String const& image);
   void updateSizeAndPosition();
 
   Json m_schema;

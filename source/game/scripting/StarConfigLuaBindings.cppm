@@ -1,6 +1,9 @@
 module;
 
 import std;
+import star.format;
+import star.json;
+import star.lua;
 
 namespace Star {
 class Json;
@@ -11,5 +14,5 @@ class LuaCallbacks;
 export module star.config_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makeConfigCallbacks(std::function<Json(String const&, Json const&)> getParameter);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeConfigCallbacks(std::function<std::expected<Json, StarException>(String const&, Json const&)> getParameter);
 }

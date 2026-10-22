@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.game_timers;
 import std;
 import star.type_identity;
@@ -80,69 +81,67 @@ public:
     return Star::typeName<ContainerObject>();
   }
 
-  ContainerObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<ContainerObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
 
-  void update(float dt, std::uint64_t currentStep) override;
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
 
-  void destroy(RenderCallback* renderCallback) override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Json containerGuiConfig() const override;
-  String containerDescription() const override;
-  String containerSubTitle() const override;
-  ItemDescriptor iconItem() const override;
+  [[nodiscard]] std::expected<Json, StarException> containerGuiConfig() const override;
+  [[nodiscard]] std::expected<String, StarException> containerDescription() const override;
+  [[nodiscard]] std::expected<String, StarException> containerSubTitle() const override;
+  [[nodiscard]] std::expected<ItemDescriptor, StarException> iconItem() const override;
 
   std::shared_ptr<ItemBag const> itemBag() const override;
 
-  void containerOpen() override;
-  void containerClose() override;
+  [[nodiscard]] std::expected<void, StarException> containerOpen() override;
+  [[nodiscard]] std::expected<void, StarException> containerClose() override;
 
-  void startCrafting() override;
-  void stopCrafting() override;
+  [[nodiscard]] std::expected<void, StarException> startCrafting() override;
+  [[nodiscard]] std::expected<void, StarException> stopCrafting() override;
   bool isCrafting() const override;
   float craftingProgress() const override;
 
-  void burnContainerContents() override;
+  [[nodiscard]] std::expected<void, StarException> burnContainerContents() override;
 
-  RpcPromise<std::shared_ptr<Item>> addItems(std::shared_ptr<Item> const& items) override;
-  RpcPromise<std::shared_ptr<Item>> putItems(std::size_t slot, std::shared_ptr<Item> const& items) override;
-  RpcPromise<std::shared_ptr<Item>> takeItems(std::size_t slot, std::size_t count = NPos) override;
-  RpcPromise<std::shared_ptr<Item>> swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true) override;
-  RpcPromise<std::shared_ptr<Item>> applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) override;
-  RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
-  RpcPromise<bool> consumeItems(std::size_t slot, std::size_t count) override;
-  RpcPromise<List<std::shared_ptr<Item>>> clearContainer() override;
+  [[nodiscard]] std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> addItems(std::shared_ptr<Item> const& items) override;
+  [[nodiscard]] std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> putItems(std::size_t slot, std::shared_ptr<Item> const& items) override;
+  [[nodiscard]] std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> takeItems(std::size_t slot, std::size_t count = NPos) override;
+  [[nodiscard]] std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true) override;
+  [[nodiscard]] std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) override;
+  [[nodiscard]] std::expected<RpcPromise<bool>, StarException> consumeItems(ItemDescriptor const& descriptor) override;
+  [[nodiscard]] std::expected<RpcPromise<bool>, StarException> consumeItems(std::size_t slot, std::size_t count) override;
+  [[nodiscard]] std::expected<RpcPromise<List<std::shared_ptr<Item>>>, StarException> clearContainer() override;
 
 protected:
-  void getNetStates(bool initial) override;
-  void setNetStates() override;
+  [[nodiscard]] std::expected<void, StarException> getNetStates(bool initial) override;
+  [[nodiscard]] std::expected<void, StarException> setNetStates() override;
 
-  void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  [[nodiscard]] std::expected<void, StarException> readStoredData(Json const& diskStore) override;
+  [[nodiscard]] std::expected<Json, StarException> writeStoredData() const override;
 
 private:
+  explicit ContainerObject(Root& rootContext);
   typedef std::function<void(ContainerObject*)> ContainerCallback;
 
-  ItemRecipe recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems);
-  void tickCrafting(float dt);
+  [[nodiscard]] std::expected<ItemRecipe, StarException> recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems);
+  [[nodiscard]] std::expected<void, StarException> tickCrafting(float dt);
 
-  std::shared_ptr<Item> doAddItems(std::shared_ptr<Item> const& items);
-  std::shared_ptr<Item> doStackItems(std::shared_ptr<Item> const& items);
-  std::shared_ptr<Item> doPutItems(std::size_t slot, std::shared_ptr<Item> const& items);
-  std::shared_ptr<Item> doTakeItems(std::size_t slot, std::size_t count = NPos);
-  std::shared_ptr<Item> doSwapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true);
-  std::shared_ptr<Item> doApplyAugment(std::size_t slot, std::shared_ptr<Item> const& augment);
-  bool doConsumeItems(ItemDescriptor const& descriptor);
-  bool doConsumeItems(std::size_t slot, std::size_t count);
-  List<std::shared_ptr<Item>> doClearContainer();
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> doAddItems(std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> doPutItems(std::size_t slot, std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> doTakeItems(std::size_t slot, std::size_t count = NPos);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> doSwapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> doApplyAugment(std::size_t slot, std::shared_ptr<Item> const& augment);
+  [[nodiscard]] std::expected<bool, StarException> doConsumeItems(ItemDescriptor const& descriptor);
+  [[nodiscard]] std::expected<bool, StarException> doConsumeItems(std::size_t slot, std::size_t count);
+  [[nodiscard]] std::expected<List<std::shared_ptr<Item>>, StarException> doClearContainer();
 
-  template<typename T>
-  RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, std::function<T(Json)> converter);
 
   void itemsUpdated();
 

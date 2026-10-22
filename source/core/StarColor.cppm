@@ -38,7 +38,7 @@ public:
   static Color const Pink;
   static Color const Clear;
 
-  static CaseInsensitiveStringMap<Color> const NamedColors;
+  static std::expected<CaseInsensitiveStringMap<Color>, StarException> const NamedColors;
 
   // Some useful conversion methods for dealing with Vec3 / Vec4 as colors
   static Vec3F v3bToFloat(Vec3B const& b);
@@ -65,7 +65,7 @@ public:
   static Color gray(std::uint8_t g);
 
   // Only supports 8 bit color
-  static Color fromHex(StringView s);
+  [[nodiscard]] static std::expected<Color, StarException> fromHex(StringView s);
 
   // #AARRGGBB
   static Color fromUint32(std::uint32_t v);
@@ -74,11 +74,11 @@ public:
   static Color temperature(float temp);
 
   static Vec4B hueShiftVec4B(Vec4B color, float hue);
-  static Vec4B hexToVec4B(StringView s);
+  [[nodiscard]] static std::expected<Vec4B, StarException> hexToVec4B(StringView s);
   // Black
   Color();
 
-  explicit Color(StringView name);
+  [[nodiscard]] static std::expected<Color, StarException> create(StringView name);
 
   std::uint8_t red() const;
   std::uint8_t green() const;

@@ -5,7 +5,7 @@ import star.optional;
 
 import star.array;
 import star.math_common;
-import star.algorithm;
+import star.format;
 
 namespace Star {
 
@@ -140,7 +140,8 @@ public:
   template <std::size_t P = N>
   static Enable2D<P, T> angleFormedBy2(Vector const& a, Vector const& b, Vector const& c);
   template <std::size_t P = N>
-  static Enable2D<P, T> angleFormedBy2(Vector const& a, Vector const& b, Vector const& c, std::function<Vector(Vector, Vector)> const& diff);
+  [[nodiscard]] static Enable2D<P, std::expected<T, StarException>> angleFormedBy2(Vector const& a, Vector const& b, Vector const& c,
+      std::function<std::expected<Vector, StarException>(Vector, Vector)> const& diff);
 
   template <std::size_t P = N>
   Enable2D<P, Vector> rotate(T angle) const;
@@ -561,7 +562,10 @@ void Vector<T, N>::transform(Function&& function) {
 template <typename T, std::size_t N>
 template <typename Function>
 Vector<decltype(std::declval<Function>()(std::declval<T>())), N> Vector<T, N>::transformed(Function&& function) const {
-  return Star::transform<Vector<decltype(std::declval<Function>()(std::declval<T>())), N>>(*this, function);
+  Vector<decltype(std::declval<Function>()(std::declval<T>())), N> result;
+  for (std::size_t i = 0; i < N; ++i)
+    result[i] = function((*this)[i]);
+  return result;
 }
 
 template <typename T, std::size_t N>
@@ -648,9 +652,18 @@ auto Vector<T, N>::angleFormedBy2(Vector const& a, Vector const& b, Vector const
 template <typename T, std::size_t N>
 template <std::size_t P>
 auto Vector<T, N>::angleFormedBy2(
-    Vector const& a, Vector const& b, Vector const& c, std::function<Vector(Vector, Vector)> const& diff)
-    -> Enable2D<P, T> {
-  return angleBetween2(diff(b, a), diff(b, c));
+    Vector const& a, Vector const& b, Vector const& c,
+    std::function<std::expected<Vector, StarException>(Vector, Vector)> const& diff)
+    -> Enable2D<P, std::expected<T, StarException>> {
+  if (!diff)
+    return std::unexpected(StarException("Vector::angleFormedBy2 requires a difference function"));
+  auto ba = diff(b, a);
+  if (!ba)
+    return std::unexpected(std::move(ba.error()));
+  auto bc = diff(b, c);
+  if (!bc)
+    return std::unexpected(std::move(bc.error()));
+  return angleBetween2(*ba, *bc);
 }
 
 template <typename T, std::size_t N>

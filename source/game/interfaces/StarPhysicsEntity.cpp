@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -23,12 +24,37 @@ import star.physics_entity;
 import star.rect;
 namespace Star {
 
-PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {
+std::expected<PhysicsMovingCollision, StarException> PhysicsMovingCollision::fromJson(Json const& json) {
   PhysicsMovingCollision pmc;
-  pmc.position = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
-  pmc.collision = jsonToPolyF(json.get("collision"));
-  pmc.collisionKind = CollisionKindNames.getLeft(json.getString("collisionKind", "block"));
-  pmc.categoryFilter = jsonToPhysicsCategoryFilter(json);
+  auto positionJson = json.opt("position");
+  if (!positionJson)
+    return std::unexpected(std::move(positionJson.error()));
+  if (*positionJson) {
+    auto position = jsonToVec2F(**positionJson);
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    pmc.position = *position;
+  }
+  auto collisionJson = json.get("collision");
+  if (!collisionJson)
+    return std::unexpected(std::move(collisionJson.error()));
+  auto collision = jsonToPolyF(*collisionJson);
+  if (!collision)
+    return std::unexpected(std::move(collision.error()));
+  pmc.collision = std::move(*collision);
+  auto kindName = json.getString("collisionKind", "block");
+  if (!kindName)
+    return std::unexpected(std::move(kindName.error()));
+  if (!CollisionKindNames)
+    return std::unexpected(CollisionKindNames.error());
+  auto kind = CollisionKindNames->getLeft(*kindName);
+  if (!kind)
+    return std::unexpected(std::move(kind.error()));
+  pmc.collisionKind = **kind;
+  auto filter = jsonToPhysicsCategoryFilter(json);
+  if (!filter)
+    return std::unexpected(std::move(filter.error()));
+  pmc.categoryFilter = std::move(*filter);
   return pmc;
 }
 
@@ -44,20 +70,17 @@ bool PhysicsMovingCollision::operator==(PhysicsMovingCollision const& rhs) const
   return std::tie(position, collision, collisionKind, categoryFilter) == std::tie(rhs.position, rhs.collision, rhs.collisionKind, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc) {
-  ds >> pmc.position;
-  ds >> pmc.collision;
-  ds >> pmc.collisionKind;
-  ds >> pmc.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsMovingCollision& pmc) {
+  PhysicsMovingCollision decoded;
+  auto read = ds >> decoded.position >> decoded.collision >> decoded.collisionKind >> decoded.categoryFilter;
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  pmc = std::move(decoded);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
-  ds << pmc.position;
-  ds << pmc.collision;
-  ds << pmc.collisionKind;
-  ds << pmc.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
+  return ds << pmc.position << pmc.collision << pmc.collisionKind << pmc.categoryFilter;
 }
 
 MovingCollisionId::MovingCollisionId() : physicsEntityId(NullEntityId), collisionIndex(0) {}
@@ -77,27 +100,37 @@ MovingCollisionId::operator bool() const {
   return valid();
 }
 
-DataStream& operator>>(DataStream& ds, MovingCollisionId& mci) {
-  ds.read(mci.physicsEntityId);
-  ds.readVlqS(mci.collisionIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovingCollisionId& mci) {
+  MovingCollisionId decoded;
+  auto id = ds.read(decoded.physicsEntityId);
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  auto index = ds.readVlqS(decoded.collisionIndex);
+  if (!index)
+    return std::unexpected(std::move(index.error()));
+  mci = decoded;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, MovingCollisionId const& mci) {
-  ds.write(mci.physicsEntityId);
-  ds.writeVlqS(mci.collisionIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovingCollisionId const& mci) {
+  auto id = ds.write(mci.physicsEntityId);
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  auto index = ds.writeVlqS(mci.collisionIndex);
+  if (!index)
+    return std::unexpected(std::move(index.error()));
+  return &ds;
 }
 
-List<PhysicsForceRegion> PhysicsEntity::forceRegions() const {
-  return {};
+std::expected<List<PhysicsForceRegion>, StarException> PhysicsEntity::forceRegions() const {
+  return List<PhysicsForceRegion>{};
 }
 
 std::size_t PhysicsEntity::movingCollisionCount() const {
   return 0;
 }
 
-std::optional<PhysicsMovingCollision> PhysicsEntity::movingCollision(std::size_t) const {
+std::expected<std::optional<PhysicsMovingCollision>, StarException> PhysicsEntity::movingCollision(std::size_t) const {
   return {};
 }
 

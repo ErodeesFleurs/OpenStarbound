@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.set;
 import star.json;
@@ -93,25 +94,34 @@ public:
 
   enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
 
-  BeamItem(Root& root, Json config);
+  explicit BeamItem(Root& root);
   virtual ~BeamItem() = default;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
 
-  virtual float getAngle(float angle);
-  virtual List<Drawable> drawables() const;
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAngle(float angle);
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> drawables() const;
   virtual Vec2F handPosition() const;
   virtual Vec2F firePosition() const;
   virtual void setRange(float range);
-  virtual float getAppropriateOpacity() const;
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAppropriateOpacity() const;
   virtual void setEnd(EndType type);
 
 protected:
   Root& beamRoot() const;
-  List<Drawable> beamDrawables(bool canPlace = true) const;
+  [[nodiscard]]
+  std::expected<void, StarException> initializeBeam(Json config);
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> beamDrawables(bool canPlace = true) const;
 
   String m_image;
   StringList m_endImages;

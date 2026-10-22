@@ -1,6 +1,7 @@
 module;
 import std;
 import star.string;
+import star.format;
 
 namespace Star {
 
@@ -9,7 +10,7 @@ public:
   // Convenience function, tries to acquire a lock, and if succesfull returns an
   // already locked
   // LockFile.
-  static std::optional<LockFile> acquireLock(String const& filename, std::int64_t lockTimeout = 1000);
+  [[nodiscard]] static std::expected<std::optional<LockFile>, StarException> acquireLock(String const& filename, std::int64_t lockTimeout = 1000);
 
   LockFile(String const& filename);
   LockFile(LockFile&& lockFile);
@@ -23,8 +24,9 @@ public:
 
   // Wait at most timeout time to acquire the file lock, and return true if the
   // lock was acquired.  If timeout is negative, wait forever.
-  bool lock(std::int64_t timeout = 0);
-  void unlock();
+  [[nodiscard]] std::expected<bool, StarException> lock(std::int64_t timeout = 0);
+  // Consumes the handle, including when releasing it fails.
+  [[nodiscard]] std::expected<void, StarException> unlock();
 
   bool isLocked() const;
 

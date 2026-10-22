@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.net_compatibility;
 import star.byte_array;
 
@@ -25,11 +26,19 @@ public:
     BaseNetElement::initNetVersion(&m_netVersion);
   }
 
+  template <typename... Params>
+  [[nodiscard]] static std::expected<std::shared_ptr<NetElementTop>, StarException> create(Params&&... params) {
+    auto element = std::shared_ptr<NetElementTop>(new NetElementTop(InitializeTag{}, std::forward<Params>(params)...));
+    auto result = element->BaseNetElement::initialize();
+    if (!result) return std::unexpected(std::move(result.error()));
+    return element;
+  }
+
   // Writes the state update to the given DataStream then returns the version
   // code that should be passed to the next call to writeState.  If
   // 'fromVersion' is 0, then this is a full write for an initial read of a
   // slave NetElementTop.
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Reads a state produced by a call to writeState, optionally with the
   // interpolation delay time for the data contained in this state update.  If
   // the state is a full update rather than a delta, the interoplation delay
@@ -37,9 +46,17 @@ public:
   // readState, *unless* extrapolation is enabled.  If extrapolation is
   // enabled, reading a blank update calls 'blankNetDelta' which is necessary
   // to not improperly extrapolate past the end of incoming deltas.
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
 
 private:
+  struct InitializeTag {};
+
+  template <typename... Params>
+  NetElementTop(InitializeTag, Params&&... params)
+    : BaseNetElement(std::forward<Params>(params)...) {
+    BaseNetElement::initNetVersion(&m_netVersion);
+  }
+
   using BaseNetElement::initNetVersion;
   using BaseNetElement::netStore;
   using BaseNetElement::netLoad;
@@ -57,34 +74,30 @@ NetElementTop<BaseNetElement>::NetElementTop() requires std::default_initializab
 }
 
 template <typename BaseNetElement>
-std::pair<ByteArray, std::uint64_t> NetElementTop<BaseNetElement>::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
+[[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> NetElementTop<BaseNetElement>::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
   if (fromVersion == 0) {
-    ds.write<bool>(true);
-    BaseNetElement::netStore(ds, rules);
-    return {ds.takeData(), m_netVersion.increment()};
-  } else {
-    ds.write<bool>(false);
-    if (!BaseNetElement::writeNetDelta(ds, fromVersion, rules))
-      return {ByteArray(), m_netVersion.current()};
-    else
-      return {ds.takeData(), m_netVersion.increment()};
+    { auto result = ds.write<bool>(true); if (!result) return std::unexpected(std::move(result.error())); }
+    { auto result = BaseNetElement::netStore(ds, rules); if (!result) return std::unexpected(std::move(result.error())); }
+    return std::pair<ByteArray, std::uint64_t>{ds.takeData(), m_netVersion.increment()};
   }
+  { auto result = ds.write<bool>(false); if (!result) return std::unexpected(std::move(result.error())); }
+  auto written = BaseNetElement::writeNetDelta(ds, fromVersion, rules);
+  if (!written) return std::unexpected(std::move(written.error()));
+  if (!*written) return std::pair<ByteArray, std::uint64_t>{ByteArray(), m_netVersion.current()};
+  return std::pair<ByteArray, std::uint64_t>{ds.takeData(), m_netVersion.increment()};
 }
 
 template <typename BaseNetElement>
-void NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
-  if (data.empty()) {
-    BaseNetElement::blankNetDelta(interpolationTime);
-  } else {
-    DataStreamBuffer ds(std::move(data));
-    ds.setStreamCompatibilityVersion(rules);
-    if (ds.read<bool>())
-      BaseNetElement::netLoad(ds, rules);
-    else
-      BaseNetElement::readNetDelta(ds, interpolationTime, rules);
-  }
+[[nodiscard]] std::expected<void, StarException> NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  if (data.empty()) return BaseNetElement::blankNetDelta(interpolationTime);
+  DataStreamBuffer ds(std::move(data));
+  ds.setStreamCompatibilityVersion(rules);
+  auto full = ds.read<bool>();
+  if (!full) return std::unexpected(std::move(full.error()));
+  if (*full) return BaseNetElement::netLoad(ds, rules);
+  return BaseNetElement::readNetDelta(ds, interpolationTime, rules);
 }
 
 }

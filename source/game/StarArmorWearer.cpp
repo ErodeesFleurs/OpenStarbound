@@ -117,18 +117,24 @@ import star.array;
 namespace Star {
 
 ArmorWearer::ArmorWearer(Root& root) : m_root(root), m_lastNude(true) {
-  for (std::size_t i = 0; i != m_armors.size(); ++i) {
-    auto& armor = m_armors[i];
-    armor.isCosmetic = i >= 4;
-    if (i >= 8)
-      armor.netState.setCompatibilityVersion(9);
-    addNetElement(&armor.netState);
-  }
-
   reset();
 }
 
-bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
+std::expected<std::shared_ptr<ArmorWearer>, StarException> ArmorWearer::create(Root& root) {
+  auto wearer = std::shared_ptr<ArmorWearer>(new ArmorWearer(root));
+  for (std::size_t i = 0; i != wearer->m_armors.size(); ++i) {
+    auto& armor = wearer->m_armors[i];
+    armor.isCosmetic = i >= 4;
+    if (i >= 8)
+      armor.netState.setCompatibilityVersion(9);
+    auto added = wearer->addNetElement(&armor.netState);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+  }
+  return wearer;
+}
+
+std::expected<bool, StarException> ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   bool nudeChanged = m_lastNude != forceNude;
   auto gender = humanoid.identity().gender;
   bool genderChanged = !m_lastGender || *m_lastGender != gender;
@@ -157,26 +163,27 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
   bool bodyHidden = false;
   Json humanoidConfig;
-  auto addHumanoidConfig = [&](ArmorItem const& item) {
+  auto addHumanoidConfig = [&](ArmorItem const& item) -> std::expected<void, StarException> {
     bodyHidden |= item.hideBody();
     auto newConfig = item.instanceValue("humanoidConfig");
-    if (newConfig.isType(Json::Type::Object)) {
+    if (!newConfig)
+      return std::unexpected(std::move(newConfig.error()));
+    if (newConfig->isType(Json::Type::Object)) {
       if (!humanoidConfig)
         humanoidConfig = JsonObject();
-      humanoidConfig = jsonMerge(humanoidConfig, newConfig);
+      humanoidConfig = jsonMerge(humanoidConfig, *newConfig);
     }
+    return {};
   };
 
-  std::exception_ptr configException;
-  bool movementParametersChanged;
+  std::optional<StarException> configError;
+  bool movementParametersChanged = false;
   if (anyNeedsSync) {
     for (std::size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];
       auto& item = armor.item;
-      bool allowed = true;
-      if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
-        allowed = false;
-      } else if (!armor.isCosmetic) {
+      bool allowed = armor.visible && item && item->visible(i >= 8) && !(forceNude && !item->bypassNude());
+      if (allowed && !armor.isCosmetic) {
         std::uint8_t typeIndex = (std::uint8_t)armor.item->armorType();
         std::uint8_t prevWorn = m_wornCosmeticTypes[typeIndex];
         std::uint8_t curWorn = wornCosmeticTypes[typeIndex];
@@ -190,34 +197,43 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
       m_armors[i].isCurrentlyVisible = allowed;
       if (allowed) {
-        addHumanoidConfig(*armor.item);
+        auto configAdded = addHumanoidConfig(*armor.item);
+        if (!configAdded)
+          return std::unexpected(std::move(configAdded.error()));
         if (armor.needsSync) {
+          std::expected<void, StarException> wearable;
           if (auto head = as<HeadArmor>(armor.item))
-            humanoid.setWearableFromHead(i, *head, gender);
+            wearable = humanoid.setWearableFromHead(i, *head, gender);
           else if (auto chest = as<ChestArmor>(armor.item))
-            humanoid.setWearableFromChest(i, *chest, gender);
+            wearable = humanoid.setWearableFromChest(i, *chest, gender);
           else if (auto legs = as<LegsArmor>(armor.item))
-            humanoid.setWearableFromLegs(i, *legs, gender);
+            wearable = humanoid.setWearableFromLegs(i, *legs, gender);
           else if (auto back = as<BackArmor>(armor.item))
-            humanoid.setWearableFromBack(i, *back, gender);
+            wearable = humanoid.setWearableFromBack(i, *back, gender);
+          if (!wearable)
+            return std::unexpected(std::move(wearable.error()));
           armor.needsSync = false;
         }
-      } else
-        humanoid.removeWearable(i);
+      } else {
+        auto removed = humanoid.removeWearable(i);
+        if (!removed)
+          return std::unexpected(std::move(removed.error()));
+      }
     }
-    try
-      { movementParametersChanged = humanoid.loadConfig(humanoidConfig); }
-    catch (std::exception const&)
-      { configException = std::current_exception(); }
+    auto loaded = humanoid.loadConfig(humanoidConfig);
+    if (loaded)
+      movementParametersChanged = *loaded;
+    else
+      configError = std::move(loaded.error());
     humanoid.setBodyHidden(bodyHidden);
   }
   m_wornCosmeticTypes = wornCosmeticTypes;
-  if (configException)
-    std::rethrow_exception(configException);
+  if (configError)
+    return std::unexpected(std::move(*configError));
   return movementParametersChanged;
 }
 
-void ArmorWearer::effects(EffectEmitter& effectEmitter) {
+std::expected<void, StarException> ArmorWearer::effects(EffectEmitter& effectEmitter) {
   StringSet headEffects, chestEffects, legsEffects, backEffects;
 
   for (std::uint8_t i = 0; i != m_armors.size(); ++i) {
@@ -227,21 +243,25 @@ void ArmorWearer::effects(EffectEmitter& effectEmitter) {
       if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(std::uint8_t)armorType] > 0))
         continue;
       auto newEffects = item->effectSources();
+      if (!newEffects)
+        return std::unexpected(std::move(newEffects.error()));
       if (armorType == ArmorType::Head)
-        headEffects.addAll(newEffects);
+        headEffects.addAll(*newEffects);
       else if (armorType == ArmorType::Chest)
-        chestEffects.addAll(newEffects);
+        chestEffects.addAll(*newEffects);
       else if (armorType == ArmorType::Legs)
-        legsEffects.addAll(newEffects);
+        legsEffects.addAll(*newEffects);
       else if (armorType == ArmorType::Back)
-        backEffects.addAll(newEffects);
+        backEffects.addAll(*newEffects);
     }
   }
 
-  effectEmitter.addEffectSources("headArmor", headEffects);
-  effectEmitter.addEffectSources("chestArmor", chestEffects);
-  effectEmitter.addEffectSources("legsArmor", legsEffects);
-  effectEmitter.addEffectSources("backArmor", backEffects);
+  for (auto& source : {
+      std::pair{"headArmor", &headEffects}, std::pair{"chestArmor", &chestEffects},
+      std::pair{"legsArmor", &legsEffects}, std::pair{"backArmor", &backEffects}}) {
+    effectEmitter.addEffectSources(source.first, std::move(*source.second));
+  }
+  return {};
 }
 
 void ArmorWearer::reset() {
@@ -253,57 +273,65 @@ void ArmorWearer::reset() {
   }
 }
 
-Json ArmorWearer::diskStore() const {
+std::expected<Json, StarException> ArmorWearer::diskStore() const {
   JsonObject res;
-  auto save = [&](std::uint8_t slot, String const& id) {
-    auto& armor = m_armors[slot];
-    if (armor.item)
-      res[id] = armor.item->descriptor().diskStore(*m_root.versioningDatabase());
-  };
-
-  save(0, "headItem");
-  save(1, "chestItem");
-  save(2, "legsItem");
-  save(3, "backItem");
-  save(4, "headCosmeticItem");
-  save(5, "chestCosmeticItem");
-  save(6, "legsCosmeticItem");
-  save(7, "backCosmeticItem");
-
-  for (std::size_t i = 8; i != m_armors.size(); ++i)
-    save(i, strf("cosmetic{}Item", i - 7));
-
+  std::size_t first = 0;
+  while (first != m_armors.size() && !m_armors[first].item)
+    ++first;
+  if (first == m_armors.size())
+    return res;
+  auto versioning = m_root.versioningDatabase();
+  if (!versioning)
+    return std::unexpected(std::move(versioning.error()));
+  static char const* const slotNames[] = {
+      "headItem", "chestItem", "legsItem", "backItem",
+      "headCosmeticItem", "chestCosmeticItem", "legsCosmeticItem", "backCosmeticItem"};
+  for (std::size_t i = first; i != m_armors.size(); ++i) {
+    auto const& armor = m_armors[i];
+    if (!armor.item)
+      continue;
+    auto stored = armor.item->descriptor().diskStore(**versioning);
+    if (!stored)
+      return std::unexpected(std::move(stored.error()));
+    String id = i < 8 ? String(slotNames[i]) : strf("cosmetic{}Item", i - 7);
+    res[id] = std::move(*stored);
+  }
   return res;
 }
 
-void ArmorWearer::diskLoad(Json const& diskStore) {
-  auto itemDb = m_root.itemDatabase();
-  auto load = [&](std::uint8_t slot, String const& id) {
-    if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
-      setItem(slot, item);
-  };
-
-  load(0, "headItem");
-  load(1, "chestItem");
-  load(2, "legsItem");
-  load(3, "backItem");
-  load(4, "headCosmeticItem");
-  load(5, "chestCosmeticItem");
-  load(6, "legsCosmeticItem");
-  load(7, "backCosmeticItem");
-
-  for (std::size_t i = 8; i != m_armors.size(); ++i)
-    load(i, strf("cosmetic{}Item", i - 7));
+std::expected<void, StarException> ArmorWearer::diskLoad(Json const& diskStore) {
+  auto itemDatabase = m_root.itemDatabase();
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  static char const* const slotNames[] = {
+      "headItem", "chestItem", "legsItem", "backItem",
+      "headCosmeticItem", "chestCosmeticItem", "legsCosmeticItem", "backCosmeticItem"};
+  for (std::size_t i = 0; i != m_armors.size(); ++i) {
+    String id = i < 8 ? String(slotNames[i]) : strf("cosmetic{}Item", i - 7);
+    auto itemJson = diskStore.get(id, {});
+    if (!itemJson)
+      return std::unexpected(std::move(itemJson.error()));
+    auto loaded = (*itemDatabase)->diskLoad(*itemJson);
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+    if (auto item = as<ArmorItem>(*loaded))
+      setItem(i, std::move(item));
+  }
+  return {};
 }
 
-List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const {
+std::expected<List<PersistentStatusEffect>, StarException> ArmorWearer::statusEffects(bool cosmeticOnly) const {
   List<PersistentStatusEffect> statusEffects;
 
   for (std::size_t i = 0; i != m_armors.size(); ++i) {
     if (!m_armors[i].item)
       continue;
-    if (!cosmeticOnly && ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot()))
-      statusEffects.appendAll(m_armors[i].item->statusEffects());
+    if (!cosmeticOnly && ((i < 4) || m_armors[i].item->statusEffectsInCosmeticSlot())) {
+      auto effects = m_armors[i].item->statusEffects();
+      if (!effects)
+        return std::unexpected(std::move(effects.error()));
+      statusEffects.appendAll(std::move(*effects));
+    }
     if (m_armors[i].isCurrentlyVisible)
       statusEffects.appendAll(m_armors[i].item->cosmeticStatusEffects());
   }
@@ -422,23 +450,29 @@ ItemDescriptor ArmorWearer::cosmeticItemDescriptor(std::uint8_t slot) const {
   return {};
 }
 
-void ArmorWearer::netElementsNeedLoad(bool) {
+std::expected<void, StarException> ArmorWearer::netElementsNeedLoad(bool) {
   auto itemDatabase = m_root.itemDatabase();
-
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
   for (auto& armor : m_armors) {
-    if (armor.netState.pullUpdated())
-      armor.needsStore |= armor.needsSync |= itemDatabase->loadItem(armor.netState.get(), armor.item);
+    if (armor.netState.pullUpdated()) {
+      auto loaded = (*itemDatabase)->loadItem(armor.netState.get(), armor.item);
+      if (!loaded)
+        return std::unexpected(std::move(loaded.error()));
+      armor.needsStore |= armor.needsSync |= *loaded;
+    }
   }
+  return {};
 }
 
-void ArmorWearer::netElementsNeedStore() {
-  auto itemDatabase = m_root.itemDatabase();
+std::expected<void, StarException> ArmorWearer::netElementsNeedStore() {
   for (auto& armor : m_armors) {
     if (armor.needsStore) {
       armor.netState.set(armor.visible ? itemSafeDescriptor(armor.item) : ItemDescriptor());
       armor.needsStore = false;
     }
   }
+  return {};
 }
 
 }

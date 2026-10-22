@@ -10,16 +10,24 @@ import star.encode;
 
 namespace Star {
 
-Uuid::Uuid(RandomService& random) : Uuid(random.randBytes(UuidSize)) {}
-
-Uuid::Uuid(ByteArray const& bytes) {
-  if (bytes.size() != UuidSize)
-    throw UuidException(strf("Size mismatch in reading Uuid from ByteArray: {} vs {}", bytes.size(), UuidSize));
-
-  bytes.copyTo(m_data.ptr(), UuidSize);
+Uuid::Uuid(RandomService& random) {
+  random.randBytes(m_data.ptr(), UuidSize);
 }
 
-Uuid::Uuid(String const& hex) : Uuid(hexDecode(hex)) {}
+std::expected<Uuid, StarException> Uuid::create(ByteArray const& bytes) {
+  if (bytes.size() != UuidSize)
+    return std::unexpected(UuidException(strf("Size mismatch in reading Uuid from ByteArray: {} vs {}", bytes.size(), UuidSize)));
+  auto uuid = nil();
+  bytes.copyTo(uuid.m_data.ptr(), UuidSize);
+  return uuid;
+}
+
+std::expected<Uuid, StarException> Uuid::create(String const& hex) {
+  auto bytes = hexDecode(hex);
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  return create(*bytes);
+}
 
 char const* Uuid::ptr() const {
   return m_data.ptr();
@@ -64,19 +72,27 @@ std::size_t hash<Uuid>::operator()(Uuid const& u) const {
   return hashval;
 }
 
-DataStream& operator>>(DataStream& ds, Uuid& uuid) {
-  uuid = Uuid(ds.readBytes(UuidSize));
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Uuid& uuid) {
+  auto result = ds.read<Uuid>();
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  uuid = std::move(*result);
+  return &ds;
 }
 
 template <>
-Uuid DataStream::read<Uuid>() {
-  return Uuid(readBytes(UuidSize));
+std::expected<Uuid, StarException> DataStream::read<Uuid>() {
+  auto bytes = readBytes(UuidSize);
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  return Uuid::create(*bytes);
 }
 
-DataStream& operator<<(DataStream& ds, Uuid const& uuid) {
-  ds.writeData(uuid.ptr(), UuidSize);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, Uuid const& uuid) {
+  auto result = ds.writeData(uuid.ptr(), UuidSize);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
 }

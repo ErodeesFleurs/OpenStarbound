@@ -12,29 +12,29 @@ struct BadLexicalCastTag {
 };
 using BadLexicalCast = StarError<BadLexicalCastTag, StarException>;
 
-void throwLexicalCastError(std::errc ec, const char* first, const char* last);
+BadLexicalCast lexicalCastError(std::errc ec, const char* first, const char* last);
 
 template <typename Type>
-bool tryLexicalCast(Type& result, const char* first, const char* last) {
+[[nodiscard]] bool tryLexicalCast(Type& result, const char* first, const char* last) {
   auto res = fast_float::from_chars(first, last, result);
   return res.ptr == last && (res.ec == std::errc() || res.ec == std::errc::result_out_of_range);
 }
 
 template <>
-bool tryLexicalCast(bool& result, const char* first, const char* last);
+[[nodiscard]] bool tryLexicalCast(bool& result, const char* first, const char* last);
 
 template <typename Type>
-bool tryLexicalCast(Type& result, String const& s) {
+[[nodiscard]] bool tryLexicalCast(Type& result, String const& s) {
   return tryLexicalCast<Type>(result, s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 template <typename Type>
-bool tryLexicalCast(Type& result, StringView s) {
+[[nodiscard]] bool tryLexicalCast(Type& result, StringView s) {
   return tryLexicalCast<Type>(result, s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 template <typename Type>
-std::optional<Type> maybeLexicalCast(const char* first, const char* last) {
+[[nodiscard]] std::optional<Type> maybeLexicalCast(const char* first, const char* last) {
   Type result{};
   if (tryLexicalCast(result, first, last))
     return result;
@@ -43,25 +43,25 @@ std::optional<Type> maybeLexicalCast(const char* first, const char* last) {
 }
 
 template <typename Type>
-std::optional<Type> maybeLexicalCast(StringView s) {
+[[nodiscard]] std::optional<Type> maybeLexicalCast(StringView s) {
   return maybeLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
 template <typename Type>
-Type lexicalCast(const char* first, const char* last) {
+[[nodiscard]] std::expected<Type, StarException> lexicalCast(const char* first, const char* last) {
   Type result{};
   auto res = fast_float::from_chars(first, last, result);
   if ((res.ec != std::errc() && res.ec != std::errc::result_out_of_range) || res.ptr != last)
-    throwLexicalCastError(res.ec, first, last);
+    return std::unexpected(lexicalCastError(res.ec, first, last));
   
   return result;
 }
 
 template <>
-bool lexicalCast(const char* first, const char* last);
+[[nodiscard]] std::expected<bool, StarException> lexicalCast(const char* first, const char* last);
 
 template <typename Type>
-Type lexicalCast(StringView s) {
+[[nodiscard]] std::expected<Type, StarException> lexicalCast(StringView s) {
   return lexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
@@ -72,7 +72,7 @@ export module star.lexical_cast;
 export namespace Star {
   using ::Star::BadLexicalCastTag;
   using ::Star::BadLexicalCast;
-  using ::Star::throwLexicalCastError;
+  using ::Star::lexicalCastError;
   using ::Star::tryLexicalCast;
   using ::Star::maybeLexicalCast;
   using ::Star::lexicalCast;

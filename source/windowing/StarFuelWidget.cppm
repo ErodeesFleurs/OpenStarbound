@@ -44,6 +44,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 class FuelWidget : public Widget {
@@ -55,10 +56,10 @@ public:
     return Star::typeName<FuelWidget>();
   }
 
-  FuelWidget(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<FuelWidget>, StarException> create(GuiContext& context);
   virtual ~FuelWidget() {}
 
-  virtual void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
   void setCurrentFuelLevel(float amount);
   void setMaxFuelLevel(float amount);
@@ -68,7 +69,7 @@ public:
   void ping();
 
 protected:
-  virtual void renderImpl();
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
   float m_fuelLevel;
   float m_maxLevel;
@@ -80,6 +81,7 @@ protected:
   TextStyle m_textStyle;
 
 private:
+  explicit FuelWidget(GuiContext& context);
 };
 
 }

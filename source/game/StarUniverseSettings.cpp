@@ -31,29 +31,57 @@ import star.universe_settings;
 import star.algorithm;
 namespace Star {
 
-UniverseFlagAction parseUniverseFlagAction(Json const& json) {
-  String actionType = json.getString("type");
-
-  if (actionType == "placeDungeon") {
-    PlaceDungeonFlagAction res;
-    res.dungeonId = json.getString("dungeonId");
-    res.targetInstance = json.getString("targetInstance");
-    res.targetPosition = jsonToVec2I(json.get("targetPosition"));
-    return res;
-  } else {
-    throw StarException(strf("Unsupported universe flag action type {}", actionType));
-  }
+std::expected<UniverseFlagAction, StarException> parseUniverseFlagAction(Json const& json) {
+  auto actionType = json.getString("type");
+  if (!actionType)
+    return std::unexpected(std::move(actionType.error()));
+  if (*actionType != "placeDungeon")
+    return std::unexpected(StarException::format("Unsupported universe flag action type {}", *actionType));
+  auto dungeon = json.getString("dungeonId");
+  if (!dungeon)
+    return std::unexpected(std::move(dungeon.error()));
+  auto instance = json.getString("targetInstance");
+  if (!instance)
+    return std::unexpected(std::move(instance.error()));
+  auto positionData = json.get("targetPosition");
+  if (!positionData)
+    return std::unexpected(std::move(positionData.error()));
+  auto position = jsonToVec2I(*positionData);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  return PlaceDungeonFlagAction{std::move(*dungeon), std::move(*instance), *position};
 }
 
-UniverseSettings::UniverseSettings(Root& root) : m_root(root), m_uuid(root.random()) {
-  loadFlagActions();
+UniverseSettings::UniverseSettings(Root& root) : m_root(root), m_uuid(root.random()) {}
+
+std::expected<std::shared_ptr<UniverseSettings>, StarException> UniverseSettings::create(Root& root) {
+  auto settings = std::shared_ptr<UniverseSettings>(new UniverseSettings(root));
+  auto loaded = settings->loadFlagActions();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  return settings;
 }
 
-UniverseSettings::UniverseSettings(Root& root, Json const& json) : m_root(root), m_uuid(root.random()) {
-  m_uuid = Uuid(json.getString("uuid"));
-  m_flags = jsonToStringSet(json.get("flags"));
-
-  loadFlagActions();
+std::expected<std::shared_ptr<UniverseSettings>, StarException> UniverseSettings::create(Root& root, Json const& json) {
+  auto settings = std::shared_ptr<UniverseSettings>(new UniverseSettings(root));
+  auto uuidText = json.getString("uuid");
+  if (!uuidText)
+    return std::unexpected(std::move(uuidText.error()));
+  auto uuid = Uuid::create(*uuidText);
+  if (!uuid)
+    return std::unexpected(std::move(uuid.error()));
+  auto flagData = json.get("flags");
+  if (!flagData)
+    return std::unexpected(std::move(flagData.error()));
+  auto flags = jsonToStringSet(*flagData);
+  if (!flags)
+    return std::unexpected(std::move(flags.error()));
+  settings->m_uuid = std::move(*uuid);
+  settings->m_flags = std::move(*flags);
+  auto loaded = settings->loadFlagActions();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  return settings;
 }
 
 Json UniverseSettings::toJson() const {
@@ -75,16 +103,22 @@ StringSet UniverseSettings::flags() const {
   return m_flags;
 }
 
-void UniverseSettings::setFlag(String const& flag) {
+std::expected<void, StarException> UniverseSettings::setFlag(String const& flag) {
   MutexLocker locker(m_lock);
 
   if (m_flags.add(flag)) {
-    m_root.logger().info("Universe flags set to {}", m_flags);
-    if (auto flagActions = m_flagActions.maybe(flag))
+    auto logged = m_root.logger().info("Universe flags set to {}", m_flags);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+    if (auto flagActions = m_flagActions.maybe(flag)) {
       m_pendingFlagActions.appendAll(*flagActions);
-    else
-      m_root.logger().info("No actions configured for universe flag {}", flag);
+    } else {
+      auto logged = m_root.logger().info("No actions configured for universe flag {}", flag);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+    }
   }
+  return {};
 }
 
 std::optional<List<UniverseFlagAction>> UniverseSettings::pullPendingFlagActions() {
@@ -117,16 +151,35 @@ void UniverseSettings::resetFlags() {
   m_flags.clear();
 }
 
-void UniverseSettings::loadFlagActions() {
-  m_flagActions.clear();
-
-  Json flagsConfig = m_root.assets()->json("/universeflags.config");
-  for (auto flagPair : flagsConfig.iterateObject()) {
+std::expected<void, StarException> UniverseSettings::loadFlagActions() {
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/universeflags.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto entries = config->iterateObject();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  StringMap<List<UniverseFlagAction>> actionsByFlag;
+  for (auto const& entry : *entries) {
+    auto actionsData = entry.second.get("actions");
+    if (!actionsData)
+      return std::unexpected(std::move(actionsData.error()));
+    auto actionArray = actionsData->iterateArray();
+    if (!actionArray)
+      return std::unexpected(std::move(actionArray.error()));
     List<UniverseFlagAction> actions;
-    for (auto actionConfig : flagPair.second.get("actions").iterateArray())
-      actions.append(parseUniverseFlagAction(actionConfig));
-    m_flagActions[flagPair.first] = actions;
+    for (auto const& actionConfig : *actionArray) {
+      auto action = parseUniverseFlagAction(actionConfig);
+      if (!action)
+        return std::unexpected(std::move(action.error()));
+      actions.append(std::move(*action));
+    }
+    actionsByFlag[entry.first] = std::move(actions);
   }
+  m_flagActions = std::move(actionsByFlag);
+  return {};
 }
 
 }

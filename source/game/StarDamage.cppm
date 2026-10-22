@@ -3,6 +3,7 @@ import std;
 import star.string;
 import star.list;
 import star.json;
+import star.format;
 
 import star.vector;
 import star.data_stream;
@@ -19,14 +20,14 @@ import star.line;
 namespace Star {
 
 struct DamageSource {
-  friend DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
-  friend DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
 
   typedef std::variant<std::monostate, PolyF, Line2F> DamageArea;
   typedef std::variant<std::monostate, float, Vec2F> Knockback;
 
   DamageSource();
-  DamageSource(Json const& v);
+  [[nodiscard]] static std::expected<DamageSource, StarException> create(Json const& v);
   DamageSource(DamageType damageType,
       DamageArea damageArea,
       float damage,
@@ -40,11 +41,11 @@ struct DamageSource {
       Knockback knockback,
       bool rayCheck);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   DamageSource& translate(Vec2F const& position);
 
-  bool intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const;
+  [[nodiscard]] std::expected<bool, StarException> intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const;
   Vec2F knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const;
 
   bool operator==(DamageSource const& rhs) const;
@@ -77,15 +78,15 @@ struct DamageSource {
   bool rayCheck;
 };
 
-DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
-DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageSource const& damageSource);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageSource& damageSource);
 
 struct DamageRequest {
-  friend DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
-  friend DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
 
   DamageRequest();
-  DamageRequest(Json const& v);
+  [[nodiscard]] static std::expected<DamageRequest, StarException> create(Json const& v);
   DamageRequest(HitType hitType,
       DamageType type,
       float damage,
@@ -94,7 +95,7 @@ struct DamageRequest {
       String const& damageSourceKind,
       List<EphemeralStatusEffect> const& statusEffects);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   HitType hitType;
   DamageType damageType;
@@ -107,15 +108,15 @@ struct DamageRequest {
   List<EphemeralStatusEffect> statusEffects;
 };
 
-DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
-DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageRequest const& damageRequest);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageRequest& damageRequest);
 
 struct DamageNotification {
-  friend DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
-  friend DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
 
   DamageNotification();
-  DamageNotification(Json const& v);
+  [[nodiscard]] static std::expected<DamageNotification, StarException> create(Json const& v);
   DamageNotification(EntityId sourceEntityId,
       EntityId targetEntityId,
       Vec2F position,
@@ -125,7 +126,7 @@ struct DamageNotification {
       String damageSourceKind,
       String targetMaterialKind);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   EntityId sourceEntityId;
   EntityId targetEntityId;
@@ -137,8 +138,8 @@ struct DamageNotification {
   String targetMaterialKind;
 };
 
-DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
-DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DamageNotification const& damageNotification);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DamageNotification& damageNotification);
 }
 
 export module star.damage;

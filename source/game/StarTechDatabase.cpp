@@ -27,56 +27,107 @@ import star.tech_database;
 
 namespace Star {
 
-extern EnumMap<TechType> const TechTypeNames{
+extern std::expected<EnumMap<TechType>, StarException> const TechTypeNames = EnumMap<TechType>::create({
   {TechType::Head, "Head"},
   {TechType::Body, "Body"},
   {TechType::Legs, "Legs"}
-};
+});
 
-TechDatabase::TechDatabase(std::shared_ptr<Assets const> assets) {
-  auto& files = assets->scanExtension("tech");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    auto tech = parseTech(assets->json(file), file);
-
-    if (m_tech.contains(tech.name))
-      throw TechDatabaseException::format("Duplicate tech named '{}', config file '{}'", tech.name, file);
-    m_tech[tech.name] = tech;
+std::expected<std::shared_ptr<TechDatabase>, StarException> TechDatabase::create(std::shared_ptr<Assets const> assets) {
+  auto result = std::shared_ptr<TechDatabase>(new TechDatabase());
+  auto files = assets->scanExtension("tech");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = assets->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto config = assets->json(file);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto tech = result->parseTech(*config, file);
+    if (!tech)
+      return std::unexpected(std::move(tech.error()));
+    if (result->m_tech.contains(tech->name))
+      return std::unexpected(TechDatabaseException::format("Duplicate tech named '{}', config file '{}'", tech->name, file));
+    result->m_tech[tech->name] = std::move(*tech);
   }
+  return result;
 }
 
 bool TechDatabase::contains(String const& techName) const {
   return m_tech.contains(techName);
 }
 
-TechConfig TechDatabase::tech(String const& techName) const {
+std::expected<TechConfig, StarException> TechDatabase::tech(String const& techName) const {
   if (auto p = m_tech.ptr(techName))
     return *p;
-  throw TechDatabaseException::format("No such tech '{}'", techName);
+  return std::unexpected(TechDatabaseException::format("No such tech '{}'", techName));
 }
 
-TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
-  try {
+std::expected<TechConfig, StarException> TechDatabase::parseTech(Json const& config, String const& path) const {
+  auto parsed = [&]() -> std::expected<TechConfig, StarException> {
+    if (!TechTypeNames)
+      return std::unexpected(TechTypeNames.error());
+    if (!RarityNames)
+      return std::unexpected(RarityNames.error());
     TechConfig tech;
-    tech.name = config.getString("name");
+    auto name = config.getString("name");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    tech.name = std::move(*name);
     tech.path = path;
     tech.parameters = config;
-
-    tech.type = TechTypeNames.getLeft(config.getString("type"));
-
-    tech.scripts = jsonToStringList(config.get("scripts")).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
-    tech.animationConfig = config.optString("animator").transform(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
-
-    tech.description = config.getString("description");
-    tech.shortDescription = config.getString("shortDescription");
-    tech.rarity = RarityNames.getLeft(config.getString("rarity"));
-    tech.icon = AssetPath::relativeTo(path, config.getString("icon"));
-
+    auto typeName = config.getString("type");
+    if (!typeName)
+      return std::unexpected(std::move(typeName.error()));
+    auto type = TechTypeNames->leftPtr(*typeName);
+    if (!type)
+      return std::unexpected(std::move(type.error()));
+    if (!*type)
+      return std::unexpected(TechDatabaseException::format("Unknown tech type '{}'", *typeName));
+    tech.type = **type;
+    auto scripts = config.get("scripts").and_then([](Json const& value) { return value.iterateArray(); });
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    for (auto const& script : *scripts) {
+      auto scriptName = script.toString();
+      if (!scriptName)
+        return std::unexpected(std::move(scriptName.error()));
+      tech.scripts.append(AssetPath::relativeTo(path, *scriptName));
+    }
+    auto animator = config.optString("animator");
+    if (!animator)
+      return std::unexpected(std::move(animator.error()));
+    if (*animator)
+      tech.animationConfig = AssetPath::relativeTo(path, **animator);
+    auto description = config.getString("description");
+    if (!description)
+      return std::unexpected(std::move(description.error()));
+    tech.description = std::move(*description);
+    auto shortDescription = config.getString("shortDescription");
+    if (!shortDescription)
+      return std::unexpected(std::move(shortDescription.error()));
+    tech.shortDescription = std::move(*shortDescription);
+    auto rarityName = config.getString("rarity");
+    if (!rarityName)
+      return std::unexpected(std::move(rarityName.error()));
+    auto rarity = RarityNames->leftPtr(*rarityName);
+    if (!rarity)
+      return std::unexpected(std::move(rarity.error()));
+    if (!*rarity)
+      return std::unexpected(TechDatabaseException::format("Unknown tech rarity '{}'", *rarityName));
+    tech.rarity = **rarity;
+    auto icon = config.getString("icon");
+    if (!icon)
+      return std::unexpected(std::move(icon.error()));
+    tech.icon = AssetPath::relativeTo(path, *icon);
     return tech;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw TechDatabaseException(strf("Error reading tech config {}", path), e);
-  }
+  }();
+  if (!parsed)
+    return std::unexpected(TechDatabaseException(strf("Error reading tech config {}", path), parsed.error()));
+  return parsed;
 }
 
 }

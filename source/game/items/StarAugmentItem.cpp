@@ -20,6 +20,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 
 import star.lua_components;
@@ -42,21 +43,37 @@ import star.item_database;
 
 namespace Star {
 
-AugmentItem::AugmentItem(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters) {}
-
-AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.root(), rhs.config(), rhs.directory(), rhs.parameters()) {}
-
-std::shared_ptr<Item> AugmentItem::clone() const {
-  return std::make_shared<AugmentItem>(*this);
+std::expected<std::shared_ptr<AugmentItem>, StarException> AugmentItem::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<AugmentItem>(new AugmentItem(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return item;
 }
 
-StringList AugmentItem::augmentScripts() const {
-  return jsonToStringList(instanceValue("scripts")).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1));
+std::expected<std::shared_ptr<Item>, StarException> AugmentItem::clone() const {
+  return create(root(), config(), directory(), parameters()).transform([](std::shared_ptr<AugmentItem> item) -> std::shared_ptr<Item> { return item; });
 }
 
-std::shared_ptr<Item> AugmentItem::applyTo(std::shared_ptr<Item> const item) {
-  return root().itemDatabase()->applyAugment(item, this);
+std::expected<StringList, StarException> AugmentItem::augmentScripts() const {
+  auto scriptsValue = instanceValue("scripts");
+  if (!scriptsValue)
+    return std::unexpected(std::move(scriptsValue.error()));
+  auto scripts = jsonToStringList(*scriptsValue);
+  if (!scripts)
+    return std::unexpected(std::move(scripts.error()));
+  StringList result;
+  for (auto const& script : *scripts) {
+    result.append(AssetPath::relativeTo(directory(), script));
+  }
+  return result;
+}
+
+std::expected<std::shared_ptr<Item>, StarException> AugmentItem::applyTo(std::shared_ptr<Item> const item) {
+  auto database = root().itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  return (*database)->applyAugment(item, this);
 }
 
 }

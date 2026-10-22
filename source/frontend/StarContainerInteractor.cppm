@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -36,8 +37,8 @@ class ContainerInteractor {
 public:
   ContainerInteractor(Root& root);
 
-  void openContainer(std::shared_ptr<ContainerEntity> containerEntity);
-  void closeContainer();
+  [[nodiscard]] std::expected<void, StarException> openContainer(std::shared_ptr<ContainerEntity> containerEntity);
+  [[nodiscard]] std::expected<void, StarException> closeContainer();
 
   bool containerOpen() const;
 
@@ -47,20 +48,20 @@ public:
   // This does not perform any checks; make sure to check if it is valid if you use it!
   std::shared_ptr<ContainerEntity> const& openContainer() const;
 
-  List<ContainerResult> pullContainerResults();
+  [[nodiscard]] std::expected<List<ContainerResult>, StarException> pullContainerResults();
 
-  void swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items);
-  void addToContainer(std::shared_ptr<Item> const& items);
-  void takeFromContainerSlot(std::size_t slot, std::size_t count);
-  void applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment);
+  [[nodiscard]] std::expected<void, StarException> swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<void, StarException> addToContainer(std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<void, StarException> takeFromContainerSlot(std::size_t slot, std::size_t count);
+  [[nodiscard]] std::expected<void, StarException> applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment);
 
-  void startCraftingInContainer();
-  void stopCraftingInContainer();
-  void burnContainer();
-  void clearContainer();
+  [[nodiscard]] std::expected<void, StarException> startCraftingInContainer();
+  [[nodiscard]] std::expected<void, StarException> stopCraftingInContainer();
+  [[nodiscard]] std::expected<void, StarException> burnContainer();
+  [[nodiscard]] std::expected<void, StarException> clearContainer();
 
 private:
-  static ContainerResult resultFromItem(std::shared_ptr<Item> const& items);
+  [[nodiscard]] static std::expected<ContainerResult, StarException> resultFromItem(std::shared_ptr<Item> const& items);
 
   Root* m_root;
   mutable std::shared_ptr<ContainerEntity> m_openContainer;

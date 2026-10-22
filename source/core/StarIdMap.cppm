@@ -30,17 +30,26 @@ public:
   typedef mapped_type MappedType;
 
   IdMapWrapper();
-  IdMapWrapper(IdType min, IdType max);
+  [[nodiscard]] static std::expected<IdMapWrapper, StarException> create(IdType min, IdType max);
+  template <IdType Min, IdType Max>
+    requires (Min < Max)
+  static IdMapWrapper withRange() {
+    IdMapWrapper result;
+    result.m_min = Min;
+    result.m_max = Max;
+    result.m_nextId = Min;
+    return result;
+  }
 
   // New valid id that does not exist in this map.  Tries not to immediately
   // recycle ids, to avoid temporally close id repeats.
-  IdType nextId();
+  [[nodiscard]] std::expected<IdType, StarException> nextId();
 
-  // Throws exception if key already exists
-  void add(IdType id, MappedType mappedType);
+  // Returns an error if the key already exists.
+  [[nodiscard]] std::expected<void, StarException> add(IdType id, MappedType mappedType);
 
   // Add with automatically allocated id
-  IdType add(MappedType mappedType);
+  [[nodiscard]] std::expected<IdType, StarException> add(MappedType mappedType);
 
   void clear();
 
@@ -65,9 +74,9 @@ public:
   using BaseMap::erase;
 
   template <typename Base>
-  friend DataStream& operator>>(DataStream& ds, IdMapWrapper<Base>& map);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, IdMapWrapper<Base>& map);
   template <typename Base>
-  friend DataStream& operator<<(DataStream& ds, IdMapWrapper<Base> const& map);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, IdMapWrapper<Base> const& map);
 
 private:
   IdType m_min;
@@ -86,18 +95,20 @@ IdMapWrapper<BaseMap>::IdMapWrapper()
   : m_min(std::numeric_limits<IdType>::lowest()), m_max(std::numeric_limits<IdType>::max()), m_nextId(m_min) {}
 
 template <typename BaseMap>
-IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
-  : m_min(min), m_max(max), m_nextId(m_min) {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((m_max > m_min));
-  }
+auto IdMapWrapper<BaseMap>::create(IdType min, IdType max) -> std::expected<IdMapWrapper, StarException> {
+  if (max <= min)
+    return std::unexpected(IdMapException("Invalid id range in IdMapWrapper"));
+  IdMapWrapper result;
+  result.m_min = min;
+  result.m_max = max;
+  result.m_nextId = min;
+  return result;
 }
 
 template <typename BaseMap>
-auto IdMapWrapper<BaseMap>::nextId() -> IdType {
+auto IdMapWrapper<BaseMap>::nextId() -> std::expected<IdType, StarException> {
   if ((IdType)BaseMap::size() > m_max - m_min)
-    throw IdMapException("No id space left in IdMapWrapper");
-
+    return std::unexpected(IdMapException("No id space left in IdMapWrapper"));
   IdType nextId = m_nextId;
   while (BaseMap::contains(nextId))
     nextId = cycleIncrement(nextId, m_min, m_max);
@@ -106,16 +117,19 @@ auto IdMapWrapper<BaseMap>::nextId() -> IdType {
 }
 
 template <typename BaseMap>
-void IdMapWrapper<BaseMap>::add(IdType id, MappedType mappedType) {
-  if (!BaseMap::insert(std::make_pair(std::move(id), std::move(mappedType))).second)
-    throw IdMapException::format("IdMapWrapper::add(id, value) called with pre-existing id '{}'", outputAny(id));
+std::expected<void, StarException> IdMapWrapper<BaseMap>::add(IdType id, MappedType mappedType) {
+  if (!BaseMap::insert(std::make_pair(id, std::move(mappedType))).second)
+    return std::unexpected(mapDiagnosticError<IdMapException>("IdMapWrapper::add(id, value) called with pre-existing id '{}'", "IdMapWrapper::add: id already present while rendering its diagnostic", id));
+  return {};
 }
 
 template <typename BaseMap>
-auto IdMapWrapper<BaseMap>::add(MappedType mappedType) -> IdType {
+auto IdMapWrapper<BaseMap>::add(MappedType mappedType) -> std::expected<IdType, StarException> {
   auto id = nextId();
-  BaseMap::insert(id, mappedType);
-  return id;
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  BaseMap::insert(*id, std::move(mappedType));
+  return *id;
 }
 
 template <typename BaseMap>
@@ -135,21 +149,29 @@ bool IdMapWrapper<BaseMap>::operator!=(IdMapWrapper const& rhs) const {
 }
 
 template <typename BaseMap>
-DataStream& operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
-  ds.readMapContainer((BaseMap&)map);
-  ds.read(map.m_min);
-  ds.read(map.m_max);
-  ds.read(map.m_nextId);
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
+  auto entries = ds.readMapContainer((BaseMap&)map);
+  if (!entries) return std::unexpected(std::move(entries.error()));
+  auto min = ds.read(map.m_min);
+  if (!min) return std::unexpected(std::move(min.error()));
+  auto max = ds.read(map.m_max);
+  if (!max) return std::unexpected(std::move(max.error()));
+  auto next = ds.read(map.m_nextId);
+  if (!next) return std::unexpected(std::move(next.error()));
+  return &ds;
 }
 
 template <typename BaseMap>
-DataStream& operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
-  ds.writeMapContainer((BaseMap const&)map);
-  ds.write(map.m_min);
-  ds.write(map.m_max);
-  ds.write(map.m_nextId);
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
+  auto entries = ds.writeMapContainer((BaseMap const&)map);
+  if (!entries) return std::unexpected(std::move(entries.error()));
+  auto min = ds.write(map.m_min);
+  if (!min) return std::unexpected(std::move(min.error()));
+  auto max = ds.write(map.m_max);
+  if (!max) return std::unexpected(std::move(max.error()));
+  auto next = ds.write(map.m_nextId);
+  if (!next) return std::unexpected(std::move(next.error()));
+  return &ds;
 }
 
 }

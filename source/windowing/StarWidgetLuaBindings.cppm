@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.lua;
@@ -56,11 +57,11 @@ struct LuaConverter<std::shared_ptr<CanvasWidget>> : LuaUserDataConverter<std::s
 
 template <>
 struct LuaUserDataMethods<std::shared_ptr<CanvasWidget>> {
-  static LuaMethods<std::shared_ptr<CanvasWidget>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> make();
 };
 
 namespace LuaBindings {
-  LuaCallbacks makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
 }
 
 }

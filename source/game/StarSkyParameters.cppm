@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -29,17 +30,17 @@ struct VisitableWorldParameters;
 // derived from the visitableworldparameters without reconstructing all sky
 // parameters, e.g. for terraforming
 struct SkyParameters {
-  friend DataStream& operator>>(DataStream& ds, SkyParameters& value);
-  friend DataStream& operator<<(DataStream& ds, SkyParameters const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& value);
   SkyParameters();
-  SkyParameters(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
+  [[nodiscard]] static std::expected<SkyParameters, StarException> create(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, std::shared_ptr<VisitableWorldParameters const> newVisitableParameters);
-  explicit SkyParameters(Json const& config);
+  [[nodiscard]] static std::expected<SkyParameters, StarException> create(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
-  void read(DataStream& ds);
-  void write(DataStream& ds) const;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds);
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const;
 
   void readVisitableParameters(std::shared_ptr<VisitableWorldParameters const> visitableParameters);
 
@@ -57,8 +58,8 @@ struct SkyParameters {
   Json settings;
 };
 
-DataStream& operator>>(DataStream& ds, SkyParameters& sky);
-DataStream& operator<<(DataStream& ds, SkyParameters const& sky);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& sky);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& sky);
 }
 
 export module star.sky_parameters;

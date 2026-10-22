@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.json;
 import star.lua;
 
@@ -12,5 +13,5 @@ class UniverseServer;
 export module star.universe_server_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makeUniverseServerCallbacks(Root& root, UniverseServer* universe);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeUniverseServerCallbacks(Root& root, UniverseServer* universe);
 }

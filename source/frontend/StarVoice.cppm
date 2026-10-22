@@ -32,10 +32,10 @@ struct VoiceExceptionTag {
 using VoiceException = StarError<VoiceExceptionTag, StarException>;
 
 enum class VoiceInputMode : std::uint8_t { VoiceActivity, PushToTalk };
-extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
+extern std::expected<EnumMap<VoiceInputMode>, StarException> const VoiceInputModeNames;
 
 enum class VoiceChannelMode: std::uint8_t { Mono = 1, Stereo = 2 };
-extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames;
+extern std::expected<EnumMap<VoiceChannelMode>, StarException> const VoiceChannelModeNames;
 
 class VoiceAudioStream;
 class ApplicationController;
@@ -98,28 +98,30 @@ public:
 
     unsigned int minimumPlaySamples = 4096;
 
-    Speaker(SpeakerId speakerId);
+    [[nodiscard]] static std::expected<std::shared_ptr<Speaker>, StarException> create(SpeakerId speakerId);
     Json toJson() const;
+  private:
+    Speaker(SpeakerId speakerId);
   };
 
-  Voice(Root& root, std::shared_ptr<ApplicationController> appController);
+  [[nodiscard]] static std::expected<std::shared_ptr<Voice>, StarException> create(Root& root, std::shared_ptr<ApplicationController> appController);
   ~Voice();
 
   Voice(Voice const&) = delete;
   Voice& operator=(Voice const&) = delete;
 
-  void init();
+  [[nodiscard]] std::expected<void, StarException> init();
 
-  void loadJson(Json const& config, bool skipSave = false);
+  [[nodiscard]] std::expected<void, StarException> loadJson(Json const& config, bool skipSave = false);
   Json saveJson() const;
 
-  void save() const;
+  [[nodiscard]] std::expected<void, StarException> save() const;
   void scheduleSave();
 
   // Sets the local speaker ID and returns the local speaker. Must be called upon loading into a world.
   std::shared_ptr<Speaker> setLocalSpeaker(SpeakerId speakerId);
   std::shared_ptr<Speaker> localSpeaker();
-  std::shared_ptr<Speaker> speaker(SpeakerId speakerId);
+  [[nodiscard]] std::expected<std::shared_ptr<Speaker>, StarException> speaker(SpeakerId speakerId);
   HashMap<SpeakerId, std::shared_ptr<Speaker>>& speakers();
   List<std::shared_ptr<Voice::Speaker>> sortedSpeakers(bool onlyPlaying);
   void clearSpeakers();
@@ -130,33 +132,35 @@ public:
   // Called to mix voice audio with the game.
   void mix(std::int16_t* buffer, std::size_t frames, unsigned channels);
 
-  typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
-  void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
+  typedef std::function<std::expected<float, StarException>(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
-  void setDeviceName(std::optional<String> device);
+  [[nodiscard]] std::expected<void, StarException> setDeviceName(std::optional<String> device);
   StringList availableDevices();
 
-  int send(DataStreamBuffer& out, std::size_t budget = 0);
-  bool receive(std::shared_ptr<Speaker> speaker, std::string_view view);
+  [[nodiscard]] std::expected<int, StarException> send(DataStreamBuffer& out, std::size_t budget = 0);
+  [[nodiscard]] std::expected<bool, StarException> receive(std::shared_ptr<Speaker> speaker, std::string_view view);
 
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
 
   inline int encoderChannels() const { return (int)m_channelMode; }
 
-  static OpusDecoder* createDecoder(int channels);
-  static OpusEncoder* createEncoder(int channels);
+  [[nodiscard]] static std::expected<std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)>, StarException> createDecoder(int channels);
+  [[nodiscard]] static std::expected<std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>, StarException> createEncoder(int channels);
 private:
+  Voice(Root& root, std::shared_ptr<ApplicationController> appController);
+  [[nodiscard]] std::expected<bool, StarException> decode(std::shared_ptr<Speaker> const& speaker, std::string_view view);
   Root& m_root;
-  void resetEncoder();
-  void resetDevice();
-  void openDevice();
+  [[nodiscard]] std::expected<void, StarException> resetEncoder();
+  [[nodiscard]] std::expected<void, StarException> resetDevice();
+  [[nodiscard]] std::expected<void, StarException> openDevice();
   void closeDevice();
   inline bool shouldEnableInput() const { return m_enabled && m_inputEnabled; }
 
   bool playSpeaker(std::shared_ptr<Speaker> const& speaker, int channels);
 
-  void thread();
+  [[nodiscard]] std::expected<void, StarException> thread();
 
   SpeakerId m_speakerId = 0;
   std::shared_ptr<Speaker> m_clientSpeaker;
@@ -195,7 +199,7 @@ private:
   ThreadFunction<void> m_thread;
   Mutex m_threadMutex;
   ConditionVariable m_threadCond;
-  std::atomic<bool> m_stopThread;
+  std::atomic<bool> m_stopThread = true;
 
   std::vector<std::int16_t> m_decodeBuffer;
   std::vector<std::int16_t> m_resampleBuffer;

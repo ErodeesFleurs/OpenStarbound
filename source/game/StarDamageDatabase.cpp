@@ -3,6 +3,7 @@ import star.data_stream;
 import star.game_types;
 import star.random;
 import star.ordered_map;
+import star.map;
 import star.bi_map;
 import star.thread;
 import star.io_device;
@@ -28,63 +29,105 @@ import star.damage_database;
 
 namespace Star {
 
-DamageDatabase::DamageDatabase(std::shared_ptr<Assets const> assets) {
-
+std::expected<std::shared_ptr<DamageDatabase>, StarException> DamageDatabase::create(std::shared_ptr<Assets const> assets) {
+  auto database = std::shared_ptr<DamageDatabase>(new DamageDatabase);
+  if (!HitTypeNames)
+    return std::unexpected(HitTypeNames.error());
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
-  for (auto p : elementalConfig.iterateObject()) {
+  if (!elementalConfig)
+    return std::unexpected(std::move(elementalConfig.error()));
+  auto elementalEntries = elementalConfig->iterateObject();
+  if (!elementalEntries)
+    return std::unexpected(std::move(elementalEntries.error()));
+  for (auto p : *elementalEntries) {
     ElementalType type;
-    type.resistanceStat = p.second.getString("resistanceStat");
-    for (auto particle : p.second.getObject("damageNumberParticles")) {
-      type.damageNumberParticles.set(HitTypeNames.getLeft(particle.first), particle.second.toString());
+    auto resistance = p.second.getString("resistanceStat");
+    if (!resistance)
+      return std::unexpected(std::move(resistance.error()));
+    type.resistanceStat = std::move(*resistance);
+    auto particles = p.second.getObject("damageNumberParticles");
+    if (!particles)
+      return std::unexpected(std::move(particles.error()));
+    for (auto particle : *particles) {
+      auto hit = HitTypeNames->getLeft(particle.first);
+      if (!hit)
+        return std::unexpected(std::move(hit.error()));
+      auto name = particle.second.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      type.damageNumberParticles.set(**hit, std::move(*name));
     }
-    m_elementalTypes.set(p.first, std::move(type));
+    database->m_elementalTypes.set(p.first, std::move(type));
   }
 
-  auto& files = assets->scanExtension("damage");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    auto config = assets->json(file);
-    String name = config.getString("kind");
-    if (m_damageKinds.contains(name))
-      throw StarException(strf("Duplicate damage kind Name {}. configfile {}", name, file));
+  auto files = assets->scanExtension("damage");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = assets->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto& file : **files) {
+    auto config = assets->json(file.string());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto name = config->getString("kind");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    if (database->m_damageKinds.contains(*name))
+      return std::unexpected(StarException(strf("Duplicate damage kind Name {}. configfile {}", *name, file.string())));
 
     DamageKind kind;
-    kind.name = name;
-    for (auto effect : config.getObject("effects", JsonObject())) {
-      TargetMaterial material = effect.first;
-      kind.effects.set(material, {});
-      for (auto hit : effect.second.toObject()) {
-        DamageEffect effect = DamageEffect {
-          hit.second.get("sounds", JsonArray()),
-          hit.second.get("particles", JsonArray())
-        };
-        kind.effects[material].set(HitTypeNames.getLeft(hit.first), effect);
+    kind.name = *name;
+    auto effects = config->getObject("effects", JsonObject());
+    if (!effects)
+      return std::unexpected(std::move(effects.error()));
+    for (auto effect : *effects) {
+      HashMap<HitType, DamageEffect> materialEffects;
+      auto hits = effect.second.toObject();
+      if (!hits)
+        return std::unexpected(std::move(hits.error()));
+      for (auto hit : *hits) {
+        auto sounds = hit.second.get("sounds", JsonArray());
+        if (!sounds)
+          return std::unexpected(std::move(sounds.error()));
+        auto particles = hit.second.get("particles", JsonArray());
+        if (!particles)
+          return std::unexpected(std::move(particles.error()));
+        auto hitType = HitTypeNames->getLeft(hit.first);
+        if (!hitType)
+          return std::unexpected(std::move(hitType.error()));
+        materialEffects.set(**hitType, DamageEffect{std::move(*sounds), std::move(*particles)});
       }
+      kind.effects.set(effect.first, std::move(materialEffects));
     }
-    kind.elementalType = config.getString("elementalType", "default");
-    if (!m_elementalTypes.contains(kind.elementalType))
-      throw StarException(strf("Undefined elemental type {} in damage kind {}", kind.elementalType, name));
-
-    m_damageKinds.set(name, std::move(kind));
+    auto elementalType = config->getString("elementalType", "default");
+    if (!elementalType)
+      return std::unexpected(std::move(elementalType.error()));
+    kind.elementalType = std::move(*elementalType);
+    if (!database->m_elementalTypes.contains(kind.elementalType))
+      return std::unexpected(StarException(strf("Undefined elemental type {} in damage kind {}", kind.elementalType, *name)));
+    database->m_damageKinds.set(*name, std::move(kind));
   }
+  return database;
 }
 
-DamageKind const& DamageDatabase::damageKind(String kind) const {
-  if (kind.empty())
+std::expected<DamageKind const*, StarException> DamageDatabase::damageKind(String kind) const {
+  if (kind.empty()) {
     kind = "default";
-  else
-    kind = kind.toLower();
-
+  } else {
+    auto lower = kind.toLower();
+    if (!lower)
+      return std::unexpected(std::move(lower.error()));
+    kind = std::move(*lower);
+  }
   if (!m_damageKinds.contains(kind))
-    throw StarException(strf("Unknown damage definition with kind '{}'.", kind));
-
+    return std::unexpected(StarException(strf("Unknown damage definition with kind '{}'.", kind)));
   return m_damageKinds.get(kind);
 }
 
-ElementalType const& DamageDatabase::elementalType(String const& name) const {
+std::expected<ElementalType const*, StarException> DamageDatabase::elementalType(String const& name) const {
   if (!m_damageKinds.contains(name))
-    throw StarException(strf("Unknown elemental type with name '{}'.", name));
-
+    return std::unexpected(StarException(strf("Unknown elemental type with name '{}'.", name)));
   return m_elementalTypes.get(name);
 }
 

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 
 import star.string;
@@ -32,7 +33,7 @@ class RandomService;
 
 class TeamManager {
 public:
-  explicit TeamManager(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeamManager>, StarException> create(Root& root);
 
   JsonRpcHandlers rpcHandlers();
 
@@ -46,6 +47,7 @@ public:
   std::optional<Uuid> getTeam(Uuid const& playerUuid) const;
 
 private:
+  TeamManager(Root& root, unsigned maxTeamSize, double invitationTimeout, bool secureTeams);
   struct TeamMember {
     String name;
     int entity;
@@ -107,13 +109,13 @@ private:
 
   TeamNumber m_pvpTeamCounter;
 
-  Json fetchTeamStatus(Json const& args);
-  Json updateStatus(Json const& args);
-  Json invite(Json const& args);
-  Json pollInvitation(Json const& args);
-  Json acceptInvitation(Json const& args);
-  Json removeFromTeam(Json const& args);
-  Json makeLeader(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> fetchTeamStatus(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> updateStatus(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> invite(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> pollInvitation(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> acceptInvitation(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> removeFromTeam(Json const& args);
+  [[nodiscard]] std::expected<Json, StarException> makeLeader(Json const& args);
 };
 
 }

@@ -8,6 +8,7 @@ import star.strong_typedef;
 import star.rpc_promise;
 import star.a_star;
 import std;
+import star.format;
 import star.type_identity;
 import star.audio;
 import star.thread;
@@ -87,22 +88,31 @@ public:
     return Star::typeName<MiningTool>();
   }
 
-  MiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<MiningTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
   // In pixels, offset from image center
   Vec2F handPosition() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  float durabilityStatus() override;
+  [[nodiscard]]
+  std::expected<float, StarException> durabilityStatus() override;
 
-  float getAngle(float aimAngle) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float aimAngle) override;
 
 private:
-  void changeDurability(float amount);
+  explicit MiningTool(Root& root) : Item(root) {}
+  [[nodiscard]]
+  std::expected<void, StarException> changeDurability(float amount);
 
   String m_image;
   int m_frames;
@@ -132,18 +142,25 @@ public:
     return Star::typeName<HarvestingTool>();
   }
 
-  HarvestingTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<HarvestingTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
   // In pixels, offset from image center
   Vec2F handPosition() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  float getAngle(float aimAngle) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float aimAngle) override;
 
 private:
+  explicit HarvestingTool(Root& root) : Item(root) {}
   String m_image;
   int m_frames;
   float m_frameCycle;
@@ -169,26 +186,35 @@ public:
     return Star::typeName<WireTool>();
   }
 
-  WireTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<WireTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> drawables() const override;
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
 
   void setEnd(EndType type) override;
 
   // In pixels, offset from image center
   Vec2F handPosition() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  float getAngle(float aimAngle) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float aimAngle) override;
 
   void setConnector(WireConnector* connector);
 
 private:
+  explicit WireTool(Root& root) : Item(root), BeamItem(root) {}
   String m_image;
   Vec2F m_handPosition;
 
@@ -207,25 +233,36 @@ public:
     return Star::typeName<BeamMiningTool>();
   }
 
-  BeamMiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<BeamMiningTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
   virtual void setEnd(EndType type) override;
-  virtual List<PreviewTile> previewTiles(bool shifting) const override;
-  virtual List<Drawable> nonRotatedDrawables() const override;
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<List<PreviewTile>, StarException> previewTiles(bool shifting) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  float getAngle(float angle) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float angle) override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]]
+  std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const override;
 
 private:
+  explicit BeamMiningTool(Root& root) : Item(root), BeamItem(root) {}
   float m_blockRadius;
   float m_altBlockRadius;
 
@@ -255,22 +292,32 @@ public:
     return Star::typeName<PaintingBeamTool>();
   }
 
-  PaintingBeamTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<PaintingBeamTool>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
   void setEnd(EndType type) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  List<PreviewTile> previewTiles(bool shifting) const override;
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  List<Drawable> nonRotatedDrawables() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<List<PreviewTile>, StarException> previewTiles(bool shifting) const override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  float getAngle(float angle) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float angle) override;
 
 private:
+  explicit PaintingBeamTool(Root& root) : Item(root), BeamItem(root) {}
   List<Color> m_colors;
   List<String> m_colorKeys;
   int m_colorIndex;

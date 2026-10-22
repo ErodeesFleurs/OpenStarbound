@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -48,7 +49,7 @@ public:
 
   // Foot position for things teleporting onto this entity, relative to root
   // position.
-  virtual Vec2F footPosition() const = 0;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> footPosition() const = 0;
 };
 
 }

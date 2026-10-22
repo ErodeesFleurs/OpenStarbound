@@ -25,13 +25,13 @@ namespace Star {
 
 class Root;
 
-extern EnumMap<ClientEntityMode> const ClientEntityModeNames{
+extern std::expected<EnumMap<ClientEntityMode>, StarException> const ClientEntityModeNames = EnumMap<ClientEntityMode>::create({
   {ClientEntityMode::ClientSlaveOnly, "ClientSlaveOnly"},
   {ClientEntityMode::ClientMasterAllowed, "ClientMasterAllowed"},
   {ClientEntityMode::ClientPresenceMaster, "ClientPresenceMaster"}
-};
+});
 
-extern EnumMap<EntityType> const EntityTypeNames{
+extern std::expected<EnumMap<EntityType>, StarException> const EntityTypeNames = EnumMap<EntityType>::create({
   {EntityType::Plant, "plant"},
   {EntityType::Object, "object"},
   {EntityType::Vehicle, "vehicle"},
@@ -42,38 +42,40 @@ extern EnumMap<EntityType> const EntityTypeNames{
   {EntityType::Monster, "monster"},
   {EntityType::Npc, "npc"},
   {EntityType::Player, "player"}
-};
+});
 
 Entity::~Entity() {}
 
-void Entity::init(World* world, EntityId entityId, EntityMode mode) {
+std::expected<void, StarException> Entity::init(World* world, EntityId entityId, EntityMode mode) {
   if (!world)
-    throw EntityException("Entity::init called with null world pointer");
+    return std::unexpected(EntityException("Entity::init called with null world pointer"));
   if (entityId == NullEntityId)
-    throw EntityException("Entity::init called with null entity id");
+    return std::unexpected(EntityException("Entity::init called with null entity id"));
   if (m_world)
-    throw EntityException("Entity::init called when already initialized");
+    return std::unexpected(EntityException("Entity::init called when already initialized"));
 
   m_world = world;
   m_entityMode = mode;
   m_entityId = entityId;
+  return {};
 }
 
-void Entity::uninit() {
+std::expected<void, StarException> Entity::uninit() {
   m_world = nullptr;
   m_entityMode = {};
   m_entityId = NullEntityId;
+  return {};
 }
 
-std::pair<ByteArray, std::uint64_t> Entity::writeNetState(std::uint64_t, NetCompatibilityRules) {
-  return {ByteArray(), 0};
+std::expected<std::pair<ByteArray, std::uint64_t>, StarException> Entity::writeNetState(std::uint64_t, NetCompatibilityRules) {
+  return std::pair<ByteArray, std::uint64_t>{ByteArray(), 0};
 }
 
-void Entity::readNetState(ByteArray, float, NetCompatibilityRules) {}
+std::expected<void, StarException> Entity::readNetState(ByteArray, float, NetCompatibilityRules) { return {}; }
 
-void Entity::enableInterpolation(float) {}
+std::expected<void, StarException> Entity::enableInterpolation(float) { return {}; }
 
-void Entity::disableInterpolation() {}
+std::expected<void, StarException> Entity::disableInterpolation() { return {}; }
 
 RectF Entity::collisionArea() const {
   return RectF::null();
@@ -91,57 +93,57 @@ bool Entity::masterOnly() const {
   return false;
 }
 
-String Entity::name() const {
+std::expected<String, StarException> Entity::name() const {
   return "";
 }
 
-String Entity::description() const {
+std::expected<String, StarException> Entity::description() const {
   return "";
 }
 
-List<LightSource> Entity::lightSources() const {
+std::expected<List<LightSource>, StarException> Entity::lightSources() const {
+  return List<LightSource>{};
+}
+
+std::expected<List<DamageSource>, StarException> Entity::damageSources() const {
+  return List<DamageSource>{};
+}
+
+std::expected<void, StarException> Entity::hitOther(EntityId, DamageRequest const&) { return {}; }
+
+std::expected<void, StarException> Entity::damagedOther(DamageNotification const&) { return {}; }
+
+std::expected<std::optional<HitType>, StarException> Entity::queryHit(DamageSource const&) const {
   return {};
 }
 
-List<DamageSource> Entity::damageSources() const {
+std::expected<std::optional<PolyF>, StarException> Entity::hitPoly() const {
   return {};
 }
 
-void Entity::hitOther(EntityId, DamageRequest const&) {}
-
-void Entity::damagedOther(DamageNotification const&) {}
-
-std::optional<HitType> Entity::queryHit(DamageSource const&) const {
-  return {};
+std::expected<List<DamageNotification>, StarException> Entity::applyDamage(DamageRequest const&) {
+  return List<DamageNotification>{};
 }
 
-std::optional<PolyF> Entity::hitPoly() const {
-  return {};
+std::expected<List<DamageNotification>, StarException> Entity::selfDamageNotifications() {
+  return List<DamageNotification>{};
 }
 
-List<DamageNotification> Entity::applyDamage(DamageRequest const&) {
-  return {};
-}
-
-List<DamageNotification> Entity::selfDamageNotifications() {
-  return {};
-}
-
-bool Entity::shouldDestroy() const {
+std::expected<bool, StarException> Entity::shouldDestroy() const {
   return false;
 }
 
-void Entity::destroy(RenderCallback*) {}
+std::expected<void, StarException> Entity::destroy(RenderCallback*) { return {}; }
 
-std::optional<ChainableJsonMessageResponse> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
   return {};
 }
 
-void Entity::update(float, std::uint64_t) {}
+std::expected<void, StarException> Entity::update(float, std::uint64_t) { return {}; }
 
-void Entity::render(RenderCallback*) {}
+std::expected<void, StarException> Entity::render(RenderCallback*) { return {}; }
 
-void Entity::renderLightSources(RenderCallback*) {}
+std::expected<void, StarException> Entity::renderLightSources(RenderCallback*) { return {}; }
 
 EntityId Entity::entityId() const {
   return m_entityId;
@@ -165,9 +167,9 @@ bool Entity::inWorld() const {
   }
 }
 
-World* Entity::world() const {
+std::expected<World*, StarException> Entity::world() const {
   if (!m_world)
-    throw EntityException("world() called while uninitialized");
+    return std::unexpected(EntityException("world() called while uninitialized"));
 
   return m_world;
 }

@@ -75,7 +75,7 @@ enum class ItemType {
   ActiveItem,
   AugmentItem
 };
-extern EnumMap<ItemType> const ItemTypeNames;
+extern std::expected<EnumMap<ItemType>, StarException> const ItemTypeNames;
 
 class ItemDatabase {
 public:
@@ -102,56 +102,69 @@ public:
   static bool canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& availableIngredients, StringMap<std::uint64_t> const& availableCurrencies);
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset);
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
-  static String guiFilterString(std::shared_ptr<Item> const& item);
+  [[nodiscard]]
+  static std::expected<String, StarException> guiFilterString(std::shared_ptr<Item> const& item);
 
-  ItemDatabase(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDatabase>, StarException> create(Root& root);
 
   void cleanup();
 
   // Load an item based on item descriptor.  If loadItem is called with a
   // live ptr, and the ptr matches the descriptor read, then no new item is
   // constructed.  If ItemT is some other type than Item, then loadItem will
-  // clear the item if the new item is not castable to it.  Returns whether
-  // itemPtr was changed.  No exception will be thrown if there is an error
-  // spawning the new item, it will be logged and the itemPtr will be set to a
-  // default item.
+  // clear the item if the new item is not castable to it. Returns whether the
+  // pointer changed. Existing recovery handlers may substitute a default item;
+  // failures in those handlers or the fallback are propagated.
   template <typename ItemT>
-  bool loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
-  bool diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const;
 
-  std::shared_ptr<Item> diskLoad(Json const& diskStore) const;
-  std::shared_ptr<Item> fromJson(Json const& spec) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> diskLoad(Json const& diskStore) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> fromJson(Json const& spec) const;
 
-  Json diskStore(std::shared_ptr<Item const> const& itemPtr) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> diskStore(std::shared_ptr<Item const> const& itemPtr) const;
 
   Json toJson(std::shared_ptr<Item const> const& itemPtr) const;
 
   bool hasItem(String const& itemName) const;
-  ItemType itemType(String const& itemName) const;
+  [[nodiscard]]
+  std::expected<ItemType, StarException> itemType(String const& itemName) const;
   // Friendly name here can be different than the final friendly name, as it
   // can be modified by custom config or builder scripts.
-  String itemFriendlyName(String const& itemName) const;
-  StringSet itemTags(String const& itemName) const;
+  [[nodiscard]]
+  std::expected<String, StarException> itemFriendlyName(String const& itemName) const;
+  [[nodiscard]]
+  std::expected<StringSet, StarException> itemTags(String const& itemName) const;
 
   // Generate an item config for the given itemName, parameters, level and seed.
   // Level and seed are used by generation in some item types, and may be stored as part
   // of the unique item data or may be ignored.
-  ItemConfig itemConfig(String const& itemName, Json parameters, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}) const;
+  [[nodiscard]]
+  std::expected<ItemConfig, StarException> itemConfig(String const& itemName, Json parameters, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}) const;
 
   // Returns the path to the item's json file in the assets.
-  std::optional<String> itemFile(String const& itemName) const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> itemFile(String const& itemName) const;
 
   // Generates the config for the given item descriptor and then loads the item
   // from the appropriate factory.  If there is a problem instantiating the
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  std::shared_ptr<Item> itemShared(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> itemShared(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}) const;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  std::shared_ptr<Item> item(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> item(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
@@ -170,17 +183,21 @@ public:
 
   ItemRecipe getPreciseRecipeForMaterials(String const& group, List<std::shared_ptr<Item>> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const;
 
-  ItemRecipe parseRecipe(Json const& config) const;
+  [[nodiscard]]
+  std::expected<ItemRecipe, StarException> parseRecipe(Json const& config) const;
 
   HashSet<ItemRecipe> const& allRecipes() const;
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
-  std::shared_ptr<Item> applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const;
-  bool ageItem(std::shared_ptr<Item>& item, double aging) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> ageItem(std::shared_ptr<Item>& item, double aging) const;
 
   List<String> allItems() const;
 
 private:
+  explicit ItemDatabase(Root& root);
   struct ItemData {
     ItemType type;
     String name;
@@ -193,22 +210,33 @@ private:
     String filename;
   };
 
-  std::shared_ptr<Item> createItem(ItemType type, ItemConfig const& config) const;
-  ItemDescriptor loadDescriptor(Json const& store) const;
-  std::shared_ptr<Item> tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> createItem(ItemType type, ItemConfig const& config) const;
+  [[nodiscard]]
+  std::expected<ItemDescriptor, StarException> loadDescriptor(Json const& store) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level = {}, std::optional<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
-  ItemData const& itemData(String const& name) const;
-  ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
+  [[nodiscard]]
+  std::expected<ItemData const*, StarException> itemData(String const& name) const;
+  [[nodiscard]]
+  std::expected<ItemRecipe, StarException> makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
 
-  void addItemSet(ItemType type, String const& extension);
-  void addObjectDropItem(String const& objectPath, Json const& objectConfig);
+  [[nodiscard]]
+  std::expected<void, StarException> addItemSet(ItemType type, String const& extension);
+  [[nodiscard]]
+  std::expected<void, StarException> addObjectDropItem(String const& objectPath, Json const& objectConfig);
 
-  void scanItems();
-  void addObjectItems();
-  void scanRecipes();
-  void addBlueprints();
-  void addCodexes();
-
+  [[nodiscard]]
+  std::expected<void, StarException> scanItems();
+  [[nodiscard]]
+  std::expected<void, StarException> addObjectItems();
+  [[nodiscard]]
+  std::expected<void, StarException> scanRecipes();
+  [[nodiscard]]
+  std::expected<void, StarException> addBlueprints();
+  [[nodiscard]]
+  std::expected<void, StarException> addCodexes();
   Root& m_root;
 
   StringMap<ItemData> m_items;
@@ -225,7 +253,8 @@ private:
 };
 
 template <typename ItemT>
-bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const {
+[[nodiscard]]
+std::expected<bool, StarException> ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const {
   if (descriptor.isNull()) {
     if (itemPtr) {
       itemPtr.reset();
@@ -233,7 +262,10 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<It
     }
   } else {
     if (!itemPtr || !itemPtr->matches(descriptor, true)) {
-      itemPtr = as<ItemT>(item(descriptor));
+      auto loaded = item(descriptor);
+      if (!loaded)
+        return std::unexpected(std::move(loaded.error()));
+      itemPtr = as<ItemT>(*loaded);
       return true;
     } else if (itemPtr->count() != descriptor.count()) {
       itemPtr->setCount(descriptor.count());
@@ -244,13 +276,17 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<It
 }
 
 template <typename ItemT>
-bool ItemDatabase::diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const {
-  try {
-    return loadItem(loadDescriptor(diskStore), itemPtr);
-  } catch (StarException const&) {
+[[nodiscard]]
+std::expected<bool, StarException> ItemDatabase::diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const {
+  auto descriptor = loadDescriptor(diskStore);
+  if (!descriptor)
     return false;
-  }
+  auto loaded = loadItem(*descriptor, itemPtr);
+  if (!loaded)
+    return false;
+  return loaded;
 }
+
 }
 
 export module star.item_database;

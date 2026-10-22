@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import star.vector;
 import std;
@@ -13,7 +14,7 @@ enum class LightType : std::uint8_t {
   PointAsSpread = 2 // Point with spread-like range
 };
 
-extern EnumMap<LightType> const LightTypeNames;
+extern std::expected<EnumMap<LightType>, StarException> const LightTypeNames;
 
 struct LightSource {
   Vec2F position;
@@ -31,12 +32,12 @@ struct LightSource {
 
   void translate(Vec2F const& pos);
 
-  friend DataStream& operator<<(DataStream& ds, LightSource const& lightSource);
-  friend DataStream& operator>>(DataStream& ds, LightSource& lightSource);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, LightSource& lightSource);
 };
 
-DataStream& operator<<(DataStream& ds, LightSource const& lightSource);
-DataStream& operator>>(DataStream& ds, LightSource& lightSource);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, LightSource const& lightSource);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, LightSource& lightSource);
 }
 
 export module star.light_source;

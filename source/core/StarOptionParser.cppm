@@ -42,13 +42,13 @@ public:
   void setSummary(String summary);
   void setAdditionalHelp(String help);
 
-  void addSwitch(String const& flag, String description = {});
-  void addParameter(String const& flag, String argumentName, RequirementMode mode, String description = {});
+  std::expected<void, StarException> addSwitch(String const& flag, String description = {});
+  std::expected<void, StarException> addParameter(String const& flag, String argumentName, RequirementMode mode, String description = {});
   void addArgument(String argumentName, RequirementMode mode, String description = {});
 
   // Parse the given arguments into an options set, returns the options parsed
   // and a list of all the errors encountered while parsing.
-  std::pair<Options, StringList> parseOptions(StringList const& arguments) const;
+  std::expected<std::pair<Options, StringList>, StarException> parseOptions(StringList const& arguments) const;
 
   // Print help text to the given std::ostream
   void printHelp(std::ostream& os) const;

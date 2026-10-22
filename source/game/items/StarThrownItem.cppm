@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -93,17 +94,23 @@ public:
     return Star::typeName<ThrownItem>();
   }
 
-  ThrownItem(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ThrownItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
-  List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
-  void fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
 
 private:
+  explicit ThrownItem(Root& root) : Item(root) {}
   String m_projectileType;
   Json m_projectileConfig;
   std::size_t m_ammoUsage;
@@ -114,48 +121,92 @@ private:
 
 namespace Star {
 
-ThrownItem::ThrownItem(Root& root, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(root, config, directory, itemParameters), SwingableItem(config) {
-  m_projectileType = instanceValue("projectileType").toString();
-  m_projectileConfig = instanceValue("projectileConfig", {});
-  m_ammoUsage = instanceValue("ammoUsage", 1).toUInt();
-
-  auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F())};
+std::expected<std::shared_ptr<ThrownItem>, StarException> ThrownItem::create(Root& root, Json const& config, String const& directory, Json const& itemParameters) {
+  auto item = std::shared_ptr<ThrownItem>(new ThrownItem(root));
+  auto initialized = item->initialize(config, directory, itemParameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  auto projectileType = item->instanceValue("projectileType").and_then([](Json const& value) { return value.toString(); });
+  if (!projectileType)
+    return std::unexpected(std::move(projectileType.error()));
+  item->m_projectileType = std::move(*projectileType);
+  auto projectileConfig = item->instanceValue("projectileConfig", {});
+  if (!projectileConfig)
+    return std::unexpected(std::move(projectileConfig.error()));
+  item->m_projectileConfig = std::move(*projectileConfig);
+  auto ammoUsage = item->instanceValue("ammoUsage", 1).and_then([](Json const& value) { return value.toUInt(); });
+  if (!ammoUsage)
+    return std::unexpected(std::move(ammoUsage.error()));
+  item->m_ammoUsage = *ammoUsage;
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  auto metadata = root.imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto drawable = Drawable::makeImage(**metadata, AssetPath::relativeTo(directory, *image), 1.0f / TilePixels, true, Vec2F());
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  item->m_drawables = {std::move(*drawable)};
+  return item;
 }
 
-std::shared_ptr<Item> ThrownItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> ThrownItem::clone() const {
   return std::make_shared<ThrownItem>(*this);
 }
 
-List<Drawable> ThrownItem::drawables() const {
+std::expected<List<Drawable>, StarException> ThrownItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> ThrownItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
+std::expected<List<Drawable>, StarException> ThrownItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
-void ThrownItem::fireTriggered() {
-  if (initialized()) {
-    Vec2F direction = world()->geometry().diff(owner()->aimPosition(), owner()->position()).normalized();
-    Vec2F firePosition = owner()->position() + ownerFirePosition();
-    if (world()->lineTileCollision(owner()->position(), firePosition))
-      return;
-
-    if (consume(m_ammoUsage)) {
-      auto projectile = root().projectileDatabase()->createProjectile(m_projectileType, m_projectileConfig);
-      projectile->setInitialPosition(firePosition);
-      projectile->setInitialDirection(direction);
-      projectile->setSourceEntity(owner()->entityId(), false);
-      projectile->setPowerMultiplier(owner()->powerMultiplier());
-      world()->addEntity(projectile);
-    }
-
-    FireableItem::fireTriggered();
-  } else {
-    throw ItemException("Thrown item not init'd properly, or user not recognized as Tool User.");
+std::expected<void, StarException> ThrownItem::fireTriggered() {
+  if (!initialized())
+    return std::unexpected(ItemException("Thrown item not init'd properly, or user not recognized as Tool User."));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto aimPosition = (*itemOwner)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  Vec2F direction = (*itemWorld)->geometry().diff(*aimPosition, (*itemOwner)->position()).normalized();
+  auto relativeFirePosition = ownerFirePosition();
+  if (!relativeFirePosition)
+    return std::unexpected(std::move(relativeFirePosition.error()));
+  Vec2F firePosition = (*itemOwner)->position() + *relativeFirePosition;
+  auto collision = (*itemWorld)->lineTileCollision((*itemOwner)->position(), firePosition);
+  if (!collision)
+    return std::unexpected(std::move(collision.error()));
+  if (*collision)
+    return {};
+  if (consume(m_ammoUsage)) {
+    auto database = root().projectileDatabase();
+    if (!database)
+      return std::unexpected(std::move(database.error()));
+    auto projectile = (*database)->createProjectile(m_projectileType, m_projectileConfig);
+    if (!projectile)
+      return std::unexpected(std::move(projectile.error()));
+    (*projectile)->setInitialPosition(firePosition);
+    (*projectile)->setInitialDirection(direction);
+    (*projectile)->setSourceEntity((*itemOwner)->entityId(), false);
+    auto multiplier = (*itemOwner)->powerMultiplier();
+    if (!multiplier)
+      return std::unexpected(std::move(multiplier.error()));
+    (*projectile)->setPowerMultiplier(*multiplier);
+    auto added = (*itemWorld)->addEntity(*projectile);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
+  return FireableItem::fireTriggered();
 }
 
 }

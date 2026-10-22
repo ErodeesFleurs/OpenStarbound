@@ -8,7 +8,7 @@ import star.gui_types;
 namespace Star {
 
 bool ImageStretchSet::fullyPopulated() const {
-  return inner.size() && begin.size() && end.size();
+  return !inner.empty() && !begin.empty() && !end.empty();
 }
 
 GuiDirection otherDirection(GuiDirection direction) {
@@ -25,12 +25,15 @@ GuiDirection otherDirection(GuiDirection direction) {
   }
 }
 
-extern EnumMap<GuiDirection> const GuiDirectionNames{
+extern std::expected<EnumMap<GuiDirection>, StarException> const GuiDirectionNames = EnumMap<GuiDirection>::create({
     {GuiDirection::Horizontal, "horizontal"}, {GuiDirection::Vertical, "vertical"},
-};
+});
 
-String rarityBorder(String rarity) {
-  return (rarity.beginsWith("/") ? rarity : strf("/interface/inventory/itemborder{}.png", rarity)).toLower();
+std::expected<String, StarException> rarityBorder(String rarity) {
+  auto absolute = rarity.beginsWith("/");
+  if (!absolute)
+    return std::unexpected(std::move(absolute.error()));
+  return (*absolute ? rarity : strf("/interface/inventory/itemborder{}.png", rarity)).toLower();
 }
 
 }

@@ -28,7 +28,7 @@ struct MaterialRenderProfileExceptionTag {
 using MaterialRenderProfileException = StarError<MaterialRenderProfileExceptionTag, StarException>;
 
 enum class MaterialJoinType : std::uint8_t { All, Any };
-extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;
+extern std::expected<EnumMap<MaterialJoinType>, StarException> const MaterialJoinTypeNames;
 
 struct MaterialRule {
   struct RuleEmpty {};
@@ -120,17 +120,20 @@ struct MaterialRenderProfile {
 
   // Get a single asset path for just a single piece of a material, with the
   // image cropped to the piece itself.
-  String pieceImage(String const& pieceName,
+  [[nodiscard]]
+  std::expected<String, StarException> pieceImage(String const& pieceName,
       unsigned variant,
       MaterialColorVariant colorVariant = DefaultMaterialColorVariant,
       MaterialHue hueShift = MaterialHue()) const;
 
   // Get an overlay image for rendering damaged tiles, as well as the offset
   // for it in world coordinates.
-  std::pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
+  [[nodiscard]]
+  std::expected<std::pair<String, Vec2F> const*, StarException> damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
-MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabase const& imageMetadata, Json const& spec, String const& relativePath = "");
+[[nodiscard]]
+std::expected<MaterialRenderProfile, StarException> parseMaterialRenderProfile(ImageMetadataDatabase const& imageMetadata, Json const& spec, String const& relativePath = "");
 
 }
 

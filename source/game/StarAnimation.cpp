@@ -36,37 +36,99 @@ import star.animation;
 import star.math_common;
 namespace Star {
 
-Animation::Animation(Root& root) : Animation(root, {}, {}) {}
+std::expected<Animation, StarException> Animation::create(Root& root, Json config, String const& directory) {
+  Animation animation(root);
+  auto initialized = animation.initialize(std::move(config), directory);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return animation;
+}
 
-Animation::Animation(Root& root, Json config, String const& directory) : m_root(&root) {
+std::expected<void, StarException> Animation::initialize(Json config, String const& directory) {
   m_directory = directory;
   if (m_directory.empty()) {
-    if (config.isType(Json::Type::String))
-      m_directory = AssetPath::directory(config.toString());
-    else
+    if (config.isType(Json::Type::String)) {
+      auto path = config.toString();
+      if (!path)
+        return std::unexpected(std::move(path.error()));
+      m_directory = AssetPath::directory(*path);
+    } else {
       m_directory = "/";
+    }
   }
   if (config.isNull())
     config = JsonObject();
-
-  config = root.assets()->fetchJson(config);
-
-  m_mode = AnimationModeNames.getLeft(config.getString("mode", "endAndDisappear"));
-  m_base = config.getString("frames", "");
-  // If the base image has no index tag, then assume that the frame is appended
-  // to the end.
-  m_appendFrame = !m_base.contains("<index>");
-  m_frameNumber = config.getInt("frameNumber", 1);
-  m_animationCycle = config.getFloat("animationCycle", 1.0);
-  m_animationTime = m_animationCycle * config.getFloat("loops", 1.0);
-  m_angle = config.getFloat("angle", 0.0f);
-  m_offset = jsonToVec2F(config.get("offset", JsonArray{0.0f, 0.0f}));
-  m_centered = config.getBool("centered", true);
-  m_processing = config.getString("processing", "");
-  m_color = config.opt("color").transform(jsonToColor).value_or(Color::White);
-  m_variantOffset = root.random().randInt(config.getInt("variants", 1) - 1) * m_frameNumber;
-
+  auto assets = m_root->assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto fetched = (*assets)->fetchJson(config);
+  if (!fetched)
+    return std::unexpected(std::move(fetched.error()));
+  config = std::move(*fetched);
+  auto modeName = config.getString("mode", "endAndDisappear");
+  if (!modeName)
+    return std::unexpected(std::move(modeName.error()));
+  if (!AnimationModeNames)
+    return std::unexpected(AnimationModeNames.error());
+  auto mode = AnimationModeNames->getLeft(*modeName);
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  m_mode = **mode;
+  auto base = config.getString("frames", "");
+  if (!base)
+    return std::unexpected(std::move(base.error()));
+  m_base = std::move(*base);
+  auto hasIndex = m_base.contains("<index>");
+  if (!hasIndex)
+    return std::unexpected(std::move(hasIndex.error()));
+  m_appendFrame = !*hasIndex;
+  auto frameNumber = config.getInt("frameNumber", 1);
+  if (!frameNumber)
+    return std::unexpected(std::move(frameNumber.error()));
+  m_frameNumber = *frameNumber;
+  auto cycle = config.getFloat("animationCycle", 1.0);
+  if (!cycle)
+    return std::unexpected(std::move(cycle.error()));
+  m_animationCycle = *cycle;
+  auto loops = config.getFloat("loops", 1.0);
+  if (!loops)
+    return std::unexpected(std::move(loops.error()));
+  m_animationTime = m_animationCycle * *loops;
+  auto angle = config.getFloat("angle", 0.0f);
+  if (!angle)
+    return std::unexpected(std::move(angle.error()));
+  m_angle = *angle;
+  auto offsetConfig = config.get("offset", JsonArray{0.0f, 0.0f});
+  if (!offsetConfig)
+    return std::unexpected(std::move(offsetConfig.error()));
+  auto offset = jsonToVec2F(*offsetConfig);
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
+  m_offset = *offset;
+  auto centered = config.getBool("centered", true);
+  if (!centered)
+    return std::unexpected(std::move(centered.error()));
+  m_centered = *centered;
+  auto processing = config.getString("processing", "");
+  if (!processing)
+    return std::unexpected(std::move(processing.error()));
+  m_processing = std::move(*processing);
+  auto colorConfig = config.opt("color");
+  if (!colorConfig)
+    return std::unexpected(std::move(colorConfig.error()));
+  m_color = Color::White;
+  if (*colorConfig) {
+    auto color = jsonToColor(**colorConfig);
+    if (!color)
+      return std::unexpected(std::move(color.error()));
+    m_color = *color;
+  }
+  auto variants = config.getInt("variants", 1);
+  if (!variants)
+    return std::unexpected(std::move(variants.error()));
+  m_variantOffset = m_root->random().randInt(*variants - 1) * m_frameNumber;
   reset();
+  return {};
 }
 
 void Animation::setAngle(float angle) {
@@ -89,21 +151,23 @@ void Animation::clearTags() {
   m_tagValues.clear();
 }
 
-Drawable Animation::drawable(float pixelSize) const {
+std::expected<Drawable, StarException> Animation::drawable(float pixelSize) const {
   if (m_base.empty() || m_frame < 0)
     return Drawable();
-
-  // Replace <index> with the frame index, if it is not found then add
-  // :<index> to the end
   String baseFrame = AssetPath::relativeTo(m_directory, m_base).replaceTags(m_tagValues);
   if (m_appendFrame)
     baseFrame += ":" + toString(m_frame);
-
   auto imageMetadata = m_root->imageMetadataDatabase();
-  Drawable drawable = Drawable::makeImage(*imageMetadata, std::move(baseFrame), pixelSize, m_centered, m_offset);
-  drawable.imagePart().addDirectivesGroup(*imageMetadata, m_processing, true);
-  drawable.rotate(m_angle);
-  drawable.color = m_color;
+  if (!imageMetadata)
+    return std::unexpected(std::move(imageMetadata.error()));
+  auto drawable = Drawable::makeImage(**imageMetadata, std::move(baseFrame), pixelSize, m_centered, m_offset);
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  auto directives = drawable->imagePart().addDirectivesGroup(**imageMetadata, m_processing, true);
+  if (!directives)
+    return std::unexpected(std::move(directives.error()));
+  drawable->rotate(m_angle);
+  drawable->color = m_color;
   return drawable;
 }
 
@@ -141,7 +205,7 @@ void Animation::reset() {
   m_tagValues["index"] = "0";
 }
 
-EnumMap<Animation::AnimationMode> const Animation::AnimationModeNames = {{Animation::AnimationMode::Stop, "Stop"},
-    {Animation::AnimationMode::EndAndDisappear, "EndAndDisappear"},
-    {Animation::AnimationMode::LoopForever, "LoopForever"}};
+std::expected<EnumMap<Animation::AnimationMode>, StarException> const Animation::AnimationModeNames = EnumMap<AnimationMode>::create({{AnimationMode::Stop, "Stop"},
+    {AnimationMode::EndAndDisappear, "EndAndDisappear"},
+    {AnimationMode::LoopForever, "LoopForever"}});
 }

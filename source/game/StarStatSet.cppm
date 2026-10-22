@@ -1,5 +1,6 @@
 module;
 
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -38,24 +39,24 @@ namespace Star {
 // value will automatically update to 100.
 class StatSet {
 public:
-  void addStat(String statName, float baseValue = 0.0f);
-  void removeStat(String const& statName);
+  [[nodiscard]] std::expected<void, StarException> addStat(String statName, float baseValue = 0.0f);
+  [[nodiscard]] std::expected<void, StarException> removeStat(String const& statName);
 
   // Only lists base stats added with addStat, not stats that come only from
   // modifiers
   StringList baseStatNames() const;
   bool isBaseStat(String const& statName) const;
 
-  // Throws when the stat is not a base stat that is added via addStat.
-  float statBaseValue(String const& statName) const;
-  void setStatBaseValue(String const& statName, float value);
+  // Reports a missing base stat.
+  [[nodiscard]] std::expected<float, StarException> statBaseValue(String const& statName) const;
+  [[nodiscard]] std::expected<void, StarException> setStatBaseValue(String const& statName, float value);
 
   List<StatModifierGroupId> statModifierGroupIds() const;
-  List<StatModifier> statModifierGroup(StatModifierGroupId modifierGroupId) const;
+  [[nodiscard]] std::expected<List<StatModifier>, StarException> statModifierGroup(StatModifierGroupId modifierGroupId) const;
 
-  StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
-  void addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
-  bool setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
+  [[nodiscard]] std::expected<StatModifierGroupId, StarException> addStatModifierGroup(List<StatModifier> modifiers = {});
+  [[nodiscard]] std::expected<void, StarException> addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
+  [[nodiscard]] std::expected<bool, StarException> setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
   bool removeStatModifierGroup(StatModifierGroupId modifierGroupId);
   void clearStatModifiers();
 
@@ -67,26 +68,24 @@ public:
   // Does this stat exist either from the base stats or the modifiers
   bool isEffectiveStat(String const& statName) const;
 
-  // Will never throw, returns either the base stat value, or the modified
-  // stat value if a modifier is applied, or 0.0.  This is to support stats that
-  // may come only from modifiers and have no base value.
+  // Returns either the base stat value, the modified stat value, or zero.
+  // This supports stats that come only from modifiers and have no base value.
   float statEffectiveValue(String const& statName) const;
 
-  void addResource(String resourceName, std::variant<std::monostate, String, float> max = {}, std::variant<std::monostate, String, float> delta = {});
-  void removeResource(String const& resourceName);
+  [[nodiscard]] std::expected<void, StarException> addResource(String resourceName, std::variant<std::monostate, String, float> max = {}, std::variant<std::monostate, String, float> delta = {});
+  [[nodiscard]] std::expected<void, StarException> removeResource(String const& resourceName);
 
-  std::variant<std::monostate, String, float> resourceMax(String const& resourceName) const;
-  std::variant<std::monostate, String, float> resourceDelta(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::variant<std::monostate, String, float>, StarException> resourceMax(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::variant<std::monostate, String, float>, StarException> resourceDelta(String const& resourceName) const;
 
   StringList resourceNames() const;
   bool isResource(String const& resourceName) const;
 
-  // Will never throw, returns either the resource value, or 0.0 for a missing
-  // resource
+  // Returns either the resource value, or zero for a missing resource.
   float resourceValue(String const& resourceName) const;
 
-  float setResourceValue(String const& resourceName, float value);
-  float modifyResourceValue(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<float, StarException> setResourceValue(String const& resourceName, float value);
+  [[nodiscard]] std::expected<float, StarException> modifyResourceValue(String const& resourceName, float amount);
 
   // Similar to consumeResource, will add the given amount to a resource if
   // it exists. Returns the amount by which the resource was actually increased.
@@ -94,28 +93,24 @@ public:
 
   // If a resource exists and has more than the given amount available, and the
   // resource is not locked, then subtracts this amount from the resource and
-  // returns true.  Otherwise, does nothing and returns false.  Will only throw
-  // if 'amount' is less than zero, will simply return false on missing
-  // resource.
-  bool consumeResourceValue(String const& resourceName, float amount);
+  // returns true. Otherwise, does nothing and returns false. A negative amount
+  // is an error; a missing resource is an ordinary false outcome.
+  [[nodiscard]] std::expected<bool, StarException> consumeResourceValue(String const& resourceName, float amount);
 
   // Like consumeResource, but always succeeds if the resource is unlocked and
   // the amount is nonzero.  If the amount is greater than the available
   // resource, then the resource will be consumed to zero.
-  bool overConsumeResourceValue(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<bool, StarException> overConsumeResourceValue(String const& resourceName, float amount);
 
   // A locked resource cannot be consumed in any way.
-  bool resourceLocked(String const& resourceName) const;
-  void setResourceLocked(String const& resourceName, bool locked);
+  [[nodiscard]] std::expected<bool, StarException> resourceLocked(String const& resourceName) const;
+  [[nodiscard]] std::expected<void, StarException> setResourceLocked(String const& resourceName, bool locked);
 
-  // If a resource has a maximum value, this will return it.
-  std::optional<float> resourceMaxValue(String const& resourceName) const;
-  // Returns the resource percentage if the resource has a max value.
-  std::optional<float> resourcePercentage(String const& resourceName) const;
-  // If the resource has a max value, then modifies the value percentage,
-  // otherwise this is nonsense so throws.
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  // A resource without a maximum has no percentage.
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourceMaxValue(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] std::expected<float, StarException> setResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] std::expected<float, StarException> modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
   void update(float dt);
 
@@ -141,10 +136,10 @@ private:
     float setValue(float v);
   };
 
-  Resource const& getResource(String const& resourceName) const;
-  Resource& getResource(String const& resourceName);
+  [[nodiscard]] std::expected<Resource const*, StarException> getResource(String const& resourceName) const;
+  [[nodiscard]] std::expected<Resource*, StarException> getResource(String const& resourceName);
 
-  bool consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume);
+  [[nodiscard]] std::expected<bool, StarException> consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume);
 
   StringMap<float> m_baseStats;
   StringMap<EffectiveStat> m_effectiveStats;

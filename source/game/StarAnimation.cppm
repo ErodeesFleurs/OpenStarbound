@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -22,8 +23,7 @@ class Root;
 class Animation {
 public:
   // config can be either a path to a config or a literal config.
-  Animation(Root& root);
-  Animation(Root& root, Json config, String const& directory = {});
+  [[nodiscard]] static std::expected<Animation, StarException> create(Root& root, Json config = {}, String const& directory = {});
 
   void setAngle(float angle);
 
@@ -34,7 +34,7 @@ public:
   void setTag(String tagName, String tagValue);
   void clearTags();
 
-  Drawable drawable(float pixelSize) const;
+  [[nodiscard]] std::expected<Drawable, StarException> drawable(float pixelSize) const;
 
   void update(float dt);
 
@@ -42,8 +42,10 @@ public:
   void reset();
 
 private:
+  explicit Animation(Root& root) : m_root(&root) {}
+  [[nodiscard]] std::expected<void, StarException> initialize(Json config, String const& directory);
   enum AnimationMode { Stop, EndAndDisappear, LoopForever };
-  static EnumMap<AnimationMode> const AnimationModeNames;
+  static std::expected<EnumMap<AnimationMode>, StarException> const AnimationModeNames;
   Root* m_root;
 
   AnimationMode m_mode;

@@ -95,7 +95,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-extern EnumMap<HumanoidEmote> const HumanoidEmoteNames{
+extern std::expected<EnumMap<HumanoidEmote>, StarException> const HumanoidEmoteNames = EnumMap<HumanoidEmote>::create({
   {HumanoidEmote::Idle, "Idle"},
   {HumanoidEmote::Blabbering, "Blabbering"},
   {HumanoidEmote::Shouting, "Shouting"},
@@ -110,10 +110,10 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteNames{
   {HumanoidEmote::Wink, "Wink"},
   {HumanoidEmote::Eat, "Eat"},
   {HumanoidEmote::Sleep, "Sleep"}
-};
+});
 
 // Raptor - I hate the fact that its inconsistent between the strings used in the map above and with the switch case down below
-extern EnumMap<HumanoidEmote> const HumanoidEmoteFrameBaseNames{
+extern std::expected<EnumMap<HumanoidEmote>, StarException> const HumanoidEmoteFrameBaseNames = EnumMap<HumanoidEmote>::create({
   {HumanoidEmote::Idle, "idle"},
   {HumanoidEmote::Blabbering, "blabber"},
   {HumanoidEmote::Shouting, "shout"},
@@ -128,28 +128,76 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteFrameBaseNames{
   {HumanoidEmote::Wink, "wink"},
   {HumanoidEmote::Eat, "eat"},
   {HumanoidEmote::Sleep, "sleep"}
-};
+});
 
-Personality parsePersonalityArray(Json const& config) {
-  return Personality{config.getString(0), config.getString(1), jsonToVec2F(config.get(2)), jsonToVec2F(config.get(3))};
+std::expected<Personality, StarException> parsePersonalityArray(Json const& config) {
+  {
+auto checked1 = config.getString(0);
+if (!checked1) return std::unexpected(std::move(checked1.error()));
+auto checked2 = config.getString(1);
+if (!checked2) return std::unexpected(std::move(checked2.error()));
+auto checked3 = config.get(2);
+if (!checked3) return std::unexpected(std::move(checked3.error()));
+auto checked4 = jsonToVec2F(std::move(*checked3));
+if (!checked4) return std::unexpected(std::move(checked4.error()));
+auto checked5 = config.get(3);
+if (!checked5) return std::unexpected(std::move(checked5.error()));
+auto checked6 = jsonToVec2F(std::move(*checked5));
+if (!checked6) return std::unexpected(std::move(checked6.error()));
+return Personality{std::move(*checked1), std::move(*checked2), std::move(*checked4), std::move(*checked6)};
+}
 }
 
-Personality& parsePersonality(Personality& personality, Json const& config) {
-  if (auto idle = config.opt("idle"))
-    personality.idle = idle->toString();
-  if (auto armIdle = config.opt("armIdle"))
-    personality.armIdle = armIdle->toString();
-  if (auto headOffset = config.opt("headOffset"))
-    personality.headOffset = jsonToVec2F(*headOffset);
-  if (auto armOffset = config.opt("armOffset"))
-    personality.armOffset = jsonToVec2F(*armOffset);
-
-  return personality;
+std::expected<Personality*, StarException> parsePersonality(Personality& personality, Json const& config) {
+  {
+auto checked7 = config.opt("idle");
+if (!checked7) return std::unexpected(std::move(checked7.error()));
+if (auto idle = std::move(*checked7))
+    {
+      auto idleValue = idle->toString();
+      if (!idleValue) return std::unexpected(std::move(idleValue.error()));
+      personality.idle = std::move(*idleValue);
+    }
+}
+  {
+auto checked8 = config.opt("armIdle");
+if (!checked8) return std::unexpected(std::move(checked8.error()));
+if (auto armIdle = std::move(*checked8))
+    {
+      auto armIdleValue = armIdle->toString();
+      if (!armIdleValue) return std::unexpected(std::move(armIdleValue.error()));
+      personality.armIdle = std::move(*armIdleValue);
+    }
+}
+  {
+auto checked9 = config.opt("headOffset");
+if (!checked9) return std::unexpected(std::move(checked9.error()));
+if (auto headOffset = std::move(*checked9))
+    {
+auto checked10 = jsonToVec2F(*headOffset);
+if (!checked10) return std::unexpected(std::move(checked10.error()));
+personality.headOffset = std::move(*checked10);
+}
+}
+  {
+auto checked11 = config.opt("armOffset");
+if (!checked11) return std::unexpected(std::move(checked11.error()));
+if (auto armOffset = std::move(*checked11))
+    {
+auto checked12 = jsonToVec2F(*armOffset);
+if (!checked12) return std::unexpected(std::move(checked12.error()));
+personality.armOffset = std::move(*checked12);
+}
 }
 
-Personality parsePersonality(Json const& config) {
+  return &personality;
+}
+
+std::expected<Personality, StarException> parsePersonality(Json const& config) {
   Personality personality;
-  return parsePersonality(personality, config);
+  auto parsed = parsePersonality(personality, config);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  return personality;
 }
 
 Json jsonFromPersonality(Personality const& personality) {
@@ -161,47 +209,146 @@ Json jsonFromPersonality(Personality const& personality) {
   };
 }
 
-HumanoidIdentity::HumanoidIdentity() : HumanoidIdentity(Json()) {}
+HumanoidIdentity::HumanoidIdentity()
+  : name("Humanoid"), species("human"), gender(Gender::Male), hairGroup("hair"), hairType("male1"), color(51, 117, 237, 255) {}
 
-HumanoidIdentity::HumanoidIdentity(Json config) {
+std::expected<HumanoidIdentity, StarException> HumanoidIdentity::create(Json config) {
+  HumanoidIdentity identity;
   if (config.isNull())
     config = JsonObject();
 
-  name = config.getString("name", "Humanoid");
-  species = config.getString("species", "human");
-  gender = GenderNames.getLeft(config.getString("gender", "male"));
-  hairGroup = config.getString("hairGroup", "hair");
-  hairType = config.getString("hairType", "male1");
-  hairDirectives = config.getString("hairDirectives", "");
-  bodyDirectives = config.getString("bodyDirectives", "");
-  if (auto jEmoteDirectives = config.optString("emoteDirectives")) // Passing Directives as a default arg would be inefficient
-    emoteDirectives = takeOptional(jEmoteDirectives);
+  {
+auto checked13 = config.getString("name", "Humanoid");
+if (!checked13) return std::unexpected(std::move(checked13.error()));
+identity.name = std::move(*checked13);
+}
+  {
+auto checked14 = config.getString("species", "human");
+if (!checked14) return std::unexpected(std::move(checked14.error()));
+identity.species = std::move(*checked14);
+}
+  {
+if (!GenderNames) return std::unexpected(GenderNames.error());
+auto checked15 = config.getString("gender", "male");
+if (!checked15) return std::unexpected(std::move(checked15.error()));
+auto checked16 = GenderNames->getLeft(std::move(*checked15));
+if (!checked16) return std::unexpected(std::move(checked16.error()));
+identity.gender = (**checked16);
+}
+  {
+auto checked17 = config.getString("hairGroup", "hair");
+if (!checked17) return std::unexpected(std::move(checked17.error()));
+identity.hairGroup = std::move(*checked17);
+}
+  {
+auto checked18 = config.getString("hairType", "male1");
+if (!checked18) return std::unexpected(std::move(checked18.error()));
+identity.hairType = std::move(*checked18);
+}
+  {
+auto checked19 = config.getString("hairDirectives", "");
+if (!checked19) return std::unexpected(std::move(checked19.error()));
+identity.hairDirectives = std::move(*checked19);
+}
+  {
+auto checked20 = config.getString("bodyDirectives", "");
+if (!checked20) return std::unexpected(std::move(checked20.error()));
+identity.bodyDirectives = std::move(*checked20);
+}
+  {
+auto checked21 = config.optString("emoteDirectives");
+if (!checked21) return std::unexpected(std::move(checked21.error()));
+if (auto jEmoteDirectives = std::move(*checked21)) // Passing Directives as a default arg would be inefficient
+    {
+auto checked22 = takeOptional(jEmoteDirectives);
+if (!checked22) return std::unexpected(std::move(checked22.error()));
+identity.emoteDirectives = std::move(*checked22);
+}
   else
-    emoteDirectives = bodyDirectives;
-
-  facialHairGroup = config.getString("facialHairGroup", "");
-  facialHairType = config.getString("facialHairType", "");
-  facialHairDirectives = config.getString("facialHairDirectives", "");
-  facialMaskGroup = config.getString("facialMaskGroup", "");
-  facialMaskType = config.getString("facialMaskType", "");
-  facialMaskDirectives = config.getString("facialMaskDirectives", "");
-
-  personality.idle = config.getString("personalityIdle", "idle.1");
-  personality.armIdle = config.getString("personalityArmIdle", "idle.1");
-  personality.headOffset = jsonToVec2F(config.get("personalityHeadOffset", JsonArray{0, 0}));
-  personality.armOffset = jsonToVec2F(config.get("personalityArmOffset", JsonArray{0, 0}));
-
-  color = jsonToColor(config.get("color", JsonArray({51, 117, 237, 255}))).toRgba();
-
-  imagePath = config.optString("imagePath");
-
+    identity.emoteDirectives = identity.bodyDirectives;
 }
 
-Json HumanoidIdentity::toJson() const {
-  auto result = JsonObject{
+  {
+auto checked23 = config.getString("facialHairGroup", "");
+if (!checked23) return std::unexpected(std::move(checked23.error()));
+identity.facialHairGroup = std::move(*checked23);
+}
+  {
+auto checked24 = config.getString("facialHairType", "");
+if (!checked24) return std::unexpected(std::move(checked24.error()));
+identity.facialHairType = std::move(*checked24);
+}
+  {
+auto checked25 = config.getString("facialHairDirectives", "");
+if (!checked25) return std::unexpected(std::move(checked25.error()));
+identity.facialHairDirectives = std::move(*checked25);
+}
+  {
+auto checked26 = config.getString("facialMaskGroup", "");
+if (!checked26) return std::unexpected(std::move(checked26.error()));
+identity.facialMaskGroup = std::move(*checked26);
+}
+  {
+auto checked27 = config.getString("facialMaskType", "");
+if (!checked27) return std::unexpected(std::move(checked27.error()));
+identity.facialMaskType = std::move(*checked27);
+}
+  {
+auto checked28 = config.getString("facialMaskDirectives", "");
+if (!checked28) return std::unexpected(std::move(checked28.error()));
+identity.facialMaskDirectives = std::move(*checked28);
+}
+
+  {
+auto checked29 = config.getString("personalityIdle", "idle.1");
+if (!checked29) return std::unexpected(std::move(checked29.error()));
+identity.personality.idle = std::move(*checked29);
+}
+  {
+auto checked30 = config.getString("personalityArmIdle", "idle.1");
+if (!checked30) return std::unexpected(std::move(checked30.error()));
+identity.personality.armIdle = std::move(*checked30);
+}
+  {
+auto checked31 = config.get("personalityHeadOffset", JsonArray{0, 0});
+if (!checked31) return std::unexpected(std::move(checked31.error()));
+auto checked32 = jsonToVec2F(std::move(*checked31));
+if (!checked32) return std::unexpected(std::move(checked32.error()));
+identity.personality.headOffset = std::move(*checked32);
+}
+  {
+auto checked33 = config.get("personalityArmOffset", JsonArray{0, 0});
+if (!checked33) return std::unexpected(std::move(checked33.error()));
+auto checked34 = jsonToVec2F(std::move(*checked33));
+if (!checked34) return std::unexpected(std::move(checked34.error()));
+identity.personality.armOffset = std::move(*checked34);
+}
+
+  {
+auto checked35 = config.get("color", JsonArray({51, 117, 237, 255}));
+if (!checked35) return std::unexpected(std::move(checked35.error()));
+auto checked36 = jsonToColor(std::move(*checked35));
+if (!checked36) return std::unexpected(std::move(checked36.error()));
+identity.color = checked36->toRgba();
+}
+
+  {
+auto checked38 = config.optString("imagePath");
+if (!checked38) return std::unexpected(std::move(checked38.error()));
+identity.imagePath = std::move(*checked38);
+}
+
+  return identity;
+}
+
+std::expected<Json, StarException> HumanoidIdentity::toJson() const {
+  if (!GenderNames) return std::unexpected(GenderNames.error());
+auto checked39 = GenderNames->getRight(gender);
+if (!checked39) return std::unexpected(std::move(checked39.error()));
+auto result = JsonObject{
     {"name", name},
     {"species", species},
-    {"gender", GenderNames.getRight(gender)},
+    {"gender", (**checked39)},
     {"hairGroup", hairGroup},
     {"hairType", hairType},
     {"hairDirectives", hairDirectives.string()},
@@ -224,73 +371,237 @@ Json HumanoidIdentity::toJson() const {
   return result;
 }
 
-DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity) {
-  ds.read(identity.name);
-  ds.read(identity.species);
-  ds.read(identity.gender);
-  ds.read(identity.hairGroup);
-  ds.read(identity.hairType);
-  ds.read(identity.hairDirectives);
-  ds.read(identity.bodyDirectives);
-  ds.read(identity.emoteDirectives);
-  ds.read(identity.facialHairGroup);
-  ds.read(identity.facialHairType);
-  ds.read(identity.facialHairDirectives);
-  ds.read(identity.facialMaskGroup);
-  ds.read(identity.facialMaskType);
-  ds.read(identity.facialMaskDirectives);
-  ds.read(identity.personality.idle);
-  ds.read(identity.personality.armIdle);
-  ds.read(identity.personality.headOffset);
-  ds.read(identity.personality.armOffset);
-  ds.read(identity.color);
-  ds.read(identity.imagePath);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, HumanoidIdentity& identity) {
+  {
+auto checked40 = ds.read(identity.name);
+if (!checked40) return std::unexpected(std::move(checked40.error()));
+}
+  {
+auto checked41 = ds.read(identity.species);
+if (!checked41) return std::unexpected(std::move(checked41.error()));
+}
+  {
+auto checked42 = ds.read(identity.gender);
+if (!checked42) return std::unexpected(std::move(checked42.error()));
+}
+  {
+auto checked43 = ds.read(identity.hairGroup);
+if (!checked43) return std::unexpected(std::move(checked43.error()));
+}
+  {
+auto checked44 = ds.read(identity.hairType);
+if (!checked44) return std::unexpected(std::move(checked44.error()));
+}
+  {
+auto checked45 = ds.read(identity.hairDirectives);
+if (!checked45) return std::unexpected(std::move(checked45.error()));
+}
+  {
+auto checked46 = ds.read(identity.bodyDirectives);
+if (!checked46) return std::unexpected(std::move(checked46.error()));
+}
+  {
+auto checked47 = ds.read(identity.emoteDirectives);
+if (!checked47) return std::unexpected(std::move(checked47.error()));
+}
+  {
+auto checked48 = ds.read(identity.facialHairGroup);
+if (!checked48) return std::unexpected(std::move(checked48.error()));
+}
+  {
+auto checked49 = ds.read(identity.facialHairType);
+if (!checked49) return std::unexpected(std::move(checked49.error()));
+}
+  {
+auto checked50 = ds.read(identity.facialHairDirectives);
+if (!checked50) return std::unexpected(std::move(checked50.error()));
+}
+  {
+auto checked51 = ds.read(identity.facialMaskGroup);
+if (!checked51) return std::unexpected(std::move(checked51.error()));
+}
+  {
+auto checked52 = ds.read(identity.facialMaskType);
+if (!checked52) return std::unexpected(std::move(checked52.error()));
+}
+  {
+auto checked53 = ds.read(identity.facialMaskDirectives);
+if (!checked53) return std::unexpected(std::move(checked53.error()));
+}
+  {
+auto checked54 = ds.read(identity.personality.idle);
+if (!checked54) return std::unexpected(std::move(checked54.error()));
+}
+  {
+auto checked55 = ds.read(identity.personality.armIdle);
+if (!checked55) return std::unexpected(std::move(checked55.error()));
+}
+  {
+auto checked56 = ds.read(identity.personality.headOffset);
+if (!checked56) return std::unexpected(std::move(checked56.error()));
+}
+  {
+auto checked57 = ds.read(identity.personality.armOffset);
+if (!checked57) return std::unexpected(std::move(checked57.error()));
+}
+  {
+auto checked58 = ds.read(identity.color);
+if (!checked58) return std::unexpected(std::move(checked58.error()));
+}
+  {
+auto checked59 = ds.read(identity.imagePath);
+if (!checked59) return std::unexpected(std::move(checked59.error()));
 }
 
-DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity) {
-  ds.write(identity.name);
-  ds.write(identity.species);
-  ds.write(identity.gender);
-  ds.write(identity.hairGroup);
-  ds.write(identity.hairType);
-  ds.write(identity.hairDirectives);
-  ds.write(identity.bodyDirectives);
-  ds.write(identity.emoteDirectives);
-  ds.write(identity.facialHairGroup);
-  ds.write(identity.facialHairType);
-  ds.write(identity.facialHairDirectives);
-  ds.write(identity.facialMaskGroup);
-  ds.write(identity.facialMaskType);
-  ds.write(identity.facialMaskDirectives);
-  ds.write(identity.personality.idle);
-  ds.write(identity.personality.armIdle);
-  ds.write(identity.personality.headOffset);
-  ds.write(identity.personality.armOffset);
-  ds.write(identity.color);
-  ds.write(identity.imagePath);
-
-  return ds;
+  return &ds;
 }
 
-Humanoid::HumanoidTiming::HumanoidTiming(Root& root) : HumanoidTiming(root, Json()) {}
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, HumanoidIdentity const& identity) {
+  {
+auto checked60 = ds.write(identity.name);
+if (!checked60) return std::unexpected(std::move(checked60.error()));
+}
+  {
+auto checked61 = ds.write(identity.species);
+if (!checked61) return std::unexpected(std::move(checked61.error()));
+}
+  {
+auto checked62 = ds.write(identity.gender);
+if (!checked62) return std::unexpected(std::move(checked62.error()));
+}
+  {
+auto checked63 = ds.write(identity.hairGroup);
+if (!checked63) return std::unexpected(std::move(checked63.error()));
+}
+  {
+auto checked64 = ds.write(identity.hairType);
+if (!checked64) return std::unexpected(std::move(checked64.error()));
+}
+  {
+auto checked65 = ds.write(identity.hairDirectives);
+if (!checked65) return std::unexpected(std::move(checked65.error()));
+}
+  {
+auto checked66 = ds.write(identity.bodyDirectives);
+if (!checked66) return std::unexpected(std::move(checked66.error()));
+}
+  {
+auto checked67 = ds.write(identity.emoteDirectives);
+if (!checked67) return std::unexpected(std::move(checked67.error()));
+}
+  {
+auto checked68 = ds.write(identity.facialHairGroup);
+if (!checked68) return std::unexpected(std::move(checked68.error()));
+}
+  {
+auto checked69 = ds.write(identity.facialHairType);
+if (!checked69) return std::unexpected(std::move(checked69.error()));
+}
+  {
+auto checked70 = ds.write(identity.facialHairDirectives);
+if (!checked70) return std::unexpected(std::move(checked70.error()));
+}
+  {
+auto checked71 = ds.write(identity.facialMaskGroup);
+if (!checked71) return std::unexpected(std::move(checked71.error()));
+}
+  {
+auto checked72 = ds.write(identity.facialMaskType);
+if (!checked72) return std::unexpected(std::move(checked72.error()));
+}
+  {
+auto checked73 = ds.write(identity.facialMaskDirectives);
+if (!checked73) return std::unexpected(std::move(checked73.error()));
+}
+  {
+auto checked74 = ds.write(identity.personality.idle);
+if (!checked74) return std::unexpected(std::move(checked74.error()));
+}
+  {
+auto checked75 = ds.write(identity.personality.armIdle);
+if (!checked75) return std::unexpected(std::move(checked75.error()));
+}
+  {
+auto checked76 = ds.write(identity.personality.headOffset);
+if (!checked76) return std::unexpected(std::move(checked76.error()));
+}
+  {
+auto checked77 = ds.write(identity.personality.armOffset);
+if (!checked77) return std::unexpected(std::move(checked77.error()));
+}
+  {
+auto checked78 = ds.write(identity.color);
+if (!checked78) return std::unexpected(std::move(checked78.error()));
+}
+  {
+auto checked79 = ds.write(identity.imagePath);
+if (!checked79) return std::unexpected(std::move(checked79.error()));
+}
 
-Humanoid::HumanoidTiming::HumanoidTiming(Root& root, Json config) {
+  return &ds;
+}
+
+std::expected<Humanoid::HumanoidTiming, StarException> Humanoid::HumanoidTiming::create(Root& root, Json config) {
+  HumanoidTiming timing;
   if (config.type() != Json::Type::Object) {
-    auto assets = root.assets();
-    config = assets->json("/humanoid.config:humanoidTiming");
+    auto checked80 = root.assets();
+if (!checked80) return std::unexpected(std::move(checked80.error()));
+auto assets = std::move(*checked80);
+    auto configResult = assets->json("/humanoid.config:humanoidTiming");
+    if (!configResult) return std::unexpected(std::move(configResult.error()));
+    config = std::move(*configResult);
   }
 
-  if (config.contains("stateCycle"))
-    stateCycle = jsonToArrayF<STATESIZE>(config.get("stateCycle"));
-  if (config.contains("stateFrames"))
-    stateFrames = jsonToArrayU<STATESIZE>(config.get("stateFrames"));
+  {
+auto checked81 = config.contains("stateCycle");
+if (!checked81) return std::unexpected(std::move(checked81.error()));
+if (std::move(*checked81))
+    {
+auto checked82 = config.get("stateCycle");
+if (!checked82) return std::unexpected(std::move(checked82.error()));
+auto checked83 = jsonToArrayF<STATESIZE>(std::move(*checked82));
+if (!checked83) return std::unexpected(std::move(checked83.error()));
+timing.stateCycle = std::move(*checked83);
+}
+}
+  {
+auto checked84 = config.contains("stateFrames");
+if (!checked84) return std::unexpected(std::move(checked84.error()));
+if (std::move(*checked84))
+    {
+auto checked85 = config.get("stateFrames");
+if (!checked85) return std::unexpected(std::move(checked85.error()));
+auto checked86 = jsonToArrayU<STATESIZE>(std::move(*checked85));
+if (!checked86) return std::unexpected(std::move(checked86.error()));
+timing.stateFrames = std::move(*checked86);
+}
+}
 
-  if (config.contains("emoteCycle"))
-    emoteCycle = jsonToArrayF<EmoteSize>(config.get("emoteCycle"));
-  if (config.contains("emoteFrames"))
-    emoteFrames = jsonToArrayU<EmoteSize>(config.get("emoteFrames"));
+  {
+auto checked87 = config.contains("emoteCycle");
+if (!checked87) return std::unexpected(std::move(checked87.error()));
+if (std::move(*checked87))
+    {
+auto checked88 = config.get("emoteCycle");
+if (!checked88) return std::unexpected(std::move(checked88.error()));
+auto checked89 = jsonToArrayF<EmoteSize>(std::move(*checked88));
+if (!checked89) return std::unexpected(std::move(checked89.error()));
+timing.emoteCycle = std::move(*checked89);
+}
+}
+  {
+auto checked90 = config.contains("emoteFrames");
+if (!checked90) return std::unexpected(std::move(checked90.error()));
+if (std::move(*checked90))
+    {
+auto checked91 = config.get("emoteFrames");
+if (!checked91) return std::unexpected(std::move(checked91.error()));
+auto checked92 = jsonToArrayU<EmoteSize>(std::move(*checked91));
+if (!checked92) return std::unexpected(std::move(checked92.error()));
+timing.emoteFrames = std::move(*checked92);
+}
+}
+  return timing;
 }
 
 bool Humanoid::HumanoidTiming::cyclicState(State state) {
@@ -337,7 +648,7 @@ int Humanoid::HumanoidTiming::genericSeq(float timer, float cycle, unsigned fram
   return clamp<int>(timer * frames / cycle, 0, frames - 1) + 1;
 }
 
-EnumMap<Humanoid::State> const Humanoid::StateNames{
+std::expected<EnumMap<Humanoid::State>, StarException> const Humanoid::StateNames = EnumMap<Humanoid::State>::create({
     {Humanoid::State::Idle, "idle"},
     {Humanoid::State::Walk, "walk"},
     {Humanoid::State::Run, "run"},
@@ -348,11 +659,11 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
     {Humanoid::State::Duck, "duck"},
     {Humanoid::State::Sit, "sit"},
     {Humanoid::State::Lay, "lay"},
-};
+});
 
 
 Humanoid::Humanoid(Root& root)
-  : m_root(&root), m_timing(root), m_networkedAnimator(root) {
+  : m_root(&root), m_useAnimation(false) {
   m_fashion = std::make_shared<Fashion>();
 
   m_twoHanded = false;
@@ -373,21 +684,59 @@ Humanoid::Humanoid(Root& root)
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(Root& root, Json const& config) : Humanoid(root) {
-  m_baseConfig = config;
-  loadConfig(JsonObject());
-  loadAnimation();
+std::expected<std::shared_ptr<Humanoid>, StarException> Humanoid::create(Root& root) {
+  auto humanoid = std::shared_ptr<Humanoid>(new Humanoid(root));
+  auto timing = HumanoidTiming::create(root, {});
+  if (!timing) return std::unexpected(std::move(timing.error()));
+  humanoid->m_timing = std::move(*timing);
+  auto animator = NetworkedAnimator::create(root);
+  if (!animator) return std::unexpected(std::move(animator.error()));
+  humanoid->m_networkedAnimator = std::move(*animator);
+  return humanoid;
 }
 
-Humanoid::Humanoid(Root& root, HumanoidIdentity const& identity, JsonObject parameters, Json config, ItemDatabase const* itemCatalog) : Humanoid(root) {
-  m_identity = identity;
-  m_baseConfig = m_root->speciesDatabase()->humanoidConfig(identity, parameters, config, itemCatalog);
-  loadConfig(JsonObject());
-  loadAnimation();
-  setIdentity(identity);
+std::expected<std::shared_ptr<Humanoid>, StarException> Humanoid::create(Humanoid const& source) {
+  auto animator = NetworkedAnimator::create(*source.m_networkedAnimator);
+  if (!animator) return std::unexpected(std::move(animator.error()));
+  auto humanoid = std::shared_ptr<Humanoid>(new Humanoid(source));
+  humanoid->m_networkedAnimator = std::move(*animator);
+  return humanoid;
 }
 
-void Humanoid::setIdentity(HumanoidIdentity const& identity) {
+std::expected<std::shared_ptr<Humanoid>, StarException> Humanoid::create(Root& root, Json const& config) {
+  auto humanoid = create(root);
+  if (!humanoid) return std::unexpected(std::move(humanoid.error()));
+  (*humanoid)->m_baseConfig = config;
+  auto loaded = (*humanoid)->loadConfig(JsonObject());
+  if (!loaded) return std::unexpected(std::move(loaded.error()));
+  auto animated = (*humanoid)->loadAnimation();
+  if (!animated) return std::unexpected(std::move(animated.error()));
+  return humanoid;
+}
+
+std::expected<std::shared_ptr<Humanoid>, StarException> Humanoid::create(Root& root, HumanoidIdentity const& identity, JsonObject parameters, Json config, ItemDatabase const* itemCatalog) {
+  auto humanoid = create(root);
+  if (!humanoid) return std::unexpected(std::move(humanoid.error()));
+  auto database = root.speciesDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto base = (*database)->humanoidConfig(identity, parameters, config, itemCatalog);
+  if (!base) return std::unexpected(std::move(base.error()));
+  (*humanoid)->m_identity = identity;
+  (*humanoid)->m_baseConfig = std::move(*base);
+  auto loaded = (*humanoid)->loadConfig(JsonObject());
+  if (!loaded) return std::unexpected(std::move(loaded.error()));
+  auto animated = (*humanoid)->loadAnimation();
+  if (!animated) return std::unexpected(std::move(animated.error()));
+  auto identified = (*humanoid)->setIdentity(identity);
+  if (!identified) return std::unexpected(std::move(identified.error()));
+  return humanoid;
+}
+
+std::expected<void, StarException> Humanoid::setIdentity(HumanoidIdentity const& identity) {
+  if (!GenderNames) return std::unexpected(GenderNames.error());
+  auto checked93 = GenderNames->getRight(identity.gender);
+if (!checked93) return std::unexpected(std::move(checked93.error()));
+  m_genderName = **checked93;
   m_identity = identity;
   m_headFrameset = getHeadFromIdentity();
   m_bodyFrameset = getBodyFromIdentity();
@@ -400,109 +749,279 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
   m_vaporTrailFrameset = getVaporTrailFrameset();
   if (m_useBodyMask) {
     m_bodyMaskFrameset = getBodyMaskFromIdentity();
-  }
+    
+}
   if (m_useBodyHeadMask) {
     m_bodyHeadMaskFrameset = getBodyHeadMaskFromIdentity();
-  }
+    
+}
   if (m_useAnimation) {
-    m_networkedAnimator.setLocalTag("name", m_identity.name);
-    m_networkedAnimator.setLocalTag("species", m_identity.species);
-    m_networkedAnimator.setLocalTag("gender", GenderNames.getRight(m_identity.gender));
-    m_networkedAnimator.setLocalTag("hairGroup", m_identity.hairGroup);
-    m_networkedAnimator.setLocalTag("hairType", m_identity.hairType);
-    m_networkedAnimator.setLocalTag("hairDirectives", m_identity.hairDirectives.string());
-    m_networkedAnimator.setLocalTag("bodyDirectives", m_identity.bodyDirectives.string());
-    m_networkedAnimator.setLocalTag("emoteDirectives", m_identity.emoteDirectives.string());
-    m_networkedAnimator.setLocalTag("facialHairGroup", m_identity.facialHairGroup);
-    m_networkedAnimator.setLocalTag("facialHairType", m_identity.facialHairType);
-    m_networkedAnimator.setLocalTag("facialHairDirectives", m_identity.facialHairDirectives.string());
-    m_networkedAnimator.setLocalTag("facialMaskGroup", m_identity.facialHairGroup);
-    m_networkedAnimator.setLocalTag("facialMaskType", m_identity.facialHairType);
-    m_networkedAnimator.setLocalTag("facialMaskDirectives", m_identity.facialMaskDirectives.string());
-    m_networkedAnimator.setLocalTag("personalityIdle", m_identity.personality.idle);
-    m_networkedAnimator.setLocalTag("personalityArmIdle", m_identity.personality.armIdle);
-    m_networkedAnimator.resetLocalTransformationGroup("personalityHeadOffset");
-    m_networkedAnimator.translateLocalTransformationGroup("personalityHeadOffset", m_identity.personality.headOffset / TilePixels);
-    m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
-    m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
+    m_networkedAnimator->setLocalTag("name", m_identity.name);
+    m_networkedAnimator->setLocalTag("species", m_identity.species);
+    m_networkedAnimator->setLocalTag("gender", m_genderName);
+    m_networkedAnimator->setLocalTag("hairGroup", m_identity.hairGroup);
+    m_networkedAnimator->setLocalTag("hairType", m_identity.hairType);
+    m_networkedAnimator->setLocalTag("hairDirectives", m_identity.hairDirectives.string());
+    m_networkedAnimator->setLocalTag("bodyDirectives", m_identity.bodyDirectives.string());
+    m_networkedAnimator->setLocalTag("emoteDirectives", m_identity.emoteDirectives.string());
+    m_networkedAnimator->setLocalTag("facialHairGroup", m_identity.facialHairGroup);
+    m_networkedAnimator->setLocalTag("facialHairType", m_identity.facialHairType);
+    m_networkedAnimator->setLocalTag("facialHairDirectives", m_identity.facialHairDirectives.string());
+    m_networkedAnimator->setLocalTag("facialMaskGroup", m_identity.facialHairGroup);
+    m_networkedAnimator->setLocalTag("facialMaskType", m_identity.facialHairType);
+    m_networkedAnimator->setLocalTag("facialMaskDirectives", m_identity.facialMaskDirectives.string());
+    m_networkedAnimator->setLocalTag("personalityIdle", m_identity.personality.idle);
+    m_networkedAnimator->setLocalTag("personalityArmIdle", m_identity.personality.armIdle);
+    auto checked94 = m_networkedAnimator->resetLocalTransformationGroup("personalityHeadOffset");
+if (!checked94) return std::unexpected(std::move(checked94.error()));
+    auto checked95 = m_networkedAnimator->translateLocalTransformationGroup("personalityHeadOffset", m_identity.personality.headOffset / TilePixels);
+if (!checked95) return std::unexpected(std::move(checked95.error()));
+    auto checked96 = m_networkedAnimator->resetLocalTransformationGroup("personalityArmOffset");
+if (!checked96) return std::unexpected(std::move(checked96.error()));
+    auto checked97 = m_networkedAnimator->translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
+if (!checked97) return std::unexpected(std::move(checked97.error()));
 
-    m_networkedAnimator.setLocalTag("hairFrameset", m_identity.hairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.hairGroup, m_identity.hairType));
-    m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType));
-    m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType));
+    m_networkedAnimator->setLocalTag("hairFrameset", m_identity.hairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.hairGroup, m_identity.hairType));
+    m_networkedAnimator->setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType));
+    m_networkedAnimator->setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType));
 
     for (auto p : m_identityFramesetTags) {
-      m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", p.first), m_networkedAnimator.applyPartTags("anchor", p.second));
-    }
-  }
+      auto checked98 = m_networkedAnimator->applyPartTags("anchor", p.first);
+if (!checked98) return std::unexpected(std::move(checked98.error()));
+auto checked99 = m_networkedAnimator->applyPartTags("anchor", p.second);
+if (!checked99) return std::unexpected(std::move(checked99.error()));
+m_networkedAnimator->setLocalTag(std::move(*checked98), std::move(*checked99));
+      
+}
+    
+}
+  return {};
 }
 
 HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::setHumanoidParameters(JsonObject parameters){
+std::expected<void, StarException> Humanoid::setHumanoidParameters(JsonObject parameters){
   m_baseConfig = jsonMerge(m_baseConfig, parameters);
-  loadConfig(take(m_mergeConfig), true);
+  auto checked100 = loadConfig(take(m_mergeConfig), true);
+if (!checked100) return std::unexpected(std::move(checked100.error()));
+
+  return {};
 }
 
-bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
+std::expected<bool, StarException> Humanoid::loadConfig(Json merger, bool forceRefresh) {
   if (m_mergeConfig == merger && !forceRefresh)
     return false;
 
   auto config = jsonMerge(m_baseConfig, merger);
-  m_timing = HumanoidTiming(*m_root, config.getObject("humanoidTiming"));
+  auto checked101 = config.getObject("humanoidTiming");
+if (!checked101) return std::unexpected(std::move(checked101.error()));
+auto checked102 = HumanoidTiming::create(*m_root, std::move(*checked101));
+if (!checked102) return std::unexpected(std::move(checked102.error()));
+m_timing = std::move(*checked102);
 
-  m_globalOffset = jsonToVec2F(config.get("globalOffset")) / TilePixels;
-  m_headRunOffset = jsonToVec2F(config.get("headRunOffset")) / TilePixels;
-  m_headSwimOffset = jsonToVec2F(config.get("headSwimOffset")) / TilePixels;
-  m_runFallOffset = config.get("runFallOffset").toDouble() / TilePixels;
-  m_duckOffset = config.get("duckOffset").toDouble() / TilePixels;
-  m_headDuckOffset = jsonToVec2F(config.get("headDuckOffset")) / TilePixels;
-  m_sitOffset = config.get("sitOffset").toDouble() / TilePixels;
-  m_layOffset = config.get("layOffset").toDouble() / TilePixels;
-  m_headSitOffset = jsonToVec2F(config.get("headSitOffset")) / TilePixels;
-  m_headLayOffset = jsonToVec2F(config.get("headLayOffset")) / TilePixels;
-  m_recoilOffset = jsonToVec2F(config.get("recoilOffset")) / TilePixels;
-  m_mouthOffset = jsonToVec2F(config.get("mouthOffset")) / TilePixels;
-  m_feetOffset = jsonToVec2F(config.get("feetOffset")) / TilePixels;
+  auto checked103 = config.get("globalOffset");
+if (!checked103) return std::unexpected(std::move(checked103.error()));
+auto checked104 = jsonToVec2F(std::move(*checked103));
+if (!checked104) return std::unexpected(std::move(checked104.error()));
+m_globalOffset = std::move(*checked104) / TilePixels;
+  auto checked105 = config.get("headRunOffset");
+if (!checked105) return std::unexpected(std::move(checked105.error()));
+auto checked106 = jsonToVec2F(std::move(*checked105));
+if (!checked106) return std::unexpected(std::move(checked106.error()));
+m_headRunOffset = std::move(*checked106) / TilePixels;
+  auto checked107 = config.get("headSwimOffset");
+if (!checked107) return std::unexpected(std::move(checked107.error()));
+auto checked108 = jsonToVec2F(std::move(*checked107));
+if (!checked108) return std::unexpected(std::move(checked108.error()));
+m_headSwimOffset = std::move(*checked108) / TilePixels;
+  auto checked109 = config.get("runFallOffset");
+if (!checked109) return std::unexpected(std::move(checked109.error()));
+auto checked110 = std::move(*checked109).toDouble();
+if (!checked110) return std::unexpected(std::move(checked110.error()));
+m_runFallOffset = std::move(*checked110) / TilePixels;
+  auto checked111 = config.get("duckOffset");
+if (!checked111) return std::unexpected(std::move(checked111.error()));
+auto checked112 = std::move(*checked111).toDouble();
+if (!checked112) return std::unexpected(std::move(checked112.error()));
+m_duckOffset = std::move(*checked112) / TilePixels;
+  auto checked113 = config.get("headDuckOffset");
+if (!checked113) return std::unexpected(std::move(checked113.error()));
+auto checked114 = jsonToVec2F(std::move(*checked113));
+if (!checked114) return std::unexpected(std::move(checked114.error()));
+m_headDuckOffset = std::move(*checked114) / TilePixels;
+  auto checked115 = config.get("sitOffset");
+if (!checked115) return std::unexpected(std::move(checked115.error()));
+auto checked116 = std::move(*checked115).toDouble();
+if (!checked116) return std::unexpected(std::move(checked116.error()));
+m_sitOffset = std::move(*checked116) / TilePixels;
+  auto checked117 = config.get("layOffset");
+if (!checked117) return std::unexpected(std::move(checked117.error()));
+auto checked118 = std::move(*checked117).toDouble();
+if (!checked118) return std::unexpected(std::move(checked118.error()));
+m_layOffset = std::move(*checked118) / TilePixels;
+  auto checked119 = config.get("headSitOffset");
+if (!checked119) return std::unexpected(std::move(checked119.error()));
+auto checked120 = jsonToVec2F(std::move(*checked119));
+if (!checked120) return std::unexpected(std::move(checked120.error()));
+m_headSitOffset = std::move(*checked120) / TilePixels;
+  auto checked121 = config.get("headLayOffset");
+if (!checked121) return std::unexpected(std::move(checked121.error()));
+auto checked122 = jsonToVec2F(std::move(*checked121));
+if (!checked122) return std::unexpected(std::move(checked122.error()));
+m_headLayOffset = std::move(*checked122) / TilePixels;
+  auto checked123 = config.get("recoilOffset");
+if (!checked123) return std::unexpected(std::move(checked123.error()));
+auto checked124 = jsonToVec2F(std::move(*checked123));
+if (!checked124) return std::unexpected(std::move(checked124.error()));
+m_recoilOffset = std::move(*checked124) / TilePixels;
+  auto checked125 = config.get("mouthOffset");
+if (!checked125) return std::unexpected(std::move(checked125.error()));
+auto checked126 = jsonToVec2F(std::move(*checked125));
+if (!checked126) return std::unexpected(std::move(checked126.error()));
+m_mouthOffset = std::move(*checked126) / TilePixels;
+  auto checked127 = config.get("feetOffset");
+if (!checked127) return std::unexpected(std::move(checked127.error()));
+auto checked128 = jsonToVec2F(std::move(*checked127));
+if (!checked128) return std::unexpected(std::move(checked128.error()));
+m_feetOffset = std::move(*checked128) / TilePixels;
 
-  m_bodyFullbright = config.getBool("bodyFullbright", false);
-  m_useBodyMask = config.getBool("useBodyMask", false);
-  m_useBodyHeadMask = config.getBool("useBodyHeadMask", false);
+  auto checked129 = config.getBool("bodyFullbright", false);
+if (!checked129) return std::unexpected(std::move(checked129.error()));
+m_bodyFullbright = std::move(*checked129);
+  auto checked130 = config.getBool("useBodyMask", false);
+if (!checked130) return std::unexpected(std::move(checked130.error()));
+m_useBodyMask = std::move(*checked130);
+  auto checked131 = config.getBool("useBodyHeadMask", false);
+if (!checked131) return std::unexpected(std::move(checked131.error()));
+m_useBodyHeadMask = std::move(*checked131);
 
-  m_headArmorOffset = jsonToVec2F(config.get("headArmorOffset")) / TilePixels;
-  m_chestArmorOffset = jsonToVec2F(config.get("chestArmorOffset")) / TilePixels;
-  m_legsArmorOffset = jsonToVec2F(config.get("legsArmorOffset")) / TilePixels;
-  m_backArmorOffset = jsonToVec2F(config.get("backArmorOffset")) / TilePixels;
+  auto checked132 = config.get("headArmorOffset");
+if (!checked132) return std::unexpected(std::move(checked132.error()));
+auto checked133 = jsonToVec2F(std::move(*checked132));
+if (!checked133) return std::unexpected(std::move(checked133.error()));
+m_headArmorOffset = std::move(*checked133) / TilePixels;
+  auto checked134 = config.get("chestArmorOffset");
+if (!checked134) return std::unexpected(std::move(checked134.error()));
+auto checked135 = jsonToVec2F(std::move(*checked134));
+if (!checked135) return std::unexpected(std::move(checked135.error()));
+m_chestArmorOffset = std::move(*checked135) / TilePixels;
+  auto checked136 = config.get("legsArmorOffset");
+if (!checked136) return std::unexpected(std::move(checked136.error()));
+auto checked137 = jsonToVec2F(std::move(*checked136));
+if (!checked137) return std::unexpected(std::move(checked137.error()));
+m_legsArmorOffset = std::move(*checked137) / TilePixels;
+  auto checked138 = config.get("backArmorOffset");
+if (!checked138) return std::unexpected(std::move(checked138.error()));
+auto checked139 = jsonToVec2F(std::move(*checked138));
+if (!checked139) return std::unexpected(std::move(checked139.error()));
+m_backArmorOffset = std::move(*checked139) / TilePixels;
 
-  m_bodyHidden = config.getBool("bodyHidden", false);
+  auto checked140 = config.getBool("bodyHidden", false);
+if (!checked140) return std::unexpected(std::move(checked140.error()));
+m_bodyHidden = std::move(*checked140);
 
-  m_armWalkSeq = jsonToIntList(config.get("armWalkSeq"));
-  m_armRunSeq = jsonToIntList(config.get("armRunSeq"));
+  auto checked141 = config.get("armWalkSeq");
+if (!checked141) return std::unexpected(std::move(checked141.error()));
+auto checked142 = jsonToIntList(std::move(*checked141));
+if (!checked142) return std::unexpected(std::move(checked142.error()));
+m_armWalkSeq = std::move(*checked142);
+  auto checked143 = config.get("armRunSeq");
+if (!checked143) return std::unexpected(std::move(checked143.error()));
+auto checked144 = jsonToIntList(std::move(*checked143));
+if (!checked144) return std::unexpected(std::move(checked144.error()));
+m_armRunSeq = std::move(*checked144);
 
   m_walkBob.clear();
-  for (auto const& v : config.get("walkBob").toArray())
-    m_walkBob.append(v.toDouble() / TilePixels);
+  {
+auto checked145 = config.get("walkBob");
+if (!checked145) return std::unexpected(std::move(checked145.error()));
+auto checked146 = std::move(*checked145).toArray();
+if (!checked146) return std::unexpected(std::move(checked146.error()));
+for (auto const& v : std::move(*checked146))
+    {
+auto checked147 = v.toDouble();
+if (!checked147) return std::unexpected(std::move(checked147.error()));
+m_walkBob.append(std::move(*checked147) / TilePixels);
+}
+}
   m_runBob.clear();
-  for (auto const& v : config.get("runBob").toArray())
-    m_runBob.append(v.toDouble() / TilePixels);
+  {
+auto checked148 = config.get("runBob");
+if (!checked148) return std::unexpected(std::move(checked148.error()));
+auto checked149 = std::move(*checked148).toArray();
+if (!checked149) return std::unexpected(std::move(checked149.error()));
+for (auto const& v : std::move(*checked149))
+    {
+auto checked150 = v.toDouble();
+if (!checked150) return std::unexpected(std::move(checked150.error()));
+m_runBob.append(std::move(*checked150) / TilePixels);
+}
+}
   m_swimBob.clear();
-  for (auto const& v : config.get("swimBob").toArray())
-    m_swimBob.append(v.toDouble() / TilePixels);
+  {
+auto checked151 = config.get("swimBob");
+if (!checked151) return std::unexpected(std::move(checked151.error()));
+auto checked152 = std::move(*checked151).toArray();
+if (!checked152) return std::unexpected(std::move(checked152.error()));
+for (auto const& v : std::move(*checked152))
+    {
+auto checked153 = v.toDouble();
+if (!checked153) return std::unexpected(std::move(checked153.error()));
+m_swimBob.append(std::move(*checked153) / TilePixels);
+}
+}
 
-  m_jumpBob = config.get("jumpBob").toDouble() / TilePixels;
-  m_frontArmRotationCenter = jsonToVec2F(config.get("frontArmRotationCenter")) / TilePixels;
-  m_backArmRotationCenter = jsonToVec2F(config.get("backArmRotationCenter")) / TilePixels;
-  m_frontHandPosition = jsonToVec2F(config.get("frontHandPosition")) / TilePixels;
-  m_backArmOffset = jsonToVec2F(config.get("backArmOffset")) / TilePixels;
-  m_vaporTrailFrames = config.get("vaporTrailFrames").toInt();
-  m_vaporTrailCycle = config.get("vaporTrailCycle").toFloat();
+  auto checked154 = config.get("jumpBob");
+if (!checked154) return std::unexpected(std::move(checked154.error()));
+auto checked155 = std::move(*checked154).toDouble();
+if (!checked155) return std::unexpected(std::move(checked155.error()));
+m_jumpBob = std::move(*checked155) / TilePixels;
+  auto checked156 = config.get("frontArmRotationCenter");
+if (!checked156) return std::unexpected(std::move(checked156.error()));
+auto checked157 = jsonToVec2F(std::move(*checked156));
+if (!checked157) return std::unexpected(std::move(checked157.error()));
+m_frontArmRotationCenter = std::move(*checked157) / TilePixels;
+  auto checked158 = config.get("backArmRotationCenter");
+if (!checked158) return std::unexpected(std::move(checked158.error()));
+auto checked159 = jsonToVec2F(std::move(*checked158));
+if (!checked159) return std::unexpected(std::move(checked159.error()));
+m_backArmRotationCenter = std::move(*checked159) / TilePixels;
+  auto checked160 = config.get("frontHandPosition");
+if (!checked160) return std::unexpected(std::move(checked160.error()));
+auto checked161 = jsonToVec2F(std::move(*checked160));
+if (!checked161) return std::unexpected(std::move(checked161.error()));
+m_frontHandPosition = std::move(*checked161) / TilePixels;
+  auto checked162 = config.get("backArmOffset");
+if (!checked162) return std::unexpected(std::move(checked162.error()));
+auto checked163 = jsonToVec2F(std::move(*checked162));
+if (!checked163) return std::unexpected(std::move(checked163.error()));
+m_backArmOffset = std::move(*checked163) / TilePixels;
+  auto checked164 = config.get("vaporTrailFrames");
+if (!checked164) return std::unexpected(std::move(checked164.error()));
+auto checked165 = std::move(*checked164).toInt();
+if (!checked165) return std::unexpected(std::move(checked165.error()));
+m_vaporTrailFrames = std::move(*checked165);
+  auto checked166 = config.get("vaporTrailCycle");
+if (!checked166) return std::unexpected(std::move(checked166.error()));
+auto checked167 = std::move(*checked166).toFloat();
+if (!checked167) return std::unexpected(std::move(checked167.error()));
+m_vaporTrailCycle = std::move(*checked167);
 
-  m_defaultDeathParticles = config.getString("deathParticles");
-  m_particleEmitters = config.get("particleEmitters");
+  auto checked168 = config.getString("deathParticles");
+if (!checked168) return std::unexpected(std::move(checked168.error()));
+m_defaultDeathParticles = std::move(*checked168);
+  auto checked169 = config.get("particleEmitters");
+if (!checked169) return std::unexpected(std::move(checked169.error()));
+m_particleEmitters = std::move(*checked169);
 
-  Json newMovementParameters = config.get("movementParameters");
-  std::optional<Json> newPlayerMovementParameters = config.opt("playerMovementParameters");
+  auto checked170 = config.get("movementParameters");
+if (!checked170) return std::unexpected(std::move(checked170.error()));
+Json newMovementParameters = std::move(*checked170);
+  auto checked171 = config.opt("playerMovementParameters");
+if (!checked171) return std::unexpected(std::move(checked171.error()));
+std::optional<Json> newPlayerMovementParameters = std::move(*checked171);
   bool movementParametersChanged = m_defaultMovementParameters != newMovementParameters || m_playerMovementParameters != newPlayerMovementParameters;
 
   m_defaultMovementParameters = newMovementParameters;
@@ -511,16 +1030,26 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
   m_mergeConfig = merger;
 
 
-  m_headRotationCenter = jsonToVec2F(config.getArray("headRotationCenter", JsonArray{0,-2})) / TilePixels;
+  auto checked172 = config.getArray("headRotationCenter", JsonArray{0,-2});
+if (!checked172) return std::unexpected(std::move(checked172.error()));
+auto checked173 = jsonToVec2F(std::move(*checked172));
+if (!checked173) return std::unexpected(std::move(checked173.error()));
+m_headRotationCenter = std::move(*checked173) / TilePixels;
 
   return movementParametersChanged;
 }
 
-void Humanoid::loadAnimation() {
-  auto animationConfig = m_baseConfig.opt("animation");
+std::expected<void, StarException> Humanoid::loadAnimation() {
+  auto checked174 = m_baseConfig.opt("animation");
+if (!checked174) return std::unexpected(std::move(checked174.error()));
+auto animationConfig = std::move(*checked174);
   m_useAnimation = animationConfig.has_value();
 
-  m_animationScripts = jsonToStringList(m_baseConfig.getArray("animationScripts", JsonArray()));
+  auto checked175 = m_baseConfig.getArray("animationScripts", JsonArray());
+if (!checked175) return std::unexpected(std::move(checked175.error()));
+auto checked176 = jsonToStringList(std::move(*checked175));
+if (!checked176) return std::unexpected(std::move(checked176.error()));
+m_animationScripts = std::move(*checked176);
 
   m_animationStates.clear();
   m_animationStatesBackwards.clear();
@@ -528,61 +1057,234 @@ void Humanoid::loadAnimation() {
   m_portraitAnimationStates.clear();
 
   String animationPath = ("/humanoid/" + m_identity.imagePath.value_or(m_identity.species) + "/");
-  m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*m_root, *animationConfig, animationPath) : NetworkedAnimator(*m_root);
+  if (m_useAnimation)
+    {
+auto checked177 = NetworkedAnimator::create(*m_root, *animationConfig, animationPath);
+if (!checked177) return std::unexpected(std::move(checked177.error()));
+m_networkedAnimator = std::move(*checked177);
+}
+  else
+    {
+auto checked178 = NetworkedAnimator::create(*m_root);
+if (!checked178) return std::unexpected(std::move(checked178.error()));
+m_networkedAnimator = std::move(*checked178);
+}
 
   if (m_useAnimation) {
-    m_frontItemPart = m_baseConfig.getString("frontHandItemPart", "frontHandItem");
-    m_backItemPart = m_baseConfig.getString("backHandItemPart", "backHandItem");
+    auto checked179 = m_baseConfig.getString("frontHandItemPart", "frontHandItem");
+if (!checked179) return std::unexpected(std::move(checked179.error()));
+m_frontItemPart = std::move(*checked179);
+    auto checked180 = m_baseConfig.getString("backHandItemPart", "backHandItem");
+if (!checked180) return std::unexpected(std::move(checked180.error()));
+m_backItemPart = std::move(*checked180);
 
-    m_headRotationPoint = {m_baseConfig.getString("headRotationPart", "head"), m_baseConfig.getString("headRotationPartPoint", "rotationCenter")};
-    m_frontArmRotationPoint = {m_baseConfig.getString("frontArmRotationPart", "frontArm"), m_baseConfig.getString("frontArmRotationPartPoint", "rotationCenter")};
-    m_backArmRotationPoint = {m_baseConfig.getString("backArmRotationPart", "backArm"), m_baseConfig.getString("backArmRotationPartPoint", "rotationCenter")};
+    auto checked181 = m_baseConfig.getString("headRotationPart", "head");
+if (!checked181) return std::unexpected(std::move(checked181.error()));
+auto checked182 = m_baseConfig.getString("headRotationPartPoint", "rotationCenter");
+if (!checked182) return std::unexpected(std::move(checked182.error()));
+m_headRotationPoint = {std::move(*checked181), std::move(*checked182)};
+    auto checked183 = m_baseConfig.getString("frontArmRotationPart", "frontArm");
+if (!checked183) return std::unexpected(std::move(checked183.error()));
+auto checked184 = m_baseConfig.getString("frontArmRotationPartPoint", "rotationCenter");
+if (!checked184) return std::unexpected(std::move(checked184.error()));
+m_frontArmRotationPoint = {std::move(*checked183), std::move(*checked184)};
+    auto checked185 = m_baseConfig.getString("backArmRotationPart", "backArm");
+if (!checked185) return std::unexpected(std::move(checked185.error()));
+auto checked186 = m_baseConfig.getString("backArmRotationPartPoint", "rotationCenter");
+if (!checked186) return std::unexpected(std::move(checked186.error()));
+m_backArmRotationPoint = {std::move(*checked185), std::move(*checked186)};
 
-    m_mouthOffsetPoint = {m_baseConfig.getString("mouthOffsetPart", "head"), m_baseConfig.getString("mouthOffsetPartPoint", "mouthOffset")};
-    m_headArmorOffsetPoint = {m_baseConfig.getString("headArmorOffsetPart", "headCosmetic"), m_baseConfig.getString("headArmorOffsetPartPoint", "armorOffset")};
-    m_chestArmorOffsetPoint = {m_baseConfig.getString("chestArmorOffsetPart", "chestCosmetic"), m_baseConfig.getString("chestArmorOffsetPartPoint", "armorOffset")};
-    m_legsArmorOffsetPoint = {m_baseConfig.getString("legsArmorOffsetPart", "legsCosmetic"), m_baseConfig.getString("legsArmorOffsetPartPoint", "armorOffset")};
-    m_backArmorOffsetPoint = {m_baseConfig.getString("backArmorOffsetPart", "backCosmetic"), m_baseConfig.getString("backArmorOffsetPartPoint", "armorOffset")};
-    m_feetOffsetPoint = {m_baseConfig.getString("feetOffsetPart", "body"), m_baseConfig.getString("feetOffsetPartPoint", "feetOffset")};
-    m_throwPoint = {m_baseConfig.getString("throwPart", "head"), m_baseConfig.getString("throwPartPoint", "mouthOffset")};
-    m_interactPoint = {m_baseConfig.getString("interactPart", "body"), m_baseConfig.getString("interactPartPoint", "interact")};
+    auto checked187 = m_baseConfig.getString("mouthOffsetPart", "head");
+if (!checked187) return std::unexpected(std::move(checked187.error()));
+auto checked188 = m_baseConfig.getString("mouthOffsetPartPoint", "mouthOffset");
+if (!checked188) return std::unexpected(std::move(checked188.error()));
+m_mouthOffsetPoint = {std::move(*checked187), std::move(*checked188)};
+    auto checked189 = m_baseConfig.getString("headArmorOffsetPart", "headCosmetic");
+if (!checked189) return std::unexpected(std::move(checked189.error()));
+auto checked190 = m_baseConfig.getString("headArmorOffsetPartPoint", "armorOffset");
+if (!checked190) return std::unexpected(std::move(checked190.error()));
+m_headArmorOffsetPoint = {std::move(*checked189), std::move(*checked190)};
+    auto checked191 = m_baseConfig.getString("chestArmorOffsetPart", "chestCosmetic");
+if (!checked191) return std::unexpected(std::move(checked191.error()));
+auto checked192 = m_baseConfig.getString("chestArmorOffsetPartPoint", "armorOffset");
+if (!checked192) return std::unexpected(std::move(checked192.error()));
+m_chestArmorOffsetPoint = {std::move(*checked191), std::move(*checked192)};
+    auto checked193 = m_baseConfig.getString("legsArmorOffsetPart", "legsCosmetic");
+if (!checked193) return std::unexpected(std::move(checked193.error()));
+auto checked194 = m_baseConfig.getString("legsArmorOffsetPartPoint", "armorOffset");
+if (!checked194) return std::unexpected(std::move(checked194.error()));
+m_legsArmorOffsetPoint = {std::move(*checked193), std::move(*checked194)};
+    auto checked195 = m_baseConfig.getString("backArmorOffsetPart", "backCosmetic");
+if (!checked195) return std::unexpected(std::move(checked195.error()));
+auto checked196 = m_baseConfig.getString("backArmorOffsetPartPoint", "armorOffset");
+if (!checked196) return std::unexpected(std::move(checked196.error()));
+m_backArmorOffsetPoint = {std::move(*checked195), std::move(*checked196)};
+    auto checked197 = m_baseConfig.getString("feetOffsetPart", "body");
+if (!checked197) return std::unexpected(std::move(checked197.error()));
+auto checked198 = m_baseConfig.getString("feetOffsetPartPoint", "feetOffset");
+if (!checked198) return std::unexpected(std::move(checked198.error()));
+m_feetOffsetPoint = {std::move(*checked197), std::move(*checked198)};
+    auto checked199 = m_baseConfig.getString("throwPart", "head");
+if (!checked199) return std::unexpected(std::move(checked199.error()));
+auto checked200 = m_baseConfig.getString("throwPartPoint", "mouthOffset");
+if (!checked200) return std::unexpected(std::move(checked200.error()));
+m_throwPoint = {std::move(*checked199), std::move(*checked200)};
+    auto checked201 = m_baseConfig.getString("interactPart", "body");
+if (!checked201) return std::unexpected(std::move(checked201.error()));
+auto checked202 = m_baseConfig.getString("interactPartPoint", "interact");
+if (!checked202) return std::unexpected(std::move(checked202.error()));
+m_interactPoint = {std::move(*checked201), std::move(*checked202)};
 
-    m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), std::mem_fn(&Json::toString));
+    auto checked203 = m_baseConfig.getObject("identityFramesetTags", JsonObject());
+if (!checked203) return std::unexpected(std::move(checked203.error()));
+auto checked204 = jsonToMapV<StringMap<String>>(std::move(*checked203), std::mem_fn(&Json::toString));
+if (!checked204) return std::unexpected(std::move(checked204.error()));
+m_identityFramesetTags = std::move(*checked204);
 
-    for (auto pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
+    {
+auto checked205 = m_baseConfig.getObject("stateAnimations", JsonObject());
+if (!checked205) return std::unexpected(std::move(checked205.error()));
+for (auto pair : std::move(*checked205)) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
-      }
-      m_animationStates.set(StateNames.getLeft(pair.first), animations);
-    }
-    for (auto pair : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
+      {
+auto checked206 = pair.second.iterateObject();
+if (!checked206) return std::unexpected(std::move(checked206.error()));
+for (auto anim : std::move(*checked206)){
+        auto checked207 = anim.second.toArray();
+if (!checked207) return std::unexpected(std::move(checked207.error()));
+auto args = std::move(*checked207);
+        auto checked208 = args.at(0);
+if (!checked208) return std::unexpected(std::move(checked208.error()));
+auto checked209 = (**checked208).toString();
+if (!checked209) return std::unexpected(std::move(checked209.error()));
+auto checked210 = args.at(1);
+if (!checked210) return std::unexpected(std::move(checked210.error()));
+auto checked211 = (**checked210).toBool();
+if (!checked211) return std::unexpected(std::move(checked211.error()));
+auto checked212 = args.at(2);
+if (!checked212) return std::unexpected(std::move(checked212.error()));
+auto checked213 = (**checked212).toBool();
+if (!checked213) return std::unexpected(std::move(checked213.error()));
+animations.set(anim.first, {std::move(*checked209), std::move(*checked211), std::move(*checked213)});
+        
+}
+}
+      if (!StateNames) return std::unexpected(StateNames.error());
+auto checked214 = StateNames->getLeft(pair.first);
+if (!checked214) return std::unexpected(std::move(checked214.error()));
+m_animationStates.set((**checked214), animations);
+      
+}
+}
+    {
+auto checked215 = m_baseConfig.getObject("stateAnimationsBackwards", JsonObject());
+if (!checked215) return std::unexpected(std::move(checked215.error()));
+for (auto pair : std::move(*checked215)) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
-      }
-      m_animationStatesBackwards.set(StateNames.getLeft(pair.first), animations);
-    }
-    for (auto pair : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
+      {
+auto checked216 = pair.second.iterateObject();
+if (!checked216) return std::unexpected(std::move(checked216.error()));
+for (auto anim : std::move(*checked216)){
+        auto checked217 = anim.second.toArray();
+if (!checked217) return std::unexpected(std::move(checked217.error()));
+auto args = std::move(*checked217);
+        auto checked218 = args.at(0);
+if (!checked218) return std::unexpected(std::move(checked218.error()));
+auto checked219 = (**checked218).toString();
+if (!checked219) return std::unexpected(std::move(checked219.error()));
+auto checked220 = args.at(1);
+if (!checked220) return std::unexpected(std::move(checked220.error()));
+auto checked221 = (**checked220).toBool();
+if (!checked221) return std::unexpected(std::move(checked221.error()));
+auto checked222 = args.at(2);
+if (!checked222) return std::unexpected(std::move(checked222.error()));
+auto checked223 = (**checked222).toBool();
+if (!checked223) return std::unexpected(std::move(checked223.error()));
+animations.set(anim.first, {std::move(*checked219), std::move(*checked221), std::move(*checked223)});
+        
+}
+}
+      if (!StateNames) return std::unexpected(StateNames.error());
+auto checked224 = StateNames->getLeft(pair.first);
+if (!checked224) return std::unexpected(std::move(checked224.error()));
+m_animationStatesBackwards.set((**checked224), animations);
+      
+}
+}
+    {
+auto checked225 = m_baseConfig.getObject("emoteAnimations", JsonObject());
+if (!checked225) return std::unexpected(std::move(checked225.error()));
+for (auto pair : std::move(*checked225)) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
-      }
-      m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(pair.first), animations);
-    }
-    for (auto pair : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
+      {
+auto checked226 = pair.second.iterateObject();
+if (!checked226) return std::unexpected(std::move(checked226.error()));
+for (auto anim : std::move(*checked226)){
+        auto checked227 = anim.second.toArray();
+if (!checked227) return std::unexpected(std::move(checked227.error()));
+auto args = std::move(*checked227);
+        auto checked228 = args.at(0);
+if (!checked228) return std::unexpected(std::move(checked228.error()));
+auto checked229 = (**checked228).toString();
+if (!checked229) return std::unexpected(std::move(checked229.error()));
+auto checked230 = args.at(1);
+if (!checked230) return std::unexpected(std::move(checked230.error()));
+auto checked231 = (**checked230).toBool();
+if (!checked231) return std::unexpected(std::move(checked231.error()));
+auto checked232 = args.at(2);
+if (!checked232) return std::unexpected(std::move(checked232.error()));
+auto checked233 = (**checked232).toBool();
+if (!checked233) return std::unexpected(std::move(checked233.error()));
+animations.set(anim.first, {std::move(*checked229), std::move(*checked231), std::move(*checked233)});
+        
+}
+}
+      if (!HumanoidEmoteFrameBaseNames) return std::unexpected(HumanoidEmoteFrameBaseNames.error());
+auto checked234 = HumanoidEmoteFrameBaseNames->getLeft(pair.first);
+if (!checked234) return std::unexpected(std::move(checked234.error()));
+m_emoteAnimationStates.set((**checked234), animations);
+      
+}
+}
+    {
+auto checked235 = m_baseConfig.getObject("portraitAnimations", JsonObject());
+if (!checked235) return std::unexpected(std::move(checked235.error()));
+for (auto pair : std::move(*checked235)) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
-      }
-      m_portraitAnimationStates.set(PortraitModeNames.getLeft(pair.first), animations);
+      {
+auto checked236 = pair.second.iterateObject();
+if (!checked236) return std::unexpected(std::move(checked236.error()));
+for (auto anim : std::move(*checked236)){
+        auto checked237 = anim.second.toArray();
+if (!checked237) return std::unexpected(std::move(checked237.error()));
+auto args = std::move(*checked237);
+        auto checked238 = args.at(0);
+if (!checked238) return std::unexpected(std::move(checked238.error()));
+auto checked239 = (**checked238).toString();
+if (!checked239) return std::unexpected(std::move(checked239.error()));
+auto checked240 = args.at(1);
+if (!checked240) return std::unexpected(std::move(checked240.error()));
+auto checked241 = (**checked240).toBool();
+if (!checked241) return std::unexpected(std::move(checked241.error()));
+auto checked242 = args.at(2);
+if (!checked242) return std::unexpected(std::move(checked242.error()));
+auto checked243 = (**checked242).toBool();
+if (!checked243) return std::unexpected(std::move(checked243.error()));
+animations.set(anim.first, {std::move(*checked239), std::move(*checked241), std::move(*checked243)});
+        
+}
+}
+      if (!PortraitModeNames) return std::unexpected(PortraitModeNames.error());
+auto checked244 = PortraitModeNames->getLeft(pair.first);
+if (!checked244) return std::unexpected(std::move(checked244.error()));
+m_portraitAnimationStates.set((**checked244), animations);
 
-    }
-  }
+      
+}
+}
+    
+}
+  return {};
 }
 
 void Humanoid::wearableRemoved(Wearable const& wearable) {
@@ -591,7 +1293,7 @@ void Humanoid::wearableRemoved(Wearable const& wearable) {
   auto setTags = [&](HashMap<String,String> tags) {
     if (m_useAnimation)
       for (auto tag : tags) {
-        m_networkedAnimator.setLocalTag(tag.first);
+        m_networkedAnimator->setLocalTag(tag.first);
       }
   };
 
@@ -612,16 +1314,21 @@ void Humanoid::wearableRemoved(Wearable const& wearable) {
   }
 }
 
-void Humanoid::removeWearable(std::uint8_t slot) {
+std::expected<void, StarException> Humanoid::removeWearable(std::uint8_t slot) {
   auto& fashion = *m_fashion;
-  Wearable& current = fashion.wearables.at(slot);
+  auto checked245 = fashion.wearables.at(slot);
+if (!checked245) return std::unexpected(std::move(checked245.error()));
+Wearable& current = (**checked245);
   wearableRemoved(current);
   current.emplace<0>();
+  return {};
 }
 
-void Humanoid::setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gender gender) {
+std::expected<void, StarException> Humanoid::setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gender gender) {
   auto& fashion = *m_fashion;
-  Wearable& current = fashion.wearables.at(slot);
+  auto checked246 = fashion.wearables.at(slot);
+if (!checked246) return std::unexpected(std::move(checked246.error()));
+Wearable& current = (**checked246);
   if (auto currentHead = std::get_if<WornHead>(&current))
     fashion.helmetMasksChanged |= currentHead->maskDirectives != head.maskDirectives();
   else {
@@ -637,17 +1344,34 @@ void Humanoid::setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gen
   wornHead.animationTags.clear();
   wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot+1), wornHead.frameset);
   wornHead.animationTags.set(strf("headCosmetic{}Directives", slot+1), wornHead.directives.string());
-  for (auto tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornHead.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString())
+  {
+auto checked247 = head.instanceValue("humanoidAnimationTags", JsonObject());
+if (!checked247) return std::unexpected(std::move(checked247.error()));
+auto checked248 = std::move(*checked247).iterateObject();
+if (!checked248) return std::unexpected(std::move(checked248.error()));
+for (auto tag : std::move(*checked248)) {
+    auto checked249 = tag.first.replace("<slot>", toString(slot + 1));
+if (!checked249) return std::unexpected(std::move(checked249.error()));
+auto checked250 = m_networkedAnimator->applyPartTags(m_headArmorOffsetPoint.first, std::move(*checked249));
+if (!checked250) return std::unexpected(std::move(checked250.error()));
+auto checked251 = tag.second.toString();
+if (!checked251) return std::unexpected(std::move(checked251.error()));
+auto checked252 = m_networkedAnimator->applyPartTags(m_headArmorOffsetPoint.first, std::move(*checked251));
+if (!checked252) return std::unexpected(std::move(checked252.error()));
+wornHead.animationTags.set(
+      std::move(*checked250),
+      std::move(*checked252)
     );
   }
 }
+  return {};
+}
 
-void Humanoid::setWearableFromChest(std::uint8_t slot, ChestArmor const& chest, Gender gender) {
+std::expected<void, StarException> Humanoid::setWearableFromChest(std::uint8_t slot, ChestArmor const& chest, Gender gender) {
   auto& fashion = *m_fashion;
-  Wearable& current = fashion.wearables.at(slot);
+  auto checked253 = fashion.wearables.at(slot);
+if (!checked253) return std::unexpected(std::move(checked253.error()));
+Wearable& current = (**checked253);
   if (!std::holds_alternative<WornChest>(current) && !std::holds_alternative<WornLegs>(current)) {
     wearableRemoved(current);
     fashion.wornChestsLegsChanged = true;
@@ -664,17 +1388,34 @@ void Humanoid::setWearableFromChest(std::uint8_t slot, ChestArmor const& chest, 
   wornChest.animationTags.set(strf("frontSleeve{}Frameset", slot+1), wornChest.frontSleeveFrameset);
   wornChest.animationTags.set(strf("backSleeve{}Frameset", slot+1), wornChest.backSleeveFrameset);
   wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot+1), wornChest.directives.string());
-  for (auto tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornChest.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString())
+  {
+auto checked254 = chest.instanceValue("humanoidAnimationTags", JsonObject());
+if (!checked254) return std::unexpected(std::move(checked254.error()));
+auto checked255 = std::move(*checked254).iterateObject();
+if (!checked255) return std::unexpected(std::move(checked255.error()));
+for (auto tag : std::move(*checked255)) {
+    auto checked256 = tag.first.replace("<slot>", toString(slot + 1));
+if (!checked256) return std::unexpected(std::move(checked256.error()));
+auto checked257 = m_networkedAnimator->applyPartTags(m_chestArmorOffsetPoint.first, std::move(*checked256));
+if (!checked257) return std::unexpected(std::move(checked257.error()));
+auto checked258 = tag.second.toString();
+if (!checked258) return std::unexpected(std::move(checked258.error()));
+auto checked259 = m_networkedAnimator->applyPartTags(m_chestArmorOffsetPoint.first, std::move(*checked258));
+if (!checked259) return std::unexpected(std::move(checked259.error()));
+wornChest.animationTags.set(
+      std::move(*checked257),
+      std::move(*checked259)
     );
   }
 }
+  return {};
+}
 
-void Humanoid::setWearableFromLegs(std::uint8_t slot, LegsArmor const& legs, Gender gender) {
+std::expected<void, StarException> Humanoid::setWearableFromLegs(std::uint8_t slot, LegsArmor const& legs, Gender gender) {
   auto& fashion = *m_fashion;
-  Wearable& current = fashion.wearables.at(slot);
+  auto checked260 = fashion.wearables.at(slot);
+if (!checked260) return std::unexpected(std::move(checked260.error()));
+Wearable& current = (**checked260);
   if (!std::holds_alternative<WornChest>(current) && !std::holds_alternative<WornLegs>(current)) {
     wearableRemoved(current);
     fashion.wornChestsLegsChanged = true;
@@ -687,17 +1428,34 @@ void Humanoid::setWearableFromLegs(std::uint8_t slot, LegsArmor const& legs, Gen
   wornLegs.animationTags.clear();
   wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot+1), wornLegs.frameset);
   wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot+1), wornLegs.directives.string());
-  for (auto tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornLegs.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString())
+  {
+auto checked261 = legs.instanceValue("humanoidAnimationTags", JsonObject());
+if (!checked261) return std::unexpected(std::move(checked261.error()));
+auto checked262 = std::move(*checked261).iterateObject();
+if (!checked262) return std::unexpected(std::move(checked262.error()));
+for (auto tag : std::move(*checked262)) {
+    auto checked263 = tag.first.replace("<slot>", toString(slot + 1));
+if (!checked263) return std::unexpected(std::move(checked263.error()));
+auto checked264 = m_networkedAnimator->applyPartTags(m_legsArmorOffsetPoint.first, std::move(*checked263));
+if (!checked264) return std::unexpected(std::move(checked264.error()));
+auto checked265 = tag.second.toString();
+if (!checked265) return std::unexpected(std::move(checked265.error()));
+auto checked266 = m_networkedAnimator->applyPartTags(m_legsArmorOffsetPoint.first, std::move(*checked265));
+if (!checked266) return std::unexpected(std::move(checked266.error()));
+wornLegs.animationTags.set(
+      std::move(*checked264),
+      std::move(*checked266)
     );
   }
 }
+  return {};
+}
 
-void Humanoid::setWearableFromBack(std::uint8_t slot, BackArmor const& back, Gender gender) {
+std::expected<void, StarException> Humanoid::setWearableFromBack(std::uint8_t slot, BackArmor const& back, Gender gender) {
   auto& fashion = *m_fashion;
-  Wearable& current = fashion.wearables.at(slot);
+  auto checked267 = fashion.wearables.at(slot);
+if (!checked267) return std::unexpected(std::move(checked267.error()));
+Wearable& current = (**checked267);
   if (!std::holds_alternative<WornBack>(current)) {
     wearableRemoved(current);
     fashion.wornBacksChanged = true;
@@ -707,16 +1465,35 @@ void Humanoid::setWearableFromBack(std::uint8_t slot, BackArmor const& back, Gen
   wornBack.directives = back.directives(m_facingDirection == Direction::Left);
   wornBack.fullbright = back.fullbright();
   wornBack.frameset = back.frameset(gender);
-  wornBack.rotateWithHead = back.instanceValue("rotateWithHead", false).optBool().value_or(false);
+  auto checked268 = back.instanceValue("rotateWithHead", false);
+if (!checked268) return std::unexpected(std::move(checked268.error()));
+auto checked269 = std::move(*checked268).optBool();
+if (!checked269) return std::unexpected(std::move(checked269.error()));
+wornBack.rotateWithHead = std::move(*checked269).value_or(false);
   wornBack.animationTags.clear();
   wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot+1), wornBack.frameset);
   wornBack.animationTags.set(strf("backCosmetic{}Directives", slot+1), wornBack.directives.string());
-  for (auto tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
-    wornBack.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString())
+  {
+auto checked270 = back.instanceValue("humanoidAnimationTags", JsonObject());
+if (!checked270) return std::unexpected(std::move(checked270.error()));
+auto checked271 = std::move(*checked270).iterateObject();
+if (!checked271) return std::unexpected(std::move(checked271.error()));
+for (auto tag : std::move(*checked271)) {
+    auto checked272 = tag.first.replace("<slot>", toString(slot + 1));
+if (!checked272) return std::unexpected(std::move(checked272.error()));
+auto checked273 = m_networkedAnimator->applyPartTags(m_backArmorOffsetPoint.first, std::move(*checked272));
+if (!checked273) return std::unexpected(std::move(checked273.error()));
+auto checked274 = tag.second.toString();
+if (!checked274) return std::unexpected(std::move(checked274.error()));
+auto checked275 = m_networkedAnimator->applyPartTags(m_backArmorOffsetPoint.first, std::move(*checked274));
+if (!checked275) return std::unexpected(std::move(checked275.error()));
+wornBack.animationTags.set(
+      std::move(*checked273),
+      std::move(*checked275)
     );
   }
+}
+  return {};
 }
 
 const std::uint8_t ChestLegsSortOrder[21] = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
@@ -741,7 +1518,7 @@ void Humanoid::refreshWearables(Fashion& fashion) {
   auto setTags = [&](HashMap<String,String> tags) {
     if (m_useAnimation)
       for (auto tag : tags) {
-        m_networkedAnimator.setLocalTag(tag.first, tag.second);
+        m_networkedAnimator->setLocalTag(tag.first, tag.second);
       }
   };
 
@@ -780,7 +1557,9 @@ void Humanoid::refreshWearables(Fashion& fashion) {
   }
 
   if (m_useAnimation)
-    m_networkedAnimator.setLocalTag("helmetMaskDirectives", fashion.helmetMaskDirectivesGroup.toString());
+    {
+m_networkedAnimator->setLocalTag("helmetMaskDirectives", fashion.helmetMaskDirectivesGroup.toString());
+}
 
   fashion.wornHeadsChanged = fashion.wornChestsLegsChanged = fashion.wornBacksChanged = fashion.helmetMasksChanged = false;
 }
@@ -852,49 +1631,71 @@ void Humanoid::setBodyHidden(bool hidden) {
   m_bodyHidden = hidden;
 }
 
-void Humanoid::setState(State state) {
+std::expected<void, StarException> Humanoid::setState(State state) {
   if (m_state != state) {
     m_state = state;
     m_animationTimer = 0.0f;
     if (m_useAnimation)
-      refreshAnimationState();
-
-  }
+      {
+auto checked277 = refreshAnimationState();
+if (!checked277) return std::unexpected(std::move(checked277.error()));
 }
 
-void Humanoid::setEmoteState(HumanoidEmote state) {
+  }
+  return {};
+}
+
+std::expected<void, StarException> Humanoid::setEmoteState(HumanoidEmote state) {
   if (m_emoteState != state) {
     m_emoteState = state;
     m_emoteAnimationTimer = 0.0f;
     if (m_useAnimation) {
       if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
         for (auto args : *animationStates)
-          m_networkedAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+          {
+auto checked278 = m_networkedAnimator->setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+if (!checked278) return std::unexpected(std::move(checked278.error()));
+}
     }
   }
+  return {};
 }
 
-void Humanoid::setDance(std::optional<String> const& dance) {
+std::expected<void, StarException> Humanoid::setDance(std::optional<String> const& dance) {
   if (m_dance != dance) {
     m_danceTimer = 0.0f;
-    if (m_useAnimation && dance.has_value() && m_networkedAnimator.hasState("dance", dance.value_or(String{})))
-      m_networkedAnimator.setLocalState("dance", dance.value_or(String{}));
+    bool checked280 = m_useAnimation && dance.has_value();
+if (checked280) {
+auto checked279 = m_networkedAnimator->hasState("dance", dance.value_or(String{}));
+if (!checked279) return std::unexpected(std::move(checked279.error()));
+checked280 = std::move(*checked279);
+}
+if (checked280)
+      {
+auto checked281 = m_networkedAnimator->setLocalState("dance", dance.value_or(String{}));
+if (!checked281) return std::unexpected(std::move(checked281.error()));
+}
   }
   m_dance = dance;
+  return {};
 }
 
 void Humanoid::setFacingDirection(Direction facingDirection) {
   m_facingDirection = facingDirection;
   if (m_useAnimation)
-    m_networkedAnimator.setFlipped(m_facingDirection == Direction::Left);
+    m_networkedAnimator->setFlipped(m_facingDirection == Direction::Left);
 }
 
-void Humanoid::setMovingBackwards(bool movingBackwards) {
+std::expected<void, StarException> Humanoid::setMovingBackwards(bool movingBackwards) {
   if (m_movingBackwards != movingBackwards) {
     m_movingBackwards = movingBackwards;
     if (m_useAnimation)
-      refreshAnimationState();
+      {
+auto checked282 = refreshAnimationState();
+if (!checked282) return std::unexpected(std::move(checked282.error()));
+}
   }
+  return {};
 }
 
 void Humanoid::setHeadRotation(float headRotation) {
@@ -925,12 +1726,16 @@ std::optional<String> Humanoid::dance() const {
   return m_dance;
 }
 
-bool Humanoid::danceCyclicOrEnded() const {
+std::expected<bool, StarException> Humanoid::danceCyclicOrEnded() const {
   if (!m_dance)
     return false;
 
-  auto danceDatabase = m_root->danceDatabase();
-  auto dance = danceDatabase->getDance(*m_dance);
+  auto checked283 = m_root->danceDatabase();
+if (!checked283) return std::unexpected(std::move(checked283.error()));
+auto danceDatabase = std::move(*checked283);
+  auto checked284 = danceDatabase->getDance(*m_dance);
+if (!checked284) return std::unexpected(std::move(checked284.error()));
+auto dance = std::move(*checked284);
   return dance->cyclic || m_danceTimer > dance->duration;
 }
 
@@ -981,45 +1786,62 @@ bool Humanoid::handHoldingItem(ToolHand hand) const {
   return getHand(hand).holdingItem;
 }
 
-void Humanoid::animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget) {
+std::expected<void, StarException> Humanoid::animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget) {
   m_animationTimer += dt;
   m_emoteAnimationTimer += dt;
   m_danceTimer += dt;
   float headRotationTarget = m_root->humanoidHeadRotation() ? m_headRotationTarget : 0.f;
   m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * std::powf(.333333f, dt * 60.f));
 
-  m_networkedAnimator.update(dt, dynamicTarget);
+  auto checked285 = m_networkedAnimator->update(dt, dynamicTarget);
+if (!checked285) return std::unexpected(std::move(checked285.error()));
+  return {};
 }
 
-void Humanoid::resetAnimation() {
+std::expected<void, StarException> Humanoid::resetAnimation() {
   m_animationTimer = 0.0f;
   m_emoteAnimationTimer = 0.0f;
   m_danceTimer = 0.0f;
   m_headRotation = m_root->humanoidHeadRotation() ? 0.f : m_headRotationTarget;
 
   if (m_useAnimation) {
-    m_networkedAnimator.finishAnimations();
+    auto checked286 = m_networkedAnimator->finishAnimations();
+if (!checked286) return std::unexpected(std::move(checked286.error()));
     // reset set all animations and force startnew
     if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
       for (auto args : *animationStates)
-        m_networkedAnimator.setLocalState(args.first, args.second.state, true, args.second.reverse);
-    refreshAnimationState(true);
+        {
+auto checked287 = m_networkedAnimator->setLocalState(args.first, args.second.state, true, args.second.reverse);
+if (!checked287) return std::unexpected(std::move(checked287.error()));
+}
+    auto checked288 = refreshAnimationState(true);
+if (!checked288) return std::unexpected(std::move(checked288.error()));
   }
+  return {};
 }
 
-List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
+std::expected<List<Drawable>, StarException> Humanoid::render(bool withItems, bool withRotationAndScale) {
   auto& fashion = *m_fashion;
   refreshWearables(fashion);
   List<Drawable> drawables;
 
-  int armStateSeq = getArmStateSequence();
+  auto checked289 = getArmStateSequence();
+if (!checked289) return std::unexpected(std::move(checked289.error()));
+int armStateSeq = std::move(*checked289);
   int bodyStateSeq = getBodyStateSequence();
   int emoteStateSeq = getEmoteStateSequence();
-  float bobYOffset = getBobYOffset();
-  std::optional<std::shared_ptr<Dance>> dance = getDance();
+  auto checked290 = getBobYOffset();
+if (!checked290) return std::unexpected(std::move(checked290.error()));
+float bobYOffset = std::move(*checked290);
+  auto checked291 = getDance();
+if (!checked291) return std::unexpected(std::move(checked291.error()));
+std::optional<std::shared_ptr<Dance>> dance = std::move(*checked291);
   std::optional<DanceStep> danceStep = {};
   if (dance.has_value()) {
-    if (!(*dance)->states.contains(StateNames.getRight(m_state)))
+    if (!StateNames) return std::unexpected(StateNames.error());
+auto checked292 = StateNames->getRight(m_state);
+if (!checked292) return std::unexpected(std::move(checked292.error()));
+if (!(*dance)->states.contains((**checked292)))
       dance = {};
     else
       danceStep = (*dance)->steps[m_timing.danceSeq(m_danceTimer, *dance)];
@@ -1036,12 +1858,15 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     backArmFrameOffset += m_recoilOffset;
 
   if (m_useAnimation) {
-    m_networkedAnimator.resetLocalTransformationGroup("headRotation");
-    m_networkedAnimator.resetLocalTransformationGroup("bodyHeadRotation");
+    auto checked293 = m_networkedAnimator->resetLocalTransformationGroup("headRotation");
+if (!checked293) return std::unexpected(std::move(checked293.error()));
+    auto checked294 = m_networkedAnimator->resetLocalTransformationGroup("bodyHeadRotation");
+if (!checked294) return std::unexpected(std::move(checked294.error()));
     for (std::uint8_t i : fashion.wornBacks) {
       if (i == 0)
         break;
-      m_networkedAnimator.resetLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation");
+      auto checked295 = m_networkedAnimator->resetLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation");
+if (!checked295) return std::unexpected(std::move(checked295.error()));
     }
     if (m_headRotation != 0.f) {
       float dir = numericalDirection(m_facingDirection);
@@ -1050,105 +1875,168 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         -(state() == State::Run ? (std::fmaxf(headX, 0.f) * 2.f) : headX),
         -(std::fabsf(m_headRotation / ((float)std::numbers::pi * 4.f)))
       };
-      auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
-      auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
-      m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
-      m_networkedAnimator.translateLocalTransformationGroup("headRotation", translate);
-      m_networkedAnimator.rotateLocalTransformationGroup("bodyHeadRotation", m_headRotation * dir, rotationCenter);
-      m_networkedAnimator.translateLocalTransformationGroup("bodyHeadRotation", translate);
+      auto checked296 = m_networkedAnimator->partProperty(m_headRotationPoint.first, m_headRotationPoint.second);
+if (!checked296) return std::unexpected(std::move(checked296.error()));
+auto checked297 = jsonToVec2F(std::move(*checked296));
+if (!checked297) return std::unexpected(std::move(checked297.error()));
+auto rotationCenter = std::move(*checked297);
+      auto checked298 = networkedAnimator()->partTransformation(m_headRotationPoint.first);
+if (!checked298) return std::unexpected(std::move(checked298.error()));
+auto bodyHeadRotationCenter = std::move(*checked298).transformVec2(rotationCenter);
+      auto checked299 = m_networkedAnimator->rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
+if (!checked299) return std::unexpected(std::move(checked299.error()));
+      auto checked300 = m_networkedAnimator->translateLocalTransformationGroup("headRotation", translate);
+if (!checked300) return std::unexpected(std::move(checked300.error()));
+      auto checked301 = m_networkedAnimator->rotateLocalTransformationGroup("bodyHeadRotation", m_headRotation * dir, rotationCenter);
+if (!checked301) return std::unexpected(std::move(checked301.error()));
+      auto checked302 = m_networkedAnimator->translateLocalTransformationGroup("bodyHeadRotation", translate);
+if (!checked302) return std::unexpected(std::move(checked302.error()));
       for (std::uint8_t i : fashion.wornBacks) {
         if (i == 0)
           break;
         auto& back = std::get<WornBack>(fashion.wearables[std::size_t(i) - 1]);
         if (back.rotateWithHead) {
-          m_networkedAnimator.rotateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", m_headRotation * dir, bodyHeadRotationCenter);
-          m_networkedAnimator.translateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", translate);
+          auto checked303 = m_networkedAnimator->rotateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", m_headRotation * dir, bodyHeadRotationCenter);
+if (!checked303) return std::unexpected(std::move(checked303.error()));
+          auto checked304 = m_networkedAnimator->translateLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation", translate);
+if (!checked304) return std::unexpected(std::move(checked304.error()));
         }
       }
     }
 
-    m_networkedAnimator.setPartDrawables(m_backItemPart, {});
-    m_networkedAnimator.resetLocalTransformationGroup("backArmRotation");
-    m_networkedAnimator.setPartDrawables(m_frontItemPart, {});
-    m_networkedAnimator.resetLocalTransformationGroup("frontArmRotation");
+    m_networkedAnimator->setPartDrawables(m_backItemPart, {});
+    auto checked305 = m_networkedAnimator->resetLocalTransformationGroup("backArmRotation");
+if (!checked305) return std::unexpected(std::move(checked305.error()));
+    m_networkedAnimator->setPartDrawables(m_frontItemPart, {});
+    auto checked306 = m_networkedAnimator->resetLocalTransformationGroup("frontArmRotation");
+if (!checked306) return std::unexpected(std::move(checked306.error()));
 
     if (dance.has_value()) {
 
       if (danceStep->bodyFrame.has_value()) {
         auto danceFrame = danceStep->bodyFrame.value_or(String{});
-        m_networkedAnimator.setLocalTag("bodyDanceFrame", danceFrame);
-        m_networkedAnimator.setLocalState("bodyDance", m_networkedAnimator.hasState("bodyDance", danceFrame) ? danceFrame : "dance");
+        m_networkedAnimator->setLocalTag("bodyDanceFrame", danceFrame);
+        auto checked307 = m_networkedAnimator->hasState("bodyDance", danceFrame);
+if (!checked307) return std::unexpected(std::move(checked307.error()));
+auto checked308 = m_networkedAnimator->setLocalState("bodyDance", std::move(*checked307) ? danceFrame : "dance");
+if (!checked308) return std::unexpected(std::move(checked308.error()));
       } else {
-        m_networkedAnimator.setLocalState("bodyDance", "idle");
-        m_networkedAnimator.setLocalTag("bodyDanceFrame");
+        auto checked309 = m_networkedAnimator->setLocalState("bodyDance", "idle");
+if (!checked309) return std::unexpected(std::move(checked309.error()));
+        m_networkedAnimator->setLocalTag("bodyDanceFrame");
       }
 
-      m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", danceStep->backArmOffset / TilePixels);
-      m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation", danceStep->backArmRotation);
+      auto checked310 = m_networkedAnimator->translateLocalTransformationGroup("backArmRotation", danceStep->backArmOffset / TilePixels);
+if (!checked310) return std::unexpected(std::move(checked310.error()));
+      auto checked311 = m_networkedAnimator->rotateLocalTransformationGroup("backArmRotation", danceStep->backArmRotation);
+if (!checked311) return std::unexpected(std::move(checked311.error()));
       if (danceStep->backArmFrame.has_value()) {
         auto danceFrame = danceStep->backArmFrame.value_or(String{});
-        m_networkedAnimator.setLocalTag("backArmDanceFrame", danceFrame);
-        m_networkedAnimator.setLocalState("backArmDance", m_networkedAnimator.hasState("backArmDance", danceFrame) ? danceFrame : "dance");
+        m_networkedAnimator->setLocalTag("backArmDanceFrame", danceFrame);
+        auto checked312 = m_networkedAnimator->hasState("backArmDance", danceFrame);
+if (!checked312) return std::unexpected(std::move(checked312.error()));
+auto checked313 = m_networkedAnimator->setLocalState("backArmDance", std::move(*checked312) ? danceFrame : "dance");
+if (!checked313) return std::unexpected(std::move(checked313.error()));
       } else {
-        m_networkedAnimator.setLocalState("backArmDance", "idle");
-        m_networkedAnimator.setLocalTag("backArmDanceFrame");
+        auto checked314 = m_networkedAnimator->setLocalState("backArmDance", "idle");
+if (!checked314) return std::unexpected(std::move(checked314.error()));
+        m_networkedAnimator->setLocalTag("backArmDanceFrame");
       }
-      m_networkedAnimator.setLocalState("backArm", "idle");
+      auto checked315 = m_networkedAnimator->setLocalState("backArm", "idle");
+if (!checked315) return std::unexpected(std::move(checked315.error()));
 
-      m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", danceStep->frontArmOffset / TilePixels);
-      m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation", danceStep->frontArmRotation);
+      auto checked316 = m_networkedAnimator->translateLocalTransformationGroup("frontArmRotation", danceStep->frontArmOffset / TilePixels);
+if (!checked316) return std::unexpected(std::move(checked316.error()));
+      auto checked317 = m_networkedAnimator->rotateLocalTransformationGroup("frontArmRotation", danceStep->frontArmRotation);
+if (!checked317) return std::unexpected(std::move(checked317.error()));
       if (danceStep->frontArmFrame.has_value()) {
         auto danceFrame = danceStep->frontArmFrame.value_or(String{});
-        m_networkedAnimator.setLocalTag("frontArmDanceFrame", danceFrame);
-        m_networkedAnimator.setLocalState("frontArmDance", m_networkedAnimator.hasState("frontArmDance", danceFrame) ? danceFrame : "dance");
+        m_networkedAnimator->setLocalTag("frontArmDanceFrame", danceFrame);
+        auto checked318 = m_networkedAnimator->hasState("frontArmDance", danceFrame);
+if (!checked318) return std::unexpected(std::move(checked318.error()));
+auto checked319 = m_networkedAnimator->setLocalState("frontArmDance", std::move(*checked318) ? danceFrame : "dance");
+if (!checked319) return std::unexpected(std::move(checked319.error()));
       } else {
-        m_networkedAnimator.setLocalState("frontArmDance", "idle");
-        m_networkedAnimator.setLocalTag("frontArmDanceFrame");
+        auto checked320 = m_networkedAnimator->setLocalState("frontArmDance", "idle");
+if (!checked320) return std::unexpected(std::move(checked320.error()));
+        m_networkedAnimator->setLocalTag("frontArmDanceFrame");
       }
-      m_networkedAnimator.setLocalState("frontArm", "idle");
+      auto checked321 = m_networkedAnimator->setLocalState("frontArm", "idle");
+if (!checked321) return std::unexpected(std::move(checked321.error()));
 
     } else {
-      m_networkedAnimator.setLocalState("bodyDance", "idle");
-      m_networkedAnimator.setLocalTag("bodyDanceFrame");
+      auto checked322 = m_networkedAnimator->setLocalState("bodyDance", "idle");
+if (!checked322) return std::unexpected(std::move(checked322.error()));
+      m_networkedAnimator->setLocalTag("bodyDanceFrame");
 
-      m_networkedAnimator.setLocalState("backArmDance", "idle");
-      m_networkedAnimator.setLocalTag("backArmDanceFrame");
-      m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
+      auto checked323 = m_networkedAnimator->setLocalState("backArmDance", "idle");
+if (!checked323) return std::unexpected(std::move(checked323.error()));
+      m_networkedAnimator->setLocalTag("backArmDanceFrame");
+      auto checked324 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second);
+if (!checked324) return std::unexpected(std::move(checked324.error()));
+auto checked325 = jsonToVec2F(std::move(*checked324));
+if (!checked325) return std::unexpected(std::move(checked325.error()));
+auto checked326 = m_networkedAnimator->rotateLocalTransformationGroup("backArmRotation",
         backHand.angle,
-        jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second))
+        std::move(*checked325)
       );
+if (!checked326) return std::unexpected(std::move(checked326.error()));
       if (backHand.recoil)
-        m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
+        {
+auto checked327 = m_networkedAnimator->translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
+if (!checked327) return std::unexpected(std::move(checked327.error()));
+}
       if (backHand.holdingItem && withItems) {
-        m_networkedAnimator.setLocalTag("backArmFrame", backHand.backFrame);
-        m_networkedAnimator.setLocalState("backArm", m_networkedAnimator.hasState("backArm", backHand.backFrame) ? backHand.backFrame : "rotation");
+        m_networkedAnimator->setLocalTag("backArmFrame", backHand.backFrame);
+        auto checked328 = m_networkedAnimator->hasState("backArm", backHand.backFrame);
+if (!checked328) return std::unexpected(std::move(checked328.error()));
+auto checked329 = m_networkedAnimator->setLocalState("backArm", std::move(*checked328) ? backHand.backFrame : "rotation");
+if (!checked329) return std::unexpected(std::move(checked329.error()));
         if (!m_twoHanded)
-          m_networkedAnimator.setPartDrawables(m_backItemPart, backHand.itemDrawables);
-        m_networkedAnimator.setLocalState("backHandItem", backHand.outsideOfHand ? "outside" : "inside");
+          m_networkedAnimator->setPartDrawables(m_backItemPart, backHand.itemDrawables);
+        auto checked330 = m_networkedAnimator->setLocalState("backHandItem", backHand.outsideOfHand ? "outside" : "inside");
+if (!checked330) return std::unexpected(std::move(checked330.error()));
       } else {
-        m_networkedAnimator.setLocalState("backArm", "idle");
+        auto checked331 = m_networkedAnimator->setLocalState("backArm", "idle");
+if (!checked331) return std::unexpected(std::move(checked331.error()));
       }
 
-      m_networkedAnimator.setLocalState("frontArmDance", "idle");
-      m_networkedAnimator.setLocalTag("frontArmDanceFrame");
-      m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
+      auto checked332 = m_networkedAnimator->setLocalState("frontArmDance", "idle");
+if (!checked332) return std::unexpected(std::move(checked332.error()));
+      m_networkedAnimator->setLocalTag("frontArmDanceFrame");
+      auto checked333 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second);
+if (!checked333) return std::unexpected(std::move(checked333.error()));
+auto checked334 = jsonToVec2F(std::move(*checked333));
+if (!checked334) return std::unexpected(std::move(checked334.error()));
+auto checked335 = m_networkedAnimator->rotateLocalTransformationGroup("frontArmRotation",
         frontHand.angle,
-        jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second))
+        std::move(*checked334)
       );
+if (!checked335) return std::unexpected(std::move(checked335.error()));
       if (frontHand.recoil)
-        m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
+        {
+auto checked336 = m_networkedAnimator->translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
+if (!checked336) return std::unexpected(std::move(checked336.error()));
+}
       if (frontHand.holdingItem && withItems) {
-        m_networkedAnimator.setLocalTag("frontArmFrame", frontHand.frontFrame);
-        m_networkedAnimator.setLocalState("frontArm", m_networkedAnimator.hasState("frontArm", frontHand.frontFrame) ? frontHand.frontFrame : "rotation");
+        m_networkedAnimator->setLocalTag("frontArmFrame", frontHand.frontFrame);
+        auto checked337 = m_networkedAnimator->hasState("frontArm", frontHand.frontFrame);
+if (!checked337) return std::unexpected(std::move(checked337.error()));
+auto checked338 = m_networkedAnimator->setLocalState("frontArm", std::move(*checked337) ? frontHand.frontFrame : "rotation");
+if (!checked338) return std::unexpected(std::move(checked338.error()));
 
-        m_networkedAnimator.setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
-        m_networkedAnimator.setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
+        m_networkedAnimator->setPartDrawables(m_frontItemPart, frontHand.itemDrawables);
+        auto checked339 = m_networkedAnimator->setLocalState("frontHandItem", frontHand.outsideOfHand ? "outside" : "inside");
+if (!checked339) return std::unexpected(std::move(checked339.error()));
       } else {
-        m_networkedAnimator.setLocalState("frontArm", "idle");
+        auto checked340 = m_networkedAnimator->setLocalState("frontArm", "idle");
+if (!checked340) return std::unexpected(std::move(checked340.error()));
       }
     }
 
-    auto animatorDrawables = m_networkedAnimator.drawables();
+    auto checked341 = m_networkedAnimator->drawables();
+if (!checked341) return std::unexpected(std::move(checked341.error()));
+auto animatorDrawables = std::move(*checked341);
     if (withRotationAndScale) {
       Drawable::rotateAll(animatorDrawables, m_rotation);
       Drawable::scaleAll(animatorDrawables, m_scale);
@@ -1168,14 +2056,24 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         drawable.scale(Vec2F(-1, 1));
       drawable.fullbright |= forceFullbright;
       drawables.append(std::move(drawable));
-      return drawables.back();
+      return drawables[drawables.size() - 1];
     };
 
-    auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
+    auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> std::expected<Drawable, StarException> {
       String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
-      Drawable backArm = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
-      backArm.imagePart().addDirectives(*m_root->imageMetadataDatabase(), directives, true);
-      backArm.imagePart().addDirectives(*m_root->imageMetadataDatabase(), backHand.backDirectives, true);
+      auto checked342 = m_root->imageMetadataDatabase();
+if (!checked342) return std::unexpected(std::move(checked342.error()));
+auto checked343 = Drawable::makeImage(*std::move(*checked342), std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
+if (!checked343) return std::unexpected(std::move(checked343.error()));
+Drawable backArm = std::move(*checked343);
+      auto checked344 = m_root->imageMetadataDatabase();
+if (!checked344) return std::unexpected(std::move(checked344.error()));
+auto checked345 = backArm.imagePart().addDirectives(*std::move(*checked344), directives, true);
+if (!checked345) return std::unexpected(std::move(checked345.error()));
+      auto checked346 = m_root->imageMetadataDatabase();
+if (!checked346) return std::unexpected(std::move(checked346.error()));
+auto checked347 = backArm.imagePart().addDirectives(*std::move(*checked346), backHand.backDirectives, true);
+if (!checked347) return std::unexpected(std::move(checked347.error()));
       backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
       return backArm;
     };
@@ -1213,7 +2111,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         break;
       auto& back = std::get<WornBack>(fashion.wearables[std::size_t(i) - 1]);
       if (!back.frameset.empty()) {
-        auto frameGroup = frameBase(m_state);
+        auto checked348 = frameBase(m_state);
+if (!checked348) return std::unexpected(std::move(checked348.error()));
+auto frameGroup = std::move(*checked348);
         auto prefix = back.directives.prefix();
         if (m_movingBackwards && (m_state == State::Run))
           frameGroup = "runbackwards";
@@ -1225,18 +2125,29 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         else
           image = strf("{}:{}.{}{}", back.frameset, frameGroup, bodyStateSeq, prefix);
 
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, Vec2F());
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), back.directives, true);
+        auto checked349 = m_root->imageMetadataDatabase();
+if (!checked349) return std::unexpected(std::move(checked349.error()));
+auto checked350 = Drawable::makeImage(*std::move(*checked349), std::move(image), 1.0f / TilePixels, true, Vec2F());
+if (!checked350) return std::unexpected(std::move(checked350.error()));
+auto drawable = std::move(*checked350);
+        auto checked351 = m_root->imageMetadataDatabase();
+if (!checked351) return std::unexpected(std::move(checked351.error()));
+auto checked352 = drawable.imagePart().addDirectives(*std::move(*checked351), back.directives, true);
+if (!checked352) return std::unexpected(std::move(checked352.error()));
         Drawable& applied = addDrawable(std::move(drawable), back.fullbright);
         if (back.rotateWithHead)
           applyHeadRotation(applied);
       }
     }
 
-    auto drawBackArmAndSleeves = [&](bool holdingItem) {
+    auto drawBackArmAndSleeves = [&](bool holdingItem) -> std::expected<void, StarException> {
       auto bodyDirectives = getBodyDirectives();
       if (holdingItem && !m_bodyHidden)
-        addDrawable(backArmDrawable(m_backArmFrameset, bodyDirectives), m_bodyFullbright);
+        {
+auto checked353 = backArmDrawable(m_backArmFrameset, bodyDirectives);
+if (!checked353) return std::unexpected(std::move(checked353.error()));
+addDrawable(std::move(*checked353), m_bodyFullbright);
+}
       else if (!m_backArmFrameset.empty() && !m_bodyHidden) {
         String image;
         Vec2F position;
@@ -1248,9 +2159,20 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}{}", m_backArmFrameset, m_identity.personality.armIdle, prefix);
           position = m_identity.personality.armOffset / TilePixels;
         } else
-          image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, position);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
+          {
+auto checked354 = frameBase(m_state);
+if (!checked354) return std::unexpected(std::move(checked354.error()));
+image = strf("{}:{}.{}{}", m_backArmFrameset, std::move(*checked354), armStateSeq, prefix);
+}
+        auto checked355 = m_root->imageMetadataDatabase();
+if (!checked355) return std::unexpected(std::move(checked355.error()));
+auto checked356 = Drawable::makeImage(*std::move(*checked355), std::move(image), 1.0f / TilePixels, true, position);
+if (!checked356) return std::unexpected(std::move(checked356.error()));
+auto drawable = std::move(*checked356);
+        auto checked357 = m_root->imageMetadataDatabase();
+if (!checked357) return std::unexpected(std::move(checked357.error()));
+auto checked358 = drawable.imagePart().addDirectives(*std::move(*checked357), bodyDirectives, true);
+if (!checked358) return std::unexpected(std::move(checked358.error()));
         if (dance.has_value())
           drawable.rotate(danceStep->backArmRotation);
         addDrawable(std::move(drawable), m_bodyFullbright);
@@ -1261,7 +2183,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         auto chest = std::get_if<WornChest>(&fashion.wearables[std::size_t(i) - 1]);
         if (chest && !chest->backSleeveFrameset.empty()) {
           if (holdingItem) {
-            addDrawable(backArmDrawable(chest->backSleeveFrameset, chest->directives));
+            auto checked359 = backArmDrawable(chest->backSleeveFrameset, chest->directives);
+if (!checked359) return std::unexpected(std::move(checked359.error()));
+addDrawable(std::move(*checked359));
           } else {
             String image;
             Vec2F position;
@@ -1273,16 +2197,28 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               image = strf("{}:{}{}", chest->backSleeveFrameset, m_identity.personality.armIdle, prefix);
               position = m_identity.personality.armOffset / TilePixels;
             } else
-              image = strf("{}:{}.{}{}", chest->backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-            auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, position);
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
+              {
+auto checked360 = frameBase(m_state);
+if (!checked360) return std::unexpected(std::move(checked360.error()));
+image = strf("{}:{}.{}{}", chest->backSleeveFrameset, std::move(*checked360), armStateSeq, prefix);
+}
+            auto checked361 = m_root->imageMetadataDatabase();
+if (!checked361) return std::unexpected(std::move(checked361.error()));
+auto checked362 = Drawable::makeImage(*std::move(*checked361), std::move(image), 1.0f / TilePixels, true, position);
+if (!checked362) return std::unexpected(std::move(checked362.error()));
+auto drawable = std::move(*checked362);
+            auto checked363 = m_root->imageMetadataDatabase();
+if (!checked363) return std::unexpected(std::move(checked363.error()));
+auto checked364 = drawable.imagePart().addDirectives(*std::move(*checked363), chest->directives, true);
+if (!checked364) return std::unexpected(std::move(checked364.error()));
             if (dance.has_value())
               drawable.rotate(danceStep->backArmRotation);
             addDrawable(std::move(drawable), chest->fullbright);
           }
         }
       }
-    };
+      return {};
+};
 
     if (backHand.holdingItem && !dance.has_value() && withItems) {
       auto drawItem = [&]() {
@@ -1295,12 +2231,14 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (!m_twoHanded && backHand.outsideOfHand)
         drawItem();
 
-      drawBackArmAndSleeves(true);
+      auto checked365 = drawBackArmAndSleeves(true);
+if (!checked365) return std::unexpected(std::move(checked365.error()));
 
       if (!m_twoHanded && !backHand.outsideOfHand)
         drawItem();
     } else {
-      drawBackArmAndSleeves(false);
+      auto checked366 = drawBackArmAndSleeves(false);
+if (!checked366) return std::unexpected(std::move(checked366.error()));
     }
 
     auto addHeadDrawable = [&](Drawable drawable, bool forceFullbright = false) {
@@ -1313,23 +2251,50 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     if (!m_headFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_headFrameset);
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), getBodyDirectives(), true);
+      auto checked367 = m_root->imageMetadataDatabase();
+if (!checked367) return std::unexpected(std::move(checked367.error()));
+auto checked368 = Drawable::makeImage(*std::move(*checked367), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked368) return std::unexpected(std::move(checked368.error()));
+auto drawable = std::move(*checked368);
+      auto checked369 = m_root->imageMetadataDatabase();
+if (!checked369) return std::unexpected(std::move(checked369.error()));
+auto checked370 = drawable.imagePart().addDirectives(*std::move(*checked369), getBodyDirectives(), true);
+if (!checked370) return std::unexpected(std::move(checked370.error()));
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_emoteFrameset.empty() && !m_bodyHidden) {
       auto emoteDirectives = getEmoteDirectives();
-      String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), emoteDirectives, true);
+      auto checked371 = emoteFrameBase(m_emoteState);
+if (!checked371) return std::unexpected(std::move(checked371.error()));
+String image = strf("{}:{}.{}{}", m_emoteFrameset, std::move(*checked371), emoteStateSeq, emoteDirectives.prefix());
+      auto checked372 = m_root->imageMetadataDatabase();
+if (!checked372) return std::unexpected(std::move(checked372.error()));
+auto checked373 = Drawable::makeImage(*std::move(*checked372), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked373) return std::unexpected(std::move(checked373.error()));
+auto drawable = std::move(*checked373);
+      auto checked374 = m_root->imageMetadataDatabase();
+if (!checked374) return std::unexpected(std::move(checked374.error()));
+auto checked375 = drawable.imagePart().addDirectives(*std::move(*checked374), emoteDirectives, true);
+if (!checked375) return std::unexpected(std::move(checked375.error()));
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_hairFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_hairFrameset);
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), getHairDirectives(), true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
+      auto checked376 = m_root->imageMetadataDatabase();
+if (!checked376) return std::unexpected(std::move(checked376.error()));
+auto checked377 = Drawable::makeImage(*std::move(*checked376), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked377) return std::unexpected(std::move(checked377.error()));
+auto drawable = std::move(*checked377);
+      auto checked378 = m_root->imageMetadataDatabase();
+if (!checked378) return std::unexpected(std::move(checked378.error()));
+auto checked379 = drawable.imagePart().addDirectives(*std::move(*checked378), getHairDirectives(), true);
+if (!checked379) return std::unexpected(std::move(checked379.error()));
+auto checked380 = m_root->imageMetadataDatabase();
+if (!checked380) return std::unexpected(std::move(checked380.error()));
+auto checked381 = (**checked379).addDirectivesGroup(*std::move(*checked380), fashion.helmetMaskDirectivesGroup, true);
+if (!checked381) return std::unexpected(std::move(checked381.error()));
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
@@ -1342,22 +2307,46 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       else if (m_state == Idle)
         frameName = strf("{}{}", m_identity.personality.idle, prefix);
       else
-        frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
+        {
+auto checked382 = frameBase(m_state);
+if (!checked382) return std::unexpected(std::move(checked382.error()));
+frameName = strf("{}.{}{}", std::move(*checked382), bodyStateSeq, prefix);
+}
       String image = strf("{}:{}",m_bodyFrameset,frameName);
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
+      auto checked383 = m_root->imageMetadataDatabase();
+if (!checked383) return std::unexpected(std::move(checked383.error()));
+auto checked384 = Drawable::makeImage(*std::move(*checked383), m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
+if (!checked384) return std::unexpected(std::move(checked384.error()));
+auto drawable = std::move(*checked384);
+      auto checked385 = m_root->imageMetadataDatabase();
+if (!checked385) return std::unexpected(std::move(checked385.error()));
+auto checked386 = drawable.imagePart().addDirectives(*std::move(*checked385), bodyDirectives, true);
+if (!checked386) return std::unexpected(std::move(checked386.error()));
       if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
         String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
         Directives maskDirectives = "?addmask="+maskImage+";0;0";
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), maskDirectives, true);
+        auto checked387 = m_root->imageMetadataDatabase();
+if (!checked387) return std::unexpected(std::move(checked387.error()));
+auto checked388 = drawable.imagePart().addDirectives(*std::move(*checked387), maskDirectives, true);
+if (!checked388) return std::unexpected(std::move(checked388.error()));
       }
       addDrawable(std::move(drawable), m_bodyFullbright);
       if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
         String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
         Directives maskDirectives = "?addmask="+maskImage+";0;0";
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, {});
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), maskDirectives, true);
+        auto checked389 = m_root->imageMetadataDatabase();
+if (!checked389) return std::unexpected(std::move(checked389.error()));
+auto checked390 = Drawable::makeImage(*std::move(*checked389), std::move(image), 1.0f / TilePixels, true, {});
+if (!checked390) return std::unexpected(std::move(checked390.error()));
+auto drawable = std::move(*checked390);
+        auto checked391 = m_root->imageMetadataDatabase();
+if (!checked391) return std::unexpected(std::move(checked391.error()));
+auto checked392 = drawable.imagePart().addDirectives(*std::move(*checked391), bodyDirectives, true);
+if (!checked392) return std::unexpected(std::move(checked392.error()));
+        auto checked393 = m_root->imageMetadataDatabase();
+if (!checked393) return std::unexpected(std::move(checked393.error()));
+auto checked394 = drawable.imagePart().addDirectives(*std::move(*checked393), maskDirectives, true);
+if (!checked394) return std::unexpected(std::move(checked394.error()));
         addHeadDrawable(std::move(drawable), m_bodyFullbright);
       }
     }
@@ -1375,9 +2364,20 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         else if (m_state == Idle)
           image = strf("{}:{}{}", legs->frameset, m_identity.personality.idle, prefix);
         else
-          image = strf("{}:{}.{}{}", legs->frameset, frameBase(m_state), bodyStateSeq, prefix);
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, {});
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), legs->directives, true);
+          {
+auto checked395 = frameBase(m_state);
+if (!checked395) return std::unexpected(std::move(checked395.error()));
+image = strf("{}:{}.{}{}", legs->frameset, std::move(*checked395), bodyStateSeq, prefix);
+}
+        auto checked396 = m_root->imageMetadataDatabase();
+if (!checked396) return std::unexpected(std::move(checked396.error()));
+auto checked397 = Drawable::makeImage(*std::move(*checked396), std::move(image), 1.0f / TilePixels, true, {});
+if (!checked397) return std::unexpected(std::move(checked397.error()));
+auto drawable = std::move(*checked397);
+        auto checked398 = m_root->imageMetadataDatabase();
+if (!checked398) return std::unexpected(std::move(checked398.error()));
+auto checked399 = drawable.imagePart().addDirectives(*std::move(*checked398), legs->directives, true);
+if (!checked399) return std::unexpected(std::move(checked399.error()));
         addDrawable(std::move(drawable), legs->fullbright);
       } else {
         auto* chest = std::get_if<WornChest>(&wearable);
@@ -1399,8 +2399,15 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             image = strf("{}:chest.1{}", chest->frameset, prefix);
           if (m_state != Duck)
             position[1] += bobYOffset;
-          auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, position);
-          drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
+          auto checked400 = m_root->imageMetadataDatabase();
+if (!checked400) return std::unexpected(std::move(checked400.error()));
+auto checked401 = Drawable::makeImage(*std::move(*checked400), std::move(image), 1.0f / TilePixels, true, position);
+if (!checked401) return std::unexpected(std::move(checked401.error()));
+auto drawable = std::move(*checked401);
+          auto checked402 = m_root->imageMetadataDatabase();
+if (!checked402) return std::unexpected(std::move(checked402.error()));
+auto checked403 = drawable.imagePart().addDirectives(*std::move(*checked402), chest->directives, true);
+if (!checked403) return std::unexpected(std::move(checked403.error()));
           addDrawable(std::move(drawable), chest->fullbright);
         }
       }
@@ -1408,15 +2415,37 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     if (!m_facialHairFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_facialHairFrameset);
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), getFacialHairDirectives(), true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
+      auto checked404 = m_root->imageMetadataDatabase();
+if (!checked404) return std::unexpected(std::move(checked404.error()));
+auto checked405 = Drawable::makeImage(*std::move(*checked404), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked405) return std::unexpected(std::move(checked405.error()));
+auto drawable = std::move(*checked405);
+      auto checked406 = m_root->imageMetadataDatabase();
+if (!checked406) return std::unexpected(std::move(checked406.error()));
+auto checked407 = drawable.imagePart().addDirectives(*std::move(*checked406), getFacialHairDirectives(), true);
+if (!checked407) return std::unexpected(std::move(checked407.error()));
+auto checked408 = m_root->imageMetadataDatabase();
+if (!checked408) return std::unexpected(std::move(checked408.error()));
+auto checked409 = (**checked407).addDirectivesGroup(*std::move(*checked408), fashion.helmetMaskDirectivesGroup, true);
+if (!checked409) return std::unexpected(std::move(checked409.error()));
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_facialMaskFrameset);
-      auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), getFacialMaskDirectives(), true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
+      auto checked410 = m_root->imageMetadataDatabase();
+if (!checked410) return std::unexpected(std::move(checked410.error()));
+auto checked411 = Drawable::makeImage(*std::move(*checked410), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked411) return std::unexpected(std::move(checked411.error()));
+auto drawable = std::move(*checked411);
+      auto checked412 = m_root->imageMetadataDatabase();
+if (!checked412) return std::unexpected(std::move(checked412.error()));
+auto checked413 = drawable.imagePart().addDirectives(*std::move(*checked412), getFacialMaskDirectives(), true);
+if (!checked413) return std::unexpected(std::move(checked413.error()));
+auto checked414 = m_root->imageMetadataDatabase();
+if (!checked414) return std::unexpected(std::move(checked414.error()));
+auto checked415 = (**checked413).addDirectivesGroup(*std::move(*checked414), fashion.helmetMaskDirectivesGroup, true);
+if (!checked415) return std::unexpected(std::move(checked415.error()));
       addHeadDrawable(std::move(drawable));
     }
 
@@ -1426,26 +2455,47 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       auto& head = std::get<WornHead>(fashion.wearables[std::size_t(i) - 1]);
       if (!head.frameset.empty()) {
         String image = strf("{}:normal{}", head.frameset, head.directives.prefix());
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, headPosition);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), head.directives, true);
+        auto checked416 = m_root->imageMetadataDatabase();
+if (!checked416) return std::unexpected(std::move(checked416.error()));
+auto checked417 = Drawable::makeImage(*std::move(*checked416), std::move(image), 1.0f / TilePixels, true, headPosition);
+if (!checked417) return std::unexpected(std::move(checked417.error()));
+auto drawable = std::move(*checked417);
+        auto checked418 = m_root->imageMetadataDatabase();
+if (!checked418) return std::unexpected(std::move(checked418.error()));
+auto checked419 = drawable.imagePart().addDirectives(*std::move(*checked418), head.directives, true);
+if (!checked419) return std::unexpected(std::move(checked419.error()));
         addHeadDrawable(std::move(drawable), head.fullbright);
       }
     }
 
-    auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
+    auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> std::expected<Drawable, StarException> {
       String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
-      Drawable frontArm = Drawable::makeImage(*m_root->imageMetadataDatabase(), image, 1.0f / TilePixels, true, frontArmFrameOffset);
-      frontArm.imagePart().addDirectives(*m_root->imageMetadataDatabase(), directives, true);
-      frontArm.imagePart().addDirectives(*m_root->imageMetadataDatabase(), frontHand.frontDirectives, true);
+      auto checked420 = m_root->imageMetadataDatabase();
+if (!checked420) return std::unexpected(std::move(checked420.error()));
+auto checked421 = Drawable::makeImage(*std::move(*checked420), image, 1.0f / TilePixels, true, frontArmFrameOffset);
+if (!checked421) return std::unexpected(std::move(checked421.error()));
+Drawable frontArm = std::move(*checked421);
+      auto checked422 = m_root->imageMetadataDatabase();
+if (!checked422) return std::unexpected(std::move(checked422.error()));
+auto checked423 = frontArm.imagePart().addDirectives(*std::move(*checked422), directives, true);
+if (!checked423) return std::unexpected(std::move(checked423.error()));
+      auto checked424 = m_root->imageMetadataDatabase();
+if (!checked424) return std::unexpected(std::move(checked424.error()));
+auto checked425 = frontArm.imagePart().addDirectives(*std::move(*checked424), frontHand.frontDirectives, true);
+if (!checked425) return std::unexpected(std::move(checked425.error()));
       frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
       return frontArm;
     };
 
 
-    auto drawFrontArmAndSleeves = [&](bool holdingItem) {
+    auto drawFrontArmAndSleeves = [&](bool holdingItem) -> std::expected<void, StarException> {
       auto& bodyDirectives = getBodyDirectives();
       if (holdingItem && !m_bodyHidden)
-        addDrawable(frontArmDrawable(m_frontArmFrameset, bodyDirectives), m_bodyFullbright);
+        {
+auto checked426 = frontArmDrawable(m_frontArmFrameset, bodyDirectives);
+if (!checked426) return std::unexpected(std::move(checked426.error()));
+addDrawable(std::move(*checked426), m_bodyFullbright);
+}
       else if (!m_frontArmFrameset.empty() && !m_bodyHidden) {
         String image;
         Vec2F position;
@@ -1457,9 +2507,20 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}{}", m_frontArmFrameset, m_identity.personality.armIdle, prefix);
           position = m_identity.personality.armOffset / TilePixels;
         } else
-          image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
-        auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f / TilePixels, true, position);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
+          {
+auto checked427 = frameBase(m_state);
+if (!checked427) return std::unexpected(std::move(checked427.error()));
+image = strf("{}:{}.{}{}", m_frontArmFrameset, std::move(*checked427), armStateSeq, prefix);
+}
+        auto checked428 = m_root->imageMetadataDatabase();
+if (!checked428) return std::unexpected(std::move(checked428.error()));
+auto checked429 = Drawable::makeImage(*std::move(*checked428), std::move(image), 1.0f / TilePixels, true, position);
+if (!checked429) return std::unexpected(std::move(checked429.error()));
+auto drawable = std::move(*checked429);
+        auto checked430 = m_root->imageMetadataDatabase();
+if (!checked430) return std::unexpected(std::move(checked430.error()));
+auto checked431 = drawable.imagePart().addDirectives(*std::move(*checked430), bodyDirectives, true);
+if (!checked431) return std::unexpected(std::move(checked431.error()));
         if (dance.has_value())
           drawable.rotate(danceStep->frontArmRotation);
         addDrawable(drawable, m_bodyFullbright);
@@ -1470,7 +2531,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         auto chest = std::get_if<WornChest>(&fashion.wearables[std::size_t(i) - 1]);
         if (chest && !chest->frontSleeveFrameset.empty()) {
           if (holdingItem) {
-            addDrawable(frontArmDrawable(chest->frontSleeveFrameset, chest->directives), chest->fullbright);
+            auto checked432 = frontArmDrawable(chest->frontSleeveFrameset, chest->directives);
+if (!checked432) return std::unexpected(std::move(checked432.error()));
+addDrawable(std::move(*checked432), chest->fullbright);
           } else {
             String image;
             Vec2F position;
@@ -1482,16 +2545,28 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               image = strf("{}:{}{}", chest->frontSleeveFrameset, m_identity.personality.armIdle, prefix);
               position = m_identity.personality.armOffset / TilePixels;
             } else
-              image = strf("{}:{}.{}{}", chest->frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-            auto drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), image, 1.0f / TilePixels, true, position);
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
+              {
+auto checked433 = frameBase(m_state);
+if (!checked433) return std::unexpected(std::move(checked433.error()));
+image = strf("{}:{}.{}{}", chest->frontSleeveFrameset, std::move(*checked433), armStateSeq, prefix);
+}
+            auto checked434 = m_root->imageMetadataDatabase();
+if (!checked434) return std::unexpected(std::move(checked434.error()));
+auto checked435 = Drawable::makeImage(*std::move(*checked434), image, 1.0f / TilePixels, true, position);
+if (!checked435) return std::unexpected(std::move(checked435.error()));
+auto drawable = std::move(*checked435);
+            auto checked436 = m_root->imageMetadataDatabase();
+if (!checked436) return std::unexpected(std::move(checked436.error()));
+auto checked437 = drawable.imagePart().addDirectives(*std::move(*checked436), chest->directives, true);
+if (!checked437) return std::unexpected(std::move(checked437.error()));
             if (dance.has_value())
               drawable.rotate(danceStep->frontArmRotation);
             addDrawable(drawable, chest->fullbright);
           }
         }
       }
-    };
+      return {};
+};
 
     if (frontHand.holdingItem && !dance.has_value() && withItems) {
       auto drawItem = [&]() {
@@ -1504,19 +2579,25 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (!frontHand.outsideOfHand)
         drawItem();
 
-      drawFrontArmAndSleeves(true);
+      auto checked438 = drawFrontArmAndSleeves(true);
+if (!checked438) return std::unexpected(std::move(checked438.error()));
 
       if (frontHand.outsideOfHand)
         drawItem();
     } else {
-      drawFrontArmAndSleeves(false);
+      auto checked439 = drawFrontArmAndSleeves(false);
+if (!checked439) return std::unexpected(std::move(checked439.error()));
     }
 
     if (m_drawVaporTrail) {
       auto image = strf("{}:{}",
           m_vaporTrailFrameset,
           m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
-      addDrawable(Drawable::makeImage(*m_root->imageMetadataDatabase(), AssetPath::split(image), 1.0f / TilePixels, true, {}));
+      auto checked440 = m_root->imageMetadataDatabase();
+if (!checked440) return std::unexpected(std::move(checked440.error()));
+auto checked441 = Drawable::makeImage(*std::move(*checked440), AssetPath::split(image), 1.0f / TilePixels, true, {});
+if (!checked441) return std::unexpected(std::move(checked441.error()));
+addDrawable(std::move(*checked441));
     }
 
     if (withItems) {
@@ -1541,46 +2622,67 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   return drawables;
 }
 
-List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
+std::expected<List<Drawable>, StarException> Humanoid::renderPortrait(PortraitMode mode) const {
   auto& fashion = *m_fashion;
   ((Humanoid*)this)->refreshWearables(fashion); // bleh
   List<Drawable> drawables;
 
   if (m_useAnimation) {
-    auto portraitAnimator = m_networkedAnimator;
-    portraitAnimator.setFlipped(false);
-    portraitAnimator.setPartDrawables(m_frontItemPart, {});
-    portraitAnimator.setPartDrawables(m_backItemPart, {});
-    portraitAnimator.resetLocalTransformationGroup("headRotation");
+    auto checked442 = NetworkedAnimator::create(*m_networkedAnimator);
+if (!checked442) return std::unexpected(std::move(checked442.error()));
+auto portraitAnimator = std::move(*checked442);
+    portraitAnimator->setFlipped(false);
+    portraitAnimator->setPartDrawables(m_frontItemPart, {});
+    portraitAnimator->setPartDrawables(m_backItemPart, {});
+    auto checked443 = portraitAnimator->resetLocalTransformationGroup("headRotation");
+if (!checked443) return std::unexpected(std::move(checked443.error()));
     for (std::uint8_t i : fashion.wornBacks) {
       if (i == 0)
         break;
-      portraitAnimator.resetLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation");
+      auto checked444 = portraitAnimator->resetLocalTransformationGroup("backCosmetic" + toString(i) + "Rotation");
+if (!checked444) return std::unexpected(std::move(checked444.error()));
     }
-    portraitAnimator.resetLocalTransformationGroup("frontArmRotation");
-    portraitAnimator.resetLocalTransformationGroup("backArmRotation");
-    portraitAnimator.setLocalState("frontArm", "idle");
-    portraitAnimator.setLocalState("backArm", "idle");
+    auto checked445 = portraitAnimator->resetLocalTransformationGroup("frontArmRotation");
+if (!checked445) return std::unexpected(std::move(checked445.error()));
+    auto checked446 = portraitAnimator->resetLocalTransformationGroup("backArmRotation");
+if (!checked446) return std::unexpected(std::move(checked446.error()));
+    auto checked447 = portraitAnimator->setLocalState("frontArm", "idle");
+if (!checked447) return std::unexpected(std::move(checked447.error()));
+    auto checked448 = portraitAnimator->setLocalState("backArm", "idle");
+if (!checked448) return std::unexpected(std::move(checked448.error()));
 
     if (auto animationStates = m_portraitAnimationStates.maybe(mode))
       for (auto args : *animationStates)
-        portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+        {
+auto checked449 = portraitAnimator->setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+if (!checked449) return std::unexpected(std::move(checked449.error()));
+}
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
-      auto personality = m_root->speciesDatabase()->species(m_identity.species)->personalities()[0];
-      portraitAnimator.setLocalTag("personalityIdle", personality.idle);
-      portraitAnimator.setLocalTag("personalityArmIdle", personality.armIdle);
-      portraitAnimator.resetLocalTransformationGroup("personalityHeadOffset");
-      portraitAnimator.translateLocalTransformationGroup("personalityHeadOffset", personality.headOffset / TilePixels);
-      portraitAnimator.resetLocalTransformationGroup("personalityArmOffset");
-      portraitAnimator.translateLocalTransformationGroup("personalityArmOffset", personality.armOffset / TilePixels);
+      auto checked450 = m_root->speciesDatabase();
+if (!checked450) return std::unexpected(std::move(checked450.error()));
+auto checked451 = std::move(*checked450)->species(m_identity.species);
+if (!checked451) return std::unexpected(std::move(checked451.error()));
+auto checked452 = std::move(*checked451)->personalities().at(0);
+if (!checked452) return std::unexpected(std::move(checked452.error()));
+auto personality = (**checked452);
+      portraitAnimator->setLocalTag("personalityIdle", personality.idle);
+      portraitAnimator->setLocalTag("personalityArmIdle", personality.armIdle);
+      auto checked453 = portraitAnimator->resetLocalTransformationGroup("personalityHeadOffset");
+if (!checked453) return std::unexpected(std::move(checked453.error()));
+      auto checked454 = portraitAnimator->translateLocalTransformationGroup("personalityHeadOffset", personality.headOffset / TilePixels);
+if (!checked454) return std::unexpected(std::move(checked454.error()));
+      auto checked455 = portraitAnimator->resetLocalTransformationGroup("personalityArmOffset");
+if (!checked455) return std::unexpected(std::move(checked455.error()));
+      auto checked456 = portraitAnimator->translateLocalTransformationGroup("personalityArmOffset", personality.armOffset / TilePixels);
+if (!checked456) return std::unexpected(std::move(checked456.error()));
     }
     if (mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude) {
-      portraitAnimator.setLocalTag("helmetMaskDirectives");
+      portraitAnimator->setLocalTag("helmetMaskDirectives");
       auto setTags = [&](HashMap<String,String> tags) {
       if (m_useAnimation)
         for (auto tag : tags) {
-          portraitAnimator.setLocalTag(tag.first);
+          portraitAnimator->setLocalTag(tag.first);
         }
       };
       for (std::uint8_t i = 0; i != fashion.wearables.size(); ++i) {
@@ -1598,36 +2700,58 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         }
       }
     }
-    portraitAnimator.update(0, {});
+    auto checked457 = portraitAnimator->update(0, {});
+if (!checked457) return std::unexpected(std::move(checked457.error()));
 
-    drawables = portraitAnimator.drawables();
+    auto checked458 = portraitAnimator->drawables();
+if (!checked458) return std::unexpected(std::move(checked458.error()));
+drawables = std::move(*checked458);
     Drawable::scaleAll(drawables, TilePixels);
   } else {
     int emoteStateSeq = m_timing.emoteStateSeq(m_emoteAnimationTimer, m_emoteState);
 
-    auto addDrawable = [&](Drawable&& drawable) -> Drawable& {
+    auto addDrawable = [&](Drawable&& drawable) -> std::expected<Drawable*, StarException> {
       if (mode != PortraitMode::Full && mode != PortraitMode::FullNeutral
         && mode != PortraitMode::FullNude && mode != PortraitMode::FullNeutralNude) {
         // TODO: make this configurable
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), String("addmask=/humanoid/portraitMask.png;0;0"), false);
+        auto checked459 = m_root->imageMetadataDatabase();
+if (!checked459) return std::unexpected(std::move(checked459.error()));
+auto checked460 = drawable.imagePart().addDirectives(*std::move(*checked459), String("addmask=/humanoid/portraitMask.png;0;0"), false);
+if (!checked460) return std::unexpected(std::move(checked460.error()));
       }
       drawables.append(std::move(drawable));
-      return drawables.back();
+      return &drawables[drawables.size() - 1];
     };
 
     bool dressed = !(mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude);
 
     auto personality = m_identity.personality;
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
-      personality = m_root->speciesDatabase()->species(m_identity.species)->personalities()[0];
+      {
+auto checked461 = m_root->speciesDatabase();
+if (!checked461) return std::unexpected(std::move(checked461.error()));
+auto checked462 = std::move(*checked461)->species(m_identity.species);
+if (!checked462) return std::unexpected(std::move(checked462.error()));
+auto checked463 = std::move(*checked462)->personalities().at(0);
+if (!checked463) return std::unexpected(std::move(checked463.error()));
+personality = (**checked463);
+}
 
     if (mode != PortraitMode::Head) {
       if (!m_backArmFrameset.empty()) {
         auto& bodyDirectives = getBodyDirectives();
         String image = strf("{}:{}{}", m_backArmFrameset, personality.armIdle, bodyDirectives.prefix());
-        Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.armOffset);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
-        addDrawable(std::move(drawable));
+        auto checked464 = m_root->imageMetadataDatabase();
+if (!checked464) return std::unexpected(std::move(checked464.error()));
+auto checked465 = Drawable::makeImage(*std::move(*checked464), std::move(image), 1.0f, true, personality.armOffset);
+if (!checked465) return std::unexpected(std::move(checked465.error()));
+Drawable drawable = std::move(*checked465);
+        auto checked466 = m_root->imageMetadataDatabase();
+if (!checked466) return std::unexpected(std::move(checked466.error()));
+auto checked467 = drawable.imagePart().addDirectives(*std::move(*checked466), bodyDirectives, true);
+if (!checked467) return std::unexpected(std::move(checked467.error()));
+        auto checked468 = addDrawable(std::move(drawable));
+if (!checked468) return std::unexpected(std::move(checked468.error()));
       }
       if (dressed) {
         for (std::uint8_t i : fashion.wornChestsLegs) {
@@ -1636,9 +2760,17 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           auto chest = std::get_if<WornChest>(&fashion.wearables[std::size_t(i) - 1]);
           if (chest && !chest->backSleeveFrameset.empty()) {
             String image = strf("{}:{}{}", chest->backSleeveFrameset, personality.armIdle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.armOffset);
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
-            addDrawable(std::move(drawable));
+            auto checked469 = m_root->imageMetadataDatabase();
+if (!checked469) return std::unexpected(std::move(checked469.error()));
+auto checked470 = Drawable::makeImage(*std::move(*checked469), std::move(image), 1.0f, true, personality.armOffset);
+if (!checked470) return std::unexpected(std::move(checked470.error()));
+Drawable drawable = std::move(*checked470);
+            auto checked471 = m_root->imageMetadataDatabase();
+if (!checked471) return std::unexpected(std::move(checked471.error()));
+auto checked472 = drawable.imagePart().addDirectives(*std::move(*checked471), chest->directives, true);
+if (!checked472) return std::unexpected(std::move(checked472.error()));
+            auto checked473 = addDrawable(std::move(drawable));
+if (!checked473) return std::unexpected(std::move(checked473.error()));
           }
         }
       }
@@ -1650,9 +2782,17 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           if (!back.frameset.empty()) {
             auto backDirectives = back.directives;
             String image = strf("{}:{}{}", back.frameset, personality.idle, backDirectives.prefix());
-            Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, {});
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), backDirectives, true);
-            addDrawable(std::move(drawable));
+            auto checked474 = m_root->imageMetadataDatabase();
+if (!checked474) return std::unexpected(std::move(checked474.error()));
+auto checked475 = Drawable::makeImage(*std::move(*checked474), std::move(image), 1.0f, true, {});
+if (!checked475) return std::unexpected(std::move(checked475.error()));
+Drawable drawable = std::move(*checked475);
+            auto checked476 = m_root->imageMetadataDatabase();
+if (!checked476) return std::unexpected(std::move(checked476.error()));
+auto checked477 = drawable.imagePart().addDirectives(*std::move(*checked476), backDirectives, true);
+if (!checked477) return std::unexpected(std::move(checked477.error()));
+            auto checked478 = addDrawable(std::move(drawable));
+if (!checked478) return std::unexpected(std::move(checked478.error()));
           }
         }
       }
@@ -1661,33 +2801,71 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     if (!m_headFrameset.empty()) {
       auto& bodyDirectives = getBodyDirectives();
       String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
-      addDrawable(std::move(drawable));
+      auto checked479 = m_root->imageMetadataDatabase();
+if (!checked479) return std::unexpected(std::move(checked479.error()));
+auto checked480 = Drawable::makeImage(*std::move(*checked479), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked480) return std::unexpected(std::move(checked480.error()));
+Drawable drawable = std::move(*checked480);
+      auto checked481 = m_root->imageMetadataDatabase();
+if (!checked481) return std::unexpected(std::move(checked481.error()));
+auto checked482 = drawable.imagePart().addDirectives(*std::move(*checked481), bodyDirectives, true);
+if (!checked482) return std::unexpected(std::move(checked482.error()));
+      auto checked483 = addDrawable(std::move(drawable));
+if (!checked483) return std::unexpected(std::move(checked483.error()));
     }
 
     if (!m_emoteFrameset.empty()) {
       auto& emoteDirectives = getEmoteDirectives();
-      String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), emoteDirectives, true);
-      addDrawable(std::move(drawable));
+      auto checked484 = emoteFrameBase(m_emoteState);
+if (!checked484) return std::unexpected(std::move(checked484.error()));
+String image = strf("{}:{}.{}{}", m_emoteFrameset, std::move(*checked484), emoteStateSeq, emoteDirectives.prefix());
+      auto checked485 = m_root->imageMetadataDatabase();
+if (!checked485) return std::unexpected(std::move(checked485.error()));
+auto checked486 = Drawable::makeImage(*std::move(*checked485), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked486) return std::unexpected(std::move(checked486.error()));
+Drawable drawable = std::move(*checked486);
+      auto checked487 = m_root->imageMetadataDatabase();
+if (!checked487) return std::unexpected(std::move(checked487.error()));
+auto checked488 = drawable.imagePart().addDirectives(*std::move(*checked487), emoteDirectives, true);
+if (!checked488) return std::unexpected(std::move(checked488.error()));
+      auto checked489 = addDrawable(std::move(drawable));
+if (!checked489) return std::unexpected(std::move(checked489.error()));
     }
 
     if (!m_hairFrameset.empty()) {
       auto& hairDirectives = getHairDirectives();
       String image = strf("{}:normal{}", m_hairFrameset, hairDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), hairDirectives, true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
-      addDrawable(std::move(drawable));
+      auto checked490 = m_root->imageMetadataDatabase();
+if (!checked490) return std::unexpected(std::move(checked490.error()));
+auto checked491 = Drawable::makeImage(*std::move(*checked490), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked491) return std::unexpected(std::move(checked491.error()));
+Drawable drawable = std::move(*checked491);
+      auto checked492 = m_root->imageMetadataDatabase();
+if (!checked492) return std::unexpected(std::move(checked492.error()));
+auto checked493 = drawable.imagePart().addDirectives(*std::move(*checked492), hairDirectives, true);
+if (!checked493) return std::unexpected(std::move(checked493.error()));
+auto checked494 = m_root->imageMetadataDatabase();
+if (!checked494) return std::unexpected(std::move(checked494.error()));
+auto checked495 = (**checked493).addDirectivesGroup(*std::move(*checked494), fashion.helmetMaskDirectivesGroup, true);
+if (!checked495) return std::unexpected(std::move(checked495.error()));
+      auto checked496 = addDrawable(std::move(drawable));
+if (!checked496) return std::unexpected(std::move(checked496.error()));
     }
 
     if (!m_bodyFrameset.empty()) {
       auto& bodyDirectives = getBodyDirectives();
       String image = strf("{}:{}{}", m_bodyFrameset, personality.idle, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
-      addDrawable(std::move(drawable));
+      auto checked497 = m_root->imageMetadataDatabase();
+if (!checked497) return std::unexpected(std::move(checked497.error()));
+auto checked498 = Drawable::makeImage(*std::move(*checked497), std::move(image), 1.0f, true, {});
+if (!checked498) return std::unexpected(std::move(checked498.error()));
+Drawable drawable = std::move(*checked498);
+      auto checked499 = m_root->imageMetadataDatabase();
+if (!checked499) return std::unexpected(std::move(checked499.error()));
+auto checked500 = drawable.imagePart().addDirectives(*std::move(*checked499), bodyDirectives, true);
+if (!checked500) return std::unexpected(std::move(checked500.error()));
+      auto checked501 = addDrawable(std::move(drawable));
+if (!checked501) return std::unexpected(std::move(checked501.error()));
     }
 
     if (mode != PortraitMode::Head && dressed) {
@@ -1698,16 +2876,32 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         auto* legs = std::get_if<WornLegs>(&wearable);
         if (legs && !legs->frameset.empty()) {
           String image = strf("{}:{}{}", legs->frameset, personality.idle, legs->directives.prefix());
-          Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, {});
-          drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), legs->directives, true);
-          addDrawable(std::move(drawable));
+          auto checked502 = m_root->imageMetadataDatabase();
+if (!checked502) return std::unexpected(std::move(checked502.error()));
+auto checked503 = Drawable::makeImage(*std::move(*checked502), std::move(image), 1.0f, true, {});
+if (!checked503) return std::unexpected(std::move(checked503.error()));
+Drawable drawable = std::move(*checked503);
+          auto checked504 = m_root->imageMetadataDatabase();
+if (!checked504) return std::unexpected(std::move(checked504.error()));
+auto checked505 = drawable.imagePart().addDirectives(*std::move(*checked504), legs->directives, true);
+if (!checked505) return std::unexpected(std::move(checked505.error()));
+          auto checked506 = addDrawable(std::move(drawable));
+if (!checked506) return std::unexpected(std::move(checked506.error()));
         } else {
           auto* chest = std::get_if<WornChest>(&wearable);
           if (chest && !chest->frameset.empty()) {
             String image = strf("{}:{}{}", chest->frameset, personality.idle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, {});
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
-            addDrawable(std::move(drawable));
+            auto checked507 = m_root->imageMetadataDatabase();
+if (!checked507) return std::unexpected(std::move(checked507.error()));
+auto checked508 = Drawable::makeImage(*std::move(*checked507), std::move(image), 1.0f, true, {});
+if (!checked508) return std::unexpected(std::move(checked508.error()));
+Drawable drawable = std::move(*checked508);
+            auto checked509 = m_root->imageMetadataDatabase();
+if (!checked509) return std::unexpected(std::move(checked509.error()));
+auto checked510 = drawable.imagePart().addDirectives(*std::move(*checked509), chest->directives, true);
+if (!checked510) return std::unexpected(std::move(checked510.error()));
+            auto checked511 = addDrawable(std::move(drawable));
+if (!checked511) return std::unexpected(std::move(checked511.error()));
           }
         }
       }
@@ -1716,17 +2910,41 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     if (!m_facialHairFrameset.empty()) {
       auto facialHairDirectives = getFacialHairDirectives();
       String image = strf("{}:normal{}", m_facialHairFrameset, facialHairDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), facialHairDirectives, true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
-      addDrawable(std::move(drawable));
+      auto checked512 = m_root->imageMetadataDatabase();
+if (!checked512) return std::unexpected(std::move(checked512.error()));
+auto checked513 = Drawable::makeImage(*std::move(*checked512), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked513) return std::unexpected(std::move(checked513.error()));
+Drawable drawable = std::move(*checked513);
+      auto checked514 = m_root->imageMetadataDatabase();
+if (!checked514) return std::unexpected(std::move(checked514.error()));
+auto checked515 = drawable.imagePart().addDirectives(*std::move(*checked514), facialHairDirectives, true);
+if (!checked515) return std::unexpected(std::move(checked515.error()));
+auto checked516 = m_root->imageMetadataDatabase();
+if (!checked516) return std::unexpected(std::move(checked516.error()));
+auto checked517 = (**checked515).addDirectivesGroup(*std::move(*checked516), fashion.helmetMaskDirectivesGroup, true);
+if (!checked517) return std::unexpected(std::move(checked517.error()));
+      auto checked518 = addDrawable(std::move(drawable));
+if (!checked518) return std::unexpected(std::move(checked518.error()));
     }
 
     if (!m_facialMaskFrameset.empty()) {
       auto facialMaskDirectives = getFacialMaskDirectives();
       String image = strf("{}:normal{}", m_facialMaskFrameset, facialMaskDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), facialMaskDirectives, true).addDirectivesGroup(*m_root->imageMetadataDatabase(), fashion.helmetMaskDirectivesGroup, true);
-      addDrawable(std::move(drawable));
+      auto checked519 = m_root->imageMetadataDatabase();
+if (!checked519) return std::unexpected(std::move(checked519.error()));
+auto checked520 = Drawable::makeImage(*std::move(*checked519), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked520) return std::unexpected(std::move(checked520.error()));
+Drawable drawable = std::move(*checked520);
+      auto checked521 = m_root->imageMetadataDatabase();
+if (!checked521) return std::unexpected(std::move(checked521.error()));
+auto checked522 = drawable.imagePart().addDirectives(*std::move(*checked521), facialMaskDirectives, true);
+if (!checked522) return std::unexpected(std::move(checked522.error()));
+auto checked523 = m_root->imageMetadataDatabase();
+if (!checked523) return std::unexpected(std::move(checked523.error()));
+auto checked524 = (**checked522).addDirectivesGroup(*std::move(*checked523), fashion.helmetMaskDirectivesGroup, true);
+if (!checked524) return std::unexpected(std::move(checked524.error()));
+      auto checked525 = addDrawable(std::move(drawable));
+if (!checked525) return std::unexpected(std::move(checked525.error()));
     }
 
     if (dressed) {
@@ -1736,9 +2954,17 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         auto& head = std::get<WornHead>(fashion.wearables[std::size_t(i) - 1]);
         if (!head.frameset.empty()) {
           String image = strf("{}:normal{}", head.frameset, head.directives.prefix());
-          Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.headOffset);
-          drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), head.directives, true);
-          addDrawable(std::move(drawable));
+          auto checked526 = m_root->imageMetadataDatabase();
+if (!checked526) return std::unexpected(std::move(checked526.error()));
+auto checked527 = Drawable::makeImage(*std::move(*checked526), std::move(image), 1.0f, true, personality.headOffset);
+if (!checked527) return std::unexpected(std::move(checked527.error()));
+Drawable drawable = std::move(*checked527);
+          auto checked528 = m_root->imageMetadataDatabase();
+if (!checked528) return std::unexpected(std::move(checked528.error()));
+auto checked529 = drawable.imagePart().addDirectives(*std::move(*checked528), head.directives, true);
+if (!checked529) return std::unexpected(std::move(checked529.error()));
+          auto checked530 = addDrawable(std::move(drawable));
+if (!checked530) return std::unexpected(std::move(checked530.error()));
         }
       }
     }
@@ -1747,9 +2973,17 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
       if (!m_frontArmFrameset.empty()) {
         auto bodyDirectives = getBodyDirectives();
         String image = strf("{}:{}{}", m_frontArmFrameset, personality.armIdle, bodyDirectives.prefix());
-        Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.armOffset);
-        drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), bodyDirectives, true);
-        addDrawable(std::move(drawable));
+        auto checked531 = m_root->imageMetadataDatabase();
+if (!checked531) return std::unexpected(std::move(checked531.error()));
+auto checked532 = Drawable::makeImage(*std::move(*checked531), std::move(image), 1.0f, true, personality.armOffset);
+if (!checked532) return std::unexpected(std::move(checked532.error()));
+Drawable drawable = std::move(*checked532);
+        auto checked533 = m_root->imageMetadataDatabase();
+if (!checked533) return std::unexpected(std::move(checked533.error()));
+auto checked534 = drawable.imagePart().addDirectives(*std::move(*checked533), bodyDirectives, true);
+if (!checked534) return std::unexpected(std::move(checked534.error()));
+        auto checked535 = addDrawable(std::move(drawable));
+if (!checked535) return std::unexpected(std::move(checked535.error()));
       }
 
       if (dressed) {
@@ -1759,9 +2993,17 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           auto chest = std::get_if<WornChest>(&fashion.wearables[std::size_t(i) - 1]);
           if (chest && !chest->frontSleeveFrameset.empty()) {
             String image = strf("{}:{}{}", chest->frontSleeveFrameset, personality.armIdle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), std::move(image), 1.0f, true, personality.armOffset);
-            drawable.imagePart().addDirectives(*m_root->imageMetadataDatabase(), chest->directives, true);
-            addDrawable(std::move(drawable));
+            auto checked536 = m_root->imageMetadataDatabase();
+if (!checked536) return std::unexpected(std::move(checked536.error()));
+auto checked537 = Drawable::makeImage(*std::move(*checked536), std::move(image), 1.0f, true, personality.armOffset);
+if (!checked537) return std::unexpected(std::move(checked537.error()));
+Drawable drawable = std::move(*checked537);
+            auto checked538 = m_root->imageMetadataDatabase();
+if (!checked538) return std::unexpected(std::move(checked538.error()));
+auto checked539 = drawable.imagePart().addDirectives(*std::move(*checked538), chest->directives, true);
+if (!checked539) return std::unexpected(std::move(checked539.error()));
+            auto checked540 = addDrawable(std::move(drawable));
+if (!checked540) return std::unexpected(std::move(checked540.error()));
           }
         }
       }
@@ -1771,25 +3013,62 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   return drawables;
 }
 
-List<Drawable> Humanoid::renderSkull() const {
-  return {Drawable::makeImage(*m_root->imageMetadataDatabase(),
-      m_root->speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
+std::expected<List<Drawable>, StarException> Humanoid::renderSkull() const {
+  auto checked541 = m_root->imageMetadataDatabase();
+if (!checked541) return std::unexpected(std::move(checked541.error()));
+auto checked542 = m_root->speciesDatabase();
+if (!checked542) return std::unexpected(std::move(checked542.error()));
+auto checked543 = std::move(*checked542)->species(m_identity.species);
+if (!checked543) return std::unexpected(std::move(checked543.error()));
+auto checked544 = Drawable::makeImage(*std::move(*checked541),
+      std::move(*checked543)->skull(), 1.0f, true, Vec2F());
+if (!checked544) return std::unexpected(std::move(checked544.error()));
+return List<Drawable>{std::move(*checked544)};
 }
 
-std::shared_ptr<Humanoid> Humanoid::makeDummy(Root& root, Gender) {
-  auto assets = root.assets();
-  std::shared_ptr<Humanoid> humanoid = std::make_shared<Humanoid>(root, assets->json("/humanoid.config"));
+std::expected<std::shared_ptr<Humanoid>, StarException> Humanoid::makeDummy(Root& root, Gender) {
+  auto checked545 = root.assets();
+if (!checked545) return std::unexpected(std::move(checked545.error()));
+auto assets = std::move(*checked545);
+  auto checked562 = assets->json("/humanoid.config");
+if (!checked562) return std::unexpected(std::move(checked562.error()));
+auto checked546 = Humanoid::create(root, std::move(*checked562));
+if (!checked546) return std::unexpected(std::move(checked546.error()));
+std::shared_ptr<Humanoid> humanoid = std::move(*checked546);
 
-  humanoid->m_headFrameset = assets->json("/humanoid/any/dummy.config:head").toString();
-  humanoid->m_bodyFrameset = assets->json("/humanoid/any/dummy.config:body").toString();
-  humanoid->m_frontArmFrameset = assets->json("/humanoid/any/dummy.config:frontArm").toString();
-  humanoid->m_backArmFrameset = assets->json("/humanoid/any/dummy.config:backArm").toString();
-  humanoid->setFacingDirection(DirectionNames.getLeft(assets->json("/humanoid/any/dummy.config:direction").toString()));
+  auto checked563 = assets->json("/humanoid/any/dummy.config:head");
+if (!checked563) return std::unexpected(std::move(checked563.error()));
+auto checked547 = std::move(*checked563).toString();
+if (!checked547) return std::unexpected(std::move(checked547.error()));
+humanoid->m_headFrameset = std::move(*checked547);
+  auto checked564 = assets->json("/humanoid/any/dummy.config:body");
+if (!checked564) return std::unexpected(std::move(checked564.error()));
+auto checked548 = std::move(*checked564).toString();
+if (!checked548) return std::unexpected(std::move(checked548.error()));
+humanoid->m_bodyFrameset = std::move(*checked548);
+  auto checked565 = assets->json("/humanoid/any/dummy.config:frontArm");
+if (!checked565) return std::unexpected(std::move(checked565.error()));
+auto checked549 = std::move(*checked565).toString();
+if (!checked549) return std::unexpected(std::move(checked549.error()));
+humanoid->m_frontArmFrameset = std::move(*checked549);
+  auto checked566 = assets->json("/humanoid/any/dummy.config:backArm");
+if (!checked566) return std::unexpected(std::move(checked566.error()));
+auto checked550 = std::move(*checked566).toString();
+if (!checked550) return std::unexpected(std::move(checked550.error()));
+humanoid->m_backArmFrameset = std::move(*checked550);
+  if (!DirectionNames) return std::unexpected(DirectionNames.error());
+auto checked567 = assets->json("/humanoid/any/dummy.config:direction");
+if (!checked567) return std::unexpected(std::move(checked567.error()));
+auto checked551 = std::move(*checked567).toString();
+if (!checked551) return std::unexpected(std::move(checked551.error()));
+auto checked552 = DirectionNames->getLeft(std::move(*checked551));
+if (!checked552) return std::unexpected(std::move(checked552.error()));
+humanoid->setFacingDirection((**checked552));
 
   return humanoid;
 }
 
-List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
+std::expected<List<Drawable>, StarException> Humanoid::renderDummy(Gender gender, HeadArmor const* head, ChestArmor const* chest, LegsArmor const* legs, BackArmor const* back) {
   std::shared_ptr<Fashion> fashion = std::move(m_fashion);
   auto state = m_state;
   m_state = State::Idle;
@@ -1801,42 +3080,65 @@ List<Drawable> Humanoid::renderDummy(Gender gender, HeadArmor const* head, Chest
     m_state = state;
     m_headRotation = headRotation;
   };
-  List<Drawable> drawables;
-
-  try {
+  auto result = [&]() -> std::expected<List<Drawable>, StarException> {
+    List<Drawable> drawables;
     m_fashion = std::make_shared<Fashion>();
     if (head)
-      setWearableFromHead(3, *head, gender);
+      {
+auto checked553 = setWearableFromHead(3, *head, gender);
+if (!checked553) return std::unexpected(std::move(checked553.error()));
+}
     if (chest)
-      setWearableFromChest(2, *chest, gender);
+      {
+auto checked554 = setWearableFromChest(2, *chest, gender);
+if (!checked554) return std::unexpected(std::move(checked554.error()));
+}
     if (legs)
-      setWearableFromLegs(1, *legs, gender);
+      {
+auto checked555 = setWearableFromLegs(1, *legs, gender);
+if (!checked555) return std::unexpected(std::move(checked555.error()));
+}
     if (back)
-      setWearableFromBack(0, *back, gender);
+      {
+auto checked556 = setWearableFromBack(0, *back, gender);
+if (!checked556) return std::unexpected(std::move(checked556.error()));
+}
 
-    drawables = render(false, false);
+    auto checked557 = render(false, false);
+if (!checked557) return std::unexpected(std::move(checked557.error()));
+drawables = std::move(*checked557);
     Drawable::scaleAll(drawables, TilePixels);
-    removeWearable(0);
-    removeWearable(1);
-    removeWearable(2);
-    removeWearable(3);
-  } catch (std::exception const&) {
-    restore();
-    throw;
-  }
+    auto checked558 = removeWearable(0);
+if (!checked558) return std::unexpected(std::move(checked558.error()));
+    auto checked559 = removeWearable(1);
+if (!checked559) return std::unexpected(std::move(checked559.error()));
+    auto checked560 = removeWearable(2);
+if (!checked560) return std::unexpected(std::move(checked560.error()));
+    auto checked561 = removeWearable(3);
+if (!checked561) return std::unexpected(std::move(checked561.error()));
+    return drawables;
+  }();
   restore();
-  return drawables;
+  return result;
 }
 
-Vec2F Humanoid::primaryHandPosition(Vec2F const& offset) const {
-  return primaryArmPosition(m_facingDirection, m_primaryHand.angle, primaryHandOffset(m_facingDirection) + offset);
+std::expected<Vec2F, StarException> Humanoid::primaryHandPosition(Vec2F const& offset) const {
+  auto checked568 = primaryHandOffset(m_facingDirection);
+if (!checked568) return std::unexpected(std::move(checked568.error()));
+auto checked569 = primaryArmPosition(m_facingDirection, m_primaryHand.angle, std::move(*checked568) + offset);
+if (!checked569) return std::unexpected(std::move(checked569.error()));
+return std::move(*checked569);
 }
 
-Vec2F Humanoid::altHandPosition(Vec2F const& offset) const {
-  return altArmPosition(m_facingDirection, m_altHand.angle, altHandOffset(m_facingDirection) + offset);
+std::expected<Vec2F, StarException> Humanoid::altHandPosition(Vec2F const& offset) const {
+  auto checked570 = altHandOffset(m_facingDirection);
+if (!checked570) return std::unexpected(std::move(checked570.error()));
+auto checked571 = altArmPosition(m_facingDirection, m_altHand.angle, std::move(*checked570) + offset);
+if (!checked571) return std::unexpected(std::move(checked571.error()));
+return std::move(*checked571);
 }
 
-Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
+std::expected<Vec2F, StarException> Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
   if (m_useAnimation){
     // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
@@ -1845,18 +3147,46 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
     String rotationTransformGroup;
     if (facingDirection == Direction::Left || m_twoHanded) {
       rotationTransformGroup = "frontArmRotation";
-      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
+      auto checked572 = m_networkedAnimator->hasState("frontArm", m_primaryHand.frontFrame);
+if (!checked572) return std::unexpected(std::move(checked572.error()));
+auto state = std::move(*checked572) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      auto checked573 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1);
+if (!checked573) return std::unexpected(std::move(checked573.error()));
+auto checked574 = jsonToVec2F(std::move(*checked573));
+if (!checked574) return std::unexpected(std::move(checked574.error()));
+rotationCenter = std::move(*checked574);
+      auto checked575 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1);
+if (!checked575) return std::unexpected(std::move(checked575.error()));
+auto checked576 = std::move(*checked575).toString();
+if (!checked576) return std::unexpected(std::move(checked576.error()));
+anchor = std::move(*checked576);
+      auto checked577 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1);
+if (!checked577) return std::unexpected(std::move(checked577.error()));
+auto checked578 = jsonToStringList(std::move(*checked577));
+if (!checked578) return std::unexpected(std::move(checked578.error()));
+transformationGroups = std::move(*checked578);
     } else {
       rotationTransformGroup = "backArmRotation";
-      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
+      auto checked579 = m_networkedAnimator->hasState("backArm", m_primaryHand.backFrame);
+if (!checked579) return std::unexpected(std::move(checked579.error()));
+auto state = std::move(*checked579) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      auto checked580 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1);
+if (!checked580) return std::unexpected(std::move(checked580.error()));
+auto checked581 = jsonToVec2F(std::move(*checked580));
+if (!checked581) return std::unexpected(std::move(checked581.error()));
+rotationCenter = std::move(*checked581);
+      auto checked582 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1);
+if (!checked582) return std::unexpected(std::move(checked582.error()));
+auto checked583 = std::move(*checked582).toString();
+if (!checked583) return std::unexpected(std::move(checked583.error()));
+anchor = std::move(*checked583);
+      auto checked584 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1);
+if (!checked584) return std::unexpected(std::move(checked584.error()));
+auto checked585 = jsonToStringList(std::move(*checked584));
+if (!checked585) return std::unexpected(std::move(checked585.error()));
+transformationGroups = std::move(*checked585);
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1866,23 +3196,41 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
     auto i = transformationGroups.indexOf(rotationTransformGroup);
     if (i != NPos) {
       if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+        {
+auto checked586 = transformationGroups.slice(0, i-1);
+if (!checked586) return std::unexpected(std::move(checked586.error()));
+auto checked587 = m_networkedAnimator->groupTransformation(std::move(*checked586));
+if (!checked587) return std::unexpected(std::move(checked587.error()));
+mat = std::move(*checked587);
+}
       auto rotated = Mat3F::identity();
       rotated.rotate(armAngle, rotationCenter);
       mat = rotated * mat;
       if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+        {
+auto checked588 = transformationGroups.slice(i+1, transformationGroups.size() -1);
+if (!checked588) return std::unexpected(std::move(checked588.error()));
+auto checked589 = m_networkedAnimator->groupTransformation(std::move(*checked588));
+if (!checked589) return std::unexpected(std::move(checked589.error()));
+mat = std::move(*checked589) * mat;
+}
     } else {
-      mat = m_networkedAnimator.groupTransformation(transformationGroups);
+      auto checked590 = m_networkedAnimator->groupTransformation(transformationGroups);
+if (!checked590) return std::unexpected(std::move(checked590.error()));
+mat = std::move(*checked590);
     }
-    mat = m_networkedAnimator.partTransformation(anchor) * mat;
+    auto checked591 = m_networkedAnimator->partTransformation(anchor);
+if (!checked591) return std::unexpected(std::move(checked591.error()));
+mat = std::move(*checked591) * mat;
     auto position = mat.transformVec2(offset + rotationCenter);
     if (facingDirection == Direction::Left)
       position[0] *= -1;
     return position;
   }
 
-  float bobYOffset = getBobYOffset();
+  auto checked592 = getBobYOffset();
+if (!checked592) return std::unexpected(std::move(checked592.error()));
+float bobYOffset = std::move(*checked592);
 
   if (m_primaryHand.holdingItem) {
     Vec2F rotationCenter;
@@ -1903,7 +3251,7 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
   }
 }
 
-Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
+std::expected<Vec2F, StarException> Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
   if (m_useAnimation){
     // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
@@ -1912,18 +3260,46 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
     String rotationTransformGroup;
     if (facingDirection == Direction::Right) {
       rotationTransformGroup = "frontArmRotation";
-      auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
+      auto checked593 = m_networkedAnimator->hasState("frontArm", m_primaryHand.frontFrame);
+if (!checked593) return std::unexpected(std::move(checked593.error()));
+auto state = std::move(*checked593) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      auto checked594 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1);
+if (!checked594) return std::unexpected(std::move(checked594.error()));
+auto checked595 = jsonToVec2F(std::move(*checked594));
+if (!checked595) return std::unexpected(std::move(checked595.error()));
+rotationCenter = std::move(*checked595);
+      auto checked596 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1);
+if (!checked596) return std::unexpected(std::move(checked596.error()));
+auto checked597 = std::move(*checked596).toString();
+if (!checked597) return std::unexpected(std::move(checked597.error()));
+anchor = std::move(*checked597);
+      auto checked598 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1);
+if (!checked598) return std::unexpected(std::move(checked598.error()));
+auto checked599 = jsonToStringList(std::move(*checked598));
+if (!checked599) return std::unexpected(std::move(checked599.error()));
+transformationGroups = std::move(*checked599);
     } else {
       rotationTransformGroup = "backArmRotation";
-      auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
+      auto checked600 = m_networkedAnimator->hasState("backArm", m_primaryHand.backFrame);
+if (!checked600) return std::unexpected(std::move(checked600.error()));
+auto state = std::move(*checked600) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      auto checked601 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1);
+if (!checked601) return std::unexpected(std::move(checked601.error()));
+auto checked602 = jsonToVec2F(std::move(*checked601));
+if (!checked602) return std::unexpected(std::move(checked602.error()));
+rotationCenter = std::move(*checked602);
+      auto checked603 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1);
+if (!checked603) return std::unexpected(std::move(checked603.error()));
+auto checked604 = std::move(*checked603).toString();
+if (!checked604) return std::unexpected(std::move(checked604.error()));
+anchor = std::move(*checked604);
+      auto checked605 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1);
+if (!checked605) return std::unexpected(std::move(checked605.error()));
+auto checked606 = jsonToStringList(std::move(*checked605));
+if (!checked606) return std::unexpected(std::move(checked606.error()));
+transformationGroups = std::move(*checked606);
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1933,23 +3309,41 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
     auto i = transformationGroups.indexOf(rotationTransformGroup);
     if (i != NPos) {
       if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+        {
+auto checked607 = transformationGroups.slice(0, i-1);
+if (!checked607) return std::unexpected(std::move(checked607.error()));
+auto checked608 = m_networkedAnimator->groupTransformation(std::move(*checked607));
+if (!checked608) return std::unexpected(std::move(checked608.error()));
+mat = std::move(*checked608);
+}
       auto rotated = Mat3F::identity();
       rotated.rotate(armAngle, rotationCenter);
       mat = rotated * mat;
       if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+        {
+auto checked609 = transformationGroups.slice(i+1, transformationGroups.size() -1);
+if (!checked609) return std::unexpected(std::move(checked609.error()));
+auto checked610 = m_networkedAnimator->groupTransformation(std::move(*checked609));
+if (!checked610) return std::unexpected(std::move(checked610.error()));
+mat = std::move(*checked610) * mat;
+}
     } else {
-      mat = m_networkedAnimator.groupTransformation(transformationGroups);
+      auto checked611 = m_networkedAnimator->groupTransformation(transformationGroups);
+if (!checked611) return std::unexpected(std::move(checked611.error()));
+mat = std::move(*checked611);
     }
-    mat = m_networkedAnimator.partTransformation(anchor) * mat;
+    auto checked612 = m_networkedAnimator->partTransformation(anchor);
+if (!checked612) return std::unexpected(std::move(checked612.error()));
+mat = std::move(*checked612) * mat;
     auto position = mat.transformVec2(offset + rotationCenter);
     if (facingDirection == Direction::Left)
       position[0] *= -1;
     return position;
   }
 
-  float bobYOffset = getBobYOffset();
+  auto checked613 = getBobYOffset();
+if (!checked613) return std::unexpected(std::move(checked613.error()));
+float bobYOffset = std::move(*checked613);
 
   if (m_altHand.holdingItem) {
     Vec2F rotationCenter;
@@ -1970,12 +3364,32 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
   }
 }
 
-Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
+std::expected<Vec2F, StarException> Humanoid::primaryHandOffset(Direction facingDirection) const {
   if (m_useAnimation){
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+      {
+auto checked614 = m_networkedAnimator->partProperty(m_frontItemPart,"offset");
+if (!checked614) return std::unexpected(std::move(checked614.error()));
+auto checked615 = jsonToVec2F(std::move(*checked614));
+if (!checked615) return std::unexpected(std::move(checked615.error()));
+auto checked616 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second);
+if (!checked616) return std::unexpected(std::move(checked616.error()));
+auto checked617 = jsonToVec2F(std::move(*checked616));
+if (!checked617) return std::unexpected(std::move(checked617.error()));
+return std::move(*checked615) - std::move(*checked617);
+}
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+      {
+auto checked618 = m_networkedAnimator->partProperty(m_backItemPart,"offset");
+if (!checked618) return std::unexpected(std::move(checked618.error()));
+auto checked619 = jsonToVec2F(std::move(*checked618));
+if (!checked619) return std::unexpected(std::move(checked619.error()));
+auto checked620 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second);
+if (!checked620) return std::unexpected(std::move(checked620.error()));
+auto checked621 = jsonToVec2F(std::move(*checked620));
+if (!checked621) return std::unexpected(std::move(checked621.error()));
+return std::move(*checked619) - std::move(*checked621);
+}
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_frontArmRotationCenter;
@@ -1983,12 +3397,32 @@ Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
     return m_frontHandPosition - m_backArmRotationCenter;
 }
 
-Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
+std::expected<Vec2F, StarException> Humanoid::altHandOffset(Direction facingDirection) const {
   if (m_useAnimation){
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+      {
+auto checked622 = m_networkedAnimator->partProperty(m_backItemPart,"offset");
+if (!checked622) return std::unexpected(std::move(checked622.error()));
+auto checked623 = jsonToVec2F(std::move(*checked622));
+if (!checked623) return std::unexpected(std::move(checked623.error()));
+auto checked624 = m_networkedAnimator->partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second);
+if (!checked624) return std::unexpected(std::move(checked624.error()));
+auto checked625 = jsonToVec2F(std::move(*checked624));
+if (!checked625) return std::unexpected(std::move(checked625.error()));
+return std::move(*checked623) - std::move(*checked625);
+}
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+      {
+auto checked626 = m_networkedAnimator->partProperty(m_frontItemPart,"offset");
+if (!checked626) return std::unexpected(std::move(checked626.error()));
+auto checked627 = jsonToVec2F(std::move(*checked626));
+if (!checked627) return std::unexpected(std::move(checked627.error()));
+auto checked628 = m_networkedAnimator->partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second);
+if (!checked628) return std::unexpected(std::move(checked628.error()));
+auto checked629 = jsonToVec2F(std::move(*checked628));
+if (!checked629) return std::unexpected(std::move(checked629.error()));
+return std::move(*checked627) - std::move(*checked629);
+}
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_backArmRotationCenter;
@@ -2000,7 +3434,7 @@ Humanoid::HandDrawingInfo const& Humanoid::getHand(ToolHand hand) const {
   return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
 }
 
-String Humanoid::frameBase(State state) const {
+std::expected<String, StarException> Humanoid::frameBase(State state) const {
   switch (state) {
     case State::Idle:
       return "idle";
@@ -2024,11 +3458,16 @@ String Humanoid::frameBase(State state) const {
       return "lay";
 
     default:
-      throw StarException(strf("No such state '{}'", StateNames.getRight(state)));
+      if (!StateNames) return std::unexpected(StateNames.error());
+      {
+        auto name = StateNames->getRight(state);
+        if (!name) return std::unexpected(std::move(name.error()));
+        return std::unexpected(StarException(strf("No such state '{}'", **name)));
+      }
   }
 }
 
-String Humanoid::emoteFrameBase(HumanoidEmote state) const {
+std::expected<String, StarException> Humanoid::emoteFrameBase(HumanoidEmote state) const {
   switch (state) {
     case HumanoidEmote::Idle:
       return "idle";
@@ -2060,32 +3499,37 @@ String Humanoid::emoteFrameBase(HumanoidEmote state) const {
       return "sleep";
 
     default:
-      throw StarException(strf("No such emote state '{}'", HumanoidEmoteNames.getRight(state)));
+      if (!HumanoidEmoteNames) return std::unexpected(HumanoidEmoteNames.error());
+      {
+        auto name = HumanoidEmoteNames->getRight(state);
+        if (!name) return std::unexpected(std::move(name.error()));
+        return std::unexpected(StarException(strf("No such emote state '{}'", **name)));
+      }
   }
 }
 
 String Humanoid::getHeadFromIdentity() const {
   return strf("/humanoid/{}/{}head.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+      m_genderName);
 }
 
 String Humanoid::getBodyFromIdentity() const {
   return strf("/humanoid/{}/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+      m_genderName);
 }
 
 String Humanoid::getBodyMaskFromIdentity() const {
   return strf("/humanoid/{}/mask/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+      m_genderName);
 }
 
 String Humanoid::getBodyHeadMaskFromIdentity() const {
   return strf("/humanoid/{}/headmask/{}body.png",
       m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+      m_genderName);
 }
 
 String Humanoid::getFacialEmotesFromIdentity() const {
@@ -2159,14 +3603,18 @@ int Humanoid::getEmoteStateSequence() const {
   return m_timing.emoteStateSeq(m_emoteAnimationTimer, m_emoteState);
 }
 
-int Humanoid::getArmStateSequence() const {
+std::expected<int, StarException> Humanoid::getArmStateSequence() const {
   int stateSeq = m_timing.stateSeq(m_animationTimer, m_state);
 
   int armStateSeq;
   if (m_state == Walk) {
-    armStateSeq = m_movingBackwards ? m_armWalkSeq.at(m_armWalkSeq.size() - stateSeq) : m_armWalkSeq.at(stateSeq - 1);
+    auto checked630 = m_armWalkSeq.at(m_movingBackwards ? m_armWalkSeq.size() - stateSeq : stateSeq - 1);
+if (!checked630) return std::unexpected(std::move(checked630.error()));
+armStateSeq = (**checked630);
   } else if (m_state == Run) {
-    armStateSeq = m_movingBackwards ? m_armRunSeq.at(m_armRunSeq.size() - stateSeq) : m_armRunSeq.at(stateSeq - 1);
+    auto checked631 = m_armRunSeq.at(m_movingBackwards ? m_armRunSeq.size() - stateSeq : stateSeq - 1);
+if (!checked631) return std::unexpected(std::move(checked631.error()));
+armStateSeq = (**checked631);
   } else {
     armStateSeq = stateSeq;
   }
@@ -2186,39 +3634,56 @@ int Humanoid::getBodyStateSequence() const {
   return bodyStateSeq;
 }
 
-std::optional<std::shared_ptr<Dance>> Humanoid::getDance() const {
+std::expected<std::optional<std::shared_ptr<Dance>>, StarException> Humanoid::getDance() const {
   if (!m_dance.has_value())
     return {};
 
-  auto danceDatabase = m_root->danceDatabase();
-  return danceDatabase->getDance(*m_dance);
+  auto checked632 = m_root->danceDatabase();
+if (!checked632) return std::unexpected(std::move(checked632.error()));
+auto danceDatabase = std::move(*checked632);
+  auto checked633 = danceDatabase->getDance(*m_dance);
+if (!checked633) return std::unexpected(std::move(checked633.error()));
+return std::move(*checked633);
 }
 
-void Humanoid::refreshAnimationState(bool startNew) {
+std::expected<void, StarException> Humanoid::refreshAnimationState(bool startNew) {
   if (m_movingBackwards)
     if (auto animationStates = m_animationStatesBackwards.maybe(m_state)) {
       for (auto args : *animationStates)
-        m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
-      return;
+        {
+auto checked634 = m_networkedAnimator->setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+if (!checked634) return std::unexpected(std::move(checked634.error()));
+}
+      return {};
     }
   if (auto animationStates = m_animationStates.maybe(m_state))
     for (auto args : *animationStates)
-      m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+      {
+auto checked635 = m_networkedAnimator->setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+if (!checked635) return std::unexpected(std::move(checked635.error()));
+}
+  return {};
 }
 
-float Humanoid::getBobYOffset() const {
+std::expected<float, StarException> Humanoid::getBobYOffset() const {
   int bodyStateSeq = getBodyStateSequence();
   float bobYOffset = 0.0f;
   if (m_state == Run) {
-    bobYOffset = m_runFallOffset + m_runBob.at(bodyStateSeq - 1);
+    auto checked636 = m_runBob.at(bodyStateSeq - 1);
+if (!checked636) return std::unexpected(std::move(checked636.error()));
+bobYOffset = m_runFallOffset + (**checked636);
   } else if (m_state == Fall) {
     bobYOffset = m_runFallOffset;
   } else if (m_state == Jump) {
     bobYOffset = m_jumpBob;
   } else if (m_state == Walk) {
-    bobYOffset = m_walkBob.at(bodyStateSeq - 1);
+    auto checked637 = m_walkBob.at(bodyStateSeq - 1);
+if (!checked637) return std::unexpected(std::move(checked637.error()));
+bobYOffset = (**checked637);
   } else if (m_state == Swim) {
-    bobYOffset = m_swimBob.at(bodyStateSeq - 1);
+    auto checked638 = m_swimBob.at(bodyStateSeq - 1);
+if (!checked638) return std::unexpected(std::move(checked638.error()));
+bobYOffset = (**checked638);
   } else if (m_state == Duck) {
     bobYOffset = m_duckOffset;
   } else if (m_state == Sit) {
@@ -2229,18 +3694,26 @@ float Humanoid::getBobYOffset() const {
   return bobYOffset;
 }
 
-Vec2F Humanoid::armAdjustment() const {
-  return Vec2F(0, getBobYOffset());
+std::expected<Vec2F, StarException> Humanoid::armAdjustment() const {
+  auto checked639 = getBobYOffset();
+if (!checked639) return std::unexpected(std::move(checked639.error()));
+return Vec2F(0, std::move(*checked639));
 }
 
-Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
+std::expected<Vec2F, StarException> Humanoid::mouthOffset(bool ignoreAdjustments) const {
   if (ignoreAdjustments) {
     return (m_mouthOffset).rotate(m_rotation);
   } else {
     if (m_useAnimation)
-      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value_or(m_mouthOffset).rotate(m_rotation);
+      {
+auto checked640 = m_networkedAnimator->partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second);
+if (!checked640) return std::unexpected(std::move(checked640.error()));
+return std::move(*checked640).value_or(m_mouthOffset).rotate(m_rotation);
+}
 
-    Vec2F headPosition(0, getBobYOffset());
+    auto checked641 = getBobYOffset();
+if (!checked641) return std::unexpected(std::move(checked641.error()));
+Vec2F headPosition(0, std::move(*checked641));
     if (m_state == Idle)
       headPosition += m_identity.personality.headOffset / TilePixels;
     else if (m_state == Run)
@@ -2258,17 +3731,27 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
   }
 }
 
-Vec2F Humanoid::feetOffset() const {
+std::expected<Vec2F, StarException> Humanoid::feetOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value_or(m_feetOffset).rotate(m_rotation);
+    {
+auto checked642 = m_networkedAnimator->partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second);
+if (!checked642) return std::unexpected(std::move(checked642.error()));
+return std::move(*checked642).value_or(m_feetOffset).rotate(m_rotation);
+}
   return m_feetOffset.rotate(m_rotation);
 }
 
-Vec2F Humanoid::headArmorOffset() const {
+std::expected<Vec2F, StarException> Humanoid::headArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value_or(m_headArmorOffset).rotate(m_rotation);
+    {
+auto checked643 = m_networkedAnimator->partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second);
+if (!checked643) return std::unexpected(std::move(checked643.error()));
+return std::move(*checked643).value_or(m_headArmorOffset).rotate(m_rotation);
+}
 
-  Vec2F headPosition(0, getBobYOffset());
+  auto checked644 = getBobYOffset();
+if (!checked644) return std::unexpected(std::move(checked644.error()));
+Vec2F headPosition(0, std::move(*checked644));
   if (m_state == Idle)
     headPosition += m_identity.personality.headOffset / TilePixels;
   else if (m_state == Run)
@@ -2285,24 +3768,40 @@ Vec2F Humanoid::headArmorOffset() const {
   return (m_headArmorOffset + headPosition).rotate(m_rotation);
 }
 
-Vec2F Humanoid::chestArmorOffset() const {
+std::expected<Vec2F, StarException> Humanoid::chestArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value_or(m_chestArmorOffset).rotate(m_rotation);
+    {
+auto checked645 = m_networkedAnimator->partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second);
+if (!checked645) return std::unexpected(std::move(checked645.error()));
+return std::move(*checked645).value_or(m_chestArmorOffset).rotate(m_rotation);
+}
 
-  Vec2F position(0, getBobYOffset());
+  auto checked646 = getBobYOffset();
+if (!checked646) return std::unexpected(std::move(checked646.error()));
+Vec2F position(0, std::move(*checked646));
   return (m_chestArmorOffset + position).rotate(m_rotation);
 }
 
-Vec2F Humanoid::legsArmorOffset() const {
+std::expected<Vec2F, StarException> Humanoid::legsArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value_or(m_legsArmorOffset).rotate(m_rotation);
+    {
+auto checked647 = m_networkedAnimator->partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second);
+if (!checked647) return std::unexpected(std::move(checked647.error()));
+return std::move(*checked647).value_or(m_legsArmorOffset).rotate(m_rotation);
+}
   return m_legsArmorOffset.rotate(m_rotation);
 }
 
-Vec2F Humanoid::backArmorOffset() const {
+std::expected<Vec2F, StarException> Humanoid::backArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value_or(m_backArmorOffset).rotate(m_rotation);
-  Vec2F position(0, getBobYOffset());
+    {
+auto checked648 = m_networkedAnimator->partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second);
+if (!checked648) return std::unexpected(std::move(checked648.error()));
+return std::move(*checked648).value_or(m_backArmorOffset).rotate(m_rotation);
+}
+  auto checked649 = getBobYOffset();
+if (!checked649) return std::unexpected(std::move(checked649.error()));
+Vec2F position(0, std::move(*checked649));
   return (m_backArmorOffset + position).rotate(m_rotation);
 }
 
@@ -2310,14 +3809,28 @@ String Humanoid::defaultDeathParticles() const {
   return m_defaultDeathParticles;
 }
 
-List<Particle> Humanoid::particles(String const& name) const {
-  auto particleDatabase = m_root->particleDatabase();
+std::expected<List<Particle>, StarException> Humanoid::particles(String const& name) const {
+  auto checked650 = m_root->particleDatabase();
+if (!checked650) return std::unexpected(std::move(checked650.error()));
+auto particleDatabase = std::move(*checked650);
   List<Particle> res;
-  Json particles = m_particleEmitters.get(name).get("particles", {});
-  for (auto& particle : particles.toArray()) {
-    auto particleSpec = particle.get("particle", {});
-    res.push_back(particleDatabase->particle(particleSpec));
+  auto checked651 = m_particleEmitters.get(name);
+if (!checked651) return std::unexpected(std::move(checked651.error()));
+auto checked652 = std::move(*checked651).get("particles", {});
+if (!checked652) return std::unexpected(std::move(checked652.error()));
+Json particles = std::move(*checked652);
+  {
+auto checked653 = particles.toArray();
+if (!checked653) return std::unexpected(std::move(checked653.error()));
+for (auto& particle : std::move(*checked653)) {
+    auto checked654 = particle.get("particle", {});
+if (!checked654) return std::unexpected(std::move(checked654.error()));
+auto particleSpec = std::move(*checked654);
+    auto checked655 = particleDatabase->particle(particleSpec);
+if (!checked655) return std::unexpected(std::move(checked655.error()));
+res.push_back(std::move(*checked655));
   }
+}
 
   return res;
 }
@@ -2329,19 +3842,23 @@ std::optional<Json> const& Humanoid::playerMovementParameters() const {
   return m_playerMovementParameters;
 }
 
-std::pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& directives) {
+std::expected<std::pair<Vec2F, Directives>, StarException> Humanoid::extractScaleFromDirectives(Directives const& directives) {
   if (!directives)
     return std::make_pair(Vec2F::filled(1.f), Directives());
 
+  auto shared = directives.get();
+  if (!shared) return std::unexpected(std::move(shared.error()));
   List<Directives::Entry const*> entries;
   std::size_t toReserve = 0;
   std::optional<Vec2F> scale;
 
-  for (auto& entry : directives->entries) {
-    auto string = entry.string(*directives);
+  for (auto& entry : (*shared)->entries) {
+    auto string = entry.string(**shared);
     const ScaleImageOperation* op = nullptr;
-    if (string.beginsWith("scalenearest") && string.utf8().find("skip") == NPos)
-      op = std::get_if<ScaleImageOperation>(&entry.loadOperation(*directives));
+    auto scaleNearest = string.beginsWith("scalenearest");
+    if (!scaleNearest) return std::unexpected(std::move(scaleNearest.error()));
+    if (*scaleNearest && string.utf8().find("skip") == NPos)
+      op = std::get_if<ScaleImageOperation>(&entry.loadOperation(**shared));
 
     if (op)
       scale = scale.value_or(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
@@ -2358,70 +3875,80 @@ std::pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives con
   mergedDirectives.reserve(toReserve);
   for (auto& entry : entries) {
     if (entry->begin > 0)
-      mergedDirectives.append('?');
-    mergedDirectives.append(entry->string(*directives));
+      mergedDirectives.append("?");
+    mergedDirectives.append(entry->string(**shared));
   }
 
   return std::make_pair(*scale, Directives(mergedDirectives));
 }
 
 NetworkedAnimator * Humanoid::networkedAnimator() {
-  return &m_networkedAnimator;
+  return m_networkedAnimator.get();
 }
 NetworkedAnimator const* Humanoid::networkedAnimator() const {
-  return &m_networkedAnimator;
+  return m_networkedAnimator.get();
 }
 
 List<String> Humanoid::animationScripts() const {
   return m_animationScripts;
 }
 
-Json Humanoid::humanoidConfig(bool withOverrides) {
+std::expected<Json, StarException> Humanoid::humanoidConfig(bool withOverrides) {
   if (withOverrides)
     return jsonMerge(m_baseConfig, m_mergeConfig);
   return m_baseConfig;
 }
 
-NetHumanoid::NetHumanoid(Root& root) : NetHumanoid(root, HumanoidIdentity(), JsonObject(), Json()) {}
+NetHumanoid::NetHumanoid(Root& root) : m_root(root) {}
 
-NetHumanoid::NetHumanoid(Root& root, HumanoidIdentity identity, JsonObject parameters, Json config)
-  : m_root(root) {
-  m_config = config;
-  m_humanoidParameters.reset(parameters);
-  m_humanoid = std::make_shared<Humanoid>(m_root, identity, parameters, config, nullptr);
-  setupNetElements();
+std::expected<std::shared_ptr<NetHumanoid>, StarException> NetHumanoid::create(Root& root) {
+  return create(root, HumanoidIdentity(), JsonObject(), Json());
 }
 
-void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
-  auto identity = m_humanoid->identity();
-  ds.write(identity);
-  JsonObject parameters = m_humanoidParameters.baseMap();
-  ds.write(parameters);
-  ds.write(m_config);
-  NetElementSyncGroup::netStore(ds, rules);
+std::expected<std::shared_ptr<NetHumanoid>, StarException> NetHumanoid::create(Root& root, HumanoidIdentity identity, JsonObject parameters, Json config) {
+  auto wrapper = std::shared_ptr<NetHumanoid>(new NetHumanoid(root));
+  wrapper->m_config = config;
+  wrapper->m_humanoidParameters.reset(parameters);
+  auto humanoid = Humanoid::create(root, identity, parameters, config, nullptr);
+  if (!humanoid) return std::unexpected(std::move(humanoid.error()));
+  wrapper->m_humanoid = std::move(*humanoid);
+  auto elements = wrapper->setupNetElements();
+  if (!elements) return std::unexpected(std::move(elements.error()));
+  return wrapper;
 }
 
-void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+std::expected<void, StarException> NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return {};
+  auto fields = ds << m_humanoid->identity() << m_humanoidParameters.baseMap() << m_config;
+  if (!fields) return std::unexpected(std::move(fields.error()));
+  return NetElementSyncGroup::netStore(ds, rules);
+}
+
+std::expected<void, StarException> NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
   HumanoidIdentity identity;
-  ds.read(identity);
   JsonObject parameters;
-  ds.read(parameters);
-  m_humanoidParameters.reset(parameters);
-  ds.read(m_config);
-  m_humanoid = std::make_shared<Humanoid>(m_root, identity, parameters, m_config, nullptr);
-  setupNetElements();
-  NetElementSyncGroup::netLoad(ds, rules);
+  Json config;
+  auto fields = ds >> identity >> parameters >> config;
+  if (!fields) return std::unexpected(std::move(fields.error()));
+  auto humanoid = Humanoid::create(m_root, identity, parameters, config, nullptr);
+  if (!humanoid) return std::unexpected(std::move(humanoid.error()));
+  m_config = std::move(config);
+  m_humanoidParameters.reset(std::move(parameters));
+  m_humanoid = std::move(*humanoid);
+  auto elements = setupNetElements();
+  if (!elements) return std::unexpected(std::move(elements.error()));
+  return NetElementSyncGroup::netLoad(ds, rules);
 }
 
-void NetHumanoid::netElementsNeedLoad(bool) {
+std::expected<void, StarException> NetHumanoid::netElementsNeedLoad(bool) {
+  return {};
 }
 
-void NetHumanoid::netElementsNeedStore() {
-  if (m_humanoidParameters.pullUpdated()) {
-    m_humanoid->setHumanoidParameters(m_humanoidParameters.baseMap());
-  }
+std::expected<void, StarException> NetHumanoid::netElementsNeedStore() {
+  if (m_humanoidParameters.pullUpdated())
+    return m_humanoid->setHumanoidParameters(m_humanoidParameters.baseMap());
+  return {};
 }
 
 std::shared_ptr<Humanoid> NetHumanoid::humanoid() {
@@ -2432,14 +3959,15 @@ JsonObject NetHumanoid::humanoidParameters() {
   return m_humanoidParameters.baseMap();
 }
 
-void NetHumanoid::setHumanoidParameters(JsonObject parameters) {
+std::expected<void, StarException> NetHumanoid::setHumanoidParameters(JsonObject parameters) {
   m_humanoidParameters.reset(parameters);
-  m_humanoid->setHumanoidParameters(parameters);
+  return m_humanoid->setHumanoidParameters(std::move(parameters));
 }
 
-void NetHumanoid::setupNetElements() {
+std::expected<void, StarException> NetHumanoid::setupNetElements() {
   clearNetElements();
-  addNetElement(m_humanoid->networkedAnimator());
-  addNetElement(&m_humanoidParameters);
+  auto animator = addNetElement(m_humanoid->networkedAnimator());
+  if (!animator) return std::unexpected(std::move(animator.error()));
+  return addNetElement(&m_humanoidParameters);
 }
 }

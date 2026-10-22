@@ -6,25 +6,26 @@ import star.json;
 import star.lua;
 import star.random;
 import star.logging;
+import star.format;
 
 namespace Star {
 
 namespace LuaBindings {
-  LuaCallbacks makeUtilityCallbacks(RandomService& random, Logger& logger, LogMap& logMap);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeUtilityCallbacks(RandomService& random, Logger& logger, LogMap& logMap);
 
-  String formatLua(String const& string, List<LuaValue> const& args);
+  [[nodiscard]] std::expected<String, StarException> formatLua(String const& string, List<LuaValue> const& args);
 
   namespace UtilityCallbacks {
     double nrand(RandomService& random, std::optional<double> const& stdev, std::optional<double> const& mean);
     String makeUuid(RandomService& random);
-    void logInfo(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
-    void logWarn(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
-    void logError(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
-    void setLogMap(LogMap& logMap, String const& key, String const& value, LuaVariadic<LuaValue> const& args);
-    Json parseJson(String const& str);
-    String printJson(Json const& arg, std::optional<int> pretty);
-    String print(LuaValue const& arg);
-    LuaValue interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2);
+    [[nodiscard]] std::expected<void, StarException> logInfo(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<void, StarException> logWarn(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<void, StarException> logError(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<void, StarException> setLogMap(LogMap& logMap, String const& key, String const& value, LuaVariadic<LuaValue> const& args);
+    [[nodiscard]] std::expected<Json, StarException> parseJson(String const& str);
+    [[nodiscard]] std::expected<String, StarException> printJson(Json const& arg, std::optional<int> pretty);
+    [[nodiscard]] std::expected<String, StarException> print(LuaValue const& arg);
+    [[nodiscard]] std::expected<LuaValue, StarException> interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2);
     String replaceTags(String const& str, StringMap<String> const& tags);
   }
 }

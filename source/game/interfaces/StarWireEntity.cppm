@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -50,17 +51,17 @@ public:
   virtual ~WireEntity() {}
 
   virtual std::size_t nodeCount(WireDirection direction) const = 0;
-  virtual Vec2I nodePosition(WireNode wireNode) const = 0;
-  virtual List<WireConnection> connectionsForNode(WireNode wireNode) const = 0;
-  virtual bool nodeState(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual std::expected<Vec2I, StarException> nodePosition(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual std::expected<List<WireConnection>, StarException> connectionsForNode(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> nodeState(WireNode wireNode) const = 0;
 
-  virtual Color nodeColor(WireNode wireNode) const = 0;
-  virtual String nodeIcon(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual std::expected<Color, StarException> nodeColor(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual std::expected<String, StarException> nodeIcon(WireNode wireNode) const = 0;
 
-  virtual void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
-  virtual void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
 
-  virtual void evaluate(WireCoordinator* coordinator) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> evaluate(WireCoordinator* coordinator) = 0;
 };
 
 }

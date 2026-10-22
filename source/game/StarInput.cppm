@@ -31,7 +31,7 @@ struct hash<InputVariant> {
 class Input {
 public:
 
-  static Json inputEventToJson(InputEvent const& event);
+  [[nodiscard]] static std::expected<Json, StarException> inputEventToJson(InputEvent const& event);
 
   struct KeyBind {
     Key key = Key::Zero;
@@ -60,8 +60,8 @@ public:
 
   typedef std::variant<std::monostate, KeyBind, MouseBind, ControllerBind> Bind;
 
-  static Bind bindFromJson(Json const& json);
-  static Json bindToJson(Bind const& bind);
+  [[nodiscard]] static std::expected<Bind, StarException> bindFromJson(Json const& json);
+  [[nodiscard]] static std::expected<Json, StarException> bindToJson(Bind const& bind);
 
   struct BindCategory;
 
@@ -81,8 +81,9 @@ public:
     // The user-configured binds.
     List<Bind> customBinds;
 
-    BindEntry(Input& owner, String entryId, Json const& config, BindCategory const& parentCategory);
-    void updated();
+    explicit BindEntry(Input& owner) : owner(owner) {}
+    [[nodiscard]] static std::expected<BindEntry, StarException> create(Input& owner, String entryId, Json const& config, BindCategory const& parentCategory);
+    [[nodiscard]] std::expected<void, StarException> updated();
   };
 
   struct BindRef {
@@ -104,7 +105,7 @@ public:
     StableHashMap<String, BindEntry> entries;
 
     explicit BindCategory(Input& owner);
-    void mergeJson(String const& categoryId, Json const& categoryConfig);
+    [[nodiscard]] std::expected<void, StarException> mergeJson(String const& categoryId, Json const& categoryConfig);
   };
 
   struct InputState {
@@ -143,7 +144,7 @@ public:
 
   typedef InputState ControllerInputState;
 
-  explicit Input(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<Input>, StarException> create(Root& root);
   ~Input();
 
   Input(Input const&) = delete;
@@ -157,12 +158,12 @@ public:
   void update();
 
   // Handles an input event.
-  bool handleInput(InputEvent const& input, bool gameProcessed);
+  [[nodiscard]] std::expected<bool, StarException> handleInput(InputEvent const& input, bool gameProcessed);
 
   void rebuildMappings();
 
   // Loads input categories and their binds from Assets.
-  void reload();
+  [[nodiscard]] std::expected<void, StarException> reload();
 
   void setTextInputActive(bool active);
 
@@ -180,10 +181,10 @@ public:
 
   Vec2F mousePosition() const;
 
-  void resetBinds(String const& categoryId, String const& bindId);
-  void setBinds(String const& categoryId, String const& bindId, Json const& binds);
-  Json getDefaultBinds(String const& categoryId, String const& bindId); 
-  Json getBinds(String const& categoryId, String const& bindId);
+  [[nodiscard]] std::expected<void, StarException> resetBinds(String const& categoryId, String const& bindId);
+  [[nodiscard]] std::expected<void, StarException> setBinds(String const& categoryId, String const& bindId, Json const& binds);
+  [[nodiscard]] std::expected<Json, StarException> getDefaultBinds(String const& categoryId, String const& bindId); 
+  [[nodiscard]] std::expected<Json, StarException> getBinds(String const& categoryId, String const& bindId);
 
   unsigned getTag(String const& tagName) const;
 
@@ -201,10 +202,11 @@ public:
   ClipboardUnlock unlockClipboard();
   bool clipboardAllowed() const;
 private:
+  explicit Input(Root& root);
   List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
 
   BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
-  BindEntry& bindEntry(String const& categoryId, String const& bindId);
+  [[nodiscard]] std::expected<BindEntry*, StarException> bindEntry(String const& categoryId, String const& bindId);
 
   InputState* bindStatePtr(String const& categoryId, String const& bindId);
 

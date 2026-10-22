@@ -61,50 +61,69 @@ import star.fireable_item;
 export module star.fireable_item_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makeFireableItemCallbacks(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeFireableItemCallbacks(FireableItem* fireableItem);
 }
 
 namespace Star::LuaBindings::FireableItemCallbacks {
-  void fire(FireableItem* fireableItem, std::optional<String> const& mode);
-  void triggerCooldown(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<void, StarException> fire(FireableItem* fireableItem, std::optional<String> const& mode);
+  [[nodiscard]] std::expected<void, StarException> triggerCooldown(FireableItem* fireableItem);
   void setCooldown(FireableItem* fireableItem, float cooldownTime);
   void endCooldown(FireableItem* fireableItem);
   float cooldownTime(FireableItem* fireableItem);
-  Json fireableParam(FireableItem* fireableItem, String const& name, Json const& def);
+  [[nodiscard]] std::expected<Json, StarException> fireableParam(FireableItem* fireableItem, String const& name, Json const& def);
   String fireMode(FireableItem* fireableItem);
   bool ready(FireableItem* fireableItem);
   bool firing(FireableItem* fireableItem);
-  bool windingUp(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<bool, StarException> windingUp(FireableItem* fireableItem);
   bool coolingDown(FireableItem* fireableItem);
-  bool ownerFullEnergy(FireableItem* fireableItem);
-  bool ownerEnergy(FireableItem* fireableItem);
-  bool ownerEnergyLocked(FireableItem* fireableItem);
-  bool ownerConsumeEnergy(FireableItem* fireableItem, float energy);
+  [[nodiscard]] std::expected<bool, StarException> ownerFullEnergy(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<bool, StarException> ownerEnergy(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<bool, StarException> ownerEnergyLocked(FireableItem* fireableItem);
+  [[nodiscard]] std::expected<bool, StarException> ownerConsumeEnergy(FireableItem* fireableItem, float energy);
 }
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, std::optional<String>>("fire", std::bind(FireableItemCallbacks::fire, fireableItem, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void>("triggerCooldown", std::bind(FireableItemCallbacks::triggerCooldown, fireableItem));
-  callbacks.registerCallbackWithSignature<void, float>("setCooldown", std::bind(FireableItemCallbacks::setCooldown, fireableItem, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void>("endCooldown", std::bind(FireableItemCallbacks::endCooldown, fireableItem));
-  callbacks.registerCallbackWithSignature<float>("cooldownTime", std::bind(FireableItemCallbacks::cooldownTime, fireableItem));
-  callbacks.registerCallbackWithSignature<Json, String, Json>("fireableParam", std::bind(FireableItemCallbacks::fireableParam, fireableItem, std::placeholders::_1, std::placeholders::_2));
-  callbacks.registerCallbackWithSignature<String>("fireMode", std::bind(FireableItemCallbacks::fireMode, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ready", std::bind(FireableItemCallbacks::ready, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("firing", std::bind(FireableItemCallbacks::firing, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("windingUp", std::bind(FireableItemCallbacks::windingUp, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("coolingDown", std::bind(FireableItemCallbacks::coolingDown, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerFullEnergy", std::bind(FireableItemCallbacks::ownerFullEnergy, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerEnergy", std::bind(FireableItemCallbacks::ownerEnergy, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerEnergyLocked", std::bind(FireableItemCallbacks::ownerEnergyLocked, fireableItem));
-  callbacks.registerCallbackWithSignature<bool, float>("ownerConsumeEnergy", std::bind(FireableItemCallbacks::ownerConsumeEnergy, fireableItem, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<Vec2F>("ownerAimPosition", [fireableItem]() {
-      return fireableItem->owner()->aimPosition();
-    });
+  if (auto registration = callbacks.registerCallbackWithSignature<void, std::optional<String>>("fire", std::bind(FireableItemCallbacks::fire, fireableItem, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void>("triggerCooldown", std::bind(FireableItemCallbacks::triggerCooldown, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>("setCooldown", std::bind(FireableItemCallbacks::setCooldown, fireableItem, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void>("endCooldown", std::bind(FireableItemCallbacks::endCooldown, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("cooldownTime", std::bind(FireableItemCallbacks::cooldownTime, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json, String, Json>("fireableParam", std::bind(FireableItemCallbacks::fireableParam, fireableItem, std::placeholders::_1, std::placeholders::_2)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("fireMode", std::bind(FireableItemCallbacks::fireMode, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("ready", std::bind(FireableItemCallbacks::ready, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("firing", std::bind(FireableItemCallbacks::firing, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("windingUp", std::bind(FireableItemCallbacks::windingUp, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("coolingDown", std::bind(FireableItemCallbacks::coolingDown, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("ownerFullEnergy", std::bind(FireableItemCallbacks::ownerFullEnergy, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("ownerEnergy", std::bind(FireableItemCallbacks::ownerEnergy, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("ownerEnergyLocked", std::bind(FireableItemCallbacks::ownerEnergyLocked, fireableItem)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool, float>("ownerConsumeEnergy", std::bind(FireableItemCallbacks::ownerConsumeEnergy, fireableItem, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Vec2F>("ownerAimPosition", [fireableItem]() -> std::expected<Vec2F, StarException> {
+      auto owner = fireableItem->owner();
+      if (!owner)
+        return std::unexpected(std::move(owner.error()));
+      return (*owner)->aimPosition();
+    }); !registration)
+    return std::unexpected(std::move(registration.error()));
 
   return callbacks;
 }
@@ -114,24 +133,32 @@ LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) 
 // @param[opt] fireMode fireMode to trigger; should be 'Primary' or 'Alt'
 // (defaults to Primary)
 // @return nil
-void LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, std::optional<String> const& mode) {
+std::expected<void, StarException> LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, std::optional<String> const& mode) {
   auto fireMode = FireMode::Primary;
   if (mode) {
-    if (mode->equalsIgnoreCase("Alt"))
+    auto alt = mode->equalsIgnoreCase("Alt");
+    if (!alt)
+      return std::unexpected(std::move(alt.error()));
+    if (*alt) {
       fireMode = FireMode::Alt;
-    else if (!mode->equalsIgnoreCase("Primary"))
-      throw StarException("Invalid fire mode specified! Must be 'Primary' or 'Alt'");
+    } else {
+      auto primary = mode->equalsIgnoreCase("Primary");
+      if (!primary)
+        return std::unexpected(std::move(primary.error()));
+      if (!*primary)
+        return std::unexpected(StarException("Invalid fire mode specified! Must be 'Primary' or 'Alt'"));
+    }
   }
-
   if (fireableItem->ready())
-    fireableItem->fire(fireMode, false, true);
+    return fireableItem->fire(fireMode, false, true);
+  return {};
 }
 
 // Triggers the item's cooldown
 //
 // @return nil
-void LuaBindings::FireableItemCallbacks::triggerCooldown(FireableItem* fireableItem) {
-  fireableItem->triggerCooldown();
+std::expected<void, StarException> LuaBindings::FireableItemCallbacks::triggerCooldown(FireableItem* fireableItem) {
+  return fireableItem->triggerCooldown();
 }
 
 // Sets the item's current cooldown to the specified time (will not change the
@@ -169,7 +196,7 @@ float LuaBindings::FireableItemCallbacks::cooldownTime(FireableItem* fireableIte
 // @return[1] nil if the item has no configuration option with the given name,
 // and no default value is given.
 // @return[2] the value of the configuration option, or the given default value.
-Json LuaBindings::FireableItemCallbacks::fireableParam(
+std::expected<Json, StarException> LuaBindings::FireableItemCallbacks::fireableParam(
     FireableItem* fireableItem, String const& name, Json const& def) {
   return fireableItem->fireableParam(name, def);
 }
@@ -203,7 +230,7 @@ bool LuaBindings::FireableItemCallbacks::firing(FireableItem* fireableItem) {
 // Determine whether the item is currently winding up to fire
 //
 // @return true if the item is winding up
-bool LuaBindings::FireableItemCallbacks::windingUp(FireableItem* fireableItem) {
+std::expected<bool, StarException> LuaBindings::FireableItemCallbacks::windingUp(FireableItem* fireableItem) {
   return fireableItem->windup();
 }
 
@@ -217,30 +244,45 @@ bool LuaBindings::FireableItemCallbacks::coolingDown(FireableItem* fireableItem)
 // Determine whether the item's owner has full energy
 //
 // @return true if the owner's energy is full
-bool LuaBindings::FireableItemCallbacks::ownerFullEnergy(FireableItem* fireableItem) {
-  return fireableItem->owner()->fullEnergy();
+std::expected<bool, StarException> LuaBindings::FireableItemCallbacks::ownerFullEnergy(FireableItem* fireableItem) {
+  auto owner = fireableItem->owner();
+  if (!owner)
+    return std::unexpected(std::move(owner.error()));
+  return (*owner)->fullEnergy();
 }
 
 // Determine the amount of energy that the item's owner currently has
 //
 // @return the owner's current energy
-bool LuaBindings::FireableItemCallbacks::ownerEnergy(FireableItem* fireableItem) {
-  return fireableItem->owner()->energy();
+std::expected<bool, StarException> LuaBindings::FireableItemCallbacks::ownerEnergy(FireableItem* fireableItem) {
+  auto owner = fireableItem->owner();
+  if (!owner)
+    return std::unexpected(std::move(owner.error()));
+  auto energy = (*owner)->energy();
+  if (!energy)
+    return std::unexpected(std::move(energy.error()));
+  return static_cast<bool>(*energy);
 }
 
 // Determine whether the item's owner's energy pool is currently locked
 //
 // @return true if the owner's energy pool is currently locked
-bool LuaBindings::FireableItemCallbacks::ownerEnergyLocked(FireableItem* fireableItem) {
-  return fireableItem->owner()->energyLocked();
+std::expected<bool, StarException> LuaBindings::FireableItemCallbacks::ownerEnergyLocked(FireableItem* fireableItem) {
+  auto owner = fireableItem->owner();
+  if (!owner)
+    return std::unexpected(std::move(owner.error()));
+  return (*owner)->energyLocked();
 }
 
 // Attempt to consume the specified amount of the owner's energy
 //
 // @param amount the amount of energy to consume
 // @return true if the energy was consumed successfully
-bool LuaBindings::FireableItemCallbacks::ownerConsumeEnergy(FireableItem* fireableItem, float energy) {
-  return fireableItem->owner()->consumeEnergy(energy);
+std::expected<bool, StarException> LuaBindings::FireableItemCallbacks::ownerConsumeEnergy(FireableItem* fireableItem, float energy) {
+  auto owner = fireableItem->owner();
+  if (!owner)
+    return std::unexpected(std::move(owner.error()));
+  return (*owner)->consumeEnergy(energy);
 }
 
 }

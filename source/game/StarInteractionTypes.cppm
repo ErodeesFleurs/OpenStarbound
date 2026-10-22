@@ -17,16 +17,16 @@ struct InteractActionExceptionTag {
 using InteractActionException = StarError<InteractActionExceptionTag, StarException>;
 
 struct InteractRequest {
-  friend DataStream& operator>>(DataStream& ds, InteractRequest& ir);
-  friend DataStream& operator<<(DataStream& ds, InteractRequest const& ir);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractRequest& ir);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
   EntityId sourceId;
   Vec2F sourcePosition;
   EntityId targetId;
   Vec2F interactPosition;
 };
 
-DataStream& operator>>(DataStream& ds, InteractRequest& ir);
-DataStream& operator<<(DataStream& ds, InteractRequest const& ir);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractRequest& ir);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractRequest const& ir);
 
 enum class InteractActionType {
   None,
@@ -42,14 +42,14 @@ enum class InteractActionType {
   ScriptPane,
   Message
 };
-extern EnumMap<InteractActionType> const InteractActionTypeNames;
+extern std::expected<EnumMap<InteractActionType>, StarException> const InteractActionTypeNames;
 
 struct InteractAction {
-  friend DataStream& operator>>(DataStream& ds, InteractAction& ir);
-  friend DataStream& operator<<(DataStream& ds, InteractAction const& ir);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractAction& ir);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractAction const& ir);
   InteractAction();
   InteractAction(InteractActionType type, EntityId entityId, Json data);
-  InteractAction(String const& typeName, EntityId entityId, Json data);
+  [[nodiscard]] static std::expected<InteractAction, StarException> create(String const& typeName, EntityId entityId, Json data);
 
   explicit operator bool() const;
 
@@ -58,8 +58,8 @@ struct InteractAction {
   Json data;
 };
 
-DataStream& operator>>(DataStream& ds, InteractAction& ir);
-DataStream& operator<<(DataStream& ds, InteractAction const& ir);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, InteractAction& ir);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, InteractAction const& ir);
 
 }
 

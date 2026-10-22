@@ -79,64 +79,81 @@ GuiReader::GuiReader(GuiContext& context) : WidgetParser(context) {
       String const& name, Json const& config) { return scrollAreaHandler(name, config); };
 }
 
-WidgetConstructResult GuiReader::titleHandler(String const&, Json const& config) {
-  if (m_pane) {
-    String title = config.getString("title", "");
-    String subtitle = config.getString("subtitle", "");
-    Json iconConfig = config.get("icon", Json());
-
-    if (iconConfig.isNull()) {
-      m_pane->setTitleString(title, subtitle);
-    } else {
-      try {
-        String type = iconConfig.getString("type");
-        auto icon = m_constructors.get(type)("icon", iconConfig);
-        if (!icon.obj)
-          throw WidgetParserException(strf("Title specified incompatible icon type: {}", type));
-        m_pane->setTitle(icon.obj, title, subtitle);
-      } catch (JsonException const& e) {
-        throw WidgetParserException(strf("Malformed icon configuration data in title. {}", outputException(e, false)));
-      }
-    }
+std::expected<WidgetConstructResult, StarException> GuiReader::titleHandler(String const&, Json const& config) {
+  if (!m_pane)
+    return std::unexpected(StarException("Only Pane controls support the 'title' command"));
+  auto title = config.getString("title", "");
+  if (!title)
+    return std::unexpected(std::move(title.error()));
+  auto subtitle = config.getString("subtitle", "");
+  if (!subtitle)
+    return std::unexpected(std::move(subtitle.error()));
+  auto iconConfig = config.get("icon", Json());
+  if (!iconConfig)
+    return std::unexpected(std::move(iconConfig.error()));
+  if (iconConfig->isNull()) {
+    m_pane->setTitleString(*title, *subtitle);
   } else {
-    throw StarException("Only Pane controls support the 'title' command");
+    auto icon = makeSingle("icon", *iconConfig);
+    if (!icon)
+      return std::unexpected(std::move(icon.error()));
+    if (!*icon)
+      return std::unexpected(WidgetParserException("Title specified an incompatible icon type"));
+    auto result = m_pane->setTitle(*icon, *title, *subtitle);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
-
-  return {};
+  return WidgetConstructResult{};
 }
 
-WidgetConstructResult GuiReader::paneFeatureHandler(String const&, Json const& config) {
-  if (m_pane) {
-    m_pane->setAnchor(PaneAnchorNames.getLeft(config.getString("anchor", "None")));
-    if (config.contains("offset"))
-      m_pane->setAnchorOffset(jsonToVec2I(config.get("offset")));
-    if (config.getBool("positionLocked", false))
-      m_pane->lockPosition();
-  } else {
-    throw StarException("Only Pane controls support the 'panefeature' command");
+std::expected<WidgetConstructResult, StarException> GuiReader::paneFeatureHandler(String const&, Json const& config) {
+  if (!m_pane)
+    return std::unexpected(StarException("Only Pane controls support the 'panefeature' command"));
+  auto anchorName = config.getString("anchor", "None");
+  if (!anchorName)
+    return std::unexpected(std::move(anchorName.error()));
+  if (!PaneAnchorNames)
+    return std::unexpected(PaneAnchorNames.error());
+  auto anchor = PaneAnchorNames->getLeft(*anchorName);
+  if (!anchor)
+    return std::unexpected(std::move(anchor.error()));
+  m_pane->setAnchor(**anchor);
+  auto hasOffset = config.contains("offset");
+  if (!hasOffset)
+    return std::unexpected(std::move(hasOffset.error()));
+  if (*hasOffset) {
+    auto offsetConfig = config.get("offset");
+    if (!offsetConfig)
+      return std::unexpected(std::move(offsetConfig.error()));
+    auto offset = jsonToVec2I(*offsetConfig);
+    if (!offset)
+      return std::unexpected(std::move(offset.error()));
+    m_pane->setAnchorOffset(*offset);
   }
-
-  return {};
+  auto positionLocked = config.getBool("positionLocked", false);
+  if (!positionLocked)
+    return std::unexpected(std::move(positionLocked.error()));
+  if (*positionLocked)
+    m_pane->lockPosition();
+  return WidgetConstructResult{};
 }
 
-WidgetConstructResult GuiReader::backgroundHandler(String const&, Json const& config) {
-  if (m_pane) {
-    String header, body, footer;
-    try {
-      header = config.getString("fileHeader", "");
-      body = config.getString("fileBody", "");
-      footer = config.getString("fileFooter", "");
-    } catch (MapException const& e) {
-      throw WidgetParserException(
-          strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
-    }
-
-    m_pane->setBG(header, body, footer);
-  } else {
-    throw StarException("Only Pane controls support the 'background' command");
-  }
-
-  return {};
+std::expected<WidgetConstructResult, StarException> GuiReader::backgroundHandler(String const&, Json const& config) {
+  if (!m_pane)
+    return std::unexpected(StarException("Only Pane controls support the 'background' command"));
+  auto header = config.getString("fileHeader", "");
+  if (!header)
+    return std::unexpected(std::move(header.error()));
+  auto body = config.getString("fileBody", "");
+  if (!body)
+    return std::unexpected(std::move(body.error()));
+  auto footer = config.getString("fileFooter", "");
+  if (!footer)
+    return std::unexpected(std::move(footer.error()));
+  auto result = m_pane->setBG(*header, *body, *footer);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return WidgetConstructResult{};
 }
 
 }

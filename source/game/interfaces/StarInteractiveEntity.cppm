@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.list;
@@ -40,7 +41,7 @@ public:
 
   // Interaction always takes place on the *server*, whether the interactive
   // entity is master or slave there.
-  virtual InteractAction interact(InteractRequest const& request) = 0;
+  [[nodiscard]] virtual std::expected<InteractAction, StarException> interact(InteractRequest const& request) = 0;
 
   // Defaults to metaBoundBox
   virtual RectF interactiveBoundBox() const;
@@ -49,11 +50,11 @@ public:
   virtual bool isInteractive() const;
 
   // Defaults to empty
-  virtual List<QuestArcDescriptor> offeredQuests() const;
-  virtual StringSet turnInQuests() const;
+  [[nodiscard]] virtual std::expected<List<QuestArcDescriptor>, StarException> offeredQuests() const;
+  [[nodiscard]] virtual std::expected<StringSet, StarException> turnInQuests() const;
 
   // Defaults to position()
-  virtual Vec2F questIndicatorPosition() const;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> questIndicatorPosition() const;
 };
 
 }

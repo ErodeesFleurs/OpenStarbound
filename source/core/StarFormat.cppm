@@ -1,9 +1,10 @@
 module;
 import std;
 
-import star.output_proxy;
+import star.type_identity;
 
 namespace Star {
+struct OutputProxy;
 #ifndef NDEBUG
 inline constexpr bool DebugEnabled = true;
 #else
@@ -11,45 +12,20 @@ inline constexpr bool DebugEnabled = false;
 #endif
 
 
-template <typename S>
-struct IsFormatStringType : std::false_type {};
-template <typename C, typename... A>
-struct IsFormatStringType<std::basic_format_string<C, A...>> : std::true_type {};
-
-template <typename S, typename = void>
-struct HasUtf8Ptr : std::false_type {};
-template <typename S>
-struct HasUtf8Ptr<S, std::void_t<decltype(std::declval<S const&>().utf8Ptr())>> : std::true_type {};
-
-// Runtime text excludes literals and already checked std::format_string values.
-// Star::String participates through utf8Ptr(), without copying its UTF-8 bytes.
-template <typename S>
-concept RuntimeFormatString = !std::is_array_v<std::remove_reference_t<S>>
-    && !IsFormatStringType<std::remove_cv_t<std::remove_reference_t<S>>>::value
-    && (std::is_convertible_v<S const&, std::string_view>
-        || HasUtf8Ptr<std::remove_reference_t<S>>::value);
 
 template <typename... T>
 std::string strf(std::format_string<T...> fmt, T&&... args);
 
-// Declare the runtime overload before StarError: scalar arguments cannot use
-// ADL to find an overload declared after the template definition.
-template <typename S, typename... T>
-  requires RuntimeFormatString<S>
-std::string strf(S const& fmt, T&&... args);
 
 template <typename Char, typename... T>
 std::string strfChecked(std::basic_format_string<Char, T...> fmt, T const&... args);
 
 class StarException;
 
-// An owning diagnostic captured before an exception's static type is erased.
-// exception_ptr is classified by the exception-handling machinery, not RTTI.
-// A bare std::exception reference cannot identify an arbitrary dynamic object.
+// Owning diagnostics remain valid after the originating error value is gone.
 class ExceptionDiagnostic {
 public:
   ExceptionDiagnostic(StarException const& exception);
-  ExceptionDiagnostic(std::exception_ptr exception);
 
   friend void printException(std::ostream& os, ExceptionDiagnostic const& e, bool fullStacktrace);
   friend OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace);
@@ -59,22 +35,50 @@ private:
   std::function<void(std::ostream&, bool)> m_printException;
 };
 
-class StarException : public std::exception {
+class StarException {
 public:
   template <typename... Args>
   static StarException format(std::format_string<Args...> fmt, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static StarException format(S const& fmt, Args const&... args);
 
   StarException() noexcept;
-  virtual ~StarException() noexcept;
+  ~StarException() noexcept;
+  StarException(StarException const&) = default;
+  StarException& operator=(StarException const&) = default;
+  StarException(StarException&&) noexcept = default;
+  StarException& operator=(StarException&&) noexcept = default;
 
   explicit StarException(std::string message, bool genStackTrace = true) noexcept;
   explicit StarException(ExceptionDiagnostic cause) noexcept;
   StarException(std::string message, ExceptionDiagnostic cause) noexcept;
 
-  virtual char const* what() const noexcept override;
+  char const* what() const noexcept;
+
+  template <typename Error>
+  bool is() const noexcept {
+    return m_matchesErrorType(typeKey<Error>());
+  }
+
+  static bool matchesErrorType(TypeKey key) noexcept {
+    return key == typeKey<StarException>();
+  }
+
+  StarException withContext(std::string context) const& {
+    return StarException(
+        [context = std::move(context), cause = m_printException](std::ostream& os, bool fullStacktrace) {
+          os << context << "\nCaused by: ";
+          cause(os, fullStacktrace);
+        },
+        m_matchesErrorType);
+  }
+
+  StarException withContext(std::string context) && {
+    return StarException(
+        [context = std::move(context), cause = std::move(m_printException)](std::ostream& os, bool fullStacktrace) {
+          os << context << "\nCaused by: ";
+          cause(os, fullStacktrace);
+        },
+        m_matchesErrorType);
+  }
 
   friend class ExceptionDiagnostic;
 
@@ -82,7 +86,16 @@ protected:
   StarException(char const* type, std::string message, bool genStackTrace = true) noexcept;
   StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept;
 
+  template <typename Error>
+  void setErrorType() noexcept {
+    m_matchesErrorType = &Error::matchesErrorType;
+  }
+
 private:
+  bool (*m_matchesErrorType)(TypeKey) noexcept = &StarException::matchesErrorType;
+  StarException(std::function<void(std::ostream&, bool)> printer,
+      bool (*matcher)(TypeKey) noexcept) noexcept
+    : m_matchesErrorType(matcher), m_printException(std::move(printer)) {}
   // Takes the ostream to print to, whether to print the full stacktrace.  Must
   // not bind 'this', may outlive the exception in the case of chained
   // exception causes.
@@ -102,7 +115,6 @@ void printStack(char const* message);
 // Log error and stack-trace and possibly show a dialog box if available, then
 // abort.
 void fatalError(char const* message, bool showStackTrace);
-void fatalException(ExceptionDiagnostic const& e, bool showStackTrace);
 
 // The file and line of an assertion are a language construct now
 // (std::source_location) instead of __FILE__/__LINE__ stringification.
@@ -137,10 +149,7 @@ inline void debugPrintStack(std::source_location location = std::source_location
 }
 
 
-// An exception class used to be generated by the STAR_EXCEPTION macro.  It is a
-// template now, so that a module could export it.  The tag names one exception
-// (with the alias below every one stays a distinct type, exactly as a generated
-// class was) and supplies the type string that #ClassName provided.
+// Domain error values preserve their category when stored as StarException.
 template <typename Tag, typename Base>
 class StarError : public Base {
 public:
@@ -149,23 +158,26 @@ public:
     return StarError(strfChecked(fmt, args...));
   }
 
-  template <typename S, typename... Args>
-    requires RuntimeFormatString<S>
-  static StarError format(S const& fmt, Args const&... args) {
-    return StarError(strf(fmt, args...));
+
+  static bool matchesErrorType(TypeKey key) noexcept {
+    return key == typeKey<StarError>() || Base::matchesErrorType(key);
   }
 
-  StarError() : Base(Tag::name(), std::string(), true) {}
+  StarError() : Base(Tag::name(), std::string(), true) { this->template setErrorType<StarError>(); }
   explicit StarError(std::string message, bool genStackTrace = true)
-    : Base(Tag::name(), std::move(message), genStackTrace) {}
-  explicit StarError(ExceptionDiagnostic cause) : Base(Tag::name(), std::string(), std::move(cause)) {}
-  StarError(std::string message, ExceptionDiagnostic cause) : Base(Tag::name(), std::move(message), std::move(cause)) {}
+    : Base(Tag::name(), std::move(message), genStackTrace) { this->template setErrorType<StarError>(); }
+  explicit StarError(ExceptionDiagnostic cause) : Base(Tag::name(), std::string(), std::move(cause)) {
+    this->template setErrorType<StarError>();
+  }
+  StarError(std::string message, ExceptionDiagnostic cause) : Base(Tag::name(), std::move(message), std::move(cause)) {
+    this->template setErrorType<StarError>();
+  }
 
 protected:
   StarError(char const* type, std::string message, bool genStackTrace = true)
-    : Base(type, std::move(message), genStackTrace) {}
+    : Base(type, std::move(message), genStackTrace) { this->template setErrorType<StarError>(); }
   StarError(char const* type, std::string message, ExceptionDiagnostic cause)
-    : Base(type, std::move(message), std::move(cause)) {}
+    : Base(type, std::move(message), std::move(cause)) { this->template setErrorType<StarError>(); }
 };
 
 struct OutOfRangeExceptionTag {
@@ -186,11 +198,6 @@ StarException StarException::format(std::format_string<Args...> fmt, Args const&
   return StarException(strfChecked(fmt, args...));
 }
 
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-StarException StarException::format(S const& fmt, Args const&... args) {
-  return StarException(strf(fmt, args...));
-}
 
 }
 namespace Star {
@@ -200,33 +207,47 @@ struct FormatExceptionTag {
 };
 using FormatException = StarError<FormatExceptionTag, StarException>;
 
-namespace Detail {
-  template <typename S>
-  std::string_view formatStringView(S const& fmt) {
-    if constexpr (HasUtf8Ptr<std::remove_reference_t<S>>::value)
-      return fmt.utf8();
-    else
-      return fmt;
-  }
-
-  // Named arguments remain lvalues for make_format_args; the argument store
-  // borrows them only for the synchronous vformat call.
-  template <typename S, typename... T>
-  std::string formatRuntime(S const& fmt, T&&... args) {
-    try {
-      return std::vformat(formatStringView(fmt), std::make_format_args(args...));
-    } catch (std::exception const& e) {
-      throw FormatException(std::format("Exception thrown during string format: {}", e.what()));
+// Tags are UTF-8 byte sequences; values are copied verbatim, including NULs.
+// A doubled '<' is literal. Bindings use the first matching name.
+[[nodiscard]] inline std::expected<std::string, StarException> formatTags(
+    std::string_view text,
+    std::span<std::pair<std::string_view, std::string_view> const> tags) {
+  std::string output;
+  output.reserve(text.size());
+  std::size_t position = 0;
+  while (position < text.size()) {
+    auto open = text.find('<', position);
+    if (open == std::string_view::npos) {
+      output.append(text.substr(position));
+      break;
     }
+    output.append(text.substr(position, open - position));
+    if (open + 1 < text.size() && text[open + 1] == '<') {
+      output.push_back('<');
+      position = open + 2;
+      continue;
+    }
+    auto close = text.find('>', open + 1);
+    if (close == std::string_view::npos)
+      return std::unexpected(FormatException("Unterminated template tag"));
+    auto name = text.substr(open + 1, close - open - 1);
+    if (name.empty())
+      return std::unexpected(FormatException("Empty template tag"));
+    auto binding = std::find_if(tags.begin(), tags.end(),
+        [name](auto const& entry) { return entry.first == name; });
+    if (binding == tags.end())
+      return std::unexpected(FormatException::format("Unknown template tag '{}'", name));
+    output.append(binding->second);
+    position = close + 1;
   }
+  return output;
+}
 
+namespace Detail {
+  // Only callers holding a compile-time checked format string use this path.
   template <typename... T>
   std::string vformatChecked(std::string_view fmt, T const&... args) {
-    try {
-      return std::vformat(fmt, std::make_format_args(args...));
-    } catch (std::exception const& e) {
-      throw FormatException(std::format("Exception thrown during string format: {}", e.what()));
-    }
+    return std::vformat(fmt, std::make_format_args(args...));
   }
 }
 
@@ -242,23 +263,12 @@ std::string strfChecked(std::basic_format_string<Char, T...> fmt, T const&... ar
   return Detail::vformatChecked(fmt.get(), args...);
 }
 
-// Runtime strings exclude literals and already checked format strings.
-template <typename S, typename... T>
-  requires RuntimeFormatString<S>
-std::string strf(S const& fmt, T&&... args) {
-  return Detail::formatRuntime(fmt, std::forward<T>(args)...);
-}
 
 template <typename... T>
 void format(std::ostream& out, std::format_string<T...> fmt, T&&... args) {
   out << Detail::vformatChecked(fmt.get(), args...);
 }
 
-template <typename S, typename... T>
-  requires RuntimeFormatString<S>
-void format(std::ostream& out, S const& fmt, T&&... args) {
-  out << Detail::formatRuntime(fmt, args...);
-}
 
 // Automatically flushes; use format to avoid flushing.
 template <typename... T>
@@ -267,12 +277,6 @@ void coutf(std::format_string<T...> fmt, T&&... args) {
   std::cout.flush();
 }
 
-template <typename S, typename... T>
-  requires RuntimeFormatString<S>
-void coutf(S const& fmt, T&&... args) {
-  format(std::cout, fmt, args...);
-  std::cout.flush();
-}
 
 // Automatically flushes; use format to avoid flushing.
 template <typename... T>
@@ -281,12 +285,6 @@ void cerrf(std::format_string<T...> fmt, T&&... args) {
   std::cerr.flush();
 }
 
-template <typename S, typename... T>
-  requires RuntimeFormatString<S>
-void cerrf(S const& fmt, T&&... args) {
-  format(std::cerr, fmt, args...);
-  std::cerr.flush();
-}
 
 template <class Type>
 inline std::string toString(Type const& t) {
@@ -299,9 +297,6 @@ export module star.format;
 
 export namespace Star {
 using ::Star::DebugEnabled;
-using ::Star::IsFormatStringType;
-using ::Star::HasUtf8Ptr;
-using ::Star::RuntimeFormatString;
 using ::Star::ExceptionDiagnostic;
 using ::Star::StarException;
 using ::Star::StarError;
@@ -317,7 +312,6 @@ using ::Star::printException;
 using ::Star::outputException;
 using ::Star::printStack;
 using ::Star::fatalError;
-using ::Star::fatalException;
 using ::Star::starAssertFailed;
 using ::Star::debugPrintStack;
 using ::Star::strf;
@@ -326,4 +320,5 @@ using ::Star::format;
 using ::Star::coutf;
 using ::Star::cerrf;
 using ::Star::toString;
+using ::Star::formatTags;
 }

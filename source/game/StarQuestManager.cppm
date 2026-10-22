@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.list;
 import star.json;
@@ -31,25 +32,25 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(Root& root, Player* player);
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestManager>, StarException> create(Root& root, Player* player);
 
-  void diskLoad(Json const& quests);
-  Json diskStore();
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& quests);
+  [[nodiscard]] std::expected<Json, StarException> diskStore();
 
   void setUniverseClient(UniverseClient* client);
 
-  void init(World* world);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(World* world);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
-  bool canStart(QuestArcDescriptor const& questArc) const;
+  [[nodiscard]] std::expected<bool, StarException> canStart(QuestArcDescriptor const& questArc) const;
 
   // Show a dialog offering the player a quest, and later start it if they
   // accept it.
-  void offer(std::shared_ptr<Quest> const& quest);
+  [[nodiscard]] std::expected<void, StarException> offer(std::shared_ptr<Quest> const& quest);
   StringMap<std::shared_ptr<Quest>> quests() const;
   // Only returns quests that are exclusive to the current server.
   StringMap<std::shared_ptr<Quest>> serverQuests() const;
-  std::shared_ptr<Quest> getQuest(String const& questId) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Quest>, StarException> getQuest(String const& questId) const;
 
   bool hasQuest(String const& questId) const;
   bool hasAcceptedQuest(String const& questId) const;
@@ -74,17 +75,18 @@ public:
   std::optional<std::shared_ptr<Quest>> currentQuest() const;
   std::optional<String> trackedQuestId() const;
   std::optional<std::shared_ptr<Quest>> trackedQuest() const;
-  std::optional<QuestIndicator> getQuestIndicator(std::shared_ptr<Entity> const& entity) const;
+  [[nodiscard]] std::expected<std::optional<QuestIndicator>, StarException> getQuestIndicator(std::shared_ptr<Entity> const& entity) const;
 
   // Handled at this level to allow multiple active quests to specify interestingObjects
-  StringSet interestingObjects();
+  [[nodiscard]] std::expected<StringSet, StarException> interestingObjects();
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  void update(float dt);
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 private:
+  QuestManager(Root& root, Player* player);
   Root& m_root;
-  void startInitialQuests();
+  [[nodiscard]] std::expected<void, StarException> startInitialQuests();
   void setMostRecentQuestCurrent();
   bool questValidOnServer(std::shared_ptr<Quest> quest) const;
 

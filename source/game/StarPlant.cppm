@@ -77,7 +77,7 @@ public:
     RotateCrownLeaves
   };
 
-  static EnumMap<RotationType> const RotationTypeNames;
+  static std::expected<EnumMap<RotationType>, StarException> const RotationTypeNames;
 
   enum PlantPieceKind {
     None,
@@ -102,41 +102,41 @@ public:
     float zLevel;
   };
 
-  Plant(Root& rootContext, TreeVariant const& config, std::uint64_t seed);
-  Plant(Root& rootContext, GrassVariant const& config, std::uint64_t seed);
-  Plant(Root& rootContext, BushVariant const& config, std::uint64_t seed);
-  Plant(Root& rootContext, Json const& diskStore);
-  Plant(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<Plant>, StarException> create(Root& rootContext, TreeVariant const& config, std::uint64_t seed);
+  [[nodiscard]] static std::expected<std::shared_ptr<Plant>, StarException> create(Root& rootContext, GrassVariant const& config, std::uint64_t seed);
+  [[nodiscard]] static std::expected<std::shared_ptr<Plant>, StarException> create(Root& rootContext, BushVariant const& config, std::uint64_t seed);
+  [[nodiscard]] static std::expected<std::shared_ptr<Plant>, StarException> create(Root& rootContext, Json const& diskStore);
+  [[nodiscard]] static std::expected<std::shared_ptr<Plant>, StarException> create(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
 
-  virtual String description() const override;
+  [[nodiscard]] virtual std::expected<String, StarException> description() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
   bool ephemeral() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
 
   // Forces the plant to check if it has been invalidly placed in some way, and
   // should die.  shouldDie does not, by default, do this expensive calculation
-  bool checkBroken() override;
+  [[nodiscard]] std::expected<bool, StarException> checkBroken() override;
 
   // Base tile grid position
   Vec2I tilePosition() const override;
-  void setTilePosition(Vec2I const& tilePosition) override;
+  [[nodiscard]] std::expected<void, StarException> setTilePosition(Vec2I const& tilePosition) override;
 
   // Spaces this plant currently occupies
   List<Vec2I> spaces() const override;
@@ -144,11 +144,11 @@ public:
   // Root blocks for this plant.
   List<Vec2I> roots() const override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  [[nodiscard]] std::expected<bool, StarException> damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
 
   // Central root position
   Vec2I primaryRoot() const;
@@ -159,28 +159,34 @@ public:
   RectF interactiveBoundBox() const override;
 
 private:
+  [[nodiscard]] std::expected<void, StarException> initialize(ByteArray const& netStore, NetCompatibilityRules rules);
+  [[nodiscard]] std::expected<void, StarException> initialize(Json const& diskStore);
+  [[nodiscard]] std::expected<void, StarException> initialize(BushVariant const& config, std::uint64_t seed);
+  [[nodiscard]] std::expected<void, StarException> initialize(GrassVariant const& config, std::uint64_t seed);
+  [[nodiscard]] std::expected<void, StarException> initialize(TreeVariant const& config, std::uint64_t seed);
+
   Plant(Root& rootContext);
 
-  void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
-  Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
-  bool damagable() const;
+  [[nodiscard]] std::expected<void, StarException> breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
+  [[nodiscard]] std::expected<Vec2I, StarException> baseDamagePosition(List<Vec2I> const& positions) const;
+  [[nodiscard]] std::expected<bool, StarException> damagable() const;
 
-  void scanSpacesAndRoots();
+  [[nodiscard]] std::expected<void, StarException> scanSpacesAndRoots();
   List<PlantPiece> spawnFolliage(String const& key, String const& type);
   float branchRotation(float xPos, float rotoffset) const;
   void calcBoundBox();
 
-  void readPieces(ByteArray pieces);
-  ByteArray writePieces() const;
+  [[nodiscard]] std::expected<void, StarException> readPieces(ByteArray pieces);
+  [[nodiscard]] std::expected<ByteArray, StarException> writePieces() const;
 
-  void readPiecesFromJson(Json const& pieces);
-  Json writePiecesToJson() const;
+  [[nodiscard]] std::expected<void, StarException> readPiecesFromJson(Json const& pieces);
+  [[nodiscard]] std::expected<Json, StarException> writePiecesToJson() const;
 
-  void validatePieces();
+  [[nodiscard]] std::expected<void, StarException> validatePieces();
 
-  void setupNetStates();
-  void getNetStates();
-  void setNetStates();
+  [[nodiscard]] std::expected<void, StarException> setupNetStates();
+  [[nodiscard]] std::expected<void, StarException> getNetStates();
+  [[nodiscard]] std::expected<void, StarException> setNetStates();
 
   Vec2I m_tilePosition;
   List<Vec2I> m_spaces;
@@ -210,7 +216,7 @@ private:
   bool m_piecesScanned;
 
   TileDamageParameters m_tileDamageParameters;
-  EntityTileDamageStatus m_tileDamageStatus;
+  std::shared_ptr<EntityTileDamageStatus> m_tileDamageStatus;
   float m_tileDamageX;
   float m_tileDamageY;
   bool m_tileDamageEventTrigger;

@@ -39,13 +39,14 @@ struct SpawnParameters {
     Night
   };
 
-  static EnumMap<Area> const AreaNames;
-  static EnumMap<Region> const RegionNames;
-  static EnumMap<Time> const TimeNames;
+  static std::expected<EnumMap<Area>, StarException> const AreaNames;
+  static std::expected<EnumMap<Region>, StarException> const RegionNames;
+  static std::expected<EnumMap<Time>, StarException> const TimeNames;
 
   // Null config constructs SpawnParameters filled with All
   SpawnParameters();
-  SpawnParameters(Json const& config);
+  [[nodiscard]]
+  static std::expected<SpawnParameters, StarException> create(Json const& config);
   SpawnParameters(Set<Area> areas, Region region, Time time);
 
   bool compatible(SpawnParameters const& parameters) const;
@@ -71,11 +72,13 @@ struct SpawnType {
   std::uint64_t seedMix;
 };
 
-SpawnType spawnTypeFromJson(Json const& config);
+[[nodiscard]]
+std::expected<SpawnType, StarException> spawnTypeFromJson(Json const& config);
 
 struct SpawnProfile {
   SpawnProfile();
-  SpawnProfile(Json const& config);
+  [[nodiscard]]
+  static std::expected<SpawnProfile, StarException> create(Json const& config);
   SpawnProfile(StringSet spawnTypes, Json monsterParameters);
 
   Json toJson() const;
@@ -84,15 +87,19 @@ struct SpawnProfile {
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Assets const& assets, Json const& config, std::uint64_t seed);
+[[nodiscard]]
+std::expected<SpawnProfile, StarException> constructSpawnProfile(Assets const& assets, Json const& config, std::uint64_t seed);
 
 class SpawnTypeDatabase {
 public:
-  explicit SpawnTypeDatabase(std::shared_ptr<Assets const> const& assets);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<SpawnTypeDatabase>, StarException> create(std::shared_ptr<Assets const> const& assets);
 
-  SpawnType spawnType(String const& typeName) const;
+  [[nodiscard]]
+  std::expected<SpawnType, StarException> spawnType(String const& typeName) const;
 
 private:
+  SpawnTypeDatabase() = default;
   StringMap<SpawnType> m_spawnTypes;
 };
 

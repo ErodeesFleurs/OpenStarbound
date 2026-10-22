@@ -1,9 +1,11 @@
+import std;
+import star.format;
 import star.bi_map;
 import star.input_event;
 
 namespace Star {
 
-extern EnumMap<Key> const KeyNames{
+extern std::expected<EnumMap<Key>, StarException> const KeyNames = EnumMap<Key>::create({
   {Key::Backspace, "Backspace"},
   {Key::Tab, "Tab"},
   {Key::Clear, "Clear"},
@@ -143,9 +145,9 @@ extern EnumMap<Key> const KeyNames{
   {Key::Pause, "Pause"},
   {Key::Menu, "Menu"},
   {Key::Power, "Power"}
-};
+});
 
-extern EnumMap<KeyMod> const KeyModNames{
+extern std::expected<EnumMap<KeyMod>, StarException> const KeyModNames = EnumMap<KeyMod>::create({
   {KeyMod::NoMod, "NoMod"},
   {KeyMod::LShift, "LShift"},
   {KeyMod::RShift, "RShift"},
@@ -158,31 +160,31 @@ extern EnumMap<KeyMod> const KeyModNames{
   {KeyMod::Num, "Num"},
   {KeyMod::Caps, "Caps"},
   {KeyMod::AltGr, "AltGr"}
-};
+});
 
-extern EnumMap<MouseButton> const MouseButtonNames{
+extern std::expected<EnumMap<MouseButton>, StarException> const MouseButtonNames = EnumMap<MouseButton>::create({
   {MouseButton::Left, "MouseLeft"},
   {MouseButton::Middle, "MouseMiddle"},
   {MouseButton::Right, "MouseRight"},
   {MouseButton::FourthButton, "MouseFourth"},
   {MouseButton::FifthButton, "MouseFifth"}
-};
+});
 
-extern EnumMap<MouseWheel> const MouseWheelNames{
+extern std::expected<EnumMap<MouseWheel>, StarException> const MouseWheelNames = EnumMap<MouseWheel>::create({
   {MouseWheel::Up, "MouseWheelUp"},
   {MouseWheel::Down, "MouseWheelDown"}
-};
+});
 
-extern EnumMap<ControllerAxis> const ControllerAxisNames{
+extern std::expected<EnumMap<ControllerAxis>, StarException> const ControllerAxisNames = EnumMap<ControllerAxis>::create({
   {ControllerAxis::LeftX, "LeftX"},
   {ControllerAxis::LeftY, "LeftY"},
   {ControllerAxis::RightX, "RightX"},
   {ControllerAxis::RightY, "RightY"},
   {ControllerAxis::TriggerLeft, "TriggerLeft"},
   {ControllerAxis::TriggerRight, "TriggerRight"},
-};
+});
 
-extern EnumMap<ControllerButton> const ControllerButtonNames{
+extern std::expected<EnumMap<ControllerButton>, StarException> const ControllerButtonNames = EnumMap<ControllerButton>::create({
   {ControllerButton::A, "A"},
   {ControllerButton::B, "B"},
   {ControllerButton::X, "X"},
@@ -205,6 +207,6 @@ extern EnumMap<ControllerButton> const ControllerButtonNames{
   {ControllerButton::Paddle4, "Paddle4"},
   {ControllerButton::Touchpad, "Touchpad"},
   {ControllerButton::Invalid, "Invalid"}
-};
+});
 
 }

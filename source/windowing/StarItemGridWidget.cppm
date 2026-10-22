@@ -50,6 +50,7 @@ import star.animation;
 import star.item_slot_widget;
 import star.item_descriptor;
 
+import star.format;
 namespace Star {
 
 class ItemBag;
@@ -63,16 +64,16 @@ public:
     return Star::typeName<ItemGridWidget>();
   }
 
-  ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
-  ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
+  [[nodiscard]] static std::expected<std::shared_ptr<ItemGridWidget>, StarException> create(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
+  [[nodiscard]] static std::expected<std::shared_ptr<ItemGridWidget>, StarException> create(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
 
   std::shared_ptr<ItemBag const> bag() const;
 
-  std::shared_ptr<Item> itemAt(Vec2I const& position) const;
-  std::shared_ptr<Item> itemAt(std::size_t index) const;
-  std::shared_ptr<Item> selectedItem() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> itemAt(Vec2I const& position) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> itemAt(std::size_t index) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> selectedItem() const;
 
-  std::shared_ptr<ItemSlotWidget> itemWidgetAt(Vec2I const& position) const;
+  [[nodiscard]] std::expected<std::shared_ptr<ItemSlotWidget>, StarException> itemWidgetAt(Vec2I const& position) const;
   std::shared_ptr<ItemSlotWidget> itemWidgetAt(std::size_t index) const;
 
   // Returns the dimensions of the item grid
@@ -88,38 +89,40 @@ public:
   std::size_t effectiveSize() const;
 
   std::size_t bagLocationAt(Vec2I const& position) const;
-  Vec2I positionOfSlot(std::size_t slotNumber);
+  [[nodiscard]] std::expected<Vec2I, StarException> positionOfSlot(std::size_t slotNumber);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
-  void setItemBag(std::shared_ptr<ItemBag const> bag);
-  void setProgress(float progress);
+  [[nodiscard]] std::expected<void, StarException> setItemBag(std::shared_ptr<ItemBag const> bag);
+  [[nodiscard]] std::expected<void, StarException> setProgress(float progress);
 
   std::size_t selectedIndex() const;
 
-  void updateAllItemSlots();
+  [[nodiscard]] std::expected<void, StarException> updateAllItemSlots();
 
   // Item states, keeping track of new items
-  void updateItemState();
+  [[nodiscard]] std::expected<void, StarException> updateItemState();
   void clearChangedSlots();
   bool slotsChanged();
   void indicateChangedSlots();
 
   void setHighlightEmpty(bool highlight);
 
-  void setBackingImageAffinity(bool full, bool empty);
-  void showDurability(bool show);
+  [[nodiscard]] std::expected<void, StarException> setBackingImageAffinity(bool full, bool empty);
+  [[nodiscard]] std::expected<void, StarException> showDurability(bool show);
 
   virtual RectI getScissorRect() const override;
 
 protected:
-  void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
   HashSet<ItemDescriptor> uniqueItemState();
   List<String> slotItemNames();
 
 private:
+  ItemGridWidget(GuiContext& context, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
+  Vec2I m_scissorExtra;
   Vec2I locOfItemSlot(unsigned slot) const;
 
   std::shared_ptr<ItemBag const> m_bag;

@@ -16,6 +16,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.string;
 import star.version;
 
@@ -35,32 +36,65 @@ import star.behavior_state;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorCallbacks(Root& root, List<std::shared_ptr<BehaviorState>>* list) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeBehaviorCallbacks(Root& root, List<std::shared_ptr<BehaviorState>>* list) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [&root, list](Json const& config, JsonObject const& parameters, LuaTable context, std::optional<LuaUserData> blackboard) -> std::weak_ptr<BehaviorState> {
+  auto registration = callbacks.registerCallback("behavior", [&root, list](Json const& config, JsonObject const& parameters, LuaTable context, std::optional<LuaUserData> blackboard) -> std::expected<std::weak_ptr<BehaviorState>, StarException> {
     auto behaviorDatabase = root.behaviorDatabase();
-    std::optional<std::weak_ptr<Blackboard>> board = {};
-    if (blackboard && blackboard->is<std::weak_ptr<Blackboard>>())
-      board = blackboard->get<std::weak_ptr<Blackboard>>();
-
-    std::shared_ptr<BehaviorTree const> tree;
-    if (config.isType(Json::Type::String)) {
-      if (parameters.empty()) {
-        tree = behaviorDatabase->behaviorTree(config.toString());
-      } else {
-        JsonObject treeConfig = behaviorDatabase->behaviorConfig(config.toString()).toObject();
-        treeConfig.set("parameters", jsonMerge(treeConfig.get("parameters"), parameters));
-        tree = behaviorDatabase->buildTree(treeConfig);
+    if (!behaviorDatabase)
+      return std::unexpected(std::move(behaviorDatabase.error()));
+    std::optional<std::weak_ptr<Blackboard>> board;
+    if (blackboard) {
+      auto matches = blackboard->is<std::weak_ptr<Blackboard>>();
+      if (!matches)
+        return std::unexpected(std::move(matches.error()));
+      if (*matches) {
+        auto value = blackboard->get<std::weak_ptr<Blackboard>>();
+        if (!value)
+          return std::unexpected(std::move(value.error()));
+        board = **value;
       }
-    } else {
-      tree = behaviorDatabase->buildTree(config.set("parameters", jsonMerge(config.getObject("parameters", {}), parameters)));
     }
 
-    std::shared_ptr<BehaviorState> state = std::make_shared<BehaviorState>(tree, context, board);
-    list->append(state);
-    return std::weak_ptr<BehaviorState>(state);
+    std::expected<std::shared_ptr<BehaviorTree const>, StarException> tree;
+    if (config.isType(Json::Type::String)) {
+      auto name = config.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (parameters.empty()) {
+        tree = (*behaviorDatabase)->behaviorTree(*name);
+      } else {
+        auto treeConfig = (*behaviorDatabase)->behaviorConfig(*name);
+        if (!treeConfig)
+          return std::unexpected(std::move(treeConfig.error()));
+        auto object = treeConfig->toObject();
+        if (!object)
+          return std::unexpected(std::move(object.error()));
+        auto parameter = object->get("parameters");
+        if (!parameter)
+          return std::unexpected(std::move(parameter.error()));
+        object->set("parameters", jsonMerge(**parameter, parameters));
+        tree = (*behaviorDatabase)->buildTree(*object);
+      }
+    } else {
+      auto defaults = config.getObject("parameters", {});
+      if (!defaults)
+        return std::unexpected(std::move(defaults.error()));
+      auto treeConfig = config.set("parameters", jsonMerge(*defaults, parameters));
+      if (!treeConfig)
+        return std::unexpected(std::move(treeConfig.error()));
+      tree = (*behaviorDatabase)->buildTree(*treeConfig);
+    }
+    if (!tree)
+      return std::unexpected(std::move(tree.error()));
+    auto state = BehaviorState::create(*tree, std::move(context), board);
+    if (!state)
+      return std::unexpected(std::move(state.error()));
+    list->append(*state);
+    return std::weak_ptr<BehaviorState>(*state);
   });
+  if (!registration)
+    return std::unexpected(std::move(registration.error()));
 
   return callbacks;
 }

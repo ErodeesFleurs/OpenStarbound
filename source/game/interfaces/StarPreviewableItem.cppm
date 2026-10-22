@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.string;
@@ -30,7 +31,8 @@ public:
   }
 
   virtual ~PreviewableItem() {}
-  virtual List<Drawable> preview(TileDrawer* tileDrawer, std::shared_ptr<Player> const& viewer = {}) const = 0;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> preview(TileDrawer* tileDrawer, std::shared_ptr<Player> const& viewer = {}) const = 0;
 };
 
 }

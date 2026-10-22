@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 
@@ -31,7 +32,7 @@ enum class EquipmentSlot : std::uint8_t {
   Cosmetic11,
   Cosmetic12
 };
-extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
+extern std::expected<EnumMap<EquipmentSlot>, StarException> const EquipmentSlotNames;
 
 typedef std::pair<String, std::uint8_t> BagSlot;
 
@@ -71,7 +72,7 @@ template <typename BaseType> struct TrashSlotWrapper;
       BaseType::operator=(std::forward<Arg>(other));
       return *this;
     }
-    friend std::ostream& operator<<(std::ostream& ostream,
+    friend std::expected<std::ostream*, StarException> operator<<(std::ostream& ostream,
         std::variant<EquipmentSlot, BagSlot, SwapSlotWrapper<Empty>, TrashSlotWrapper<Empty>> const& slot);
   };
   typedef SwapSlotWrapper<Empty> SwapSlot;
@@ -115,10 +116,10 @@ typedef TrashSlotWrapper<Empty> TrashSlot;
 // InventorySlot
 typedef std::variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
 
-InventorySlot jsonToInventorySlot(Json const& json);
-Json jsonFromInventorySlot(InventorySlot const& slot);
+[[nodiscard]] std::expected<InventorySlot, StarException> jsonToInventorySlot(Json const& json);
+[[nodiscard]] std::expected<Json, StarException> jsonFromInventorySlot(InventorySlot const& slot);
 
-std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot);
+[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& ostream, InventorySlot const& slot);
 
 // Special items in the player inventory that are not generally manageable
 enum class EssentialItem : std::uint8_t {
@@ -127,7 +128,7 @@ enum class EssentialItem : std::uint8_t {
   PaintTool = 2,
   InspectionTool = 3
 };
-extern EnumMap<EssentialItem> const EssentialItemNames;
+extern std::expected<EnumMap<EssentialItem>, StarException> const EssentialItemNames;
 
 // A player's action bar is a collection of custom item shortcuts, and special
 // hard coded shortcuts to the essential items.  There is one location selected
@@ -136,8 +137,8 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 typedef std::uint8_t CustomBarIndex;
 typedef std::variant<std::monostate, CustomBarIndex, EssentialItem> SelectedActionBarLocation;
 
-SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
-Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
+[[nodiscard]] std::expected<SelectedActionBarLocation, StarException> jsonToSelectedActionBarLocation(Json const& json);
+[[nodiscard]] std::expected<Json, StarException> jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
 
 inline constexpr std::uint8_t EquipmentSize = 8;
 inline constexpr std::uint8_t EssentialItemCount = 4;

@@ -74,7 +74,16 @@ AssetPath AssetPath::split(String const& path) {
 }
 
 String AssetPath::join(AssetPath const& components) {
-  return toString(components);
+  String result = components.basePath;
+  if (components.subPath) {
+    result.append(":");
+    result.append(*components.subPath);
+  }
+  components.directives.forEach([&](Directives::Entry const& entry, Directives const& directives) {
+    result.append("?");
+    result += entry.string(*directives.m_shared);
+  });
+  return result;
 }
 
 String AssetPath::setSubPath(String const& path, String const& subPath) {
@@ -90,21 +99,35 @@ String AssetPath::removeSubPath(String const& path) {
 }
 
 String AssetPath::getDirectives(String const& path) {
-  std::size_t firstDirective = path.find('?');
+  std::size_t firstDirective = path.utf8().find('?');
   if (firstDirective == NPos)
     return {};
-  return path.substr(firstDirective + 1);
+  return String(path.utf8().substr(firstDirective + 1));
 }
 
 String AssetPath::addDirectives(String const& path, String const& directives) {
-  return String::joinWith("?", path, directives);
+  if (path.empty())
+    return directives;
+  if (directives.empty())
+    return path;
+  bool const leftJoined = path.utf8().back() == '?';
+  bool const rightJoined = directives.utf8().front() == '?';
+  String result = path;
+  if (leftJoined && rightJoined) {
+    result.append(directives.utf8().data() + 1, directives.utf8Size() - 1);
+  } else {
+    if (!leftJoined && !rightJoined)
+      result.append("?");
+    result.append(directives);
+  }
+  return result;
 }
 
 String AssetPath::removeDirectives(String const& path) {
-  std::size_t firstDirective = path.find('?');
+  std::size_t firstDirective = path.utf8().find('?');
   if (firstDirective == NPos)
     return path;
-  return path.substr(0, firstDirective);
+  return String(path.utf8().substr(0, firstDirective));
 }
 
 String AssetPath::directory(String const& path) {
@@ -125,15 +148,15 @@ String AssetPath::filename(String const& path) {
 
 String AssetPath::extension(String const& path) {
   auto file = filename(path);
-  auto lastDot = file.findLast(".");
+  auto lastDot = file.utf8().find_last_of('.');
   if (lastDot == NPos)
     return "";
 
-  return file.substr(lastDot + 1);
+  return String(file.utf8().substr(lastDot + 1));
 }
 
 String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) {
-  if (!givenPath.empty() && givenPath[0] == '/')
+  if (!givenPath.empty() && givenPath.utf8()[0] == '/')
     return givenPath;
 
   auto path = directory(sourcePath);
@@ -162,10 +185,12 @@ AssetPath::AssetPath(AssetPath&& path)
 AssetPath& AssetPath::operator=(AssetPath&& path) {
   if (this != &path) {
     basePath = std::move(path.basePath);
-    if (path.subPath)
-      subPath.emplace(takeOptional(path.subPath));
-    else
+    if (path.subPath) {
+      subPath.emplace(std::move(*path.subPath));
+      path.subPath.reset();
+    } else {
       subPath.reset();
+    }
     directives = std::move(path.directives);
   }
   return *this;
@@ -173,8 +198,10 @@ AssetPath& AssetPath::operator=(AssetPath&& path) {
 
 AssetPath::AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives) {
   this->basePath = std::move(basePath);
-  if (subPath)
-    this->subPath.emplace(takeOptional(subPath));
+  if (subPath) {
+    this->subPath.emplace(std::move(*subPath));
+    subPath.reset();
+  }
   this->directives = std::move(directives);
 }
 
@@ -193,7 +220,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
 
   rhs.directives.forEach([&](Directives::Entry const& entry, Directives const& directives) {
     os << "?";
-    os << entry.string(*directives);
+    os << entry.string(*directives.m_shared);
   });
 
   return os;
@@ -203,19 +230,20 @@ std::size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 
-DataStream& operator>>(DataStream& ds, AssetPath& path) {
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path) {
   String string;
-  ds.read(string);
-
+  auto read = ds.read(string);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
   path = std::move(string);
-
-  return ds;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, AssetPath const& path) {
-  ds.write(AssetPath::join(path));
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path) {
+  auto written = ds.write(AssetPath::join(path));
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return &ds;
 }
 
 }

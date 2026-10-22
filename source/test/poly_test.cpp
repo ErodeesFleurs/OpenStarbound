@@ -10,7 +10,9 @@ import star.math_common;
 using namespace Star;
 
 TEST(PolyTest, ConvexHull) {
-  RandomService random;
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto& random = **randomResult;
   PolyF::VertexList inputVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
     float angle = random.randf() * 2 * std::numbers::pi;
@@ -37,8 +39,12 @@ TEST(PolyTest, Distance) {
 
 TEST(PolyTest, LineCollision) {
   PolyF square = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
-  EXPECT_TRUE(vmag(Vec2F(-1, 0) - square.lineIntersection(Line2F({-2, 0}, {2, 0}))->point) < 0.0001f);
-  EXPECT_TRUE(vmag(Vec2F(1, 0) - square.lineIntersection(Line2F({2, 0}, {-2, 0}))->point) < 0.0001f);
+  auto fromLeft = square.lineIntersection(Line2F({-2, 0}, {2, 0}));
+  ASSERT_TRUE(fromLeft);
+  EXPECT_TRUE(vmag(Vec2F(-1, 0) - fromLeft->point) < 0.0001f);
+  auto fromRight = square.lineIntersection(Line2F({2, 0}, {-2, 0}));
+  ASSERT_TRUE(fromRight);
+  EXPECT_TRUE(vmag(Vec2F(1, 0) - fromRight->point) < 0.0001f);
 }
 
 TEST(PolyTest, ConvexArea) {

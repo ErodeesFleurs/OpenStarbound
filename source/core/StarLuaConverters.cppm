@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.rect;
 import star.vector;
 import star.string;
@@ -16,66 +17,92 @@ namespace Star {
 
 template <typename T>
 struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
-  static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T>&& v) {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaNullTermWrapper<T>&& v) {
     auto enforcer = engine.nullTerminate();
     return LuaConverter<T>::from(engine, std::forward<T>(v));
   }
 
-  static LuaValue from(LuaEngine& engine, LuaNullTermWrapper<T> const& v) {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaNullTermWrapper<T> const& v) {
     auto enforcer = engine.nullTerminate();
     return LuaConverter<T>::from(engine, v);
   }
 
-  static LuaNullTermWrapper<T> to(LuaEngine& engine, LuaValue const& v) {
+  [[nodiscard]] static std::expected<std::optional<LuaNullTermWrapper<T>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
     auto enforcer = engine.nullTerminate();
-    return LuaConverter<T>::to(engine, v);
+    auto converted = engine.luaMaybeTo<T>(v);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    if (!*converted)
+      return std::nullopt;
+    return LuaNullTermWrapper<T>(std::move(**converted));
   }
 };
 
 template <typename T1, typename T2>
 struct LuaConverter<std::pair<T1, T2>> {
-  static LuaValue from(LuaEngine& engine, std::pair<T1, T2>&& v) {
-    auto t = engine.createTable();
-    t.set(1, std::move(v.first));
-    t.set(2, std::move(v.second));
+  template <typename Pair>
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Pair&& v) {
+    auto created = engine.createTable();
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+    auto t = std::move(*created);
+    auto first = t.set(1, std::forward<Pair>(v).first);
+    if (!first)
+      return std::unexpected(std::move(first.error()));
+    auto second = t.set(2, std::forward<Pair>(v).second);
+    if (!second)
+      return std::unexpected(std::move(second.error()));
     return t;
   }
 
-  static LuaValue from(LuaEngine& engine, std::pair<T1, T2> const& v) {
-    auto t = engine.createTable();
-    t.set(1, v.first);
-    t.set(2, v.second);
-    return t;
-  }
-
-  static std::optional<std::pair<T1, T2>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto table = engine.luaMaybeTo<LuaTable>(std::move(v))) {
-      auto p1 = engine.luaMaybeTo<T1>(table->get(1));
-      auto p2 = engine.luaMaybeTo<T2>(table->get(2));
-      if (p1 && p2)
-        return std::optional<std::pair<T1, T2>>(std::in_place, takeOptional(p1), takeOptional(p2));
-    }
-    return {};
+  [[nodiscard]] static std::expected<std::optional<std::pair<T1, T2>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
+    auto table = std::get_if<LuaTable>(&v);
+    if (!table)
+      return std::nullopt;
+    auto first = table->get<LuaValue>(1);
+    if (!first)
+      return std::unexpected(std::move(first.error()));
+    auto p1 = engine.luaMaybeTo<T1>(*first);
+    if (!p1)
+      return std::unexpected(std::move(p1.error()));
+    if (!*p1)
+      return std::nullopt;
+    auto second = table->get<LuaValue>(2);
+    if (!second)
+      return std::unexpected(std::move(second.error()));
+    auto p2 = engine.luaMaybeTo<T2>(*second);
+    if (!p2)
+      return std::unexpected(std::move(p2.error()));
+    if (!*p2)
+      return std::nullopt;
+    return std::optional<std::pair<T1, T2>>(std::in_place, std::move(**p1), std::move(**p2));
   }
 };
 
 template <typename T, std::size_t N>
 struct LuaConverter<Vector<T, N>> {
-  static LuaValue from(LuaEngine& engine, Vector<T, N> const& v) {
-    return engine.createArrayTable(v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Vector<T, N> const& v) {
+    auto table = engine.createArrayTable(v);
+    if (!table)
+      return std::unexpected(std::move(table.error()));
+    return std::move(*table);
   }
 
-  static std::optional<Vector<T, N>> to(LuaEngine& engine, LuaValue const& v) {
+  [[nodiscard]] static std::expected<std::optional<Vector<T, N>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
     auto table = std::get_if<LuaTable>(&v);
     if (!table)
-      return {};
-
+      return std::nullopt;
     Vector<T, N> vec;
     for (std::size_t i = 0; i < N; ++i) {
-      auto v = engine.luaMaybeTo<T>(table->get(i + 1));
-      if (!v)
-        return {};
-      vec[i] = *v;
+      auto value = table->get<LuaValue>(i + 1);
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      auto converted = engine.luaMaybeTo<T>(*value);
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      if (!*converted)
+        return std::nullopt;
+      vec[i] = std::move(**converted);
     }
     return vec;
   }
@@ -83,85 +110,81 @@ struct LuaConverter<Vector<T, N>> {
 
 template <typename T>
 struct LuaConverter<Matrix3<T>> {
-  static LuaValue from(LuaEngine& engine, Matrix3<T> const& m) {
-    auto table = engine.createTable(3, 0);
-    table.set(1, m[0]);
-    table.set(2, m[1]);
-    table.set(3, m[2]);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Matrix3<T> const& m) {
+    auto created = engine.createTable(3, 0);
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+    auto table = std::move(*created);
+    for (std::size_t i = 0; i < 3; ++i) {
+      auto result = table.set(i + 1, m[i]);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
     return table;
   }
 
-  static std::optional<Matrix3<T>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto table = std::get_if<LuaTable>(&v)) {
-      auto r1 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(1));
-      auto r2 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(2));
-      auto r3 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(3));
-      if (r1 && r2 && r3)
-        return Matrix3<T>(*r1, *r2, *r3);
-    }
-    return {};
+  [[nodiscard]] static std::expected<std::optional<Matrix3<T>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
+    auto rows = LuaConverter<Vector<typename Matrix3<T>::Vec3, 3>>::to(engine, v);
+    if (!rows)
+      return std::unexpected(std::move(rows.error()));
+    if (!*rows)
+      return std::nullopt;
+    return Matrix3<T>((**rows)[0], (**rows)[1], (**rows)[2]);
   }
 };
 
 template <typename T>
 struct LuaConverter<Rect<T>> {
-  static LuaValue from(LuaEngine& engine, Rect<T> const& v) {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Rect<T> const& v) {
     if (v.isNull())
       return LuaNil;
-    auto t = engine.createTable();
-    t.set(1, v.xMin());
-    t.set(2, v.yMin());
-    t.set(3, v.xMax());
-    t.set(4, v.yMax());
-    return t;
+    return LuaConverter<Vector<T, 4>>::from(engine, Vector<T, 4>(v.xMin(), v.yMin(), v.xMax(), v.yMax()));
   }
 
-  static std::optional<Rect<T>> to(LuaEngine& engine, LuaValue const& v) {
+  [[nodiscard]] static std::expected<std::optional<Rect<T>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
     if (v == LuaNil)
       return Rect<T>::null();
-
-    if (auto table = std::get_if<LuaTable>(&v)) {
-      auto xMin = engine.luaMaybeTo<T>(table->get(1));
-      auto yMin = engine.luaMaybeTo<T>(table->get(2));
-      auto xMax = engine.luaMaybeTo<T>(table->get(3));
-      auto yMax = engine.luaMaybeTo<T>(table->get(4));
-      if (xMin && yMin && xMax && yMax)
-        return Rect<T>(*xMin, *yMin, *xMax, *yMax);
-    }
-    return {};
+    auto bounds = LuaConverter<Vector<T, 4>>::to(engine, v);
+    if (!bounds)
+      return std::unexpected(std::move(bounds.error()));
+    if (!*bounds)
+      return std::nullopt;
+    return Rect<T>((**bounds)[0], (**bounds)[1], (**bounds)[2], (**bounds)[3]);
   }
 };
 
 template <typename T>
 struct LuaConverter<Polygon<T>> {
-  static LuaValue from(LuaEngine& engine, Polygon<T> const& poly) {
-    return engine.createArrayTable(poly.vertexes());
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Polygon<T> const& poly) {
+    auto table = engine.createArrayTable(poly.vertexes());
+    if (!table)
+      return std::unexpected(std::move(table.error()));
+    return std::move(*table);
   }
 
-  static std::optional<Polygon<T>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto points = engine.luaMaybeTo<typename Polygon<T>::VertexList>(v))
-      return Polygon<T>(takeOptional(points));
-    return {};
+  [[nodiscard]] static std::expected<std::optional<Polygon<T>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
+    auto points = engine.luaMaybeTo<typename Polygon<T>::VertexList>(v);
+    if (!points)
+      return std::unexpected(std::move(points.error()));
+    if (!*points)
+      return std::nullopt;
+    return Polygon<T>(std::move(**points));
   }
 };
 
 template <typename T, std::size_t N>
 struct LuaConverter<Line<T, N>> {
-  static LuaValue from(LuaEngine& engine, Line<T, N> const& line) {
-    auto table = engine.createTable();
-    table.set(1, line.min());
-    table.set(2, line.max());
-    return table;
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Line<T, N> const& line) {
+    return LuaConverter<std::pair<Vector<T, N>, Vector<T, N>>>::from(engine, std::pair(line.min(), line.max()));
   }
 
-  static std::optional<Line<T, N>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto table = std::get_if<LuaTable>(&v)) {
-      auto min = engine.luaMaybeTo<Vector<T, N>>(table->get(1));
-      auto max = engine.luaMaybeTo<Vector<T, N>>(table->get(2));
-      if (min && max)
-        return Line<T, N>(*min, *max);
-    }
-    return {};
+  [[nodiscard]] static std::expected<std::optional<Line<T, N>>, StarException> to(LuaEngine& engine, LuaValue const& v) {
+    auto endpoints = LuaConverter<std::pair<Vector<T, N>, Vector<T, N>>>::to(engine, v);
+    if (!endpoints)
+      return std::unexpected(std::move(endpoints.error()));
+    if (!*endpoints)
+      return std::nullopt;
+    return Line<T, N>((**endpoints).first, (**endpoints).second);
   }
 };
 
@@ -171,8 +194,8 @@ template <typename... Types>
 struct LuaConverter<std::variant<Types...>> {
   using Value = std::variant<Types...>;
 
-  static LuaValue from(LuaEngine& engine, Value const& value) {
-    return std::visit([&engine](auto const& payload) -> LuaValue {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Value const& value) {
+    return std::visit([&engine](auto const& payload) -> std::expected<LuaValue, StarException> {
       if constexpr (std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
         return LuaNil;
       else
@@ -180,8 +203,8 @@ struct LuaConverter<std::variant<Types...>> {
     }, value);
   }
 
-  static LuaValue from(LuaEngine& engine, Value&& value) {
-    return std::visit([&engine](auto& payload) -> LuaValue {
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Value&& value) {
+    return std::visit([&engine](auto& payload) -> std::expected<LuaValue, StarException> {
       if constexpr (std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
         return LuaNil;
       else
@@ -190,7 +213,7 @@ struct LuaConverter<std::variant<Types...>> {
   }
 
   template <std::size_t Index = 0, typename Input>
-  static std::optional<Value> checkTypeTo(LuaEngine& engine, Input&& v) {
+  [[nodiscard]] static std::expected<std::optional<Value>, StarException> checkTypeTo(LuaEngine& engine, Input&& v) {
     using Type = std::variant_alternative_t<Index, Value>;
     if constexpr (std::is_same_v<Type, std::monostate>) {
       if (v == LuaNil)
@@ -202,34 +225,36 @@ struct LuaConverter<std::variant<Types...>> {
         else
           return engine.luaMaybeTo<Type>(v);
       }();
-      if (converted)
-        return std::optional<Value>(std::in_place, std::in_place_index<Index>, takeOptional(converted));
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      if (*converted)
+        return std::optional<Value>(std::in_place, std::in_place_index<Index>, std::move(**converted));
     }
     if constexpr (Index + 1 < sizeof...(Types))
       return checkTypeTo<Index + 1>(engine, std::forward<Input>(v));
     else
-      return {};
+      return std::nullopt;
   }
 
-  static std::optional<Value> to(LuaEngine& engine, LuaValue const& v) {
+  [[nodiscard]] static std::expected<std::optional<Value>, StarException> to(LuaEngine& engine, LuaValue const& v) {
     return checkTypeTo(engine, v);
   }
 
-  static std::optional<Value> to(LuaEngine& engine, LuaValue&& v) {
+  [[nodiscard]] static std::expected<std::optional<Value>, StarException> to(LuaEngine& engine, LuaValue&& v) {
     return checkTypeTo(engine, std::move(v));
   }
 };
 
 template <>
 struct LuaConverter<Color> {
-  static LuaValue from(LuaEngine& engine, Color const& c);
-  static std::optional<Color> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Color const& c);
+  [[nodiscard]] static std::expected<std::optional<Color>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<LuaCallbacks> {
-  static LuaValue from(LuaEngine& engine, LuaCallbacks const& c);
-  static std::optional<LuaCallbacks> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LuaCallbacks const& c);
+  [[nodiscard]] static std::expected<std::optional<LuaCallbacks>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <typename T>
@@ -237,16 +262,24 @@ struct LuaConverter<RpcPromise<T>> : LuaUserDataConverter<RpcPromise<T>> {};
 
 template <typename T>
 struct LuaUserDataMethods<RpcPromise<T>> {
-  static LuaMethods<RpcPromise<T>> make();
+  [[nodiscard]] static std::expected<LuaMethods<RpcPromise<T>>, StarException> make();
 };
 
 template <typename T>
-LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
+[[nodiscard]] std::expected<LuaMethods<RpcPromise<T>>, StarException> LuaUserDataMethods<RpcPromise<T>>::make() {
   LuaMethods<RpcPromise<T>> methods;
-  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished",        std::mem_fn(&RpcPromise<T>::finished));
-  methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded",       std::mem_fn(&RpcPromise<T>::succeeded));
-  methods.template registerMethodWithSignature<std::optional<T>, RpcPromise<T>&>("result",      std::mem_fn(&RpcPromise<T>::result));
-  methods.template registerMethodWithSignature<std::optional<String>, RpcPromise<T>&>("error",  std::mem_fn(&RpcPromise<T>::error));
+  auto finished = methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished", std::mem_fn(&RpcPromise<T>::finished));
+  if (!finished)
+    return std::unexpected(std::move(finished.error()));
+  auto succeeded = methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded", std::mem_fn(&RpcPromise<T>::succeeded));
+  if (!succeeded)
+    return std::unexpected(std::move(succeeded.error()));
+  auto result = methods.template registerMethodWithSignature<std::optional<T>, RpcPromise<T>&>("result", std::mem_fn(&RpcPromise<T>::result));
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  auto error = methods.template registerMethodWithSignature<std::optional<String>, RpcPromise<T>&>("error", std::mem_fn(&RpcPromise<T>::error));
+  if (!error)
+    return std::unexpected(std::move(error.error()));
   return methods;
 }
 
@@ -256,21 +289,27 @@ struct LuaConverter<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> : LuaUserDataC
 
 template <typename T>
 struct LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> {
-  static LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>, StarException> make();
 };
 
 template <typename T>
-LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>::make() {
+[[nodiscard]] std::expected<LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>, StarException> LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>::make() {
   LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> methods;
-  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, RpcPromise<T>>("chain",  [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, RpcPromise<T> const& promise) {
-        keeper->chain(promise);
+  auto chain = methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, RpcPromise<T>>("chain", [](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, RpcPromise<T> const& promise) {
+    return keeper->chain(promise);
   });
-  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, T>("fulfill",            [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, T const& result) {
-        keeper->fulfill(result);
+  if (!chain)
+    return std::unexpected(std::move(chain.error()));
+  auto fulfill = methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, T>("fulfill", [](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, T const& result) {
+    return keeper->fulfill(result);
   });
-  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, String>("fail",          [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, String const& error) {
-        keeper->fail(error);
+  if (!fulfill)
+    return std::unexpected(std::move(fulfill.error()));
+  auto fail = methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, String>("fail", [](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, String const& error) {
+    return keeper->fail(error);
   });
+  if (!fail)
+    return std::unexpected(std::move(fail.error()));
   return methods;
 }
 

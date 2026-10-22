@@ -19,7 +19,7 @@ std::size_t hexEncode(std::span<char const> data, std::span<char> output) {
   return len * 2;
 }
 
-std::size_t hexDecode(std::span<char const> src, std::span<char> output) {
+std::expected<std::size_t, StarException> hexDecode(std::span<char const> src, std::span<char> output) {
   for (std::size_t i = 0; i < src.size() / 2; ++i) {
     if (i >= output.size())
       return i;
@@ -48,7 +48,7 @@ std::size_t hexDecode(std::span<char const> src, std::span<char> output) {
   return src.size() / 2;
 }
 
-std::size_t nibbleDecode(std::span<char const> src, std::span<char> output) {
+std::expected<std::size_t, StarException> nibbleDecode(std::span<char const> src, std::span<char> output) {
   for (std::size_t i = 0; i < src.size(); ++i) {
     if (i >= output.size())
       return i;
@@ -137,7 +137,7 @@ static inline bool is_base64(unsigned char c) {
   return (std::isalnum(c) || (c == '+') || (c == '/'));
 }
 
-std::size_t base64Decode(std::span<char const> src, std::span<char> destination) {
+std::expected<std::size_t, StarException> base64Decode(std::span<char const> src, std::span<char> destination) {
   auto output = destination.data();
   auto outLen = destination.size();
   if (outLen == 0)
@@ -217,13 +217,11 @@ String hexEncode(ByteArray const& data) {
   return hexEncode(data.ptr(), data.size());
 }
 
-ByteArray hexDecode(String const& encodedData) {
-  ByteArray res(encodedData.size() / 2, 0);
-  std::size_t decoded = hexDecode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
-  ((void)(decoded));
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((decoded == res.size()));
-  }
+std::expected<ByteArray, StarException> hexDecode(String const& encodedData) {
+  ByteArray res(encodedData.utf8Size() / 2, 0);
+  auto decoded = hexDecode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
+  if (!decoded)
+    return std::unexpected(std::move(decoded.error()));
   return res;
 }
 
@@ -231,14 +229,12 @@ String base64Encode(ByteArray const& data) {
   return base64Encode(data.ptr(), data.size());
 }
 
-ByteArray base64Decode(String const& encodedData) {
-  ByteArray res(encodedData.size() * 3 / 4, 0);
-  std::size_t decoded = base64Decode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
-  ((void)(decoded));
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((decoded <= res.size()));
-  }
-  res.resize(decoded);
+std::expected<ByteArray, StarException> base64Decode(String const& encodedData) {
+  ByteArray res((encodedData.utf8Size() + 3) / 4 * 3, 0);
+  auto decoded = base64Decode({encodedData.utf8Ptr(), encodedData.utf8Size()}, {res.ptr(), res.size()});
+  if (!decoded)
+    return std::unexpected(std::move(decoded.error()));
+  res.resize(*decoded);
   return res;
 }
 

@@ -34,6 +34,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 import star.ordered_set;
 import star.either;
@@ -122,127 +123,226 @@ import star.line;
 import star.math_common;
 namespace Star {
 
-std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal) {
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal) {
   if (!item)
-    return {};
-
-  auto idconfig = rootContext.assets()->json("/itemdrop.config");
-
-  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(rootContext, item);
-  auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * rootContext.random().randf());
+    return std::shared_ptr<ItemDrop>();
+  auto assets = rootContext.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/itemdrop.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto drop = create(rootContext, item);
+  if (!drop)
+    return std::unexpected(std::move(drop.error()));
+  auto distance = config->getFloat("randomizedDistance");
+  if (!distance)
+    return std::unexpected(std::move(distance.error()));
+  auto offset = Vec2F(*distance, 0).rotate(std::numbers::pi * 2.0 * rootContext.random().randf());
   offset[1] = std::fabs(offset[1]);
-  itemDrop->setPosition(position + offset / TilePixels);
-  itemDrop->setVelocity(offset * idconfig.getFloat("randomizedSpeed"));
-  itemDrop->setEternal(eternal);
-
-  return itemDrop;
+  (*drop)->setPosition(position + offset / TilePixels);
+  auto speed = config->getFloat("randomizedSpeed");
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  (*drop)->setVelocity(offset * *speed);
+  (*drop)->setEternal(eternal);
+  return drop;
 }
 
-std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(Root& rootContext, ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::createRandomizedDrop(Root& rootContext, ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
   if (!descriptor || descriptor.isEmpty())
-    return {};
-
-  auto itemDatabase = rootContext.itemDatabase();
-  auto itemDrop = createRandomizedDrop(rootContext, itemDatabase->item(descriptor), position, false);
-  itemDrop->setEternal(eternal);
-
-  return itemDrop;
-}
-
-std::shared_ptr<ItemDrop> ItemDrop::throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+    return std::shared_ptr<ItemDrop>();
+  auto database = rootContext.itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto item = (*database)->item(descriptor);
   if (!item)
-    return {};
-
-  auto idconfig = rootContext.assets()->json("/itemdrop.config");
-
-  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(rootContext, item);
-  itemDrop->setPosition(position);
-  if (direction != Vec2F())
-    itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
-
-  itemDrop->setEternal(eternal);
-  itemDrop->setIntangibleTime(idconfig.getFloat("throwIntangibleTime"));
-
-  return itemDrop;
+    return std::unexpected(std::move(item.error()));
+  auto drop = createRandomizedDrop(rootContext, *item, position, false);
+  if (!drop)
+    return std::unexpected(std::move(drop.error()));
+  (*drop)->setEternal(eternal);
+  return drop;
 }
 
-std::shared_ptr<ItemDrop> ItemDrop::throwDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
-  if (!itemDescriptor || itemDescriptor.isEmpty())
-    return {};
-
-  auto itemDatabase = rootContext.itemDatabase();
-  auto itemDrop = throwDrop(rootContext, itemDatabase->item(itemDescriptor), position, velocity, direction, false);
-  itemDrop->setEternal(eternal);
-
-  return itemDrop;
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+  if (!item)
+    return std::shared_ptr<ItemDrop>();
+  auto assets = rootContext.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/itemdrop.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto drop = create(rootContext, item);
+  if (!drop)
+    return std::unexpected(std::move(drop.error()));
+  (*drop)->setPosition(position);
+  if (direction != Vec2F()) {
+    auto speed = config->getFloat("throwSpeed");
+    if (!speed)
+      return std::unexpected(std::move(speed.error()));
+    (*drop)->setVelocity(velocity + vnorm(direction) * *speed);
+  }
+  (*drop)->setEternal(eternal);
+  auto intangibleTime = config->getFloat("throwIntangibleTime");
+  if (!intangibleTime)
+    return std::unexpected(std::move(intangibleTime.error()));
+  (*drop)->setIntangibleTime(*intangibleTime);
+  return drop;
 }
 
-ItemDrop::ItemDrop(Root& rootContext, std::shared_ptr<Item> item)
-  : ItemDrop(rootContext) {
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::throwDrop(Root& rootContext, ItemDescriptor const& descriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+  if (!descriptor || descriptor.isEmpty())
+    return std::shared_ptr<ItemDrop>();
+  auto database = rootContext.itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto item = (*database)->item(descriptor);
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  auto drop = throwDrop(rootContext, *item, position, velocity, direction, false);
+  if (!drop)
+    return std::unexpected(std::move(drop.error()));
+  (*drop)->setEternal(eternal);
+  return drop;
+}
+
+std::expected<void, StarException> ItemDrop::initializeItem(std::shared_ptr<Item> item) {
+  if (!item)
+    return std::unexpected(ItemException("Cannot construct an item drop without an item"));
+  auto parameters = item->instanceValueOfType("itemDrop", Json::Type::Object, JsonObject{});
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
   m_item = std::move(item);
-  
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
-
-  updateCollisionPoly();
-
-  m_owningEntity.set(NullEntityId);
-  m_mode.set(Mode::Available);
+  m_parameters = std::move(*parameters);
   m_itemDescriptor.set(m_item->descriptor());
-  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
+  auto modeName = configValue("clientEntityMode", "ClientSlaveOnly").and_then([](Json const& value) { return value.toString(); });
+  if (!modeName)
+    return std::unexpected(std::move(modeName.error()));
+  if (!ClientEntityModeNames)
+    return std::unexpected(ClientEntityModeNames.error());
+  auto mode = ClientEntityModeNames->getLeft(*modeName);
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  m_clientEntityMode = **mode;
+  return {};
 }
 
-ItemDrop::ItemDrop(Root& rootContext, Json const& diskStore)
-  : ItemDrop(rootContext) {
-  this->root().itemDatabase()->diskLoad(diskStore.get("item"), m_item);
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
-  m_movementController.setPosition(jsonToVec2F(diskStore.get("position")));
-  m_mode.set(ModeNames.getLeft(diskStore.getString("mode")));
-  m_eternal = diskStore.getBool("eternal");
-  m_dropAge = EpochTimer(diskStore.get("dropAge"));
-  m_ageItemsTimer = EpochTimer(diskStore.get("ageItemsTimer"));
-
-  updateCollisionPoly();
-  m_owningEntity.set(NullEntityId);
-  m_itemDescriptor.set(m_item->descriptor());
-  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::create(Root& rootContext, std::shared_ptr<Item> item) {
+  auto drop = std::shared_ptr<ItemDrop>(new ItemDrop(rootContext));
+  if (auto initialized = drop->initialize(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  if (auto initialized = drop->initializeItem(std::move(item)); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  drop->m_owningEntity.set(NullEntityId);
+  drop->m_mode.set(Mode::Available);
+  return drop;
 }
 
-ItemDrop::ItemDrop(Root& rootContext, ByteArray store, NetCompatibilityRules rules) : ItemDrop(rootContext) {
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::create(Root& rootContext, Json const& store) {
+  auto drop = std::shared_ptr<ItemDrop>(new ItemDrop(rootContext));
+  if (auto initialized = drop->initialize(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto database = rootContext.itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto itemStore = store.get("item");
+  if (!itemStore)
+    return std::unexpected(std::move(itemStore.error()));
+  auto item = (*database)->diskLoad(*itemStore);
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  if (auto initialized = drop->initializeItem(std::move(*item)); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto position = store.get("position").and_then([](Json const& value) { return jsonToVec2F(value); });
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  drop->m_movementController->setPosition(*position);
+  auto modeName = store.getString("mode");
+  if (!modeName)
+    return std::unexpected(std::move(modeName.error()));
+  if (!ModeNames)
+    return std::unexpected(ModeNames.error());
+  auto mode = ModeNames->getLeft(*modeName);
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  drop->m_mode.set(**mode);
+  auto eternal = store.getBool("eternal");
+  if (!eternal)
+    return std::unexpected(std::move(eternal.error()));
+  drop->m_eternal = *eternal;
+  auto age = store.get("dropAge").and_then([](Json const& value) { return EpochTimer::create(value); });
+  if (!age)
+    return std::unexpected(std::move(age.error()));
+  drop->m_dropAge = std::move(*age);
+  auto aging = store.get("ageItemsTimer").and_then([](Json const& value) { return EpochTimer::create(value); });
+  if (!aging)
+    return std::unexpected(std::move(aging.error()));
+  drop->m_ageItemsTimer = std::move(*aging);
+  drop->m_owningEntity.set(NullEntityId);
+  return drop;
+}
+
+std::expected<std::shared_ptr<ItemDrop>, StarException> ItemDrop::create(Root& rootContext, ByteArray store, NetCompatibilityRules rules) {
+  auto drop = std::shared_ptr<ItemDrop>(new ItemDrop(rootContext));
+  if (auto initialized = drop->initialize(); !initialized)
+    return std::unexpected(std::move(initialized.error()));
   DataStreamBuffer ds(std::move(store));
   ds.setStreamCompatibilityVersion(rules);
-
-  this->root().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
-  ds.read(m_eternal);
-  ds.read(m_dropAge);
-  ds.read(m_intangibleTimer);
-
-  updateCollisionPoly();
-  m_itemDescriptor.set(m_item->descriptor());
-  m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
+  auto descriptor = ds.read<ItemDescriptor>();
+  if (!descriptor)
+    return std::unexpected(std::move(descriptor.error()));
+  auto database = rootContext.itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto item = (*database)->item(*descriptor);
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  if (auto initialized = drop->initializeItem(std::move(*item)); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  if (auto read = ds.read(drop->m_eternal); !read)
+    return std::unexpected(std::move(read.error()));
+  if (auto read = ds.read(drop->m_dropAge); !read)
+    return std::unexpected(std::move(read.error()));
+  if (auto read = ds.read(drop->m_intangibleTimer); !read)
+    return std::unexpected(std::move(read.error()));
+  return drop;
 }
 
-Json ItemDrop::diskStore() const {
-  auto itemDatabase = this->root().itemDatabase();
-  return JsonObject{
-    {"item", itemDatabase->diskStore(m_item)},
-    {"position", jsonFromVec2F(m_movementController.position())},
-    {"mode", ModeNames.getRight(m_mode.get())},
+std::expected<Json, StarException> ItemDrop::diskStore() const {
+  auto database = root().itemDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto stored = (*database)->diskStore(m_item);
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  if (!ModeNames)
+    return std::unexpected(ModeNames.error());
+  auto mode = ModeNames->getRight(m_mode.get());
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  return Json(JsonObject{
+    {"item", std::move(*stored)},
+    {"position", jsonFromVec2F(m_movementController->position())},
+    {"mode", **mode},
     {"eternal", m_eternal},
     {"dropAge", m_dropAge.toJson()},
     {"ageItemsTimer", m_ageItemsTimer.toJson()}
-  };
+  });
 }
 
-ByteArray ItemDrop::netStore(NetCompatibilityRules rules) const {
+std::expected<ByteArray, StarException> ItemDrop::netStore(NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
-
-  ds.write(itemSafeDescriptor(m_item));
-  ds.write(m_eternal);
-  ds.write(m_dropAge);
-  ds.write(m_intangibleTimer);
-
+  if (auto written = ds.write(itemSafeDescriptor(m_item)); !written)
+    return std::unexpected(std::move(written.error()));
+  if (auto written = ds.write(m_eternal); !written)
+    return std::unexpected(std::move(written.error()));
+  if (auto written = ds.write(m_dropAge); !written)
+    return std::unexpected(std::move(written.error()));
+  if (auto written = ds.write(m_intangibleTimer); !written)
+    return std::unexpected(std::move(written.error()));
   return ds.takeData();
 }
 
@@ -250,76 +350,116 @@ EntityType ItemDrop::entityType() const {
   return EntityType::ItemDrop;
 }
 
-void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
-
-  m_movementController.init(world);
-  if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
-    if (scripts && !(*scripts).empty()) {
-      m_scriptComponent.setScripts(*scripts);
-      m_scriptComponent.setUpdateDelta(configValue("scriptDelta",1).toUInt());
-
-      m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
-      m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&ItemDrop::configValue, this, std::placeholders::_1, std::placeholders::_2)));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
-      m_scriptComponent.init(world);
-    }
+std::expected<void, StarException> ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
+  auto initialized = Entity::init(world, entityId, mode);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  m_movementController->init(world);
+  auto setup = [&]() -> std::expected<void, StarException> {
+    if (!isMaster())
+      return {};
+    auto scripts = configValue("scripts").and_then([](Json const& value) { return value.optArray(); });
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    if (!*scripts)
+      return {};
+    auto scriptPaths = jsonToStringList(Json(**scripts));
+    if (!scriptPaths)
+      return std::unexpected(std::move(scriptPaths.error()));
+    if (scriptPaths->empty())
+      return {};
+    if (auto set = m_scriptComponent.setScripts(std::move(*scriptPaths)); !set)
+      return std::unexpected(std::move(set.error()));
+    auto delta = configValue("scriptDelta", 1).and_then([](Json const& value) { return value.toUInt(); });
+    if (!delta)
+      return std::unexpected(std::move(delta.error()));
+    m_scriptComponent.setUpdateDelta(*delta);
+    auto add = [&](String name, std::expected<LuaCallbacks, StarException> callbacks) -> std::expected<void, StarException> {
+      if (!callbacks)
+        return std::unexpected(std::move(callbacks.error()));
+      return m_scriptComponent.addCallbacks(std::move(name), std::move(*callbacks));
+    };
+    if (auto added = add("itemDrop", makeItemDropCallbacks()); !added)
+      return std::unexpected(std::move(added.error()));
+    if (auto added = add("item", LuaBindings::makeItemCallbacks(m_item.get())); !added)
+      return std::unexpected(std::move(added.error()));
+    if (auto added = add("config", LuaBindings::makeConfigCallbacks(std::bind(&ItemDrop::configValue, this, std::placeholders::_1, std::placeholders::_2))); !added)
+      return std::unexpected(std::move(added.error()));
+    if (auto added = add("entity", LuaBindings::makeEntityCallbacks(this)); !added)
+      return std::unexpected(std::move(added.error()));
+    if (auto added = add("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get())); !added)
+      return std::unexpected(std::move(added.error()));
+    return m_scriptComponent.init(world);
+  }();
+  if (!setup) {
+    auto cleaned = uninit();
+    if (!cleaned)
+      return std::unexpected(cleaned.error().withContext(printException(setup.error(), true)));
   }
+  return setup;
 }
 
 ClientEntityMode ItemDrop::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-void ItemDrop::uninit() {
-  Entity::uninit();
-  m_movementController.uninit();
-  if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
-    if (scripts && !(*scripts).empty()) {
-      m_scriptComponent.uninit();
-      m_scriptComponent.removeCallbacks("itemDrop");
-      m_scriptComponent.removeCallbacks("item");
-      m_scriptComponent.removeCallbacks("config");
-      m_scriptComponent.removeCallbacks("entity");
-      m_scriptComponent.removeCallbacks("mcontroller");
+std::expected<void, StarException> ItemDrop::uninit() {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result) {
+      if (error)
+        error = result.error().withContext(printException(*error, true));
+      else
+        error = std::move(result.error());
     }
+  };
+  if (isMaster()) {
+    remember(m_scriptComponent.uninit());
+    remember(m_scriptComponent.removeCallbacks("itemDrop"));
+    remember(m_scriptComponent.removeCallbacks("item"));
+    remember(m_scriptComponent.removeCallbacks("config"));
+    remember(m_scriptComponent.removeCallbacks("entity"));
+    remember(m_scriptComponent.removeCallbacks("mcontroller"));
   }
+  m_movementController->uninit();
+  remember(Entity::uninit());
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-String ItemDrop::name() const {
+std::expected<String, StarException> ItemDrop::name() const {
   if (m_item)
     return m_item->name();
   return Entity::name();
 }
 
-String ItemDrop::description() const {
+std::expected<String, StarException> ItemDrop::description() const {
   return m_item->description();
 }
 
-std::pair<ByteArray, std::uint64_t> ItemDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
+std::expected<std::pair<ByteArray, std::uint64_t>, StarException> ItemDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void ItemDrop::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
-  m_netGroup.readNetState(data, interpolationTime, rules);
+std::expected<void, StarException> ItemDrop::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  return m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-void ItemDrop::enableInterpolation(float extrapolationHint) {
-  m_netGroup.enableNetInterpolation(extrapolationHint);
-  m_mode.disableNetInterpolation();
-  m_owningEntity.disableNetInterpolation();
+std::expected<void, StarException> ItemDrop::enableInterpolation(float extrapolationHint) {
+  if (auto enabled = m_netGroup.enableNetInterpolation(extrapolationHint); !enabled)
+    return std::unexpected(std::move(enabled.error()));
+  if (auto disabled = m_mode.disableNetInterpolation(); !disabled)
+    return std::unexpected(std::move(disabled.error()));
+  return m_owningEntity.disableNetInterpolation();
 }
 
-void ItemDrop::disableInterpolation() {
-  m_netGroup.disableNetInterpolation();
+std::expected<void, StarException> ItemDrop::disableInterpolation() {
+  return m_netGroup.disableNetInterpolation();
 }
 
 Vec2F ItemDrop::position() const {
-  return m_movementController.position();
+  return m_movementController->position();
 }
 
 RectF ItemDrop::metaBoundBox() const {
@@ -334,51 +474,60 @@ RectF ItemDrop::collisionArea() const {
   return m_boundBox;
 }
 
-void ItemDrop::update(float dt, std::uint64_t) {
-  m_dropAge.update(world()->epochTime());
-
+std::expected<void, StarException> ItemDrop::update(float dt, std::uint64_t) {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
+  auto* world = *currentWorld;
+  m_dropAge.update(world->epochTime());
   if (isMaster()) {
-    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
-    
+    auto updated = m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
     if (m_owningEntity.get() != NullEntityId) {
-      updateTaken(true);
+      if (auto taken = updateTaken(true); !taken)
+        return std::unexpected(std::move(taken.error()));
     } else {
-      // Rarely, check for other drops near us and combine with them if possible.
-      if (canTake() && m_mode.get() == Mode::Available && this->root().random().randf() < m_combineChance) {
-        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](std::shared_ptr<Entity> const& entity) {
-            if (auto closeDrop = as<ItemDrop>(entity)) {
-              // Make sure not to try to merge with ourselves here.
-              if (closeDrop.get() != this && closeDrop->canTake()
-                  && vmag(position() - closeDrop->position()) < m_combineRadius
-                  && closeDrop->isMaster()) {
-                if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
-                  m_item->stackWith(closeDrop->take());
-                  m_dropAge.setElapsedTime(std::min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
-
-                  // Average the position and velocity of the drop we merged
-                  // with
-                  m_movementController.setPosition(m_movementController.position()
-                      + world()->geometry().diff(closeDrop->position(), m_movementController.position()) / 2.0f);
-                  m_movementController.setVelocity((m_movementController.velocity() + closeDrop->velocity()) / 2.0f);
-                  return true;
-                }
-              }
-            }
+      auto takeable = canTake();
+      if (!takeable)
+        return std::unexpected(std::move(takeable.error()));
+      if (*takeable && m_mode.get() == Mode::Available && root().random().randf() < m_combineChance) {
+        auto found = world->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)),
+            [&](std::shared_ptr<Entity> const& entity) -> std::expected<bool, StarException> {
+          auto closeDrop = as<ItemDrop>(entity);
+          if (!closeDrop || closeDrop.get() == this)
             return false;
-          });
+          auto closeTakeable = closeDrop->canTake();
+          if (!closeTakeable)
+            return std::unexpected(std::move(closeTakeable.error()));
+          if (!*closeTakeable || vmag(position() - closeDrop->position()) >= m_combineRadius || !closeDrop->isMaster())
+            return false;
+          if (m_item->couldStack(closeDrop->item()) != closeDrop->item()->count())
+            return false;
+          auto taken = closeDrop->take();
+          if (!taken)
+            return std::unexpected(std::move(taken.error()));
+          m_item->stackWith(*taken);
+          m_dropAge.setElapsedTime(std::min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
+          m_movementController->setPosition(m_movementController->position()
+              + world->geometry().diff(closeDrop->position(), m_movementController->position()) / 2.0f);
+          m_movementController->setVelocity((m_movementController->velocity() + closeDrop->velocity()) / 2.0f);
+          return true;
+        });
+        if (!found)
+          return std::unexpected(std::move(found.error()));
       }
-
       MovementParameters parameters;
       parameters.collisionEnabled = true;
       parameters.gravityEnabled = true;
-      m_movementController.applyParameters(parameters);
+      if (auto applied = m_movementController->applyParameters(parameters); !applied)
+        return std::unexpected(std::move(applied.error()));
     }
-    m_movementController.tickMaster(dt);
-
+    if (auto ticked = m_movementController->tickMaster(dt); !ticked)
+      return std::unexpected(std::move(ticked.error()));
     m_intangibleTimer.tick(dt);
-    m_ageItemsTimer.update(world()->epochTime());
-
-    if ((m_mode.get() == Mode::Intangible || m_mode.get() == Mode::Available) && m_movementController.atWorldLimit())
+    m_ageItemsTimer.update(world->epochTime());
+    if ((m_mode.get() == Mode::Intangible || m_mode.get() == Mode::Available) && m_movementController->atWorldLimit())
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Intangible && m_intangibleTimer.ready())
       m_mode.set(Mode::Available);
@@ -386,53 +535,61 @@ void ItemDrop::update(float dt, std::uint64_t) {
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
-    
-    
-    if (m_overrideMode) {
+    if (m_overrideMode)
       m_mode.set(*m_overrideMode);
-    }
-    if (m_clientEntityMode != ClientEntityMode::ClientSlaveOnly) {
-      if (m_mode.get() == Mode::Available) {
-        m_mode.set(Mode::Intangible);
-      }
-    }
-
+    if (m_clientEntityMode != ClientEntityMode::ClientSlaveOnly && m_mode.get() == Mode::Available)
+      m_mode.set(Mode::Intangible);
     if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
-      if (this->root().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
+      auto database = root().itemDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto aged = (*database)->ageItem(m_item, m_ageItemsTimer.elapsedTime());
+      if (!aged)
+        return std::unexpected(std::move(aged.error()));
+      if (*aged)
         m_itemDescriptor.set(m_item->descriptor());
-        updateCollisionPoly();
-      }
       m_ageItemsTimer.setElapsedTime(0.0);
     }
   } else {
-    if (m_itemDescriptor.pullUpdated())
-      this->root().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
-    m_netGroup.tickNetInterpolation(dt);
+    if (m_itemDescriptor.pullUpdated()) {
+      auto database = root().itemDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto loaded = (*database)->loadItem(m_itemDescriptor.get(), m_item);
+      if (!loaded)
+        return std::unexpected(std::move(loaded.error()));
+      if (!m_item)
+        return std::unexpected(ItemException("Item drop network state contains no item"));
+    }
+    if (auto ticked = m_netGroup.tickNetInterpolation(dt); !ticked)
+      return std::unexpected(std::move(ticked.error()));
     if (m_owningEntity.get() != NullEntityId) {
-      if (!isMaster() && m_dropAge.elapsedTime() > 1.0f)
+      if (m_dropAge.elapsedTime() > 1.0f) {
         m_owningEntity.set(NullEntityId);
-      else {
-        updateTaken(false);
-        m_movementController.tickMaster(dt);
+      } else {
+        if (auto taken = updateTaken(false); !taken)
+          return std::unexpected(std::move(taken.error()));
+        if (auto ticked = m_movementController->tickMaster(dt); !ticked)
+          return std::unexpected(std::move(ticked.error()));
       }
-    }
-    else {
-      m_movementController.tickSlave(dt);
+    } else if (auto ticked = m_movementController->tickSlave(dt); !ticked) {
+      return std::unexpected(std::move(ticked.error()));
     }
   }
-
-  if (world()->isClient()) {
-    this->root().spatialLogger().logPoly("world",
-      m_movementController.collisionBody(),
-      (canTake() ? Color::Green : Color::Red).toRgba());
+  if (world->isClient()) {
+    auto takeable = canTake();
+    if (!takeable)
+      return std::unexpected(std::move(takeable.error()));
+    root().spatialLogger().logPoly("world", m_movementController->collisionBody(), (*takeable ? Color::Green : Color::Red).toRgba());
   }
+  return {};
 }
 
-bool ItemDrop::shouldDestroy() const {
+std::expected<bool, StarException> ItemDrop::shouldDestroy() const {
   return m_mode.get() == Mode::Dead || (m_item->empty() && m_owningEntity.get() == NullEntityId);
 }
 
-void ItemDrop::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> ItemDrop::render(RenderCallback* renderCallback) {
   if (m_mode.get() != Mode::Taken && m_drawRarityBeam) {
     Color beamColor;
     switch (m_item->rarity()) {
@@ -458,42 +615,63 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     auto drawable = Drawable::makeLine(line, width, beamColor, position());
     (drawable.linePart().endColor = beamColor)->setAlphaF(0.0f);
     drawable.fullbright = true;
-    renderCallback->addDrawable(std::move(drawable), RenderLayerItemDrop);
+    if (auto added = renderCallback->addDrawable(std::move(drawable), RenderLayerItemDrop); !added)
+      return std::unexpected(std::move(added.error()));
   }
 
   if (!m_drawables) {
-    if (auto mat = as<MaterialItem>(m_item.get())) {
-      m_drawables = mat->generatedPreview(renderCallback->tileDrawer(), Vec2I(position().floor()));
-      m_overForeground = true;
+    auto mat = as<MaterialItem>(m_item.get());
+    List<Drawable> generated;
+    if (mat) {
+      auto preview = mat->generatedPreview(renderCallback->tileDrawer(), Vec2I(position().floor()));
+      if (!preview)
+        return std::unexpected(std::move(preview.error()));
+      generated = **preview;
+    } else {
+      auto drawables = m_item->dropDrawables(renderCallback->tileDrawer());
+      if (!drawables)
+        return std::unexpected(std::move(drawables.error()));
+      generated = std::move(*drawables);
     }
-    else
-      m_drawables = m_item->dropDrawables(renderCallback->tileDrawer());
-
-    if (Directives dropDirectives = m_config.getString("directives", "")) {
-      for (auto& drawable : *m_drawables) {
-        if (drawable.isImage())
-          drawable.imagePart().addDirectives(*this->root().imageMetadataDatabase(), dropDirectives, true);
+    auto directives = m_config.getString("directives", "");
+    if (!directives)
+      return std::unexpected(std::move(directives.error()));
+    if (Directives dropDirectives = *directives) {
+      auto metadata = root().imageMetadataDatabase();
+      if (!metadata)
+        return std::unexpected(std::move(metadata.error()));
+      for (auto& drawable : generated) {
+        if (drawable.isImage()) {
+          auto added = drawable.imagePart().addDirectives(**metadata, dropDirectives, true);
+          if (!added)
+            return std::unexpected(std::move(added.error()));
+        }
       }
     }
+    m_drawables = std::move(generated);
+    if (mat)
+      m_overForeground = true;
   }
   EntityRenderLayer renderLayer = m_mode.get() == Mode::Taken || m_overForeground ? RenderLayerForegroundTile : RenderLayerItemDrop;
   Vec2F dropPosition = position();
   for (Drawable drawable : *m_drawables) {
     drawable.position += dropPosition;
-    renderCallback->addDrawable(std::move(drawable), renderLayer);
+    if (auto added = renderCallback->addDrawable(std::move(drawable), renderLayer); !added)
+      return std::unexpected(std::move(added.error()));
   }
+  return {};
 }
 
-void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
+std::expected<void, StarException> ItemDrop::renderLightSources(RenderCallback* renderCallback) {
   LightSource light;
   light.type = LightType::Spread;
   light.color = Vec3F::filled(20.f / 255.f);
   light.position = position();
-  renderCallback->addLightSource(std::move(light));
+  return renderCallback->addLightSource(std::move(light));
 }
 
 MovementController* ItemDrop::movementController() {
-  return &m_movementController;
+  return m_movementController.get();
 }
 
 std::shared_ptr<Item> ItemDrop::item() const {
@@ -510,116 +688,157 @@ void ItemDrop::setIntangibleTime(float intangibleTime) {
     m_mode.set(Mode::Intangible);
 }
 
-bool ItemDrop::canTake() const {
-  if (m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty()) {
-    if (isMaster())
-      if (auto res = m_scriptComponent.invoke<bool>("canTake"))
-        return *res;
-    return true;
+std::expected<bool, StarException> ItemDrop::canTake() const {
+  if (m_mode.get() != Mode::Available || m_owningEntity.get() != NullEntityId || m_item->empty())
+    return false;
+  if (isMaster()) {
+    auto result = m_scriptComponent.invoke<bool>("canTake");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    if (*result)
+      return **result;
   }
-  return false;
+  return true;
 }
 
-std::shared_ptr<Item> ItemDrop::takeBy(EntityId entityId, float timeOffset) {
-  if (canTake()) {
-    m_owningEntity.set(entityId);
-    m_dropAge.setElapsedTime(timeOffset);
-    m_mode.set(Mode::Taken);
-    setPersistent(false);
-
-    return m_item->take();
-  } else {
-    return {};
-  }
+std::expected<std::shared_ptr<Item>, StarException> ItemDrop::takeBy(EntityId entityId, float timeOffset) {
+  auto takeable = canTake();
+  if (!takeable)
+    return std::unexpected(std::move(takeable.error()));
+  if (!*takeable)
+    return std::shared_ptr<Item>();
+  auto taken = m_item->take();
+  if (!taken)
+    return std::unexpected(std::move(taken.error()));
+  m_owningEntity.set(entityId);
+  m_dropAge.setElapsedTime(timeOffset);
+  m_mode.set(Mode::Taken);
+  setPersistent(false);
+  return taken;
 }
 
-std::shared_ptr<Item> ItemDrop::take() {
-  if (canTake()) {
-    m_mode.set(Mode::Taken);
-    return m_item->take();
-  } else {
-    return {};
-  }
+std::expected<std::shared_ptr<Item>, StarException> ItemDrop::take() {
+  auto takeable = canTake();
+  if (!takeable)
+    return std::unexpected(std::move(takeable.error()));
+  if (!*takeable)
+    return std::shared_ptr<Item>();
+  auto taken = m_item->take();
+  if (!taken)
+    return std::unexpected(std::move(taken.error()));
+  m_mode.set(Mode::Taken);
+  return taken;
 }
 
 void ItemDrop::setPosition(Vec2F const& position) {
-  m_movementController.setPosition(position);
+  m_movementController->setPosition(position);
 }
 
 Vec2F ItemDrop::velocity() const {
-  return m_movementController.velocity();
+  return m_movementController->velocity();
 }
 
 void ItemDrop::setVelocity(Vec2F const& velocity) {
-  m_movementController.setVelocity(velocity);
+  m_movementController->setVelocity(velocity);
 }
 
-EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
+std::expected<EnumMap<ItemDrop::Mode>, StarException> const ItemDrop::ModeNames = EnumMap<Mode>::create({
     {ItemDrop::Mode::Intangible, "Intangible"},
     {ItemDrop::Mode::Available, "Available"},
     {ItemDrop::Mode::Taken, "Taken"},
-    {ItemDrop::Mode::Dead, "Dead"}};
+    {ItemDrop::Mode::Dead, "Dead"}});
     
-Json ItemDrop::configValue(String const& name, Json const& def) const {
-  return m_parameters.query(name, m_config.query(name, def));
+std::expected<Json, StarException> ItemDrop::configValue(String const& name, Json const& def) const {
+  auto config = m_config.query(name, def);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  return m_parameters.query(name, std::move(*config));
 }
 
-ItemDrop::ItemDrop(Root& rootContext) : Entity(rootContext), m_movementController(rootContext), m_scriptComponent(rootContext) {
+ItemDrop::ItemDrop(Root& rootContext) : Entity(rootContext), m_parameters(JsonObject{}), m_scriptComponent(rootContext) {
   setPersistent(true);
+}
 
-  m_config = this->root().assets()->json("/itemdrop.config");
-  m_parameters = JsonObject{};
-
-  MovementParameters parameters = MovementParameters(m_config.get("movementSettings", JsonObject()));
-  if (!parameters.physicsEffectCategories)
-    parameters.physicsEffectCategories = StringSet({"itemdrop"});
-  if (parameters.collisionPoly)
-    m_defaultBoundBox = parameters.collisionPoly->boundBox();
+std::expected<void, StarException> ItemDrop::initialize() {
+  auto controller = MovementController::create(root());
+  if (!controller)
+    return std::unexpected(std::move(controller.error()));
+  m_movementController = std::move(*controller);
+  auto assets = root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/itemdrop.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  m_config = std::move(*config);
+  auto parameters = m_config.get("movementSettings", JsonObject()).and_then([](Json const& value) { return MovementParameters::create(value); });
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  if (!parameters->physicsEffectCategories)
+    parameters->physicsEffectCategories = StringSet({"itemdrop"});
+  if (parameters->collisionPoly)
+    m_boundBox = parameters->collisionPoly->boundBox();
   else
-    m_defaultBoundBox = RectF{-0.499, -0.499, 0.499, 0.499};
-  m_boundBox = m_defaultBoundBox;
-
-  m_movementController.applyParameters(parameters);
-
-  m_netGroup.addNetElement(&m_mode);
-  m_netGroup.addNetElement(&m_owningEntity);
-  m_netGroup.addNetElement(&m_movementController);
-  m_netGroup.addNetElement(&m_itemDescriptor);
-
-  m_afterTakenLife = m_config.getFloat("afterTakenLife");
-  m_overheadTime = m_config.getFloat("overheadTime");
-  m_pickupDistance = m_config.getFloat("pickupDistance");
-  m_velocity = m_config.getFloat("velocity");
-  m_velocityApproach = m_config.getFloat("velocityApproach");
-  m_overheadApproach = m_config.getFloat("overheadApproach");
-  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * this->root().random().randf());
-
-  m_combineChance = m_config.getFloat("combineChance");
-  m_combineRadius = m_config.getFloat("combineRadius");
-  m_ageItemsEvery = m_config.getDouble("ageItemsEvery", 10);
-
-  m_drawRarityBeam = m_config.getBool("drawRarityBeam", false);
+    m_boundBox = RectF{-0.499, -0.499, 0.499, 0.499};
+  if (auto applied = m_movementController->applyParameters(*parameters); !applied)
+    return std::unexpected(std::move(applied.error()));
+  if (auto added = m_netGroup.addNetElement(&m_mode); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = m_netGroup.addNetElement(&m_owningEntity); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = m_netGroup.addNetElement(m_movementController.get()); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = m_netGroup.addNetElement(&m_itemDescriptor); !added)
+    return std::unexpected(std::move(added.error()));
+  auto loadFloat = [&](String const& key, float& target) -> std::expected<void, StarException> {
+    auto value = m_config.getFloat(key);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    target = *value;
+    return {};
+  };
+  if (auto loaded = loadFloat("afterTakenLife", m_afterTakenLife); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("overheadTime", m_overheadTime); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("pickupDistance", m_pickupDistance); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("velocity", m_velocity); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("velocityApproach", m_velocityApproach); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("overheadApproach", m_overheadApproach); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  auto overheadDistance = m_config.getFloat("overheadRandomizedDistance");
+  if (!overheadDistance)
+    return std::unexpected(std::move(overheadDistance.error()));
+  m_overheadOffset = Vec2F(*overheadDistance, 0).rotate(std::numbers::pi * 2.0 * root().random().randf());
+  if (auto loaded = loadFloat("combineChance", m_combineChance); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  if (auto loaded = loadFloat("combineRadius", m_combineRadius); !loaded)
+    return std::unexpected(std::move(loaded.error()));
+  auto ageEvery = m_config.getDouble("ageItemsEvery", 10);
+  if (!ageEvery)
+    return std::unexpected(std::move(ageEvery.error()));
+  m_ageItemsEvery = *ageEvery;
+  auto rarityBeam = m_config.getBool("drawRarityBeam", false);
+  if (!rarityBeam)
+    return std::unexpected(std::move(rarityBeam.error()));
+  m_drawRarityBeam = *rarityBeam;
   m_eternal = false;
   m_overForeground = false;
   m_clientEntityMode = ClientEntityMode::ClientSlaveOnly;
-}
-
-void ItemDrop::updateCollisionPoly() {
-  /* // currently disabled due to causing items to get stuck
-  if (!as<MaterialItem>(m_item.get())) {
-    m_boundBox = Drawable::boundBoxAll(*this->root().imageMetadataDatabase(), m_item->dropDrawables(nullptr), true);
-    m_boundBox.rangeSetIfEmpty(m_defaultBoundBox);
-    MovementParameters parameters;
-    parameters.collisionPoly = PolyF(collisionArea());
-    m_movementController.applyParameters(parameters);
-  }
-  */
+  return {};
 }
 
 
-void ItemDrop::updateTaken(bool master) {
-  if (auto owningEntity = world()->entity(m_owningEntity.get())) {
-    Vec2F position = m_movementController.position();
+std::expected<void, StarException> ItemDrop::updateTaken(bool master) {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
+  auto* world = *currentWorld;
+  if (auto owningEntity = world->entity(m_owningEntity.get())) {
+    Vec2F position = m_movementController->position();
     bool overhead = m_dropAge.elapsedTime() < m_overheadTime;
     Vec2F targetPosition = owningEntity->position();
     if (overhead) {
@@ -630,12 +849,12 @@ void ItemDrop::updateTaken(bool master) {
       else
         targetPosition[1] += 1.5f;
     }
-    Vec2F diff = world()->geometry().diff(targetPosition, position);
+    Vec2F diff = world->geometry().diff(targetPosition, position);
     float magnitude = diff.magnitude();
     Vec2F velocity = diff.normalized() * m_velocity * std::min(1.0f, magnitude);
     if (auto playerEntity = as<Player>(owningEntity))
       velocity += playerEntity->velocity();
-    m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
+    m_movementController->approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
     if (master && !overhead && magnitude < m_pickupDistance)
       m_mode.set(Mode::Dead);
 
@@ -648,41 +867,58 @@ void ItemDrop::updateTaken(bool master) {
   parameters.maxMovementPerStep = 1000.0f;
   parameters.collisionEnabled = false;
   parameters.gravityEnabled = false;
-  m_movementController.applyParameters(parameters);
+  return m_movementController->applyParameters(parameters);
 }
 
-std::optional<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::expected<std::optional<LuaValue>, StarException> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-std::optional<LuaValue> ItemDrop::evalScript(String const& code) {
+std::expected<std::optional<LuaValue>, StarException> ItemDrop::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-LuaCallbacks ItemDrop::makeItemDropCallbacks() {
+std::expected<LuaCallbacks, StarException> ItemDrop::makeItemDropCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("takingEntity", [this]() -> std::optional<EntityId> {
-      if (m_owningEntity.get() == NullEntityId)
-        return {};
-      else
-        return m_owningEntity.get();
-  });
-  callbacks.registerCallback("setEternal", [this](bool const& eternal) { setEternal(eternal); });
-  callbacks.registerCallback("eternal", [this]() -> bool { return m_eternal; });
-  callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) { setIntangibleTime(intangibleTime); });
-  callbacks.registerCallback("intangibleTime", [this]() -> float { return m_intangibleTimer.timer; });
-  callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) {
-    if (mode)
-      m_overrideMode = ModeNames.getLeft(*mode);
-    else
-      m_overrideMode = {};
-  });
-  callbacks.registerCallback("overrideMode", [this]() -> std::optional<String> {
-    if (m_overrideMode)
-      return ModeNames.getRight(*m_overrideMode);
-    else
+  if (auto registered = callbacks.registerCallback("takingEntity", [this]() -> std::optional<EntityId> {
+    if (m_owningEntity.get() == NullEntityId)
       return {};
-  });
+    return m_owningEntity.get();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setEternal", [this](bool eternal) { setEternal(eternal); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("eternal", [this]() { return m_eternal; }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setIntangibleTime", [this](float time) { setIntangibleTime(time); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("intangibleTime", [this]() { return m_intangibleTimer.timer; }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) -> std::expected<void, StarException> {
+    if (!mode) {
+      m_overrideMode.reset();
+      return {};
+    }
+    if (!ModeNames)
+      return std::unexpected(ModeNames.error());
+    auto value = ModeNames->getLeft(*mode);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_overrideMode = **value;
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("overrideMode", [this]() -> std::expected<std::optional<String>, StarException> {
+    if (!m_overrideMode)
+      return std::optional<String>();
+    if (!ModeNames)
+      return std::unexpected(ModeNames.error());
+    auto value = ModeNames->getRight(*m_overrideMode);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return std::optional<String>(**value);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   return callbacks;
 }
 

@@ -14,16 +14,19 @@ TEST(LexicalCastTest, BoolRequiresTheExactLiteral) {
     return tryLexicalCast(value, text.data(), text.data() + text.size());
   };
 
-  EXPECT_TRUE(cast("true"));
-  EXPECT_FALSE(cast("false"));
+  auto trueResult = cast("true");
+  ASSERT_TRUE(trueResult);
+  EXPECT_TRUE(*trueResult);
+  auto falseResult = cast("false");
+  ASSERT_TRUE(falseResult);
+  EXPECT_FALSE(*falseResult);
 
-  // These used to be accepted: the comparison only looked at as many characters
-  // as the input had, so any prefix of the literal matched.
-  EXPECT_THROW(cast(""), BadLexicalCast);
-  EXPECT_THROW(cast("t"), BadLexicalCast);
-  EXPECT_THROW(cast("tru"), BadLexicalCast);
-  EXPECT_THROW(cast("fals"), BadLexicalCast);
-  EXPECT_THROW(cast("truex"), BadLexicalCast);
+  // Prefixes and trailing bytes must not be accepted as boolean literals.
+  for (auto text : {"", "t", "tru", "fals", "truex"}) {
+    auto result = cast(text);
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().is<BadLexicalCast>());
+  }
 
   bool value = true;
   EXPECT_FALSE(tryCast(value, "tru"));

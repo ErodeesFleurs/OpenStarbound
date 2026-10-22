@@ -32,9 +32,9 @@ import star.list;
 
 namespace Star {
 
-std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
+std::expected<std::optional<SocketPollResult>, StarException> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
   if (query.empty())
-    return {};
+    return std::nullopt;
 
   // Prevent close from being called on any socket during this call.
   LinkedList<ReadLocker> readLockers;
@@ -77,10 +77,10 @@ std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsig
   ret = ::select(0, &readfs, &writefs, &exceptfs, &time);
 
   if (ret < 0)
-    throw NetworkException::format("Error during call to select, '{}'", netErrorString());
+    return std::unexpected(NetworkException::format("Error during call to select, '{}'", netErrorString()));
 
   if (ret == 0)
-    return {};
+    return result.empty() ? std::optional<SocketPollResult>{} : std::optional<SocketPollResult>{std::move(result)};
 
   for (auto const& p : query) {
     if (p.first->isOpen()) {
@@ -94,9 +94,10 @@ std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsig
   }
 
 #else
-  std::unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
+  std::unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]{});
   int ret = 0;
   for (auto [index, p] : std::views::enumerate(query)) {
+    pollfds[static_cast<std::size_t>(index)].fd = -1;
     if (p.first->isOpen()) {
       auto& pfd = pollfds[static_cast<std::size_t>(index)];
       pfd.fd = p.first->m_impl->socketDesc;
@@ -110,10 +111,10 @@ std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsig
   ret = ::poll(pollfds.get(), query.size(), timeout);
 
   if (ret < 0)
-    throw NetworkException::format("Error during call to poll, '{}'", netErrorString());
+    return std::unexpected(NetworkException::format("Error during call to poll, '{}'", netErrorString()));
 
   if (ret == 0)
-    return {};
+    return result.empty() ? std::optional<SocketPollResult>{} : std::optional<SocketPollResult>{std::move(result)};
 
   for (auto [index, p] : std::views::enumerate(query)) {
     if (p.first->isOpen()) {
@@ -124,28 +125,31 @@ std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsig
       pr.exception = pfd.revents & POLLHUP || pfd.revents & POLLNVAL || pfd.revents & POLLERR;
       if (pfd.revents & POLLHUP)
         p.first->doShutdown();
-      result.add(p.first, std::move(pr));
+      if (auto added = result.add(p.first, std::move(pr)); !added)
+        return std::unexpected(std::move(added.error()));
     }
   }
 #endif
 
   readLockers.clear();
 
-  return result;
+  return std::optional<SocketPollResult>{std::move(result)};
 }
 
-void Socket::waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const {
+std::expected<void, StarException> Socket::waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const {
   ReadLocker locker(m_mutex);
   if (!isActive())
-    return;
+    return {};
   auto impl = m_impl;
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
   auto wakeSocket = impl->prepareWait();
+  if (!wakeSocket)
+    return std::unexpected(std::move(wakeSocket.error()));
 #endif
   locker.unlock();
   // Shutdown may race wake-channel initialization before native waiting begins.
   if (!isActive())
-    return;
+    return {};
 
   while (true) {
     auto now = std::chrono::steady_clock::now();
@@ -158,7 +162,7 @@ void Socket::waitForData(bool writable, std::chrono::steady_clock::time_point de
     FD_ZERO(&reads);
     FD_ZERO(&writes);
     FD_ZERO(&exceptions);
-    FD_SET(wakeSocket, &reads);
+    FD_SET(*wakeSocket, &reads);
     if (writable)
       FD_SET(impl->socketDesc, &writes);
     else
@@ -175,11 +179,11 @@ void Socket::waitForData(bool writable, std::chrono::steady_clock::time_point de
     int result = ::poll(&descriptor, 1, static_cast<int>(timeout));
 #endif
     if (result >= 0)
-      return;
+      return {};
     if (!netErrorInterrupt())
-      throw NetworkException::format("Error waiting for socket readiness: {}", netErrorString());
+      return std::unexpected(NetworkException::format("Error waiting for socket readiness: {}", netErrorString()));
     if (!isActive() || std::chrono::steady_clock::now() >= deadline)
-      return;
+      return {};
   }
 }
 
@@ -187,46 +191,54 @@ Socket::~Socket() {
   close();
 }
 
-void Socket::bind(Logger& logger, HostAddressWithPort const& addressWithPort) {
+std::expected<void, StarException> Socket::bind(Logger& logger, HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
-  checkOpen("Socket::bind");
+  if (auto status = checkOpen("Socket::bind"); !status)
+    return std::unexpected(std::move(status.error()));
 
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen;
 
   if (addressWithPort.address().mode() != m_networkMode)
-    throw NetworkException("Bind address does not match socket mode");
+    return std::unexpected(NetworkException("Bind address does not match socket mode"));
 
   // Ensure quick restarts don't prevent us binding
   int set = 1;
-  m_impl->setSockOpt(SOL_SOCKET, SO_REUSEADDR, (void*)&set, sizeof(int));
+  if (auto status = m_impl->setSockOpt(SOL_SOCKET, SO_REUSEADDR, (void*)&set, sizeof(int)); !status)
+    return std::unexpected(std::move(status.error()));
 
   m_localAddress = addressWithPort;
-  setNativeFromAddress(m_localAddress, &sockAddr, &sockAddrLen);
+  if (auto status = setNativeFromAddress(m_localAddress, &sockAddr, &sockAddrLen); !status)
+    return std::unexpected(std::move(status.error()));
   if (::bind(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
-    throw NetworkException(strf("Cannot bind socket to {}: {}", m_localAddress, netErrorString()));
+    return std::unexpected(NetworkException(strf("Cannot bind socket to {}: {}", m_localAddress, netErrorString())));
   if (addressWithPort.port() == 0) {
     sockAddrLen = sizeof(sockAddr);
     if (::getsockname(m_impl->socketDesc, (struct sockaddr*)&sockAddr, &sockAddrLen) != 0)
-      throw NetworkException::format("Cannot query bound socket address: {}", netErrorString());
-    setAddressFromNative(m_localAddress, m_networkMode, &sockAddr);
+      return std::unexpected(NetworkException::format("Cannot query bound socket address: {}", netErrorString()));
+    if (auto status = setAddressFromNative(m_localAddress, m_networkMode, &sockAddr); !status)
+      return std::unexpected(std::move(status.error()));
   }
 
   m_socketMode = SocketMode::Bound;
 
-  logger.debug("bind {} ({})", addressWithPort, m_impl->socketDesc);
+  return logger.debug("bind {} ({})", addressWithPort, m_impl->socketDesc);
 }
 
-void Socket::listen(int backlog) {
+std::expected<void, StarException> Socket::listen(int backlog) {
   WriteLocker locker(m_mutex);
+  if (auto status = checkOpen("Socket::listen"); !status)
+    return std::unexpected(std::move(status.error()));
 
   if (::listen(m_impl->socketDesc, backlog) != 0)
-    throw NetworkException(strf("Could not listen on socket: '{}'", netErrorString()));
+    return std::unexpected(NetworkException(strf("Could not listen on socket: '{}'", netErrorString())));
+  return {};
 }
 
-void Socket::setTimeout(unsigned timeout) {
+std::expected<void, StarException> Socket::setTimeout(unsigned timeout) {
   ReadLocker locker(m_mutex);
-  checkOpen("Socket::setTimeout");
+  if (auto status = checkOpen("Socket::setTimeout"); !status)
+    return std::unexpected(std::move(status.error()));
 
   void* val;
   socklen_t size;
@@ -241,25 +253,28 @@ void Socket::setTimeout(unsigned timeout) {
   size = sizeof(tv);
 #endif
 
-  m_impl->setSockOpt(SOL_SOCKET, SO_RCVTIMEO, val, size);
-  m_impl->setSockOpt(SOL_SOCKET, SO_SNDTIMEO, val, size);
+  if (auto status = m_impl->setSockOpt(SOL_SOCKET, SO_RCVTIMEO, val, size); !status)
+    return std::unexpected(std::move(status.error()));
+  return m_impl->setSockOpt(SOL_SOCKET, SO_SNDTIMEO, val, size);
 }
 
-void Socket::setNonBlocking(bool nonBlocking) {
+std::expected<void, StarException> Socket::setNonBlocking(bool nonBlocking) {
   ReadLocker locker(m_mutex);
-  checkOpen("Socket::setNonBlocking");
+  if (auto status = checkOpen("Socket::setNonBlocking"); !status)
+    return std::unexpected(std::move(status.error()));
 #ifdef WIN32
   unsigned long mode = nonBlocking ? 1 : 0;
   if (ioctlsocket(m_impl->socketDesc, FIONBIO, &mode) != 0)
-    throw NetworkException::format("Cannot set socket non-blocking mode: {}", netErrorString());
+    return std::unexpected(NetworkException::format("Cannot set socket non-blocking mode: {}", netErrorString()));
 #else
   int flags = fcntl(m_impl->socketDesc, F_GETFL, 0);
   if (flags < 0)
-    throw NetworkException::format("fcntl failure getting socket flags: {}", netErrorString());
+    return std::unexpected(NetworkException::format("fcntl failure getting socket flags: {}", netErrorString()));
   flags = nonBlocking ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
   if (fcntl(m_impl->socketDesc, F_SETFL, flags) != 0)
-    throw NetworkException::format("fcntl failure setting non-blocking mode: {}", netErrorString());
+    return std::unexpected(NetworkException::format("fcntl failure setting non-blocking mode: {}", netErrorString()));
 #endif
+  return {};
 }
 
 NetworkMode Socket::networkMode() const {
@@ -291,30 +306,34 @@ void Socket::close() {
   doClose();
 }
 
-Socket::Socket(SocketType type, NetworkMode networkMode)
-  : m_networkMode(networkMode), m_impl(std::make_shared<SocketImpl>()), m_socketMode(SocketMode::Closed) {
-  if (m_networkMode == NetworkMode::IPv4)
-    m_impl->socketDesc = ::socket(AF_INET, type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
-  else
-    m_impl->socketDesc = ::socket(AF_INET6, type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
+Socket::Socket(NetworkMode networkMode)
+  : m_networkMode(networkMode), m_socketMode(SocketMode::Closed) {}
 
+std::expected<void, StarException> Socket::initialize(SocketType type) {
+  m_impl = std::make_shared<SocketImpl>();
+  if (m_networkMode != NetworkMode::IPv4 && m_networkMode != NetworkMode::IPv6)
+    return std::unexpected(NetworkException("Invalid socket network mode"));
+  m_impl->socketDesc = ::socket(m_networkMode == NetworkMode::IPv4 ? AF_INET : AF_INET6,
+      type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
   if (invalidSocketDescriptor(m_impl->socketDesc))
-    throw NetworkException(strf("cannot create socket: {}", netErrorString()));
-
+    return std::unexpected(NetworkException::format("cannot create socket: {}", netErrorString()));
   m_socketMode = SocketMode::Shutdown;
-  setTimeout(60000);
-  setNonBlocking(false);
+  return configure();
 }
 
 Socket::Socket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl, SocketMode socketMode)
-  : m_networkMode(networkMode), m_impl(impl), m_socketMode(socketMode) {
-  setTimeout(60000);
-  setNonBlocking(false);
+  : m_networkMode(networkMode), m_impl(std::move(impl)), m_socketMode(socketMode) {}
+
+std::expected<void, StarException> Socket::configure() {
+  if (auto status = setTimeout(60000); !status)
+    return std::unexpected(std::move(status.error()));
+  return setNonBlocking(false);
 }
 
-void Socket::checkOpen(char const* methodName) const {
+std::expected<void, StarException> Socket::checkOpen(char const* methodName) const {
   if (m_socketMode == SocketMode::Closed)
-    throw SocketClosedException::format("Socket not open in {}", methodName);
+    return std::unexpected(SocketClosedException::format("Socket not open in {}", methodName));
+  return {};
 }
 
 void Socket::doShutdown() {

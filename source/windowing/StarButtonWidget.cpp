@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.vector;
@@ -74,34 +75,74 @@ ButtonWidget::ButtonWidget(GuiContext& context) : Widget(context) {
   m_fontColor = Color::White;
   m_fontColorDisabled = Color::Gray;
 
-  auto assets = this->context()->root().assets();
-
-  auto interfaceConfig = assets->json("/interface.config");
-  m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
-  m_textStyle = interfaceConfig.get("buttonTextStyle");
-  m_clickSounds = jsonToStringList(interfaceConfig.get("buttonClickSound"));
-  m_releaseSounds = jsonToStringList(interfaceConfig.get("buttonReleaseSound"));
-  m_hoverSounds = jsonToStringList(interfaceConfig.get("buttonHoverSound"));
-  m_hoverOffSounds = jsonToStringList(interfaceConfig.get("buttonHoverOffSound"));
 }
 
-ButtonWidget::ButtonWidget(GuiContext& context, WidgetCallbackFunc callback,
-    String const& baseImage,
-    String const& hoverImage,
-    String const& pressedImage,
-    String const& disabledImage)
-  : ButtonWidget(context) {
-  setCallback(callback);
-  setImages(baseImage, hoverImage, pressedImage, disabledImage);
+std::expected<std::shared_ptr<ButtonWidget>, StarException> ButtonWidget::create(GuiContext& context) {
+  auto button = std::shared_ptr<ButtonWidget>(new ButtonWidget(context));
+  auto initialized = button->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return button;
+}
+
+std::expected<void, StarException> ButtonWidget::initialize() {
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto offsetJson = config->get("buttonPressedOffset");
+  if (!offsetJson)
+    return std::unexpected(std::move(offsetJson.error()));
+  auto offset = jsonToVec2I(*offsetJson);
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
+  m_pressedOffset = *offset;
+  auto styleJson = config->get("buttonTextStyle");
+  if (!styleJson)
+    return std::unexpected(std::move(styleJson.error()));
+  auto style = TextStyle::create(*styleJson);
+  if (!style)
+    return std::unexpected(std::move(style.error()));
+  m_textStyle = std::move(*style);
+  for (auto entry : {std::pair{"buttonClickSound", &m_clickSounds},
+           std::pair{"buttonReleaseSound", &m_releaseSounds},
+           std::pair{"buttonHoverSound", &m_hoverSounds},
+           std::pair{"buttonHoverOffSound", &m_hoverOffSounds}}) {
+    auto json = config->get(entry.first);
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto sounds = jsonToStringList(*json);
+    if (!sounds)
+      return std::unexpected(std::move(sounds.error()));
+    *entry.second = std::move(*sounds);
+  }
+  return {};
+}
+
+std::expected<std::shared_ptr<ButtonWidget>, StarException> ButtonWidget::create(GuiContext& context, WidgetCallbackFunc callback,
+    String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+  auto button = create(context);
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  (*button)->setCallback(std::move(callback));
+  auto images = (*button)->setImages(baseImage, hoverImage, pressedImage, disabledImage);
+  if (!images)
+    return std::unexpected(std::move(images.error()));
+  return *button;
 }
 
 
-void ButtonWidget::renderImpl() {
-  if (isPressed() && sustainCallbackOnDownHold()) {
-    if (m_callback) {
-      auto unlocker = this->context()->input().unlockClipboard();
-      m_callback(this);
-    }
+std::expected<void, StarException> ButtonWidget::renderImpl() {
+  if (isPressed() && sustainCallbackOnDownHold() && m_callback) {
+    auto input = context()->input();
+    if (!input)
+      return std::unexpected(std::move(input.error()));
+    auto unlocker = (*input)->unlockClipboard();
+    auto called = m_callback(this);
+    if (!called)
+      return std::unexpected(std::move(called.error()));
   }
 
   Vec2F position = Vec2F(screenPosition());
@@ -120,70 +161,94 @@ void ButtonWidget::renderImpl() {
     textPosition += Vec2F(m_pressedOffset);
   }
 
+  String const* image = nullptr;
   if (m_hasCheckedImages && m_checked) {
     if (m_disabled)
-      drawButtonPart(m_disabledImageChecked, position);
+      image = &m_disabledImageChecked;
     else if ((m_pressed || m_highlighted) && !m_pressedImageChecked.empty())
-      drawButtonPart(m_pressedImageChecked, position);
+      image = &m_pressedImageChecked;
     else if ((m_pressed || m_hovered || m_highlighted) && !m_hoverImageChecked.empty())
-      drawButtonPart(m_hoverImageChecked, position);
+      image = &m_hoverImageChecked;
     else
-      drawButtonPart(m_baseImageChecked, position);
+      image = &m_baseImageChecked;
   } else {
     if (m_disabled)
-      drawButtonPart(m_disabledImage, position);
+      image = &m_disabledImage;
     else if ((m_pressed || m_highlighted) && !m_pressedImage.empty())
-      drawButtonPart(m_pressedImage, position);
+      image = &m_pressedImage;
     else if ((m_pressed || m_hovered || m_highlighted) && !m_hoverImage.empty())
-      drawButtonPart(m_hoverImage, position);
+      image = &m_hoverImage;
     else if (!m_invisible)
-      drawButtonPart(m_baseImage, position);
+      image = &m_baseImage;
   }
-
-  if (!m_overlayImage.empty())
-    drawButtonPart(m_overlayImage, position);
-
+  if (image) {
+    auto drawn = drawButtonPart(*image, position);
+    if (!drawn)
+      return std::unexpected(std::move(drawn.error()));
+  }
+  if (!m_overlayImage.empty()) {
+    auto drawn = drawButtonPart(m_overlayImage, position);
+    if (!drawn)
+      return std::unexpected(std::move(drawn.error()));
+  }
   if (!m_text.empty()) {
-    auto& guiContext = (*this->context());
-    guiContext.setTextStyle(m_textStyle);
-    if (m_disabled)
-      guiContext.setFontColor(m_fontColorDisabled.toRgba());
-    else if (m_fontColorChecked && m_checked)
-      guiContext.setFontColor(m_fontColorChecked.value_or(Color{}).toRgba());
-    else
-      guiContext.setFontColor(m_fontColor.toRgba());
-    guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
-    guiContext.clearTextStyle();
+    auto& gui = *context();
+    auto style = gui.setTextStyle(m_textStyle);
+    if (!style)
+      return std::unexpected(std::move(style.error()));
+    auto color = gui.setFontColor((m_disabled ? m_fontColorDisabled
+        : m_fontColorChecked && m_checked ? *m_fontColorChecked : m_fontColor).toRgba());
+    if (!color)
+      return std::unexpected(std::move(color.error()));
+    auto rendered = gui.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
+    auto cleared = gui.clearTextStyle();
+    if (!rendered)
+      return std::unexpected(std::move(rendered.error()));
+    if (!cleared)
+      return std::unexpected(std::move(cleared.error()));
   }
+  return {};
 }
 
-bool ButtonWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> ButtonWidget::sendEvent(InputEvent const& event) {
   if (m_visible && !m_disabled) {
     if (std::holds_alternative<MouseButtonDownEvent>(event) && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left) {
       if (inMember(*context()->mousePosition(event))) {
         if (!isPressed()) {
-          auto assets = this->context()->root().assets();
           auto sound = this->context()->root().random().randValueFrom(m_clickSounds, "");
-          if (!sound.empty())
-            context()->playAudio(sound);
+          if (!sound.empty()) {
+            auto played = context()->playAudio(sound);
+            if (!played)
+              return std::unexpected(std::move(played.error()));
+          }
         }
-        setPressed(true);
+        auto pressed = setPressed(true);
+        if (!pressed)
+          return std::unexpected(std::move(pressed.error()));
         if (m_callback) {
-          focus();
+          auto focused = focus();
+          if (!focused)
+            return std::unexpected(std::move(focused.error()));
           return true;
         }
       } else {
-        blur();
+        auto blurred = blur();
+        if (!blurred)
+          return std::unexpected(std::move(blurred.error()));
         return false;
       }
     } else if (std::holds_alternative<MouseButtonUpEvent>(event)) {
       if (isPressed()) {
-        auto assets = this->context()->root().assets();
-        auto sound = this->context()->root().random().randValueFrom(m_releaseSounds, "");
-        if (!sound.empty())
-          context()->playAudio(sound);
+        auto sound = context()->root().random().randValueFrom(m_releaseSounds, "");
+        if (!sound.empty()) {
+          auto played = context()->playAudio(sound);
+          if (!played)
+            return std::unexpected(std::move(played.error()));
+        }
       }
-      setPressed(false);
+      auto pressed = setPressed(false);
+      if (!pressed)
+        return std::unexpected(std::move(pressed.error()));
       return false;
     }
   }
@@ -191,51 +256,69 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
   return false;
 }
 
-void ButtonWidget::mouseOver() {
-  Widget::mouseOver();
+std::expected<void, StarException> ButtonWidget::mouseOver() {
+  auto over = Widget::mouseOver();
+  if (!over)
+    return std::unexpected(std::move(over.error()));
   if (!m_disabled) {
     if (!m_hovered) {
-      auto assets = this->context()->root().assets();
-      auto sound = this->context()->root().random().randValueFrom(m_hoverSounds);
-      if (!sound.empty())
-        context()->playAudio(sound);
+      auto sound = context()->root().random().randValueFrom(m_hoverSounds);
+      if (!sound.empty()) {
+        auto played = context()->playAudio(sound);
+        if (!played)
+          return std::unexpected(std::move(played.error()));
+      }
     }
     m_hovered = true;
   }
+  return {};
 }
 
-void ButtonWidget::mouseOut() {
-  Widget::mouseOut();
+std::expected<void, StarException> ButtonWidget::mouseOut() {
+  auto out = Widget::mouseOut();
+  if (!out)
+    return std::unexpected(std::move(out.error()));
   if (!m_disabled && m_hovered) {
-    auto assets = this->context()->root().assets();
-    auto sound = this->context()->root().random().randValueFrom(m_hoverOffSounds);
-    if (!sound.empty())
-      context()->playAudio(sound);
+    auto sound = context()->root().random().randValueFrom(m_hoverOffSounds);
+    if (!sound.empty()) {
+      auto played = context()->playAudio(sound);
+      if (!played)
+        return std::unexpected(std::move(played.error()));
+    }
   }
   m_hovered = false;
   m_pressed = false;
+  return {};
 }
 
-void ButtonWidget::mouseReturnStillDown() {
-  Widget::mouseReturnStillDown();
+std::expected<void, StarException> ButtonWidget::mouseReturnStillDown() {
+  auto returned = Widget::mouseReturnStillDown();
+  if (!returned)
+    return std::unexpected(std::move(returned.error()));
   if (!isPressed()) {
-    auto assets = this->context()->root().assets();
-    auto sound = this->context()->root().random().randValueFrom(m_clickSounds, "");
-    if (!sound.empty())
-      context()->playAudio(sound);
+    auto sound = context()->root().random().randValueFrom(m_clickSounds, "");
+    if (!sound.empty()) {
+      auto played = context()->playAudio(sound);
+      if (!played)
+        return std::unexpected(std::move(played.error()));
+    }
   }
   m_hovered = true;
   m_pressed = true;
+  return {};
 }
 
-void ButtonWidget::hide() {
-  Widget::hide();
+std::expected<void, StarException> ButtonWidget::hide() {
+  auto hidden = Widget::hide();
+  if (!hidden)
+    return std::unexpected(std::move(hidden.error()));
   m_pressed = false;
   m_hovered = false;
+  return {};
 }
 
 void ButtonWidget::setCallback(WidgetCallbackFunc callback) {
-  m_callback = callback;
+  m_callback = std::move(callback);
 }
 
 std::shared_ptr<ButtonGroup> ButtonWidget::buttonGroup() const {
@@ -271,18 +354,25 @@ bool ButtonWidget::isPressed() const {
   return m_pressed;
 }
 
-void ButtonWidget::setPressed(bool pressed) {
+std::expected<void, StarException> ButtonWidget::setPressed(bool pressed) {
   if (m_pressed != pressed) {
-    // Button action is triggered when the button is released after being pressed
     if (m_pressed) {
-      check();
+      auto checked = check();
+      if (!checked)
+        return std::unexpected(std::move(checked.error()));
       if (m_callback) {
-        auto unlocker = this->context()->input().unlockClipboard();
-        m_callback(this);
+        auto input = context()->input();
+        if (!input)
+          return std::unexpected(std::move(input.error()));
+        auto unlocker = (*input)->unlockClipboard();
+        auto called = m_callback(this);
+        if (!called)
+          return std::unexpected(std::move(called.error()));
       }
     }
     m_pressed = pressed;
   }
+  return {};
 }
 
 bool ButtonWidget::isCheckable() const {
@@ -311,19 +401,18 @@ void ButtonWidget::setChecked(bool checked) {
   m_checked = checked;
 }
 
-void ButtonWidget::check() {
+std::expected<void, StarException> ButtonWidget::check() {
   if (m_checkable) {
-    // If we are part of an exclusive button group, then don't uncheck if
-    // we are already checked and pressed again.
     if (auto group = m_buttonGroup.lock()) {
       if (group->toggle() || !isChecked()) {
         setChecked(!group->toggle() || !isChecked());
-        group->wasChecked(this);
+        return group->wasChecked(this);
       }
     } else {
       setChecked(!isChecked());
     }
   }
+  return {};
 }
 
 bool ButtonWidget::sustainCallbackOnDownHold() {
@@ -334,25 +423,47 @@ void ButtonWidget::setSustainCallbackOnDownHold(bool sustain) {
   m_sustain = sustain;
 }
 
-void ButtonWidget::setImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+std::expected<void, StarException> ButtonWidget::setImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+  String disabled = disabledImage;
+  if (disabled.empty() && !baseImage.empty()) {
+    auto assets = context()->root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto json = (*assets)->json("/interface.config:disabledButton");
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto suffix = json->toString();
+    if (!suffix)
+      return std::unexpected(std::move(suffix.error()));
+    disabled = baseImage + *suffix;
+  }
   m_baseImage = baseImage;
   m_hoverImage = hoverImage;
   m_pressedImage = pressedImage;
-  m_disabledImage = disabledImage;
-  if (m_disabledImage.empty() && !m_baseImage.empty())
-    m_disabledImage = m_baseImage + this->context()->root().assets()->json("/interface.config:disabledButton").toString();
-  updateSize();
+  m_disabledImage = std::move(disabled);
+  return updateSize();
 }
 
-void ButtonWidget::setCheckedImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+std::expected<void, StarException> ButtonWidget::setCheckedImages(String const& baseImage, String const& hoverImage, String const& pressedImage, String const& disabledImage) {
+  String disabled = disabledImage;
+  if (!baseImage.empty() && disabled.empty()) {
+    auto assets = context()->root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto json = (*assets)->json("/interface.config:disabledButton");
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto suffix = json->toString();
+    if (!suffix)
+      return std::unexpected(std::move(suffix.error()));
+    disabled = baseImage + *suffix;
+  }
   m_hasCheckedImages = !baseImage.empty();
   m_baseImageChecked = baseImage;
   m_hoverImageChecked = hoverImage;
   m_pressedImageChecked = pressedImage;
-  m_disabledImageChecked = disabledImage;
-  if (m_hasCheckedImages && m_disabledImageChecked.empty())
-    m_disabledImageChecked = m_baseImageChecked + this->context()->root().assets()->json("/interface.config:disabledButton").toString();
-  updateSize();
+  m_disabledImageChecked = std::move(disabled);
+  return updateSize();
 }
 
 void ButtonWidget::setOverlayImage(String const& overlayImage) {
@@ -433,31 +544,32 @@ RectI ButtonWidget::getScissorRect() const {
   return RectI::withSize(screenPosition(), size());
 }
 
-void ButtonWidget::drawButtonPart(String const& image, Vec2F const& position) {
-  auto& guiContext = (*this->context());
-  auto imageSize = guiContext.textureSize(image);
-  guiContext.drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - imageSize) / 2);
+std::expected<void, StarException> ButtonWidget::drawButtonPart(String const& image, Vec2F const& position) {
+  auto imageSize = context()->textureSize(image);
+  if (!imageSize)
+    return std::unexpected(std::move(imageSize.error()));
+  return context()->drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - *imageSize) / 2);
 }
 
-void ButtonWidget::updateSize() {
+std::expected<void, StarException> ButtonWidget::updateSize() {
   if (m_invisible || m_baseImage.empty())
-    return;
-  auto& guiContext = (*this->context());
-  m_buttonBoundSize = guiContext.textureSize(m_baseImage);
-  if (!m_hoverImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImage));
-  if (!m_pressedImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImage));
-  if (!m_baseImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_baseImageChecked));
-  if (!m_hoverImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImageChecked));
-  if (!m_pressedImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImageChecked));
-  if (!m_disabledImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_disabledImageChecked));
-
-  setSize(Vec2I(m_buttonBoundSize));
+    return {};
+  auto baseSize = context()->textureSize(m_baseImage);
+  if (!baseSize)
+    return std::unexpected(std::move(baseSize.error()));
+  auto bounds = *baseSize;
+  for (auto image : {&m_hoverImage, &m_pressedImage, &m_baseImageChecked,
+           &m_hoverImageChecked, &m_pressedImageChecked, &m_disabledImageChecked}) {
+    if (!image->empty()) {
+      auto imageSize = context()->textureSize(*image);
+      if (!imageSize)
+        return std::unexpected(std::move(imageSize.error()));
+      bounds = bounds.piecewiseMax(*imageSize);
+    }
+  }
+  m_buttonBoundSize = bounds;
+  setSize(Vec2I(bounds));
+  return {};
 }
 
 }

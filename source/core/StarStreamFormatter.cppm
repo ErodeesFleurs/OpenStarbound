@@ -64,12 +64,14 @@ struct StreamFormatter : std::formatter<std::string_view> {
   void set_debug_format() = delete;
 
   template <typename T, typename Context>
+    requires requires(std::ostream& output, T const& value) {
+      { output << value } -> std::same_as<std::ostream&>;
+    }
   auto format(T const& value, Context& context) const -> typename Context::iterator {
     Detail::FormattingStreamBuffer buffer;
     std::ostream output(&buffer);
     output.imbue(std::locale::classic());
     output << value;
-    output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
     return std::formatter<std::string_view>::format(buffer.view(), context);
   }
 };

@@ -35,10 +35,7 @@ Directives::Entry::Entry(Entry const& other) {
 
 ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) const {
   if (std::holds_alternative<NullImageOperation>(operation)) {
-    try
-      { operation = imageOperationFromString(string(parent)); }
-    catch (StarException const& e)
-      { operation = ErrorImageOperation{std::exception_ptr()}; }
+    operation = imageOperationFromString(string(parent));
   }
   return operation;
 }
@@ -140,18 +137,17 @@ void Directives::parse(String&& directives) {
 
   List<Entry> entries;
   StringView view(directives);
-  view.forEachSplitView("?", [&](StringView split, std::size_t beg, std::size_t end) {
-    if (!split.empty()) {
-      ImageOperation operation = NullImageOperation();
-      if (beg == 0) {
-        try
-          { operation = imageOperationFromString(split); }
-        catch (StarException const& e)
-          { operation = ErrorImageOperation{std::exception_ptr()}; }
-      }
-      entries.emplace_back(std::move(operation), beg, end);
+  auto bytes = view.utf8();
+  for (std::size_t begin = 0; begin < bytes.size();) {
+    auto end = bytes.find('?', begin);
+    if (end == std::string_view::npos)
+      end = bytes.size();
+    if (end != begin) {
+      ImageOperation operation = begin == 0 ? imageOperationFromString(bytes.substr(begin, end - begin)) : ImageOperation(NullImageOperation{});
+      entries.emplace_back(std::move(operation), begin, end - begin);
     }
-  });
+    begin = end + 1;
+  }
 
   if (entries.empty()) {
     m_shared.reset();
@@ -170,7 +166,7 @@ StringView Directives::prefix() const {
     return "";
   else if (m_shared->empty())
     return m_shared->string;
-  else if (m_shared->string.utf8().at(0) == '?')
+  else if (m_shared->string.utf8()[0] == '?')
     return "";
   else
     return m_shared->entries.front().string(*m_shared);
@@ -253,22 +249,20 @@ bool Directives::operator!=(String const& string) const {
   return !equals(string);
 }
 
-DataStream& operator>>(DataStream& ds, Directives& directives) {
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Directives& directives) {
   String string;
-  ds.read(string);
-
+  auto read = ds.read(string);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
   directives.parse(std::move(string));
-
-  return ds;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream & ds, Directives const& directives) {
-  if (directives)
-    ds.write(directives->string);
-  else
-    ds.write(String());
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream & ds, Directives const& directives) {
+  auto written = ds.write(directives.string());
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return &ds;
 }
 
 bool operator==(Directives const& d1, Directives const& d2) {
@@ -350,56 +344,36 @@ String DirectivesGroup::toString() const {
 
 void DirectivesGroup::addToString(String& string) const {
   for (auto& entry : m_directives) {
-    if (entry && !entry->string.empty()) {
-      if (!string.empty() && string.utf8().back() != '?' && entry->string.utf8()[0] != '?')
-        string.append('?');
-      string += entry->string;
+    if (entry && !entry.m_shared->string.empty()) {
+      if (!string.empty() && string.utf8().back() != '?' && entry.m_shared->string.utf8()[0] != '?')
+        string.append("?");
+      string += entry.m_shared->string;
     }
   }
 }
 
-void DirectivesGroup::forEach(DirectivesCallback callback) const {
-  for (auto& directives : m_directives) {
-    if (directives) {
-      for (auto& entry : directives->entries)
-        callback(entry, directives);
-    }
-  }
-}
 
-bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) const {
-  for (auto& directives : m_directives) {
-    if (directives) {
-      for (auto& entry : directives->entries) {
-        if (!callback(entry, directives))
-          return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {
+std::expected<Image, StarException> DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {
   Image result = image;
-  applyExistingImage(result, refCallback);
+  auto applied = applyExistingImage(result, refCallback);
+  if (!applied)
+    return std::unexpected(std::move(applied.error()));
   return result;
 }
 
-void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
+std::expected<void, StarException> DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
   bool first = true;
-  forEach([&](Directives::Entry const& entry, Directives const& directives) {
-    ImageOperation const& operation = entry.loadOperation(*directives);
+  return forEach([&](Directives::Entry const& entry, Directives const& directives) -> std::expected<void, StarException> {
+    ImageOperation const& operation = entry.loadOperation(*directives.m_shared);
     if (auto error = std::get_if<ErrorImageOperation>(&operation))
-      if (auto string = std::get_if<std::string>(&error->cause))
-        throw DirectivesException::format("ImageOperation parse error: {}", *string);
-      else
-        std::rethrow_exception(std::get<std::exception_ptr>(error->cause));
-    else if (!first && entry.begin != 0 && std::holds_alternative<NullImageOperation>(operation))
-      throw DirectivesException::format("Invalid image operation: {}", entry.string(*directives));
-    else
-      processImageOperation(operation, image, refCallback);
+      return std::unexpected(error->cause);
+    if (!first && entry.begin != 0 && std::holds_alternative<NullImageOperation>(operation))
+      return std::unexpected(DirectivesException::format("Invalid image operation: {}", entry.string(*directives.m_shared)));
+    auto processed = processImageOperation(operation, image, refCallback);
+    if (!processed)
+      return std::unexpected(std::move(processed.error()));
     first = false;
+    return {};
   });
 }
 
@@ -425,19 +399,20 @@ bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b) {
   return !a.compare(b);
 }
 
-DataStream& operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
   String string;
-  ds.read(string);
-
+  auto read = ds.read(string);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
   directivesGroup = DirectivesGroup(std::move(string));
-
-  return ds;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
-  ds.write(directivesGroup.toString());
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
+  auto written = ds.write(directivesGroup.toString());
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return &ds;
 }
 
 std::size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {

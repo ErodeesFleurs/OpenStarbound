@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.game_types;
 import star.string;
@@ -16,11 +17,11 @@ import star.pointable_item;
 
 namespace Star {
 
-float PointableItem::getAngleDir(float angle, Direction) {
+std::expected<float, StarException> PointableItem::getAngleDir(float angle, Direction) {
   return getAngle(angle);
 }
 
-float PointableItem::getAngle(float angle) {
+std::expected<float, StarException> PointableItem::getAngle(float angle) {
   return angle;
 }
 

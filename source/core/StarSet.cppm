@@ -46,14 +46,14 @@ public:
   template <typename Container>
   void removeAll(Container const& s);
 
-  value_type first();
+  [[nodiscard]] std::expected<value_type, StarException> first();
   std::optional<value_type> maybeFirst();
-  value_type takeFirst();
+  [[nodiscard]] std::expected<value_type, StarException> takeFirst();
   std::optional<value_type> maybeTakeFirst();
 
-  value_type last();
+  [[nodiscard]] std::expected<value_type, StarException> last();
   std::optional<value_type> maybeLast();
-  value_type takeLast();
+  [[nodiscard]] std::expected<value_type, StarException> takeLast();
   std::optional<value_type> maybeTakeLast();
 
   bool hasIntersection(SetMixin const& s) const;
@@ -156,9 +156,9 @@ void SetMixin<BaseSet>::removeAll(Container const& s) {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::first() -> value_type {
+auto SetMixin<BaseSet>::first() -> std::expected<value_type, StarException> {
   if (Base::empty())
-    throw SetException("first called on empty set");
+    return std::unexpected(SetException("first called on empty set"));
   return *Base::begin();
 }
 
@@ -170,9 +170,9 @@ auto SetMixin<BaseSet>::maybeFirst() -> std::optional<value_type> {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::takeFirst() -> value_type {
+auto SetMixin<BaseSet>::takeFirst() -> std::expected<value_type, StarException> {
   if (Base::empty())
-    throw SetException("takeFirst called on empty set");
+    return std::unexpected(SetException("takeFirst called on empty set"));
   auto i = Base::begin();
   value_type v = std::move(*i);
   Base::erase(i);
@@ -190,9 +190,9 @@ auto SetMixin<BaseSet>::maybeTakeFirst() -> std::optional<value_type> {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::last() -> value_type {
+auto SetMixin<BaseSet>::last() -> std::expected<value_type, StarException> {
   if (Base::empty())
-    throw SetException("last called on empty set");
+    return std::unexpected(SetException("last called on empty set"));
   return *std::prev(Base::end());
 }
 
@@ -204,9 +204,9 @@ auto SetMixin<BaseSet>::maybeLast() -> std::optional<value_type> {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::takeLast() -> value_type {
+auto SetMixin<BaseSet>::takeLast() -> std::expected<value_type, StarException> {
   if (Base::empty())
-    throw SetException("takeLast called on empty set");
+    return std::unexpected(SetException("takeLast called on empty set"));
   auto i = std::prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);

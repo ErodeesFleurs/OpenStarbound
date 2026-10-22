@@ -44,21 +44,21 @@ using MovementControllerException = StarError<MovementControllerExceptionTag, St
 // object.  Each parameter is optional so that this structure can be used to
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
-  friend DataStream& operator>>(DataStream& ds, MovementParameters& value);
-  friend DataStream& operator<<(DataStream& ds, MovementParameters const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementParameters& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementParameters const& value);
   // Load sensible defaults from a config file.
-  static MovementParameters sensibleDefaults(Root& root);
+  [[nodiscard]] static std::expected<MovementParameters, StarException> sensibleDefaults(Root& root);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
   MovementParameters();
-  MovementParameters(Json const& config);
+  [[nodiscard]] static std::expected<MovementParameters, StarException> create(Json const& config);
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
   MovementParameters merge(MovementParameters const& rhs) const;
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   std::optional<float> mass;
   std::optional<float> gravityMultiplier;
@@ -100,28 +100,27 @@ struct MovementParameters {
   std::optional<int> restDuration;
 };
 
-DataStream& operator>>(DataStream& ds, MovementParameters& movementParameters);
-DataStream& operator<<(DataStream& ds, MovementParameters const& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MovementParameters& movementParameters);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MovementParameters const& movementParameters);
 
 class MovementController : public NetElementGroup {
 public:
   // Constructs a MovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit MovementController(Root& root);
-  MovementController(Root& root, MovementParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<MovementController>, StarException> create(Root& root, MovementParameters const& parameters = {});
 
   MovementParameters const& parameters() const;
 
   // Apply any set parameters from the given set on top of the current set.
-  void applyParameters(MovementParameters const& parameters);
+  [[nodiscard]] std::expected<void, StarException> applyParameters(MovementParameters const& parameters);
 
   // Reset the parameters from the sensible defaults, and apply the given
   // parameters (if any) on top of them.
-  void resetParameters(MovementParameters const& parameters = MovementParameters());
+  [[nodiscard]] std::expected<void, StarException> resetParameters(MovementParameters const& parameters = MovementParameters());
 
   // Stores and loads position, velocity, and rotation.
   Json storeState() const;
-  void loadState(Json const& state);
+  [[nodiscard]] std::expected<void, StarException> loadState(Json const& state);
 
   // Currently active mass parameter
   float mass() const;
@@ -217,20 +216,20 @@ public:
 
   // Integrates the ActorMovementController for dt and applies all
   // forces.
-  void tickMaster(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickMaster(float dt);
 
   // Does not integrate, only tracks master state and updates non-networked
   // fields based on local data
-  void tickSlave(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickSlave(float dt);
 
   void setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEntities);
   // iterate over all physics entity collision polys in the region, iteration stops if the callback returns false
-  void forEachMovingCollision(RectF const& region, std::function<bool(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
+  [[nodiscard]] std::expected<void, StarException> forEachMovingCollision(RectF const& region, std::function<std::expected<bool, StarException>(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
 
 protected:
   // forces the movement controller onGround status, used when manually controlling movement outside the movement controller
-  void updateForceRegions(float dt);
-  void updateLiquidPercentage();
+  [[nodiscard]] std::expected<void, StarException> updateForceRegions(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateLiquidPercentage();
   void setOnGround(bool onGround);
 
   // whether force regions were applied in the last update
@@ -243,9 +242,11 @@ protected:
   // Velocity of the surface that the body is resting on, if any
   Vec2F surfaceVelocity() const;
 
-  World* world();
+  [[nodiscard]] std::expected<World*, StarException> world();
 
 protected:
+  explicit MovementController(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize(MovementParameters const& parameters);
   Root& root() const;
 
 private:
@@ -281,12 +282,12 @@ private:
   static CollisionSeparation collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
       bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance);
 
-  void updateParameters(MovementParameters parameters);
+  [[nodiscard]] std::expected<void, StarException> updateParameters(MovementParameters parameters);
   void updatePositionInterpolators();
 
-  void queryCollisions(RectF const& region);
+  [[nodiscard]] std::expected<void, StarException> queryCollisions(RectF const& region);
 
-  float gravity();
+  [[nodiscard]] std::expected<float, StarException> gravity();
 
   MovementParameters m_parameters;
   Root& m_root;

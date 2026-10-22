@@ -1,3 +1,4 @@
+import star.format;
 import star.memory;
 import star.json;
 import star.json_extra;
@@ -44,25 +45,38 @@ import star.emote_processor;
 
 namespace Star {
 
-EmoteProcessor::EmoteProcessor(std::shared_ptr<Assets const> const& assets) {
-
-  m_emoteBindings.clear();
+std::expected<std::shared_ptr<EmoteProcessor>, StarException> EmoteProcessor::create(std::shared_ptr<Assets const> const& assets) {
+  auto result = std::shared_ptr<EmoteProcessor>(new EmoteProcessor());
   auto cfg = assets->json("/emotes.config");
-  for (auto binding : cfg.get("emoteBindings").iterateObject()) {
-    for (auto text : binding.second.toArray()) {
-      EmoteBinding emoteBinding;
-      emoteBinding.emote = HumanoidEmoteNames.getLeft(binding.first);
-      emoteBinding.text = text.toString();
-      m_emoteBindings.append(emoteBinding);
+  if (!cfg) return std::unexpected(std::move(cfg.error()));
+  auto bindings = cfg->getObject("emoteBindings");
+  if (!bindings) return std::unexpected(std::move(bindings.error()));
+  if (!HumanoidEmoteNames) return std::unexpected(HumanoidEmoteNames.error());
+  for (auto const& binding : *bindings) {
+    auto array = binding.second.toArray();
+    if (!array) return std::unexpected(std::move(array.error()));
+    for (auto const& text : *array) {
+      auto emote = HumanoidEmoteNames->getLeft(binding.first);
+      if (!emote) return std::unexpected(std::move(emote.error()));
+      auto string = text.toString();
+      if (!string) return std::unexpected(std::move(string.error()));
+      EmoteBinding value;
+      value.emote = **emote;
+      value.text = std::move(*string);
+      result->m_emoteBindings.append(std::move(value));
     }
   }
+  return result;
 }
 
-HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
-  auto isShouty = [](String const& text) -> bool {
+std::expected<HumanoidEmote, StarException> EmoteProcessor::detectEmotes(String const& chatter) const {
+  auto isShouty = [](String const& text) -> std::expected<bool, StarException> {
     int caps = 0;
     int noCaps = 0;
-    for (auto c : text) {
+    auto begin = text.begin();
+    if (!begin) return std::unexpected(std::move(begin.error()));
+    for (auto it = *begin; it != text.end(); ++it) {
+      auto c = *it;
       if (String::toUpper(c) != String::toLower(c)) {
         if (String::toUpper(c) == c)
           caps++;
@@ -75,7 +89,9 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
 
   HumanoidEmote result = HumanoidEmote::Idle;
   if (!chatter.empty()) {
-    if (isShouty(chatter))
+    auto shouty = isShouty(chatter);
+    if (!shouty) return std::unexpected(std::move(shouty.error()));
+    if (*shouty)
       result = HumanoidEmote::Shouting;
     else
       result = HumanoidEmote::Blabbering;
@@ -83,11 +99,14 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
 
   float bestMatch = -1;
 
-  for (auto option : m_emoteBindings) {
+  for (auto const& option : m_emoteBindings) {
     auto p = chatter.find(option.text);
-    if (p == NPos)
+    if (!p) return std::unexpected(std::move(p.error()));
+    if (*p == NPos)
       continue;
-    float r = p + (float)option.text.length() * 0.01f;
+    auto length = option.text.length();
+    if (!length) return std::unexpected(std::move(length.error()));
+    float r = *p + (float)*length * 0.01f;
     if (r > bestMatch) {
       bestMatch = r;
       result = option.emote;

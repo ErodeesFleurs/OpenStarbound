@@ -16,12 +16,13 @@ using CodexDatabaseException = StarError<CodexDatabaseExceptionTag, StarExceptio
 
 class CodexDatabase {
 public:
-  explicit CodexDatabase(std::shared_ptr<Assets const> assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<CodexDatabase>, StarException> create(std::shared_ptr<Assets const> assets);
 
   StringMap<std::shared_ptr<Codex const>> codexes() const;
   std::shared_ptr<Codex const> codex(String const& codexId) const;
 
 private:
+  CodexDatabase() = default;
   StringMap<std::shared_ptr<Codex const>> m_codexes;
 };
 

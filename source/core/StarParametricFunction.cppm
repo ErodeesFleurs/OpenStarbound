@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.interpolation;
 
 import star.math_common;
@@ -21,10 +22,10 @@ public:
   explicit ParametricTable(ParametricTable<OtherIndexType, OtherValueType> const& parametricFunction);
 
   // Construct a ParametricTable with a list of point pairs, which does not
-  // have to be sorted (it will be sorted internally).  Throws an exception on
-  // duplicate index values.
+  // have to be sorted (it will be sorted internally). Duplicate indexes are
+  // returned as a diagnostic without publishing a partial table.
   template <typename PairContainer>
-  explicit ParametricTable(PairContainer indexValuePairs);
+  [[nodiscard]] static std::expected<ParametricTable, StarException> create(PairContainer indexValuePairs);
 
   // addPoint does not need to be called in order, it will insert the point in
   // the correct ordered position for the given index, and return the position.
@@ -34,21 +35,20 @@ public:
   std::size_t size() const;
   bool empty() const;
 
-  IndexType const& index(std::size_t i) const;
-  ValueType const& value(std::size_t i) const;
+  [[nodiscard]] std::expected<IndexType const*, StarException> index(std::size_t i) const;
+  [[nodiscard]] std::expected<ValueType const*, StarException> value(std::size_t i) const;
 
   // Returns true if the values of the table are also valid indexes (true when
   // the data points are monotonic increasing)
   bool isInvertible() const;
 
-  // Invert the table, switching indexes and values.  Throws an exception if
-  // the function is not invertible.  Will not generally compile unless the
-  // Index and Value types are the same type.
-  void invert() const;
+  // Invert the table, switching indexes and values. Will not generally compile
+  // unless Index and Value are the same type.
+  [[nodiscard]] std::expected<void, StarException> invert();
 
   // Find the value to the left of the given index.  If the index is lower than
   // the lowest index point, returns the first value.
-  ValueType const& get(IndexType index) const;
+  [[nodiscard]] std::expected<ValueType const*, StarException> get(IndexType index) const;
 
 protected:
   typedef std::vector<IndexType> IndexList;
@@ -58,6 +58,7 @@ protected:
   ValueList const& values() const;
 
 private:
+  template <typename, typename> friend class ParametricTable;
   IndexList m_indexes;
   ValueList m_values;
 };
@@ -80,7 +81,7 @@ public:
   explicit ParametricFunction(ParametricFunction<OtherIndexType, OtherValueType> const& parametricFunction);
 
   template <typename PairContainer>
-  explicit ParametricFunction(PairContainer indexValuePairs,
+  [[nodiscard]] static std::expected<ParametricFunction, StarException> create(PairContainer indexValuePairs,
       InterpolationMode interpolationMode = InterpolationMode::Linear,
       BoundMode boundMode = BoundMode::Clamp);
 
@@ -92,10 +93,10 @@ public:
 
   // Interpolates a value at the given index according to the interpolation and
   // bound mode.
-  ValueType interpolate(IndexType index) const;
+  [[nodiscard]] std::expected<ValueType, StarException> interpolate(IndexType index) const;
 
   // Synonym for interpolate
-  ValueType operator()(IndexType index) const;
+  [[nodiscard]] std::expected<ValueType, StarException> operator()(IndexType index) const;
 
 private:
   InterpolationMode m_interpolationMode;
@@ -110,16 +111,17 @@ template <typename OtherIndexType, typename OtherValueType>
 ParametricTable<IndexType, ValueType>::ParametricTable(
     ParametricTable<OtherIndexType, OtherValueType> const& parametricTable) {
   for (std::size_t i = 0; i < parametricTable.size(); ++i) {
-    m_indexes.push_back(parametricTable.index(i));
-    m_values.push_back(parametricTable.value(i));
+    m_indexes.push_back(parametricTable.m_indexes[i]);
+    m_values.push_back(parametricTable.m_values[i]);
   }
 }
 
 template <typename IndexType, typename ValueType>
 template <typename PairContainer>
-ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValuePairs) {
+std::expected<ParametricTable<IndexType, ValueType>, StarException> ParametricTable<IndexType, ValueType>::create(PairContainer indexValuePairs) {
+  ParametricTable table;
   if (indexValuePairs.empty())
-    return;
+    return table;
 
   std::sort(indexValuePairs.begin(), indexValuePairs.end(),
       [](typename PairContainer::value_type const& a, typename PairContainer::value_type const& b) {
@@ -127,14 +129,15 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
       });
 
   for (auto const& pair : indexValuePairs) {
-    m_indexes.push_back(std::move(std::get<0>(pair)));
-    m_values.push_back(std::move(std::get<1>(pair)));
+    table.m_indexes.push_back(std::move(std::get<0>(pair)));
+    table.m_values.push_back(std::move(std::get<1>(pair)));
   }
 
-  for (std::size_t i = 0; i < size() - 1; ++i) {
-    if (m_indexes[i] == m_indexes[i + 1])
-      throw MathException("Degenerate index values given in ParametricTable constructor");
+  for (std::size_t i = 0; i < table.size() - 1; ++i) {
+    if (table.m_indexes[i] == table.m_indexes[i + 1])
+      return std::unexpected(MathException("Degenerate index values given in ParametricTable constructor"));
   }
+  return table;
 }
 
 template <typename IndexType, typename ValueType>
@@ -162,13 +165,17 @@ bool ParametricTable<IndexType, ValueType>::empty() const {
 }
 
 template <typename IndexType, typename ValueType>
-IndexType const& ParametricTable<IndexType, ValueType>::index(std::size_t i) const {
-  return m_indexes.at(i);
+std::expected<IndexType const*, StarException> ParametricTable<IndexType, ValueType>::index(std::size_t i) const {
+  if (i >= size())
+    return std::unexpected(MathException("Index out of bounds in ParametricTable::index"));
+  return &m_indexes[i];
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::value(std::size_t i) const {
-  return m_values.at(i);
+std::expected<ValueType const*, StarException> ParametricTable<IndexType, ValueType>::value(std::size_t i) const {
+  if (i >= size())
+    return std::unexpected(MathException("Index out of bounds in ParametricTable::value"));
+  return &m_values[i];
 }
 
 template <typename IndexType, typename ValueType>
@@ -185,24 +192,25 @@ bool ParametricTable<IndexType, ValueType>::isInvertible() const {
 }
 
 template <typename IndexType, typename ValueType>
-void ParametricTable<IndexType, ValueType>::invert() const {
+std::expected<void, StarException> ParametricTable<IndexType, ValueType>::invert() {
   if (isInvertible())
-    throw MathException("invert() called on non-invertible ParametricTable");
+    return std::unexpected(MathException("invert() called on non-invertible ParametricTable"));
 
   for (std::size_t i = 0; i < size(); ++i)
     std::swap(m_indexes[i], m_values[i]);
+  return {};
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::get(IndexType index) const {
+std::expected<ValueType const*, StarException> ParametricTable<IndexType, ValueType>::get(IndexType index) const {
   if (empty())
-    throw MathException("get called on empty ParametricTable");
+    return std::unexpected(MathException("get called on empty ParametricTable"));
 
   auto i = std::lower_bound(m_indexes.begin(), m_indexes.end(), index);
   if (i != m_indexes.begin())
     --i;
 
-  return m_values[std::distance(m_indexes.begin(), i)];
+  return &m_values[std::distance(m_indexes.begin(), i)];
 }
 
 template <typename IndexType, typename ValueType>
@@ -234,11 +242,14 @@ ParametricFunction<IndexType, ValueType>::ParametricFunction(
 
 template <typename IndexType, typename ValueType>
 template <typename PairContainer>
-ParametricFunction<IndexType, ValueType>::ParametricFunction(
-    PairContainer indexValuePairs, InterpolationMode interpolationMode, BoundMode boundMode)
-  : Base(indexValuePairs) {
-  m_interpolationMode = interpolationMode;
-  m_boundMode = boundMode;
+std::expected<ParametricFunction<IndexType, ValueType>, StarException> ParametricFunction<IndexType, ValueType>::create(
+    PairContainer indexValuePairs, InterpolationMode interpolationMode, BoundMode boundMode) {
+  auto base = Base::create(std::move(indexValuePairs));
+  if (!base)
+    return std::unexpected(std::move(base.error()));
+  ParametricFunction function(interpolationMode, boundMode);
+  static_cast<Base&>(function) = std::move(*base);
+  return function;
 }
 
 template <typename IndexType, typename ValueType>
@@ -262,7 +273,7 @@ void ParametricFunction<IndexType, ValueType>::setBoundMode(BoundMode boundMode)
 }
 
 template <typename IndexType, typename ValueType>
-ValueType ParametricFunction<IndexType, ValueType>::interpolate(IndexType index) const {
+std::expected<ValueType, StarException> ParametricFunction<IndexType, ValueType>::interpolate(IndexType index) const {
   if (Base::empty())
     return ValueType();
 
@@ -280,12 +291,12 @@ ValueType ParametricFunction<IndexType, ValueType>::interpolate(IndexType index)
         Base::indexes(), Base::values(), index, Cubic4WeightOperator<IndexType>(true), m_boundMode);
 
   } else {
-    throw MathException("Unsupported interpolation type in ParametricFunction::interpolate");
+    return std::unexpected(MathException("Unsupported interpolation type in ParametricFunction::interpolate"));
   }
 }
 
 template <typename IndexType, typename ValueType>
-ValueType ParametricFunction<IndexType, ValueType>::operator()(IndexType index) const {
+std::expected<ValueType, StarException> ParametricFunction<IndexType, ValueType>::operator()(IndexType index) const {
   return interpolate(index);
 }
 

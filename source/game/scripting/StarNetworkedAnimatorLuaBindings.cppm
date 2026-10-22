@@ -2,6 +2,7 @@ module;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import std;
+import star.format;
 import star.json;
 import star.lua;
 
@@ -16,5 +17,5 @@ export namespace Star {
 }
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makeNetworkedAnimatorCallbacks(NetworkedAnimator* networkedAnimator);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeNetworkedAnimatorCallbacks(NetworkedAnimator* networkedAnimator);
 }

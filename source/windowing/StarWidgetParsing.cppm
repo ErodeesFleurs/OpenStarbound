@@ -63,52 +63,52 @@ struct WidgetConstructResult {
   float zlevel;
 };
 
-typedef std::function<WidgetConstructResult(String const& name, Json const& config)> ConstuctorFunc;
+typedef std::function<std::expected<WidgetConstructResult, StarException>(String const& name, Json const& config)> ConstuctorFunc;
 
 class WidgetParser {
 public:
   WidgetParser(GuiContext& context);
   virtual ~WidgetParser() {}
 
-  virtual void construct(Json const& config, Widget* widget = nullptr);
+  [[nodiscard]] virtual std::expected<void, StarException> construct(Json const& config, Widget* widget = nullptr);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
-  std::shared_ptr<Widget> makeSingle(String const& name, Json const& config);
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> makeSingle(String const& name, Json const& config);
 
 protected:
-  void constructImpl(Json const& config, Widget* widget);
-  List<WidgetConstructResult> constructor(Json const& config);
+  [[nodiscard]] std::expected<void, StarException> constructImpl(Json const& config, Widget* widget);
+  [[nodiscard]] std::expected<List<WidgetConstructResult>, StarException> constructor(Json const& config);
 
   // Parents
-  WidgetConstructResult stackHandler(String const& name, Json const& config);
-  WidgetConstructResult scrollAreaHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> stackHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> scrollAreaHandler(String const& name, Json const& config);
 
   // Interactive
-  WidgetConstructResult radioGroupHandler(String const& name, Json const& config);
-  WidgetConstructResult buttonHandler(String const& name, Json const& config);
-  WidgetConstructResult spinnerHandler(String const& name, Json const& config);
-  WidgetConstructResult textboxHandler(String const& name, Json const& config);
-  WidgetConstructResult itemSlotHandler(String const& name, Json const& config);
-  WidgetConstructResult itemGridHandler(String const& name, Json const& config);
-  WidgetConstructResult listHandler(String const& name, Json const& config);
-  WidgetConstructResult sliderHandler(String const& name, Json const& config);
-  WidgetConstructResult largeCharPlateHandler(String const& name, Json const& config);
-  WidgetConstructResult tabSetHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> radioGroupHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> buttonHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> spinnerHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> textboxHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> itemSlotHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> itemGridHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> listHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> sliderHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> largeCharPlateHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> tabSetHandler(String const& name, Json const& config);
 
   // Non-interactive
-  WidgetConstructResult widgetHandler(String const& name, Json const& config);
-  WidgetConstructResult imageHandler(String const& name, Json const& config);
-  WidgetConstructResult imageStretchHandler(String const& name, Json const& config);
-  WidgetConstructResult portraitHandler(String const& name, Json const& config);
-  WidgetConstructResult labelHandler(String const& name, Json const& config);
-  WidgetConstructResult canvasHandler(String const& name, Json const& config);
-  WidgetConstructResult fuelGaugeHandler(String const& name, Json const& config);
-  WidgetConstructResult progressHandler(String const& name, Json const& config);
-  WidgetConstructResult containerHandler(String const& name, Json const& config);
-  WidgetConstructResult layoutHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> widgetHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> imageHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> imageStretchHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> portraitHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> labelHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> canvasHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> fuelGaugeHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> progressHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> containerHandler(String const& name, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> layoutHandler(String const& name, Json const& config);
 
   // Utilities
-  void common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren = true);
-  ImageStretchSet parseImageStretchSet(Json const& config);
+  [[nodiscard]] std::expected<void, StarException> common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren = true);
+  [[nodiscard]] std::expected<ImageStretchSet, StarException> parseImageStretchSet(Json const& config);
 
   GuiContext* m_context;
   Pane* m_pane;

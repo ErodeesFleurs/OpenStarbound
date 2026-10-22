@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.map;
@@ -37,24 +38,24 @@ public:
 
   FontTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup);
 
-  const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<GlyphTexture const*, StarException> glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize);
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<TexturePtr, StarException> glyphTexturePtr(String::Char, unsigned fontSize);
+  [[nodiscard]] std::expected<TexturePtr, StarException> glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
-  unsigned glyphWidth(String::Char c, unsigned fontSize);
+  [[nodiscard]] std::expected<unsigned, StarException> glyphWidth(String::Char c, unsigned fontSize);
 
   // Removes glyphs that haven't been used in more than the given time in
   // milliseconds
   void cleanup(std::int64_t timeout);
   // Switches the current font
-  void switchFont(String const& font);
+  [[nodiscard]] std::expected<void, StarException> switchFont(String const& font);
   String const& activeFont();
-  void addFont(std::shared_ptr<Font> const& font, String const& name);
+  [[nodiscard]] std::expected<void, StarException> addFont(std::shared_ptr<Font> const& font, String const& name);
   void clearFonts();
-  void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
+  [[nodiscard]] std::expected<void, StarException> setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
 private:
-  Font* getFontForCharacter(String::Char);
+  [[nodiscard]] std::expected<Font*, StarException> getFontForCharacter(String::Char);
 
   Root& m_root;
   CaseInsensitiveStringMap<std::shared_ptr<Font>> m_fonts;

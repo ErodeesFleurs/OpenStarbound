@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -60,14 +61,14 @@ public:
     return Star::typeName<ScrollThumb>();
   }
 
-  ScrollThumb(GuiContext& context, GuiDirection direction);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScrollThumb>, StarException> create(GuiContext& context, GuiDirection direction);
   virtual ~ScrollThumb() {}
 
   void setDirection(GuiDirection direction);
   void setImages(ImageStretchSet const& base,
       ImageStretchSet const& hover = ImageStretchSet(),
       ImageStretchSet const& pressed = ImageStretchSet());
-  void setImages(Json const& images);
+  [[nodiscard]] std::expected<void, StarException> setImages(Json const& images);
 
   bool isHovered() const;
   bool isPressed() const;
@@ -75,16 +76,16 @@ public:
   void setHovered(bool hovered);
   void setPressed(bool pressed);
 
-  void mouseOver() override;
-  void mouseOut() override;
+  [[nodiscard]] std::expected<void, StarException> mouseOver() override;
+  [[nodiscard]] std::expected<void, StarException> mouseOut() override;
 
-  Vec2U baseSize() const;
+  [[nodiscard]] std::expected<Vec2U, StarException> baseSize() const;
 
 protected:
-  virtual void renderImpl() override;
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl() override;
 
 private:
-  void readDefaults();
+  ScrollThumb(GuiContext& context, GuiDirection direction);
 
   GuiDirection m_direction;
 
@@ -105,24 +106,26 @@ public:
     return Star::typeName<ScrollBar>();
   }
 
-  ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScrollBar>, StarException> create(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
 
-  void setButtonImages(Json const& images);
+  [[nodiscard]] std::expected<void, StarException> setButtonImages(Json const& images);
 
-  int trackSize() const;
-  float sizeRatio() const;
+  [[nodiscard]] std::expected<int, StarException> trackSize() const;
+  [[nodiscard]] std::expected<float, StarException> sizeRatio() const;
   virtual Vec2I size() const override;
-  float scrollRatio() const;
-  Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
+  [[nodiscard]] std::expected<float, StarException> scrollRatio() const;
+  [[nodiscard]] std::expected<Vec2I, StarException> offsetFromThumbPosition(Vec2I const& thumbPosition) const;
 
   std::shared_ptr<ButtonWidget> forwardButton() const;
   std::shared_ptr<ButtonWidget> backwardButton() const;
   std::shared_ptr<ScrollThumb> thumb() const;
 
 protected:
-  void drawChildren() override;
+  [[nodiscard]] std::expected<void, StarException> drawChildren() override;
 
 private:
+  ScrollBar(GuiContext& context, GuiDirection direction);
+  [[nodiscard]] std::expected<void, StarException> initialize(WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
   GuiDirection m_direction;
 
   std::shared_ptr<ButtonWidget> m_forward; // up or right, makes the offset higher
@@ -141,10 +144,10 @@ public:
     return Star::typeName<ScrollArea>();
   }
 
-  ScrollArea(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScrollArea>, StarException> create(GuiContext& context);
 
-  void setButtonImages(Json const& images);
-  void setThumbImages(Json const& images);
+  [[nodiscard]] std::expected<void, StarException> setButtonImages(Json const& images);
+  [[nodiscard]] std::expected<void, StarException> setThumbImages(Json const& images);
 
   RectI contentBoundRect() const;
   Vec2I contentSize() const;
@@ -164,13 +167,15 @@ public:
 
   void setUpdatesChildren(bool slop);
 
-  virtual bool sendEvent(InputEvent const& event) override;
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 
 protected:
-  void drawChildren() override;
+  [[nodiscard]] std::expected<void, StarException> drawChildren() override;
 
 private:
+  explicit ScrollArea(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   int advanceFactorHelper();
 
   int m_buttonAdvance;

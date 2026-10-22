@@ -56,7 +56,18 @@ import star.gui_context;
 import star.widget;
 import star.progress_widget;
 
+import star.format;
 namespace Star {
+
+std::expected<std::shared_ptr<ProgressWidget>, StarException> ProgressWidget::create(GuiContext& context, String const& background, String const& overlay, ImageStretchSet const& progressSet, GuiDirection direction) {
+  auto widget = std::shared_ptr<ProgressWidget>(new ProgressWidget(context, background, overlay, progressSet, direction));
+  if (!background.empty() || !overlay.empty()) {
+    auto size = context.textureSize(!background.empty() ? background : overlay);
+    if (!size) return std::unexpected(std::move(size.error()));
+    widget->setSize(Vec2I(*size));
+  }
+  return widget;
+}
 
 ProgressWidget::ProgressWidget(GuiContext& context, String const& background,
     String const& overlay,
@@ -70,15 +81,10 @@ ProgressWidget::ProgressWidget(GuiContext& context, String const& background,
   m_progressLevel = 0;
   m_maxLevel = 1;
 
-  if (!m_background.empty())
-    setSize(Vec2I(this->context()->textureSize(m_background)));
-  else if (!m_overlay.empty())
-    setSize(Vec2I(this->context()->textureSize(m_overlay)));
-
   m_color = Color::White;
 }
 
-void ProgressWidget::renderImpl() {
+std::expected<void, StarException> ProgressWidget::renderImpl() {
   float progress = 1;
   if (m_maxLevel > 0)
     progress = m_progressLevel / m_maxLevel;
@@ -97,13 +103,16 @@ void ProgressWidget::renderImpl() {
     return result;
   };
 
-  if (!m_background.empty())
-    context()->drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+  if (!m_background.empty()) {
+    auto result = context()->drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
 
-  context()->drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
-
+  auto result = context()->drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
+  if (!result) return std::unexpected(std::move(result.error()));
   if (!m_overlay.empty())
-    context()->drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    return context()->drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+  return {};
 }
 
 void ProgressWidget::setCurrentProgressLevel(float amount) {

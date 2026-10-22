@@ -185,90 +185,110 @@ import star.client_context;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallbackWithSignature<bool>(
-    "hudVisible", std::bind(std::mem_fn(&MainInterface::hudVisible), mainInterface));
-  callbacks.registerCallbackWithSignature<void, bool>(
-    "setHudVisible", std::bind(std::mem_fn(&MainInterface::setHudVisible), mainInterface, std::placeholders::_1));
-
-  callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, std::optional<bool> ignoreInterfaceScale) -> std::optional<std::shared_ptr<CanvasWidget>> {
-    if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value_or(false)))
-      return canvas;
+  if (auto r = callbacks.registerCallback("hudVisible", [mainInterface]() { return mainInterface->hudVisible(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setHudVisible", [mainInterface](bool visible) { return mainInterface->setHudVisible(visible); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("bindCanvas", [mainInterface](String const& name, std::optional<bool> ignoreScale) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {
+    auto canvas = mainInterface->fetchCanvas(name, ignoreScale.value_or(false));
+    if (!canvas) return std::unexpected(std::move(canvas.error()));
+    if (*canvas) return std::optional<std::shared_ptr<CanvasWidget>>(std::move(*canvas));
+    return std::optional<std::shared_ptr<CanvasWidget>>{};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& name) -> std::expected<std::optional<LuaCallbacks>, StarException> {
+    if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+    auto type = MainInterfacePanesNames->getLeft(name);
+    if (!type) return std::unexpected(std::move(type.error()));
+    auto pane = mainInterface->paneManager()->maybeRegisteredPane(**type);
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    if (!*pane) return std::optional<LuaCallbacks>{};
+    auto bound = (*pane)->makePaneCallbacks();
+    if (!bound) return std::unexpected(std::move(bound.error()));
+    return std::optional<LuaCallbacks>(std::move(*bound));
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("displayRegisteredPane", [mainInterface](String const& name) -> std::expected<void, StarException> {
+    if (!MainInterfacePanesNames) return std::unexpected(MainInterfacePanesNames.error());
+    auto type = MainInterfacePanesNames->getLeft(name);
+    if (!type) return std::unexpected(std::move(type.error()));
+    auto manager = mainInterface->paneManager();
+    auto pane = manager->maybeRegisteredPane(**type);
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    if (*pane) {
+      auto displayed = manager->displayRegisteredPane(**type);
+      if (!displayed) return std::unexpected(std::move(displayed.error()));
+    }
     return {};
-  });
-
-  callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> std::optional<LuaCallbacks> {
-    if (auto pane = mainInterface->paneManager()->maybeRegisteredPane(MainInterfacePanesNames.getLeft(registeredPaneName)))
-      return pane->makePaneCallbacks();
-    return {};
-  });
-
-  callbacks.registerCallback("displayRegisteredPane", [mainInterface](String const& registeredPaneName) {
-    auto pane = MainInterfacePanesNames.getLeft(registeredPaneName);
-    auto paneManager = mainInterface->paneManager();
-    if (paneManager->maybeRegisteredPane(pane))
-      paneManager->displayRegisteredPane(pane);
-  });
-
-  callbacks.registerCallback("scale", [mainInterface]() {
-    return mainInterface->context().interfaceScale();
-  });
-
-  callbacks.registerCallback("queueMessage", [mainInterface](String const& message, std::optional<float> cooldown, std::optional<float> springState) {
-    mainInterface->queueMessage(message, cooldown, springState.value_or(0));
-  });
-
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("scale", [mainInterface]() { return mainInterface->context().interfaceScale(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("queueMessage", [mainInterface](String const& message, std::optional<float> cooldown, std::optional<float> spring) {
+    return mainInterface->queueMessage(message, cooldown, spring.value_or(0));
+  }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }
 
-LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, UniverseClient* client) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeChatCallbacks(MainInterface* mainInterface, UniverseClient* client) {
   LuaCallbacks callbacks;
-
-  auto chat = as<Chat>(mainInterface->paneManager()->registeredPane(MainInterfacePanes::Chat).get());
-
-  callbacks.registerCallback("send", [client](String const& message, std::optional<String> modeName, std::optional<bool> speak, std::optional<JsonObject> data) {
-    auto sendMode = modeName ? ChatSendModeNames.getLeft(*modeName) : ChatSendMode::Broadcast;
-    client->sendChat(message, sendMode, speak, data);
-  });
-
-  // just for SE compat - this shoulda been a utility callback :moyai:
-  callbacks.registerCallback("parseArguments", [](String const& args) -> LuaVariadic<Json> {
-    return Json::parseSequence(args).toArray();
-  });
-
-  callbacks.registerCallback("command", [mainInterface](String const& command) -> StringList {
-    return mainInterface->commandProcessor()->handleCommand(command);
-  });
-
-  callbacks.registerCallback("addMessage", [client, chat](String const& text, std::optional<Json> config) {
-    ChatReceivedMessage message({MessageContext::Mode::CommandResult, ""}, client->clientContext()->connectionId(), "", text);
-    if (config) {
-      if (auto mode = config->optString("mode"))
-        message.context.mode = MessageContextModeNames.getLeft(*mode);
-      if (auto channelName = config->optString("channelName"))
-        message.context.channelName = std::move(*channelName);
-      if (auto portrait = config->optString("portrait"))
-        message.portrait = std::move(*portrait);
-      if (auto fromNick = config->optString("fromNick"))
-        message.fromNick = std::move(*fromNick);
+  auto chatResult = mainInterface->paneManager()->registeredPane<Chat>(MainInterfacePanes::Chat);
+  if (!chatResult) return std::unexpected(std::move(chatResult.error()));
+  auto chat = std::move(*chatResult);
+  if (auto r = callbacks.registerCallback("send", [client](String const& message, std::optional<String> modeName, std::optional<bool> speak, std::optional<JsonObject> data) -> std::expected<void, StarException> {
+    ChatSendMode mode = ChatSendMode::Broadcast;
+    if (modeName) {
+      if (!ChatSendModeNames) return std::unexpected(ChatSendModeNames.error());
+      auto parsed = ChatSendModeNames->getLeft(*modeName);
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      mode = **parsed;
     }
-    chat->addMessages({std::move(message)}, config ? config->getBool("showPane", true) : true);
-  });
-
-  callbacks.registerCallback("input", [chat]() -> String {
-    return chat->currentChat();
-  });
-
-  callbacks.registerCallback("setInput", [chat](String const& text, std::optional<bool> moveCursor) -> bool {
+    return client->sendChat(message, mode, speak, data);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("parseArguments", [](String const& args) -> std::expected<LuaVariadic<Json>, StarException> {
+    auto parsed = Json::parseSequence(args);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    auto values = parsed->toArray();
+    if (!values) return std::unexpected(std::move(values.error()));
+    return LuaVariadic<Json>(std::move(*values));
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("command", [mainInterface](String const& command) {
+    return mainInterface->commandProcessor()->handleCommand(command);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("addMessage", [client, chat](String const& text, std::optional<Json> config) -> std::expected<void, StarException> {
+    ChatReceivedMessage message({MessageContext::Mode::CommandResult, ""}, client->clientContext()->connectionId(), "", text);
+    bool showPane = true;
+    if (config) {
+      auto mode = config->optString("mode");
+      if (!mode) return std::unexpected(std::move(mode.error()));
+      if (*mode) {
+        if (!MessageContextModeNames) return std::unexpected(MessageContextModeNames.error());
+        auto parsed = MessageContextModeNames->getLeft(**mode);
+        if (!parsed) return std::unexpected(std::move(parsed.error()));
+        message.context.mode = **parsed;
+      }
+      auto channel = config->optString("channelName");
+      if (!channel) return std::unexpected(std::move(channel.error()));
+      if (*channel) message.context.channelName = std::move(**channel);
+      auto portrait = config->optString("portrait");
+      if (!portrait) return std::unexpected(std::move(portrait.error()));
+      if (*portrait) message.portrait = std::move(**portrait);
+      auto nickname = config->optString("fromNick");
+      if (!nickname) return std::unexpected(std::move(nickname.error()));
+      if (*nickname) message.fromNick = std::move(**nickname);
+      auto show = config->getBool("showPane", true);
+      if (!show) return std::unexpected(std::move(show.error()));
+      showPane = *show;
+    }
+    return chat->addMessages({std::move(message)}, showPane);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("input", [chat]() { return chat->currentChat(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setInput", [chat](String const& text, std::optional<bool> moveCursor) {
     return chat->setCurrentChat(text, moveCursor.value_or(false));
-  });
-
-  callbacks.registerCallback("clear", [chat](std::optional<std::size_t> count) {
-    chat->clear(count.value_or(std::numeric_limits<std::size_t>::max()));
-  });
-
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("clear", [chat](std::optional<std::size_t> count) {
+    return chat->clear(count.value_or(std::numeric_limits<std::size_t>::max()));
+  }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }
 

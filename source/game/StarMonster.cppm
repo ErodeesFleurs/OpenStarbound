@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.data_stream_extra;
@@ -121,98 +122,98 @@ public:
     String image;
   };
 
-  Monster(Root& rootContext, MonsterVariant const& variant, std::optional<float> level = {});
-  Monster(Root& rootContext, Json const& diskStore);
+  [[nodiscard]] static std::expected<std::shared_ptr<Monster>, StarException> create(Root& rootContext, MonsterVariant const& variant, std::optional<float> level = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<Monster>, StarException> create(Root& rootContext, Json const& diskStore);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {});
 
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
   Vec2F velocity() const;
 
-  Vec2F mouthOffset() const;
-  Vec2F feetOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> mouthOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> feetOffset() const;
 
   RectF collisionArea() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] std::expected<String, StarException> name() const override;
+  [[nodiscard]] std::expected<String, StarException> description() const override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const override;
 
-  std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  [[nodiscard]] std::expected<std::optional<HitType>, StarException> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] std::expected<std::optional<PolyF>, StarException> hitPoly() const override;
 
-  void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
-  void damagedOther(DamageNotification const& damage) override;
+  [[nodiscard]] std::expected<void, StarException> hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
+  [[nodiscard]] std::expected<void, StarException> damagedOther(DamageNotification const& damage) override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> selfDamageNotifications() override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
 
-  bool shouldDie();
-  void knockout();
+  [[nodiscard]] std::expected<bool, StarException> shouldDie();
+  [[nodiscard]] std::expected<void, StarException> knockout();
 
-  bool shouldDestroy() const override;
-  void destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
 
-  void renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
 
   void setPosition(Vec2F const& pos);
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  float maxHealth() const override;
+  [[nodiscard]] std::expected<float, StarException> maxHealth() const override;
   float health() const override;
   DamageBarType damageBar() const override;
 
-  float monsterLevel() const;
-  SkillInfo activeSkillInfo() const;
+  [[nodiscard]] std::expected<float, StarException> monsterLevel() const;
+  [[nodiscard]] std::expected<SkillInfo, StarException> activeSkillInfo() const;
 
-  List<Drawable> portrait(PortraitMode mode) const override;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> portrait(PortraitMode mode) const override;
   String typeName() const;
   MonsterVariant monsterVariant() const;
 
   std::optional<String> statusText() const override;
   bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  [[nodiscard]] std::expected<Vec3B, StarException> nametagColor() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> nametagOrigin() const override;
+  [[nodiscard]] std::expected<String, StarException> nametag() const override;
 
   bool aggressive() const override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
 
-  virtual Vec2F mouthPosition() const override;
-  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> mouthPosition() const override;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> mouthPosition(bool ignoreAdjustments) const override;
   virtual List<ChatAction> pullPendingChatActions() override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
 
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
   bool isInteractive() const override;
 
-  Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> questIndicatorPosition() const override;
 
   ActorMovementController* movementController() override;
   StatusController* statusController() override;
@@ -221,16 +222,20 @@ public:
   using Entity::setUniqueId;
 
 private:
-  Vec2F getAbsolutePosition(Vec2F relativePosition) const;
+  explicit Monster(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(MonsterVariant const& monsterVariant, std::optional<float> level);
+  [[nodiscard]] std::expected<void, StarException> loadState(Json const& diskStore);
 
-  void updateStatus(float dt);
-  LuaCallbacks makeMonsterCallbacks();
+  [[nodiscard]] std::expected<Vec2F, StarException> getAbsolutePosition(Vec2F relativePosition) const;
 
-  void addChatMessage(String const& message, String const& portrait = "");
+  [[nodiscard]] std::expected<void, StarException> updateStatus(float dt);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeMonsterCallbacks();
 
-  void setupNetStates();
-  void getNetStates(bool initial);
-  void setNetStates();
+  [[nodiscard]] std::expected<void, StarException> addChatMessage(String const& message, String const& portrait = "");
+
+  [[nodiscard]] std::expected<void, StarException> setupNetStates();
+  [[nodiscard]] std::expected<void, StarException> getNetStates(bool initial);
+  [[nodiscard]] std::expected<void, StarException> setNetStates();
 
   NetElementTopGroup m_netGroup;
 
@@ -239,13 +244,13 @@ private:
   MonsterVariant m_monsterVariant;
   std::optional<float> m_monsterLevel;
 
-  NetworkedAnimator m_networkedAnimator;
+  std::shared_ptr<NetworkedAnimator> m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
   std::shared_ptr<ActorMovementController> m_movementController;
   std::shared_ptr<StatusController> m_statusController;
 
-  EffectEmitter m_effectEmitter;
+  std::shared_ptr<EffectEmitter> m_effectEmitter;
 
   // The set of damage source kinds that were used to kill this entity.
   StringSet m_deathDamageSourceKinds;

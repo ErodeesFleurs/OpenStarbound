@@ -17,7 +17,7 @@ import star.file;
 
 namespace Star {
 
-Json::Type Json::typeFromName(String const& t) {
+std::expected<Json::Type, StarException> Json::typeFromName(String const& t) {
   if (t == "float")
     return Type::Float;
   else if (t == "bool")
@@ -33,7 +33,7 @@ Json::Type Json::typeFromName(String const& t) {
   else if (t == "null")
     return Type::Null;
   else
-    throw JsonException(strf("String '{}' is not a valid json type", t));
+    return std::unexpected(JsonException(strf("String '{}' is not a valid json type", t)));
 }
 
 String Json::typeName(Type t) {
@@ -60,7 +60,13 @@ bool Json::operator==(const Json& v) const {
     return true;
   } else if (type() != v.type()) {
     if ((type() == Type::Float || type() == Type::Int) && (v.type() == Type::Float || v.type() == Type::Int))
-      return toDouble() == v.toDouble() && toInt() == v.toInt();
+      {
+        auto const& integer = type() == Type::Int ? *this : v;
+        auto const& floating = type() == Type::Float ? *this : v;
+        auto i = std::get<std::int64_t>(integer.m_data);
+        auto d = std::get<double>(floating.m_data);
+        return d >= -0x1p63 && d < 0x1p63 && d == (double)i && (std::int64_t)d == i;
+      }
     return false;
   } else {
     if (type() == Type::Float)
@@ -113,16 +119,19 @@ Json Json::ofType(Type t) {
   }
 }
 
-Json Json::parse(String const& string) {
-  return inputUtf32Json<String::const_iterator>(string.begin(), string.end(), JsonParseType::Value);
+std::expected<Json, StarException> Json::parse(String const& string) {
+  auto const& bytes = string.utf8();
+  return inputUtf8Json(bytes.begin(), bytes.end(), JsonParseType::Value);
 }
 
-Json Json::parseSequence(String const& sequence) {
-  return inputUtf32Json<String::const_iterator>(sequence.begin(), sequence.end(), JsonParseType::Sequence);
+std::expected<Json, StarException> Json::parseSequence(String const& sequence) {
+  auto const& bytes = sequence.utf8();
+  return inputUtf8Json(bytes.begin(), bytes.end(), JsonParseType::Sequence);
 }
 
-Json Json::parseJson(String const& json) {
-  return inputUtf32Json<String::const_iterator>(json.begin(), json.end(), JsonParseType::Top);
+std::expected<Json, StarException> Json::parseJson(String const& json) {
+  auto const& bytes = json.utf8();
+  return inputUtf8Json(bytes.begin(), bytes.end(), JsonParseType::Top);
 }
 
 Json::Json() {}
@@ -163,12 +172,18 @@ Json::Json(char const* s) {
   m_data = std::make_shared<String const>(s);
 }
 
-Json::Json(String::Char const* s) {
-  m_data = std::make_shared<String const>(s);
+std::expected<Json, StarException> Json::create(String::Char const* s) {
+  auto string = String::create(s);
+  if (!string)
+    return std::unexpected(std::move(string.error()));
+  return Json(std::move(*string));
 }
 
-Json::Json(String::Char const* s, std::size_t len) {
-  m_data = std::make_shared<String const>(s, len);
+std::expected<Json, StarException> Json::create(String::Char const* s, std::size_t len) {
+  auto string = String::create(s, len);
+  if (!string)
+    return std::unexpected(std::move(string.error()));
+  return Json(std::move(*string));
 }
 
 Json::Json(String s) {
@@ -187,87 +202,99 @@ Json::Json(JsonObject m) {
   m_data = std::make_shared<JsonObject const>(std::move(m));
 }
 
-double Json::toDouble() const {
+std::expected<double, StarException> Json::toDouble() const {
   if (type() == Type::Float)
     return std::get<double>(m_data);
   if (type() == Type::Int)
     return (double)std::get<std::int64_t>(m_data);
-
-  throw JsonException::format("Improper conversion to double from {}", typeName());
+  return std::unexpected(JsonException::format("Improper conversion to double from {}", typeName()));
 }
 
-float Json::toFloat() const {
-  return (float)toDouble();
+std::expected<float, StarException> Json::toFloat() const {
+  auto value = toDouble();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return (float)*value;
 }
 
-bool Json::toBool() const {
+std::expected<bool, StarException> Json::toBool() const {
   if (type() != Type::Bool)
-    throw JsonException::format("Improper conversion to bool from {}", typeName());
+    return std::unexpected(JsonException::format("Improper conversion to bool from {}", typeName()));
   return std::get<bool>(m_data);
 }
 
-std::int64_t Json::toInt() const {
+std::expected<std::int64_t, StarException> Json::toInt() const {
   if (type() == Type::Float) {
-    return (std::int64_t)std::get<double>(m_data);
-  } else if (type() == Type::Int) {
-    return std::get<std::int64_t>(m_data);
-  } else {
-    throw JsonException::format("Improper conversion to int from {}", typeName());
+    auto value = std::get<double>(m_data);
+    if (!(value >= -0x1p63 && value < 0x1p63))
+      return std::unexpected(JsonException::format("Cannot convert out-of-range float {} to int", value));
+    return (std::int64_t)value;
   }
+  if (type() == Type::Int)
+    return (std::int64_t)std::get<std::int64_t>(m_data);
+  return std::unexpected(JsonException::format("Improper conversion to int from {}", typeName()));
 }
 
-std::uint64_t Json::toUInt() const {
+std::expected<std::uint64_t, StarException> Json::toUInt() const {
   if (type() == Type::Float) {
-    return (std::uint64_t)std::get<double>(m_data);
-  } else if (type() == Type::Int) {
+    auto value = std::get<double>(m_data);
+    if (!(value > -1.0 && value < 0x1p64))
+      return std::unexpected(JsonException::format("Cannot convert out-of-range float {} to unsigned int", value));
+    return (std::uint64_t)value;
+  }
+  if (type() == Type::Int)
     return (std::uint64_t)std::get<std::int64_t>(m_data);
-  } else {
-    throw JsonException::format("Improper conversion to unsigned int from {}", typeName());
-  }
+  return std::unexpected(JsonException::format("Improper conversion to unsigned int from {}", typeName()));
 }
 
-String Json::toString() const {
+std::expected<String, StarException> Json::toString() const {
   if (type() != Type::String)
-    throw JsonException(strf("Cannot convert from {} to string", typeName()));
+    return std::unexpected(JsonException::format("Cannot convert from {} to string", typeName()));
   return *std::get<std::shared_ptr<String const>>(m_data);
 }
 
-JsonArray Json::toArray() const {
-  if (type() != Type::Array)
-    throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
-  return *std::get<std::shared_ptr<JsonArray const>>(m_data);
-}
-
-JsonObject Json::toObject() const {
-  if (type() != Type::Object)
-    throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
-  return *std::get<std::shared_ptr<JsonObject const>>(m_data);
-}
-
-std::shared_ptr<String const> Json::stringPtr() const {
+std::expected<std::shared_ptr<String const>, StarException> Json::stringPtr() const {
   if (type() != Type::String)
-    throw JsonException(strf("Cannot convert from {} to string", typeName()));
+    return std::unexpected(JsonException::format("Cannot convert from {} to string", typeName()));
   return std::get<std::shared_ptr<String const>>(m_data);
 }
 
-std::shared_ptr<JsonArray const> Json::arrayPtr() const {
+std::expected<JsonArray, StarException> Json::toArray() const {
   if (type() != Type::Array)
-    throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
+    return std::unexpected(JsonException::format("Improper conversion to JsonArray from {}", typeName()));
+  return *std::get<std::shared_ptr<JsonArray const>>(m_data);
+}
+
+std::expected<std::shared_ptr<JsonArray const>, StarException> Json::arrayPtr() const {
+  if (type() != Type::Array)
+    return std::unexpected(JsonException::format("Improper conversion to JsonArray from {}", typeName()));
   return std::get<std::shared_ptr<JsonArray const>>(m_data);
 }
 
-std::shared_ptr<JsonObject const> Json::objectPtr() const {
+std::expected<Json::IteratorWrapper<JsonArray>, StarException> Json::iterateArray() const {
+  auto pointer = arrayPtr();
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  return IteratorWrapper<JsonArray>{std::move(*pointer)};
+}
+
+std::expected<JsonObject, StarException> Json::toObject() const {
   if (type() != Type::Object)
-    throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
+    return std::unexpected(JsonException::format("Improper conversion to JsonObject from {}", typeName()));
+  return *std::get<std::shared_ptr<JsonObject const>>(m_data);
+}
+
+std::expected<std::shared_ptr<JsonObject const>, StarException> Json::objectPtr() const {
+  if (type() != Type::Object)
+    return std::unexpected(JsonException::format("Improper conversion to JsonObject from {}", typeName()));
   return std::get<std::shared_ptr<JsonObject const>>(m_data);
 }
 
-Json::IteratorWrapper<JsonArray> Json::iterateArray() const {
-  return IteratorWrapper<JsonArray>{arrayPtr()};
-}
-
-Json::IteratorWrapper<JsonObject> Json::iterateObject() const {
-  return IteratorWrapper<JsonObject>{objectPtr()};
+std::expected<Json::IteratorWrapper<JsonObject>, StarException> Json::iterateObject() const {
+  auto pointer = objectPtr();
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  return IteratorWrapper<JsonObject>{std::move(*pointer)};
 }
 
 std::optional<Json> Json::opt() const {
@@ -276,535 +303,756 @@ std::optional<Json> Json::opt() const {
   return *this;
 }
 
-std::optional<double> Json::optDouble() const {
+std::expected<std::optional<double>, StarException> Json::optDouble() const {
   if (isNull())
-    return {};
-  return toDouble();
+    return std::optional<double>{};
+  auto value = toDouble();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<double>(std::move(*value));
 }
 
-std::optional<float> Json::optFloat() const {
+std::expected<std::optional<float>, StarException> Json::optFloat() const {
   if (isNull())
-    return {};
-  return toFloat();
+    return std::optional<float>{};
+  auto value = toFloat();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<float>(std::move(*value));
 }
 
-std::optional<bool> Json::optBool() const {
+std::expected<std::optional<bool>, StarException> Json::optBool() const {
   if (isNull())
-    return {};
-  return toBool();
+    return std::optional<bool>{};
+  auto value = toBool();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<bool>(std::move(*value));
 }
 
-std::optional<std::int64_t> Json::optInt() const {
+std::expected<std::optional<std::int64_t>, StarException> Json::optInt() const {
   if (isNull())
-    return {};
-  return toInt();
+    return std::optional<std::int64_t>{};
+  auto value = toInt();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<std::int64_t>(std::move(*value));
 }
 
-std::optional<std::uint64_t> Json::optUInt() const {
+std::expected<std::optional<std::uint64_t>, StarException> Json::optUInt() const {
   if (isNull())
-    return {};
-  return toUInt();
+    return std::optional<std::uint64_t>{};
+  auto value = toUInt();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<std::uint64_t>(std::move(*value));
 }
 
-std::optional<String> Json::optString() const {
+std::expected<std::optional<String>, StarException> Json::optString() const {
   if (isNull())
-    return {};
-  return toString();
+    return std::optional<String>{};
+  auto value = toString();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<String>(std::move(*value));
 }
 
-std::optional<JsonArray> Json::optArray() const {
+std::expected<std::optional<JsonArray>, StarException> Json::optArray() const {
   if (isNull())
-    return {};
-  return toArray();
+    return std::optional<JsonArray>{};
+  auto value = toArray();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<JsonArray>(std::move(*value));
 }
 
-std::optional<JsonObject> Json::optObject() const {
+std::expected<std::optional<JsonObject>, StarException> Json::optObject() const {
   if (isNull())
-    return {};
-  return toObject();
+    return std::optional<JsonObject>{};
+  auto value = toObject();
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return std::optional<JsonObject>(std::move(*value));
 }
 
-std::size_t Json::size() const {
+std::expected<std::size_t, StarException> Json::size() const {
   if (type() == Type::Array)
     return std::get<std::shared_ptr<JsonArray const>>(m_data)->size();
-  else if (type() == Type::Object)
+  if (type() == Type::Object)
     return std::get<std::shared_ptr<JsonObject const>>(m_data)->size();
-  else
-    throw JsonException("size() called on improper json type");
+  return std::unexpected(JsonException("size() called on improper json type"));
 }
 
-bool Json::contains(String const& key) const {
+std::expected<bool, StarException> Json::contains(String const& key) const {
   if (type() == Type::Object)
     return std::get<std::shared_ptr<JsonObject const>>(m_data)->contains(key);
-  else
-    throw JsonException("contains() called on improper json type");
+  return std::unexpected(JsonException("contains() called on improper json type"));
 }
 
-Json Json::get(std::size_t index) const {
-  if (auto p = ptr(index))
-    return *p;
-  throw JsonException(strf("Json::get({}) out of range", index));
+std::expected<Json, StarException> Json::get(std::size_t index) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return **pointer;
+  return std::unexpected(JsonException::format("Json::get({}) out of range", index));
 }
 
-double Json::getDouble(std::size_t index) const {
-  return get(index).toDouble();
-}
-
-float Json::getFloat(std::size_t index) const {
-  return get(index).toFloat();
-}
-
-bool Json::getBool(std::size_t index) const {
-  return get(index).toBool();
-}
-
-std::int64_t Json::getInt(std::size_t index) const {
-  return get(index).toInt();
-}
-
-std::uint64_t Json::getUInt(std::size_t index) const {
-  return get(index).toUInt();
-}
-
-String Json::getString(std::size_t index) const {
-  return get(index).toString();
-}
-
-JsonArray Json::getArray(std::size_t index) const {
-  return get(index).toArray();
-}
-
-JsonObject Json::getObject(std::size_t index) const {
-  return get(index).toObject();
-}
-
-Json Json::get(std::size_t index, Json def) const {
-  if (auto p = ptr(index))
-    return *p;
+std::expected<Json, StarException> Json::get(std::size_t index, Json def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return **pointer;
   return def;
 }
 
-double Json::getDouble(std::size_t index, double def) const {
-  if (auto p = ptr(index))
-    return p->toDouble();
+std::expected<double, StarException> Json::getDouble(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toDouble();
+}
+
+std::expected<double, StarException> Json::getDouble(std::size_t index, double def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toDouble();
   return def;
 }
 
-float Json::getFloat(std::size_t index, float def) const {
-  if (auto p = ptr(index))
-    return p->toFloat();
+std::expected<float, StarException> Json::getFloat(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toFloat();
+}
+
+std::expected<float, StarException> Json::getFloat(std::size_t index, float def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toFloat();
   return def;
 }
 
-bool Json::getBool(std::size_t index, bool def) const {
-  if (auto p = ptr(index))
-    return p->toBool();
+std::expected<bool, StarException> Json::getBool(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toBool();
+}
+
+std::expected<bool, StarException> Json::getBool(std::size_t index, bool def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toBool();
   return def;
 }
 
-std::int64_t Json::getInt(std::size_t index, std::int64_t def) const {
-  if (auto p = ptr(index))
-    return p->toInt();
+std::expected<std::int64_t, StarException> Json::getInt(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toInt();
+}
+
+std::expected<std::int64_t, StarException> Json::getInt(std::size_t index, std::int64_t def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toInt();
   return def;
 }
 
-std::uint64_t Json::getUInt(std::size_t index, std::int64_t def) const {
-  if (auto p = ptr(index))
-    return p->toUInt();
+std::expected<std::uint64_t, StarException> Json::getUInt(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toUInt();
+}
+
+std::expected<std::uint64_t, StarException> Json::getUInt(std::size_t index, std::int64_t def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toUInt();
   return def;
 }
 
-String Json::getString(std::size_t index, String def) const {
-  if (auto p = ptr(index))
-    return p->toString();
+std::expected<String, StarException> Json::getString(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toString();
+}
+
+std::expected<String, StarException> Json::getString(std::size_t index, String def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toString();
   return def;
 }
 
-JsonArray Json::getArray(std::size_t index, JsonArray def) const {
-  if (auto p = ptr(index))
-    return p->toArray();
+std::expected<JsonArray, StarException> Json::getArray(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toArray();
+}
+
+std::expected<JsonArray, StarException> Json::getArray(std::size_t index, JsonArray def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toArray();
   return def;
 }
 
-JsonObject Json::getObject(std::size_t index, JsonObject def) const {
-  if (auto p = ptr(index))
-    return p->toObject();
+std::expected<JsonObject, StarException> Json::getObject(std::size_t index) const {
+  auto value = get(index);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toObject();
+}
+
+std::expected<JsonObject, StarException> Json::getObject(std::size_t index, JsonObject def) const {
+  auto pointer = ptr(index);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return (*pointer)->toObject();
   return def;
 }
 
-Json Json::get(String const& key) const {
-  if (auto p = ptr(key))
-    return *p;
-  throw JsonException(strf("No such key in Json::get(\"{}\")", key));
+std::expected<Json, StarException> Json::get(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return **pointer;
+  return std::unexpected(JsonException::format("No such key in Json::get(\"{}\")", key));
 }
 
-double Json::getDouble(String const& key) const {
-  return get(key).toDouble();
-}
-
-float Json::getFloat(String const& key) const {
-  return get(key).toFloat();
-}
-
-bool Json::getBool(String const& key) const {
-  return get(key).toBool();
-}
-
-std::int64_t Json::getInt(String const& key) const {
-  return get(key).toInt();
-}
-
-std::uint64_t Json::getUInt(String const& key) const {
-  return get(key).toUInt();
-}
-
-String Json::getString(String const& key) const {
-  return get(key).toString();
-}
-
-JsonArray Json::getArray(String const& key) const {
-  return get(key).toArray();
-}
-
-JsonObject Json::getObject(String const& key) const {
-  return get(key).toObject();
-}
-
-Json Json::get(String const& key, Json def) const {
-  if (auto p = ptr(key))
-    return *p;
+std::expected<Json, StarException> Json::get(String const& key, Json def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer)
+    return **pointer;
   return def;
 }
 
-double Json::getDouble(String const& key, double def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toDouble();
+std::expected<double, StarException> Json::getDouble(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toDouble();
+}
+
+std::expected<double, StarException> Json::getDouble(String const& key, double def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toDouble();
   return def;
 }
 
-float Json::getFloat(String const& key, float def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toFloat();
+std::expected<float, StarException> Json::getFloat(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toFloat();
+}
+
+std::expected<float, StarException> Json::getFloat(String const& key, float def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toFloat();
   return def;
 }
 
-bool Json::getBool(String const& key, bool def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toBool();
+std::expected<bool, StarException> Json::getBool(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toBool();
+}
+
+std::expected<bool, StarException> Json::getBool(String const& key, bool def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toBool();
   return def;
 }
 
-std::int64_t Json::getInt(String const& key, std::int64_t def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toInt();
+std::expected<std::int64_t, StarException> Json::getInt(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toInt();
+}
+
+std::expected<std::int64_t, StarException> Json::getInt(String const& key, std::int64_t def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toInt();
   return def;
 }
 
-std::uint64_t Json::getUInt(String const& key, std::int64_t def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toUInt();
+std::expected<std::uint64_t, StarException> Json::getUInt(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toUInt();
+}
+
+std::expected<std::uint64_t, StarException> Json::getUInt(String const& key, std::int64_t def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toUInt();
   return def;
 }
 
-String Json::getString(String const& key, String def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toString();
+std::expected<String, StarException> Json::getString(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toString();
+}
+
+std::expected<String, StarException> Json::getString(String const& key, String def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toString();
   return def;
 }
 
-JsonArray Json::getArray(String const& key, JsonArray def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toArray();
+std::expected<JsonArray, StarException> Json::getArray(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toArray();
+}
+
+std::expected<JsonArray, StarException> Json::getArray(String const& key, JsonArray def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toArray();
   return def;
 }
 
-JsonObject Json::getObject(String const& key, JsonObject def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toObject();
+std::expected<JsonObject, StarException> Json::getObject(String const& key) const {
+  auto value = get(key);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toObject();
+}
+
+std::expected<JsonObject, StarException> Json::getObject(String const& key, JsonObject def) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return (*pointer)->toObject();
   return def;
 }
 
-std::optional<Json> Json::opt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return *p;
-  return {};
+std::expected<std::optional<Json>, StarException> Json::opt(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (*pointer && **pointer)
+    return std::optional<Json>(**pointer);
+  return std::optional<Json>{};
 }
 
-std::optional<double> Json::optDouble(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toDouble();
-  return {};
+std::expected<std::optional<double>, StarException> Json::optDouble(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<double>{};
+  return (*pointer)->optDouble();
 }
 
-std::optional<float> Json::optFloat(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toFloat();
-  return {};
+std::expected<std::optional<float>, StarException> Json::optFloat(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<float>{};
+  return (*pointer)->optFloat();
 }
 
-std::optional<bool> Json::optBool(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toBool();
-  return {};
+std::expected<std::optional<bool>, StarException> Json::optBool(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<bool>{};
+  return (*pointer)->optBool();
 }
 
-std::optional<std::int64_t> Json::optInt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toInt();
-  return {};
+std::expected<std::optional<std::int64_t>, StarException> Json::optInt(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<std::int64_t>{};
+  return (*pointer)->optInt();
 }
 
-std::optional<std::uint64_t> Json::optUInt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toUInt();
-  return {};
+std::expected<std::optional<std::uint64_t>, StarException> Json::optUInt(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<std::uint64_t>{};
+  return (*pointer)->optUInt();
 }
 
-std::optional<String> Json::optString(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toString();
-  return {};
+std::expected<std::optional<String>, StarException> Json::optString(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<String>{};
+  return (*pointer)->optString();
 }
 
-std::optional<JsonArray> Json::optArray(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toArray();
-  return {};
+std::expected<std::optional<JsonArray>, StarException> Json::optArray(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<JsonArray>{};
+  return (*pointer)->optArray();
 }
 
-std::optional<JsonObject> Json::optObject(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toObject();
-  return {};
+std::expected<std::optional<JsonObject>, StarException> Json::optObject(String const& key) const {
+  auto pointer = ptr(key);
+  if (!pointer)
+    return std::unexpected(std::move(pointer.error()));
+  if (!*pointer || !(**pointer))
+    return std::optional<JsonObject>{};
+  return (*pointer)->optObject();
 }
 
-Json Json::query(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q);
+std::expected<Json, StarException> Json::query(String const& path) const {
+  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, path);
 }
 
-double Json::queryDouble(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toDouble();
+std::expected<double, StarException> Json::queryDouble(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toDouble();
 }
 
-float Json::queryFloat(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toFloat();
+std::expected<float, StarException> Json::queryFloat(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toFloat();
 }
 
-bool Json::queryBool(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toBool();
+std::expected<bool, StarException> Json::queryBool(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toBool();
 }
 
-std::int64_t Json::queryInt(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toInt();
+std::expected<std::int64_t, StarException> Json::queryInt(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toInt();
 }
 
-std::uint64_t Json::queryUInt(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toUInt();
+std::expected<std::uint64_t, StarException> Json::queryUInt(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toUInt();
 }
 
-String Json::queryString(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toString();
+std::expected<String, StarException> Json::queryString(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toString();
 }
 
-JsonArray Json::queryArray(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toArray();
+std::expected<JsonArray, StarException> Json::queryArray(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toArray();
 }
 
-JsonObject Json::queryObject(String const& q) const {
-  return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toObject();
+std::expected<JsonObject, StarException> Json::queryObject(String const& path) const {
+  auto value = query(path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return value->toObject();
 }
 
-Json Json::query(String const& query, Json def) const {
-  if (auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query))
-    return *json;
+std::expected<Json, StarException> Json::query(String const& path, Json def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value)
+    return std::move(**value);
   return def;
 }
 
-double Json::queryDouble(String const& query, double def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toDouble();
+std::expected<double, StarException> Json::queryDouble(String const& path, double def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toDouble();
   return def;
 }
 
-float Json::queryFloat(String const& query, float def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toFloat();
+std::expected<float, StarException> Json::queryFloat(String const& path, float def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toFloat();
   return def;
 }
 
-bool Json::queryBool(String const& query, bool def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toBool();
+std::expected<bool, StarException> Json::queryBool(String const& path, bool def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toBool();
   return def;
 }
 
-std::int64_t Json::queryInt(String const& query, std::int64_t def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toInt();
+std::expected<std::int64_t, StarException> Json::queryInt(String const& path, std::int64_t def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toInt();
   return def;
 }
 
-std::uint64_t Json::queryUInt(String const& query, std::uint64_t def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toUInt();
+std::expected<std::uint64_t, StarException> Json::queryUInt(String const& path, std::uint64_t def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toUInt();
   return def;
 }
 
-String Json::queryString(String const& query, String const& def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toString();
+std::expected<String, StarException> Json::queryString(String const& path, String const& def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toString();
   return def;
 }
 
-JsonArray Json::queryArray(String const& query, JsonArray def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toArray();
+std::expected<JsonArray, StarException> Json::queryArray(String const& path, JsonArray def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toArray();
   return def;
 }
 
-JsonObject Json::queryObject(String const& query, JsonObject def) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
-  if (json && *json)
-    return json->toObject();
+std::expected<JsonObject, StarException> Json::queryObject(String const& path, JsonObject def) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).toObject();
   return def;
 }
 
-std::optional<Json> Json::optQuery(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return *json;
-  return {};
+std::expected<std::optional<Json>, StarException> Json::optQuery(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return std::move(*value);
+  return std::optional<Json>{};
 }
 
-std::optional<double> Json::optQueryDouble(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toDouble();
-  return {};
+std::expected<std::optional<double>, StarException> Json::optQueryDouble(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optDouble();
+  return std::optional<double>{};
 }
 
-std::optional<float> Json::optQueryFloat(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toFloat();
-  return {};
+std::expected<std::optional<float>, StarException> Json::optQueryFloat(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optFloat();
+  return std::optional<float>{};
 }
 
-std::optional<bool> Json::optQueryBool(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toBool();
-  return {};
+std::expected<std::optional<bool>, StarException> Json::optQueryBool(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optBool();
+  return std::optional<bool>{};
 }
 
-std::optional<std::int64_t> Json::optQueryInt(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toInt();
-  return {};
+std::expected<std::optional<std::int64_t>, StarException> Json::optQueryInt(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optInt();
+  return std::optional<std::int64_t>{};
 }
 
-std::optional<std::uint64_t> Json::optQueryUInt(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toUInt();
-  return {};
+std::expected<std::optional<std::uint64_t>, StarException> Json::optQueryUInt(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optUInt();
+  return std::optional<std::uint64_t>{};
 }
 
-std::optional<String> Json::optQueryString(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toString();
-  return {};
+std::expected<std::optional<String>, StarException> Json::optQueryString(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optString();
+  return std::optional<String>{};
 }
 
-std::optional<JsonArray> Json::optQueryArray(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toArray();
-  return {};
+std::expected<std::optional<JsonArray>, StarException> Json::optQueryArray(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optArray();
+  return std::optional<JsonArray>{};
 }
 
-std::optional<JsonObject> Json::optQueryObject(String const& path) const {
-  auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
-  if (json && *json)
-    return json->toObject();
-  return {};
+std::expected<std::optional<JsonObject>, StarException> Json::optQueryObject(String const& path) const {
+  auto value = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && **value)
+    return (**value).optObject();
+  return std::optional<JsonObject>{};
 }
 
-Json Json::set(String key, Json value) const {
+std::expected<Json, StarException> Json::set(String key, Json value) const {
   auto map = toObject();
-  map[std::move(key)] = std::move(value);
-  return map;
+  if (!map)
+    return std::unexpected(std::move(map.error()));
+  (*map)[std::move(key)] = std::move(value);
+  return Json(std::move(*map));
 }
 
-Json Json::setPath(String path, Json value) const {
+std::expected<Json, StarException> Json::setPath(String path, Json value) const {
   return JsonPath::pathSet(*this, JsonPath::parseQueryPath, path, value);
 }
 
-Json Json::erasePath(String path) const {
+std::expected<Json, StarException> Json::erasePath(String path) const {
   return JsonPath::pathRemove(*this, JsonPath::parseQueryPath, path);
 }
 
-Json Json::setAll(JsonObject values) const {
+std::expected<Json, StarException> Json::setAll(JsonObject values) const {
   auto map = toObject();
+  if (!map)
+    return std::unexpected(std::move(map.error()));
   for (auto& p : values)
-    map[std::move(p.first)] = std::move(p.second);
-  return map;
+    (*map)[std::move(p.first)] = std::move(p.second);
+  return Json(std::move(*map));
 }
 
-Json Json::eraseKey(String key) const {
+std::expected<Json, StarException> Json::eraseKey(String key) const {
   auto map = toObject();
-  map.erase(std::move(key));
-  return map;
+  if (!map)
+    return std::unexpected(std::move(map.error()));
+  map->erase(key);
+  return Json(std::move(*map));
 }
 
-Json Json::set(std::size_t index, Json value) const {
+std::expected<Json, StarException> Json::set(std::size_t index, Json value) const {
   auto array = toArray();
-  array[index] = std::move(value);
-  return array;
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  if (index >= array->size())
+    return std::unexpected(JsonException::format("Json::set({}) out of range", index));
+  (*array)[index] = std::move(value);
+  return Json(std::move(*array));
 }
 
-Json Json::insert(std::size_t index, Json value) const {
+std::expected<Json, StarException> Json::insert(std::size_t index, Json value) const {
   auto array = toArray();
-  array.insertAt(index, std::move(value));
-  return array;
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  if (index > array->size())
+    return std::unexpected(JsonException::format("Json::insert({}) out of range", index));
+  array->insert(array->begin() + index, std::move(value));
+  return Json(std::move(*array));
 }
 
-Json Json::append(Json value) const {
+std::expected<Json, StarException> Json::append(Json value) const {
   auto array = toArray();
-  array.append(std::move(value));
-  return array;
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  array->append(std::move(value));
+  return Json(std::move(*array));
 }
 
-Json Json::eraseIndex(std::size_t index) const {
+std::expected<Json, StarException> Json::eraseIndex(std::size_t index) const {
   auto array = toArray();
-  array.eraseAt(index);
-  return array;
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  if (index >= array->size())
+    return std::unexpected(JsonException::format("Json::eraseIndex({}) out of range", index));
+  array->erase(array->begin() + index);
+  return Json(std::move(*array));
 }
 
 Json::Type Json::type() const {
@@ -815,27 +1063,50 @@ String Json::typeName() const {
   return typeName(type());
 }
 
-Json Json::convert(Type u) const {
-  if (type() == u)
+std::expected<Json, StarException> Json::convert(Type target) const {
+  if (type() == target)
     return *this;
-
-  switch (u) {
+  switch (target) {
     case Type::Null:
       return Json();
-    case Type::Float:
-      return toDouble();
-    case Type::Bool:
-      return toBool();
-    case Type::Int:
-      return toInt();
-    case Type::String:
-      return toString();
-    case Type::Array:
-      return toArray();
-    case Type::Object:
-      return toObject();
+    case Type::Float: {
+      auto value = toDouble();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
+    case Type::Bool: {
+      auto value = toBool();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
+    case Type::Int: {
+      auto value = toInt();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
+    case Type::String: {
+      auto value = toString();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
+    case Type::Array: {
+      auto value = toArray();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
+    case Type::Object: {
+      auto value = toObject();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      return Json(std::move(*value));
+    }
     default:
-      throw JsonException::format("Improper conversion to type {}", typeName(u));
+      return std::unexpected(JsonException::format("Improper conversion to type {}", typeName(target)));
   }
 }
 
@@ -864,121 +1135,216 @@ Json::operator bool() const {
   return !isNull();
 }
 
-String Json::repr(int pretty, bool sort) const {
+std::expected<String, StarException> Json::repr(int pretty, bool sort) const {
   String result;
-  outputUtf32Json(*this, std::back_inserter(result), pretty, sort);
+  auto written = outputUtf32Json(*this, JsonStringOutputIterator(result), pretty, sort);
+  if (!written)
+    return std::unexpected(std::move(written.error()));
   return result;
 }
 
-String Json::printJson(int pretty, bool sort) const {
+std::expected<String, StarException> Json::printJson(int pretty, bool sort) const {
   if (type() != Type::Object && type() != Type::Array)
-    throw JsonException("printJson called on non-top-level JSON type");
+    return std::unexpected(JsonException("printJson called on non-top-level JSON type"));
 
   return repr(pretty, sort);
 }
 
-String Json::printString() const {
+std::expected<String, StarException> Json::printString() const {
   if (type() == Type::String)
     return *std::get<std::shared_ptr<String const>>(m_data);
   return repr(0, false);
 }
 
-std::ostream& operator<<(std::ostream& os, Json const& v) {
-  outputUtf8Json(v, std::ostream_iterator<char>(os), 0, false);
-  return os;
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Json const& value) {
+  auto written = outputUtf8Json(value, std::ostream_iterator<char>(os), 0, false);
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return &os;
 }
 
-std::ostream& operator<<(std::ostream& os, JsonObject const& v) {
-  // Blargh copy
-  os << Json(v);
-  return os;
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonObject const& value) {
+  return os << Json(value);
 }
 
-DataStream& operator<<(DataStream& os, const Json& v) {
-  // Compatibility with old serialization, 0 was INVALID but INVALID is no
-  // longer used.
-  os.write<std::uint8_t>((std::uint8_t)v.type() + 1);
-
-  if (v.type() == Json::Type::Float) {
-    os.write<double>(v.toDouble());
-  } else if (v.type() == Json::Type::Bool) {
-    os.write<bool>(v.toBool());
-  } else if (v.type() == Json::Type::Int) {
-    os.writeVlqI(v.toInt());
-  } else if (v.type() == Json::Type::String) {
-    os.write<String>(v.toString());
-  } else if (v.type() == Json::Type::Array) {
-    auto const& l = v.toArray();
-    os.writeVlqU(l.size());
-    for (auto const& v : l)
-      os.write<Json>(v);
-  } else if (v.type() == Json::Type::Object) {
-    auto const& m = v.toObject();
-    os.writeVlqU(m.size());
-    for (auto const& v : m) {
-      os.write<String>(v.first);
-      os.write<Json>(v.second);
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, Json const& value) {
+  auto header = ds.write<std::uint8_t>((std::uint8_t)value.type() + 1);
+  if (!header)
+    return std::unexpected(std::move(header.error()));
+  switch (value.type()) {
+    case Json::Type::Float: {
+      auto converted = value.toDouble();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto written = ds.write<double>(*converted);
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      break;
     }
+    case Json::Type::Bool: {
+      auto converted = value.toBool();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto written = ds.write<bool>(*converted);
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      break;
+    }
+    case Json::Type::Int: {
+      auto converted = value.toInt();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto written = ds.writeVlqI(*converted);
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      break;
+    }
+    case Json::Type::String: {
+      auto converted = value.toString();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto written = ds.write<String>(*converted);
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      break;
+    }
+    case Json::Type::Array: {
+      auto converted = value.arrayPtr();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto count = ds.writeVlqU((*converted)->size());
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      for (auto const& entry : **converted) {
+        auto item = ds.write<Json>(entry);
+        if (!item)
+          return std::unexpected(std::move(item.error()));
+      }
+      break;
+    }
+    case Json::Type::Object: {
+      auto converted = value.objectPtr();
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      auto count = ds.writeVlqU((*converted)->size());
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      for (auto const& entry : **converted) {
+        auto key = ds.write<String>(entry.first);
+        if (!key)
+          return std::unexpected(std::move(key.error()));
+        auto item = ds.write<Json>(entry.second);
+        if (!item)
+          return std::unexpected(std::move(item.error()));
+      }
+      break;
+    }
+    default:
+      break;
   }
-  return os;
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& os, Json& v) {
-  // Compatibility with old serialization, 0 was INVALID but INVALID is no
-  // longer used.
-  std::uint8_t typeIndex = os.read<std::uint8_t>();
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Json& value) {
+  auto header = ds.read<std::uint8_t>();
+  if (!header)
+    return std::unexpected(std::move(header.error()));
+  auto typeIndex = *header;
   if (typeIndex > 0)
-    typeIndex -= 1;
-
-  Json::Type type = (Json::Type)typeIndex;
-
-  if (type == Json::Type::Float) {
-    v = Json(os.read<double>());
-  } else if (type == Json::Type::Bool) {
-    v = Json(os.read<bool>());
-  } else if (type == Json::Type::Int) {
-    v = Json(os.readVlqI());
-  } else if (type == Json::Type::String) {
-    v = Json(os.read<String>());
-  } else if (type == Json::Type::Array) {
-    JsonArray l;
-    std::size_t s = os.readVlqU();
-    for (std::size_t i = 0; i < s; ++i)
-      l.append(os.read<Json>());
-
-    v = std::move(l);
-  } else if (type == Json::Type::Object) {
-    JsonObject m;
-    std::size_t s = os.readVlqU();
-    for (std::size_t i = 0; i < s; ++i) {
-      String k = os.read<String>();
-      m[k] = os.read<Json>();
+    --typeIndex;
+  auto type = (Json::Type)typeIndex;
+  switch (type) {
+    case Json::Type::Float: {
+      auto item = ds.read<double>();
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      value = Json(std::move(*item));
+      break;
     }
-
-    v = std::move(m);
+    case Json::Type::Bool: {
+      auto item = ds.read<bool>();
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      value = Json(std::move(*item));
+      break;
+    }
+    case Json::Type::Int: {
+      auto item = ds.readVlqI();
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      value = Json(std::move(*item));
+      break;
+    }
+    case Json::Type::String: {
+      auto item = ds.read<String>();
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      value = Json(std::move(*item));
+      break;
+    }
+    case Json::Type::Array: {
+      auto count = ds.readVlqU();
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      JsonArray items;
+      for (std::uint64_t index = 0; index < *count; ++index) {
+        auto item = ds.read<Json>();
+        if (!item)
+          return std::unexpected(std::move(item.error()));
+        items.append(std::move(*item));
+      }
+      value = Json(std::move(items));
+      break;
+    }
+    case Json::Type::Object: {
+      auto count = ds.readVlqU();
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      JsonObject items;
+      for (std::uint64_t index = 0; index < *count; ++index) {
+        auto key = ds.read<String>();
+        if (!key)
+          return std::unexpected(std::move(key.error()));
+        auto item = ds.read<Json>();
+        if (!item)
+          return std::unexpected(std::move(item.error()));
+        items[std::move(*key)] = std::move(*item);
+      }
+      value = Json(std::move(items));
+      break;
+    }
+    default:
+      break;
   }
-
-  return os;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, JsonArray const& l) {
-  ds.writeContainer(l);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonArray const& value) {
+  auto result = ds.writeContainer(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, JsonArray& l) {
-  ds.readContainer(l);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonArray& value) {
+  auto result = ds.readContainer(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, JsonObject const& m) {
-  ds.writeMapContainer(m);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonObject const& value) {
+  auto result = ds.writeMapContainer(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, JsonObject& m) {
-  ds.readMapContainer(m);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonObject& value) {
+  auto result = ds.readMapContainer(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
 void Json::getHash(XXHash3& hasher) const {
@@ -1022,9 +1388,9 @@ std::size_t hash<Json>::operator()(Json const& v) const {
   return hasher.digest();
 }
 
-Json const* Json::ptr(std::size_t index) const {
+std::expected<Json const*, StarException> Json::ptr(std::size_t index) const {
   if (type() != Type::Array)
-    throw JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName());
+    return std::unexpected(JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName()));
 
   auto const& list = *std::get<std::shared_ptr<JsonArray const>>(m_data);
   if (index >= list.size())
@@ -1032,9 +1398,9 @@ Json const* Json::ptr(std::size_t index) const {
   return &list[index];
 }
 
-Json const* Json::ptr(String const& key) const {
+std::expected<Json const*, StarException> Json::ptr(String const& key) const {
   if (type() != Type::Object)
-    throw JsonException::format("Cannot call get with key on Json type {}, must be Object type", typeName());
+    return std::unexpected(JsonException::format("Cannot call get with key on Json type {}, must be Object type", typeName()));
   auto const& map = std::get<std::shared_ptr<JsonObject const>>(m_data);
 
   auto i = map->find(key);
@@ -1046,8 +1412,8 @@ Json const* Json::ptr(String const& key) const {
 
 Json jsonMerge(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
-    JsonObject merged = base.toObject();
-    for (auto const& p : merger.toObject()) {
+    JsonObject merged = *std::get<std::shared_ptr<JsonObject const>>(base.m_data);
+    for (auto const& p : *std::get<std::shared_ptr<JsonObject const>>(merger.m_data)) {
       auto res = merged.insert(p);
       if (!res.second)
         res.first->second = jsonMerge(res.first->second, p.second);
@@ -1059,8 +1425,8 @@ Json jsonMerge(Json const& base, Json const& merger) {
 
 Json jsonMergeNulling(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
-    JsonObject merged = base.toObject();
-    for (auto const& p : merger.toObject()) {
+    JsonObject merged = *std::get<std::shared_ptr<JsonObject const>>(base.m_data);
+    for (auto const& p : *std::get<std::shared_ptr<JsonObject const>>(merger.m_data)) {
       if (p.second.isNull())
         merged.erase(p.first);
       else {
@@ -1079,16 +1445,18 @@ bool jsonPartialMatch(Json const& base, Json const& compare) {
     return true;
   } else {
     if (base.type() == Json::Type::Object && compare.type() == Json::Type::Object) {
-      for (auto const& c : compare.toObject()) {
-        if (!base.contains(c.first) || !jsonPartialMatch(base.get(c.first), c.second))
+      for (auto const& c : *std::get<std::shared_ptr<JsonObject const>>(compare.m_data)) {
+        auto const& object = *std::get<std::shared_ptr<JsonObject const>>(base.m_data);
+        auto entry = object.find(c.first);
+        if (entry == object.end() || !jsonPartialMatch(entry->second, c.second))
           return false;
       }
       return true;
     }
     if (base.type() == Json::Type::Array && compare.type() == Json::Type::Array) {
-      for (auto const& c : compare.toArray()) {
+      for (auto const& c : *std::get<std::shared_ptr<JsonArray const>>(compare.m_data)) {
         bool similar = false;
-        for (auto const& b : base.toArray()) {
+        for (auto const& b : *std::get<std::shared_ptr<JsonArray const>>(base.m_data)) {
           if (jsonPartialMatch(c, b)) {
             similar = true;
             break;

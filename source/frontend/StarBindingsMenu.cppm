@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -54,13 +55,14 @@ public:
     return Star::typeName<BindingsMenu>();
   }
 
-  BindingsMenu(GuiContext& guiContext, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<BindingsMenu>, StarException> create(GuiContext& guiContext, Json const& config);
 
-  virtual void show() override;
-  void displayed() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
+  explicit BindingsMenu(GuiContext& guiContext);
 
 };
 

@@ -14,6 +14,7 @@ import star.list;
 import star.formatted_json;
 import star.json_path;
 import star.logging;
+import star.format;
 
 namespace Star {
 
@@ -54,7 +55,7 @@ private:
   FormattedJson m_currentJson;
 };
 
-int edit(Logger& logger, int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
+[[nodiscard]] std::expected<int, StarException> edit(Logger& logger, int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
 
 }
 

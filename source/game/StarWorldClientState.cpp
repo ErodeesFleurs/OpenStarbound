@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.rect;
 import star.vector;
@@ -32,23 +33,47 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-WorldClientState::WorldClientState(Root& root) {
-  auto clientConfig = root.assets()->json("/client.config");
+std::expected<std::shared_ptr<WorldClientState>, StarException> WorldClientState::create(Root& root) {
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto clientConfig = (*assets)->json("/client.config");
+  if (!clientConfig)
+    return std::unexpected(std::move(clientConfig.error()));
+  auto windowBorder = clientConfig->getInt("windowMonitoringBorder");
+  if (!windowBorder)
+    return std::unexpected(std::move(windowBorder.error()));
+  auto presenceBorder = clientConfig->getInt("presenceEntityMonitoringBorder");
+  if (!presenceBorder)
+    return std::unexpected(std::move(presenceBorder.error()));
+  auto state = std::shared_ptr<WorldClientState>(new WorldClientState());
+  state->m_windowMonitoringBorder = *windowBorder;
+  state->m_presenceEntityMonitoringBorder = *presenceBorder;
+  auto registered = state->m_netGroup.addNetElement(&state->m_windowXMin);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  registered = state->m_netGroup.addNetElement(&state->m_windowYMin);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  registered = state->m_netGroup.addNetElement(&state->m_windowWidth);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  registered = state->m_netGroup.addNetElement(&state->m_windowHeight);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  registered = state->m_netGroup.addNetElement(&state->m_playerId);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  registered = state->m_netGroup.addNetElement(&state->m_clientPresenceEntities);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  return state;
+}
 
-  m_windowMonitoringBorder = clientConfig.getInt("windowMonitoringBorder");
-  m_presenceEntityMonitoringBorder = clientConfig.getInt("presenceEntityMonitoringBorder");
-
+WorldClientState::WorldClientState() {
   m_playerId.set(NullEntityId);
 
   m_netVersion = 0;
-
-  m_netGroup.addNetElement(&m_windowXMin);
-  m_netGroup.addNetElement(&m_windowYMin);
-  m_netGroup.addNetElement(&m_windowWidth);
-  m_netGroup.addNetElement(&m_windowHeight);
-
-  m_netGroup.addNetElement(&m_playerId);
-  m_netGroup.addNetElement(&m_clientPresenceEntities);
 }
 
 RectI WorldClientState::window() const {
@@ -104,14 +129,16 @@ List<RectI> WorldClientState::monitoringRegions(std::function<std::optional<Rect
   return regions;
 }
 
-ByteArray WorldClientState::writeDelta() {
-  ByteArray delta;
-  std::tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
-  return delta;
+std::expected<ByteArray, StarException> WorldClientState::writeDelta() {
+  auto state = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
+  if (!state)
+    return std::unexpected(std::move(state.error()));
+  m_netVersion = state->second;
+  return std::move(state->first);
 }
 
-void WorldClientState::readDelta(ByteArray delta) {
-  m_netGroup.readNetState(std::move(delta), 0.0f, m_netCompatibilityRules);
+std::expected<void, StarException> WorldClientState::readDelta(ByteArray delta) {
+  return m_netGroup.readNetState(std::move(delta), 0.0f, m_netCompatibilityRules);
 }
 
 void WorldClientState::setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules) {

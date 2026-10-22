@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.json_rpc;
@@ -85,7 +86,7 @@ class CelestialLog;
 
 class ClientContext {
 public:
-  ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid);
+  [[nodiscard]] static std::expected<std::shared_ptr<ClientContext>, StarException> create(Root& root, Uuid serverUuid, Uuid playerUuid);
 
   Uuid serverUuid() const;
   // The player Uuid can differ from the mainPlayer's Uuid
@@ -111,8 +112,8 @@ public:
   
   StringMap<WorldChunks> newCustomWorldUpdates();
 
-  void readUpdate(ByteArray data, NetCompatibilityRules rules);
-  ByteArray writeUpdate(NetCompatibilityRules rules);
+  [[nodiscard]] std::expected<void, StarException> readUpdate(ByteArray data, NetCompatibilityRules rules);
+  [[nodiscard]] std::expected<ByteArray, StarException> writeUpdate(NetCompatibilityRules rules);
 
   void setConnectionId(ConnectionId connectionId);
   ConnectionId connectionId() const;
@@ -121,6 +122,8 @@ public:
   NetCompatibilityRules netCompatibilityRules() const;
 
 private:
+  ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   Root& m_root;
   Uuid m_serverUuid;
   Uuid m_playerUuid;

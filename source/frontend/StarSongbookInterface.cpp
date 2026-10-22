@@ -129,106 +129,146 @@ namespace Star {
 
 String const SongPathPrefix = "/songs/";
 
-SongbookInterface::SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player) : Pane(guiContext) {
-  m_player = std::move(player);
+SongbookInterface::SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player)
+  : Pane(guiContext), m_player(std::move(player)) {}
 
+std::expected<std::shared_ptr<SongbookInterface>, StarException> SongbookInterface::create(GuiContext& guiContext, std::shared_ptr<Player> player) {
+  auto pane = std::shared_ptr<SongbookInterface>(new SongbookInterface(guiContext, std::move(player)));
+  auto base = pane->initializePane();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> SongbookInterface::initialize() {
   auto assets = context()->root().assets();
-
+  if (!assets) return std::unexpected(std::move(assets.error()));
   GuiReader reader(*context());
-
-  reader.registerCallback("close", [this](Widget*) { dismiss(); });
-  reader.registerCallback("btnPlay",
-      [this](Widget*) {
-        if (play())
-          dismiss();
-      });
-  reader.registerCallback("group", [=](Widget*) {});
-  reader.registerCallback("search", [=](Widget*) {});
-
-  reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
-
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("btnPlay", [this](Widget*) -> std::expected<void, StarException> {
+    auto played = play();
+    if (!played) return std::unexpected(std::move(played.error()));
+    if (*played) dismiss();
+    return {};
+  });
+  reader.registerCallback("group", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  reader.registerCallback("search", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  auto layout = (*assets)->json("/interface/windowconfig/songbook.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
   m_reloadSubscription = context()->root().registerReloadListener(
-    m_reloadListener = std::make_shared<CallbackListener>([this]() {
-      refresh(true);
-    })
+    m_reloadListener = std::make_shared<CallbackListener>([this]() { return refresh(true); })
   );
-
-  refresh(true);
+  return refresh(true);
 }
 
 SongbookInterface::~SongbookInterface() {
   m_reloadSubscription.disconnect();
 }
 
-void SongbookInterface::update(float dt) {
-  Pane::update(dt);
-  refresh();
+std::expected<void, StarException> SongbookInterface::update(float dt) {
+  auto updated = Pane::update(dt);
+  if (!updated) return std::unexpected(std::move(updated.error()));
+  return refresh();
 }
 
-bool SongbookInterface::play() {
+std::expected<bool, StarException> SongbookInterface::play() {
   auto songList = fetchChild<ListWidget>("songs.list");
-  auto songWidget = songList->selectedWidget();
+  if (!songList) return std::unexpected(std::move(songList.error()));
+  auto songWidget = (*songList)->selectedWidget();
   if (!songWidget) return false;
-  auto& songName = m_files.at(songWidget->data().toUInt());
-  auto group = fetchChild<TextBoxWidget>("group")->getText();
-
+  auto index = songWidget->data().toUInt();
+  if (!index) return std::unexpected(std::move(index.error()));
+  auto songName = m_files.at(*index);
+  if (!songName) return std::unexpected(std::move(songName.error()));
+  auto group = fetchChild<TextBoxWidget>("group");
+  if (!group) return std::unexpected(std::move(group.error()));
   JsonObject song;
-  song["resource"] = songName;
-  auto buffer = context()->root().assets()->bytes(songName);
-  song["abc"] = String(buffer->ptr(), buffer->size());
-
-  m_player->songbook()->play(song, group);
+  song["resource"] = **songName;
+  auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto buffer = (*assets)->bytes(**songName);
+  if (!buffer) return std::unexpected(std::move(buffer.error()));
+  song["abc"] = String((*buffer)->ptr(), (*buffer)->size());
+  m_player->songbook()->play(song, (*group)->getText());
   return true;
 }
 
-void SongbookInterface::refresh(bool reloadFiles) {
+std::expected<void, StarException> SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
-    m_files = context()->root().assets()->scanExtension(".abc").values();
-    eraseWhere(m_files, [this](String& song) {
-      if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
-        context()->root().logger().warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
-        return true;
-      }
-      return false;
-    });
-    std::sort(m_files.begin(), m_files.end(), [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
-  }
-  auto& search = fetchChild<TextBoxWidget>("search")->getText();
-  if (m_lastSearch != search || reloadFiles) {
-    m_lastSearch = search;
-    auto songList = fetchChild<ListWidget>("songs.list");
-    songList->clear();
-    if (search.empty()) {
-      for (std::size_t i = 0; i != m_files.size(); ++i) {
-        auto widget = songList->addItem();
-        widget->setData(i);
-        auto songName = widget->fetchChild<LabelWidget>("songName");
-        String const& song = m_files[i];
-        songName->setText(song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4)));
-        widget->show();
-      }
-    } else {
-      for (std::size_t i = 0; i != m_files.size(); ++i) {
-        StringView song = m_files[i];
-        song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
-        auto find = song.find(search, 0, String::CaseInsensitive);
-        if (find != NPos) {
-          auto widget = songList->addItem();
-          widget->setData(i);
-          String text = "";
-          std::size_t last = 0;
-          do {
-            text += strf("^#bbb;{}^#7f7;{}", song.substr(last, find - last), song.substr(find, search.size()));
-            last = find + search.size();
-            find = song.find(search, last, String::CaseInsensitive);
-          } while (find != NPos);
-          auto songName = widget->fetchChild<LabelWidget>("songName");
-          songName->setText(text + strf("^#bbb;{}", song.substr(last)));
-          widget->show();
-        }
+    auto assets = context()->root().assets();
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto scanned = (*assets)->scanExtension(".abc");
+    if (!scanned) return std::unexpected(std::move(scanned.error()));
+    m_files.clear();
+    for (auto const& path : **scanned) {
+      String song = path.string();
+      auto inSongs = song.beginsWith(SongPathPrefix, String::CaseInsensitive);
+      if (!inSongs) return std::unexpected(std::move(inSongs.error()));
+      if (!*inSongs) {
+        auto logged = context()->root().logger().warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+      } else {
+        m_files.append(std::move(song));
       }
     }
+    auto sorted = sortByComputedValue(m_files, [](String const& song) { return song.toLower(); });
+    if (!sorted) return std::unexpected(std::move(sorted.error()));
   }
+  auto searchWidget = fetchChild<TextBoxWidget>("search");
+  if (!searchWidget) return std::unexpected(std::move(searchWidget.error()));
+  auto const& search = (*searchWidget)->getText();
+  if (m_lastSearch == search && !reloadFiles) return {};
+  m_lastSearch = search;
+  auto songList = fetchChild<ListWidget>("songs.list");
+  if (!songList) return std::unexpected(std::move(songList.error()));
+  auto cleared = (*songList)->clear();
+  if (!cleared) return std::unexpected(std::move(cleared.error()));
+  auto prefixSize = SongPathPrefix.size();
+  if (!prefixSize) return std::unexpected(std::move(prefixSize.error()));
+  auto searchSize = search.size();
+  if (!searchSize) return std::unexpected(std::move(searchSize.error()));
+  for (std::size_t i = 0; i != m_files.size(); ++i) {
+    StringView path = m_files[i];
+    auto pathSize = path.size();
+    if (!pathSize) return std::unexpected(std::move(pathSize.error()));
+    auto song = path.substr(*prefixSize, *pathSize - (*prefixSize + 4));
+    if (!song) return std::unexpected(std::move(song.error()));
+    String text;
+    if (search.empty()) {
+      text = String(*song);
+    } else {
+      auto find = song->find(search, 0, String::CaseInsensitive);
+      if (!find) return std::unexpected(std::move(find.error()));
+      if (*find == NPos) continue;
+      std::size_t last = 0;
+      do {
+        auto before = song->substr(last, *find - last);
+        if (!before) return std::unexpected(std::move(before.error()));
+        auto matched = song->substr(*find, *searchSize);
+        if (!matched) return std::unexpected(std::move(matched.error()));
+        text += strf("^#bbb;{}^#7f7;{}", *before, *matched);
+        last = *find + *searchSize;
+        find = song->find(search, last, String::CaseInsensitive);
+        if (!find) return std::unexpected(std::move(find.error()));
+      } while (*find != NPos);
+      auto rest = song->substr(last);
+      if (!rest) return std::unexpected(std::move(rest.error()));
+      text += strf("^#bbb;{}", *rest);
+    }
+    auto widget = (*songList)->addItem();
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    (*widget)->setData(i);
+    auto songName = (*widget)->fetchChild<LabelWidget>("songName");
+    if (!songName) return std::unexpected(std::move(songName.error()));
+    auto labeled = (*songName)->setText(text);
+    if (!labeled) return std::unexpected(std::move(labeled.error()));
+    auto shown = (*widget)->show();
+    if (!shown) return std::unexpected(std::move(shown.error()));
+  }
+  return {};
 }
 
 }

@@ -29,17 +29,17 @@ class Blackboard {
 public:
   Blackboard(LuaTable luaContext);
 
-  LuaValue get(NodeParameterType type, String const& key) const;
-  void set(NodeParameterType type, String const& key, LuaValue value);
+  [[nodiscard]] std::expected<LuaValue, StarException> get(NodeParameterType type, String const& key) const;
+  [[nodiscard]] std::expected<void, StarException> set(NodeParameterType type, String const& key, LuaValue value);
 
-  LuaTable parameters(StringMap<NodeParameter> const& nodeParameters, std::uint64_t nodeId);
-  void setOutput(ActionNode const& node, LuaTable const& output);
+  [[nodiscard]] std::expected<LuaTable, StarException> parameters(StringMap<NodeParameter> const& nodeParameters, std::uint64_t nodeId);
+  [[nodiscard]] std::expected<void, StarException> setOutput(ActionNode const& node, LuaTable const& output);
 
   // takes the set of currently held ephemeral values
   Set<std::pair<NodeParameterType, String>> takeEphemerals();
 
   // clears any provided ephemerals that are not currently held
-  void clearEphemerals(Set<std::pair<NodeParameterType, String>> ephemerals);
+  [[nodiscard]] std::expected<void, StarException> clearEphemerals(Set<std::pair<NodeParameterType, String>> ephemerals);
 private:
   LuaTable m_luaContext;
 
@@ -84,28 +84,29 @@ struct CompositeState {
 
 class BehaviorState {
 public:
-  BehaviorState(std::shared_ptr<BehaviorTree const> tree, LuaTable context, std::optional<std::weak_ptr<Blackboard>> blackboard = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<BehaviorState>, StarException> create(std::shared_ptr<BehaviorTree const> tree, LuaTable context, std::optional<std::weak_ptr<Blackboard>> blackboard = {});
 
-  NodeStatus run(float dt);
+  [[nodiscard]] std::expected<NodeStatus, StarException> run(float dt);
   void clear();
 
   std::weak_ptr<Blackboard> blackboardPtr();
 private:
-  std::shared_ptr<Blackboard> board();
+  BehaviorState(std::shared_ptr<BehaviorTree const> tree, LuaTable context, std::optional<std::weak_ptr<Blackboard>> blackboard);
+  [[nodiscard]] std::expected<std::shared_ptr<Blackboard>, StarException> board();
 
-  LuaThread nodeLuaThread(String const& funcName);
+  [[nodiscard]] std::expected<LuaThread, StarException> nodeLuaThread(String const& funcName);
 
-  NodeStatus runNode(BehaviorNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runNode(BehaviorNode const& node, NodeState& state);
 
-  NodeStatus runAction(ActionNode const& node, NodeState& state);
-  NodeStatus runDecorator(DecoratorNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runAction(ActionNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runDecorator(DecoratorNode const& node, NodeState& state);
 
-  NodeStatus runComposite(CompositeNode const& node, NodeState& state);
-  NodeStatus runSequence(SequenceNode const& node, NodeState& state);
-  NodeStatus runSelector(SelectorNode const& node, NodeState& state);
-  NodeStatus runParallel(ParallelNode const& node, NodeState& state);
-  NodeStatus runDynamic(DynamicNode const& node, NodeState& state);
-  NodeStatus runRandomize(RandomizeNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runComposite(CompositeNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runSequence(SequenceNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runSelector(SelectorNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runParallel(ParallelNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runDynamic(DynamicNode const& node, NodeState& state);
+  [[nodiscard]] std::expected<NodeStatus, StarException> runRandomize(RandomizeNode const& node, NodeState& state);
 
   std::shared_ptr<BehaviorTree const> m_tree;
   NodeState m_rootState;

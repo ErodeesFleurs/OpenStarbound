@@ -17,6 +17,7 @@ import star.listener;
 import std;
 import star.string;
 import star.format;
+import star.output_proxy;
 import star.version;
 
 import star.asset_source;
@@ -36,25 +37,42 @@ bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   return true;
 }
 
-TenantDatabase::TenantDatabase(Root& root)
-  : m_root(root), m_tenantCache(root.random()) {
-  auto assets = m_root.assets();
-  auto& logger = m_root.logger();
+TenantDatabase::TenantDatabase(Root& root) : m_root(root), m_tenantCache(root.random()) {}
 
-  auto& files = assets->scanExtension("tenant");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    try {
-      String name = assets->json(file).getString("name");
-      if (m_paths.contains(name))
-        logger.error("Tenant {} defined twice, second time from {}", name, file);
-      else
-        m_paths[name] = file;
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      logger.error("Error loading tenant file {}: {}", file, outputException(e, true));
+std::expected<std::shared_ptr<TenantDatabase>, StarException> TenantDatabase::create(Root& root) {
+  auto result = std::shared_ptr<TenantDatabase>(new TenantDatabase(root));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("tenant");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = (*assets)->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto name = [&]() -> std::expected<String, StarException> {
+      auto config = (*assets)->json(file);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      return config->getString("name");
+    }();
+    if (!name) {
+      auto logged = root.logger().error("Error loading tenant file {}: {}", file, outputException(ExceptionDiagnostic(name.error()), true));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      continue;
+    }
+    if (result->m_paths.contains(*name)) {
+      auto logged = root.logger().error("Tenant {} defined twice, second time from {}", *name, file);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+    } else {
+      result->m_paths[*name] = file;
     }
   }
+  return result;
 }
 
 void TenantDatabase::cleanup() {
@@ -62,71 +80,121 @@ void TenantDatabase::cleanup() {
   m_tenantCache.cleanup();
 }
 
-std::shared_ptr<Tenant> TenantDatabase::getTenant(String const& name) const {
+std::expected<std::shared_ptr<Tenant>, StarException> TenantDatabase::getTenant(String const& name) const {
   MutexLocker locker(m_cacheMutex);
-  return m_tenantCache.get(name,
-      [this](String const& name) -> std::shared_ptr<Tenant> {
-        if (auto path = m_paths.maybe(name))
-          return readTenant(*m_root.assets(), *path);
-        throw TenantException::format("No such tenant named '{}'", name);
-      });
+  auto result = m_tenantCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<Tenant>, StarException> {
+    auto path = m_paths.ptr(name);
+    if (!path)
+      return std::unexpected(TenantException::format("No such tenant named '{}'", name));
+    auto assets = m_root.assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    return readTenant(**assets, *path);
+  });
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return **result;
 }
 
-List<std::shared_ptr<Tenant>> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& colonyTags) const {
-  // This implementation loops over every tenant. Smarter implementations could
-  // be written if it becomes a bottleneck, depending on how colonyTags end up
-  // being
-  // used, how many there are, how many tenants have similar criteria, etc.
+std::expected<List<std::shared_ptr<Tenant>>, StarException> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& colonyTags) const {
   List<std::shared_ptr<Tenant>> matchingTenants;
-  for (String const& name : m_paths.keys()) {
-    std::shared_ptr<Tenant> tenant = getTenant(name);
-    if (tenant->criteriaSatisfied(colonyTags))
-      matchingTenants.append(tenant);
+  for (auto const& entry : m_paths) {
+    auto tenant = getTenant(entry.first);
+    if (!tenant)
+      return std::unexpected(std::move(tenant.error()));
+    if ((*tenant)->criteriaSatisfied(colonyTags))
+      matchingTenants.append(std::move(*tenant));
   }
   return matchingTenants;
 }
 
-std::shared_ptr<Tenant> TenantDatabase::readTenant(Assets const& assets, String const& path) {
-  try {
-    Json config = assets.json(path);
-
-    String name = config.getString("name");
-    float priority = config.getFloat("priority");
-
-    StringMap<unsigned> colonyTagCriteria;
-    for (std::pair<String, Json> const& entry : config.getObject("colonyTagCriteria").pairs()) {
-      colonyTagCriteria[entry.first] = entry.second.toUInt();
+std::expected<std::shared_ptr<Tenant>, StarException> TenantDatabase::readTenant(Assets const& assets, String const& path) {
+  auto parsed = [&]() -> std::expected<std::shared_ptr<Tenant>, StarException> {
+    auto config = assets.json(path);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto name = config->getString("name");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto priority = config->getFloat("priority");
+    if (!priority)
+      return std::unexpected(std::move(priority.error()));
+    auto criteriaConfig = config->get("colonyTagCriteria").and_then([](Json const& value) { return value.iterateObject(); });
+    if (!criteriaConfig)
+      return std::unexpected(std::move(criteriaConfig.error()));
+    StringMap<unsigned> criteria;
+    for (auto const& entry : *criteriaConfig) {
+      auto count = entry.second.toUInt();
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      criteria[entry.first] = *count;
     }
-
-    List<TenantSpawnable> tenants = config.getArray("tenants").transformed([](Json const& json) -> TenantSpawnable {
-      String spawn = json.getString("spawn");
-      if (spawn == "monster") {
-        return TenantMonsterSpawnable{json.getString("type"), json.optFloat("level"), json.opt("overrides")};
+    auto tenantsConfig = config->get("tenants").and_then([](Json const& value) { return value.iterateArray(); });
+    if (!tenantsConfig)
+      return std::unexpected(std::move(tenantsConfig.error()));
+    List<TenantSpawnable> tenants;
+    for (auto const& json : *tenantsConfig) {
+      auto spawn = json.getString("spawn");
+      if (!spawn)
+        return std::unexpected(std::move(spawn.error()));
+      auto type = json.getString("type");
+      if (!type)
+        return std::unexpected(std::move(type.error()));
+      auto level = json.optFloat("level");
+      if (!level)
+        return std::unexpected(std::move(level.error()));
+      auto overrides = json.opt("overrides");
+      if (!overrides)
+        return std::unexpected(std::move(overrides.error()));
+      if (*spawn == "monster") {
+        tenants.append(TenantMonsterSpawnable{*type, *level, *overrides});
       } else {
-        if constexpr (Star::DebugEnabled) {
-          Star::starAssertFailed((json.getString("spawn") == "npc"));
-        }
-
-        Json speciesJson = json.get("species");
+        if (*spawn != "npc")
+          return std::unexpected(TenantException::format("Unknown tenant spawn type '{}'", *spawn));
+        auto speciesConfig = json.get("species");
+        if (!speciesConfig)
+          return std::unexpected(std::move(speciesConfig.error()));
         List<String> species;
-        if (speciesJson.isType(Json::Type::Array))
-          species = speciesJson.toArray().transformed(std::mem_fn(&Json::toString));
-        else
-          species.append(speciesJson.toString());
-
-        return TenantNpcSpawnable{species, json.getString("type"), json.optFloat("level"), json.opt("overrides")};
+        if (speciesConfig->isType(Json::Type::Array)) {
+          auto speciesArray = speciesConfig->iterateArray();
+          if (!speciesArray)
+            return std::unexpected(std::move(speciesArray.error()));
+          for (auto const& entry : *speciesArray) {
+            auto value = entry.toString();
+            if (!value)
+              return std::unexpected(std::move(value.error()));
+            species.append(std::move(*value));
+          }
+        } else {
+          auto value = speciesConfig->toString();
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          species.append(std::move(*value));
+        }
+        tenants.append(TenantNpcSpawnable{std::move(species), *type, *level, *overrides});
       }
-    });
-
-    std::optional<TenantRent> rent = config.opt("rent").transform([](Json const& json) {
-      return TenantRent{jsonToVec2F(json.get("periodRange")), json.getString("pool")};
-    });
-
-    return std::make_shared<Tenant>(Tenant{name, priority, colonyTagCriteria, tenants, rent, config});
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    throw TenantException::format("Error loading tenant '{}': {}", path, outputException(e, false));
-  }
+    }
+    auto rentConfig = config->opt("rent");
+    if (!rentConfig)
+      return std::unexpected(std::move(rentConfig.error()));
+    std::optional<TenantRent> rent;
+    if (*rentConfig) {
+      auto periodConfig = (**rentConfig).get("periodRange");
+      if (!periodConfig)
+        return std::unexpected(std::move(periodConfig.error()));
+      auto period = jsonToVec2F(*periodConfig);
+      if (!period)
+        return std::unexpected(std::move(period.error()));
+      auto pool = (**rentConfig).getString("pool");
+      if (!pool)
+        return std::unexpected(std::move(pool.error()));
+      rent = TenantRent{*period, *pool};
+    }
+    return std::make_shared<Tenant>(Tenant{*name, *priority, std::move(criteria), std::move(tenants), std::move(rent), *config});
+  }();
+  if (!parsed)
+    return std::unexpected(TenantException(strf("Error loading tenant '{}'", path), parsed.error()));
+  return parsed;
 }
 
 }

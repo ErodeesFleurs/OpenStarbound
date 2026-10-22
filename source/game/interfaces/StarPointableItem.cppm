@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.game_types;
@@ -29,9 +30,12 @@ public:
 
   virtual ~PointableItem() {}
 
-  virtual float getAngleDir(float aimAngle, Direction facingDirection);
-  virtual float getAngle(float angle);
-  virtual List<Drawable> drawables() const = 0;
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAngleDir(float aimAngle, Direction facingDirection);
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAngle(float angle);
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> drawables() const = 0;
 };
 
 }

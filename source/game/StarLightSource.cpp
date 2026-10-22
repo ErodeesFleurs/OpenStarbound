@@ -1,3 +1,4 @@
+import star.format;
 import star.vector;
 import std;
 import star.data_stream;
@@ -8,36 +9,34 @@ import star.data_stream_extra;
 
 namespace Star {
 
-extern EnumMap<LightType> const LightTypeNames{
+extern std::expected<EnumMap<LightType>, StarException> const LightTypeNames = EnumMap<LightType>::create({
   {LightType::Spread, "Spread"},
   {LightType::Point, "Point"},
   {LightType::PointAsSpread, "PointAsSpread"}
-};
+});
 
 void LightSource::translate(Vec2F const& pos) {
   position += pos;
 }
 
-DataStream& operator<<(DataStream& ds, LightSource const& lightSource) {
-  ds.write(lightSource.position);
-  ds.write(lightSource.color);
-  ds.write(lightSource.type);
-  ds.write(lightSource.pointBeam);
-  ds.write(lightSource.beamAngle);
-  ds.write(lightSource.beamAmbience);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, LightSource const& lightSource) {
+  if (auto r = ds.write(lightSource.position); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(lightSource.color); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(lightSource.type); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(lightSource.pointBeam); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(lightSource.beamAngle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(lightSource.beamAmbience); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, LightSource& lightSource) {
-  ds.read(lightSource.position);
-  ds.read(lightSource.color);
-  ds.read(lightSource.type);
-  ds.read(lightSource.pointBeam);
-  ds.read(lightSource.beamAngle);
-  ds.read(lightSource.beamAmbience);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, LightSource& lightSource) {
+  if (auto r = ds.read(lightSource.position); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(lightSource.color); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(lightSource.type); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(lightSource.pointBeam); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(lightSource.beamAngle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(lightSource.beamAmbience); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
 }

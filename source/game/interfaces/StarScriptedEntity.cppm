@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -32,13 +33,11 @@ public:
     return Star::typeName<ScriptedEntity>();
   }
 
-  // Call a script function directly with the given arguments, should return
-  // nothing only on failure.
-  virtual std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) = 0;
+  // Missing/unloaded script contexts return an empty optional; execution errors
+  // are returned separately without losing the diagnostic.
+  [[nodiscard]] virtual std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) = 0;
 
-  // Execute the given code directly in the underlying context, return nothing
-  // on failure.
-  virtual std::optional<LuaValue> evalScript(String const& code) = 0;
+  [[nodiscard]] virtual std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) = 0;
 };
 
 }

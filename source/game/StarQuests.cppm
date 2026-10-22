@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.lua;
 import star.json;
 
@@ -52,33 +53,33 @@ enum class QuestState {
   // Failed - the quest finished unsuccessfully or the player abandoned it
   Failed
 };
-extern EnumMap<QuestState> const QuestStateNames;
+extern std::expected<EnumMap<QuestState>, StarException> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
+  [[nodiscard]] static std::expected<std::shared_ptr<Quest>, StarException> create(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
 
-  Quest(Root& root, Json const& diskStore);
-  Json diskStore() const;
+  [[nodiscard]] static std::expected<std::shared_ptr<Quest>, StarException> create(Root& root, Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
 
-  std::shared_ptr<QuestTemplate> getTemplate() const;
+  [[nodiscard]] std::expected<std::shared_ptr<QuestTemplate>, StarException> getTemplate() const;
 
-  void init(Player* player, World* world, UniverseClient* client);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(Player* player, World* world, UniverseClient* client);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
-  void update(float dt);
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
-  void offer();
-  void declineOffer();
-  void cancelOffer();
-  void start();
-  void complete(std::optional<std::size_t> followupIndex = {});
-  void fail();
-  void abandon();
+  [[nodiscard]] std::expected<void, StarException> offer();
+  [[nodiscard]] std::expected<void, StarException> declineOffer();
+  [[nodiscard]] std::expected<void, StarException> cancelOffer();
+  [[nodiscard]] std::expected<void, StarException> start();
+  [[nodiscard]] std::expected<void, StarException> complete(std::optional<std::size_t> followupIndex = {});
+  [[nodiscard]] std::expected<void, StarException> fail();
+  [[nodiscard]] std::expected<void, StarException> abandon();
 
-  bool interactWithEntity(EntityId entity);
+  [[nodiscard]] std::expected<bool, StarException> interactWithEntity(EntityId entity);
 
   // The generated ID for this instance of the quest with these specific
   // parameters. Multiple players iin a universe may have quests with the same
@@ -95,7 +96,7 @@ public:
   bool showDialog() const;
   void setDialogShown();
 
-  void setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity);
+  [[nodiscard]] std::expected<void, StarException> setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity);
   void setParameter(String const& paramName, QuestParam const& paramValue);
 
   std::optional<List<Drawable>> portrait(String const& portraitName) const;
@@ -126,11 +127,11 @@ public:
   void markAsRead();
   bool canTurnIn() const;
 
-  String questGiverIndicator() const;
-  String questReceiverIndicator() const;
+  [[nodiscard]] std::expected<String, StarException> questGiverIndicator() const;
+  [[nodiscard]] std::expected<String, StarException> questReceiverIndicator() const;
 
   // The String returned by this method is an image path, not a reference to a configured indicator
-  std::optional<String> customIndicator(std::shared_ptr<Entity> const& entity) const;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> customIndicator(std::shared_ptr<Entity> const& entity) const;
 
   std::optional<JsonArray> objectiveList() const;
   std::optional<float> progress() const;
@@ -140,8 +141,8 @@ public:
   void setProgress(std::optional<float> const& progress);
   void setCompassDirection(std::optional<float> const& compassDirection);
 
-  std::optional<String> completionCinema() const;
-  bool canBeAbandoned() const;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> completionCinema() const;
+  [[nodiscard]] std::expected<bool, StarException> canBeAbandoned() const;
   bool ephemeral() const;
   bool showInLog() const;
   bool showAcceptDialog() const;
@@ -151,6 +152,7 @@ public:
   bool hideCrossServer() const;
 
 private:
+  explicit Quest(Root& root);
   Root& m_root;
   struct DisplayParameters {
     bool ephemeral;
@@ -164,12 +166,12 @@ private:
 
   void setState(QuestState state);
 
-  void initScript();
-  void uninitScript();
-  LuaCallbacks makeQuestCallbacks(Player* player);
+  [[nodiscard]] std::expected<void, StarException> initScript();
+  [[nodiscard]] std::expected<void, StarException> uninitScript();
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeQuestCallbacks(Player* player);
 
-  void setEntityParameter(String const& paramName, Entity const* entity);
-  void addReward(ItemDescriptor const& reward);
+  [[nodiscard]] std::expected<void, StarException> setEntityParameter(String const& paramName, Entity const* entity);
+  [[nodiscard]] std::expected<void, StarException> addReward(ItemDescriptor const& reward);
 
   String const& defaultCustomIndicator() const;
 
@@ -216,7 +218,7 @@ private:
 // Create an instance of Quest for a specific template with all the parameters filled
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
-std::shared_ptr<Quest> createPreviewQuest(
+[[nodiscard]] std::expected<std::shared_ptr<Quest>, StarException> createPreviewQuest(
     Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
 }
 

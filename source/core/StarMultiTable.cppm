@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 
 import star.multi_array;
@@ -63,8 +64,8 @@ public:
   }
 
   // Set array element based on index.
-  void set(IndexArray const& index, Element const& element) {
-    m_array.set(index, element);
+  [[nodiscard]] std::expected<void, StarException> set(IndexArray const& index, Element const& element) {
+    return m_array.set(index, element);
   }
 
   // Get array element based on index.
@@ -96,7 +97,7 @@ public:
     m_boundMode = boundMode;
   }
 
-  Element interpolate(PositionArray const& coord) const {
+  [[nodiscard]] std::expected<Element, StarException> interpolate(PositionArray const& coord) const {
     if (m_interpolationMode == InterpolationMode::HalfStep) {
       PiecewiseInterpolator piecewiseInterpolator(StepWeightOperator<Position>(), m_boundMode);
       return piecewiseInterpolator.interpolate(m_array, toIndexSpace(coord));
@@ -112,12 +113,12 @@ public:
       return interpolator4.interpolate(m_array, toIndexSpace(coord));
 
     } else {
-      throw MathException("Unsupported interpolation type in MultiTable::interpolate");
+      return std::unexpected(MathException("Unsupported interpolation type in MultiTable::interpolate"));
     }
   }
 
   // Synonym for inteprolate
-  Element operator()(PositionArray const& coord) const {
+  [[nodiscard]] std::expected<Element, StarException> operator()(PositionArray const& coord) const {
     return interpolate(coord);
   }
 

@@ -7,72 +7,73 @@ import star.game_types;
 namespace Star {
 
 
-extern EnumMap<Direction> const DirectionNames{
+extern std::expected<EnumMap<Direction>, StarException> const DirectionNames = EnumMap<Direction>::create({
   {Direction::Left, "left"},
   {Direction::Right, "right"},
-};
+});
 
-extern EnumMap<Gender> const GenderNames{
+extern std::expected<EnumMap<Gender>, StarException> const GenderNames = EnumMap<Gender>::create({
   {Gender::Male, "male"},
   {Gender::Female, "female"},
-};
+});
 
-extern EnumMap<FireMode> const FireModeNames{
+extern std::expected<EnumMap<FireMode>, StarException> const FireModeNames = EnumMap<FireMode>::create({
   {FireMode::None, "none"},
   {FireMode::Primary, "primary"},
   {FireMode::Alt, "alt"}
-};
+});
 
-extern EnumMap<ToolHand> const ToolHandNames{
+extern std::expected<EnumMap<ToolHand>, StarException> const ToolHandNames = EnumMap<ToolHand>::create({
   {ToolHand::Primary, "primary"},
   {ToolHand::Alt, "alt"}
-};
+});
 
-extern EnumMap<TileLayer> const TileLayerNames{
+extern std::expected<EnumMap<TileLayer>, StarException> const TileLayerNames = EnumMap<TileLayer>::create({
   {TileLayer::Foreground, "foreground"},
   {TileLayer::Background, "background"}
-};
+});
 
-extern EnumMap<MoveControlType> const MoveControlTypeNames{
+extern std::expected<EnumMap<MoveControlType>, StarException> const MoveControlTypeNames = EnumMap<MoveControlType>::create({
   {MoveControlType::Left, "left"},
   {MoveControlType::Right, "right"},
   {MoveControlType::Down, "down"},
   {MoveControlType::Up, "up"},
   {MoveControlType::Jump, "jump"}
-};
+});
 
-extern EnumMap<PortraitMode> const PortraitModeNames{
+extern std::expected<EnumMap<PortraitMode>, StarException> const PortraitModeNames = EnumMap<PortraitMode>::create({
   {PortraitMode::Head, "head"},
   {PortraitMode::Bust, "bust"},
   {PortraitMode::Full, "full"},
   {PortraitMode::FullNeutral, "fullneutral"},
   {PortraitMode::FullNude, "fullnude"},
   {PortraitMode::FullNeutralNude, "fullneutralnude"}
-};
+});
 
-extern EnumMap<Rarity> const RarityNames{
+extern std::expected<EnumMap<Rarity>, StarException> const RarityNames = EnumMap<Rarity>::create({
   {Rarity::Common, "common"},
   {Rarity::Uncommon, "uncommon"},
   {Rarity::Rare, "rare"},
   {Rarity::Legendary, "legendary"},
   {Rarity::Essential, "essential"}
-};
+});
 
-std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
+std::expected<std::pair<EntityId, EntityId>, StarException> connectionEntitySpace(ConnectionId connectionId) {
   if (connectionId == ServerConnectionId) {
-    return {MinServerEntityId, MaxServerEntityId};
+    return std::pair{MinServerEntityId, MaxServerEntityId};
   } else if (connectionId >= MinClientConnectionId && connectionId <= MaxClientSubWorldConnectionId) {
     EntityId beginIdSpace = (EntityId)connectionId * -65536;
     EntityId endIdSpace = beginIdSpace + 65535;
-    return {beginIdSpace, endIdSpace};
+    return std::pair{beginIdSpace, endIdSpace};
   } else {
-    throw StarException::format("Invalid connection id in clientEntitySpace({})", connectionId);
+    return std::unexpected(StarException::format("Invalid connection id in clientEntitySpace({})", connectionId));
   }
 }
 
-bool entityIdInSpace(EntityId entityId, ConnectionId connectionId) {
+std::expected<bool, StarException> entityIdInSpace(EntityId entityId, ConnectionId connectionId) {
   auto pair = connectionEntitySpace(connectionId);
-  return entityId >= pair.first && entityId <= pair.second;
+  if (!pair) return std::unexpected(std::move(pair.error()));
+  return entityId >= pair->first && entityId <= pair->second;
 }
 
 ConnectionId connectionForEntity(EntityId entityId) {

@@ -81,85 +81,125 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-VehicleDatabase::VehicleDatabase(Root& root) : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "vehicle")) {
-  auto assets = m_root.assets();
-  auto& files = assets->scanExtension("vehicle");
-  assets->queueJsons(files);
-  for (String file : files) {
-    try {
-      auto config = assets->json(file);
-      String name = config.getString("name");
-
-      if (m_vehicles.contains(name))
-        throw VehicleDatabaseException::format("Repeat vehicle name '{}'", name);
-
-      m_vehicles.add(std::move(name), std::make_pair(std::move(file), std::move(config)));
-    } catch (StarException const& e) {
-      throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
-    }
+std::expected<std::shared_ptr<VehicleDatabase>, StarException> VehicleDatabase::create(Root& root) {
+  struct MakeShared final : VehicleDatabase {
+    explicit MakeShared(Root& root) : VehicleDatabase(root) {}
+  };
+  auto database = std::make_shared<MakeShared>(root);
+  auto rebuilder = Rebuilder::create(root, "vehicle");
+  if (!rebuilder)
+    return std::unexpected(std::move(rebuilder.error()));
+  database->m_rebuilder = std::move(*rebuilder);
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("vehicle");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  if (auto queued = (*assets)->queueJsons(**files); !queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& scannedFile : **files) {
+    String file = scannedFile.string();
+    auto load = [&]() -> std::expected<void, StarException> {
+      auto config = (*assets)->json(file);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      auto name = config->getString("name");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (database->m_vehicles.contains(*name))
+        return std::unexpected(VehicleDatabaseException::format("Repeat vehicle name '{}'", *name));
+      auto added = database->m_vehicles.add(std::move(*name), std::make_pair(file, std::move(*config)));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }();
+    if (!load)
+      return std::unexpected(VehicleDatabaseException(strf("Error loading vehicle '{}'", file), load.error()));
   }
+  return database;
 }
 
-std::shared_ptr<Vehicle> VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
+std::expected<std::shared_ptr<Vehicle>, StarException> VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
-    throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
-  return std::make_shared<Vehicle>(m_root, configPair->second, configPair->first, extraConfig);
+    return std::unexpected(VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName));
+  return Vehicle::create(m_root, configPair->second, configPair->first, extraConfig);
 }
 
-ByteArray VehicleDatabase::netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const {
+std::expected<ByteArray, StarException> VehicleDatabase::netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
-
-  ds.write(vehicle->baseConfig().getString("name"));
-  ds.write(vehicle->dynamicConfig());
+  auto name = vehicle->baseConfig().getString("name");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  if (auto result = ds.write(*name); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = ds.write(vehicle->dynamicConfig()); !result)
+    return std::unexpected(std::move(result.error()));
   return ds.takeData();
 }
 
-std::shared_ptr<Vehicle> VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::expected<std::shared_ptr<Vehicle>, StarException> VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
-
-  String name = ds.read<String>();
+  auto name = ds.read<String>();
+  if (!name)
+    return std::unexpected(std::move(name.error()));
   auto dynamicConfig = ds.read<Json>();
-  auto vehicle = create(name, dynamicConfig);
-
-  return vehicle;
+  if (!dynamicConfig)
+    return std::unexpected(std::move(dynamicConfig.error()));
+  return create(*name, *dynamicConfig);
 }
 
-Json VehicleDatabase::diskStore(std::shared_ptr<Vehicle> const& vehicle) const {
+std::expected<Json, StarException> VehicleDatabase::diskStore(std::shared_ptr<Vehicle> const& vehicle) const {
+  auto name = vehicle->baseConfig().getString("name");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto state = vehicle->diskStore();
+  if (!state)
+    return std::unexpected(std::move(state.error()));
   return JsonObject{
-    {"name", vehicle->baseConfig().getString("name")},
+    {"name", std::move(*name)},
     {"dynamicConfig", vehicle->dynamicConfig()},
-    {"state", vehicle->diskStore()}
+    {"state", std::move(*state)}
   };
 }
 
-std::shared_ptr<Vehicle> VehicleDatabase::diskLoad(Json const& diskStore) const {
+std::expected<std::shared_ptr<Vehicle>, StarException> VehicleDatabase::diskLoad(Json const& diskStore) const {
   std::shared_ptr<Vehicle> vehicle;
-  try {
-    vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
-    vehicle->diskLoad(diskStore.get("state"));
+  auto load = [&](Json const& store) -> std::expected<void, StarException> {
+    auto name = store.getString("name");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto config = store.get("dynamicConfig");
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto candidate = create(*name, *config);
+    if (!candidate)
+      return std::unexpected(std::move(candidate.error()));
+    auto state = store.get("state");
+    if (!state)
+      return std::unexpected(std::move(state.error()));
+    if (auto result = (*candidate)->diskLoad(std::move(*state)); !result)
+      return result;
+    vehicle = std::move(*candidate);
+    return {};
+  };
+  auto result = load(diskStore);
+  if (result)
     return vehicle;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    vehicle.reset();
-    auto exception = std::current_exception();
-    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
-      try {
-        vehicle = create(store.getString("name"), store.get("dynamicConfig"));
-        vehicle->diskLoad(store.get("state"));
-      } catch (std::exception const&) {
-        ExceptionDiagnostic const e(std::current_exception());
-        exception = std::current_exception();
-        return strf("{}", outputException(e, false));
-      }
-      return {};
-    });
-
-    if (!success)
-      std::rethrow_exception(exception);
-  }
+  StarException lastError = std::move(result.error());
+  auto rebuilt = m_rebuilder->rebuild(diskStore, lastError, [&](Json const& store) -> std::expected<void, StarException> {
+    auto attempt = load(store);
+    if (!attempt)
+      lastError = attempt.error();
+    return attempt;
+  });
+  if (!rebuilt)
+    return std::unexpected(std::move(rebuilt.error()));
+  if (!*rebuilt)
+    return std::unexpected(std::move(lastError));
   return vehicle;
 }
 

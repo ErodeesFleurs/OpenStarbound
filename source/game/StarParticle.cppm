@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -21,8 +22,8 @@ namespace Star {
 class Root;
 
 struct Particle {
-  friend DataStream& operator<<(DataStream& ds, Particle const& particle);
-  friend DataStream& operator>>(DataStream& ds, Particle& particle);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle);
 
   enum class Type {
     // Variance is basically a null type, used only for varying other particles
@@ -35,7 +36,7 @@ struct Particle {
     Streak,
     Text
   };
-  static EnumMap<Type> const TypeNames;
+  static std::expected<EnumMap<Type>, StarException> const TypeNames;
 
   enum class DestructionAction {
     None,
@@ -43,30 +44,30 @@ struct Particle {
     Fade,
     Shrink
   };
-  static EnumMap<DestructionAction> const DestructionActionNames;
+  static std::expected<EnumMap<DestructionAction>, StarException> const DestructionActionNames;
 
   enum class Layer {
     Back,
     Middle,
     Front
   };
-  static EnumMap<Layer> const LayerNames;
+  static std::expected<EnumMap<Layer>, StarException> const LayerNames;
 
   Particle();
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
-  explicit Particle(Root& root, Json const& config, String const& assetsPath = "/");
+  [[nodiscard]] static std::expected<Particle, StarException> create(Root& root, Json const& config, String const& assetsPath = "/");
   Particle(Particle const&) = default;
   Particle& operator=(Particle const&) = default;
   Particle(Particle&& other);
   Particle& operator=(Particle&& other);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   void translate(Vec2F const& pos);
 
   // Updates position, velocity, rotation, and timeToLive.
-  void update(Root& root, float dt, Vec2F const& wind = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> update(Root& root, float dt, Vec2F const& wind = Vec2F());
 
   bool dead() const;
 
@@ -83,7 +84,7 @@ struct Particle {
   // Internally called by update() / collide() / destruct()
   void destructionUpdate();
 
-  void initializeAnimation(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initializeAnimation(Root& root);
 
   Type type;
 
@@ -134,8 +135,8 @@ struct Particle {
   std::optional<Animation> animation;
 };
 
-DataStream& operator<<(DataStream& ds, Particle const& particle);
-DataStream& operator>>(DataStream& ds, Particle& particle);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle);
 
 typedef std::function<Particle()> ParticleVariantCreator;
 ParticleVariantCreator makeParticleVariantCreator(Root& root, Particle particle, Particle variance);

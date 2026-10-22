@@ -4,7 +4,6 @@ import std;
 import star.string;
 import star.format;
 import star.net_compatibility;
-
 import star.byte_array;
 import star.bytes;
 import star.math_common;
@@ -17,7 +16,8 @@ struct DataStreamExceptionTag {
 using DataStreamException = StarError<DataStreamExceptionTag, IOException>;
 extern unsigned const CurrentStreamVersion;
 
-// Writes complex types to bytes in a portable big-endian fashion.
+// Portable serialization. Every transfer and complete operator chain has an
+// explicit error result; unsuccessful reads never produce a default value.
 class DataStream {
 public:
   DataStream();
@@ -25,405 +25,383 @@ public:
   virtual void const* queryType(TypeKey key) const noexcept {
     return queryTypeOf<DataStream>(this, key);
   }
-  virtual std::string_view dynamicTypeName() const noexcept {
-    return typeName<DataStream>();
-  }
+  virtual std::string_view dynamicTypeName() const noexcept { return typeName<DataStream>(); }
 
-  // DataStream defaults to big-endian order for all primitive types
   ByteOrder byteOrder() const;
   void setByteOrder(ByteOrder byteOrder);
-
-  // DataStream can optionally write strings as null terminated rather than
-  // length prefixed
   bool nullTerminatedStrings() const;
   void setNullTerminatedStrings(bool nullTerminatedStrings);
-
-  // streamCompatibilityVersion defaults to CurrentStreamVersion, but can be
-  // changed for compatibility with older versions of DataStream serialization.
   unsigned streamCompatibilityVersion() const;
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
   void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
-  // Do direct reads and writes
-  virtual void readData(char* data, std::size_t len) = 0;
-  virtual void writeData(char const* data, std::size_t len) = 0;
-  virtual bool atEnd() { return false; };
 
-  // These do not read / write sizes, they simply read / write directly.
-  ByteArray readBytes(std::size_t len);
-  void writeBytes(ByteArray const& ba);
+  [[nodiscard]] virtual std::expected<void, StarException> readData(char* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> writeData(char const* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> atEnd() { return false; }
+  [[nodiscard]] std::expected<ByteArray, StarException> readBytes(std::size_t len);
+  [[nodiscard]] std::expected<void, StarException> writeBytes(ByteArray const& ba);
 
-  DataStream& operator<<(bool d);
-  DataStream& operator<<(char c);
-  DataStream& operator<<(std::int8_t d);
-  DataStream& operator<<(std::uint8_t d);
-  DataStream& operator<<(std::int16_t d);
-  DataStream& operator<<(std::uint16_t d);
-  DataStream& operator<<(std::int32_t d);
-  DataStream& operator<<(std::uint32_t d);
-  DataStream& operator<<(std::int64_t d);
-  DataStream& operator<<(std::uint64_t d);
-  DataStream& operator<<(float d);
-  DataStream& operator<<(double d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(bool d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(char d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int8_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint8_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int16_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint16_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int32_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint32_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::int64_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::uint64_t d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(float d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(double d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(bool& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(char& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int8_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint8_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int16_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint16_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int32_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint32_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::int64_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::uint64_t& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(float& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(double& d);
 
-  DataStream& operator>>(bool& d);
-  DataStream& operator>>(char& c);
-  DataStream& operator>>(std::int8_t& d);
-  DataStream& operator>>(std::uint8_t& d);
-  DataStream& operator>>(std::int16_t& d);
-  DataStream& operator>>(std::uint16_t& d);
-  DataStream& operator>>(std::int32_t& d);
-  DataStream& operator>>(std::uint32_t& d);
-  DataStream& operator>>(std::int64_t& d);
-  DataStream& operator>>(std::uint64_t& d);
-  DataStream& operator>>(float& d);
-  DataStream& operator>>(double& d);
+  // VLQ integers retain their on-wire 1..10-byte representation. S maps NPos to zero.
+  [[nodiscard]] std::expected<std::size_t, StarException> writeVlqU(std::uint64_t i);
+  [[nodiscard]] std::expected<std::size_t, StarException> writeVlqI(std::int64_t i);
+  [[nodiscard]] std::expected<std::size_t, StarException> writeVlqS(std::size_t i);
+  [[nodiscard]] std::expected<std::size_t, StarException> readVlqU(std::uint64_t& i);
+  [[nodiscard]] std::expected<std::size_t, StarException> readVlqI(std::int64_t& i);
+  [[nodiscard]] std::expected<std::size_t, StarException> readVlqS(std::size_t& i);
+  [[nodiscard]] std::expected<std::uint64_t, StarException> readVlqU();
+  [[nodiscard]] std::expected<std::int64_t, StarException> readVlqI();
+  [[nodiscard]] std::expected<std::size_t, StarException> readVlqS();
 
-  // Writes and reads a VLQ encoded integer.  Can write / read anywhere from 1
-  // to 10 bytes of data, with integers of smaller (absolute) value taking up
-  // fewer bytes.  size_t version can be used to portably write a size_t type,
-  // and portably and efficiently handles the case of NPos.
-
-  std::size_t writeVlqU(std::uint64_t i);
-  std::size_t writeVlqI(std::int64_t i);
-  std::size_t writeVlqS(std::size_t i);
-
-  std::size_t readVlqU(std::uint64_t& i);
-  std::size_t readVlqI(std::int64_t& i);
-  std::size_t readVlqS(std::size_t& i);
-
-  std::uint64_t readVlqU();
-  std::int64_t readVlqI();
-  std::size_t readVlqS();
-
-  // The following functions write / read data with length and then content
-  // following, but note that the length is encoded as an unsigned VLQ integer.
-  // String objects are encoded in utf8, and can optionally be written as null
-  // terminated rather than length then content.
-
-  DataStream& operator<<(const char* s);
-  DataStream& operator<<(std::string const& d);
-  DataStream& operator<<(ByteArray const& d);
-  DataStream& operator<<(String const& s);
-
-  DataStream& operator>>(std::string& d);
-  DataStream& operator>>(ByteArray& d);
-  DataStream& operator>>(String& s);
-
-  // All enum types are automatically serializable
-
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(char const* s);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::string const& s);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(ByteArray const& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(String const& s);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::string& s);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(ByteArray& d);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(String& s);
   template <typename EnumType> requires std::is_enum_v<EnumType>
-  DataStream& operator<<(EnumType const& e);
-
+  [[nodiscard]] std::expected<DataStream*, StarException> operator<<(EnumType const& e);
   template <typename EnumType> requires std::is_enum_v<EnumType>
-  DataStream& operator>>(EnumType& e);
+  [[nodiscard]] std::expected<DataStream*, StarException> operator>>(EnumType& e);
 
-  // Convenience method to avoid temporary.
-  template <typename T>
-  T read();
+  template <typename T> [[nodiscard]] std::expected<T, StarException> read();
+  template <typename Data> [[nodiscard]] std::expected<void, StarException> read(Data& data);
+  template <typename Data> [[nodiscard]] std::expected<void, StarException> write(Data const& data);
+  template <typename ReadType, typename Data> [[nodiscard]] std::expected<void, StarException> cread(Data& data);
+  template <typename WriteType, typename Data> [[nodiscard]] std::expected<void, StarException> cwrite(Data const& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> vuread(IntegralType& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> viread(IntegralType& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> vsread(IntegralType& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> vuwrite(IntegralType const& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> viwrite(IntegralType const& data);
+  template <typename IntegralType> [[nodiscard]] std::expected<void, StarException> vswrite(IntegralType const& data);
+  template <typename FloatType> [[nodiscard]] std::expected<void, StarException> vfread(FloatType& data, FloatType base);
+  template <typename FloatType> [[nodiscard]] std::expected<void, StarException> vfwrite(FloatType const& data, FloatType base);
+  template <typename PointerType, typename ReadFunction> [[nodiscard]] std::expected<void, StarException> pread(PointerType& pointer, ReadFunction function);
+  template <typename PointerType, typename WriteFunction> [[nodiscard]] std::expected<void, StarException> pwrite(PointerType const& pointer, WriteFunction function);
+  template <typename PointerType> [[nodiscard]] std::expected<void, StarException> pread(PointerType& pointer);
+  template <typename PointerType> [[nodiscard]] std::expected<void, StarException> pwrite(PointerType const& pointer);
 
-  // Convenient argument style reading / writing
-
-  template <typename Data>
-  void read(Data& data);
-
-  template <typename Data>
-  void write(Data const& data);
-
-  // Argument style reading / writing with casting.
-
-  template <typename ReadType, typename Data>
-  void cread(Data& data);
-
-  template <typename WriteType, typename Data>
-  void cwrite(Data const& data);
-
-  // Argument style reading / writing of variable length integers.  Arguments
-  // are explicitly casted, so things like enums are allowed.
-
-  template <typename IntegralType>
-  void vuread(IntegralType& data);
-
-  template <typename IntegralType>
-  void viread(IntegralType& data);
-
-  template <typename IntegralType>
-  void vsread(IntegralType& data);
-
-  template <typename IntegralType>
-  void vuwrite(IntegralType const& data);
-
-  template <typename IntegralType>
-  void viwrite(IntegralType const& data);
-
-  template <typename IntegralType>
-  void vswrite(IntegralType const& data);
-
-  // Store a fixed point number as a variable length integer
-
-  template <typename FloatType>
-  void vfread(FloatType& data, FloatType base);
-
-  template <typename FloatType>
-  void vfwrite(FloatType const& data, FloatType base);
-
-  // Read a shared / unique ptr, and store whether the pointer is initialized.
-
-  template <typename PointerType, typename ReadFunction>
-  void pread(PointerType& pointer, ReadFunction readFunction);
-
-  template <typename PointerType, typename WriteFunction>
-  void pwrite(PointerType const& pointer, WriteFunction writeFunction);
-
-  template <typename PointerType>
-  void pread(PointerType& pointer);
-
-  template <typename PointerType>
-  void pwrite(PointerType const& pointer);
-
-  // WriteFunction should be void (DataStream& ds, Element const& e)
-  template <typename Container, typename WriteFunction>
-  void writeContainer(Container const& container, WriteFunction function);
-
-  // ReadFunction should be void (DataStream& ds, Element& e)
-  template <typename Container, typename ReadFunction>
-  void readContainer(Container& container, ReadFunction function);
-
-  template <typename Container, typename WriteFunction>
-  void writeMapContainer(Container& map, WriteFunction function);
-
-  // Specialization of readContainer for map types (whose elements are a pair
-  // with the key type marked const)
-  template <typename Container, typename ReadFunction>
-  void readMapContainer(Container& map, ReadFunction function);
-
-  template <typename Container>
-  void writeContainer(Container const& container);
-
-  template <typename Container>
-  void readContainer(Container& container);
-
-  template <typename Container>
-  void writeMapContainer(Container const& container);
-
-  template <typename Container>
-  void readMapContainer(Container& container);
+  // Callbacks return expected<void, StarException>. Decoding commits only fully
+  // decoded elements; pointer decoding commits only after its complete payload.
+  template <typename Container, typename WriteFunction> [[nodiscard]] std::expected<void, StarException> writeContainer(Container const& container, WriteFunction function);
+  template <typename Container, typename ReadFunction> [[nodiscard]] std::expected<void, StarException> readContainer(Container& container, ReadFunction function);
+  template <typename Container, typename WriteFunction> [[nodiscard]] std::expected<void, StarException> writeMapContainer(Container const& container, WriteFunction function);
+  template <typename Container, typename ReadFunction> [[nodiscard]] std::expected<void, StarException> readMapContainer(Container& container, ReadFunction function);
+  template <typename Container> [[nodiscard]] std::expected<void, StarException> writeContainer(Container const& container);
+  template <typename Container> [[nodiscard]] std::expected<void, StarException> readContainer(Container& container);
+  template <typename Container> [[nodiscard]] std::expected<void, StarException> writeMapContainer(Container const& container);
+  template <typename Container> [[nodiscard]] std::expected<void, StarException> readMapContainer(Container& container);
 
 private:
-  void writeStringData(char const* data, std::size_t len);
-
+  [[nodiscard]] std::expected<void, StarException> writeStringData(char const* data, std::size_t len);
   ByteOrder m_byteOrder;
   bool m_nullTerminatedStrings;
   unsigned m_streamCompatibilityVersion;
 };
 
-template <typename EnumType> requires std::is_enum_v<EnumType>
-DataStream& DataStream::operator<<(EnumType const& e) {
-  *this << std::to_underlying(e);
-  return *this;
-}
-
-template <typename EnumType> requires std::is_enum_v<EnumType>
-DataStream& DataStream::operator>>(EnumType& e) {
-  std::underlying_type_t<EnumType> i;
-  *this >> i;
-  e = static_cast<EnumType>(i);
-  return *this;
-}
-
+// Failure short-circuits the remainder of a chain. Inspect its final expected.
 template <typename T>
-T DataStream::read() {
-  T t;
-  *this >> t;
-  return t;
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(std::expected<DataStream*, StarException> stream, T const& value) {
+  if (!stream) return std::unexpected(std::move(stream.error()));
+  return **stream << value;
+}
+template <typename T>
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(std::expected<DataStream*, StarException> stream, T& value) {
+  if (!stream) return std::unexpected(std::move(stream.error()));
+  return **stream >> value;
 }
 
+template <typename EnumType> requires std::is_enum_v<EnumType>
+[[nodiscard]] std::expected<DataStream*, StarException> DataStream::operator<<(EnumType const& e) {
+  return *this << std::to_underlying(e);
+}
+template <typename EnumType> requires std::is_enum_v<EnumType>
+[[nodiscard]] std::expected<DataStream*, StarException> DataStream::operator>>(EnumType& e) {
+  auto value = read<std::underlying_type_t<EnumType>>();
+  if (!value) return std::unexpected(std::move(value.error()));
+  e = static_cast<EnumType>(*value);
+  return this;
+}
+template <typename T>
+[[nodiscard]] std::expected<T, StarException> DataStream::read() {
+  T value;
+  auto result = *this >> value;
+  if (!result) return std::unexpected(std::move(result.error()));
+  return value;
+}
 template <typename Data>
-void DataStream::read(Data& data) {
-  *this >> data;
+[[nodiscard]] std::expected<void, StarException> DataStream::read(Data& data) {
+  auto result = *this >> data;
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
 template <typename Data>
-void DataStream::write(Data const& data) {
-  *this << data;
+[[nodiscard]] std::expected<void, StarException> DataStream::write(Data const& data) {
+  auto result = *this << data;
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
 template <typename ReadType, typename Data>
-void DataStream::cread(Data& data) {
-  ReadType v;
-  *this >> v;
-  data = (Data)v;
+[[nodiscard]] std::expected<void, StarException> DataStream::cread(Data& data) {
+  auto value = read<ReadType>();
+  if (!value) return std::unexpected(std::move(value.error()));
+  data = (Data)*value;
+  return {};
 }
-
 template <typename WriteType, typename Data>
-void DataStream::cwrite(Data const& data) {
-  WriteType v = (WriteType)data;
-  *this << v;
-}
-
+[[nodiscard]] std::expected<void, StarException> DataStream::cwrite(Data const& data) { return write((WriteType)data); }
 template <typename IntegralType>
-void DataStream::vuread(IntegralType& data) {
-  std::uint64_t i = readVlqU();
-  data = (IntegralType)i;
+[[nodiscard]] std::expected<void, StarException> DataStream::vuread(IntegralType& data) {
+  auto value = readVlqU();
+  if (!value) return std::unexpected(std::move(value.error()));
+  data = (IntegralType)*value;
+  return {};
 }
-
 template <typename IntegralType>
-void DataStream::viread(IntegralType& data) {
-  std::int64_t i = readVlqI();
-  data = (IntegralType)i;
+[[nodiscard]] std::expected<void, StarException> DataStream::viread(IntegralType& data) {
+  auto value = readVlqI();
+  if (!value) return std::unexpected(std::move(value.error()));
+  data = (IntegralType)*value;
+  return {};
 }
-
 template <typename IntegralType>
-void DataStream::vsread(IntegralType& data) {
-  std::size_t s = readVlqS();
-  data = (IntegralType)s;
+[[nodiscard]] std::expected<void, StarException> DataStream::vsread(IntegralType& data) {
+  auto value = readVlqS();
+  if (!value) return std::unexpected(std::move(value.error()));
+  data = (IntegralType)*value;
+  return {};
 }
-
 template <typename IntegralType>
-void DataStream::vuwrite(IntegralType const& data) {
-  writeVlqU((std::uint64_t)data);
+[[nodiscard]] std::expected<void, StarException> DataStream::vuwrite(IntegralType const& data) {
+  auto result = writeVlqU((std::uint64_t)data);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
 template <typename IntegralType>
-void DataStream::viwrite(IntegralType const& data) {
-  writeVlqI((std::int64_t)data);
+[[nodiscard]] std::expected<void, StarException> DataStream::viwrite(IntegralType const& data) {
+  auto result = writeVlqI((std::int64_t)data);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
 template <typename IntegralType>
-void DataStream::vswrite(IntegralType const& data) {
-  writeVlqS((std::size_t)data);
+[[nodiscard]] std::expected<void, StarException> DataStream::vswrite(IntegralType const& data) {
+  auto result = writeVlqS((std::size_t)data);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
 template <typename FloatType>
-void DataStream::vfread(FloatType& data, FloatType base) {
-  std::int64_t i = readVlqI();
-  data = (FloatType)i * base;
+[[nodiscard]] std::expected<void, StarException> DataStream::vfread(FloatType& data, FloatType base) {
+  auto value = readVlqI();
+  if (!value) return std::unexpected(std::move(value.error()));
+  data = (FloatType)*value * base;
+  return {};
 }
-
 template <typename FloatType>
-void DataStream::vfwrite(FloatType const& data, FloatType base) {
-  writeVlqI((std::int64_t)std::round(data / base));
+[[nodiscard]] std::expected<void, StarException> DataStream::vfwrite(FloatType const& data, FloatType base) {
+  auto rounded = std::round(data / base);
+  if (!std::isfinite(rounded) || rounded < -0x1p63 || rounded >= 0x1p63)
+    return std::unexpected(DataStreamException("Fixed-point stream value is outside signed 64-bit range"));
+  return viwrite((std::int64_t)rounded);
 }
-
 template <typename PointerType, typename ReadFunction>
-void DataStream::pread(PointerType& pointer, ReadFunction readFunction) {
-  bool initialized = read<bool>();
-  if (initialized) {
-    auto element = std::make_unique<typename std::decay<typename PointerType::element_type>::type>();
-    readFunction(*this, *element);
+[[nodiscard]] std::expected<void, StarException> DataStream::pread(PointerType& pointer, ReadFunction function) {
+  auto initialized = read<bool>();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  if (*initialized) {
+    if constexpr (requires { static_cast<bool>(function); }) {
+      if (!function) return std::unexpected(DataStreamException("No pointer read callback supplied"));
+    }
+    auto element = std::make_unique<std::remove_cv_t<typename PointerType::element_type>>();
+    auto result = function(*this, *element);
+    if (!result) return std::unexpected(std::move(result.error()));
     pointer.reset(element.release());
   } else {
     pointer.reset();
   }
+  return {};
 }
-
 template <typename PointerType, typename WriteFunction>
-void DataStream::pwrite(PointerType const& pointer, WriteFunction writeFunction) {
+[[nodiscard]] std::expected<void, StarException> DataStream::pwrite(PointerType const& pointer, WriteFunction function) {
+  auto result = write((bool)pointer);
+  if (!result) return std::unexpected(std::move(result.error()));
   if (pointer) {
-    write(true);
-    writeFunction(*this, *pointer);
-  } else {
-    write(false);
+    if constexpr (requires { static_cast<bool>(function); }) {
+      if (!function) return std::unexpected(DataStreamException("No pointer write callback supplied"));
+    }
+    auto payload = function(*this, *pointer);
+    if (!payload) return std::unexpected(std::move(payload.error()));
   }
+  return {};
 }
-
 template <typename PointerType>
-void DataStream::pread(PointerType& pointer) {
-  using Element = typename std::decay<typename PointerType::element_type>::type;
+[[nodiscard]] std::expected<void, StarException> DataStream::pread(PointerType& pointer) {
+  using Element = std::remove_cv_t<typename PointerType::element_type>;
   if constexpr (std::is_default_constructible_v<Element>) {
-    pread(pointer, [](DataStream& ds, Element& value) { ds.read(value); });
+    return pread(pointer, [](DataStream& ds, Element& value) { return ds.read(value); });
   } else {
-    if (read<bool>()) {
-      auto element = std::make_unique<Element>(read<Element>());
+    auto initialized = read<bool>();
+    if (!initialized) return std::unexpected(std::move(initialized.error()));
+    if (*initialized) {
+      auto value = read<Element>();
+      if (!value) return std::unexpected(std::move(value.error()));
+      auto element = std::make_unique<Element>(std::move(*value));
       pointer.reset(element.release());
     } else {
       pointer.reset();
     }
+    return {};
   }
 }
-
 template <typename PointerType>
-void DataStream::pwrite(PointerType const& pointer) {
-  return pwrite(pointer, [](DataStream& ds, typename std::decay<typename PointerType::element_type>::type const& value) {
-      ds.write(value);
-    });
+[[nodiscard]] std::expected<void, StarException> DataStream::pwrite(PointerType const& pointer) {
+  return pwrite(pointer, [](DataStream& ds, std::remove_cv_t<typename PointerType::element_type> const& value) { return ds.write(value); });
 }
-
 template <typename Container, typename WriteFunction>
-void DataStream::writeContainer(Container const& container, WriteFunction function) {
-  writeVlqU(container.size());
-  for (auto const& elem : container)
-    function(*this, elem);
-}
-
-template <typename Container, typename ReadFunction>
-void DataStream::readContainer(Container& container, ReadFunction function) {
-  container.clear();
-  std::size_t size = readVlqU();
-  for (std::size_t i = 0; i < size; ++i) {
-    typename Container::value_type elem;
-    function(*this, elem);
-    container.insert(container.end(), elem);
+[[nodiscard]] std::expected<void, StarException> DataStream::writeContainer(Container const& container, WriteFunction function) {
+  auto count = writeVlqU(container.size());
+  if (!count) return std::unexpected(std::move(count.error()));
+  if constexpr (requires { static_cast<bool>(function); }) {
+    if (!container.empty() && !function)
+      return std::unexpected(DataStreamException("No container write callback supplied"));
   }
+  for (auto const& element : container) {
+    auto result = function(*this, element);
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
-
-template <typename Container, typename WriteFunction>
-void DataStream::writeMapContainer(Container& map, WriteFunction function) {
-  writeVlqU(map.size());
-  for (auto const& elem : map)
-    function(*this, elem.first, elem.second);
-}
-
 template <typename Container, typename ReadFunction>
-void DataStream::readMapContainer(Container& map, ReadFunction function) {
-  map.clear();
-  std::size_t size = readVlqU();
-  for (std::size_t i = 0; i < size; ++i) {
+[[nodiscard]] std::expected<void, StarException> DataStream::readContainer(Container& container, ReadFunction function) {
+  container.clear();
+  auto count = readVlqU();
+  if (!count) return std::unexpected(std::move(count.error()));
+  if constexpr (requires { static_cast<bool>(function); }) {
+    if (*count && !function)
+      return std::unexpected(DataStreamException("No container read callback supplied"));
+  }
+  for (std::uint64_t i = 0; i < *count; ++i) {
+    typename Container::value_type element;
+    auto result = function(*this, element);
+    if (!result) return std::unexpected(std::move(result.error()));
+    if constexpr (requires { container.insert(container.end(), std::move(element)).error(); }) {
+      auto inserted = container.insert(container.end(), std::move(element));
+      if (!inserted) return std::unexpected(std::move(inserted.error()));
+    } else {
+      container.insert(container.end(), std::move(element));
+    }
+  }
+  return {};
+}
+template <typename Container, typename WriteFunction>
+[[nodiscard]] std::expected<void, StarException> DataStream::writeMapContainer(Container const& container, WriteFunction function) {
+  auto count = writeVlqU(container.size());
+  if (!count) return std::unexpected(std::move(count.error()));
+  if constexpr (requires { static_cast<bool>(function); }) {
+    if (!container.empty() && !function)
+      return std::unexpected(DataStreamException("No map write callback supplied"));
+  }
+  for (auto const& element : container) {
+    auto result = function(*this, element.first, element.second);
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
+  return {};
+}
+template <typename Container, typename ReadFunction>
+[[nodiscard]] std::expected<void, StarException> DataStream::readMapContainer(Container& container, ReadFunction function) {
+  container.clear();
+  auto count = readVlqU();
+  if (!count) return std::unexpected(std::move(count.error()));
+  if constexpr (requires { static_cast<bool>(function); }) {
+    if (*count && !function)
+      return std::unexpected(DataStreamException("No map read callback supplied"));
+  }
+  for (std::uint64_t i = 0; i < *count; ++i) {
     typename Container::key_type key;
     typename Container::mapped_type mapped;
-    function(*this, key, mapped);
-    map.insert(std::make_pair(std::move(key), std::move(mapped)));
-  }
-}
-
-template <typename Container>
-void DataStream::writeContainer(Container const& container) {
-  writeContainer(container, [](DataStream& ds, typename Container::value_type const& element) { ds << element; });
-}
-
-template <typename Container>
-void DataStream::readContainer(Container& container) {
-  container.clear();
-  std::size_t size = readVlqU();
-  for (std::size_t i = 0; i < size; ++i)
-    container.insert(container.end(), read<typename Container::value_type>());
-}
-
-template <typename Container>
-void DataStream::writeMapContainer(Container const& container) {
-  writeMapContainer(container, [](DataStream& ds, typename Container::key_type const& key, typename Container::mapped_type const& mapped) {
-      ds << key;
-      ds << mapped;
-    });
-}
-
-template <typename Container>
-void DataStream::readMapContainer(Container& container) {
-  container.clear();
-  std::size_t size = readVlqU();
-  for (std::size_t i = 0; i < size; ++i) {
-    auto key = read<typename Container::key_type>();
-    auto mapped = read<typename Container::mapped_type>();
+    auto result = function(*this, key, mapped);
+    if (!result) return std::unexpected(std::move(result.error()));
     container.insert(std::make_pair(std::move(key), std::move(mapped)));
   }
+  return {};
+}
+template <typename Container>
+[[nodiscard]] std::expected<void, StarException> DataStream::writeContainer(Container const& container) {
+  return writeContainer(container, [](DataStream& ds, typename Container::value_type const& value) { return ds.write(value); });
+}
+template <typename Container>
+[[nodiscard]] std::expected<void, StarException> DataStream::readContainer(Container& container) {
+  container.clear();
+  auto count = readVlqU();
+  if (!count) return std::unexpected(std::move(count.error()));
+  for (std::uint64_t i = 0; i < *count; ++i) {
+    auto element = read<typename Container::value_type>();
+    if (!element) return std::unexpected(std::move(element.error()));
+    if constexpr (requires { container.insert(container.end(), std::move(*element)).error(); }) {
+      auto inserted = container.insert(container.end(), std::move(*element));
+      if (!inserted) return std::unexpected(std::move(inserted.error()));
+    } else {
+      container.insert(container.end(), std::move(*element));
+    }
+  }
+  return {};
+}
+template <typename Container>
+[[nodiscard]] std::expected<void, StarException> DataStream::writeMapContainer(Container const& container) {
+  return writeMapContainer(container, [](DataStream& ds, typename Container::key_type const& key, typename Container::mapped_type const& mapped) -> std::expected<void, StarException> {
+    auto result = ds << key << mapped;
+    if (!result) return std::unexpected(std::move(result.error()));
+    return {};
+  });
+}
+template <typename Container>
+[[nodiscard]] std::expected<void, StarException> DataStream::readMapContainer(Container& container) {
+  container.clear();
+  auto count = readVlqU();
+  if (!count) return std::unexpected(std::move(count.error()));
+  for (std::uint64_t i = 0; i < *count; ++i) {
+    auto key = read<typename Container::key_type>();
+    if (!key) return std::unexpected(std::move(key.error()));
+    auto mapped = read<typename Container::mapped_type>();
+    if (!mapped) return std::unexpected(std::move(mapped.error()));
+    container.insert(std::make_pair(std::move(*key), std::move(*mapped)));
+  }
+  return {};
 }
 
 }
 
 export module star.data_stream;
-
 export namespace Star {
   using ::Star::DataStreamExceptionTag;
   using ::Star::DataStreamException;
   using ::Star::CurrentStreamVersion;
   using ::Star::DataStream;
+  using ::Star::operator<<;
+  using ::Star::operator>>;
 }

@@ -205,378 +205,539 @@ import star.team_client;
 
 namespace Star {
 
-TeamBar::TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client) : Pane(guiContext) {
-  m_mainInterface = mainInterface;
-  m_client = client;
+TeamBar::TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client)
+  : Pane(guiContext), m_mainInterface(mainInterface), m_client(std::move(client)) {}
 
-
-  auto assets = context()->root().assets();
-
-  m_teamInvite = std::make_shared<TeamInvite>(*context(), this);
-  m_teamInvitation = std::make_shared<TeamInvitation>(*context(), this);
-  m_teamMemberMenu = std::make_shared<TeamMemberMenu>(*context(), this);
-
-  m_nameStyle = assets->json("/interface.config:teamBarNameStyle");
-  m_nameStyle.fontSize = assets->json("/interface.config:font.nameSize").toInt();
-  m_nameOffset = jsonToVec2F(assets->json("/interface.config:nameOffset"));
-
-  GuiReader reader(*context());
-
-  reader.registerCallback("inviteButton", [this](Widget*) { inviteButton(); });
-  reader.registerCallback("showSelfMenu", [this](Widget*) {
-      if (!m_client->teamClient()->isMemberOfTeam())
-        return;
-      auto position = jsonToVec2I(context()->root().assets()->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
-      position[1] += windowHeight() / context()->interfaceScale();
-      showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), position);
-    });
-
-  reader.construct(assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
-
-  m_healthBar = fetchChild<ProgressWidget>("healthBar");
-  m_energyBar = fetchChild<ProgressWidget>("energyBar");
-  m_foodBar = fetchChild<ProgressWidget>("foodBar");
-  m_nameLabel = fetchChild<LabelWidget>("name");
-
-  m_energyBarColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
-  m_energyBarRegenMixColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
-  m_energyBarUnusableColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarUnusableColor"));
-
-  m_energyBar->setColor(m_energyBarColor);
-
-  auto playerPortrait = fetchChild<PortraitWidget>("portrait");
-  playerPortrait->setEntity(as<PortraitEntity>(m_client->mainPlayer()));
-
-  updatePlayerResources();
-  disableScissoring();
+std::expected<std::shared_ptr<TeamBar>, StarException> TeamBar::create(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client) {
+  auto pane = std::shared_ptr<TeamBar>(new TeamBar(guiContext, mainInterface, std::move(client)));
+  auto result = pane->initializePane();
+  if (!result) return std::unexpected(std::move(result.error()));
+  result = pane->initialize();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return pane;
 }
 
-bool TeamBar::sendEvent(InputEvent const& event) {
-  if (std::holds_alternative<MouseButtonDownEvent>(event)
-      && (std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left || std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Right)) {
-    if (m_teamMemberMenu->isDisplayed() && !m_teamMemberMenu->inMember(*context()->mousePosition(event)))
+std::expected<void, StarException> TeamBar::initialize() {
+  auto invite = TeamInvite::create(*context(), this);
+  if (!invite) return std::unexpected(std::move(invite.error()));
+  m_teamInvite = std::move(*invite);
+  auto invitation = TeamInvitation::create(*context(), this);
+  if (!invitation) return std::unexpected(std::move(invitation.error()));
+  m_teamInvitation = std::move(*invitation);
+  auto menu = TeamMemberMenu::create(*context(), this);
+  if (!menu) return std::unexpected(std::move(menu.error()));
+  m_teamMemberMenu = std::move(*menu);
+  auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/teambar.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  GuiReader reader(*context());
+  reader.registerCallback("inviteButton", [this](Widget*) { return inviteButton(); });
+  reader.registerCallback("showSelfMenu", [this](Widget*) -> std::expected<void, StarException> {
+    if (!m_client->teamClient()->isMemberOfTeam())
+      return {};
+    auto assets = context()->root().assets();
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto offset = (*assets)->json("/interface/windowconfig/teambar.config:selfMenuOffset");
+    if (!offset) return std::unexpected(std::move(offset.error()));
+    auto position = jsonToVec2I(*offset);
+    if (!position) return std::unexpected(std::move(position.error()));
+    auto height = windowHeight();
+    if (!height) return std::unexpected(std::move(height.error()));
+    (*position)[1] += *height / context()->interfaceScale();
+    return showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), *position);
+  });
+  auto layout = config->get("paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto result = reader.construct(*layout, this);
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto health = fetchChild<ProgressWidget>("healthBar");
+  if (!health) return std::unexpected(std::move(health.error()));
+  m_healthBar = std::move(*health);
+  auto energy = fetchChild<ProgressWidget>("energyBar");
+  if (!energy) return std::unexpected(std::move(energy.error()));
+  m_energyBar = std::move(*energy);
+  auto food = fetchChild<ProgressWidget>("foodBar");
+  if (!food) return std::unexpected(std::move(food.error()));
+  m_foodBar = std::move(*food);
+  auto name = fetchChild<LabelWidget>("name");
+  if (!name) return std::unexpected(std::move(name.error()));
+  m_nameLabel = std::move(*name);
+  auto colorConfig = config->get("energyBarColor");
+  if (!colorConfig) return std::unexpected(std::move(colorConfig.error()));
+  auto color = jsonToColor(*colorConfig);
+  if (!color) return std::unexpected(std::move(color.error()));
+  m_energyBarColor = *color;
+  colorConfig = config->get("energyBarRegenMixColor");
+  if (!colorConfig) return std::unexpected(std::move(colorConfig.error()));
+  color = jsonToColor(*colorConfig);
+  if (!color) return std::unexpected(std::move(color.error()));
+  m_energyBarRegenMixColor = *color;
+  colorConfig = config->get("energyBarUnusableColor");
+  if (!colorConfig) return std::unexpected(std::move(colorConfig.error()));
+  color = jsonToColor(*colorConfig);
+  if (!color) return std::unexpected(std::move(color.error()));
+  m_energyBarUnusableColor = *color;
+  m_energyBar->setColor(m_energyBarColor);
+  auto portrait = fetchChild<PortraitWidget>("portrait");
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  auto entitySet = (*portrait)->setEntity(as<PortraitEntity>(m_client->mainPlayer()));
+  if (!entitySet) return std::unexpected(std::move(entitySet.error()));
+  result = updatePlayerResources();
+  if (!result) return std::unexpected(std::move(result.error()));
+  disableScissoring();
+  return {};
+}
+
+std::expected<bool, StarException> TeamBar::sendEvent(InputEvent const& event) {
+  if (auto button = std::get_if<MouseButtonDownEvent>(&event);
+      button && (button->mouseButton == MouseButton::Left || button->mouseButton == MouseButton::Right)) {
+    auto position = context()->mousePosition(event);
+    if (position && m_teamMemberMenu->isDisplayed() && !m_teamMemberMenu->inMember(*position))
       m_teamMemberMenu->dismiss();
   }
   return Pane::sendEvent(event);
 }
 
-void TeamBar::invitePlayer(String const& playerName) {
-  m_client->teamClient()->invitePlayer(playerName);
+std::expected<void, StarException> TeamBar::invitePlayer(String const& playerName) {
+  return m_client->teamClient()->invitePlayer(playerName);
 }
 
-void TeamBar::acceptInvitation(Uuid const& inviterUuid) {
-  m_client->teamClient()->acceptInvitation(inviterUuid);
+std::expected<void, StarException> TeamBar::acceptInvitation(Uuid const& inviterUuid) {
+  return m_client->teamClient()->acceptInvitation(inviterUuid);
 }
 
-void TeamBar::update(float dt) {
-  Pane::update(dt);
-
-  updatePlayerResources();
-
+std::expected<void, StarException> TeamBar::update(float dt) {
+  auto result = Pane::update(dt);
+  if (!result) return std::unexpected(std::move(result.error()));
+  result = updatePlayerResources();
+  if (!result) return std::unexpected(std::move(result.error()));
   auto teamClient = m_client->teamClient();
-
-  if (!m_teamInvitation->active()) {
-    if (teamClient->hasInvitationPending()) {
-      auto invitation = teamClient->pullInvitation();
-      m_teamInvitation->open(invitation.first, invitation.second);
-      if (!m_teamInvitation->isDisplayed())
-        m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvitation);
+  if (!m_teamInvitation->active() && teamClient->hasInvitationPending()) {
+    auto invitation = teamClient->pullInvitation();
+    result = m_teamInvitation->open(invitation.first, invitation.second);
+    if (!result) return std::unexpected(std::move(result.error()));
+    if (!m_teamInvitation->isDisplayed()) {
+      result = m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvitation);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
   }
-
   if (teamClient->currentTeam() && !teamClient->isTeamLeader())
     m_teamInvite->dismiss();
-
-  fetchChild<ImageWidget>("leader")->setVisibility(teamClient->isTeamLeader());
-
-  buildTeamBar();
+  auto leader = fetchChild<ImageWidget>("leader");
+  if (!leader) return std::unexpected(std::move(leader.error()));
+  result = (*leader)->setVisibility(teamClient->isTeamLeader());
+  if (!result) return std::unexpected(std::move(result.error()));
+  return buildTeamBar();
 }
 
-void TeamBar::updatePlayerResources() {
+std::expected<void, StarException> TeamBar::updatePlayerResources() {
   auto player = m_client->mainPlayer();
-
-  m_healthBar->setCurrentProgressLevel(player->healthPercentage());
-  m_energyBar->setCurrentProgressLevel(player->energyPercentage());
-
+  auto health = player->healthPercentage();
+  if (!health) return std::unexpected(std::move(health.error()));
+  m_healthBar->setCurrentProgressLevel(*health);
+  auto energy = player->energyPercentage();
+  if (!energy) return std::unexpected(std::move(energy.error()));
+  m_energyBar->setCurrentProgressLevel(*energy);
+  std::expected<void, StarException> result;
   if (player->modeConfig().hunger) {
-    m_foodBar->setCurrentProgressLevel(player->foodPercentage());
+    auto food = player->foodPercentage();
+    if (!food) return std::unexpected(std::move(food.error()));
+    m_foodBar->setCurrentProgressLevel(*food);
     auto assets = context()->root().assets();
-    if (player->foodPercentage() <= assets->json("/player.config:foodLowThreshold").toFloat()) {
-      float flashTime = assets->json("/interface/windowconfig/teambar.config:foodBarFlashTime").toFloat();
-      if (std::fmod(Time::monotonicTime(), flashTime * 2) < flashTime)
-        m_foodBar->setOverlay(assets->json("/interface/windowconfig/teambar.config:foodBarFlashOverlay").toString());
-      else
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto thresholdConfig = (*assets)->json("/player.config:foodLowThreshold");
+    if (!thresholdConfig) return std::unexpected(std::move(thresholdConfig.error()));
+    auto threshold = thresholdConfig->toFloat();
+    if (!threshold) return std::unexpected(std::move(threshold.error()));
+    if (*food <= *threshold) {
+      auto flashConfig = (*assets)->json("/interface/windowconfig/teambar.config:foodBarFlashTime");
+      if (!flashConfig) return std::unexpected(std::move(flashConfig.error()));
+      auto flashTime = flashConfig->toFloat();
+      if (!flashTime) return std::unexpected(std::move(flashTime.error()));
+      if (std::fmod(Time::monotonicTime(), *flashTime * 2) < *flashTime) {
+        auto overlayConfig = (*assets)->json("/interface/windowconfig/teambar.config:foodBarFlashOverlay");
+        if (!overlayConfig) return std::unexpected(std::move(overlayConfig.error()));
+        auto overlay = overlayConfig->toString();
+        if (!overlay) return std::unexpected(std::move(overlay.error()));
+        m_foodBar->setOverlay(*overlay);
+      } else {
         m_foodBar->setOverlay("");
+      }
     } else {
       m_foodBar->setOverlay("");
     }
-    m_foodBar->show();
+    result = m_foodBar->show();
   } else {
-    m_foodBar->hide();
+    result = m_foodBar->hide();
   }
-
-  if (player->energyLocked()) {
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto locked = player->energyLocked();
+  if (!locked) return std::unexpected(std::move(locked.error()));
+  if (*locked) {
     m_energyBar->setColor(m_energyBarUnusableColor);
   } else {
-    m_energyBar->setColor(m_energyBarColor.mix(m_energyBarRegenMixColor, player->energyRegenBlockPercent()));
+    auto regen = player->energyRegenBlockPercent();
+    if (!regen) return std::unexpected(std::move(regen.error()));
+    m_energyBar->setColor(m_energyBarColor.mix(m_energyBarRegenMixColor, *regen));
   }
-
-  m_nameLabel->setText(player->name());
+  auto name = player->name();
+  if (!name) return std::unexpected(std::move(name.error()));
+  return m_nameLabel->setText(*name);
 }
 
-void TeamBar::inviteButton() {
+std::expected<void, StarException> TeamBar::inviteButton() {
   if (!m_teamInvite->isDisplayed())
-    m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvite);
+    return m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvite);
+  return {};
 }
 
-void TeamBar::buildTeamBar() {
+std::expected<void, StarException> TeamBar::buildTeamBar() {
   auto teamClient = m_client->teamClient();
   auto player = m_client->mainPlayer();
-
   auto list = fetchChild("list");
+  if (!list) return std::unexpected(std::move(list.error()));
   auto assets = context()->root().assets();
-
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/teambar.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto portraitScale = config->getFloat("memberPortraitScale");
+  if (!portraitScale) return std::unexpected(std::move(portraitScale.error()));
+  auto memberSize = config->getInt("memberSize");
+  if (!memberSize) return std::unexpected(std::move(memberSize.error()));
+  auto memberSpacing = config->getInt("memberSpacing");
+  if (!memberSpacing) return std::unexpected(std::move(memberSpacing.error()));
   Vec2I offset;
   std::size_t controlIndex = 0;
-
-  float portraitScale = assets->json("/interface/windowconfig/teambar.config:memberPortraitScale").toFloat();
-  int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
-  int memberSpacing = assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
-
   Uuid myUuid = player->clientContext()->playerUuid();
-  for (auto member : teamClient->members()) {
-    if (member.uuid == myUuid) {
+  for (auto const& member : teamClient->members()) {
+    if (member.uuid == myUuid)
       continue;
-    }
-
     String cellName = toString(controlIndex);
-    std::shared_ptr<Widget> cell = list->fetchChild(cellName);
-
+    auto cellResult = (*list)->fetchChild(cellName);
+    if (!cellResult) return std::unexpected(std::move(cellResult.error()));
+    auto cell = std::move(*cellResult);
     if (!cell) {
       GuiReader reader(*context());
       cell = std::make_shared<Widget>(*context());
       cell->disableScissoring();
       cell->markAsContainer();
-
-      reader.registerCallback("showMemberMenu", [this](Widget* widget) {
-          auto position = widget->screenPosition() + jsonToVec2I(context()->root().assets()->json("/interface/windowconfig/teambar.config:memberMenuOffset"));
-          showMemberMenu(Uuid(widget->parent()->data().toString()), position);
-        });
-
-      reader.construct(assets->json("/interface/windowconfig/teambar.config:entry"), cell.get());
-
-      list->addChild(cellName, cell);
+      reader.registerCallback("showMemberMenu", [this](Widget* widget) -> std::expected<void, StarException> {
+        auto assets = context()->root().assets();
+        if (!assets) return std::unexpected(std::move(assets.error()));
+        auto config = (*assets)->json("/interface/windowconfig/teambar.config:memberMenuOffset");
+        if (!config) return std::unexpected(std::move(config.error()));
+        auto offset = jsonToVec2I(*config);
+        if (!offset) return std::unexpected(std::move(offset.error()));
+        auto memberId = widget->parent()->data().toString();
+        if (!memberId) return std::unexpected(std::move(memberId.error()));
+        auto uuid = Uuid::create(*memberId);
+        if (!uuid) return std::unexpected(std::move(uuid.error()));
+        return showMemberMenu(*uuid, widget->screenPosition() + *offset);
+      });
+      auto entry = config->get("entry");
+      if (!entry) return std::unexpected(std::move(entry.error()));
+      auto result = reader.construct(*entry, cell.get());
+      if (!result) return std::unexpected(std::move(result.error()));
+      result = (*list)->addChild(cellName, cell);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
-
-    offset[1] -= memberSize;
+    offset[1] -= *memberSize;
     cell->setPosition(offset);
-
     cell->setData(member.uuid.hex());
-
-    cell->show();
-
-    if (!teamClient->isTeamLeader(member.uuid))
-      cell->fetchChild<ImageWidget>("leader")->hide();
-    else
-      cell->fetchChild<ImageWidget>("leader")->show();
-
-    List<Drawable> drawables = member.portrait;
-    Drawable::scaleAll(drawables, portraitScale);
-    cell->fetchChild<ImageWidget>("portrait")->setDrawables(std::move(drawables));
-
+    auto result = cell->show();
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto leader = cell->fetchChild<ImageWidget>("leader");
+    if (!leader) return std::unexpected(std::move(leader.error()));
+    result = (*leader)->setVisibility(teamClient->isTeamLeader(member.uuid));
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto portrait = cell->fetchChild<ImageWidget>("portrait");
+    if (!portrait) return std::unexpected(std::move(portrait.error()));
+    auto drawables = member.portrait;
+    Drawable::scaleAll(drawables, *portraitScale);
+    result = (*portrait)->setDrawables(std::move(drawables));
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto compass = cell->fetchChild<ImageWidget>("compass");
+    if (!compass) return std::unexpected(std::move(compass.error()));
+    auto offworld = cell->fetchChild<ImageWidget>("compassoffworld");
+    if (!offworld) return std::unexpected(std::move(offworld.error()));
     if (member.world == m_client->playerWorld() && m_client->worldClient()) {
-      auto mpos = member.position;
+      auto position = member.position;
       if (auto entity = m_client->worldClient()->entity(member.entity))
-        mpos = entity->position();
-      auto direction = m_client->worldClient()->geometry().diff(mpos, player->position());
-
-      auto compassImage = cell->fetchChild<ImageWidget>("compass");
-      compassImage->setRotation(direction.angle() - std::numbers::pi / 2.0f);
-      compassImage->show();
-      cell->fetchChild<ImageWidget>("compassoffworld")->hide();
+        position = entity->position();
+      auto direction = m_client->worldClient()->geometry().diff(position, player->position());
+      result = (*compass)->setRotation(direction.angle() - std::numbers::pi / 2.0f);
+      if (!result) return std::unexpected(std::move(result.error()));
+      result = (*compass)->show();
+      if (!result) return std::unexpected(std::move(result.error()));
+      result = (*offworld)->hide();
     } else {
-      cell->fetchChild<ImageWidget>("compass")->hide();
-      cell->fetchChild<ImageWidget>("compassoffworld")->show();
+      result = (*compass)->hide();
+      if (!result) return std::unexpected(std::move(result.error()));
+      result = (*offworld)->show();
     }
-
-    cell->fetchChild<ProgressWidget>("healthBar")->setCurrentProgressLevel(member.healthPercentage);
-    cell->fetchChild<ProgressWidget>("energyBar")->setCurrentProgressLevel(member.energyPercentage);
-
-    offset[1] -= memberSpacing;
-    controlIndex++;
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto health = cell->fetchChild<ProgressWidget>("healthBar");
+    if (!health) return std::unexpected(std::move(health.error()));
+    (*health)->setCurrentProgressLevel(member.healthPercentage);
+    auto energy = cell->fetchChild<ProgressWidget>("energyBar");
+    if (!energy) return std::unexpected(std::move(energy.error()));
+    (*energy)->setCurrentProgressLevel(member.energyPercentage);
+    offset[1] -= *memberSpacing;
+    ++controlIndex;
   }
-
-  auto inviteButton = fetchChild<ButtonWidget>("inviteButton");
-  auto noInviteImage = fetchChild<ImageWidget>("noInviteImage");
-
-  Vec2I inviteOffset = list->position() + offset;
-  inviteButton->setPosition(inviteOffset - Vec2I{0, inviteButton->size()[1]});
-  noInviteImage->setPosition(inviteOffset - Vec2I{0, noInviteImage->size()[1]});
-
-  bool couldInvite = (!teamClient->currentTeam() || teamClient->isTeamLeader())
-      && m_client->teamClient()->members().size() < context()->root().configuration()->get("maxTeamSize").toUInt();
-  inviteButton->setVisibility(couldInvite);
-  inviteButton->setEnabled(!m_teamInvitation->active());
-  noInviteImage->setVisibility(!couldInvite);
-
+  auto invite = fetchChild<ButtonWidget>("inviteButton");
+  if (!invite) return std::unexpected(std::move(invite.error()));
+  auto noInvite = fetchChild<ImageWidget>("noInviteImage");
+  if (!noInvite) return std::unexpected(std::move(noInvite.error()));
+  Vec2I inviteOffset = (*list)->position() + offset;
+  (*invite)->setPosition(inviteOffset - Vec2I{0, (*invite)->size()[1]});
+  (*noInvite)->setPosition(inviteOffset - Vec2I{0, (*noInvite)->size()[1]});
+  bool couldInvite = !teamClient->currentTeam() || teamClient->isTeamLeader();
+  if (couldInvite) {
+    auto configuration = context()->root().configuration();
+    if (!configuration) return std::unexpected(std::move(configuration.error()));
+    auto maxTeamConfig = (*configuration)->get("maxTeamSize");
+    if (!maxTeamConfig) return std::unexpected(std::move(maxTeamConfig.error()));
+    auto maxTeamSize = maxTeamConfig->toUInt();
+    if (!maxTeamSize) return std::unexpected(std::move(maxTeamSize.error()));
+    couldInvite = teamClient->members().size() < *maxTeamSize;
+  }
+  auto result = (*invite)->setVisibility(couldInvite);
+  if (!result) return std::unexpected(std::move(result.error()));
+  (*invite)->setEnabled(!m_teamInvitation->active());
+  result = (*noInvite)->setVisibility(!couldInvite);
+  if (!result) return std::unexpected(std::move(result.error()));
   while (true) {
-    String cellName = toString(controlIndex);
-    std::shared_ptr<Widget> cell = list->fetchChild(cellName);
-    if (!cell)
+    auto cell = (*list)->fetchChild(toString(controlIndex));
+    if (!cell) return std::unexpected(std::move(cell.error()));
+    if (!*cell)
       break;
-    cell->hide();
-    controlIndex++;
+    result = (*cell)->hide();
+    if (!result) return std::unexpected(std::move(result.error()));
+    ++controlIndex;
   }
+  return {};
 }
 
-void TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
-  m_teamMemberMenu->open(memberUuid, position);
+std::expected<void, StarException> TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
+  auto result = m_teamMemberMenu->open(memberUuid, position);
+  if (!result) return std::unexpected(std::move(result.error()));
   if (!m_teamMemberMenu->isDisplayed())
-    m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamMemberMenu);
+    return m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamMemberMenu);
+  return {};
 }
 
-TeamInvite::TeamInvite(GuiContext& guiContext, TeamBar* owner) : Pane(guiContext) {
-  m_owner = owner;
+TeamInvite::TeamInvite(GuiContext& guiContext, TeamBar* owner) : Pane(guiContext), m_owner(owner) {}
+
+std::expected<std::shared_ptr<TeamInvite>, StarException> TeamInvite::create(GuiContext& guiContext, TeamBar* owner) {
+  auto pane = std::shared_ptr<TeamInvite>(new TeamInvite(guiContext, owner));
+  auto result = pane->initializePane();
+  if (!result) return std::unexpected(std::move(result.error()));
+  result = pane->initialize();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return pane;
+}
+
+std::expected<void, StarException> TeamInvite::initialize() {
   GuiReader reader(*context());
   auto assets = context()->root().assets();
-  reader.registerCallback("ok", [this](Widget*) { ok(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-  reader.registerCallback("name", [](Widget*) {});
-  reader.construct(assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  reader.registerCallback("ok", [this](Widget*) { return ok(); });
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { close(); return {}; });
+  reader.registerCallback("name", [](Widget*) -> std::expected<void, StarException> { return {}; });
+  auto layout = (*assets)->json("/interface/windowconfig/teaminvite.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto result = reader.construct(*layout, this);
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
-void TeamInvite::show() {
-  Pane::show();
-  fetchChild<TextBoxWidget>("name")->setText("", false);
-  fetchChild<TextBoxWidget>("name")->focus();
+std::expected<void, StarException> TeamInvite::show() {
+  auto result = Pane::show();
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto name = fetchChild<TextBoxWidget>("name");
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto textSet = (*name)->setText("", false);
+  if (!textSet) return std::unexpected(std::move(textSet.error()));
+  return (*name)->focus();
 }
 
-void TeamInvite::ok() {
-  m_owner->invitePlayer(fetchChild<TextBoxWidget>("name")->getText());
+std::expected<void, StarException> TeamInvite::ok() {
+  auto name = fetchChild<TextBoxWidget>("name");
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto result = m_owner->invitePlayer((*name)->getText());
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
 void TeamInvite::close() {
   dismiss();
 }
 
-TeamInvitation::TeamInvitation(GuiContext& guiContext, TeamBar* owner) : Pane(guiContext), m_inviterUuid(guiContext.root().random()) {
-  m_owner = owner;
+TeamInvitation::TeamInvitation(GuiContext& guiContext, TeamBar* owner)
+  : Pane(guiContext), m_owner(owner), m_inviterUuid(guiContext.root().random()) {}
+
+std::expected<std::shared_ptr<TeamInvitation>, StarException> TeamInvitation::create(GuiContext& guiContext, TeamBar* owner) {
+  auto pane = std::shared_ptr<TeamInvitation>(new TeamInvitation(guiContext, owner));
+  auto result = pane->initializePane();
+  if (!result) return std::unexpected(std::move(result.error()));
+  result = pane->initialize();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return pane;
+}
+
+std::expected<void, StarException> TeamInvitation::initialize() {
   GuiReader reader(*context());
   auto assets = context()->root().assets();
-
-  reader.registerCallback("ok", [this](Widget*) { ok(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-
-  reader.construct(assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  reader.registerCallback("ok", [this](Widget*) { return ok(); });
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { close(); return {}; });
+  auto layout = (*assets)->json("/interface/windowconfig/teaminvitation.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto result = reader.construct(*layout, this);
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
-void TeamInvitation::open(Uuid const& inviterUuid, String const& inviterName) {
+std::expected<void, StarException> TeamInvitation::open(Uuid const& inviterUuid, String const& inviterName) {
   if (active())
-    return;
+    return {};
+  auto name = fetchChild<LabelWidget>("inviterName");
+  if (!name) return std::unexpected(std::move(name.error()));
+  auto result = (*name)->setText(inviterName);
+  if (!result) return std::unexpected(std::move(result.error()));
   m_inviterUuid = inviterUuid;
-  fetchChild<LabelWidget>("inviterName")->setText(inviterName);
-  Pane::show();
+  return Pane::show();
 }
 
-void TeamInvitation::ok() {
-  m_owner->acceptInvitation(m_inviterUuid);
+std::expected<void, StarException> TeamInvitation::ok() {
+  auto result = m_owner->acceptInvitation(m_inviterUuid);
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
 void TeamInvitation::close() {
   dismiss();
 }
 
-TeamMemberMenu::TeamMemberMenu(GuiContext& guiContext, TeamBar* owner) : Pane(guiContext), m_memberUuid(guiContext.root().random()) {
-  m_owner = owner;
+TeamMemberMenu::TeamMemberMenu(GuiContext& guiContext, TeamBar* owner)
+  : Pane(guiContext), m_owner(owner), m_memberUuid(guiContext.root().random()), m_canBeam(false) {}
 
-  auto assets = context()->root().assets();
-  GuiReader reader(*context());
-  reader.registerCallback("beamToShip", [this](Widget*) { beamToShip(); });
-  reader.registerCallback("close", [this](Widget*) { close(); });
-  reader.registerCallback("makeLeader", [this](Widget*) { makeLeader(); });
-  reader.registerCallback("removeFromTeam", [this](Widget*) { removeFromTeam(); });
-  reader.construct(assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
+std::expected<std::shared_ptr<TeamMemberMenu>, StarException> TeamMemberMenu::create(GuiContext& guiContext, TeamBar* owner) {
+  auto pane = std::shared_ptr<TeamMemberMenu>(new TeamMemberMenu(guiContext, owner));
+  auto result = pane->initializePane();
+  if (!result) return std::unexpected(std::move(result.error()));
+  result = pane->initialize();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return pane;
 }
 
-void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
-  if (active())
-    return;
-
+std::expected<void, StarException> TeamMemberMenu::initialize() {
   auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  GuiReader reader(*context());
+  reader.registerCallback("beamToShip", [this](Widget*) { return beamToShip(); });
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { close(); return {}; });
+  reader.registerCallback("makeLeader", [this](Widget*) { return makeLeader(); });
+  reader.registerCallback("removeFromTeam", [this](Widget*) { return removeFromTeam(); });
+  auto layout = (*assets)->json("/interface/windowconfig/teammembermenu.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  return reader.construct(*layout, this);
+}
 
+std::expected<void, StarException> TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
+  if (active())
+    return {};
   setPosition(position);
-
   m_memberUuid = memberUuid;
-  auto members = m_owner->m_client->teamClient()->members();
-  for (auto member : members) {
+  for (auto const& member : m_owner->m_client->teamClient()->members()) {
     if (member.uuid == m_memberUuid) {
-      fetchChild<LabelWidget>("name")->setText(member.name);
+      auto name = fetchChild<LabelWidget>("name");
+      if (!name) return std::unexpected(std::move(name.error()));
+      auto result = (*name)->setText(member.name);
+      if (!result) return std::unexpected(std::move(result.error()));
       break;
     }
   }
-
-  updateWidgets();
-
-  Pane::show();
+  auto result = updateWidgets();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return Pane::show();
 }
 
-void TeamMemberMenu::update(float dt) {
-  auto stillValid = false;
-  auto members = m_owner->m_client->teamClient()->members();
-  for (auto member : members) {
+std::expected<void, StarException> TeamMemberMenu::update(float dt) {
+  bool stillValid = false;
+  for (auto const& member : m_owner->m_client->teamClient()->members()) {
     if (member.uuid == m_memberUuid) {
       stillValid = true;
-      m_canBeam = member.warpMode != WarpMode::None && m_owner->m_client->canBeamToTeamShip();
+      m_canBeam = false;
+      if (member.warpMode != WarpMode::None) {
+        auto canBeam = m_owner->m_client->canBeamToTeamShip();
+        if (!canBeam) return std::unexpected(std::move(canBeam.error()));
+        m_canBeam = *canBeam;
+      }
     }
   }
-
   if (!stillValid) {
     close();
-    return;
+    return {};
   }
-
-  updateWidgets();
-
-  Pane::update(dt);
+  auto result = updateWidgets();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return Pane::update(dt);
 }
 
-void TeamMemberMenu::updateWidgets() {
+std::expected<void, StarException> TeamMemberMenu::updateWidgets() {
   bool isLeader = m_owner->m_client->teamClient()->isTeamLeader();
   bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->playerUuid() == m_memberUuid;
-
-  fetchChild<ButtonWidget>("beamToShip")->setEnabled(m_canBeam);
-  fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);
-  fetchChild<ButtonWidget>("removeFromTeam")->setEnabled(isLeader || isSelf);
-
+  auto beam = fetchChild<ButtonWidget>("beamToShip");
+  if (!beam) return std::unexpected(std::move(beam.error()));
+  (*beam)->setEnabled(m_canBeam);
+  auto leader = fetchChild<ButtonWidget>("makeLeader");
+  if (!leader) return std::unexpected(std::move(leader.error()));
+  (*leader)->setEnabled(isLeader && !isSelf);
+  auto remove = fetchChild<ButtonWidget>("removeFromTeam");
+  if (!remove) return std::unexpected(std::move(remove.error()));
+  (*remove)->setEnabled(isLeader || isSelf);
   auto assets = context()->root().assets();
-  if (isSelf)
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(assets->json("/interface/windowconfig/teammembermenu.config:removeSelfText").toString());
-  else
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(assets->json("/interface/windowconfig/teammembermenu.config:removeOtherText").toString());
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto textConfig = (*assets)->json(isSelf ? "/interface/windowconfig/teammembermenu.config:removeSelfText" : "/interface/windowconfig/teammembermenu.config:removeOtherText");
+  if (!textConfig) return std::unexpected(std::move(textConfig.error()));
+  auto text = textConfig->toString();
+  if (!text) return std::unexpected(std::move(text.error()));
+  (*remove)->setText(*text);
+  return {};
 }
 
-void TeamMemberMenu::beamToShip() {
-  if (m_canBeam)
-    m_owner->m_mainInterface->warpTo(WarpToWorld{ClientShipWorldId(m_memberUuid), {}});
+std::expected<void, StarException> TeamMemberMenu::beamToShip() {
+  if (m_canBeam) {
+    auto result = m_owner->m_mainInterface->warpTo(WarpToWorld{ClientShipWorldId(m_memberUuid), {}});
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
   dismiss();
+  return {};
 }
 
 void TeamMemberMenu::close() {
   dismiss();
 }
 
-void TeamMemberMenu::makeLeader() {
-  m_owner->m_client->teamClient()->makeLeader(m_memberUuid);
+std::expected<void, StarException> TeamMemberMenu::makeLeader() {
+  auto result = m_owner->m_client->teamClient()->makeLeader(m_memberUuid);
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
-void TeamMemberMenu::removeFromTeam() {
-  m_owner->m_client->teamClient()->removeFromTeam(m_memberUuid);
+std::expected<void, StarException> TeamMemberMenu::removeFromTeam() {
+  auto result = m_owner->m_client->teamClient()->removeFromTeam(m_memberUuid);
+  if (!result) return std::unexpected(std::move(result.error()));
   dismiss();
+  return {};
 }
 
 }

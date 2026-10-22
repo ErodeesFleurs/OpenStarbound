@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.bi_map;
 import star.vector;
@@ -149,7 +150,7 @@ enum class Key : std::uint16_t {
   F23,
   F24
 };
-extern EnumMap<Key> const KeyNames;
+extern std::expected<EnumMap<Key>, StarException> const KeyNames;
 
 enum class KeyMod : std::uint16_t {
   NoMod = 0x0000,
@@ -166,7 +167,7 @@ enum class KeyMod : std::uint16_t {
   AltGr = 0x4000,
   Scroll = 0x8000
 };
-extern EnumMap<KeyMod> const KeyModNames;
+extern std::expected<EnumMap<KeyMod>, StarException> const KeyModNames;
 
 KeyMod operator|(KeyMod a, KeyMod b);
 KeyMod operator&(KeyMod a, KeyMod b);
@@ -181,13 +182,13 @@ enum class MouseButton : std::uint8_t {
   FourthButton,
   FifthButton
 };
-extern EnumMap<MouseButton> const MouseButtonNames;
+extern std::expected<EnumMap<MouseButton>, StarException> const MouseButtonNames;
 
 enum class MouseWheel : std::uint8_t {
   Up,
   Down
 };
-extern EnumMap<MouseWheel> const MouseWheelNames;
+extern std::expected<EnumMap<MouseWheel>, StarException> const MouseWheelNames;
 
 typedef std::uint32_t ControllerId;
 
@@ -200,7 +201,7 @@ enum class ControllerAxis : std::uint8_t {
   TriggerRight,
   Invalid = 255
 };
-extern EnumMap<ControllerAxis> const ControllerAxisNames;
+extern std::expected<EnumMap<ControllerAxis>, StarException> const ControllerAxisNames;
 
 enum class ControllerButton : std::uint8_t {
   A,
@@ -226,7 +227,7 @@ enum class ControllerButton : std::uint8_t {
   Touchpad,
   Invalid = 255
 };
-extern EnumMap<ControllerButton> const ControllerButtonNames;
+extern std::expected<EnumMap<ControllerButton>, StarException> const ControllerButtonNames;
 
 struct KeyDownEvent {
   Key key;

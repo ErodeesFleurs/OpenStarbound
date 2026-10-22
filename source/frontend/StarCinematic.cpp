@@ -170,92 +170,291 @@ namespace Star {
 const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
+std::expected<std::shared_ptr<Cinematic>, StarException> Cinematic::create(GuiContext& context) {
+  return std::shared_ptr<Cinematic>(new Cinematic(context));
+}
+
 Cinematic::Cinematic(GuiContext& context) : m_guiContext(&context) {
   m_completable = false;
   m_suppressInput = false;
 }
 
-void Cinematic::load(Json const& definition) {
+std::expected<void, StarException> Cinematic::load(Json const& definition) {
   stop();
+  Cinematic pending(*m_guiContext);
+  auto loaded = pending.loadDefinition(definition);
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  pending.m_player = m_player;
+  *this = std::move(pending);
+  return {};
+}
 
-  for (auto timeSkipDefinition : definition.getArray("timeSkips", JsonArray())) {
-    TimeSkip timeSkip;
-    timeSkip.availableTime = timeSkipDefinition.getFloat("available");
-    timeSkip.skipToTime = timeSkipDefinition.getFloat("skipTo");
-    m_timeSkips.append(timeSkip);
+std::expected<void, StarException> Cinematic::loadDefinition(Json const& definition) {
+  auto timeSkips = definition.getArray("timeSkips", JsonArray());
+  if (!timeSkips)
+    return std::unexpected(std::move(timeSkips.error()));
+  for (auto const& timeSkipDefinition : *timeSkips) {
+    auto available = timeSkipDefinition.getFloat("available");
+    if (!available)
+      return std::unexpected(std::move(available.error()));
+    auto skipTo = timeSkipDefinition.getFloat("skipTo");
+    if (!skipTo)
+      return std::unexpected(std::move(skipTo.error()));
+    m_timeSkips.append(TimeSkip{*available, *skipTo});
   }
-  std::sort(m_timeSkips.begin(), m_timeSkips.end(), [](TimeSkip const& a, TimeSkip const& b) -> bool {
-      return a.availableTime < b.availableTime;
-    });
+  std::sort(m_timeSkips.begin(), m_timeSkips.end(), [](TimeSkip const& a, TimeSkip const& b) {
+    return a.availableTime < b.availableTime;
+  });
 
-  for (auto cameraDefinition : definition.getArray("camera", JsonArray())) {
-    CameraKeyFrame keyFrame;
-    keyFrame.timecode = cameraDefinition.getFloat("timecode");
-    keyFrame.zoom = cameraDefinition.getFloat("zoom", 1.0f);
-    if (cameraDefinition.contains("pan"))
-      keyFrame.pan = jsonToVec2F(cameraDefinition.get("pan"));
+  auto cameras = definition.getArray("camera", JsonArray());
+  if (!cameras)
+    return std::unexpected(std::move(cameras.error()));
+  for (auto const& cameraDefinition : *cameras) {
+    auto timecode = cameraDefinition.getFloat("timecode");
+    if (!timecode)
+      return std::unexpected(std::move(timecode.error()));
+    auto zoom = cameraDefinition.getFloat("zoom", 1.0f);
+    if (!zoom)
+      return std::unexpected(std::move(zoom.error()));
+    CameraKeyFrame keyFrame{*timecode, *zoom, {}};
+    auto hasPan = cameraDefinition.contains("pan");
+    if (!hasPan)
+      return std::unexpected(std::move(hasPan.error()));
+    if (*hasPan) {
+      auto panJson = cameraDefinition.get("pan");
+      if (!panJson)
+        return std::unexpected(std::move(panJson.error()));
+      auto pan = jsonToVec2F(*panJson);
+      if (!pan)
+        return std::unexpected(std::move(pan.error()));
+      keyFrame.pan = *pan;
+    }
     m_cameraKeyFrames.append(keyFrame);
   }
 
-  for (auto panelDefinition : definition.getArray("panels")) {
-    std::shared_ptr<Panel> panel = std::make_shared<Panel>();
-    panel->useCamera = panelDefinition.getBool("useCamera", true);
-    panel->drawables = panelDefinition.getArray("drawables", {});
-    panel->animationFrames = panelDefinition.getInt("animationFrames", std::numeric_limits<int>::max());
-    panel->text = panelDefinition.getString("text", "");
-    panel->textPosition = TextPositioning(panelDefinition.get("textPosition", JsonObject()));
-    panel->textStyle = panelDefinition.get("textStyle", Json());
-    panel->textStyle.color = panelDefinition.opt("fontColor").transform(jsonToVec4B).value_or(panel->textStyle.color);
-    panel->textStyle.fontSize = panelDefinition.getUInt("fontSize", panel->textStyle.fontSize);
-    panel->avatar = panelDefinition.getString("avatar", "");
-    panel->startTime = panelDefinition.getFloat("startTime", 0);
-    panel->endTime = panelDefinition.getFloat("endTime", 0);
-    panel->loopTime = panelDefinition.getFloat("loopTime", 0);
-    for (auto keyframeDefinition : panelDefinition.getArray("keyframes")) {
+  auto panels = definition.getArray("panels");
+  if (!panels)
+    return std::unexpected(std::move(panels.error()));
+  for (auto const& panelDefinition : *panels) {
+    auto panel = std::make_shared<Panel>();
+    auto useCamera = panelDefinition.getBool("useCamera", true);
+    if (!useCamera)
+      return std::unexpected(std::move(useCamera.error()));
+    panel->useCamera = *useCamera;
+    auto drawables = panelDefinition.getArray("drawables", {});
+    if (!drawables)
+      return std::unexpected(std::move(drawables.error()));
+    panel->drawables = std::move(*drawables);
+    auto animationFrames = panelDefinition.getInt("animationFrames", std::numeric_limits<int>::max());
+    if (!animationFrames)
+      return std::unexpected(std::move(animationFrames.error()));
+    panel->animationFrames = *animationFrames;
+    auto text = panelDefinition.getString("text", "");
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    panel->text = std::move(*text);
+    auto textPositionJson = panelDefinition.get("textPosition", JsonObject());
+    if (!textPositionJson)
+      return std::unexpected(std::move(textPositionJson.error()));
+    auto textPosition = TextPositioning::create(*textPositionJson);
+    if (!textPosition)
+      return std::unexpected(std::move(textPosition.error()));
+    panel->textPosition = std::move(*textPosition);
+    auto textStyleJson = panelDefinition.get("textStyle", Json());
+    if (!textStyleJson)
+      return std::unexpected(std::move(textStyleJson.error()));
+    auto textStyle = TextStyle::create(*textStyleJson);
+    if (!textStyle)
+      return std::unexpected(std::move(textStyle.error()));
+    panel->textStyle = std::move(*textStyle);
+    auto fontColorJson = panelDefinition.opt("fontColor");
+    if (!fontColorJson)
+      return std::unexpected(std::move(fontColorJson.error()));
+    if (*fontColorJson) {
+      auto color = jsonToVec4B(**fontColorJson);
+      if (!color)
+        return std::unexpected(std::move(color.error()));
+      panel->textStyle.color = *color;
+    }
+    auto fontSize = panelDefinition.getUInt("fontSize", panel->textStyle.fontSize);
+    if (!fontSize)
+      return std::unexpected(std::move(fontSize.error()));
+    panel->textStyle.fontSize = *fontSize;
+    auto avatar = panelDefinition.getString("avatar", "");
+    if (!avatar)
+      return std::unexpected(std::move(avatar.error()));
+    panel->avatar = std::move(*avatar);
+    auto startTime = panelDefinition.getFloat("startTime", 0);
+    if (!startTime)
+      return std::unexpected(std::move(startTime.error()));
+    panel->startTime = *startTime;
+    auto endTime = panelDefinition.getFloat("endTime", 0);
+    if (!endTime)
+      return std::unexpected(std::move(endTime.error()));
+    panel->endTime = *endTime;
+    auto loopTime = panelDefinition.getFloat("loopTime", 0);
+    if (!loopTime)
+      return std::unexpected(std::move(loopTime.error()));
+    panel->loopTime = *loopTime;
+    auto keyframes = panelDefinition.getArray("keyframes");
+    if (!keyframes)
+      return std::unexpected(std::move(keyframes.error()));
+    for (auto const& keyframeDefinition : *keyframes) {
       KeyFrame keyframe;
-      keyframe.timecode = keyframeDefinition.getFloat("timecode");
-      keyframe.command = keyframeDefinition;
-      panel->keyFrames.append(keyframe);
-      float endTimecode = panel->endTime > 0 ? std::min(panel->endTime, panel->startTime + keyframe.timecode) : panel->startTime + keyframe.timecode;
+      auto timecode = keyframeDefinition.getFloat("timecode");
+      if (!timecode)
+        return std::unexpected(std::move(timecode.error()));
+      keyframe.timecode = *timecode;
+      auto hasComplete = keyframeDefinition.contains("complete");
+      if (!hasComplete)
+        return std::unexpected(std::move(hasComplete.error()));
+      if (*hasComplete) {
+        auto complete = keyframeDefinition.getBool("complete");
+        if (!complete)
+          return std::unexpected(std::move(complete.error()));
+        keyframe.complete = *complete;
+      }
+      auto hasZoom = keyframeDefinition.contains("zoom");
+      if (!hasZoom)
+        return std::unexpected(std::move(hasZoom.error()));
+      if (*hasZoom) {
+        auto zoom = keyframeDefinition.getFloat("zoom");
+        if (!zoom)
+          return std::unexpected(std::move(zoom.error()));
+        keyframe.zoom = *zoom;
+      }
+      auto hasAlpha = keyframeDefinition.contains("alpha");
+      if (!hasAlpha)
+        return std::unexpected(std::move(hasAlpha.error()));
+      if (*hasAlpha) {
+        auto alpha = keyframeDefinition.getFloat("alpha");
+        if (!alpha)
+          return std::unexpected(std::move(alpha.error()));
+        keyframe.alpha = *alpha;
+      }
+      auto hasPosition = keyframeDefinition.contains("position");
+      if (!hasPosition)
+        return std::unexpected(std::move(hasPosition.error()));
+      if (*hasPosition) {
+        auto positionJson = keyframeDefinition.get("position");
+        if (!positionJson)
+          return std::unexpected(std::move(positionJson.error()));
+        auto position = jsonToVec2F(*positionJson);
+        if (!position)
+          return std::unexpected(std::move(position.error()));
+        keyframe.position = *position;
+      }
+      auto hasFrame = keyframeDefinition.contains("frame");
+      if (!hasFrame)
+        return std::unexpected(std::move(hasFrame.error()));
+      if (*hasFrame) {
+        auto frame = keyframeDefinition.getFloat("frame");
+        if (!frame)
+          return std::unexpected(std::move(frame.error()));
+        keyframe.frame = *frame;
+      }
+      auto hasTextPercentage = keyframeDefinition.contains("textPercentage");
+      if (!hasTextPercentage)
+        return std::unexpected(std::move(hasTextPercentage.error()));
+      if (*hasTextPercentage) {
+        auto textPercentage = keyframeDefinition.getFloat("textPercentage");
+        if (!textPercentage)
+          return std::unexpected(std::move(textPercentage.error()));
+        keyframe.textPercentage = *textPercentage;
+      }
+      panel->keyFrames.append(std::move(keyframe));
+      float endTimecode = panel->endTime > 0 ? std::min(panel->endTime, panel->startTime + *timecode) : panel->startTime + *timecode;
       m_completionTime = std::max(m_completionTime, endTimecode);
     }
-    m_panels.append(panel);
+    m_panels.append(std::move(panel));
   }
 
-  for (auto audioDefinition : definition.getArray("audio")) {
+  auto audio = definition.getArray("audio");
+  if (!audio)
+    return std::unexpected(std::move(audio.error()));
+  for (auto const& audioDefinition : *audio) {
     AudioCue cue;
-    cue.timecode = audioDefinition.getFloat("timecode");
-    cue.loops = audioDefinition.getInt("loops", 0);
-    cue.endTimecode = audioDefinition.getFloat("endTimecode", 0);
-    cue.resource = audioDefinition.getString("resource");
-    m_audioCues.append(cue);
-    m_completionTime = std::max(m_completionTime, cue.timecode);
-    m_completionTime = std::max(m_completionTime, cue.endTimecode);
+    auto timecode = audioDefinition.getFloat("timecode");
+    if (!timecode)
+      return std::unexpected(std::move(timecode.error()));
+    cue.timecode = *timecode;
+    auto loops = audioDefinition.getInt("loops", 0);
+    if (!loops)
+      return std::unexpected(std::move(loops.error()));
+    cue.loops = *loops;
+    auto endTimecode = audioDefinition.getFloat("endTimecode", 0);
+    if (!endTimecode)
+      return std::unexpected(std::move(endTimecode.error()));
+    cue.endTimecode = *endTimecode;
+    auto resource = audioDefinition.getString("resource");
+    if (!resource)
+      return std::unexpected(std::move(resource.error()));
+    cue.resource = std::move(*resource);
+    m_audioCues.append(std::move(cue));
+    m_completionTime = std::max(m_completionTime, *timecode);
+    m_completionTime = std::max(m_completionTime, *endTimecode);
   }
-  m_activeAudio = std::vector<std::shared_ptr<AudioInstance>>(m_audioCues.size());
+  m_activeAudio.resize(m_audioCues.size());
 
-  if (definition.contains("offset"))
-    m_offset = jsonToVec2F(definition.get("offset"));
-  else
-    m_offset = {};
-
-  if (definition.contains("backgroundColor"))
-    m_backgroundColor = jsonToVec4B(definition.get("backgroundColor"));
-  else
-    m_backgroundColor = {};
-  m_backgroundFadeTime = definition.getFloat("backgroundFadeTime", 0);
-
+  auto hasOffset = definition.contains("offset");
+  if (!hasOffset)
+    return std::unexpected(std::move(hasOffset.error()));
+  if (*hasOffset) {
+    auto offsetJson = definition.get("offset");
+    if (!offsetJson)
+      return std::unexpected(std::move(offsetJson.error()));
+    auto offset = jsonToVec2F(*offsetJson);
+    if (!offset)
+      return std::unexpected(std::move(offset.error()));
+    m_offset = *offset;
+  }
+  auto hasBackgroundColor = definition.contains("backgroundColor");
+  if (!hasBackgroundColor)
+    return std::unexpected(std::move(hasBackgroundColor.error()));
+  if (*hasBackgroundColor) {
+    auto backgroundColorJson = definition.get("backgroundColor");
+    if (!backgroundColorJson)
+      return std::unexpected(std::move(backgroundColorJson.error()));
+    auto color = jsonToVec4B(*backgroundColorJson);
+    if (!color)
+      return std::unexpected(std::move(color.error()));
+    m_backgroundColor = *color;
+  }
+  auto backgroundFadeTime = definition.getFloat("backgroundFadeTime", 0);
+  if (!backgroundFadeTime)
+    return std::unexpected(std::move(backgroundFadeTime.error()));
+  m_backgroundFadeTime = *backgroundFadeTime;
   m_completionTime += 2 * m_backgroundFadeTime;
 
-  m_scissor = definition.getBool("scissor", true);
-  m_letterbox = definition.getBool("letterbox", true);
-  m_skippable = definition.getBool("skippable", true);
-  m_suppressInput = definition.getBool("suppressInput", true);
-  m_muteSfx = definition.getBool("muteSfx", false);
-  m_muteMusic = definition.getBool("muteMusic", false);
+  auto scissor = definition.getBool("scissor", true);
+  if (!scissor)
+    return std::unexpected(std::move(scissor.error()));
+  m_scissor = *scissor;
+  auto letterbox = definition.getBool("letterbox", true);
+  if (!letterbox)
+    return std::unexpected(std::move(letterbox.error()));
+  m_letterbox = *letterbox;
+  auto skippable = definition.getBool("skippable", true);
+  if (!skippable)
+    return std::unexpected(std::move(skippable.error()));
+  m_skippable = *skippable;
+  auto suppressInput = definition.getBool("suppressInput", true);
+  if (!suppressInput)
+    return std::unexpected(std::move(suppressInput.error()));
+  m_suppressInput = *suppressInput;
+  auto muteSfx = definition.getBool("muteSfx", false);
+  if (!muteSfx)
+    return std::unexpected(std::move(muteSfx.error()));
+  m_muteSfx = *muteSfx;
+  auto muteMusic = definition.getBool("muteMusic", false);
+  if (!muteMusic)
+    return std::unexpected(std::move(muteMusic.error()));
+  m_muteMusic = *muteMusic;
 
   m_timer.reset();
   m_timer.start();
+  return {};
 }
 
 void Cinematic::setPlayer(std::shared_ptr<Player> player) {
@@ -283,14 +482,20 @@ bool Cinematic::completable() const {
   return m_completable;
 }
 
-void Cinematic::render() {
+std::expected<void, StarException> Cinematic::render() {
   if (completed())
-    return;
+    return {};
 
   auto& guiContext = *m_guiContext;
   auto mixer = guiContext.mixer();
-  auto renderer = guiContext.renderer();
-  auto textPainter = guiContext.textPainter();
+  auto rendererResult = guiContext.renderer();
+  if (!rendererResult)
+    return std::unexpected(std::move(rendererResult.error()));
+  auto renderer = *rendererResult;
+  auto textPainterResult = guiContext.textPainter();
+  if (!textPainterResult)
+    return std::unexpected(std::move(textPainterResult.error()));
+  auto textPainter = *textPainterResult;
 
   m_windowSize = Vec2F(renderer->screenSize());
   Vec2F screenWindowSize = Vec2F(vWidth * m_drawableScale, vHeight * m_drawableScale);
@@ -309,7 +514,7 @@ void Cinematic::render() {
   }
 
   if (m_backgroundColor) {
-    Vec4B backgroundColor = m_backgroundColor.value();
+    Vec4B backgroundColor = *m_backgroundColor;
     backgroundColor[3] *= fadeFactor;
     renderer->render(renderFlatRect(RectF::withSize(Vec2F(0, 0), m_windowSize), backgroundColor, 0.0f));
   }
@@ -326,65 +531,113 @@ void Cinematic::render() {
   }
 
   if (fadeFactor < 1.0f)
-    return;
+    return {};
 
-  if (m_scissor)
-    renderer->setScissorRect(m_scissorRect);
-
-  String playerSpecies = "";
-  if (m_player)
-    playerSpecies = m_player->species();
-
-  for (auto panel : m_panels) {
-    float drawableScale = m_drawableScale;
-    Vec2F drawableTranslation = m_drawableTranslation;
-    if (panel->useCamera) {
-      drawableScale *= m_cameraZoom;
-      drawableTranslation += m_cameraPan * drawableScale;
-    }
-
-    auto values = determinePanelValues(panel, currentTimecode());
-    if (values.completable)
-      m_completable = true;
-    if (!values.alpha)
-      continue;
-    auto frame = toString(((int)values.frame) % panel->animationFrames);
-    auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
-    for (auto const& d : panel->drawables) {
-      Drawable drawable = Drawable(*m_guiContext->root().imageMetadataDatabase(), d.set("image", d.getString("image").replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}})));
-      drawable.translate(m_offset);
-      drawable.scale(values.zoom);
-      drawable.translate(values.position);
-      drawable.color *= alphaColor;
-      drawDrawable(std::move(drawable), drawableScale, drawableTranslation);
-    }
-    if (!panel->avatar.empty() && m_player) {
-      for (auto drawable : m_player->portrait(PortraitModeNames.getLeft(panel->avatar))) {
-        drawable.translate(m_offset);
-        drawable.scale(values.zoom);
-        drawable.translate(values.position);
-        drawable.color *= alphaColor;
-        drawDrawable(std::move(drawable), drawableScale, drawableTranslation);
-      }
-    }
-    if (!panel->text.empty()) {
-      textPainter->setTextStyle(panel->textStyle);
-      textPainter->setFontSize(std::floor(panel->textStyle.fontSize * drawableScale));
-      auto fontColor = panel->textStyle.color;
-      fontColor[3] *= values.alpha;
-      textPainter->setFontColor(fontColor);
-      Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;
-      TextPositioning tp = TextPositioning(position, panel->textPosition.hAnchor, panel->textPosition.vAnchor, {}, {});
-      if (panel->textPosition.wrapWidth)
-        tp.wrapWidth = std::floor(panel->textPosition.wrapWidth.value() * drawableScale);
-      if (values.textPercentage < 1.0)
-        tp.charLimit = std::floor(panel->text.length() * values.textPercentage);
-      textPainter->renderText(panel->text, tp);
-    }
+  if (m_scissor) {
+    auto scissor = renderer->setScissorRect(m_scissorRect);
+    if (!scissor)
+      return std::unexpected(std::move(scissor.error()));
   }
 
-  if (m_scissor)
-    renderer->setScissorRect({});
+  auto renderPanels = [&]() -> std::expected<void, StarException> {
+    String playerSpecies = "";
+    if (m_player)
+      playerSpecies = m_player->species();
+
+    for (auto const& panel : m_panels) {
+      float drawableScale = m_drawableScale;
+      Vec2F drawableTranslation = m_drawableTranslation;
+      if (panel->useCamera) {
+        drawableScale *= m_cameraZoom;
+        drawableTranslation += m_cameraPan * drawableScale;
+      }
+
+      auto values = determinePanelValues(panel, currentTimecode());
+      if (values.completable)
+        m_completable = true;
+      if (!values.alpha)
+        continue;
+      auto frame = toString(static_cast<int>(values.frame) % panel->animationFrames);
+      auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
+      for (auto const& d : panel->drawables) {
+        auto metadata = m_guiContext->root().imageMetadataDatabase();
+        if (!metadata)
+          return std::unexpected(std::move(metadata.error()));
+        auto image = d.getString("image");
+        if (!image)
+          return std::unexpected(std::move(image.error()));
+        auto definition = d.set("image", image->replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}}));
+        if (!definition)
+          return std::unexpected(std::move(definition.error()));
+        auto drawable = Drawable::create(**metadata, *definition);
+        if (!drawable)
+          return std::unexpected(std::move(drawable.error()));
+        drawable->translate(m_offset);
+        drawable->scale(values.zoom);
+        drawable->translate(values.position);
+        drawable->color *= alphaColor;
+        auto drawn = drawDrawable(*drawable, drawableScale, drawableTranslation);
+        if (!drawn)
+          return std::unexpected(std::move(drawn.error()));
+      }
+      if (!panel->avatar.empty() && m_player) {
+        if (!PortraitModeNames)
+          return std::unexpected(PortraitModeNames.error());
+        auto portraitMode = PortraitModeNames->getLeft(panel->avatar);
+        if (!portraitMode)
+          return std::unexpected(std::move(portraitMode.error()));
+        auto portrait = m_player->portrait(**portraitMode);
+        if (!portrait)
+          return std::unexpected(std::move(portrait.error()));
+        for (auto& drawable : *portrait) {
+          drawable.translate(m_offset);
+          drawable.scale(values.zoom);
+          drawable.translate(values.position);
+          drawable.color *= alphaColor;
+          auto drawn = drawDrawable(drawable, drawableScale, drawableTranslation);
+          if (!drawn)
+            return std::unexpected(std::move(drawn.error()));
+        }
+      }
+      if (!panel->text.empty()) {
+        auto style = textPainter->setTextStyle(panel->textStyle);
+        if (!style)
+          return std::unexpected(std::move(style.error()));
+        textPainter->setFontSize(std::floor(panel->textStyle.fontSize * drawableScale));
+        auto fontColor = panel->textStyle.color;
+        fontColor[3] *= values.alpha;
+        textPainter->setFontColor(fontColor);
+        Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;
+        TextPositioning tp(position, panel->textPosition.hAnchor, panel->textPosition.vAnchor, {}, {});
+        if (panel->textPosition.wrapWidth)
+          tp.wrapWidth = std::floor(*panel->textPosition.wrapWidth * drawableScale);
+        if (values.textPercentage < 1.0) {
+          auto length = panel->text.length();
+          if (!length)
+            return std::unexpected(std::move(length.error()));
+          tp.charLimit = std::floor(*length * values.textPercentage);
+        }
+        auto text = textPainter->renderText(panel->text, tp);
+        if (!text)
+          return std::unexpected(std::move(text.error()));
+      }
+    }
+    return {};
+  };
+  auto panelsRendered = renderPanels();
+
+  if (m_scissor) {
+    auto resetScissor = renderer->setScissorRect({});
+    if (!resetScissor) {
+      if (!panelsRendered)
+        return std::unexpected(panelsRendered.error().withContext(
+            strf("Cinematic scissor restoration failed: {}",
+                printException(ExceptionDiagnostic(resetScissor.error()), true))));
+      return std::unexpected(std::move(resetScissor.error()));
+    }
+  }
+  if (!panelsRendered)
+    return std::unexpected(std::move(panelsRendered.error()));
 
   for (std::size_t i = 0; i < m_audioCues.size(); ++i) {
     if (m_audioCues[i].endTimecode > 0 && m_audioCues[i].endTimecode <= currentTimecode()) {
@@ -394,26 +647,43 @@ void Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*m_guiContext->root().assets()->audio(m_audioCues[i].resource));
-      audioInstance->setLoops(m_audioCues[i].loops);
-      audioInstance->setMixerGroup(MixerGroup::Cinematic);
-      mixer->play(audioInstance);
-      m_activeAudio[i] = audioInstance;
+      auto assets = m_guiContext->root().assets();
+      if (!assets)
+        return std::unexpected(std::move(assets.error()));
+      auto audio = (*assets)->audio(m_audioCues[i].resource);
+      if (!audio)
+        return std::unexpected(std::move(audio.error()));
+      auto audioInstance = AudioInstance::create(**audio);
+      if (!audioInstance)
+        return std::unexpected(std::move(audioInstance.error()));
+      (*audioInstance)->setLoops(m_audioCues[i].loops);
+      (*audioInstance)->setMixerGroup(MixerGroup::Cinematic);
+      auto played = mixer->play(*audioInstance);
+      if (!played)
+        return std::unexpected(std::move(played.error()));
+      m_activeAudio[i] = std::move(*audioInstance);
     }
   }
+  return {};
 }
 
-void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
+std::expected<void, StarException> Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
   auto& guiContext = *m_guiContext;
-  auto& renderer = guiContext.renderer();
-  auto& textureGroup = guiContext.assetTextureGroup();
+  auto renderer = guiContext.renderer();
+  if (!renderer)
+    return std::unexpected(std::move(renderer.error()));
+  auto textureGroup = guiContext.assetTextureGroup();
+  if (!textureGroup)
+    return std::unexpected(std::move(textureGroup.error()));
 
-  auto& primitives = renderer->immediatePrimitives();
+  auto& primitives = (*renderer)->immediatePrimitives();
 
   if (drawable.isImage()) {
     auto const& imagePart = drawable.imagePart();
-    auto texture = textureGroup->loadTexture(imagePart.image);
-    auto size = Vec2F(texture->size());
+    auto texture = (*textureGroup)->loadTexture(imagePart.image);
+    if (!texture)
+      return std::unexpected(std::move(texture.error()));
+    auto size = Vec2F((*texture)->size());
 
     RectF imageRect(Vec2F(), size);
 
@@ -434,17 +704,16 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
 
     Vec4B drawableColor = drawable.color.toRgba();
 
-    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
+    primitives.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(*texture),
         lowerLeft,  Vec2F{0, 0},
         lowerRight, Vec2F{size[0], 0},
         upperRight, Vec2F{size[0], size[1]},
         upperLeft,  Vec2F{0, size[1]},
         drawableColor, 0.0f);
-  } else {
-    if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((std::holds_alternative<std::monostate>(drawable.part)));
-    }
+  } else if (!std::holds_alternative<std::monostate>(drawable.part)) {
+    return std::unexpected(StarException("Cinematic drawable must be an image"));
   }
+  return {};
 }
 
 void Cinematic::updateCamera(float timecode) {
@@ -551,15 +820,12 @@ Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> pa
 
   bool completable = false;
 
-  for (auto keyframe : panel->keyFrames) {
-    if (keyframe.command.contains("complete")) {
-      if (keyframe.command.getBool("complete"))
-        if (keyframe.timecode <= timecode)
-          completable = true;
-    }
+  for (auto const& keyframe : panel->keyFrames) {
+    if (keyframe.complete && *keyframe.complete && keyframe.timecode <= timecode)
+      completable = true;
 
-    if (keyframe.command.contains("zoom")) {
-      float zoom = keyframe.command.getFloat("zoom");
+    if (keyframe.zoom) {
+      float zoom = *keyframe.zoom;
       if (keyframe.timecode <= timecode) {
         startZoom = zoom;
         startZoomTimecode = keyframe.timecode;
@@ -570,8 +836,8 @@ Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> pa
       }
     }
 
-    if (keyframe.command.contains("alpha")) {
-      float alpha = keyframe.command.getFloat("alpha");
+    if (keyframe.alpha) {
+      float alpha = *keyframe.alpha;
       if (keyframe.timecode <= timecode) {
         startAlpha = alpha;
         startAlphaTimecode = keyframe.timecode;
@@ -582,8 +848,8 @@ Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> pa
       }
     }
 
-    if (keyframe.command.contains("position")) {
-      Vec2F position = jsonToVec2F(keyframe.command.get("position"));
+    if (keyframe.position) {
+      Vec2F position = *keyframe.position;
       if (keyframe.timecode <= timecode) {
         startPosition = position;
         startPositionTimecode = keyframe.timecode;
@@ -594,8 +860,8 @@ Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> pa
       }
     }
 
-    if (keyframe.command.contains("frame")) {
-      float frame = keyframe.command.getFloat("frame");
+    if (keyframe.frame) {
+      float frame = *keyframe.frame;
       if (keyframe.timecode <= timecode) {
         startFrame = frame;
         startFrameTimecode = keyframe.timecode;
@@ -606,8 +872,8 @@ Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> pa
       }
     }
 
-    if (keyframe.command.contains("textPercentage")) {
-      float textPercentage = keyframe.command.getFloat("textPercentage");
+    if (keyframe.textPercentage) {
+      float textPercentage = *keyframe.textPercentage;
       if (keyframe.timecode <= timecode) {
         startTextPercentage = textPercentage;
         startTextPercentageTimecode = keyframe.timecode;
@@ -695,14 +961,17 @@ void Cinematic::stop() {
   m_suppressInput = false;
 }
 
-bool Cinematic::handleInputEvent(InputEvent const& event) {
+std::expected<bool, StarException> Cinematic::handleInputEvent(InputEvent const& event) {
   if (completed())
     return false;
   if (std::holds_alternative<MouseButtonUpEvent>(event) || std::holds_alternative<KeyUpEvent>(event))
     return false;
   if (std::holds_alternative<KeyDownEvent>(event)) {
     if (m_currentTimeSkip) {
-      setTime(takeOptional(m_currentTimeSkip).skipToTime);
+      auto timeSkip = takeOptional(m_currentTimeSkip);
+      if (!timeSkip)
+        return std::unexpected(std::move(timeSkip.error()));
+      setTime(timeSkip->skipToTime);
       return true;
     } else if (m_skippable && m_guiContext->actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();

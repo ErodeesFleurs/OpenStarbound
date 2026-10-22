@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 import star.ordered_map;
 import star.ordered_set;
@@ -16,14 +17,18 @@ public:
   String getVersionString() const;
   void setVersionName(String const& name);
 
-  VersionOptionParser();
+  [[nodiscard]] static std::expected<VersionOptionParser, StarException> create();
 
   // Parse the command line options, or, in the case of an error, -h, or -v,
   // prints the appropriate text and immediately exits.
-  Options parseOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] std::expected<Options, StarException> parseOrDie(StringList const& cmdLineArguments) const;
 
   // First sets the command name based on argv[0], then calls parseOrDie.
-  Options commandParseOrDie(int argc, char** argv);
+  [[nodiscard]] std::expected<Options, StarException> commandParseOrDie(int argc, char** argv);
+
+protected:
+  VersionOptionParser() = default;
+  [[nodiscard]] std::expected<void, StarException> initialize();
 
 private:
   std::optional<String> m_versionName;

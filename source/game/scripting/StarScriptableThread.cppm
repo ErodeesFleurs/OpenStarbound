@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.list;
 import star.json;
@@ -12,9 +13,8 @@ import star.rpc_promise;
 
 namespace Star {
 
-// Runs a Lua in a separate thread and guards exceptions that occur in
-// it.  All methods are designed to not throw exceptions, but will instead log
-// the error and trigger the ScriptableThread error state.
+// Runs Lua on a separate thread. Failures are logged and returned after script
+// contexts and every accepted asynchronous message have been settled.
 class ScriptableThread : public Thread {
 public:
   struct Message {
@@ -25,32 +25,32 @@ public:
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
 
-  ScriptableThread(Json parameters, LuaBaseComponent* parent);
+  [[nodiscard]] static std::expected<std::shared_ptr<ScriptableThread>, StarException> create(Json parameters, LuaBaseComponent* parent);
   ~ScriptableThread();
 
-  void start();
-  // Signals the ScriptableThread to stop and then joins it
-  void stop();
+  [[nodiscard]] std::expected<bool, StarException> start();
+  // Signals the ScriptableThread to stop, joins it, and fails pending messages.
+  [[nodiscard]] std::expected<void, StarException> stop();
   void setPause(bool pause);
 
-  // An exception occurred and the
-  // ScriptableThread has stopped running.
+  // A script failure stopped the thread.
   bool errorOccurred();
   bool shouldExpire();
 
   // 
-  void passMessage(Message&& message);
+  [[nodiscard]] std::expected<void, StarException> passMessage(Message&& message);
   
   // expected to be run before the thread is started or after it is stopped!
-  void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
-  void removeCallbacks(String const& groupName);
+  [[nodiscard]] std::expected<void, StarException> addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+  [[nodiscard]] std::expected<void, StarException> removeCallbacks(String const& groupName);
 
 protected:
-  virtual void run();
+  [[nodiscard]] std::expected<void, StarException> run() override;
 
 private:
-  void update();
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, JsonArray const& args);
+  ScriptableThread(Json parameters, String name, LuaBaseComponent* parent);
+  [[nodiscard]] std::expected<void, StarException> update();
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, JsonArray const& args);
 
   mutable RecursiveMutex m_mutex;
   
@@ -76,8 +76,8 @@ private:
   
   StringMap<LuaCallbacks> m_threadCallbacks;
   
-  LuaCallbacks makeThreadCallbacks();
-  Json configValue(String const& name, Json def) const;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadCallbacks();
+  [[nodiscard]] std::expected<Json, StarException> configValue(String const& name, Json def) const;
 };
 
 }

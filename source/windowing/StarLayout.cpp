@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -58,8 +59,8 @@ Layout::Layout(GuiContext& context) : Widget(context) {
   markAsContainer();
 }
 
-void Layout::update(float dt) {
-  Widget::update(dt);
+std::expected<void, StarException> Layout::update(float dt) {
+  return Widget::update(dt);
 }
 
 }

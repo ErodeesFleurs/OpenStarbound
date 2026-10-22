@@ -1,13 +1,15 @@
 module;
+import std;
+import star.format;
+import star.lua;
 
 namespace Star {
-class LuaCallbacks;
 class World;
 class Root;
 namespace LuaBindings {
   // Borrows the script domain's root and world; both must outlive the callbacks.
-  LuaCallbacks makeWorldThreadCallbacks(Root& root, World* world);
-  LuaCallbacks makeWorldCallbacks(Root& root, World* world);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldThreadCallbacks(Root& root, World* world);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeWorldCallbacks(Root& root, World* world);
 }
 }
 

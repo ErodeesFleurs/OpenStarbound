@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 
 import star.random;
@@ -32,7 +33,7 @@ public:
   // if the callback uses the RandomSource in a predictable way, will generate
   // the same field for every call.
   template <typename PointCallback>
-  PointSet generate(Poly const& area, PointCallback callback);
+  [[nodiscard]] std::expected<PointSet, StarException> generate(Poly const& area, PointCallback callback);
 
 private:
   HashTtlCache<Point, PointSet> m_cache;
@@ -48,7 +49,7 @@ inline Random2dPointGenerator<PointData, DataType>::Random2dPointGenerator(Rando
 
 template <typename PointData, typename DataType>
 template <typename PointCallback>
-auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, PointCallback callback) -> PointSet {
+auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, PointCallback callback) -> std::expected<PointSet, StarException> {
   auto bound = area.boundBox();
   std::int64_t sectorXMin = std::floor(bound.xMin() / m_cellSize);
   std::int64_t sectorYMin = std::floor(bound.yMin() / m_cellSize);
@@ -66,17 +67,30 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
       if (!area.intersects(Poly(sector)))
         continue;
 
-      finalResult.appendAll(m_cache.get(Point(x, y), [&](Point const&) {
+      auto points = m_cache.get(Point(x, y), [&](Point const&) -> std::expected<PointSet, StarException> {
           PointSet sectorResult;
           RandomSource sectorRandomness(staticRandomU64(m_seed, x, y));
-          unsigned max = sectorRandomness.randInt(m_densityRange[0], m_densityRange[1]);
+          auto count = sectorRandomness.randInt(m_densityRange[0], m_densityRange[1]);
+          if (!count)
+            return std::unexpected(std::move(count.error()));
+          unsigned max = *count;
           for (unsigned i = 0; i < max; ++i) {
             Point pointPos = Point(x + (DataType)sectorRandomness.randd(), y + (DataType)sectorRandomness.randd()) * m_cellSize;
-            sectorResult.append(std::pair<Point, PointData>(pointPos, callback(sectorRandomness)));
+            if constexpr (std::is_same_v<std::invoke_result_t<PointCallback&, RandomSource&>, std::expected<PointData, StarException>>) {
+              auto data = callback(sectorRandomness);
+              if (!data)
+                return std::unexpected(std::move(data.error()));
+              sectorResult.append(std::pair<Point, PointData>(pointPos, std::move(*data)));
+            } else {
+              sectorResult.append(std::pair<Point, PointData>(pointPos, callback(sectorRandomness)));
+            }
           }
 
           return sectorResult;
-        }));
+        });
+      if (!points)
+        return std::unexpected(std::move(points.error()));
+      finalResult.appendAll(**points);
     }
   }
 

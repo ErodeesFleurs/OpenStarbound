@@ -122,19 +122,19 @@ public:
   };
 
   AnimatedPartSet();
-  AnimatedPartSet(Json config, std::uint8_t animatiorVersion);
+  [[nodiscard]] static std::expected<AnimatedPartSet, StarException> create(Json config, std::uint8_t animatorVersion);
 
   // Returns the available state types.
   StringList stateTypes() const;
 
   // If a state type is disabled, no parts will match against it even
   // if they have entries for that state type.
-  void setStateTypeEnabled(String const& stateTypeName, bool enabled);
-  void setEnabledStateTypes(StringList const& stateTypeNames);
-  bool stateTypeEnabled(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<void, StarException> setStateTypeEnabled(String const& stateTypeName, bool enabled);
+  [[nodiscard]] std::expected<void, StarException> setEnabledStateTypes(StringList const& stateTypeNames);
+  [[nodiscard]] std::expected<bool, StarException> stateTypeEnabled(String const& stateTypeName) const;
 
   // Returns the available states for the given state type.
-  StringList states(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<StringList, StarException> states(String const& stateTypeName) const;
 
   StringList partNames() const;
 
@@ -143,55 +143,55 @@ public:
   // beginning.  If alwaysStart is true, then starts the state animation off at
   // the beginning even if no state change has occurred.  Returns true if a
   // state animation reset was done.
-  bool setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false, bool reverse = false);
+  [[nodiscard]] std::expected<bool, StarException> setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false, bool reverse = false);
 
   // Restart this given state type's timer off at the beginning.
-  void restartState(String const& stateTypeName);
+  [[nodiscard]] std::expected<void, StarException> restartState(String const& stateTypeName);
 
-  ActiveStateInformation const& activeState(String const& stateTypeName) const;
-  ActivePartInformation const& activePart(String const& partName) const;
-  State const& getState(String const& stateTypeName, String const& stateName) const;
+  [[nodiscard]] std::expected<ActiveStateInformation const*, StarException> activeState(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<ActivePartInformation const*, StarException> activePart(String const& partName) const;
+  [[nodiscard]] std::expected<State const*, StarException> getState(String const& stateTypeName, String const& stateName) const;
 
   StringMap<Part> const& constParts() const;
   StringMap<Part>& parts();
 
   // Function will be given the name of each state type, and the
   // ActiveStateInformation for the active state for that state type.
-  void forEachActiveState(std::function<void(String const&, ActiveStateInformation const&)> callback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachActiveState(std::function<std::expected<void, StarException>(String const&, ActiveStateInformation const&)> callback) const;
 
   // Function will be given the name of each part, and the
   // ActivePartInformation for the active part.
-  void forEachActivePart(std::function<void(String const&, ActivePartInformation const&)> callback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachActivePart(std::function<std::expected<void, StarException>(String const&, ActivePartInformation const&)> callback) const;
 
   // Useful for serializing state changes.  Since each set of states for a
   // state type is ordered, it is possible to simply serialize and deserialize
   // the state index for that state type.
-  std::size_t activeStateIndex(String const& stateTypeName) const;
-  bool activeStateReverse(String const& stateTypeName) const;
-  bool setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex, bool alwaysStart = false, bool reverse = false);
+  [[nodiscard]] std::expected<std::size_t, StarException> activeStateIndex(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<bool, StarException> activeStateReverse(String const& stateTypeName) const;
+  [[nodiscard]] std::expected<bool, StarException> setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex, bool alwaysStart = false, bool reverse = false);
 
   // Animate each state type forward 'dt' time, and either change state frames
   // or transition to new states, depending on the config.
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
   // Pushes all the animations into their final state
-  void finishAnimations();
+  [[nodiscard]] std::expected<void, StarException> finishAnimations();
 
   std::uint8_t version() const;
 
-  Json getStateFrameProperty(String const& stateType, String const& propertyName, String state, int frame) const;
-  Json getPartStateFrameProperty(String const& partName, String const& propertyName, String const& stateType, String state, int frame) const;
+  [[nodiscard]] std::expected<Json, StarException> getStateFrameProperty(String const& stateType, String const& propertyName, String state, int frame) const;
+  [[nodiscard]] std::expected<Json, StarException> getPartStateFrameProperty(String const& partName, String const& propertyName, String const& stateType, String state, int frame) const;
 
 private:
-  static AnimationMode stringToAnimationMode(String const& string);
+  [[nodiscard]] static std::expected<AnimationMode, StarException> stringToAnimationMode(String const& string);
 
-  void freshenActiveState(StateType const& stateType) const;
-  void freshenActivePart(Part const& part) const;
+  [[nodiscard]] std::expected<void, StarException> freshenActiveState(StateType const& stateType) const;
+  [[nodiscard]] std::expected<void, StarException> freshenActivePart(Part const& part) const;
 
   OrderedHashMap<String, StateType> m_stateTypes;
   StringMap<Part> m_parts;
 
-  std::uint8_t m_animatorVersion;
+  std::uint8_t m_animatorVersion = 0;
 };
 
 }

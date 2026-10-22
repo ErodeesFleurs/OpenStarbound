@@ -8,6 +8,7 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
+import star.format;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -28,21 +29,23 @@ namespace Star {
 class PcPlatformServices;
 
 struct PcPlatformServicesState {
-  explicit PcPlatformServicesState(Logger& logger);
+  [[nodiscard]] static std::expected<std::shared_ptr<PcPlatformServicesState>, StarException> create(Logger& logger);
   ~PcPlatformServicesState();
   Logger& logger;
   bool steamIsFlatpak = false;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  void onGameOverlayActivated(GameOverlayActivated_t* callback);
+  [[nodiscard]] std::expected<void, StarException> onGameOverlayActivated(GameOverlayActivated_t* callback);
   SteamDispatch steamDispatch;
   SteamCallback<PcPlatformServicesState, GameOverlayActivated_t> callbackGameOverlayActivated;
 
   bool steamAvailable = false;
 #endif
+  std::optional<StarException> steamError;
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   bool discordAvailable = false;
+  std::optional<StarException> discordError;
 
   // Must lock discordMutex before accessing any of the managers when not inside
   // a discord callback.
@@ -52,10 +55,13 @@ struct PcPlatformServicesState {
   
   std::optional<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
-  std::atomic<bool> discordEventShutdown;
+  std::atomic<bool> discordEventShutdown = false;
 #endif
 
   bool overlayActive = false;
+private:
+  explicit PcPlatformServicesState(Logger& logger);
+  std::expected<void, StarException> initialize();
 };
 
 
@@ -63,7 +69,7 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static std::unique_ptr<PcPlatformServices> create(Logger& logger, String const& path, StringList platformArguments);
+  [[nodiscard]] static std::expected<std::unique_ptr<PcPlatformServices>, StarException> create(Logger& logger, String const& path, StringList platformArguments);
 
   std::shared_ptr<StatisticsService> statisticsService() const;
   std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const;
@@ -76,7 +82,7 @@ public:
   // regardless of the ApplicationController setting.
   bool overlayActive() const;
 
-  void update();
+  [[nodiscard]] std::expected<void, StarException> update();
 
 private:
   PcPlatformServices() = default;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.json_extra;
@@ -18,9 +19,13 @@ export namespace Star {
 struct RotateSelector : TerrainSelector {
   static char const* const Name;
 
-  RotateSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<RotateSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  RotateSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters) : TerrainSelector(Name, config, parameters) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
   float rotation;
   Vec2F rotationCenter;
@@ -33,10 +38,13 @@ struct RotateSelector : TerrainSelector {
 struct DisplacementSelector : TerrainSelector {
   static char const* const Name;
 
-  DisplacementSelector(
-      Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<DisplacementSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  DisplacementSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters) : TerrainSelector(Name, config, parameters) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
   PerlinF xDisplacementFunction;
   PerlinF yDisplacementFunction;
@@ -61,20 +69,28 @@ namespace Star {
 
 char const* const RotateSelector::Name = "rotate";
 
-RotateSelector::RotateSelector(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
-  : TerrainSelector(Name, config, parameters) {
-  RandomSource random(parameters.seed);
-
-  rotation = config.getFloat("rotation");
-  rotationCenter = Vec2F(parameters.worldWidth / 2, 0);
-
+std::expected<std::shared_ptr<RotateSelector>, StarException> RotateSelector::create(
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+  auto result = std::make_shared<RotateSelector>(ConstructionKey{}, config, parameters);
+  auto rotation = config.getFloat("rotation");
+  if (!rotation)
+    return std::unexpected(std::move(rotation.error()));
+  result->rotation = *rotation;
+  result->rotationCenter = Vec2F(parameters.worldWidth / 2, 0);
   auto sourceConfig = config.get("source");
-  String sourceType = sourceConfig.getString("type");
-  m_source = database->createSelectorType(sourceType, sourceConfig, parameters);
+  if (!sourceConfig)
+    return std::unexpected(std::move(sourceConfig.error()));
+  auto sourceType = sourceConfig->getString("type");
+  if (!sourceType)
+    return std::unexpected(std::move(sourceType.error()));
+  auto source = database->createSelectorType(*sourceType, *sourceConfig, parameters);
+  if (!source)
+    return std::unexpected(std::move(source.error()));
+  result->m_source = std::move(*source);
+  return result;
 }
 
-float RotateSelector::get(int x, int y) const {
+std::expected<float, StarException> RotateSelector::get(int x, int y) const {
   auto pos = (Vec2F(x, y) - rotationCenter).rotate(rotation) + rotationCenter;
   return m_source->get(pos[0], pos[1]);
 }
@@ -83,50 +99,103 @@ float RotateSelector::get(int x, int y) const {
 
 char const* const DisplacementSelector::Name = "displacement";
 
-DisplacementSelector::DisplacementSelector(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
-  : TerrainSelector(Name, config, parameters) {
+std::expected<std::shared_ptr<DisplacementSelector>, StarException> DisplacementSelector::create(
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+  auto result = std::make_shared<DisplacementSelector>(ConstructionKey{}, config, parameters);
   RandomSource random(parameters.seed);
-
-  auto xType = PerlinTypeNames.getLeft(config.getString("xType"));
-  auto xOctaves = config.getFloat("xOctaves");
-  auto xFreq = config.getFloat("xFreq");
-  auto xAmp = config.getFloat("xAmp");
-  auto xBias = config.getFloat("xBias", 0.0f);
-  auto xAlpha = config.getFloat("xAlpha", 2.0f);
-  auto xBeta = config.getFloat("xBeta", 2.0f);
-
-  xDisplacementFunction = PerlinF(xType, xOctaves, xFreq, xAmp, xBias, xAlpha, xBeta, random.randu64());
-
-  auto yType = PerlinTypeNames.getLeft(config.getString("yType"));
-  auto yOctaves = config.getFloat("yOctaves");
-  auto yFreq = config.getFloat("yFreq");
-  auto yAmp = config.getFloat("yAmp");
-  auto yBias = config.getFloat("yBias", 0.0f);
-  auto yAlpha = config.getFloat("yAlpha", 2.0f);
-  auto yBeta = config.getFloat("yBeta", 2.0f);
-
-  yDisplacementFunction = PerlinF(yType, yOctaves, yFreq, yAmp, yBias, yAlpha, yBeta, random.randu64());
-
-  xXInfluence = config.getFloat("xXInfluence", 1.0f);
-  xYInfluence = config.getFloat("xYInfluence", 1.0f);
-  yXInfluence = config.getFloat("yXInfluence", 1.0f);
-  yYInfluence = config.getFloat("yYInfluence", 1.0f);
-
-  yClamp = config.contains("yClamp");
-  if (yClamp) {
-    yClampRange = jsonToVec2F(config.get("yClamp"));
-    yClampSmoothing = config.getFloat("yClampSmoothing", 0);
+  if (!PerlinTypeNames)
+    return std::unexpected(PerlinTypeNames.error());
+  auto readFunction = [&](char axis) -> std::expected<PerlinF, StarException> {
+    auto key = [axis](char const* suffix) { return strf("{}{}", axis, suffix); };
+    auto name = config.getString(key("Type"));
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto type = PerlinTypeNames->getLeft(*name);
+    if (!type)
+      return std::unexpected(std::move(type.error()));
+    auto octaves = config.getFloat(key("Octaves"));
+    if (!octaves)
+      return std::unexpected(std::move(octaves.error()));
+    auto freq = config.getFloat(key("Freq"));
+    if (!freq)
+      return std::unexpected(std::move(freq.error()));
+    auto amp = config.getFloat(key("Amp"));
+    if (!amp)
+      return std::unexpected(std::move(amp.error()));
+    auto bias = config.getFloat(key("Bias"), 0.0f);
+    if (!bias)
+      return std::unexpected(std::move(bias.error()));
+    auto alpha = config.getFloat(key("Alpha"), 2.0f);
+    if (!alpha)
+      return std::unexpected(std::move(alpha.error()));
+    auto beta = config.getFloat(key("Beta"), 2.0f);
+    if (!beta)
+      return std::unexpected(std::move(beta.error()));
+    return PerlinF(**type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
+  };
+  auto xFunction = readFunction('x');
+  if (!xFunction)
+    return std::unexpected(std::move(xFunction.error()));
+  result->xDisplacementFunction = std::move(*xFunction);
+  auto yFunction = readFunction('y');
+  if (!yFunction)
+    return std::unexpected(std::move(yFunction.error()));
+  result->yDisplacementFunction = std::move(*yFunction);
+  auto xXInfluence = config.getFloat("xXInfluence", 1.0f);
+  if (!xXInfluence)
+    return std::unexpected(std::move(xXInfluence.error()));
+  result->xXInfluence = *xXInfluence;
+  auto xYInfluence = config.getFloat("xYInfluence", 1.0f);
+  if (!xYInfluence)
+    return std::unexpected(std::move(xYInfluence.error()));
+  result->xYInfluence = *xYInfluence;
+  auto yXInfluence = config.getFloat("yXInfluence", 1.0f);
+  if (!yXInfluence)
+    return std::unexpected(std::move(yXInfluence.error()));
+  result->yXInfluence = *yXInfluence;
+  auto yYInfluence = config.getFloat("yYInfluence", 1.0f);
+  if (!yYInfluence)
+    return std::unexpected(std::move(yYInfluence.error()));
+  result->yYInfluence = *yYInfluence;
+  auto yClamp = config.contains("yClamp");
+  if (!yClamp)
+    return std::unexpected(std::move(yClamp.error()));
+  result->yClamp = *yClamp;
+  if (*yClamp) {
+    auto rangeConfig = config.get("yClamp");
+    if (!rangeConfig)
+      return std::unexpected(std::move(rangeConfig.error()));
+    auto range = jsonToVec2F(*rangeConfig);
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    result->yClampRange = *range;
+    auto smoothing = config.getFloat("yClampSmoothing", 0);
+    if (!smoothing)
+      return std::unexpected(std::move(smoothing.error()));
+    result->yClampSmoothing = *smoothing;
   }
-
   auto sourceConfig = config.get("source");
-  String sourceType = sourceConfig.getString("type");
-  m_source = database->createSelectorType(sourceType, sourceConfig, parameters);
+  if (!sourceConfig)
+    return std::unexpected(std::move(sourceConfig.error()));
+  auto sourceType = sourceConfig->getString("type");
+  if (!sourceType)
+    return std::unexpected(std::move(sourceType.error()));
+  auto source = database->createSelectorType(*sourceType, *sourceConfig, parameters);
+  if (!source)
+    return std::unexpected(std::move(source.error()));
+  result->m_source = std::move(*source);
+  return result;
 }
 
-float DisplacementSelector::get(int x, int y) const {
-  auto x_ = x + xDisplacementFunction.get(x * xXInfluence, y * xYInfluence);
-  auto y_ = y + clampY(yDisplacementFunction.get(x * yXInfluence, y * yYInfluence));
+std::expected<float, StarException> DisplacementSelector::get(int x, int y) const {
+  auto xDisplacement = xDisplacementFunction.get(x * xXInfluence, y * xYInfluence);
+  if (!xDisplacement)
+    return std::unexpected(std::move(xDisplacement.error()));
+  auto yDisplacement = yDisplacementFunction.get(x * yXInfluence, y * yYInfluence);
+  if (!yDisplacement)
+    return std::unexpected(std::move(yDisplacement.error()));
+  auto x_ = x + *xDisplacement;
+  auto y_ = y + clampY(*yDisplacement);
   return m_source->get(x_, y_);
 }
 

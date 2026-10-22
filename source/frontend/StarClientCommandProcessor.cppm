@@ -68,57 +68,58 @@ public:
   ClientCommandProcessor(GuiContext& context, std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
       MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
 
-  StringList handleCommand(String const& commandLine, bool userInput = false);
-  StringList updatePromises();
+  [[nodiscard]] std::expected<StringList, StarException> handleCommand(String const& commandLine, bool userInput = false);
+  [[nodiscard]] std::expected<StringList, StarException> updatePromises();
 
   bool debugDisplayEnabled() const;
   bool debugHudEnabled() const;
   bool fixedCameraEnabled() const;
 
 private:
-  bool adminCommandAllowed() const;
-  String previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane);
+  [[nodiscard]] std::expected<bool, StarException> adminCommandAllowed() const;
+  [[nodiscard]] std::expected<String, StarException> previewQuestPane(StringList const& arguments, std::function<std::expected<std::shared_ptr<Pane>, StarException>(std::shared_ptr<Quest>)> createPane);
+  [[nodiscard]] std::expected<StringList, StarException> executeCommand(String const& commandLine);
 
-  String reload();
-  String hotReload();
-  String whoami();
-  String gravity();
-  String debug(String const& argumentsString);
-  String boxes();
-  String fullbright();
-  String asyncLighting();
-  String setGravity(String const& argumentsString);
-  String resetGravity();
-  String fixedCamera();
-  String monochromeLighting();
-  String radioMessage(String const& argumentsString);
-  String clearRadioMessages();
-  String clearCinematics();
-  String startQuest(String const& argumentsString);
-  String completeQuest(String const& argumentsString);
-  String failQuest(String const& argumentsString);
-  String previewNewQuest(String const& argumentsString);
-  String previewQuestComplete(String const& argumentsString);
-  String previewQuestFailed(String const& argumentsString);
-  String clearScannedObjects();
-  String playTime();
-  String deathCount();
-  String cinema(String const& argumentsString);
-  String suicide();
-  String naked();
-  String resetAchievements();
-  String statistic(String const& argumentsString);
-  String giveEssentialItem(String const& argumentsString);
-  String makeTechAvailable(String const& argumentsString);
-  String enableTech(String const& argumentsString);
-  String upgradeShip(String const& argumentsString);
-  String swap(String const& argumentsString);
-  String respawnInWorld(String const& argumentsString);
-  String render(String const& imagePath);
+  [[nodiscard]] std::expected<String, StarException> reload();
+  [[nodiscard]] std::expected<String, StarException> hotReload();
+  [[nodiscard]] std::expected<String, StarException> whoami();
+  [[nodiscard]] std::expected<String, StarException> gravity();
+  [[nodiscard]] std::expected<String, StarException> debug(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> boxes();
+  [[nodiscard]] std::expected<String, StarException> fullbright();
+  [[nodiscard]] std::expected<String, StarException> asyncLighting();
+  [[nodiscard]] std::expected<String, StarException> setGravity(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> resetGravity();
+  [[nodiscard]] std::expected<String, StarException> fixedCamera();
+  [[nodiscard]] std::expected<String, StarException> monochromeLighting();
+  [[nodiscard]] std::expected<String, StarException> radioMessage(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> clearRadioMessages();
+  [[nodiscard]] std::expected<String, StarException> clearCinematics();
+  [[nodiscard]] std::expected<String, StarException> startQuest(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> completeQuest(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> failQuest(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> previewNewQuest(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> previewQuestComplete(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> previewQuestFailed(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> clearScannedObjects();
+  [[nodiscard]] std::expected<String, StarException> playTime();
+  [[nodiscard]] std::expected<String, StarException> deathCount();
+  [[nodiscard]] std::expected<String, StarException> cinema(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> suicide();
+  [[nodiscard]] std::expected<String, StarException> naked();
+  [[nodiscard]] std::expected<String, StarException> resetAchievements();
+  [[nodiscard]] std::expected<String, StarException> statistic(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> giveEssentialItem(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> makeTechAvailable(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> enableTech(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> upgradeShip(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> swap(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> respawnInWorld(String const& argumentsString);
+  [[nodiscard]] std::expected<String, StarException> render(String const& imagePath);
 
-  using BuiltinCommand = String (*)(ClientCommandProcessor&, String const&);
+  using BuiltinCommand = std::expected<String, StarException> (*)(ClientCommandProcessor&, String const&);
   template <auto Command>
-  static String invokeBuiltin(ClientCommandProcessor& self, String const& arguments) {
+  [[nodiscard]] static std::expected<String, StarException> invokeBuiltin(ClientCommandProcessor& self, String const& arguments) {
     if constexpr (std::is_invocable_v<decltype(Command), ClientCommandProcessor&, String const&>) {
       return (self.*Command)(arguments);
     } else {
@@ -126,8 +127,8 @@ private:
       return (self.*Command)();
     }
   }
-  static CaseInsensitiveStringMap<BuiltinCommand> makeBuiltinCommands();
-  static const CaseInsensitiveStringMap<BuiltinCommand> s_builtinCommands;
+  [[nodiscard]] static std::expected<CaseInsensitiveStringMap<BuiltinCommand>, StarException> makeBuiltinCommands();
+  static const std::expected<CaseInsensitiveStringMap<BuiltinCommand>, StarException> s_builtinCommands;
   GuiContext& m_context;
 
 

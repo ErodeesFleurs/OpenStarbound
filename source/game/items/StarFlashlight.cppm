@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -83,15 +84,20 @@ public:
     return Star::typeName<Flashlight>();
   }
 
-  Flashlight(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<Flashlight>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]]
+  std::expected<List<LightSource>, StarException> lightSources() const;
 
 private:
+  explicit Flashlight(Root& root) : Item(root) {}
   String m_image;
   Vec2F m_handPosition;
   Vec2F m_lightPosition;
@@ -104,37 +110,79 @@ private:
 
 namespace Star {
 
-Flashlight::Flashlight(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters) {
-  m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_handPosition = jsonToVec2F(instanceValue("handPosition"));
-  m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
-  m_lightColor = jsonToColor(instanceValue("lightColor"));
-  m_beamWidth = instanceValue("beamLevel").toFloat();
-  m_ambientFactor = instanceValue("beamAmbience").toFloat();
+std::expected<std::shared_ptr<Flashlight>, StarException> Flashlight::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<Flashlight>(new Flashlight(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  item->m_image = AssetPath::relativeTo(directory, *image);
+  auto handPosition = item->instanceValue("handPosition").and_then(jsonToVec2F);
+  if (!handPosition)
+    return std::unexpected(std::move(handPosition.error()));
+  item->m_handPosition = *handPosition;
+  auto lightPosition = item->instanceValue("lightPosition").and_then(jsonToVec2F);
+  if (!lightPosition)
+    return std::unexpected(std::move(lightPosition.error()));
+  item->m_lightPosition = *lightPosition;
+  auto lightColor = item->instanceValue("lightColor").and_then(jsonToColor);
+  if (!lightColor)
+    return std::unexpected(std::move(lightColor.error()));
+  item->m_lightColor = *lightColor;
+  auto beamWidth = item->instanceValue("beamLevel").and_then([](Json const& value) { return value.toFloat(); });
+  if (!beamWidth)
+    return std::unexpected(std::move(beamWidth.error()));
+  item->m_beamWidth = *beamWidth;
+  auto ambientFactor = item->instanceValue("beamAmbience").and_then([](Json const& value) { return value.toFloat(); });
+  if (!ambientFactor)
+    return std::unexpected(std::move(ambientFactor.error()));
+  item->m_ambientFactor = *ambientFactor;
+  return item;
 }
 
-std::shared_ptr<Item> Flashlight::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> Flashlight::clone() const {
   return std::make_shared<Flashlight>(*this);
 }
 
-List<Drawable> Flashlight::drawables() const {
-  return {Drawable::makeImage(*root().imageMetadataDatabase(), m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels)};
+std::expected<List<Drawable>, StarException> Flashlight::drawables() const {
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto drawable = Drawable::makeImage(**metadata, m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels);
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  return List<Drawable>{std::move(*drawable)};
 }
 
-List<LightSource> Flashlight::lightSources() const {
+std::expected<List<LightSource>, StarException> Flashlight::lightSources() const {
   if (!initialized())
-    return {};
-
-  float angle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
+    return List<LightSource>{};
+  auto ownerResult = owner();
+  if (!ownerResult)
+    return std::unexpected(std::move(ownerResult.error()));
+  auto worldResult = world();
+  if (!worldResult)
+    return std::unexpected(std::move(worldResult.error()));
+  auto handResult = hand();
+  if (!handResult)
+    return std::unexpected(std::move(handResult.error()));
+  auto ownerHandPosition = (*ownerResult)->handPosition(*handResult, (m_lightPosition - m_handPosition) / TilePixels);
+  if (!ownerHandPosition)
+    return std::unexpected(std::move(ownerHandPosition.error()));
+  auto aimPosition = (*ownerResult)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  float angle = (*worldResult)->geometry().diff(*aimPosition, (*ownerResult)->position()).angle();
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = owner()->position() + owner()->handPosition(hand(), (m_lightPosition - m_handPosition) / TilePixels);
+  lightSource.position = (*ownerResult)->position() + *ownerHandPosition;
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
   lightSource.beamAmbience = m_ambientFactor;
-  return {std::move(lightSource)};
+  return List<LightSource>{std::move(lightSource)};
 }
 
 }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -64,7 +65,7 @@ namespace Star::LuaBindings::ItemCallbacks {
   std::size_t count(Item* item);
   std::size_t setCount(Item* item, std::size_t count);
   std::size_t maxStack(Item* item);
-  bool matches(Item* item, Json const& descriptor, std::optional<bool> exactMatch);
+  [[nodiscard]] std::expected<bool, StarException> matches(Item* item, Json const& descriptor, std::optional<bool> exactMatch);
   Json matchingDescriptors(Item* item);
   bool consume(Item* item, std::size_t count);
   bool empty(Item* item);
@@ -72,51 +73,76 @@ namespace Star::LuaBindings::ItemCallbacks {
   String description(Item* item);
   String friendlyName(Item* item);
   int rarity(Item* item);
-  String rarityString(Item* item);
+  [[nodiscard]] std::expected<String, StarException> rarityString(Item* item);
   std::size_t price(Item* item);
-  unsigned fuelAmount(Item* item);
-  Json iconDrawables(Item* item);
-  Json dropDrawables(Item* item);
+  [[nodiscard]] std::expected<unsigned, StarException> fuelAmount(Item* item);
+  [[nodiscard]] std::expected<Json, StarException> iconDrawables(Item* item);
+  [[nodiscard]] std::expected<Json, StarException> dropDrawables(Item* item);
   String largeImage(Item* item);
   String tooltipKind(Item* item);
   String category(Item* item);
-  String pickupSound(Item* item);
+  [[nodiscard]] std::expected<String, StarException> pickupSound(Item* item);
   bool twoHanded(Item* item);
   float timeToLive(Item* item);
-  Json learnBlueprintsOnPickup(Item* item);
-  bool hasItemTag(Item* item, String const& itemTag);
-  Json pickupQuestTemplates(Item* item);
+  [[nodiscard]] std::expected<Json, StarException> learnBlueprintsOnPickup(Item* item);
+  [[nodiscard]] std::expected<bool, StarException> hasItemTag(Item* item, String const& itemTag);
+  [[nodiscard]] std::expected<Json, StarException> pickupQuestTemplates(Item* item);
 }
 namespace Star {
 
-LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeItemCallbacks(Item* item) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<String>("name", std::bind(ItemCallbacks::name, item));
-  callbacks.registerCallbackWithSignature<std::size_t>("count", std::bind(ItemCallbacks::count, item));
-  callbacks.registerCallbackWithSignature<std::size_t, std::size_t>("setCount", std::bind(ItemCallbacks::setCount, item, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<std::size_t>("maxStack", std::bind(ItemCallbacks::maxStack, item));
-  callbacks.registerCallbackWithSignature<bool, Json, std::optional<bool>>("matches", std::bind(ItemCallbacks::matches, item, std::placeholders::_1, std::placeholders::_2));
-  callbacks.registerCallbackWithSignature<bool, std::size_t>("consume", std::bind(ItemCallbacks::consume, item, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<bool>("empty", std::bind(ItemCallbacks::empty, item));
-  callbacks.registerCallbackWithSignature<Json>("descriptor", std::bind(ItemCallbacks::descriptor, item));
-  callbacks.registerCallbackWithSignature<String>("description", std::bind(ItemCallbacks::description, item));
-  callbacks.registerCallbackWithSignature<String>("friendlyName", std::bind(ItemCallbacks::friendlyName, item));
-  callbacks.registerCallbackWithSignature<int>("rarity", std::bind(ItemCallbacks::rarity, item));
-  callbacks.registerCallbackWithSignature<String>("rarityString", std::bind(ItemCallbacks::rarityString, item));
-  callbacks.registerCallbackWithSignature<std::size_t>("price", std::bind(ItemCallbacks::price, item));
-  callbacks.registerCallbackWithSignature<Json>("fuelAmount", std::bind(ItemCallbacks::fuelAmount, item));
-  callbacks.registerCallbackWithSignature<Json>("iconDrawables", std::bind(ItemCallbacks::iconDrawables, item));
-  callbacks.registerCallbackWithSignature<Json>("dropDrawables", std::bind(ItemCallbacks::dropDrawables, item));
-  callbacks.registerCallbackWithSignature<String>("largeImage", std::bind(ItemCallbacks::largeImage, item));
-  callbacks.registerCallbackWithSignature<String>("tooltipKind", std::bind(ItemCallbacks::tooltipKind, item));
-  callbacks.registerCallbackWithSignature<String>("category", std::bind(ItemCallbacks::category, item));
-  callbacks.registerCallbackWithSignature<String>("pickupSound", std::bind(ItemCallbacks::pickupSound, item));
-  callbacks.registerCallbackWithSignature<bool>("twoHanded", std::bind(ItemCallbacks::twoHanded, item));
-  callbacks.registerCallbackWithSignature<float>("timeToLive", std::bind(ItemCallbacks::timeToLive, item));
-  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", std::bind(ItemCallbacks::learnBlueprintsOnPickup, item));
-  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", std::bind(ItemCallbacks::hasItemTag, item, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", std::bind(ItemCallbacks::pickupQuestTemplates, item));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("name", std::bind(ItemCallbacks::name, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<std::size_t>("count", std::bind(ItemCallbacks::count, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<std::size_t, std::size_t>("setCount", std::bind(ItemCallbacks::setCount, item, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<std::size_t>("maxStack", std::bind(ItemCallbacks::maxStack, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool, Json, std::optional<bool>>("matches", std::bind(ItemCallbacks::matches, item, std::placeholders::_1, std::placeholders::_2)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool, std::size_t>("consume", std::bind(ItemCallbacks::consume, item, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("empty", std::bind(ItemCallbacks::empty, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("descriptor", std::bind(ItemCallbacks::descriptor, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("description", std::bind(ItemCallbacks::description, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("friendlyName", std::bind(ItemCallbacks::friendlyName, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<int>("rarity", std::bind(ItemCallbacks::rarity, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("rarityString", std::bind(ItemCallbacks::rarityString, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<std::size_t>("price", std::bind(ItemCallbacks::price, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("fuelAmount", std::bind(ItemCallbacks::fuelAmount, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("iconDrawables", std::bind(ItemCallbacks::iconDrawables, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("dropDrawables", std::bind(ItemCallbacks::dropDrawables, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("largeImage", std::bind(ItemCallbacks::largeImage, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("tooltipKind", std::bind(ItemCallbacks::tooltipKind, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("category", std::bind(ItemCallbacks::category, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<String>("pickupSound", std::bind(ItemCallbacks::pickupSound, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("twoHanded", std::bind(ItemCallbacks::twoHanded, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("timeToLive", std::bind(ItemCallbacks::timeToLive, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", std::bind(ItemCallbacks::learnBlueprintsOnPickup, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", std::bind(ItemCallbacks::hasItemTag, item, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", std::bind(ItemCallbacks::pickupQuestTemplates, item)); !registration)
+    return std::unexpected(std::move(registration.error()));
 
   return callbacks;
 }
@@ -161,9 +187,11 @@ std::size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
 // @param descriptor A properly serialized item descriptor
 // @return A bool true if matches, false if not.
 //
-bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, std::optional<bool> exactMatch) {
-  ItemDescriptor itemDesc = ItemDescriptor(desc);
-  return item->matches(itemDesc, exactMatch.value_or(false));
+std::expected<bool, StarException> LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, std::optional<bool> exactMatch) {
+  auto itemDesc = ItemDescriptor::create(desc);
+  if (!itemDesc)
+    return std::unexpected(std::move(itemDesc.error()));
+  return item->matches(*itemDesc, exactMatch.value_or(false));
 }
 
 // If the given number of this item is available, consumes that number and
@@ -219,8 +247,13 @@ int LuaBindings::ItemCallbacks::rarity(Item* item) {
 // Returns the rarity of the item as a string
 //
 // @return a string representing the rarity of the item
-String LuaBindings::ItemCallbacks::rarityString(Item* item) {
-  return RarityNames.getRight(item->rarity());
+std::expected<String, StarException> LuaBindings::ItemCallbacks::rarityString(Item* item) {
+  if (!RarityNames)
+    return std::unexpected(RarityNames.error());
+  auto name = RarityNames->getRight(item->rarity());
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  return **name;
 }
 
 // Returns the shop price of the item
@@ -234,24 +267,36 @@ std::size_t LuaBindings::ItemCallbacks::price(Item* item) {
 // Returns the amount of fuel given for buring this item stack in an engine
 //
 // @return an integer representing the amount of fuel in the entire stack
-unsigned LuaBindings::ItemCallbacks::fuelAmount(Item* item) {
-  return item->instanceValue("fuelAmount", 0).toUInt();
+std::expected<unsigned, StarException> LuaBindings::ItemCallbacks::fuelAmount(Item* item) {
+  auto value = item->instanceValue("fuelAmount", 0);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  auto amount = value->toUInt();
+  if (!amount)
+    return std::unexpected(std::move(amount.error()));
+  return *amount;
 }
 
 // Returns the iconDrawables for this item serialized into json
 //
 // @return List of tables containing the serialized icon drawables for this
 // item.
-Json LuaBindings::ItemCallbacks::iconDrawables(Item* item) {
-  return jsonFromList<Drawable>(item->iconDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
+std::expected<Json, StarException> LuaBindings::ItemCallbacks::iconDrawables(Item* item) {
+  auto drawables = item->iconDrawables();
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  return jsonFromList<Drawable>(*drawables, [](Drawable const& drawable) { return drawable.toJson(); });
 }
 
 // Returns the dropDrawables for this item serialized into json
 //
 // @return List of tables containing the serialized drop drawables for this
 // item.
-Json LuaBindings::ItemCallbacks::dropDrawables(Item* item) {
-  return jsonFromList<Drawable>(item->dropDrawables(nullptr), [](Drawable const& drawable) { return drawable.toJson(); });
+std::expected<Json, StarException> LuaBindings::ItemCallbacks::dropDrawables(Item* item) {
+  auto drawables = item->dropDrawables(nullptr);
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  return jsonFromList<Drawable>(*drawables, [](Drawable const& drawable) { return drawable.toJson(); });
 }
 
 // Returns the large image for this item as displayed on mouseover in the
@@ -280,7 +325,7 @@ String LuaBindings::ItemCallbacks::category(Item* item) {
 // Returns the pickup sound for the item
 //
 // @return string containing the path to the pickup sound for this item
-String LuaBindings::ItemCallbacks::pickupSound(Item* item) {
+std::expected<String, StarException> LuaBindings::ItemCallbacks::pickupSound(Item* item) {
   return item->pickupSound();
 }
 
@@ -303,7 +348,7 @@ float LuaBindings::ItemCallbacks::timeToLive(Item* item) {
 // this item up
 //
 // @return a list of tables containing serialize item descriptors
-Json LuaBindings::ItemCallbacks::learnBlueprintsOnPickup(Item* item) {
+std::expected<Json, StarException> LuaBindings::ItemCallbacks::learnBlueprintsOnPickup(Item* item) {
   return jsonFromList<ItemDescriptor>(
       item->learnBlueprintsOnPickup(), [](ItemDescriptor const& descriptor) { return descriptor.toJson(); });
 }
@@ -312,7 +357,7 @@ Json LuaBindings::ItemCallbacks::learnBlueprintsOnPickup(Item* item) {
 //
 // @param itemTag a string containing the tag value
 // @return a bool representing whether or not this item contains that tag
-bool LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
+std::expected<bool, StarException> LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
   return item->hasItemTag(itemTag);
 }
 
@@ -321,8 +366,11 @@ bool LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
 // @return a list of string containing the different quest templates triggered
 // by this item on
 // pickup
-Json LuaBindings::ItemCallbacks::pickupQuestTemplates(Item* item) {
-  return item->pickupQuestTemplates().transformed(std::mem_fn(&QuestArcDescriptor::toJson));
+std::expected<Json, StarException> LuaBindings::ItemCallbacks::pickupQuestTemplates(Item* item) {
+  auto templates = item->pickupQuestTemplates();
+  if (!templates)
+    return std::unexpected(std::move(templates.error()));
+  return jsonFromList<QuestArcDescriptor>(*templates, [](QuestArcDescriptor const& descriptor) { return descriptor.toJson(); });
 }
 
 }

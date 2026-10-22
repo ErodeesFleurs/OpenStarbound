@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 
 import star.vector;
 import star.string;
@@ -32,24 +33,25 @@ class GuiContext;
 
 class ErrorScreen {
 public:
-  ErrorScreen(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<ErrorScreen>, StarException> create(GuiContext& context);
 
   // Resets accepted
-  void setMessage(String const& message);
+  [[nodiscard]] std::expected<void, StarException> setMessage(String const& message);
 
   bool accepted();
 
-  void render();
+  [[nodiscard]] std::expected<void, StarException> render();
 
-  bool handleInputEvent(InputEvent const& event);
-  void update(float dt);
+  [[nodiscard]] std::expected<bool, StarException> handleInputEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 private:
-  void renderCursor();
+  explicit ErrorScreen(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> renderCursor();
 
   float interfaceScale() const;
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
 
   GuiContext* m_guiContext;
   std::shared_ptr<PaneManager> m_paneManager;
@@ -57,7 +59,7 @@ private:
 
   bool m_accepted;
   Vec2I m_cursorScreenPos;
-  InterfaceCursor m_cursor;
+  std::shared_ptr<InterfaceCursor> m_cursor;
 };
 
 }

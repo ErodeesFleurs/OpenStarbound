@@ -1,283 +1,135 @@
 import std;
 import star.memory;
 import star.unicode;
-import star.string;
 import star.format;
 import star.encode;
-
 import star.byte_array;
-import star.bytes;
+import star.string;
+
 namespace Star {
-
-void throwInvalidUtf8Sequence() {
-  throw UnicodeException("Invalid UTF-8 code unit sequence in utf8Length");
+std::expected<void, StarException> Utf8Cursor::decode() const {
+  if (atEnd()) return std::unexpected(UnicodeException("Cannot read past end of UTF-8 range"));
+  if (m_width != 0) return {};
+  auto width = utf8DecodeChar(m_bytes.data() + m_offset, &m_point, m_bytes.size() - m_offset);
+  if (!width) return std::unexpected(std::move(width.error()));
+  m_width = *width;
+  return {};
+}
+std::expected<Utf32Type, StarException> Utf8Cursor::read() const {
+  auto result = decode();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return m_point;
+}
+std::expected<void, StarException> Utf8Cursor::advance() {
+  auto result = decode();
+  if (!result) return std::unexpected(std::move(result.error()));
+  m_offset += m_width;
+  m_width = 0;
+  return {};
+}
+std::expected<void, StarException> Utf8Cursor::retreat() {
+  if (m_offset == 0) return std::unexpected(UnicodeException("Cannot move before beginning of UTF-8 range"));
+  auto offset = m_offset - 1;
+  while (offset != 0 && (static_cast<unsigned char>(m_bytes[offset]) & 0xc0) == 0x80) --offset;
+  Utf32Type point;
+  auto width = utf8DecodeChar(m_bytes.data() + offset, &point, m_offset - offset);
+  if (!width) return std::unexpected(std::move(width.error()));
+  if (*width != m_offset - offset) return std::unexpected(UnicodeException("Invalid UTF-8 boundary"));
+  m_offset = offset;
+  m_width = *width;
+  m_point = point;
+  return {};
 }
 
-void throwMissingUtf8End() {
-  throw UnicodeException("UTF-8 string missing trailing code units in utf8Length");
-}
-
-void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
-}
-
-std::size_t utf8Length(const Utf8Type* utf8, std::size_t remain) {
-  bool stopOnNull = remain == NPos;
-  std::size_t length = 0;
-
-  while (true) {
-    if (remain == 0)
-      break;
-
-    if (stopOnNull && utf8[0] == 0)
-      break;
-
-    if ((utf8[0] & 0x80) == 0x00) {
-      ++length;
-      ++utf8;
-      --remain;
-      continue;
-    }
-
-    if (remain == 1)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
-      if (((utf8[0] & 0x1fL) << 6) >= 0x00000080L) {
-        ++length;
-        utf8 += 2;
-        remain -= 2;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    }
-
-    if (remain == 2)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6)) >= 0x00000800L) {
-        ++length;
-        utf8 += 3;
-        remain -= 3;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    }
-
-    if (remain == 3)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12)) >= 0x00010000L) {
-        ++length;
-        utf8 += 4;
-        remain -= 4;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    } else {
-      throwInvalidUtf8Sequence();
-    }
+std::expected<std::size_t, StarException> utf8DecodeChar(Utf8Type const* bytes, Utf32Type* output, std::size_t remain) {
+  if (remain == 0 || (remain == NPos && *bytes == 0)) return 0;
+  auto first = static_cast<unsigned char>(bytes[0]);
+  unsigned count;
+  std::uint32_t point;
+  std::uint32_t minimum;
+  if (first < 0x80) { count = 1; point = first; minimum = 0; }
+  else if ((first & 0xe0) == 0xc0) { count = 2; point = first & 0x1f; minimum = 0x80; }
+  else if ((first & 0xf0) == 0xe0) { count = 3; point = first & 0x0f; minimum = 0x800; }
+  else if ((first & 0xf8) == 0xf0) { count = 4; point = first & 7; minimum = 0x10000; }
+  else return std::unexpected(UnicodeException("Invalid UTF-8 code unit sequence"));
+  if (remain != NPos && remain < count)
+    return std::unexpected(UnicodeException("UTF-8 string missing trailing code units"));
+  for (unsigned i = 1; i != count; ++i) {
+    auto next = static_cast<unsigned char>(bytes[i]);
+    if (remain == NPos && next == 0)
+      return std::unexpected(UnicodeException("UTF-8 string missing trailing code units"));
+    if ((next & 0xc0) != 0x80)
+      return std::unexpected(UnicodeException("Invalid UTF-8 code unit sequence"));
+    point = (point << 6) | (next & 0x3f);
   }
+  if (point < minimum || point > 0x10ffff)
+    return std::unexpected(UnicodeException("Invalid UTF-8 code point"));
+  *output = static_cast<Utf32Type>(point);
+  return count;
+}
 
+std::expected<std::size_t, StarException> utf8Length(Utf8Type const* bytes, std::size_t remain) {
+  std::size_t length = 0;
+  while (remain != 0) {
+    Utf32Type point;
+    auto decoded = utf8DecodeChar(bytes, &point, remain);
+    if (!decoded) return std::unexpected(std::move(decoded.error()));
+    if (*decoded == 0) break;
+    bytes += *decoded;
+    if (remain != NPos) remain -= *decoded;
+    ++length;
+  }
   return length;
 }
 
-std::size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, std::size_t remain) {
-  const Utf8Type* start = utf8;
-  bool stopOnNull = remain == NPos;
-
-  while (true) {
-    if (remain == 0)
-      break;
-
-    if (stopOnNull && utf8[0] == 0)
-      break;
-
-    if ((utf8[0] & 0x80) == 0x00) {
-      *utf32 = utf8[0];
-      return utf8 - start + 1;
-    }
-
-    if (remain == 1)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
-      *utf32 = ((utf8[0] & 0x1fL) << 6) | ((utf8[1] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000080L)
-        return utf8 - start + 2;
-      else
-        throwInvalidUtf8Sequence();
-    }
-
-    if (remain == 2)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
-      *utf32 = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6) | ((utf8[2] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000800L)
-        return utf8 - start + 3;
-      else
-        throwInvalidUtf8Sequence();
-    }
-
-    if (remain == 3)
-      throwMissingUtf8End();
-
-    if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
-      *utf32 =
-          ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
-      if (*utf32 >= 0x00010000L)
-        return utf8 - start + 4;
-      else
-        throwInvalidUtf8Sequence();
-    } else {
-      throwInvalidUtf8Sequence();
-    }
+std::expected<std::size_t, StarException> utf8EncodeChar(Utf8Type* bytes, Utf32Type point, std::size_t capacity) {
+  if (point > 0x10ffff)
+    return std::unexpected(UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", static_cast<std::uint32_t>(point)));
+  unsigned count = point < 0x80 ? 1 : point < 0x800 ? 2 : point < 0x10000 ? 3 : 4;
+  if (capacity < count)
+    return std::unexpected(UnicodeException("Insufficient output capacity while encoding UTF-8"));
+  if (count == 1) bytes[0] = static_cast<char>(point);
+  else {
+    for (unsigned i = count - 1; i != 0; --i) { bytes[i] = static_cast<char>(0x80 | (point & 0x3f)); point >>= 6; }
+    bytes[0] = static_cast<char>((count == 2 ? 0xc0 : count == 3 ? 0xe0 : 0xf0) | point);
   }
-
-  return utf8 - start;
+  return count;
 }
 
-std::size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len) {
-  if (utf32 > 0x10FFFFu)
-    throwInvalidUtf32CodePoint(utf32);
-
-  if (utf32 <= 0x0000007fL) {
-    if (len < 1)
-      return 0;
-
-    utf8[0] = utf32;
-    return 1;
-  } else if (utf32 <= 0x000007ffL) {
-    if (len < 2)
-      return 0;
-
-    utf8[0] = 0xc0 | ((utf32 >> 6) & 0x1f);
-    utf8[1] = 0x80 | ((utf32 >> 0) & 0x3f);
-
-    return 2;
-  } else if (utf32 <= 0x0000ffffL) {
-    if (len < 3)
-      return 0;
-
-    utf8[0] = 0xe0 | ((utf32 >> 12) & 0x0f);
-    utf8[1] = 0x80 | ((utf32 >> 6) & 0x3f);
-    utf8[2] = 0x80 | ((utf32 >> 0) & 0x3f);
-
-    return 3;
-  } else {
-    if (len < 4)
-      return 0;
-
-    utf8[0] = 0xf0 | ((utf32 >> 18) & 0x07);
-    utf8[1] = 0x80 | ((utf32 >> 12) & 0x3f);
-    utf8[2] = 0x80 | ((utf32 >> 6) & 0x3f);
-    utf8[3] = 0x80 | ((utf32 >> 0) & 0x3f);
-
-    return 4;
-  }
+bool isUtf16LeadSurrogate(Utf32Type point) { return point >= 0xd800 && point <= 0xdbff; }
+bool isUtf16TrailSurrogate(Utf32Type point) { return point >= 0xdc00 && point <= 0xdfff; }
+std::expected<Utf32Type, StarException> utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
+  if (!isUtf16LeadSurrogate(lead)) return std::unexpected(UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair"));
+  if (!isUtf16TrailSurrogate(trail)) return std::unexpected(UnicodeException("Invalid trail surrogate passed to utf32FromUtf16SurrogatePair"));
+  return static_cast<Utf32Type>(((lead - 0xd800) << 10) + (trail - 0xdc00) + 0x10000);
 }
-
-static const char32_t MIN_LEAD = 0xd800;
-static const char32_t MAX_LEAD = 0xdbff;
-static const char32_t MIN_TRAIL = 0xdc00;
-static const char32_t MAX_TRAIL = 0xdfff;
-static const char32_t SURR_MASK = 0x3ff;
-static const char32_t MIN_PAIR = 0x10000;
-static const char32_t MAX_CODEPOINT = 0x10ffff;
-
-Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint) {
-  bool continuation = false;
-  if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
-    continuation = true;
-  }
-
-  auto hexBytes = hexDecode(codepoint);
-  if (hexBytes.size() < sizeof(Utf32Type)) {
-    ByteArray newHexBytes{(std::size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
-    newHexBytes.append(hexBytes);
-    hexBytes = newHexBytes;
-  }
-
-  if (hexBytes.size() > sizeof(Utf32Type))
-    throw UnicodeException("Codepoint size is too big in parseUnicodeCodepoint");
-
-  auto res = fromBigEndian(*(Utf32Type*)hexBytes.ptr());
-
-  if (continuation) {
-    res = utf32FromUtf16SurrogatePair(*previousCodepoint, res);
-  }
-
-  return res;
+std::expected<std::pair<Utf32Type, std::optional<Utf32Type>>, StarException> utf32ToUtf16SurrogatePair(Utf32Type point) {
+  if (point > 0x10ffff) return std::unexpected(UnicodeException("Invalid codepoint passed to utf32ToUtf16SurrogatePair"));
+  if (point < 0x10000) return std::pair<Utf32Type, std::optional<Utf32Type>>{point, {}};
+  point -= 0x10000;
+  return std::pair<Utf32Type, std::optional<Utf32Type>>{static_cast<Utf32Type>((point >> 10) + 0xd800), static_cast<Utf32Type>((point & 0x3ff) + 0xdc00)};
 }
-
-std::string hexStringFromUtf32(Utf32Type character) {
-  if (character > MAX_CODEPOINT)
-    throw UnicodeException("Codepoint too big in hexStringFromUtf32");
-  Utf32Type lead;
-  std::optional<Utf32Type> trail;
-  std::tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
-
-  char16_t leadOut = toBigEndian((char16_t)lead);
-  auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
-
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((leadHex.size() == 4));
-  }
-
-  if (!trail)
-    return leadHex;
-
-  char16_t trailOut = toBigEndian((char16_t)*trail);
-  auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
-
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((trailHex.size() == 4));
-  }
-
-  return (leadHex + trailHex).takeUtf8();
+std::expected<Utf32Type, StarException> hexStringToUtf32(std::string const& hex, std::optional<Utf32Type> previous) {
+  auto bytes = hexDecode(hex);
+  if (!bytes) return std::unexpected(std::move(bytes.error()));
+  if (bytes->size() > sizeof(Utf32Type))
+    return std::unexpected(UnicodeException("Codepoint size is too big in hexStringToUtf32"));
+  std::uint32_t point = 0;
+  for (std::size_t i = 0; i != bytes->size(); ++i)
+    point = (point << 8) | static_cast<unsigned char>(bytes->ptr()[i]);
+  if (previous && isUtf16LeadSurrogate(*previous)) return utf32FromUtf16SurrogatePair(*previous, static_cast<Utf32Type>(point));
+  return static_cast<Utf32Type>(point);
 }
-
-bool isUtf16LeadSurrogate(Utf32Type codepoint) {
-  return codepoint >= MIN_LEAD && codepoint <= MAX_LEAD;
+std::expected<std::string, StarException> hexStringFromUtf32(Utf32Type point) {
+  auto pair = utf32ToUtf16SurrogatePair(point);
+  if (!pair) return std::unexpected(std::move(pair.error()));
+  constexpr char digits[] = "0123456789abcdef";
+  std::string result;
+  auto append = [&](Utf32Type unit) {
+    for (int shift = 12; shift >= 0; shift -= 4) result.push_back(digits[(unit >> shift) & 0xf]);
+  };
+  append(pair->first);
+  if (pair->second) append(*pair->second);
+  return result;
 }
-
-bool isUtf16TrailSurrogate(Utf32Type codepoint) {
-  return codepoint >= MIN_TRAIL && codepoint <= MAX_TRAIL;
-}
-
-Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
-  if (!isUtf16LeadSurrogate(lead))
-    throw UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair");
-  if (!isUtf16TrailSurrogate(trail))
-    throw UnicodeException("Invalid trail surrogate passed to utf32FromUtf16SurrogatePair");
-
-  lead -= MIN_LEAD;
-  trail -= MIN_TRAIL;
-
-  Utf32Type codepoint = (lead << 10) + trail + MIN_PAIR;
-
-  return codepoint;
-}
-
-std::pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
-  if (codepoint >= MIN_PAIR) {
-    codepoint -= MIN_PAIR;
-    Utf32Type lead = (codepoint >> 10) + MIN_LEAD;
-    Utf32Type trail = (codepoint & SURR_MASK) + MIN_TRAIL;
-
-    if (!isUtf16LeadSurrogate(lead))
-      throw UnicodeException("Invalid codepoint passed to utf32ToUtf16SurrogatePair");
-
-    return {lead, trail};
-  }
-
-  return {codepoint, {}};
-}
-
 }

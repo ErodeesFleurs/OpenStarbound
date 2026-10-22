@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.lua;
@@ -52,7 +53,7 @@ class Root;
 class TileEntity;
 class ScriptedEntity;
 
-typedef std::function<void(World*)> WorldAction;
+typedef std::function<std::expected<void, StarException>(World*)> WorldAction;
 
 class World {
 public:
@@ -81,18 +82,18 @@ public:
   virtual MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const = 0;
   virtual MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const = 0;
   virtual LiquidLevel liquidLevel(Vec2I const& pos) const = 0;
-  virtual LiquidLevel liquidLevel(RectF const& region) const = 0;
+  [[nodiscard]] virtual std::expected<LiquidLevel, StarException> liquidLevel(RectF const& region) const = 0;
 
   // Tests a tile modification list and returns the ones that are valid.
-  virtual TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const = 0;
+  [[nodiscard]] virtual std::expected<TileModificationList, StarException> validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const = 0;
   // Apply a list of tile modifications in the best order to apply as many
   // possible, and returns the modifications that could not be applied.
-  virtual TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) = 0;
+  [[nodiscard]] virtual std::expected<TileModificationList, StarException> applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) = 0;
   // Swap existing tiles for ones defined in the modification list,
   // and returns the modifications that could not be applied.
-  virtual TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) = 0;
+  [[nodiscard]] virtual std::expected<TileModificationList, StarException> replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) = 0;
   // If an applied damage would destroy a tile
-  virtual bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const = 0;
 
   virtual bool isTileProtected(Vec2I const& pos) const = 0;
 
@@ -101,82 +102,82 @@ public:
   // passed in pointer directly and initialize it, and entity will have a valid
   // id in this world and be ready for use.  This is always the case on the
   // server, but not *always* the case on the client.
-  virtual void addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) = 0;
 
-  virtual std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Entity>, StarException> closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
 
-  virtual void forAllEntities(EntityCallback entityCallback) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> forAllEntities(EntityCallback entityCallback) const = 0;
 
   // Query here is a fuzzy query based on metaBoundBox
-  virtual void forEachEntity(RectF const& boundBox, EntityCallback entityCallback) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> forEachEntity(RectF const& boundBox, EntityCallback entityCallback) const = 0;
   // Fuzzy metaBoundBox query for intersecting the given line.
-  virtual void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback entityCallback) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback entityCallback) const = 0;
   // Performs action for all entities that occupies the given tile position
   // (only entity types laid out in the tile grid).
-  virtual void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const = 0;
 
   // Like forEachEntity, but stops scanning when entityFilter returns true, and
   // returns the shared entity pointer found, otherwise returns a null pointer.
-  virtual std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter entityFilter) const = 0;
-  virtual std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const = 0;
-  virtual std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Entity>, StarException> findEntity(RectF const& boundBox, EntityFilter entityFilter) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Entity>, StarException> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<Entity>, StarException> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
 
   // Is the given tile layer and position occupied by an entity or block?
-  virtual bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const = 0;
 
   // Returns the collision kind of a tile.
-  virtual CollisionKind tileCollisionKind(Vec2I const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<CollisionKind, StarException> tileCollisionKind(Vec2I const& pos) const = 0;
 
   // Iterate over the collision block for each tile in the region.  Collision
   // polys for tiles can extend to a maximum of 1 tile outside of the natural
   // tile bounds.
-  virtual void forEachCollisionBlock(RectI const& region, std::function<void(CollisionBlock const&)> const& iterator) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> forEachCollisionBlock(RectI const& region, std::function<std::expected<void, StarException>(CollisionBlock const&)> const& iterator) const = 0;
 
   // Is there some connectable tile / tile based entity in this position?  If
   // tilesOnly is true, only checks to see whether that tile is a connectable
   // material.
-  virtual bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const = 0;
 
   // Returns whether or not a given point is inside any colliding tile.  If
   // collisionSet is Dynamic or Static, then does not intersect with platforms.
-  virtual bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
 
   // Returns whether line intersects with any colliding tiles.
-  virtual bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-  virtual std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  [[nodiscard]] virtual std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
 
   // Returns a list of all the collidable tiles along the given line.
-  virtual List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const = 0;
+  [[nodiscard]] virtual std::expected<List<Vec2I>, StarException> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const = 0;
 
   // Returns whether the given rect contains any colliding tiles.
-  virtual bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
 
   // Damage multiple tiles, avoiding duplication (objects or plants that occupy
   // more than one tile
   // position are only damaged once)
-  virtual TileDamageResult damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) = 0;
+  [[nodiscard]] virtual std::expected<TileDamageResult, StarException> damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) = 0;
 
-  virtual std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<InteractiveEntity>, StarException> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
   // Can the target entity be reached from the given position within the given radius?
-  virtual bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const = 0;
-  virtual RpcPromise<InteractAction> interact(InteractRequest const& request) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<InteractAction>, StarException> interact(InteractRequest const& request) = 0;
 
-  virtual float gravity(Vec2F const& pos) const = 0;
-  virtual float windLevel(Vec2F const& pos) const = 0;
-  virtual float lightLevel(Vec2F const& pos) const = 0;
-  virtual bool breathable(Vec2F const& pos) const = 0;
-  virtual float threatLevel() const = 0;
-  virtual StringList environmentStatusEffects(Vec2F const& pos) const = 0;
-  virtual StringList weatherStatusEffects(Vec2F const& pos) const = 0;
-  virtual bool exposedToWeather(Vec2F const& pos) const = 0;
-  virtual std::optional<String> activeWeather(Vec2F const& pos) const = 0;
-  virtual bool isUnderground(Vec2F const& pos) const = 0;
-  virtual bool disableDeathDrops() const = 0;
-  virtual List<PhysicsForceRegion> forceRegions() const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> gravity(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> windLevel(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> lightLevel(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> breathable(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> threatLevel() const = 0;
+  [[nodiscard]] virtual std::expected<StringList, StarException> environmentStatusEffects(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<StringList, StarException> weatherStatusEffects(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> exposedToWeather(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> activeWeather(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> isUnderground(Vec2F const& pos) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> disableDeathDrops() const = 0;
+  [[nodiscard]] virtual std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const = 0;
 
   // Gets / sets world-wide properties
-  virtual Json getProperty(String const& propertyName, Json const& def = {}) const = 0;
-  virtual void setProperty(String const& propertyName, Json const& property) = 0;
+  [[nodiscard]] virtual std::expected<Json, StarException> getProperty(String const& propertyName, Json const& def = {}) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setProperty(String const& propertyName, Json const& property) = 0;
 
   virtual void timer(float delay, WorldAction worldAction) = 0;
   virtual double epochTime() const = 0;
@@ -185,51 +186,51 @@ public:
   virtual float timeOfDay() const = 0;
 
   virtual std::shared_ptr<LuaRoot> luaRoot() = 0;
-  virtual StringMap<LuaCallbacks> luaThreadCallbacks() const = 0;
+  [[nodiscard]] virtual std::expected<StringMap<LuaCallbacks>, StarException> luaThreadCallbacks() const = 0;
 
   // Locate a unique entity, if the target is local, the promise will be
   // finished before being returned.  If the unique entity is not found, the
   // promise will fail.
-  virtual RpcPromise<Vec2F> findUniqueEntity(String const& uniqueEntityId) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<Vec2F>, StarException> findUniqueEntity(String const& uniqueEntityId) = 0;
 
   // Send a message to a local or remote scripted entity.  If the target is
   // local, the promise will be finished before being returned.  Entity id can
   // either be EntityId or a uniqueId.
-  virtual RpcPromise<Json> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<Json>, StarException> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) = 0;
 
   // Helper non-virtual methods.
 
   bool isServer() const;
   bool isClient() const;
 
-  List<std::shared_ptr<Entity>> entityQuery(RectF const& boundBox, EntityFilter selector = {}) const;
-  List<std::shared_ptr<Entity>> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Entity>>, StarException> entityQuery(RectF const& boundBox, EntityFilter selector = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Entity>>, StarException> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector = {}) const;
 
-  List<std::shared_ptr<TileEntity>> entitiesAtTile(Vec2I const& pos, EntityFilter filter = EntityFilter()) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<TileEntity>>, StarException> entitiesAtTile(Vec2I const& pos, EntityFilter filter = EntityFilter()) const;
 
   // Find tiles near the given point that are not occupied (according to
   // tileIsOccupied)
-  List<Vec2I> findEmptyTiles(Vec2I pos, unsigned maxDist = 5, std::size_t maxAmount = 1, bool excludeEphemeral = false) const;
+  [[nodiscard]] std::expected<List<Vec2I>, StarException> findEmptyTiles(Vec2I pos, unsigned maxDist = 5, std::size_t maxAmount = 1, bool excludeEphemeral = false) const;
 
   // Do tile modification that only uses a single tile.
-  bool canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const;
-  bool modifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap);
+  [[nodiscard]] std::expected<bool, StarException> canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const;
+  [[nodiscard]] std::expected<bool, StarException> modifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap);
 
-  TileDamageResult damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {});
+  [[nodiscard]] std::expected<TileDamageResult, StarException> damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {});
 
   // Returns closest entity for which lineCollision between the given center
   // position and the entity position returns false.
-  std::shared_ptr<Entity> closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet = DefaultCollisionSet, EntityFilter selector = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet = DefaultCollisionSet, EntityFilter selector = {}) const;
 
   // Returns whether point collides with any collision geometry.
-  bool pointCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const;
+  [[nodiscard]] std::expected<bool, StarException> pointCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const;
 
   // Returns first point along line that collides with any collision geometry, along
   // with the normal of the intersected line, if any.
-  std::optional<std::pair<Vec2F, std::optional<Vec2F>>> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
+  [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, std::optional<Vec2F>>>, StarException> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
 
   // Returns whether poly collides with any collision geometry.
-  bool polyCollision(PolyF const& poly, CollisionSet const& collisionSet = DefaultCollisionSet) const;
+  [[nodiscard]] std::expected<bool, StarException> polyCollision(PolyF const& poly, CollisionSet const& collisionSet = DefaultCollisionSet) const;
 
   // Helper template methods.  Only queries entities of the given template
   // type, and casts them to the appropriate pointer type.
@@ -238,19 +239,19 @@ public:
   std::shared_ptr<EntityT> get(EntityId entityId) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  std::shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  std::shared_ptr<EntityT> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> atTile(Vec2I const& pos) const;
 private:
   Root& m_root;
 };
@@ -261,53 +262,78 @@ std::shared_ptr<EntityT> World::get(EntityId entityId) const {
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) {
-      if (auto e = as<EntityT>(entity)) {
-        if (!selector || selector(e))
-          list.append(std::move(e));
+  auto scanned = forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+    if (auto e = as<EntityT>(entity)) {
+      if (selector) {
+        auto accepted = selector(e);
+        if (!accepted)
+          return std::unexpected(std::move(accepted.error()));
+        if (!*accepted)
+          return {};
       }
-    });
-
+      list.append(std::move(e));
+    }
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
 
 template <typename EntityT>
-std::shared_ptr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
-  return as<EntityT>(closestEntity(center, radius, entityTypeFilter<EntityT>(selector)));
+[[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
+  auto found = closestEntity(center, radius, entityTypeFilter<EntityT>(std::move(selector)));
+  if (!found)
+    return std::unexpected(std::move(found.error()));
+  return as<EntityT>(*found);
 }
 
 template <typename EntityT>
-std::shared_ptr<EntityT> World::closestInSight(
+[[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> World::closestInSight(
     Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector) const {
-  return as<EntityT>(closestEntityInSight(center, radius, collisionSet, entityTypeFilter<EntityT>(selector)));
+  auto found = closestEntityInSight(center, radius, collisionSet, entityTypeFilter<EntityT>(std::move(selector)));
+  if (!found)
+    return std::unexpected(std::move(found.error()));
+  return as<EntityT>(*found);
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> World::lineQuery(
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> World::lineQuery(
     Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> entity) {
-      if (auto e = as<EntityT>(std::move(entity))) {
-        if (!selector || selector(e))
-          list.append(std::move(e));
+  auto scanned = forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+    if (auto e = as<EntityT>(entity)) {
+      if (selector) {
+        auto accepted = selector(e);
+        if (!accepted)
+          return std::unexpected(std::move(accepted.error()));
+        if (!*accepted)
+          return {};
       }
-    });
-
+      list.append(std::move(e));
+    }
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> World::atTile(Vec2I const& pos) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) {
-      if (auto e = as<EntityT>(entity))
-        list.append(std::move(e));
-    });
+  auto scanned = forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) -> std::expected<void, StarException> {
+    if (auto e = as<EntityT>(entity))
+      list.append(std::move(e));
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
-}
+} // namespace Star
 
 export module star.world;
 

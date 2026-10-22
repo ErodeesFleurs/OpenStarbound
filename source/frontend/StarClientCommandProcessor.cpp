@@ -41,6 +41,7 @@ import star.map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
+import star.output_proxy;
 import star.version;
 import star.either;
 import star.weighted_pool;
@@ -222,8 +223,8 @@ ClientCommandProcessor::ClientCommandProcessor(GuiContext& context, std::shared_
   : m_context(context), m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {}
 
-CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::makeBuiltinCommands() {
-  return {
+std::expected<CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand>, StarException> ClientCommandProcessor::makeBuiltinCommands() {
+  std::pair<char const*, BuiltinCommand> const entries[] = {
     {"reload", &invokeBuiltin<&ClientCommandProcessor::reload>},
     {"hotReload", &invokeBuiltin<&ClientCommandProcessor::hotReload>},
     {"whoami", &invokeBuiltin<&ClientCommandProcessor::whoami>},
@@ -261,90 +262,148 @@ CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandPr
     {"respawnInWorld", &invokeBuiltin<&ClientCommandProcessor::respawnInWorld>},
     {"render", &invokeBuiltin<&ClientCommandProcessor::render>}
   };
+  CaseInsensitiveStringMap<BuiltinCommand> commands;
+  for (auto const& entry : entries) {
+    auto key = CaseInsensitiveString::create(entry.first);
+    if (!key) return std::unexpected(std::move(key.error()));
+    commands.emplace(std::move(*key), entry.second);
+  }
+  return commands;
 }
 
-const CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::s_builtinCommands = makeBuiltinCommands();
+const std::expected<CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand>, StarException> ClientCommandProcessor::s_builtinCommands = makeBuiltinCommands();
 
-bool ClientCommandProcessor::adminCommandAllowed() const {
-  return m_context.root().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
-    m_universeClient->mainPlayer()->isAdmin();
+std::expected<bool, StarException> ClientCommandProcessor::adminCommandAllowed() const {
+  auto config = m_context.root().configuration();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto allow = (*config)->get("allowAdminCommandsFromAnyone");
+  if (!allow) return std::unexpected(std::move(allow.error()));
+  auto enabled = allow->toBool();
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  return *enabled || m_universeClient->mainPlayer()->isAdmin();
 }
 
-String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane) {
-  std::optional<String> templateId = {};
-  templateId = arguments[0];
-  if (auto quest = createPreviewQuest(m_context.root(), *templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
-    auto pane = createPane(quest);
-    m_paneManager->displayPane(PaneLayer::ModalWindow, pane);
+std::expected<String, StarException> ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::expected<std::shared_ptr<Pane>, StarException>(std::shared_ptr<Quest>)> createPane) {
+  if (arguments.size() < 3)
+    return std::unexpected(StarException("Quest preview requires a template, title, and text"));
+  auto quest = createPreviewQuest(m_context.root(), arguments[0], arguments[1], arguments[2], m_universeClient->mainPlayer().get());
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  if (*quest) {
+    auto pane = createPane(std::move(*quest));
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    if (auto displayed = m_paneManager->displayPane(PaneLayer::ModalWindow, std::move(*pane)); !displayed)
+      return std::unexpected(std::move(displayed.error()));
     return "Previewed quest";
   }
   return "No such quest";
 }
 
-StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
+std::expected<StringList, StarException> ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
   std::optional<Input::ClipboardUnlock> unlock;
-  if (userInput) // allow clipboard usage during this code
-    unlock.emplace(m_context.input().unlockClipboard());
-  try {
-    if (!commandLine.beginsWith("/"))
-      throw StarException("ClientCommandProcessor expected command, does not start with '/'");
-
-    String allArguments = commandLine.substr(1);
-    String command = allArguments.extract();
-
-    StringList result;
-    if (auto builtinCommand = s_builtinCommands.maybe(command)) {
-      result.append((*builtinCommand)(*this, allArguments));
-    } else if (auto macroCommand = m_macroCommands.maybe(command)) {
-      for (auto const& c : *macroCommand) {
-        if (c.beginsWith("/"))
-          result.appendAll(handleCommand(c, false));
-        else
-          result.append(c);
-      }
-    } else {
-      auto player = m_universeClient->mainPlayer();
-      if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, {allArguments})) {
-        if (std::holds_alternative<Json>(*messageResult)) {
-          auto res = std::get_if<Json>(&*messageResult);
-          if (res->isType(Json::Type::String))
-            result.append(*res->stringPtr());
-          else if (!res->isNull())
-            result.append(res->repr(1, true));
-        } else {
-          Uuid uuid(m_context.root().random());
-          m_commandPromises[uuid] = std::get<RpcPromise<Json>>(*messageResult);
-        }
-      } else {
-        m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);
-      }
-    }
-    return result;
-  } catch (ShellParsingException const& e) {
-    m_context.root().logger().error("Shell parsing exception: {}", outputException(e, false));
-    return {"Shell parsing exception"};
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_context.root().logger().error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
-    return {strf("Exception caught handling client command {}", commandLine)};
+  if (userInput) {
+    auto input = m_context.input();
+    if (!input) return std::unexpected(std::move(input.error()));
+    unlock.emplace((*input)->unlockClipboard());
   }
+  auto result = executeCommand(commandLine);
+  if (result) return result;
+  if (result.error().is<ShellParsingException>()) {
+    auto logged = m_context.root().logger().error("Shell parsing exception: {}", outputException(ExceptionDiagnostic(result.error()), false));
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    return StringList{"Shell parsing exception"};
+  }
+  auto logged = m_context.root().logger().error("Exception caught handling client command {}: {}", commandLine, outputException(ExceptionDiagnostic(result.error()), true));
+  if (!logged) return std::unexpected(std::move(logged.error()));
+  return StringList{strf("Exception caught handling client command {}", commandLine)};
 }
 
-StringList ClientCommandProcessor::updatePromises() {
+std::expected<StringList, StarException> ClientCommandProcessor::executeCommand(String const& commandLine) {
+  auto prefixed = commandLine.beginsWith("/");
+  if (!prefixed) return std::unexpected(std::move(prefixed.error()));
+  if (!*prefixed)
+    return std::unexpected(StarException("ClientCommandProcessor expected command, does not start with '/'"));
+  auto arguments = commandLine.substr(1);
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto command = arguments->extract();
+  if (!command) return std::unexpected(std::move(command.error()));
+  if (!s_builtinCommands) return std::unexpected(s_builtinCommands.error());
+  auto key = CaseInsensitiveStringView::create(*command);
+  if (!key) return std::unexpected(std::move(key.error()));
+  StringList result;
+  if (auto builtin = s_builtinCommands->maybe(*key)) {
+    auto output = (*builtin)(*this, *arguments);
+    if (!output) return std::unexpected(std::move(output.error()));
+    result.append(std::move(*output));
+  } else if (auto macro = m_macroCommands.maybe(*command)) {
+    for (auto const& entry : *macro) {
+      auto isCommand = entry.beginsWith("/");
+      if (!isCommand) return std::unexpected(std::move(isCommand.error()));
+      if (*isCommand) {
+        auto output = handleCommand(entry, false);
+        if (!output) return std::unexpected(std::move(output.error()));
+        result.appendAll(std::move(*output));
+      } else {
+        result.append(entry);
+      }
+    }
+  } else {
+    auto player = m_universeClient->mainPlayer();
+    auto response = player->receiveMessage(connectionForEntity(player->entityId()), "/" + *command, {*arguments});
+    if (!response) return std::unexpected(std::move(response.error()));
+    if (*response) {
+      if (auto value = std::get_if<Json>(&**response)) {
+        if (value->isType(Json::Type::String)) {
+          auto text = value->stringPtr();
+          if (!text) return std::unexpected(std::move(text.error()));
+          result.append(**text);
+        } else if (!value->isNull()) {
+          auto printed = value->repr(1, true);
+          if (!printed) return std::unexpected(std::move(printed.error()));
+          result.append(std::move(*printed));
+        }
+      } else {
+        Uuid uuid(m_context.root().random());
+        m_commandPromises[uuid] = std::get<RpcPromise<Json>>(**response);
+      }
+    } else if (auto sent = m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast); !sent) {
+      return std::unexpected(std::move(sent.error()));
+    }
+  }
+  return result;
+}
+
+std::expected<StringList, StarException> ClientCommandProcessor::updatePromises() {
   StringList result;
   for (auto const& uuid : m_commandPromises.keys()) {
-    if (m_commandPromises[uuid].finished()) {
-      if (m_commandPromises[uuid].succeeded()) {
-        auto res = m_commandPromises[uuid].result();
-        if (res->isType(Json::Type::String))
-          result.append(*res->stringPtr());
-        else if (!res->isNull())
-          result.append(res->repr(1, true));
-      } else {
-        result.append(strf("Error: {}", *m_commandPromises[uuid].error()));
+    auto& promise = m_commandPromises[uuid];
+    auto finished = promise.finished();
+    if (!finished) return std::unexpected(std::move(finished.error()));
+    if (!*finished) continue;
+    auto succeeded = promise.succeeded();
+    if (!succeeded) return std::unexpected(std::move(succeeded.error()));
+    if (*succeeded) {
+      auto response = promise.result();
+      if (!response) return std::unexpected(std::move(response.error()));
+      if (!*response)
+        return std::unexpected(StarException("Successful client command promise has no result"));
+      auto& value = **response;
+      if (value.isType(Json::Type::String)) {
+        auto text = value.stringPtr();
+        if (!text) return std::unexpected(std::move(text.error()));
+        result.append(**text);
+      } else if (!value.isNull()) {
+        auto printed = value.repr(1, true);
+        if (!printed) return std::unexpected(std::move(printed.error()));
+        result.append(std::move(*printed));
       }
-      m_commandPromises.remove(uuid);
+    } else {
+      auto error = promise.error();
+      if (!error) return std::unexpected(std::move(error.error()));
+      if (!*error)
+        return std::unexpected(StarException("Failed client command promise has no error"));
+      result.append(strf("Error: {}", **error));
     }
+    m_commandPromises.remove(uuid);
   }
   return result;
 }
@@ -361,321 +420,394 @@ bool ClientCommandProcessor::fixedCameraEnabled() const {
   return m_fixedCameraEnabled;
 }
 
-String ClientCommandProcessor::reload() {
-  m_context.root().reload();
+std::expected<String, StarException> ClientCommandProcessor::reload() {
+  if (auto r = m_context.root().reload(); !r) return std::unexpected(std::move(r.error()));
   return "Client Star::Root reloaded";
 }
 
-String ClientCommandProcessor::hotReload() {
-  m_context.root().hotReload();
+std::expected<String, StarException> ClientCommandProcessor::hotReload() {
+  if (auto r = m_context.root().hotReload(); !r) return std::unexpected(std::move(r.error()));
   return "Hot-reloaded assets";
 }
 
-String ClientCommandProcessor::whoami() {
-  return strf("Client: You are {}. You are {}an Admin.",
-              m_universeClient->mainPlayer()->name(), m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
+std::expected<String, StarException> ClientCommandProcessor::whoami() {
+  auto name = m_universeClient->mainPlayer()->name();
+  if (!name) return std::unexpected(std::move(name.error()));
+  return strf("Client: You are {}. You are {}an Admin.", *name, m_universeClient->mainPlayer()->isAdmin() ? "" : "not ");
 }
 
-String ClientCommandProcessor::gravity() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  return toString(m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position()));
+std::expected<String, StarException> ClientCommandProcessor::gravity() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto gravity = m_universeClient->worldClient()->gravity(m_universeClient->mainPlayer()->position());
+  if (!gravity) return std::unexpected(std::move(gravity.error()));
+  return toString(*gravity);
 }
 
-String ClientCommandProcessor::debug(String const& argumentsString) {
-  auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!arguments.empty() && arguments.at(0).equalsIgnoreCase("hud")) {
+std::expected<String, StarException> ClientCommandProcessor::debug(String const& argumentsString) {
+  auto parsed = m_parser.tokenizeToStringList(argumentsString);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  bool hud = false;
+  if (!parsed->empty()) {
+    auto matches = (*parsed)[0].equalsIgnoreCase("hud");
+    if (!matches) return std::unexpected(std::move(matches.error()));
+    hud = *matches;
+  }
+  if (hud) {
     m_debugHudEnabled = !m_debugHudEnabled;
     return strf("Debug HUD {}", m_debugHudEnabled ? "enabled" : "disabled");
   }
-  else {
-    m_debugDisplayEnabled = !m_debugDisplayEnabled;
-    return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
-  }
+  m_debugDisplayEnabled = !m_debugDisplayEnabled;
+  return strf("Debug display {}", m_debugDisplayEnabled ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::boxes() {
+std::expected<String, StarException> ClientCommandProcessor::boxes() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->collisionDebug();
   worldClient->setCollisionDebug(state);
   return strf("Geometry debug display {}", state ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::fullbright() {
+std::expected<String, StarException> ClientCommandProcessor::fullbright() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->fullBright();
   worldClient->setFullBright(state);
   return strf("Fullbright render lighting {}", state ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::asyncLighting() {
+std::expected<String, StarException> ClientCommandProcessor::asyncLighting() {
   auto worldClient = m_universeClient->worldClient();
   bool state = !worldClient->asyncLighting();
   worldClient->setAsyncLighting(state);
   return strf("Asynchronous render lighting {}", state ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::setGravity(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::setGravity(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  m_universeClient->worldClient()->overrideGravity(lexicalCast<float>(arguments.at(0)));
-  return strf("Gravity set to {} (This is client-side!)", arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto argument = arguments->at(0);
+  if (!argument) return std::unexpected(std::move(argument.error()));
+  auto value = lexicalCast<float>(**argument);
+  if (!value) return std::unexpected(std::move(value.error()));
+  m_universeClient->worldClient()->overrideGravity(*value);
+  return strf("Gravity set to {} (This is client-side!)", **argument);
 }
 
-String ClientCommandProcessor::resetGravity() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
+std::expected<String, StarException> ClientCommandProcessor::resetGravity() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
   m_universeClient->worldClient()->resetGravity();
   return "Gravity reset";
 }
 
-String ClientCommandProcessor::fixedCamera() {
+std::expected<String, StarException> ClientCommandProcessor::fixedCamera() {
   m_fixedCameraEnabled = !m_fixedCameraEnabled;
   return strf("Fixed camera {}", m_fixedCameraEnabled ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::monochromeLighting() {
-  bool monochrome = !m_context.root().configuration()->get("monochromeLighting").toBool();
-  m_context.root().configuration()->set("monochromeLighting", monochrome);
+std::expected<String, StarException> ClientCommandProcessor::monochromeLighting() {
+  auto config = m_context.root().configuration();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto value = (*config)->get("monochromeLighting");
+  if (!value) return std::unexpected(std::move(value.error()));
+  auto enabled = value->toBool();
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  bool monochrome = !*enabled;
+  if (auto set = (*config)->set("monochromeLighting", monochrome); !set)
+    return std::unexpected(std::move(set.error()));
   return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
 }
 
-String ClientCommandProcessor::radioMessage(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::radioMessage(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (arguments.size() != 1)
-    return "Must provide one argument";
-
-  m_universeClient->mainPlayer()->queueRadioMessage(arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  if (arguments->size() != 1) return "Must provide one argument";
+  if (auto queued = m_universeClient->mainPlayer()->queueRadioMessage((*arguments)[0]); !queued)
+    return std::unexpected(std::move(queued.error()));
   return "Queued radio message";
 }
 
-String ClientCommandProcessor::clearRadioMessages() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
+std::expected<String, StarException> ClientCommandProcessor::clearRadioMessages() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
   m_universeClient->mainPlayer()->log()->clearRadioMessages();
   return "Player radio message records cleared!";
 }
 
-String ClientCommandProcessor::clearCinematics() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
+std::expected<String, StarException> ClientCommandProcessor::clearCinematics() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
   m_universeClient->mainPlayer()->log()->clearCinematics();
   return "Player cinematic records cleared!";
 }
 
-String ClientCommandProcessor::startQuest(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::startQuest(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  auto questArc = QuestArcDescriptor::fromJson(m_context.root(), Json::parseSequence(arguments.at(0)).get(0));
-  m_universeClient->questManager()->offer(std::make_shared<Quest>(m_context.root(), questArc, 0, m_universeClient->mainPlayer().get()));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto argument = arguments->at(0);
+  if (!argument) return std::unexpected(std::move(argument.error()));
+  auto parsed = Json::parseSequence(**argument);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto descriptor = parsed->get(0);
+  if (!descriptor) return std::unexpected(std::move(descriptor.error()));
+  auto arc = QuestArcDescriptor::fromJson(m_context.root(), *descriptor);
+  if (!arc) return std::unexpected(std::move(arc.error()));
+  auto quest = Quest::create(m_context.root(), *arc, 0, m_universeClient->mainPlayer().get());
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  if (auto offered = m_universeClient->questManager()->offer(std::move(*quest)); !offered)
+    return std::unexpected(std::move(offered.error()));
   return "Quest started";
 }
 
-String ClientCommandProcessor::completeQuest(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::completeQuest(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  m_universeClient->questManager()->getQuest(arguments.at(0))->complete();
-  return strf("Quest {} complete", arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto argument = arguments->at(0);
+  if (!argument) return std::unexpected(std::move(argument.error()));
+  auto quest = m_universeClient->questManager()->getQuest(**argument);
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  if (auto complete = (*quest)->complete(); !complete) return std::unexpected(std::move(complete.error()));
+  return strf("Quest {} complete", **argument);
 }
 
-String ClientCommandProcessor::failQuest(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::failQuest(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  m_universeClient->questManager()->getQuest(arguments.at(0))->fail();
-  return strf("Quest {} failed", arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto argument = arguments->at(0);
+  if (!argument) return std::unexpected(std::move(argument.error()));
+  auto quest = m_universeClient->questManager()->getQuest(**argument);
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  if (auto failed = (*quest)->fail(); !failed) return std::unexpected(std::move(failed.error()));
+  return strf("Quest {} failed", **argument);
 }
 
-String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<NewQuestInterface>(m_context, m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
+    auto pane = NewQuestInterface::create(m_context, m_universeClient->questManager(), std::move(quest), m_universeClient->mainPlayer());
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    return std::move(*pane);
   });
 }
 
-String ClientCommandProcessor::previewQuestComplete(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::previewQuestComplete(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<QuestCompleteInterface>(m_context, quest, m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
+    auto pane = QuestCompleteInterface::create(m_context, std::move(quest), m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    return std::move(*pane);
   });
 }
 
-String ClientCommandProcessor::previewQuestFailed(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::previewQuestFailed(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<QuestFailedInterface>(m_context, quest, m_universeClient->mainPlayer());
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  return previewQuestPane(*arguments, [this](std::shared_ptr<Quest> quest) -> std::expected<std::shared_ptr<Pane>, StarException> {
+    auto pane = QuestFailedInterface::create(m_context, std::move(quest), m_universeClient->mainPlayer());
+    if (!pane) return std::unexpected(std::move(pane.error()));
+    return std::move(*pane);
   });
 }
 
-String ClientCommandProcessor::clearScannedObjects() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
+std::expected<String, StarException> ClientCommandProcessor::clearScannedObjects() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
   m_universeClient->mainPlayer()->log()->clearScannedObjects();
   return "Player scanned objects cleared!";
 }
 
-String ClientCommandProcessor::playTime() {
+std::expected<String, StarException> ClientCommandProcessor::playTime() {
   return strf("Total play time: {}", Time::printDuration(m_universeClient->mainPlayer()->log()->playTime()));
 }
 
-String ClientCommandProcessor::deathCount() {
+std::expected<String, StarException> ClientCommandProcessor::deathCount() {
   auto deaths = m_universeClient->mainPlayer()->log()->deathCount();
   return deaths ? strf("Total deaths: {}", deaths) : "Total deaths: 0. Well done!";
 }
 
-String ClientCommandProcessor::cinema(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::cinema(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  m_cinematicOverlay->load(m_context.root().assets()->json(arguments.at(0)));
-  if (arguments.size() > 1)
-    m_cinematicOverlay->setTime(lexicalCast<float>(arguments.at(1)));
-  return strf("Started cinematic {} at {}", arguments.at(0), arguments.size() > 1 ? arguments.at(1) : "beginning");
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  auto argument = arguments->at(0);
+  if (!argument) return std::unexpected(std::move(argument.error()));
+  auto assets = m_context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json(**argument);
+  if (!config) return std::unexpected(std::move(config.error()));
+  if (auto loaded = m_cinematicOverlay->load(*config); !loaded) return std::unexpected(std::move(loaded.error()));
+  if (arguments->size() > 1) {
+    auto time = lexicalCast<float>((*arguments)[1]);
+    if (!time) return std::unexpected(std::move(time.error()));
+    m_cinematicOverlay->setTime(*time);
+  }
+  return strf("Started cinematic {} at {}", **argument, arguments->size() > 1 ? (*arguments)[1] : "beginning");
 }
 
-String ClientCommandProcessor::suicide() {
-  m_universeClient->mainPlayer()->kill();
+std::expected<String, StarException> ClientCommandProcessor::suicide() {
+  if (auto killed = m_universeClient->mainPlayer()->kill(); !killed) return std::unexpected(std::move(killed.error()));
   return "You are now dead";
 }
 
-String ClientCommandProcessor::naked() {
-  auto playerInventory = m_universeClient->mainPlayer()->inventory();
-  for (auto slot : EquipmentSlotNames.leftValues())
-    playerInventory->addItems(playerInventory->addToBags(playerInventory->takeSlot(slot)));
+std::expected<String, StarException> ClientCommandProcessor::naked() {
+  if (!EquipmentSlotNames) return std::unexpected(EquipmentSlotNames.error());
+  auto inventory = m_universeClient->mainPlayer()->inventory();
+  for (auto slot : EquipmentSlotNames->leftValues()) {
+    auto item = inventory->takeSlot(slot);
+    if (!item) return std::unexpected(std::move(item.error()));
+    auto remaining = inventory->addToBags(std::move(*item));
+    if (!remaining) return std::unexpected(std::move(remaining.error()));
+    if (auto added = inventory->addItems(std::move(*remaining)); !added) return std::unexpected(std::move(added.error()));
+  }
   return "You are now naked";
 }
 
-String ClientCommandProcessor::resetAchievements() {
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (m_universeClient->statistics()->reset()) {
-    return "Achievements reset";
-  }
-  return "Unable to reset achievements";
+std::expected<String, StarException> ClientCommandProcessor::resetAchievements() {
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  return m_universeClient->statistics()->reset() ? "Achievements reset" : "Unable to reset achievements";
 }
 
-String ClientCommandProcessor::statistic(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::statistic(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
   StringList values;
-  for (String const& statName : arguments) {
-    values.append(strf("{} = {}", statName, m_universeClient->statistics()->stat(statName)));
+  for (auto const& name : *arguments) {
+    auto value = m_universeClient->statistics()->stat(name);
+    auto printed = value.repr();
+    if (!printed) return std::unexpected(std::move(printed.error()));
+    values.append(strf("{} = {}", name, *printed));
   }
   return values.join("\n");
 }
 
-String ClientCommandProcessor::giveEssentialItem(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::giveEssentialItem(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (arguments.size() < 2)
-    return "Not enough arguments to /giveessentialitem";
-
-  try {
-    auto item = m_context.root().itemDatabase()->item(ItemDescriptor(arguments.at(0)));
-    auto slot = EssentialItemNames.getLeft(arguments.at(1));
-    m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot, item);
-    return strf("Put {} in player slot {}", item->name(), arguments.at(1));
-  } catch (MapException const& e) {
-    return strf("Invalid essential item slot {}.", arguments.at(1));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  if (arguments->size() < 2) return "Not enough arguments to /giveessentialitem";
+  auto database = m_context.root().itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto descriptor = ItemDescriptor::create((*arguments)[0]);
+  if (!descriptor) return std::unexpected(std::move(descriptor.error()));
+  auto item = (*database)->item(*descriptor);
+  if (!item) return std::unexpected(std::move(item.error()));
+  if (!EssentialItemNames) return std::unexpected(EssentialItemNames.error());
+  auto slot = EssentialItemNames->getLeft((*arguments)[1]);
+  if (!slot) {
+    if (slot.error().is<MapException>()) return strf("Invalid essential item slot {}.", (*arguments)[1]);
+    return std::unexpected(std::move(slot.error()));
   }
+  m_universeClient->mainPlayer()->inventory()->setEssentialItem(**slot, *item);
+  return strf("Put {} in player slot {}", (*item)->name(), (*arguments)[1]);
 }
 
-String ClientCommandProcessor::makeTechAvailable(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::makeTechAvailable(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (arguments.size() == 0)
-    return "Not enough arguments to /maketechavailable";
-
-  m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
-  return strf("Added {} to player's visible techs", arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  if (arguments->empty()) return "Not enough arguments to /maketechavailable";
+  m_universeClient->mainPlayer()->techs()->makeAvailable((*arguments)[0]);
+  return strf("Added {} to player's visible techs", (*arguments)[0]);
 }
 
-String ClientCommandProcessor::enableTech(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::enableTech(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (arguments.size() == 0)
-    return "Not enough arguments to /enabletech";
-
-  m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
-  m_universeClient->mainPlayer()->techs()->enable(arguments.at(0));
-  return strf("Player tech {} enabled", arguments.at(0));
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  if (arguments->empty()) return "Not enough arguments to /enabletech";
+  auto techs = m_universeClient->mainPlayer()->techs();
+  techs->makeAvailable((*arguments)[0]);
+  if (auto enabled = techs->enable((*arguments)[0]); !enabled) return std::unexpected(std::move(enabled.error()));
+  return strf("Player tech {} enabled", (*arguments)[0]);
 }
 
-String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::upgradeShip(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-  if (!adminCommandAllowed())
-    return "You must be an admin to use this command.";
-
-  if (arguments.size() == 0)
-    return "Not enough arguments to /upgradeship";
-
-  auto shipUpgrades = Json::parseJson(arguments.at(0));
-  m_universeClient->rpcInterface()->invokeRemote("ship.applyShipUpgrades", shipUpgrades);
-  return strf("Upgraded ship");
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  auto allowed = adminCommandAllowed();
+  if (!allowed) return std::unexpected(std::move(allowed.error()));
+  if (!*allowed) return "You must be an admin to use this command.";
+  if (arguments->empty()) return "Not enough arguments to /upgradeship";
+  auto upgrades = Json::parseJson((*arguments)[0]);
+  if (!upgrades) return std::unexpected(std::move(upgrades.error()));
+  auto invoked = m_universeClient->rpcInterface()->invokeRemote("ship.applyShipUpgrades", *upgrades);
+  if (!invoked) return std::unexpected(std::move(invoked.error()));
+  return "Upgraded ship";
 }
 
-String ClientCommandProcessor::swap(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::swap(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
-
-  if (arguments.size() == 0) {
-    m_paneManager->displayRegisteredPane(MainInterfacePanes::CharacterSwap);
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
+  if (arguments->empty()) {
+    auto displayed = m_paneManager->displayRegisteredPane(MainInterfacePanes::CharacterSwap);
+    if (!displayed) return std::unexpected(std::move(displayed.error()));
     return "";
   }
-
-  if (m_universeClient->switchPlayer(arguments[0]))
-    return "Successfully swapped player";
-  else
-    return "Failed to swap player";
+  auto switched = m_universeClient->switchPlayer((*arguments)[0]);
+  if (!switched) return std::unexpected(std::move(switched.error()));
+  return *switched ? "Successfully swapped player" : "Failed to swap player";
 }
 
-String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
+std::expected<String, StarException> ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
+  if (!arguments) return std::unexpected(std::move(arguments.error()));
   auto worldClient = m_universeClient->worldClient();
-  
-  if (arguments.size() == 0)
+  if (arguments->empty())
     return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
-
-  bool respawnInWorld = Json::parse(arguments.at(0)).toBool();
-  worldClient->setRespawnInWorld(respawnInWorld);
-  return strf("Respawn in this world set to {} (This is client-side!)", respawnInWorld ? "true" : "false");
+  auto parsed = Json::parse((*arguments)[0]);
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto enabled = parsed->toBool();
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  worldClient->setRespawnInWorld(*enabled);
+  return strf("Respawn in this world set to {} (This is client-side!)", *enabled ? "true" : "false");
 }
 
 // Hardcoded render command, future version will write to the clipboard and possibly be implemented in Lua
-String ClientCommandProcessor::render(String const& path) {
+std::expected<String, StarException> ClientCommandProcessor::render(String const& path) {
   if (path.empty()) {
     return "Specify a path to render an image, or for worn armor: "
            "^cyan;hat^reset;/^cyan;chest^reset;/^cyan;legs^reset;/^cyan;back^reset; "
@@ -688,23 +820,28 @@ String ClientCommandProcessor::render(String const& path) {
   String outputName = "render";
   auto player = m_universeClient->mainPlayer();
   if (player && path.utf8Size() < 100) {
-    auto args = m_parser.tokenizeToStringList(path);
-    auto first = args.maybeFirst().value_or(String{}).toLower();
+    auto parsedArgs = m_parser.tokenizeToStringList(path);
+    if (!parsedArgs) return std::unexpected(std::move(parsedArgs.error()));
+    auto& args = *parsedArgs;
+    auto lowered = args.maybeFirst().value_or(String{}).toLower();
+    if (!lowered) return std::unexpected(std::move(lowered.error()));
+    auto const& first = *lowered;
     auto humanoid = player->humanoid();
     auto& identity = humanoid->identity();
-    auto species = identity.imagePath.value_or(identity.species);
     outputSheet = true;
     outputName = first;
-    if (first.equals("hat")) {
+    if (first == "hat") {
       assetPath.basePath = humanoid->headArmorFrameset();
       assetPath.directives += humanoid->headArmorDirectives();
-    } else if (first.equals("chest")) {
+    } else if (first == "chest") {
       if (args.size() <= 1) {
         return "Chest armors have multiple spritesheets. Do: "
                "^white;/render chest ^cyan;front^reset;/^cyan;torso^reset;/^cyan;back^reset;. "
                "To repair old generated clothes, then also specify ^cyan;old^reset;.";
       }
-      String sheet = args[1].toLower();
+      auto loweredSheet = args[1].toLower();
+      if (!loweredSheet) return std::unexpected(std::move(loweredSheet.error()));
+      String sheet = std::move(*loweredSheet);
       outputName += " " + sheet;
       if (sheet == "torso") {
         assetPath.basePath = humanoid->chestArmorFrameset();
@@ -719,44 +856,55 @@ String ClientCommandProcessor::render(String const& path) {
         return strf("^red;Invalid chest sheet type '{}'^reset;", sheet);
       }
       // recovery for custom chests made by a very old generator
-      if (args.size() > 2 && args[2].toLower() == "old" && assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/"))
-          assetPath.basePath = "/items/armors/avian/avian-tier6separator/old/" + assetPath.basePath.substr(41);
-    } else if (first.equals("legs")) {
+      if (args.size() > 2) {
+        auto old = args[2].toLower();
+        if (!old) return std::unexpected(std::move(old.error()));
+        if (*old == "old") {
+          auto prefix = assetPath.basePath.beginsWith("/items/armors/avian/avian-tier6separator/");
+          if (!prefix) return std::unexpected(std::move(prefix.error()));
+          if (*prefix) {
+            auto suffix = assetPath.basePath.substr(41);
+            if (!suffix) return std::unexpected(std::move(suffix.error()));
+            assetPath.basePath = "/items/armors/avian/avian-tier6separator/old/" + *suffix;
+          }
+        }
+      }
+    } else if (first == "legs") {
       assetPath.basePath = humanoid->legsArmorFrameset();
       assetPath.directives += humanoid->legsArmorDirectives();
-    } else if (first.equals("back")) {
+    } else if (first == "back") {
       assetPath.basePath = humanoid->backArmorFrameset();
       assetPath.directives += humanoid->backArmorDirectives();
-    } else if (first.equals("body")) {
+    } else if (first == "body") {
       assetPath.basePath = humanoid->getBodyFromIdentity();
       assetPath.directives += identity.bodyDirectives;
-    } else if (first.equals("head")) {
+    } else if (first == "head") {
       outputSheet = false;
       assetPath.basePath = humanoid->getHeadFromIdentity();
       assetPath.subPath = String("normal");
       assetPath.directives += identity.bodyDirectives;
-    } else if (first.equals("hair")) {
+    } else if (first == "hair") {
       outputSheet = false;
       assetPath.basePath = humanoid->getHairFromIdentity();
       assetPath.subPath = String("normal");
       assetPath.directives += identity.hairDirectives;
-    } else if (first.equals("facialhair")) {
+    } else if (first == "facialhair") {
       outputSheet = false;
       assetPath.basePath = humanoid->getFacialHairFromIdentity();
       assetPath.subPath = String("normal");
       assetPath.directives += identity.facialHairDirectives;
-    } else if (first.equals("facialmask")) {
+    } else if (first == "facialmask") {
       outputSheet = false;
       assetPath.basePath = humanoid->getFacialMaskFromIdentity();
       assetPath.subPath = String("normal");
       assetPath.directives += identity.facialMaskDirectives;
-    } else if (first.equals("frontarm")) {
+    } else if (first == "frontarm") {
       assetPath.basePath = humanoid->getFrontArmFromIdentity();
       assetPath.directives += identity.bodyDirectives;
-    } else if (first.equals("backarm")) {
+    } else if (first == "backarm") {
       assetPath.basePath = humanoid->getBackArmFromIdentity();
       assetPath.directives += identity.bodyDirectives;
-    } else if (first.equals("emote")) {
+    } else if (first == "emote") {
       assetPath.basePath = humanoid->getFacialEmotesFromIdentity();
       assetPath.directives += identity.emoteDirectives;
     } else {
@@ -766,19 +914,26 @@ String ClientCommandProcessor::render(String const& path) {
   }
   if (assetPath == AssetPath()) {
     assetPath = AssetPath::split(path);
-    if (!assetPath.basePath.beginsWith("/"))
+    auto absolute = assetPath.basePath.beginsWith("/");
+    if (!absolute) return std::unexpected(std::move(absolute.error()));
+    if (!*absolute)
       assetPath.basePath = "/assetmissing.png" + assetPath.basePath;
   }
   auto assets = m_context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
   std::shared_ptr<Image const> image;
   if (outputSheet) {
-    auto sheet = std::make_shared<Image>(*assets->image(assetPath.basePath));
+    auto original = (*assets)->image(assetPath.basePath);
+    if (!original) return std::unexpected(std::move(original.error()));
+    auto sheet = std::make_shared<Image>(**original);
     sheet->convert(PixelFormat::RGBA32);
     AssetPath framePath = assetPath;
 
     StringMap<std::pair<RectU, std::shared_ptr<Image const>>> frames;
-    if (auto imageFrames = assets->imageFrames(assetPath.basePath))
-      for (auto& pair : imageFrames->frames)
+    auto imageFrames = (*assets)->imageFrames(assetPath.basePath);
+    if (!imageFrames) return std::unexpected(std::move(imageFrames.error()));
+    if (*imageFrames)
+      for (auto const& pair : (*imageFrames)->frames)
         frames[pair.first] = std::make_pair(pair.second, std::shared_ptr<Image const>());
 
     if (frames.empty())
@@ -786,10 +941,14 @@ String ClientCommandProcessor::render(String const& path) {
 
     for (auto& entry : frames) {
       framePath.subPath = entry.first;
-      entry.second.second = assets->image(framePath);
+      auto frame = (*assets)->image(framePath);
+      if (!frame) return std::unexpected(std::move(frame.error()));
+      entry.second.second = std::move(*frame);
     }
 
     Vec2U frameSize = frames.begin()->second.first.size();
+    if (frameSize.min() == 0)
+      return std::unexpected(StarException("Sprite sheet frame size is empty"));
     Vec2U imageSize = frames.begin()->second.second->size().piecewiseMin(Vec2U{256, 256});
     if (imageSize.min() == 0)
       return "^red;Resulting image is empty^reset;";
@@ -808,27 +967,46 @@ String ClientCommandProcessor::render(String const& path) {
       sheet->reset(sheetWidth, sheetHeight, PixelFormat::RGBA32);
     }
 
-    for (auto& entry : frames)
-      sheet->copyInto(entry.second.first.min(), *entry.second.second);
+    for (auto& entry : frames) {
+      auto copied = sheet->copyInto(entry.second.first.min(), *entry.second.second);
+      if (!copied) return std::unexpected(std::move(copied.error()));
+    }
 
     image = std::move(sheet);
   } else {
-    image = assets->image(assetPath);
+    auto loaded = (*assets)->image(assetPath);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    image = std::move(*loaded);
   }
   if (image->size().min() == 0)
     return "^red;Resulting image is empty^reset;";
   auto outputDirectory = m_context.root().toStoragePath("output");
   auto outputPath = File::relativeTo(outputDirectory, strf("{}.png", outputName));
-  if (!File::isDirectory(outputDirectory))
-    File::makeDirectory(outputDirectory);
-
+  auto directoryExists = File::isDirectory(outputDirectory);
+  if (!directoryExists) return std::unexpected(std::move(directoryExists.error()));
+  if (!*directoryExists) {
+    if (auto created = File::makeDirectory(outputDirectory); !created)
+      return std::unexpected(std::move(created.error()));
+  }
   auto buffer = std::make_shared<Buffer>();
-  image->writePng(m_context.root().logger(), buffer);
+  if (auto written = image->writePng(m_context.root().logger(), buffer); !written)
+    return std::unexpected(std::move(written.error()));
   auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
-  file->writeFull(buffer->ptr(), buffer->size());
-  file->close();
+  if (!file) return std::unexpected(std::move(file.error()));
+  auto size = buffer->size();
+  if (!size) return std::unexpected(std::move(size.error()));
+  auto written = (*file)->writeFull(buffer->ptr(), *size);
+  auto closed = (*file)->close();
+  if (!written) {
+    if (!closed)
+      return std::unexpected(written.error().withContext(strf("Closing output file also failed: {}", closed.error().what())));
+    return std::unexpected(std::move(written.error()));
+  }
+  if (!closed) return std::unexpected(std::move(closed.error()));
   auto fullPath = File::fullPath(outputPath);
-  m_context.setClipboardImage(*image, &buffer->data(), &fullPath);
+  if (!fullPath) return std::unexpected(std::move(fullPath.error()));
+  auto copied = m_context.setClipboardImage(*image, &buffer->data(), &*fullPath);
+  if (!copied) return std::unexpected(std::move(copied.error()));
   return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 

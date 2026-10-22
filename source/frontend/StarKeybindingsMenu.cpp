@@ -67,239 +67,385 @@ import star.button_widget;
 
 namespace Star {
 
-KeybindingsMenu::KeybindingsMenu(GuiContext& guiContext) : Pane(guiContext), m_activeKeybinding(nullptr) {
-  GuiReader reader(*context());
-  reader.registerCallback("cancel",
-      [&](Widget*) {
-        revert();
-        dismiss();
-      });
-  reader.registerCallback("accept",
-      [&](Widget*) {
-        apply();
-        dismiss();
-      });
-  reader.registerCallback("setDefault", [&](Widget*) { resetDefaults(); });
+KeybindingsMenu::KeybindingsMenu(GuiContext& guiContext) : Pane(guiContext), m_activeKeybinding(nullptr), m_currentMods(KeyMod::NoMod) {}
 
-  auto assets = context()->root().assets();
-
-  m_maxBindings = assets->json("/interface/windowconfig/keybindingsmenu.config:maxBindings").toUInt();
-
-  Json paneLayout = assets->json("/interface/windowconfig/keybindingsmenu.config:paneLayout");
-  reader.construct(paneLayout, this);
-
-  buildListsFromConfig();
-
-  m_currentMods = KeyMod::NoMod;
+std::expected<std::shared_ptr<KeybindingsMenu>, StarException> KeybindingsMenu::create(GuiContext& guiContext) {
+  auto menu = std::shared_ptr<KeybindingsMenu>(new KeybindingsMenu(guiContext));
+  if (auto result = menu->initializePane(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = menu->init(); !result)
+    return std::unexpected(std::move(result.error()));
+  return menu;
 }
 
-KeyboardCaptureMode KeybindingsMenu::keyboardCaptureMode() const {
+std::expected<void, StarException> KeybindingsMenu::init() {
+  GuiReader reader(*context());
+  reader.registerCallback("cancel", [this](Widget*) -> std::expected<void, StarException> {
+    if (auto result = revert(); !result)
+      return std::unexpected(std::move(result.error()));
+    dismiss();
+    return {};
+  });
+  reader.registerCallback("accept", [this](Widget*) -> std::expected<void, StarException> {
+    if (auto result = apply(); !result)
+      return std::unexpected(std::move(result.error()));
+    dismiss();
+    return {};
+  });
+  reader.registerCallback("setDefault", [this](Widget*) { return resetDefaults(); });
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto maxBindingsConfig = (*assets)->json("/interface/windowconfig/keybindingsmenu.config:maxBindings");
+  if (!maxBindingsConfig)
+    return std::unexpected(std::move(maxBindingsConfig.error()));
+  auto maxBindings = maxBindingsConfig->toUInt();
+  if (!maxBindings)
+    return std::unexpected(std::move(maxBindings.error()));
+  m_maxBindings = *maxBindings;
+  auto layout = (*assets)->json("/interface/windowconfig/keybindingsmenu.config:paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  if (auto result = reader.construct(*layout, this); !result)
+    return std::unexpected(std::move(result.error()));
+  return buildListsFromConfig();
+}
+
+std::expected<KeyboardCaptureMode, StarException> KeybindingsMenu::keyboardCaptureMode() const {
   return m_activeKeybinding ? KeyboardCaptureMode::KeyEvents : KeyboardCaptureMode::None;
 }
 
-bool KeybindingsMenu::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> KeybindingsMenu::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
-
   if (m_activeKeybinding) {
     if (m_context->actions(event).contains(InterfaceAction::KeybindingClear)) {
-      clearActive();
+      if (auto result = clearActive(); !result)
+        return std::unexpected(std::move(result.error()));
       return true;
     }
-
     if (m_context->actions(event).contains(InterfaceAction::KeybindingCancel)) {
-      exitActiveMode();
+      if (auto result = exitActiveMode(); !result)
+        return std::unexpected(std::move(result.error()));
       return true;
     }
-  }
-
-  if (m_activeKeybinding) {
     // HACK: I need to pass events only to the trash button first.
-    if (m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->sendEvent(event))
+    auto deleteButton = m_activeKeybinding->parent()->requireChild<ButtonWidget>("deleteBinding");
+    if (!deleteButton)
+      return std::unexpected(std::move(deleteButton.error()));
+    auto handled = (*deleteButton)->sendEvent(event);
+    if (!handled)
+      return std::unexpected(std::move(handled.error()));
+    if (*handled)
       return true;
-
     if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
       if (auto modKey = std::ranges::find(KeyChordMods, keyUp->key, &std::pair<Key, KeyMod>::first);
           modKey != KeyChordMods.end()) {
         m_currentMods &= ~modKey->second;
-        setKeybinding(KeyChord{keyUp->key, m_currentMods});
+        if (auto result = setKeybinding(KeyChord{keyUp->key, m_currentMods}); !result)
+          return std::unexpected(std::move(result.error()));
         return true;
       }
     } else if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
-      std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
-
-      if (modKey) {
-        m_currentMods |= *modKey;
-        return true;
-      } else {
-        setKeybinding(KeyChord{keyDown->key, m_currentMods});
-        return true;
+      if (!KeyNames)
+        return std::unexpected(KeyNames.error());
+      if (!KeyModNames)
+        return std::unexpected(KeyModNames.error());
+      auto keyName = KeyNames->getRight(keyDown->key);
+      if (!keyName)
+        return std::unexpected(std::move(keyName.error()));
+      auto modKey = KeyModNames->maybeLeft(**keyName);
+      if (!modKey)
+        return std::unexpected(std::move(modKey.error()));
+      if (*modKey) {
+        m_currentMods |= **modKey;
+      } else if (auto result = setKeybinding(KeyChord{keyDown->key, m_currentMods}); !result) {
+        return std::unexpected(std::move(result.error()));
       }
+      return true;
     }
   }
-
   if (m_context->actions(event).contains(InterfaceAction::GuiClose)) {
     dismiss();
     return true;
   }
-
-  if (Pane::sendEvent(event))
-    return true;
-
-  return false;
+  return Pane::sendEvent(event);
 }
 
-void KeybindingsMenu::show() {
-  m_origConfiguration = context()->root().configuration()->get("bindings");
-  Pane::show();
+std::expected<void, StarException> KeybindingsMenu::show() {
+  auto config = context()->root().configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto bindings = (*config)->get("bindings");
+  if (!bindings)
+    return std::unexpected(std::move(bindings.error()));
+  m_origConfiguration = std::move(*bindings);
+  return Pane::show();
 }
 
-void KeybindingsMenu::dismissed() {
-  exitActiveMode();
-  Pane::dismissed();
+std::expected<void, StarException> KeybindingsMenu::dismissed() {
+  if (auto result = exitActiveMode(); !result)
+    return std::unexpected(std::move(result.error()));
+  return Pane::dismissed();
 }
 
-void KeybindingsMenu::buildListsFromConfig() {
-  m_playerList = fetchChild<ListWidget>("categories.tabs.player.scrollArea.keyList");
-  m_toolBarList = fetchChild<ListWidget>("categories.tabs.toolbar.scrollArea.keyList");
-  m_gameList = fetchChild<ListWidget>("categories.tabs.game.scrollArea.keyList");
-
+std::expected<void, StarException> KeybindingsMenu::buildListsFromConfig() {
+  auto playerList = requireChild<ListWidget>("categories.tabs.player.scrollArea.keyList");
+  if (!playerList)
+    return std::unexpected(std::move(playerList.error()));
+  m_playerList = std::move(*playerList);
+  auto toolBarList = requireChild<ListWidget>("categories.tabs.toolbar.scrollArea.keyList");
+  if (!toolBarList)
+    return std::unexpected(std::move(toolBarList.error()));
+  m_toolBarList = std::move(*toolBarList);
+  auto gameList = requireChild<ListWidget>("categories.tabs.game.scrollArea.keyList");
+  if (!gameList)
+    return std::unexpected(std::move(gameList.error()));
+  m_gameList = std::move(*gameList);
   m_childToAction.clear();
-
-  auto doKeybindingsFor = [&](std::shared_ptr<ListWidget> const& list, Json const& keybinds) {
-    list->clear();
-
-    list->registerMemberCallback("activateBinding", [this](Widget* widget) { activateBinding(widget); });
-
-    list->registerMemberCallback("deleteBinding", [this](Widget*) { clearActive(); });
-
+  auto doKeybindingsFor = [&](ListWidget* list, Json const& keybinds) -> std::expected<void, StarException> {
+    if (auto result = list->clear(); !result)
+      return std::unexpected(std::move(result.error()));
+    list->registerMemberCallback("activateBinding", [this](Widget* widget) { return activateBinding(widget); });
+    list->registerMemberCallback("deleteBinding", [this](Widget*) { return clearActive(); });
     auto config = context()->root().configuration();
-    auto bindings = config->get("bindings");
-
-    for (auto const& keybind : keybinds.iterateArray()) {
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto bindings = (*config)->get("bindings");
+    if (!bindings)
+      return std::unexpected(std::move(bindings.error()));
+    auto entries = keybinds.iterateArray();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& keybind : *entries) {
       auto newListMember = list->addItem();
-      auto actionString = keybind.get("action").toString();
-      auto action = InterfaceActionNames.getLeft(actionString);
+      if (!newListMember)
+        return std::unexpected(std::move(newListMember.error()));
+      auto actionString = keybind.getString("action");
+      if (!actionString)
+        return std::unexpected(std::move(actionString.error()));
+      if (!InterfaceActionNames)
+        return std::unexpected(InterfaceActionNames.error());
+      auto action = InterfaceActionNames->getLeft(*actionString);
+      if (!action)
+        return std::unexpected(std::move(action.error()));
       List<KeyChord> inputDesc;
-      try {
-        for (auto const& bindingEntry : bindings.get(actionString).iterateArray())
-          inputDesc.append(inputDescriptorFromJson(bindingEntry));
-      } catch (StarException const& e) {
-        context()->root().logger().warn("Could not load keybinding for {}. {}\n", actionString, e.what());
+      auto loadBindings = [&]() -> std::expected<void, StarException> {
+        auto actionBindings = bindings->get(*actionString);
+        if (!actionBindings)
+          return std::unexpected(std::move(actionBindings.error()));
+        auto bindingEntries = actionBindings->iterateArray();
+        if (!bindingEntries)
+          return std::unexpected(std::move(bindingEntries.error()));
+        for (auto const& bindingEntry : *bindingEntries) {
+          auto descriptor = inputDescriptorFromJson(bindingEntry);
+          if (!descriptor)
+            return std::unexpected(std::move(descriptor.error()));
+          inputDesc.append(std::move(*descriptor));
+        }
+        return {};
+      };
+      if (auto result = loadBindings(); !result) {
+        if (auto logged = context()->root().logger().warn("Could not load keybinding for {}. {}\n", *actionString, result.error().what()); !logged)
+          return std::unexpected(std::move(logged.error()));
       }
-
-      m_childToAction.insert({newListMember->fetchChild<ButtonWidget>("boundKeys").get(), action});
-      newListMember->fetchChild<LabelWidget>("actionName")->setText(keybind.getString("label"));
-      newListMember->fetchChild<ButtonWidget>("boundKeys")->setText(StringList(inputDesc.transformed(printInputDescriptor)).join(", "));
-      newListMember->fetchChild<ButtonWidget>("deleteBinding")->hide();
+      auto boundKeys = (*newListMember)->requireChild<ButtonWidget>("boundKeys");
+      if (!boundKeys)
+        return std::unexpected(std::move(boundKeys.error()));
+      auto actionName = (*newListMember)->requireChild<LabelWidget>("actionName");
+      if (!actionName)
+        return std::unexpected(std::move(actionName.error()));
+      auto label = keybind.getString("label");
+      if (!label)
+        return std::unexpected(std::move(label.error()));
+      if (auto result = (*actionName)->setText(*label); !result)
+        return std::unexpected(std::move(result.error()));
+      m_childToAction.insert({boundKeys->get(), **action});
+      StringList descriptions;
+      for (auto const& descriptor : inputDesc) {
+        auto description = printInputDescriptor(descriptor);
+        if (!description)
+          return std::unexpected(std::move(description.error()));
+        descriptions.append(std::move(*description));
+      }
+      (*boundKeys)->setText(descriptions.join(", "));
+      auto deleteButton = (*newListMember)->requireChild<ButtonWidget>("deleteBinding");
+      if (!deleteButton)
+        return std::unexpected(std::move(deleteButton.error()));
+      if (auto result = (*deleteButton)->hide(); !result)
+        return std::unexpected(std::move(result.error()));
     }
+    return {};
   };
-
   auto assets = context()->root().assets();
-  doKeybindingsFor(m_playerList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.player"));
-  doKeybindingsFor(m_toolBarList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.toolbar"));
-  doKeybindingsFor(m_gameList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.game"));
-}
-
-bool KeybindingsMenu::activateBinding(Widget* widget) {
-  exitActiveMode();
-
-  m_activeKeybinding = widget;
-  m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->show();
-  convert<ButtonWidget>(m_activeKeybinding)->setHighlighted(true);
-
-  return false;
-}
-
-void KeybindingsMenu::setKeybinding(KeyChord desc) {
-  if (!m_activeKeybinding)
-    return;
-
-  auto out = inputDescriptorToJson(desc);
-
-  auto config = context()->root().configuration();
-  auto base = config->get("bindings");
-
-  auto action = m_childToAction.get(m_activeKeybinding);
-  auto key = InterfaceActionNames.getRight(action);
-
-  auto bindings = OrderedHashSet<Json>::from(base.get(key).toArray());
-
-  if (bindings.contains(out))
-    bindings.clear();
-
-  bindings.add(out);
-
-  if (bindings.size() > m_maxBindings)
-    bindings.removeFirst();
-
-  base = base.set(key, JsonArray::from(bindings));
-
-  config->set("bindings", base);
-
-  StringList buttonText;
-
-  for (auto const& entry : base.get(key).iterateArray()) {
-    try {
-      auto stored = inputDescriptorFromJson(entry);
-      buttonText.push_back(printInputDescriptor(stored));
-    } catch (StarException const& e) {
-      buttonText.push_back("unknown");
-    }
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  for (auto const& category : {std::pair{m_playerList.get(), "player"}, std::pair{m_toolBarList.get(), "toolbar"}, std::pair{m_gameList.get(), "game"}}) {
+    auto keybinds = (*assets)->json(strf("/interface/windowconfig/keybindingsmenu.config:keyActions.{}", category.second));
+    if (!keybinds)
+      return std::unexpected(std::move(keybinds.error()));
+    if (auto result = doKeybindingsFor(category.first, *keybinds); !result)
+      return std::unexpected(std::move(result.error()));
   }
-
-  convert<ButtonWidget>(m_activeKeybinding)->setText(buttonText.join(", "));
-
-  apply();
-  exitActiveMode();
+  return {};
 }
 
-void KeybindingsMenu::clearActive() {
-  if (!m_activeKeybinding)
-    return;
+std::expected<void, StarException> KeybindingsMenu::activateBinding(Widget* widget) {
+  if (auto result = exitActiveMode(); !result)
+    return std::unexpected(std::move(result.error()));
+  m_activeKeybinding = widget;
+  auto deleteButton = widget->parent()->requireChild<ButtonWidget>("deleteBinding");
+  if (!deleteButton)
+    return std::unexpected(std::move(deleteButton.error()));
+  if (auto result = (*deleteButton)->show(); !result)
+    return std::unexpected(std::move(result.error()));
+  auto button = convert<ButtonWidget>(widget);
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  (*button)->setHighlighted(true);
+  return {};
+}
 
+std::expected<void, StarException> KeybindingsMenu::setKeybinding(KeyChord desc) {
+  if (!m_activeKeybinding)
+    return {};
+  auto out = inputDescriptorToJson(desc);
+  if (!out)
+    return std::unexpected(std::move(out.error()));
   auto config = context()->root().configuration();
-  auto base = config->get("bindings").toObject();
-
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto base = (*config)->get("bindings");
+  if (!base)
+    return std::unexpected(std::move(base.error()));
   auto action = m_childToAction.get(m_activeKeybinding);
-  auto key = InterfaceActionNames.getRight(action);
-
-  base[key] = JsonArray{};
-  config->set("bindings", base);
-
-  convert<ButtonWidget>(m_activeKeybinding)->setText("<Unbound>");
-
-  apply();
-  exitActiveMode();
+  if (!action)
+    return std::unexpected(std::move(action.error()));
+  if (!InterfaceActionNames)
+    return std::unexpected(InterfaceActionNames.error());
+  auto key = InterfaceActionNames->getRight(**action);
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  auto storedBindings = base->get(**key);
+  if (!storedBindings)
+    return std::unexpected(std::move(storedBindings.error()));
+  auto array = storedBindings->toArray();
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  auto bindings = OrderedHashSet<Json>::from(*array);
+  if (bindings.contains(*out))
+    bindings.clear();
+  bindings.add(*out);
+  if (bindings.size() > m_maxBindings) {
+    if (auto result = bindings.removeFirst(); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto updated = base->set(**key, JsonArray::from(bindings));
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  if (auto result = (*config)->set("bindings", *updated); !result)
+    return std::unexpected(std::move(result.error()));
+  auto actionBindings = updated->get(**key);
+  if (!actionBindings)
+    return std::unexpected(std::move(actionBindings.error()));
+  auto entries = actionBindings->iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  StringList buttonText;
+  for (auto const& entry : *entries) {
+    auto description = [&]() -> std::expected<String, StarException> {
+      auto stored = inputDescriptorFromJson(entry);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+      return printInputDescriptor(*stored);
+    }();
+    buttonText.push_back(description ? std::move(*description) : String("unknown"));
+  }
+  auto button = convert<ButtonWidget>(m_activeKeybinding);
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  (*button)->setText(buttonText.join(", "));
+  if (auto result = apply(); !result)
+    return std::unexpected(std::move(result.error()));
+  return exitActiveMode();
 }
 
-void KeybindingsMenu::exitActiveMode() {
+std::expected<void, StarException> KeybindingsMenu::clearActive() {
   if (!m_activeKeybinding)
-    return;
+    return {};
+  auto config = context()->root().configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto bindings = (*config)->get("bindings");
+  if (!bindings)
+    return std::unexpected(std::move(bindings.error()));
+  auto base = bindings->toObject();
+  if (!base)
+    return std::unexpected(std::move(base.error()));
+  auto action = m_childToAction.get(m_activeKeybinding);
+  if (!action)
+    return std::unexpected(std::move(action.error()));
+  if (!InterfaceActionNames)
+    return std::unexpected(InterfaceActionNames.error());
+  auto key = InterfaceActionNames->getRight(**action);
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  (*base)[**key] = JsonArray{};
+  if (auto result = (*config)->set("bindings", *base); !result)
+    return std::unexpected(std::move(result.error()));
+  auto button = convert<ButtonWidget>(m_activeKeybinding);
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  (*button)->setText("<Unbound>");
+  if (auto result = apply(); !result)
+    return std::unexpected(std::move(result.error()));
+  return exitActiveMode();
+}
 
-  m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->hide();
-  convert<ButtonWidget>(m_activeKeybinding)->setHighlighted(false);
+std::expected<void, StarException> KeybindingsMenu::exitActiveMode() {
+  if (!m_activeKeybinding)
+    return {};
+  auto deleteButton = m_activeKeybinding->parent()->requireChild<ButtonWidget>("deleteBinding");
+  if (!deleteButton)
+    return std::unexpected(std::move(deleteButton.error()));
+  if (auto result = (*deleteButton)->hide(); !result)
+    return std::unexpected(std::move(result.error()));
+  auto button = convert<ButtonWidget>(m_activeKeybinding);
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  (*button)->setHighlighted(false);
   m_activeKeybinding = nullptr;
   m_currentMods = KeyMod::NoMod;
+  return {};
 }
 
-void KeybindingsMenu::apply() {
-  m_context->refreshKeybindings();
+std::expected<void, StarException> KeybindingsMenu::apply() {
+  return m_context->refreshKeybindings();
 }
 
-void KeybindingsMenu::revert() {
-  context()->root().configuration()->set("bindings", m_origConfiguration);
-  apply();
-
-  buildListsFromConfig();
-}
-
-void KeybindingsMenu::resetDefaults() {
+std::expected<void, StarException> KeybindingsMenu::revert() {
   auto config = context()->root().configuration();
-  config->set("bindings", config->getDefault("bindings"));
-  apply();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  if (auto result = (*config)->set("bindings", m_origConfiguration); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = apply(); !result)
+    return std::unexpected(std::move(result.error()));
+  return buildListsFromConfig();
+}
 
-  buildListsFromConfig();
+std::expected<void, StarException> KeybindingsMenu::resetDefaults() {
+  auto config = context()->root().configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto bindings = (*config)->getDefault("bindings");
+  if (!bindings)
+    return std::unexpected(std::move(bindings.error()));
+  if (auto result = (*config)->set("bindings", *bindings); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = apply(); !result)
+    return std::unexpected(std::move(result.error()));
+  return buildListsFromConfig();
 }
 
 }

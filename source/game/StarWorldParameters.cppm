@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -35,7 +36,7 @@ enum class WorldParametersType : std::uint8_t {
   AsteroidsWorldParameters,
   FloatingDungeonWorldParameters
 };
-extern EnumMap<WorldParametersType> const WorldParametersTypeNames;
+extern std::expected<EnumMap<WorldParametersType>, StarException> const WorldParametersTypeNames;
 
 enum class BeamUpRule : std::uint8_t {
   Nowhere,
@@ -43,7 +44,7 @@ enum class BeamUpRule : std::uint8_t {
   Anywhere,
   AnywhereWithWarning
 };
-extern EnumMap<BeamUpRule> const BeamUpRuleNames;
+extern std::expected<EnumMap<BeamUpRule>, StarException> const BeamUpRuleNames;
 
 enum class WorldEdgeForceRegionType : std::uint8_t {
   None,
@@ -51,7 +52,7 @@ enum class WorldEdgeForceRegionType : std::uint8_t {
   Bottom,
   TopAndBottom
 };
-extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames;
+extern std::expected<EnumMap<WorldEdgeForceRegionType>, StarException> const WorldEdgeForceRegionTypeNames;
 
 struct VisitableWorldParameters {
   virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<VisitableWorldParameters>(this, key); }
@@ -59,16 +60,16 @@ struct VisitableWorldParameters {
 
   VisitableWorldParameters() = default;
   VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters) = default;
-  explicit VisitableWorldParameters(Json const& store);
+  [[nodiscard]] std::expected<void, StarException> load(Json const& store);
 
   virtual ~VisitableWorldParameters() = default;
 
   virtual WorldParametersType type() const = 0;
 
-  virtual Json store() const;
+  [[nodiscard]] virtual std::expected<Json, StarException> store() const;
 
-  virtual void read(DataStream& ds);
-  virtual void write(DataStream& ds) const;
+  [[nodiscard]] virtual std::expected<void, StarException> read(DataStream& ds);
+  [[nodiscard]] virtual std::expected<void, StarException> write(DataStream& ds) const;
 
   String typeName;
   float threatLevel{};
@@ -128,16 +129,16 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
 
   TerrestrialWorldParameters() = default;
   TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters) = default;
-  explicit TerrestrialWorldParameters(Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<TerrestrialWorldParameters>, StarException> create(Json const& store);
 
   TerrestrialWorldParameters &operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
 
   WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] std::expected<Json, StarException> store() const override;
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String primaryBiome;
   LiquidId primarySurfaceLiquid{};
@@ -164,14 +165,14 @@ struct AsteroidsWorldParameters : VisitableWorldParameters {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<AsteroidsWorldParameters>(); }
 
   AsteroidsWorldParameters();
-  explicit AsteroidsWorldParameters(Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<AsteroidsWorldParameters>, StarException> create(Json const& store);
 
   WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] std::expected<Json, StarException> store() const override;
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   int asteroidTopLevel{};
   int asteroidBottomLevel{};
@@ -185,14 +186,14 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<FloatingDungeonWorldParameters>(); }
 
   FloatingDungeonWorldParameters() = default;
-  explicit FloatingDungeonWorldParameters(Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<FloatingDungeonWorldParameters>, StarException> create(Json const& store);
 
   WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] std::expected<Json, StarException> store() const override;
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   int dungeonBaseHeight;
   int dungeonSurfaceHeight;
@@ -206,15 +207,15 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   std::optional<String> nightAmbientNoises;
 };
 
-Json diskStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters);
-std::shared_ptr<VisitableWorldParameters> diskLoadVisitableWorldParameters(Json const& store);
+[[nodiscard]] std::expected<Json, StarException> diskStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters);
+[[nodiscard]] std::expected<std::shared_ptr<VisitableWorldParameters>, StarException> diskLoadVisitableWorldParameters(Json const& store);
 
-ByteArray netStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters);
-std::shared_ptr<VisitableWorldParameters> netLoadVisitableWorldParameters(ByteArray data);
+[[nodiscard]] std::expected<ByteArray, StarException> netStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters);
+[[nodiscard]] std::expected<std::shared_ptr<VisitableWorldParameters>, StarException> netLoadVisitableWorldParameters(ByteArray data);
 
-std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(Root& root, String const& typeName, String const& sizeName, std::uint64_t seed);
-std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(Root& root, std::uint64_t seed);
-std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(Root& root, String const& dungeonWorldName);
+[[nodiscard]] std::expected<std::shared_ptr<TerrestrialWorldParameters>, StarException> generateTerrestrialWorldParameters(Root& root, String const& typeName, String const& sizeName, std::uint64_t seed);
+[[nodiscard]] std::expected<std::shared_ptr<AsteroidsWorldParameters>, StarException> generateAsteroidsWorldParameters(Root& root, std::uint64_t seed);
+[[nodiscard]] std::expected<std::shared_ptr<FloatingDungeonWorldParameters>, StarException> generateFloatingDungeonWorldParameters(Root& root, String const& dungeonWorldName);
 
 }
 

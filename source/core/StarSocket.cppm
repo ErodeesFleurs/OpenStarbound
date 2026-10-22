@@ -11,8 +11,7 @@ namespace Star {
 
 class Logger;
 
-// Thrown when some call on a socket failed because the socket is *either*
-// closed or shutdown, for other errors sockets will throw NetworkException
+// Returned when a socket is closed or shutdown; other failures use NetworkException.
 struct SocketClosedExceptionTag {
   static constexpr char const* name() { return "SocketClosedException"; }
 };
@@ -54,21 +53,21 @@ public:
   // ready for I/O or have had error events occur on them within the timeout,
   // nothing otherwise.  If socket hangup occurs during this call, this will
   // automatically shut down the socket.
-  static std::optional<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
+  [[nodiscard]] static std::expected<std::optional<SocketPollResult>, StarException> poll(SocketPollQuery const& query, unsigned timeout);
 
   // Wait for native read/write readiness or shutdown until a steady deadline.
   // Retains the native handle, not m_mutex, so close can shut down and wake it.
-  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const;
+  [[nodiscard]] std::expected<void, StarException> waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const;
 
   ~Socket();
 
-  void bind(Logger& logger, HostAddressWithPort const& address);
-  void listen(int backlog);
+  [[nodiscard]] std::expected<void, StarException> bind(Logger& logger, HostAddressWithPort const& address);
+  [[nodiscard]] std::expected<void, StarException> listen(int backlog);
 
   // Sockets default to blocking mode
-  void setNonBlocking(bool nonBlocking);
+  [[nodiscard]] std::expected<void, StarException> setNonBlocking(bool nonBlocking);
   // Sockets default to 60 second timeout
-  void setTimeout(unsigned millis);
+  [[nodiscard]] std::expected<void, StarException> setTimeout(unsigned millis);
 
   NetworkMode networkMode() const;
   SocketMode socketMode() const;
@@ -93,10 +92,12 @@ protected:
     Udp
   };
 
-  Socket(SocketType type, NetworkMode networkMode);
+  explicit Socket(NetworkMode networkMode);
+  [[nodiscard]] std::expected<void, StarException> initialize(SocketType type);
+  [[nodiscard]] std::expected<void, StarException> configure();
   Socket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl, SocketMode socketMode);
 
-  void checkOpen(char const* methodName) const;
+  [[nodiscard]] std::expected<void, StarException> checkOpen(char const* methodName) const;
   void doShutdown();
   void doClose();
 

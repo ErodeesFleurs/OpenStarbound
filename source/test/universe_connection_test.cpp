@@ -5,6 +5,7 @@
 #endif
 
 import star.xx_hash;
+import star.algorithm;
 import star.json;
 import star.io_device;
 import star.string;
@@ -12,6 +13,7 @@ import star.either;
 import star.thread;
 import star.logging;
 import std;
+import star.unique_function;
 import star.id_map;
 import star.data_stream;
 import star.list;
@@ -158,9 +160,9 @@ namespace Star {
 // Only this real-socket fixture changes native buffer sizes; production sockets
 // retain their normal settings and expose no test/failure control API.
 struct SocketTestAccess {
-  static void setBufferSize(Socket& socket, int option, int bytes) {
+  [[nodiscard]] static std::expected<void, StarException> setBufferSize(Socket& socket, int option, int bytes) {
     ReadLocker locker(socket.m_mutex);
-    socket.m_impl->setSockOpt(SOL_SOCKET, option, &bytes, sizeof(bytes));
+    return socket.m_impl->setSockOpt(SOL_SOCKET, option, &bytes, sizeof(bytes));
   }
 };
 }
@@ -178,173 +180,315 @@ unsigned const SyncWaitMillis = 10000;
 
 class ASyncClientThread : public Thread {
 public:
-  ASyncClientThread(UniverseConnection conn)
-    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
-    start();
+  [[nodiscard]] static std::expected<std::unique_ptr<ASyncClientThread>, StarException> create(UniverseConnection conn) {
+    auto client = std::unique_ptr<ASyncClientThread>(new ASyncClientThread(std::move(conn)));
+    auto started = client->start();
+    if (!started)
+      return std::unexpected(std::move(started.error()));
+    return client;
   }
 
   ~ASyncClientThread() override {
-    join();
+    auto joined = join();
+    EXPECT_TRUE(joined);
   }
 
-  void run() override {
-    try {
-      unsigned read = 0;
-      unsigned written = 0;
-      while (read < PacketCount || written < PacketCount) {
-        m_connection.receive();
-        if (read < PacketCount) {
-          if (auto packet = m_connection.pullSingle()) {
-            EXPECT_TRUE(convert<ProtocolRequestPacket>(packet)->requestProtocolVersion == read);
-            ++read;
-          }
-        }
-
-        if (written < PacketCount) {
-          m_connection.push({std::make_shared<ProtocolRequestPacket>(written)});
-          ++written;
-        }
-        m_connection.send();
-
-        Thread::sleep(ASyncSleepMillis);
-
-        if (!m_connection.isOpen())
-          break;
-      }
-
-      EXPECT_EQ(PacketCount, read);
-      EXPECT_EQ(PacketCount, written);
-      m_connection.close();
-      EXPECT_TRUE(m_connection.pull().empty());
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      ADD_FAILURE() << "Exception: " << outputException(e, true);
-    } catch (...) {
-      ADD_FAILURE();
-    }
+  [[nodiscard]] std::expected<void, StarException> run() override {
+    auto result = runConnection();
+    if (!result)
+      ADD_FAILURE() << result.error().what();
+    return result;
   }
 
 private:
+  [[nodiscard]] std::expected<void, StarException> runConnection() {
+    unsigned read = 0;
+    unsigned written = 0;
+    while (read < PacketCount || written < PacketCount) {
+      auto received = m_connection.receive();
+      if (!received)
+        return std::unexpected(std::move(received.error()));
+      if (read < PacketCount) {
+        auto packet = m_connection.pullSingle();
+        if (!packet)
+          return std::unexpected(std::move(packet.error()));
+        if (*packet) {
+          auto request = convert<ProtocolRequestPacket>(*packet);
+          if (!request)
+            return std::unexpected(std::move(request.error()));
+          EXPECT_EQ((*request)->requestProtocolVersion, read);
+          ++read;
+        }
+      }
+      if (written < PacketCount) {
+        auto pushed = m_connection.push({std::make_shared<ProtocolRequestPacket>(written)});
+        if (!pushed)
+          return std::unexpected(std::move(pushed.error()));
+        ++written;
+      }
+      auto sent = m_connection.send();
+      if (!sent)
+        return std::unexpected(std::move(sent.error()));
+      Thread::sleep(ASyncSleepMillis);
+      if (!m_connection.isOpen())
+        break;
+    }
+    EXPECT_EQ(PacketCount, read);
+    EXPECT_EQ(PacketCount, written);
+    m_connection.close();
+    auto packets = m_connection.pull();
+    if (!packets)
+      return std::unexpected(std::move(packets.error()));
+    EXPECT_TRUE(packets->empty());
+    return {};
+  }
+
+private:
+  ASyncClientThread(UniverseConnection conn)
+    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {}
+
   UniverseConnection m_connection;
 };
 
 class SyncClientThread : public Thread {
 public:
-  SyncClientThread(UniverseConnection conn)
-    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
-    start();
+  [[nodiscard]] static std::expected<std::unique_ptr<SyncClientThread>, StarException> create(UniverseConnection conn) {
+    auto client = std::unique_ptr<SyncClientThread>(new SyncClientThread(std::move(conn)));
+    auto started = client->start();
+    if (!started)
+      return std::unexpected(std::move(started.error()));
+    return client;
   }
 
   ~SyncClientThread() override {
-    join();
+    auto joined = join();
+    EXPECT_TRUE(joined);
   }
 
-  void run() override {
-    try {
-      for (unsigned i = 0; i < PacketCount; ++i) {
-        m_connection.pushSingle(std::make_shared<ProtocolRequestPacket>(i));
-        EXPECT_TRUE(m_connection.sendAll(SyncWaitMillis));
-        EXPECT_TRUE(m_connection.receiveAny(SyncWaitMillis));
-        EXPECT_EQ(convert<ProtocolRequestPacket>(m_connection.pullSingle())->requestProtocolVersion, i);
-
-        if (!m_connection.isOpen())
-          break;
-      }
-
-      m_connection.close();
-      EXPECT_TRUE(m_connection.pull().empty());
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      ADD_FAILURE() << "Exception: " << outputException(e, true);
-    } catch (...) {
-      ADD_FAILURE();
-    }
+  [[nodiscard]] std::expected<void, StarException> run() override {
+    auto result = runConnection();
+    if (!result)
+      ADD_FAILURE() << result.error().what();
+    return result;
   }
 
 private:
+  [[nodiscard]] std::expected<void, StarException> runConnection() {
+    for (unsigned i = 0; i < PacketCount; ++i) {
+      auto pushed = m_connection.pushSingle(std::make_shared<ProtocolRequestPacket>(i));
+      if (!pushed)
+        return std::unexpected(std::move(pushed.error()));
+      auto sent = m_connection.sendAll(SyncWaitMillis);
+      if (!sent)
+        return std::unexpected(std::move(sent.error()));
+      EXPECT_TRUE(*sent);
+      auto received = m_connection.receiveAny(SyncWaitMillis);
+      if (!received)
+        return std::unexpected(std::move(received.error()));
+      EXPECT_TRUE(*received);
+      auto packet = m_connection.pullSingle();
+      if (!packet)
+        return std::unexpected(std::move(packet.error()));
+      auto request = convert<ProtocolRequestPacket>(*packet);
+      if (!request)
+        return std::unexpected(std::move(request.error()));
+      EXPECT_EQ((*request)->requestProtocolVersion, i);
+      if (!m_connection.isOpen())
+        break;
+    }
+    m_connection.close();
+    auto packets = m_connection.pull();
+    if (!packets)
+      return std::unexpected(std::move(packets.error()));
+    EXPECT_TRUE(packets->empty());
+    return {};
+  }
+
+private:
+  SyncClientThread(UniverseConnection conn)
+    : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {}
+
   UniverseConnection m_connection;
 };
 
 const GameTestRegistration universeConnectionsAll("UniverseConnections", "All", [](GameTest& fixture) {
   auto& logger = fixture.root().logger();
-  UniverseConnectionServer server(logger, [](UniverseConnectionServer* server, ConnectionId clientId, List<std::shared_ptr<::Star::Packet>> packets) {
-      server->sendPackets(clientId, packets);
-    });
+  auto server = UniverseConnectionServer::create(logger, [](UniverseConnectionServer* server, ConnectionId clientId,
+      List<std::shared_ptr<::Star::Packet>> packets) -> std::expected<void, StarException> {
+    return server->sendPackets(clientId, std::move(packets));
+  });
+  ASSERT_TRUE(server) << server.error().what();
 
   ConnectionId clientId = ServerConnectionId;
-  TcpServer tcpServer(logger, HostAddressWithPort(HostAddress::localhost(), ServerPort));
-  tcpServer.setAcceptCallback([&logger, &server, &clientId](std::shared_ptr<::Star::TcpSocket> socket) {
-      socket->setNonBlocking(true);
-      auto conn = UniverseConnection(TcpPacketSocket::open(logger, std::move(socket)));
-      server.addConnection(++clientId, std::move(conn));
-    });
+  auto tcpServer = TcpServer::create(logger, HostAddressWithPort(HostAddress::localhost(), ServerPort));
+  ASSERT_TRUE(tcpServer) << tcpServer.error().what();
+  auto acceptCallback = (*tcpServer)->setAcceptCallback([&logger, &server, &clientId](
+      std::shared_ptr<::Star::TcpSocket> socket) -> std::expected<void, StarException> {
+    auto nonblocking = socket->setNonBlocking(true);
+    if (!nonblocking)
+      return std::unexpected(std::move(nonblocking.error()));
+    auto packetSocket = TcpPacketSocket::open(logger, std::move(socket));
+    if (!packetSocket)
+      return std::unexpected(std::move(packetSocket.error()));
+    return (*server)->addConnection(++clientId, UniverseConnection(std::move(*packetSocket)));
+  });
+  ASSERT_TRUE(acceptCallback) << acceptCallback.error().what();
 
-  LinkedList<ASyncClientThread> localASyncClients;
+  List<std::unique_ptr<ASyncClientThread>> localASyncClients;
   for (unsigned i = 0; i < NumLocalASyncConnections; ++i) {
     auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
-    localASyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
+    ASSERT_TRUE((*server)->addConnection(++clientId, UniverseConnection(std::move(pair.first))));
+    auto client = ASyncClientThread::create(UniverseConnection(std::move(pair.second)));
+    ASSERT_TRUE(client) << client.error().what();
+    localASyncClients.append(std::move(*client));
   }
 
-  LinkedList<SyncClientThread> localSyncClients;
+  List<std::unique_ptr<SyncClientThread>> localSyncClients;
   for (unsigned i = 0; i < NumLocalSyncConnections; ++i) {
     auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
-    localSyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
+    ASSERT_TRUE((*server)->addConnection(++clientId, UniverseConnection(std::move(pair.first))));
+    auto client = SyncClientThread::create(UniverseConnection(std::move(pair.second)));
+    ASSERT_TRUE(client) << client.error().what();
+    localSyncClients.append(std::move(*client));
   }
 
-  LinkedList<ASyncClientThread> remoteASyncClients;
+  List<std::unique_ptr<ASyncClientThread>> remoteASyncClients;
   for (unsigned i = 0; i < NumRemoteASyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
-    socket->setNonBlocking(true);
-    remoteASyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(logger, std::move(socket))));
+    ASSERT_TRUE(socket) << socket.error().what();
+    ASSERT_TRUE((*socket)->setNonBlocking(true));
+    auto packetSocket = TcpPacketSocket::open(logger, std::move(*socket));
+    ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+    auto client = ASyncClientThread::create(UniverseConnection(std::move(*packetSocket)));
+    ASSERT_TRUE(client) << client.error().what();
+    remoteASyncClients.append(std::move(*client));
   }
 
-  LinkedList<SyncClientThread> remoteSyncClients;
+  List<std::unique_ptr<SyncClientThread>> remoteSyncClients;
   for (unsigned i = 0; i < NumRemoteSyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
-    socket->setNonBlocking(true);
-    remoteSyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(logger, std::move(socket))));
+    ASSERT_TRUE(socket) << socket.error().what();
+    ASSERT_TRUE((*socket)->setNonBlocking(true));
+    auto packetSocket = TcpPacketSocket::open(logger, std::move(*socket));
+    ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+    auto client = SyncClientThread::create(UniverseConnection(std::move(*packetSocket)));
+    ASSERT_TRUE(client) << client.error().what();
+    remoteSyncClients.append(std::move(*client));
   }
 
   for (auto& c : localASyncClients)
-    c.join();
+    EXPECT_TRUE(c->join());
 
   for (auto& c : remoteASyncClients)
-    c.join();
+    EXPECT_TRUE(c->join());
 
   for (auto& c : localSyncClients)
-    c.join();
+    EXPECT_TRUE(c->join());
 
   for (auto& c : remoteSyncClients)
-    c.join();
+    EXPECT_TRUE(c->join());
 
-  server.removeAllConnections();
+  EXPECT_TRUE((*tcpServer)->stop());
+  (*server)->removeAllConnections();
 });
 
 namespace {
 
-std::pair<std::shared_ptr<TcpSocket>, std::shared_ptr<TcpSocket>> connectionTestTcpPair(Logger& logger) {
+[[nodiscard]] std::expected<std::pair<std::shared_ptr<TcpSocket>, std::shared_ptr<TcpSocket>>, StarException> connectionTestTcpPair(Logger& logger) {
   auto listener = TcpSocket::listen(logger, {HostAddress::localhost(), 0});
-  listener->setNonBlocking(true);
-  auto client = TcpSocket::connectTo(listener->localAddress());
-  listener->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
-  auto server = listener->accept(logger);
+  if (!listener)
+    return std::unexpected(std::move(listener.error()));
+  auto nonblocking = (*listener)->setNonBlocking(true);
+  if (!nonblocking)
+    return std::unexpected(std::move(nonblocking.error()));
+  auto client = TcpSocket::connectTo((*listener)->localAddress());
+  if (!client)
+    return std::unexpected(std::move(client.error()));
+  auto ready = (*listener)->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
+  if (!ready)
+    return std::unexpected(std::move(ready.error()));
+  auto server = (*listener)->accept(logger);
   if (!server)
-    throw std::runtime_error("Loopback connection was not accepted");
-  return {std::move(client), std::move(server)};
+    return std::unexpected(std::move(server.error()));
+  if (!*server)
+    return std::unexpected(StarException("Loopback connection was not accepted"));
+  return std::pair{std::move(*client), std::move(*server)};
 }
 
-ByteArray connectionTestFrame(VersionNumber version) {
+[[nodiscard]] std::expected<ByteArray, StarException> connectionTestFrame(VersionNumber version) {
   ProtocolRequestPacket packet(version);
   DataStreamBuffer payload;
-  packet.write(payload);
+  auto packetWritten = packet.write(payload);
+  if (!packetWritten)
+    return std::unexpected(std::move(packetWritten.error()));
   DataStreamBuffer frame;
-  frame.write(PacketType::ProtocolRequest);
-  frame.writeVlqI(payload.size());
-  frame.writeData(payload.ptr(), payload.size());
+  auto typeWritten = frame.write(PacketType::ProtocolRequest);
+  if (!typeWritten)
+    return std::unexpected(std::move(typeWritten.error()));
+  auto sizeWritten = frame.writeVlqI(payload.size());
+  if (!sizeWritten)
+    return std::unexpected(std::move(sizeWritten.error()));
+  auto dataWritten = frame.writeData(payload.ptr(), payload.size());
+  if (!dataWritten)
+    return std::unexpected(std::move(dataWritten.error()));
   return frame.takeData();
 }
+
+[[nodiscard]] std::expected<VersionNumber, StarException> connectionTestVersion(UniverseConnection& connection) {
+  auto packet = connection.pullSingle();
+  if (!packet)
+    return std::unexpected(std::move(packet.error()));
+  if (!*packet)
+    return std::unexpected(StarException("Expected a queued protocol request packet"));
+  auto request = convert<ProtocolRequestPacket>(*packet);
+  if (!request)
+    return std::unexpected(std::move(request.error()));
+  return (*request)->requestProtocolVersion;
+}
+
+// std::async cannot report native thread-start failures without throwing.
+// Keep the future's timed readiness assertions, but start and join through the
+// production expected-valued thread API.
+template <typename T>
+class ConnectionTestAsync {
+public:
+  template <typename Function>
+  [[nodiscard]] static std::expected<std::unique_ptr<ConnectionTestAsync>, StarException> create(Function function) {
+    auto task = std::unique_ptr<ConnectionTestAsync>(new ConnectionTestAsync);
+    auto thread = ThreadFunction<void>::create(
+        [task = task.get(), function = std::move(function)]() mutable -> std::expected<void, StarException> {
+          task->m_promise.set_value(function());
+          return {};
+        }, "UniverseConnectionTestAsync");
+    if (!thread)
+      return std::unexpected(std::move(thread.error()));
+    task->m_thread.emplace(std::move(*thread));
+    return task;
+  }
+
+  ~ConnectionTestAsync() {
+    if (m_thread) {
+      auto finished = m_thread->finish();
+      EXPECT_TRUE(finished);
+    }
+  }
+
+  template <typename Rep, typename Period>
+  std::future_status wait_for(std::chrono::duration<Rep, Period> const& duration) {
+    return m_future.wait_for(duration);
+  }
+
+  [[nodiscard]] std::expected<T, StarException> get() {
+    return m_future.get();
+  }
+
+private:
+  ConnectionTestAsync() : m_future(m_promise.get_future()) {}
+
+  std::promise<std::expected<T, StarException>> m_promise;
+  std::future<std::expected<T, StarException>> m_future;
+  std::optional<ThreadFunction<void>> m_thread;
+};
 
 }
 
@@ -353,14 +497,14 @@ const GameTestRegistration universeConnectionsLocalZeroDeadlineAndQueuedPacketAf
   auto pair = LocalPacketSocket::openPair();
   UniverseConnection sender(std::move(pair.first));
   UniverseConnection receiver(std::move(pair.second));
-  EXPECT_FALSE(receiver.receiveAny(0));
-  sender.pushSingle(std::make_shared<ProtocolRequestPacket>(41));
-  EXPECT_TRUE(sender.sendAll(0));
+  EXPECT_EQ(receiver.receiveAny(0), false);
+  ASSERT_TRUE(sender.pushSingle(std::make_shared<ProtocolRequestPacket>(41)));
+  EXPECT_EQ(sender.sendAll(0), true);
   sender.close();
   EXPECT_FALSE(receiver.isOpen());
-  ASSERT_TRUE(receiver.receiveAny(0));
-  EXPECT_EQ(convert<ProtocolRequestPacket>(receiver.pullSingle())->requestProtocolVersion, 41u);
-  EXPECT_FALSE(receiver.receiveAny(0));
+  ASSERT_EQ(receiver.receiveAny(0), true);
+  EXPECT_EQ(connectionTestVersion(receiver), 41u);
+  EXPECT_EQ(receiver.receiveAny(0), false);
 });
 
 const GameTestRegistration universeConnectionsLocalDeliveryAndPeerCloseWakeReadiness(
@@ -370,21 +514,27 @@ const GameTestRegistration universeConnectionsLocalDeliveryAndPeerCloseWakeReadi
   UniverseConnection receiver(std::move(pair.second));
   std::promise<void> starting;
   auto started = starting.get_future();
-  auto received = std::async(std::launch::async, [&] {
+  auto receiveTask = ConnectionTestAsync<bool>::create([&] {
     starting.set_value();
     return receiver.receiveAny(2000);
   });
+  ASSERT_TRUE(receiveTask) << receiveTask.error().what();
+  auto& received = **receiveTask;
   started.wait();
-  sender.pushSingle(std::make_shared<ProtocolRequestPacket>(42));
-  EXPECT_TRUE(sender.sendAll(0));
+  ASSERT_TRUE(sender.pushSingle(std::make_shared<ProtocolRequestPacket>(42)));
+  EXPECT_EQ(sender.sendAll(0), true);
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_TRUE(received.get());
-  ASSERT_TRUE(receiver.pullSingle());
+  EXPECT_EQ(received.get(), true);
+  auto packet = receiver.pullSingle();
+  ASSERT_TRUE(packet) << packet.error().what();
+  ASSERT_TRUE(*packet);
 
-  auto closed = std::async(std::launch::async, [&] { return receiver.receiveAny(2000); });
+  auto closeTask = ConnectionTestAsync<bool>::create([&] { return receiver.receiveAny(2000); });
+  ASSERT_TRUE(closeTask) << closeTask.error().what();
+  auto& closed = **closeTask;
   sender.close();
   EXPECT_EQ(closed.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_FALSE(closed.get());
+  EXPECT_EQ(closed.get(), false);
 });
 
 const GameTestRegistration universeConnectionsLocalCloseDoesNotWaitForReceiveDeadline(
@@ -393,90 +543,124 @@ const GameTestRegistration universeConnectionsLocalCloseDoesNotWaitForReceiveDea
   UniverseConnection receiver(std::move(pair.first));
   std::promise<void> starting;
   auto started = starting.get_future();
-  auto received = std::async(std::launch::async, [&] {
+  auto receiveTask = ConnectionTestAsync<bool>::create([&] {
     starting.set_value();
     return receiver.receiveAny(2000);
   });
+  ASSERT_TRUE(receiveTask) << receiveTask.error().what();
+  auto& received = **receiveTask;
   started.wait();
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   auto before = std::chrono::steady_clock::now();
   receiver.close();
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_FALSE(received.get());
+  EXPECT_EQ(received.get(), false);
 });
 
 const GameTestRegistration universeConnectionsTcpPartialHeaderBodyAndZeroDeadline(
     "UniverseConnections", "TcpPartialHeaderBodyAndZeroDeadline", [](GameTest& fixture) {
-  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
-  auto frame = connectionTestFrame(43);
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [sender, socket] = std::move(*pair);
+  auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+  ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+  UniverseConnection receiver(std::move(*packetSocket));
+  auto frameResult = connectionTestFrame(43);
+  ASSERT_TRUE(frameResult) << frameResult.error().what();
+  auto& frame = *frameResult;
   ASSERT_GT(frame.size(), 2u);
   ASSERT_EQ(sender->send(frame.ptr(), 1), 1u);
-  socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
-  EXPECT_FALSE(receiver.receiveAny(0));
+  ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
+  EXPECT_EQ(receiver.receiveAny(0), false);
   ASSERT_EQ(sender->send(frame.ptr() + 1, frame.size() - 2), frame.size() - 2);
-  socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
-  EXPECT_FALSE(receiver.receiveAny(0));
+  ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
+  EXPECT_EQ(receiver.receiveAny(0), false);
   ASSERT_EQ(sender->send(frame.ptr() + frame.size() - 1, 1), 1u);
-  socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
-  ASSERT_TRUE(receiver.receiveAny(0));
-  EXPECT_EQ(convert<ProtocolRequestPacket>(receiver.pullSingle())->requestProtocolVersion, 43u);
-  EXPECT_FALSE(receiver.receiveAny(0));
+  ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
+  ASSERT_EQ(receiver.receiveAny(0), true);
+  EXPECT_EQ(connectionTestVersion(receiver), 43u);
+  EXPECT_EQ(receiver.receiveAny(0), false);
 });
 
 const GameTestRegistration universeConnectionsTcpCompletePacketBeforeEofAndTruncatedPacketAtEof(
     "UniverseConnections", "TcpCompletePacketBeforeEofAndTruncatedPacketAtEof", [](GameTest& fixture) {
   {
-    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
-    auto frame = connectionTestFrame(44);
+    auto pair = connectionTestTcpPair(fixture.root().logger());
+    ASSERT_TRUE(pair) << pair.error().what();
+    auto [sender, socket] = std::move(*pair);
+    auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+    ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+    UniverseConnection receiver(std::move(*packetSocket));
+    auto frameResult = connectionTestFrame(44);
+    ASSERT_TRUE(frameResult) << frameResult.error().what();
+    auto& frame = *frameResult;
     ASSERT_EQ(sender->send(frame.ptr(), frame.size()), frame.size());
     sender->close();
-    ASSERT_TRUE(receiver.receiveAny(1000));
-    EXPECT_EQ(convert<ProtocolRequestPacket>(receiver.pullSingle())->requestProtocolVersion, 44u);
-    EXPECT_FALSE(receiver.receiveAny(1000));
+    ASSERT_EQ(receiver.receiveAny(1000), true);
+    EXPECT_EQ(connectionTestVersion(receiver), 44u);
+    EXPECT_EQ(receiver.receiveAny(1000), false);
     EXPECT_FALSE(receiver.isOpen());
   }
   {
-    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
-    auto frame = connectionTestFrame(45);
+    auto pair = connectionTestTcpPair(fixture.root().logger());
+    ASSERT_TRUE(pair) << pair.error().what();
+    auto [sender, socket] = std::move(*pair);
+    auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+    ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+    UniverseConnection receiver(std::move(*packetSocket));
+    auto frameResult = connectionTestFrame(45);
+    ASSERT_TRUE(frameResult) << frameResult.error().what();
+    auto& frame = *frameResult;
     ASSERT_EQ(sender->send(frame.ptr(), frame.size() - 1), frame.size() - 1);
     sender->close();
-    EXPECT_FALSE(receiver.receiveAny(1000));
+    EXPECT_EQ(receiver.receiveAny(1000), false);
     EXPECT_FALSE(receiver.isOpen());
-    EXPECT_FALSE(receiver.pullSingle());
+    auto packet = receiver.pullSingle();
+    ASSERT_TRUE(packet) << packet.error().what();
+    EXPECT_FALSE(*packet);
   }
 });
 
 const GameTestRegistration universeConnectionsTcpCloseWakesNativeReadinessWithoutHoldingConnectionLock(
     "UniverseConnections", "TcpCloseWakesNativeReadinessWithoutHoldingConnectionLock", [](GameTest& fixture) {
-  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [sender, socket] = std::move(*pair);
+  auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+  ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+  UniverseConnection receiver(std::move(*packetSocket));
   std::promise<void> starting;
   auto started = starting.get_future();
-  auto received = std::async(std::launch::async, [&] {
+  auto receiveTask = ConnectionTestAsync<bool>::create([&] {
     starting.set_value();
     return receiver.receiveAny(2000);
   });
+  ASSERT_TRUE(receiveTask) << receiveTask.error().what();
+  auto& received = **receiveTask;
   started.wait();
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   auto before = std::chrono::steady_clock::now();
   receiver.close();
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_FALSE(received.get());
+  EXPECT_EQ(received.get(), false);
 });
 
 const GameTestRegistration universeConnectionsTcpShutdownWakesEveryNativeReadinessWaiter(
     "UniverseConnections", "TcpShutdownWakesEveryNativeReadinessWaiter", [](GameTest& fixture) {
-  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [sender, socket] = std::move(*pair);
   auto wait = [&] {
-    socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
+    return socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
   };
-  auto first = std::async(std::launch::async, wait);
-  auto second = std::async(std::launch::async, wait);
+  auto firstTask = ConnectionTestAsync<void>::create(wait);
+  ASSERT_TRUE(firstTask) << firstTask.error().what();
+  auto& first = **firstTask;
+  auto secondTask = ConnectionTestAsync<void>::create(wait);
+  ASSERT_TRUE(secondTask) << secondTask.error().what();
+  auto& second = **secondTask;
   EXPECT_EQ(first.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   EXPECT_EQ(second.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   auto before = std::chrono::steady_clock::now();
@@ -484,22 +668,28 @@ const GameTestRegistration universeConnectionsTcpShutdownWakesEveryNativeReadine
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
   EXPECT_EQ(first.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
   EXPECT_EQ(second.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_NO_THROW(first.get());
-  EXPECT_NO_THROW(second.get());
+  EXPECT_TRUE(first.get());
+  EXPECT_TRUE(second.get());
   before = std::chrono::steady_clock::now();
-  socket->waitForData(false, before + std::chrono::seconds(2));
+  EXPECT_TRUE(socket->waitForData(false, before + std::chrono::seconds(2)));
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
 });
 
 const GameTestRegistration universeConnectionsTcpPeerCloseWakesReceiveDeadline(
     "UniverseConnections", "TcpPeerCloseWakesReceiveDeadline", [](GameTest& fixture) {
-  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
-  auto received = std::async(std::launch::async, [&] { return receiver.receiveAny(2000); });
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [sender, socket] = std::move(*pair);
+  auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+  ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+  UniverseConnection receiver(std::move(*packetSocket));
+  auto receiveTask = ConnectionTestAsync<bool>::create([&] { return receiver.receiveAny(2000); });
+  ASSERT_TRUE(receiveTask) << receiveTask.error().what();
+  auto& received = **receiveTask;
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   sender->close();
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-  EXPECT_FALSE(received.get());
+  EXPECT_EQ(received.get(), false);
   EXPECT_FALSE(receiver.isOpen());
 });
 
@@ -509,16 +699,20 @@ const GameTestRegistration universeConnectionsLocalAndTcpReadinessRespectFiniteD
     auto pair = LocalPacketSocket::openPair();
     UniverseConnection receiver(std::move(pair.first));
     auto before = std::chrono::steady_clock::now();
-    EXPECT_FALSE(receiver.receiveAny(25));
+    EXPECT_EQ(receiver.receiveAny(25), false);
     auto elapsed = std::chrono::steady_clock::now() - before;
     EXPECT_GE(elapsed, std::chrono::milliseconds(20));
     EXPECT_LT(elapsed, std::chrono::milliseconds(500));
   }
   {
-    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
-    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
+    auto pair = connectionTestTcpPair(fixture.root().logger());
+    ASSERT_TRUE(pair) << pair.error().what();
+    auto [sender, socket] = std::move(*pair);
+    auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+    ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+    UniverseConnection receiver(std::move(*packetSocket));
     auto before = std::chrono::steady_clock::now();
-    EXPECT_FALSE(receiver.receiveAny(25));
+    EXPECT_EQ(receiver.receiveAny(25), false);
     auto elapsed = std::chrono::steady_clock::now() - before;
     EXPECT_GE(elapsed, std::chrono::milliseconds(20));
     EXPECT_LT(elapsed, std::chrono::milliseconds(500));
@@ -527,16 +721,20 @@ const GameTestRegistration universeConnectionsLocalAndTcpReadinessRespectFiniteD
 
 const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAndDrainsPendingTail(
     "UniverseConnections", "TcpCompressedBackpressureRetainsAndDrainsPendingTail", [](GameTest& fixture) {
-  auto [outgoing, incoming] = connectionTestTcpPair(fixture.root().logger());
-  SocketTestAccess::setBufferSize(*outgoing, SO_SNDBUF, 16384);
-  SocketTestAccess::setBufferSize(*incoming, SO_RCVBUF, 65536);
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [outgoing, incoming] = std::move(*pair);
+  ASSERT_TRUE(SocketTestAccess::setBufferSize(*outgoing, SO_SNDBUF, 16384));
+  ASSERT_TRUE(SocketTestAccess::setBufferSize(*incoming, SO_RCVBUF, 65536));
   auto sendSocket = TcpPacketSocket::open(fixture.root().logger(), outgoing);
-  auto* sendTransport = sendSocket.get();
-  sendSocket->setCompressionStreamEnabled(true);
+  ASSERT_TRUE(sendSocket) << sendSocket.error().what();
+  auto* sendTransport = sendSocket->get();
+  (*sendSocket)->setCompressionStreamEnabled(true);
   auto receiveSocket = TcpPacketSocket::open(fixture.root().logger(), incoming);
-  receiveSocket->setCompressionStreamEnabled(true);
-  UniverseConnection sender(std::move(sendSocket));
-  UniverseConnection receiver(std::move(receiveSocket));
+  ASSERT_TRUE(receiveSocket) << receiveSocket.error().what();
+  (*receiveSocket)->setCompressionStreamEnabled(true);
+  UniverseConnection sender(std::move(*sendSocket));
+  UniverseConnection receiver(std::move(*receiveSocket));
   auto nextPayload = [](std::uint32_t& state) {
     ByteArray payload(256 << 10, 0);
     for (auto& byte : payload) {
@@ -553,9 +751,11 @@ const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAn
   // Stop on observed native backpressure, not an assumed OS buffer capacity.
   // The cap is a runaway-fixture guard; buffers above are local to this pair.
   while (!backpressured && packetCount < 512) {
-    sender.pushSingle(std::make_shared<ClientContextUpdatePacket>(nextPayload(sendState)));
+    ASSERT_TRUE(sender.pushSingle(std::make_shared<ClientContextUpdatePacket>(nextPayload(sendState))));
     ++packetCount;
-    backpressured = !sender.sendAll(0);
+    auto sent = sender.sendAll(0);
+    ASSERT_TRUE(sent) << sent.error().what();
+    backpressured = !*sent;
   }
   ASSERT_TRUE(backpressured) << "Native socket never reported backpressure after " << packetCount << " packets";
   ASSERT_TRUE(sendTransport->sentPacketsPending());
@@ -563,19 +763,29 @@ const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAn
   // compression is requested. Disabling the mode must not hide that tail.
   sendTransport->setCompressionStreamEnabled(false);
   EXPECT_TRUE(sendTransport->sentPacketsPending());
-  auto received = std::async(std::launch::async, [&] {
+  auto receiveTask = ConnectionTestAsync<bool>::create([&]() -> std::expected<bool, StarException> {
     std::uint32_t receiveState = 0x12345678;
     for (std::size_t i = 0; i < packetCount; ++i) {
-      if (!receiver.receiveAny(5000))
+      auto ready = receiver.receiveAny(5000);
+      if (!ready)
+        return std::unexpected(std::move(ready.error()));
+      if (!*ready)
         return false;
-      auto packet = convert<ClientContextUpdatePacket>(receiver.pullSingle());
-      if (!packet || packet->updateData != nextPayload(receiveState))
+      auto incoming = receiver.pullSingle();
+      if (!incoming)
+        return std::unexpected(std::move(incoming.error()));
+      auto packet = convert<ClientContextUpdatePacket>(*incoming);
+      if (!packet)
+        return std::unexpected(std::move(packet.error()));
+      if ((*packet)->updateData != nextPayload(receiveState))
         return false;
     }
     return true;
   });
-  EXPECT_TRUE(sender.sendAll(5000));
-  EXPECT_TRUE(received.get());
+  ASSERT_TRUE(receiveTask) << receiveTask.error().what();
+  auto& received = **receiveTask;
+  EXPECT_EQ(sender.sendAll(5000), true);
+  EXPECT_EQ(received.get(), true);
   EXPECT_FALSE(sendTransport->sentPacketsPending());
 });
 
@@ -587,28 +797,32 @@ const GameTestRegistration universeConnectionsShardCallbacksReenterAndRemovalRet
   auto callbackRelease = release.get_future().share();
   std::atomic<unsigned> calls = 0;
   std::atomic<unsigned> active = 0;
-  UniverseConnectionServer server(fixture.root().logger(), [&](UniverseConnectionServer* server, ConnectionId id,
-      List<std::shared_ptr<Packet>> packets) {
+  auto server = UniverseConnectionServer::create(fixture.root().logger(), [&](UniverseConnectionServer* server, ConnectionId id,
+      List<std::shared_ptr<Packet>> packets) -> std::expected<void, StarException> {
     if (id == 2) {
       EXPECT_EQ(active.fetch_add(1), 0u);
+      auto leave = finally([&]() { --active; });
       if (calls++ == 0) {
         EXPECT_TRUE(server->hasConnection(id));
         auto connection = server->removeConnection(id);
-        server->addConnection(id, std::move(connection));
+        if (!connection)
+          return std::unexpected(std::move(connection.error()));
+        auto added = server->addConnection(id, std::move(*connection));
+        if (!added)
+          return std::unexpected(std::move(added.error()));
         entered.set_value();
         callbackRelease.wait_for(std::chrono::seconds(2));
       }
-      server->sendPackets(id, std::move(packets));
-      --active;
-    } else {
-      server->sendPackets(id, std::move(packets));
+      return server->sendPackets(id, std::move(packets));
     }
+    return server->sendPackets(id, std::move(packets));
   }, 2);
+  ASSERT_TRUE(server) << server.error().what();
   auto gatePair = LocalPacketSocket::openPair();
-  server.addConnection(2, UniverseConnection(std::move(gatePair.first)));
+  ASSERT_TRUE((*server)->addConnection(2, UniverseConnection(std::move(gatePair.first))));
   UniverseConnection gateClient(std::move(gatePair.second));
-  gateClient.pushSingle(std::make_shared<ProtocolRequestPacket>(1));
-  ASSERT_TRUE(gateClient.sendAll(0));
+  ASSERT_TRUE(gateClient.pushSingle(std::make_shared<ProtocolRequestPacket>(1)));
+  ASSERT_EQ(gateClient.sendAll(0), true);
   ASSERT_EQ(callbackEntered.wait_for(std::chrono::seconds(1)), std::future_status::ready);
 
   // Same shard: the worker is inside the callback, so neither queue can have
@@ -616,33 +830,34 @@ const GameTestRegistration universeConnectionsShardCallbacksReenterAndRemovalRet
   auto queuedPair = LocalPacketSocket::openPair();
   UniverseConnection queued(std::move(queuedPair.first));
   UniverseConnection queuedClient(std::move(queuedPair.second));
-  queued.pushSingle(std::make_shared<ProtocolRequestPacket>(46));
-  queuedClient.pushSingle(std::make_shared<ProtocolRequestPacket>(47));
-  ASSERT_TRUE(queuedClient.sendAll(0));
-  ASSERT_TRUE(queued.receiveAny(0));
-  server.addConnection(4, std::move(queued));
-  auto returned = server.removeConnection(4);
-  ASSERT_TRUE(returned.receiveAny(0));
-  EXPECT_EQ(convert<ProtocolRequestPacket>(returned.pullSingle())->requestProtocolVersion, 47u);
-  ASSERT_TRUE(returned.sendAll(0));
-  ASSERT_TRUE(queuedClient.receiveAny(0));
-  EXPECT_EQ(convert<ProtocolRequestPacket>(queuedClient.pullSingle())->requestProtocolVersion, 46u);
+  ASSERT_TRUE(queued.pushSingle(std::make_shared<ProtocolRequestPacket>(46)));
+  ASSERT_TRUE(queuedClient.pushSingle(std::make_shared<ProtocolRequestPacket>(47)));
+  ASSERT_EQ(queuedClient.sendAll(0), true);
+  ASSERT_EQ(queued.receiveAny(0), true);
+  ASSERT_TRUE((*server)->addConnection(4, std::move(queued)));
+  auto returned = (*server)->removeConnection(4);
+  ASSERT_TRUE(returned) << returned.error().what();
+  ASSERT_EQ(returned->receiveAny(0), true);
+  EXPECT_EQ(connectionTestVersion(*returned), 47u);
+  ASSERT_EQ(returned->sendAll(0), true);
+  ASSERT_EQ(queuedClient.receiveAny(0), true);
+  EXPECT_EQ(connectionTestVersion(queuedClient), 46u);
 
   // Another shard continues while the first shard is in its reentrant callback.
   auto otherPair = LocalPacketSocket::openPair();
-  server.addConnection(3, UniverseConnection(std::move(otherPair.first)));
+  ASSERT_TRUE((*server)->addConnection(3, UniverseConnection(std::move(otherPair.first))));
   UniverseConnection otherClient(std::move(otherPair.second));
-  otherClient.pushSingle(std::make_shared<ProtocolRequestPacket>(48));
-  ASSERT_TRUE(otherClient.sendAll(0));
-  ASSERT_TRUE(otherClient.receiveAny(1000));
-  EXPECT_EQ(convert<ProtocolRequestPacket>(otherClient.pullSingle())->requestProtocolVersion, 48u);
-  gateClient.pushSingle(std::make_shared<ProtocolRequestPacket>(2));
-  ASSERT_TRUE(gateClient.sendAll(0));
-  EXPECT_FALSE(gateClient.receiveAny(0));
+  ASSERT_TRUE(otherClient.pushSingle(std::make_shared<ProtocolRequestPacket>(48)));
+  ASSERT_EQ(otherClient.sendAll(0), true);
+  ASSERT_EQ(otherClient.receiveAny(1000), true);
+  EXPECT_EQ(connectionTestVersion(otherClient), 48u);
+  ASSERT_TRUE(gateClient.pushSingle(std::make_shared<ProtocolRequestPacket>(2)));
+  ASSERT_EQ(gateClient.sendAll(0), true);
+  EXPECT_EQ(gateClient.receiveAny(0), false);
   release.set_value();
   for (VersionNumber version : {1u, 2u}) {
-    ASSERT_TRUE(gateClient.receiveAny(1000));
-    EXPECT_EQ(convert<ProtocolRequestPacket>(gateClient.pullSingle())->requestProtocolVersion, version);
+    ASSERT_EQ(gateClient.receiveAny(1000), true);
+    EXPECT_EQ(connectionTestVersion(gateClient), version);
   }
 });
 
@@ -659,20 +874,19 @@ const GameTestRegistration universeConnectionsStartupFailureJoinsEveryPreviously
       std::atomic<unsigned> completed = 0;
       completedInjectedThreads = &completed;
       threadStartsBeforeFailure = failAfter;
-      bool threw = false;
-      try {
-        UniverseConnectionServer server(logger, [](auto*, auto, auto) {}, 4);
-      } catch (StarException const&) {
-        threw = true;
-      }
+      auto server = UniverseConnectionServer::create(logger,
+          [](auto*, auto, auto) -> std::expected<void, StarException> { return {}; }, 4);
       threadStartsBeforeFailure = -1;
       completedInjectedThreads = nullptr;
-      if (!threw || completed.load() != static_cast<unsigned>(failAfter))
+      if (server || completed.load() != static_cast<unsigned>(failAfter))
         std::_Exit(1);
     }
     // Injection resets on failure; a subsequent ordinary startup still works.
     {
-      UniverseConnectionServer server(logger, [](auto*, auto, auto) {}, 2);
+      auto server = UniverseConnectionServer::create(logger,
+          [](auto*, auto, auto) -> std::expected<void, StarException> { return {}; }, 2);
+      if (!server)
+        std::_Exit(1);
     }
     std::_Exit(0);
   }()), testing::ExitedWithCode(0), "");

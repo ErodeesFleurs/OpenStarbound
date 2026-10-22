@@ -1,8 +1,10 @@
 module;
 import std;
 import star.format;
+import star.output_proxy;
 import star.string;
 import star.thread;
+import star.logging;
 
 namespace Star {
 
@@ -14,15 +16,14 @@ using RpcPromiseException = StarError<RpcPromiseExceptionTag, StarException>;
 template <typename Result, typename Error>
 class RpcPromise;
 
-// The other side of an RpcPromise, can be used to either fulfill or fail a
-// paired promise.  Call either fulfill or fail function exactly once, any
-// further invocations will result in an exception.
+// The other side of an RpcPromise. Completion is allowed exactly once; a
+// missing keeper or a second completion returns a diagnostic.
 template <typename Result, typename Error = String>
 class RpcPromiseKeeper {
 public:
-  void chain(RpcPromise<Result,Error> promise);
-  void fulfill(Result result);
-  void fail(Error error);
+  [[nodiscard]] std::expected<void, StarException> chain(RpcPromise<Result, Error> promise);
+  [[nodiscard]] std::expected<void, StarException> fulfill(Result result);
+  [[nodiscard]] std::expected<void, StarException> fail(Error error);
 
 private:
   template <typename ResultT, typename ErrorT>
@@ -35,14 +36,14 @@ private:
 template <typename Result, typename Error = String>
 class AutoFailRpcPromiseKeeper {
 public:
-  void chain(RpcPromise<Result,Error> promise);
-  void fulfill(Result result);
-  void fail(Error error);
+  [[nodiscard]] std::expected<void, StarException> chain(RpcPromise<Result, Error> promise);
+  [[nodiscard]] std::expected<void, StarException> fulfill(Result result);
+  [[nodiscard]] std::expected<void, StarException> fail(Error error);
 
-  AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result,Error> keeper);
+  AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result, Error> keeper);
   ~AutoFailRpcPromiseKeeper();
 private:
-  RpcPromiseKeeper<Result,Error> m_keeper;
+  RpcPromiseKeeper<Result, Error> m_keeper;
   bool m_done = false;
 };
 
@@ -55,26 +56,23 @@ public:
   static RpcPromise createFulfilled(Result result);
   static RpcPromise createFailed(Error error);
 
-  // Has the response either failed or succeeded?
-  bool finished() const;
-  // Has the response finished with success?
-  bool succeeded() const;
-  // Has the response finished with failure?
-  bool failed() const;
+  // Query diagnostics are distinct from the remote call's Error outcome.
+  [[nodiscard]] std::expected<bool, StarException> finished() const;
+  [[nodiscard]] std::expected<bool, StarException> succeeded() const;
+  [[nodiscard]] std::expected<bool, StarException> failed() const;
 
-  // Returns the result of the rpc call on success, nothing on failure or when
-  // not yet finished.
-  std::optional<Result> result() const;
+  // A successful query contains a result only when the RPC succeeded.
+  [[nodiscard]] std::expected<std::optional<Result>, StarException> result() const;
 
-  // Returns the error of a failed rpc call.  Returns nothing if the call is
-  // successful or not yet finished.
-  std::optional<Error> error() const;
+  // A successful query contains an Error only when the RPC failed.
+  [[nodiscard]] std::expected<std::optional<Error>, StarException> error() const;
 
-  // Wrap this RpcPromise into another promise which returns instead the result
-  // of this function when fulfilled. Evaluation is lazy and its successful
-  // result is cached for every observer. A throwing function leaves it unevaluated.
+  // Evaluation is lazy and successful values are cached for every observer.
+  // The callback returns expected<T, StarException>. A diagnostic leaves the
+  // wrapper unevaluated, so a later query retries it.
   template <typename Function>
-  decltype(auto) wrap(Function function);
+  [[nodiscard]] auto wrap(Function function)
+      -> std::expected<RpcPromise<typename std::invoke_result_t<Function const&, Result>::value_type, Error>, StarException>;
 
 private:
   template <typename ResultT, typename ErrorT>
@@ -91,10 +89,10 @@ private:
 
   struct State {
     virtual ~State() = default;
-    virtual void poll() {}
+    [[nodiscard]] virtual std::expected<void, StarException> poll() { return {}; }
 
     bool pending() const {
-      return std::holds_alternative<Pending>(outcome) || outcome.valueless_by_exception();
+      return std::holds_alternative<Pending>(outcome);
     }
 
     void fulfill(Result&& result) {
@@ -114,85 +112,113 @@ private:
     WrappedState(Function function, RpcPromise<SourceResult, Error> other)
       : function(std::move(function)), other(std::move(other)) {}
 
-    void poll() override {
+    [[nodiscard]] std::expected<void, StarException> poll() override {
       if (!this->pending())
-        return;
-      // Do not commit an outcome until the wrapper returns successfully.
-      // A throwing wrapper remains lazy and is called by the next query.
-      if (other.succeeded())
-        this->outcome.template emplace<Fulfilled>(function(*other.result()));
-      else if (other.failed())
-        this->fail(std::move(*other.error()));
+        return {};
+      auto sourceResult = other.result();
+      if (!sourceResult)
+        return std::unexpected(std::move(sourceResult.error()));
+      if (*sourceResult) {
+        auto wrappedResult = function(std::move(**sourceResult));
+        if (!wrappedResult)
+          return std::unexpected(std::move(wrappedResult.error()));
+        // Commit only after successful evaluation; diagnostics remain retryable.
+        this->fulfill(std::move(*wrappedResult));
+        return {};
+      }
+      auto sourceError = other.error();
+      if (!sourceError)
+        return std::unexpected(std::move(sourceError.error()));
+      if (*sourceError)
+        this->fail(std::move(**sourceError));
+      return {};
     }
 
     Function const function;
     RpcPromise<SourceResult, Error> other;
   };
 
-  State& state() const {
+  [[nodiscard]] std::expected<State*, StarException> state() const {
     if (!m_state)
-      throw std::bad_function_call();
-    return *m_state;
+      return std::unexpected(RpcPromiseException("Cannot query an empty RpcPromise"));
+    return m_state.get();
   }
 
   std::shared_ptr<State> m_state;
 };
 
 template <typename Result, typename Error>
-void RpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result,Error> promise) {
+[[nodiscard]] std::expected<void, StarException> RpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result, Error> promise) {
   if (!m_state)
-    throw std::bad_function_call();
+    return std::unexpected(RpcPromiseException("Cannot chain an empty RpcPromiseKeeper"));
+  if (!promise.m_state)
+    return std::unexpected(RpcPromiseException("Cannot chain an empty RpcPromise"));
   MutexLocker lock(m_state->mutex);
   if (!m_state->pending())
-    throw RpcPromiseException("fulfill called on already finished RpcPromise");
+    return std::unexpected(RpcPromiseException("chain called on already finished RpcPromise"));
   m_state->outcome.template emplace<typename RpcPromise<Result, Error>::Chained>(std::move(promise));
+  return {};
 }
 
 template <typename Result, typename Error>
-void RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
+[[nodiscard]] std::expected<void, StarException> RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
   if (!m_state)
-    throw std::bad_function_call();
+    return std::unexpected(RpcPromiseException("Cannot fulfill an empty RpcPromiseKeeper"));
   MutexLocker lock(m_state->mutex);
   if (!m_state->pending())
-    throw RpcPromiseException("fulfill called on already finished RpcPromise");
+    return std::unexpected(RpcPromiseException("fulfill called on already finished RpcPromise"));
   m_state->fulfill(std::move(result));
+  return {};
 }
 
 template <typename Result, typename Error>
-void RpcPromiseKeeper<Result, Error>::fail(Error error) {
+[[nodiscard]] std::expected<void, StarException> RpcPromiseKeeper<Result, Error>::fail(Error error) {
   if (!m_state)
-    throw std::bad_function_call();
+    return std::unexpected(RpcPromiseException("Cannot fail an empty RpcPromiseKeeper"));
   MutexLocker lock(m_state->mutex);
   if (!m_state->pending())
-    throw RpcPromiseException("fail called on already finished RpcPromise");
+    return std::unexpected(RpcPromiseException("fail called on already finished RpcPromise"));
   m_state->fail(std::move(error));
+  return {};
 }
 
 template <typename Result, typename Error>
-void AutoFailRpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result,Error> promise) {
+[[nodiscard]] std::expected<void, StarException> AutoFailRpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result, Error> promise) {
+  auto completed = m_keeper.chain(std::move(promise));
+  if (!completed)
+    return std::unexpected(std::move(completed.error()));
   m_done = true;
-  m_keeper.chain(std::move(promise));
+  return {};
 }
 
 template <typename Result, typename Error>
-void AutoFailRpcPromiseKeeper<Result, Error>::fulfill(Result result) {
+[[nodiscard]] std::expected<void, StarException> AutoFailRpcPromiseKeeper<Result, Error>::fulfill(Result result) {
+  auto completed = m_keeper.fulfill(std::move(result));
+  if (!completed)
+    return std::unexpected(std::move(completed.error()));
   m_done = true;
-  m_keeper.fulfill(std::move(result));
+  return {};
 }
 
 template <typename Result, typename Error>
-void AutoFailRpcPromiseKeeper<Result, Error>::fail(Error error) {
+[[nodiscard]] std::expected<void, StarException> AutoFailRpcPromiseKeeper<Result, Error>::fail(Error error) {
+  auto completed = m_keeper.fail(std::move(error));
+  if (!completed)
+    return std::unexpected(std::move(completed.error()));
   m_done = true;
-  m_keeper.fail(std::move(error));
+  return {};
 }
 
 template <typename Result, typename Error>
-AutoFailRpcPromiseKeeper<Result, Error>::AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result,Error> keeper) : m_keeper(keeper) {}
+AutoFailRpcPromiseKeeper<Result, Error>::AutoFailRpcPromiseKeeper(RpcPromiseKeeper<Result, Error> keeper)
+  : m_keeper(std::move(keeper)) {}
 
 template <typename Result, typename Error>
 AutoFailRpcPromiseKeeper<Result, Error>::~AutoFailRpcPromiseKeeper() {
   if (!m_done) {
-    m_keeper.fail("Keeper destroyed");
+    auto completed = fail("Keeper destroyed");
+    if (!completed)
+      EmergencyLog::error("Failed to auto-fail RpcPromise keeper: {}", outputException(ExceptionDiagnostic(completed.error()), true));
   }
 }
 
@@ -224,63 +250,94 @@ RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::finished() const {
-  auto& val = state();
+[[nodiscard]] std::expected<bool, StarException> RpcPromise<Result, Error>::finished() const {
+  auto currentState = state();
+  if (!currentState)
+    return std::unexpected(std::move(currentState.error()));
+  auto& val = **currentState;
   MutexLocker lock(val.mutex);
-  val.poll();
+  auto polled = val.poll();
+  if (!polled)
+    return std::unexpected(std::move(polled.error()));
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.finished();
   return std::holds_alternative<Fulfilled>(val.outcome) || std::holds_alternative<Failed>(val.outcome);
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::succeeded() const {
-  auto& val = state();
+[[nodiscard]] std::expected<bool, StarException> RpcPromise<Result, Error>::succeeded() const {
+  auto currentState = state();
+  if (!currentState)
+    return std::unexpected(std::move(currentState.error()));
+  auto& val = **currentState;
   MutexLocker lock(val.mutex);
-  val.poll();
+  auto polled = val.poll();
+  if (!polled)
+    return std::unexpected(std::move(polled.error()));
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.succeeded();
   return std::holds_alternative<Fulfilled>(val.outcome);
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::failed() const {
-  auto& val = state();
+[[nodiscard]] std::expected<bool, StarException> RpcPromise<Result, Error>::failed() const {
+  auto currentState = state();
+  if (!currentState)
+    return std::unexpected(std::move(currentState.error()));
+  auto& val = **currentState;
   MutexLocker lock(val.mutex);
-  val.poll();
+  auto polled = val.poll();
+  if (!polled)
+    return std::unexpected(std::move(polled.error()));
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.failed();
   return std::holds_alternative<Failed>(val.outcome);
 }
 
 template <typename Result, typename Error>
-std::optional<Result> RpcPromise<Result, Error>::result() const {
-  auto& val = state();
+[[nodiscard]] std::expected<std::optional<Result>, StarException> RpcPromise<Result, Error>::result() const {
+  auto currentState = state();
+  if (!currentState)
+    return std::unexpected(std::move(currentState.error()));
+  auto& val = **currentState;
   MutexLocker lock(val.mutex);
-  val.poll();
+  auto polled = val.poll();
+  if (!polled)
+    return std::unexpected(std::move(polled.error()));
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.result();
   if (auto fulfilled = std::get_if<Fulfilled>(&val.outcome))
     return std::optional<Result>(std::in_place, fulfilled->value);
-  return {};
+  return std::optional<Result>{};
 }
 
 template <typename Result, typename Error>
-std::optional<Error> RpcPromise<Result, Error>::error() const {
-  auto& val = state();
+[[nodiscard]] std::expected<std::optional<Error>, StarException> RpcPromise<Result, Error>::error() const {
+  auto currentState = state();
+  if (!currentState)
+    return std::unexpected(std::move(currentState.error()));
+  auto& val = **currentState;
   MutexLocker lock(val.mutex);
-  val.poll();
+  auto polled = val.poll();
+  if (!polled)
+    return std::unexpected(std::move(polled.error()));
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.error();
   if (auto failed = std::get_if<Failed>(&val.outcome))
     return std::optional<Error>(std::in_place, failed->value);
-  return {};
+  return std::optional<Error>{};
 }
 
 template <typename Result, typename Error>
 template <typename Function>
-decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
-  using WrappedPromise = RpcPromise<std::decay_t<decltype(function(std::declval<Result>()))>, Error>;
+[[nodiscard]] auto RpcPromise<Result, Error>::wrap(Function function)
+    -> std::expected<RpcPromise<typename std::invoke_result_t<Function const&, Result>::value_type, Error>, StarException> {
+  using WrappedResult = typename std::invoke_result_t<Function const&, Result>::value_type;
+  static_assert(std::is_same_v<std::invoke_result_t<Function const&, Result>, std::expected<WrappedResult, StarException>>,
+      "RpcPromise wrappers must return std::expected<T, StarException>");
+  if (!m_state)
+    return std::unexpected(RpcPromiseException("Cannot wrap an empty RpcPromise"));
+  using WrappedPromise = RpcPromise<WrappedResult, Error>;
   WrappedPromise wrappedPromise;
   wrappedPromise.m_state = std::make_shared<typename WrappedPromise::template WrappedState<Result, Function>>(
       std::move(function), *this);

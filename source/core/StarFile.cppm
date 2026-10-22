@@ -18,17 +18,17 @@ public:
   // uniform appearance).  Does *nothing else* (no validity checks, etc).
   static String convertDirSeparators(String const& path);
 
-  // All static file operations here throw IOException on error.
+  // Fallible file operations return their IO diagnostics.
   // get the current working directory
-  static String currentDirectory();
+  [[nodiscard]] static std::expected<String, StarException> currentDirectory();
   // set the current working directory.
-  static void changeDirectory(String const& dirName);
-  static void makeDirectory(String const& dirName);
-  static void makeDirectoryRecursive(String const& dirName);
+  [[nodiscard]] static std::expected<void, StarException> changeDirectory(String const& dirName);
+  [[nodiscard]] static std::expected<void, StarException> makeDirectory(String const& dirName);
+  [[nodiscard]] static std::expected<void, StarException> makeDirectoryRecursive(String const& dirName);
 
   // List all files or directories under given directory.  skipDots skips the
   // special '.' and '..' entries.  Bool value is true for directories.
-  static List<std::pair<String, bool>> dirList(String const& dirName, bool skipDots = true);
+  [[nodiscard]] static std::expected<List<std::pair<String, bool>>, StarException> dirList(String const& dirName, bool skipDots = true);
 
   // Returns the final component of the given path with no directory separators
   static String baseName(String const& fileName);
@@ -41,115 +41,115 @@ public:
   static String relativeTo(String const& relativeTo, String const& path);
 
   // Resolve the given possibly relative path into an absolute path.
-  static String fullPath(String const& path);
+  [[nodiscard]] static std::expected<String, StarException> fullPath(String const& path);
 
-  static String temporaryFileName(RandomService& random);
+  [[nodiscard]] static std::expected<String, StarException> temporaryFileName(RandomService& random);
 
   // Creates and opens a new ReadWrite temporary file with a real path that can
   // be closed and re-opened.  Will not be removed automatically.
-  static std::shared_ptr<File> temporaryFile(RandomService& random);
+  [[nodiscard]] static std::expected<std::shared_ptr<File>, StarException> temporaryFile(RandomService& random);
 
   // Creates and opens new ReadWrite temporary file and opens it.  This file
   // has no filename and will be removed on close.
-  static std::shared_ptr<File> ephemeralFile(RandomService& random);
+  [[nodiscard]] static std::expected<std::shared_ptr<File>, StarException> ephemeralFile(RandomService& random);
 
   // Creates a new temporary directory and reutrns the path.  Will not be
   // removed automatically.
-  static String temporaryDirectory(RandomService& random);
+  [[nodiscard]] static std::expected<String, StarException> temporaryDirectory(RandomService& random);
 
-  static bool exists(String const& path);
+  [[nodiscard]] static std::expected<bool, StarException> exists(String const& path);
 
   // Does the file exist and is it a regular file (not a directory or special
   // file)?
-  static bool isFile(String const& path);
+  [[nodiscard]] static std::expected<bool, StarException> isFile(String const& path);
   // Is the file a directory?
-  static bool isDirectory(String const& path);
+  [[nodiscard]] static std::expected<bool, StarException> isDirectory(String const& path);
 
   // Is the path a symbolic link?  Directory walks must not follow those: a link
   // can point outside of the tree being walked, or at one of its own parents.
-  static bool isSymlink(String const& path);
+  [[nodiscard]] static std::expected<bool, StarException> isSymlink(String const& path);
 
-  static void remove(String const& filename);
-  static void removeDirectoryRecursive(String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> remove(String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> removeDirectoryRecursive(String const& filename);
 
   // Moves the source file to the target path, overwriting the target path if
   // it already exists.
-  static void rename(String const& source, String const& target);
+  [[nodiscard]] static std::expected<void, StarException> rename(String const& source, String const& target);
 
   // Copies the source file to the target, overwriting the target path if it
   // already exists.
-  static void copy(String const& source, String const& target);
+  [[nodiscard]] static std::expected<void, StarException> copy(String const& source, String const& target);
 
-  static ByteArray readFile(String const& filename);
-  static String readFileString(String const& filename);
-  static StreamOffset fileSize(String const& filename);
+  [[nodiscard]] static std::expected<ByteArray, StarException> readFile(String const& filename);
+  [[nodiscard]] static std::expected<String, StarException> readFileString(String const& filename);
+  [[nodiscard]] static std::expected<StreamOffset, StarException> fileSize(String const& filename);
 
-  static void writeFile(char const* data, std::size_t len, String const& filename);
-  static void writeFile(ByteArray const& data, String const& filename);
-  static void writeFile(String const& data, String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeFile(char const* data, std::size_t len, String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeFile(ByteArray const& data, String const& filename);
+  [[nodiscard]] static std::expected<void, StarException> writeFile(String const& data, String const& filename);
 
   // Write a new file, potentially overwriting an existing file, in the safest
   // way possible while preserving the old file in the same directory until the
   // operation completes.  Writes to the same path as the existing file to
   // avoid different partition copying.  This may clobber anything in the given
   // path that matches filename + newSuffix.
-  static void overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix = ".new");
-  static void overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
-  static void overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
+  [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix = ".new");
+  [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
+  [[nodiscard]] static std::expected<void, StarException> overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
 
-  static void backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
-  static void backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
+  [[nodiscard]] static std::expected<void, StarException> backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
+  [[nodiscard]] static std::expected<void, StarException> backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
 
-  static std::shared_ptr<File> open(String const& filename, IOMode mode);
+  [[nodiscard]] static std::expected<std::shared_ptr<File>, StarException> open(String const& filename, IOMode mode);
 
   File();
   File(String filename);
   virtual ~File() noexcept;
 
   String fileName() const;
-  void setFilename(String filename);
+  [[nodiscard]] std::expected<void, StarException> setFilename(String filename);
 
   // File is closed before removal.
-  void remove();
+  [[nodiscard]] std::expected<void, StarException> remove();
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
-  void resize(StreamOffset size) override;
-  StreamOffset size() override;
-  bool atEnd() override;
-  std::size_t read(char* data, std::size_t len) override;
-  std::size_t write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> pos() override;
+  [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
+  [[nodiscard]] std::expected<void, StarException> resize(StreamOffset size) override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> size() override;
+  [[nodiscard]] std::expected<bool, StarException> atEnd() override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
 
   // Do an immediate read / write of an absolute location in the file, without
   // modifying the current file cursor.  Safe to call in a threaded context
   // with other reads and writes, but not safe vs changing the File state like
   // open and close.
-  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
-  void open(IOMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
   // Consumes the handle even on error.  Call explicitly after writing so that
   // delayed close errors can be reported to the caller; destruction only logs.
-  void close() override;
+  [[nodiscard]] std::expected<void, StarException> close() override;
 
-  void sync() override;
+  [[nodiscard]] std::expected<void, StarException> sync() override;
 
-  String deviceName() const override;
+  [[nodiscard]] std::expected<String, StarException> deviceName() const override;
 
-  std::shared_ptr<IODevice> clone() override;
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> clone() override;
 
 private:
-  static void* fopen(char const* filename, IOMode mode);
-  static void fseek(void* file, StreamOffset offset, IOSeek seek);
-  static StreamOffset ftell(void* file);
-  static std::size_t fread(void* file, char* data, std::size_t len);
-  static std::size_t fwrite(void* file, char const* data, std::size_t len);
-  static void fsync(void* file);
-  static void fclose(void* file);
-  static StreamOffset fsize(void* file);
-  static std::size_t pread(void* file, char* data, std::size_t len, StreamOffset absPosition);
-  static std::size_t pwrite(void* file, char const* data, std::size_t len, StreamOffset absPosition);
-  static void resize(void* file, StreamOffset size);
+  static std::expected<void*, StarException> fopen(char const* filename, IOMode mode);
+  static std::expected<void, StarException> fseek(void* file, StreamOffset offset, IOSeek seek);
+  static std::expected<StreamOffset, StarException> ftell(void* file);
+  static std::expected<std::size_t, StarException> fread(void* file, char* data, std::size_t len);
+  static std::expected<std::size_t, StarException> fwrite(void* file, char const* data, std::size_t len);
+  static std::expected<void, StarException> fsync(void* file);
+  static std::expected<void, StarException> fclose(void* file);
+  static std::expected<StreamOffset, StarException> fsize(void* file);
+  static std::expected<std::size_t, StarException> pread(void* file, char* data, std::size_t len, StreamOffset absPosition);
+  static std::expected<std::size_t, StarException> pwrite(void* file, char const* data, std::size_t len, StreamOffset absPosition);
+  static std::expected<void, StarException> resize(void* file, StreamOffset size);
 
   String m_filename;
   void* m_file;

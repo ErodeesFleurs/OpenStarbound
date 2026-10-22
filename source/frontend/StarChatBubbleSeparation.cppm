@@ -3,6 +3,7 @@ module;
 import std;
 import star.rect;
 import star.list;
+import star.format;
 
 import star.vector;
 namespace Star {
@@ -52,7 +53,7 @@ public:
 
   void filter(std::function<bool(Bubble const&, T&)> func);
   List<Bubble> filtered(std::function<bool(Bubble const&, T const&)> func);
-  void forEach(std::function<void(Bubble&, T&)> func);
+  [[nodiscard]] std::expected<void, StarException> forEach(std::function<std::expected<void, StarException>(Bubble&, T&)> func);
 
   void update(float dt);
   void clear();
@@ -138,40 +139,32 @@ List<BubbleState<T>> BubbleSeparator<T>::filtered(std::function<bool(Bubble cons
 }
 
 template <typename T>
-void BubbleSeparator<T>::forEach(std::function<void(Bubble&, T&)> func) {
-  bool anyMoved = false;
-  
+[[nodiscard]] std::expected<void, StarException> BubbleSeparator<T>::forEach(std::function<std::expected<void, StarException>(Bubble&, T&)> func) {
+  for (auto& bubble : m_bubbles) {
+    auto result = func(bubble, bubble.contents);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+
   List<Box<float, 2>> leftEdges = std::move(m_sortedLeftEdges);
   List<Box<float, 2>> rightEdges = std::move(m_sortedRightEdges);
-
-  m_bubbles.exec([this, func, &anyMoved, &leftEdges, &rightEdges](Bubble& bubble) {
-    RectF oldBoundBox = bubble.boundBox;
-
-    func(bubble, bubble.contents);
-
-    // Kae: I'm disabling the movement threshold check for now because it also
-    // stops bubble sorting on bubbles that haven't moved, which causes problems.
-
-    Vec2F sizeDelta = bubble.boundBox.size() - oldBoundBox.size();
+  for (auto& bubble : m_bubbles) {
     leftEdges.remove(bubble.separatedBox);
     rightEdges.remove(bubble.separatedBox);
     RectF boundBox = RectF::withCenter(bubble.idealDestination, bubble.boundBox.size());
     RectF separated = separateBubble(leftEdges, rightEdges, m_sortedLeftEdges, m_sortedRightEdges, boundBox);
     leftEdges.insertSorted(bubble.separatedBox, compareLeft);
     rightEdges.insertSorted(bubble.separatedBox, compareRight);
-
-    anyMoved = true;
     bubble.currentDestination = bubble.idealDestination;
     bubble.boundBox = boundBox;
     bubble.seperatedOffset = separated.min() - boundBox.min();
     bubble.separatedBox = separated;
-  });
-
+  }
   m_sortedLeftEdges.sort(compareLeft);
   m_sortedRightEdges.sort(compareRight);
-
-  if (anyMoved)
+  if (!m_bubbles.empty())
     m_bubbles.sort(&BubbleSeparator<T>::compareBubbleY);
+  return {};
 }
 
 template <typename T>

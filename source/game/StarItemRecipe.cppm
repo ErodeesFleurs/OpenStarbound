@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.format;
-import star.stream_formatter;
 import star.hash;
 
 import star.json;
@@ -20,8 +19,9 @@ struct RecipeExceptionTag {
 using RecipeException = StarError<RecipeExceptionTag, StarException>;
 
 struct ItemRecipe {
-  friend std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
-  Json toJson() const;
+  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
 
   bool isNull() const;
 
@@ -44,7 +44,8 @@ struct hash<ItemRecipe> {
   std::size_t operator()(ItemRecipe const& v) const;
 };
 
-std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
+[[nodiscard]]
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
 export module star.item_recipe;
@@ -55,7 +56,6 @@ export namespace Star {
 }
 
 
-export template <> struct std::formatter<Star::ItemRecipe> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::RecipeExceptionTag;

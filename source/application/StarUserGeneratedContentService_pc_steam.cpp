@@ -41,18 +41,24 @@ StringList SteamUserGeneratedContentService::subscribedContentIds() const {
     });
 }
 
-std::optional<String> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
-  PublishedFileId_t id = lexicalCast<PublishedFileId_t>(contentId);
+std::expected<std::optional<String>, StarException> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
+  auto parsed = lexicalCast<PublishedFileId_t>(contentId);
+  if (!parsed)
+    return std::unexpected(std::move(parsed.error()));
+  PublishedFileId_t id = *parsed;
   uint32 itemState = SteamAPI_ISteamUGC_GetItemState(SteamAPI_SteamUGC(), id);
   if (itemState & k_EItemStateInstalled) {
     char path[4096];
     if (SteamAPI_ISteamUGC_GetItemInstallInfo(SteamAPI_SteamUGC(), id, nullptr, path, sizeof(path), nullptr))
-      return String(path);
+      return std::optional<String>(String(path));
+    return std::unexpected(ApplicationException::format("Steam could not obtain installation info for content {}", contentId));
   }
   return {};
 }
 
-UserGeneratedContentService::UGCState SteamUserGeneratedContentService::triggerContentDownload() {
+std::expected<UserGeneratedContentService::UGCState, StarException> SteamUserGeneratedContentService::triggerContentDownload() {
+  if (m_downloadError)
+    return std::unexpected(*m_downloadError);
   List<PublishedFileId_t> contentIds(SteamAPI_ISteamUGC_GetNumSubscribedItems(SteamAPI_SteamUGC()), {});
   SteamAPI_ISteamUGC_GetSubscribedItems(SteamAPI_SteamUGC(), contentIds.ptr(), contentIds.size());
 
@@ -79,10 +85,11 @@ UserGeneratedContentService::UGCState SteamUserGeneratedContentService::triggerC
         // DownloadItem has a return bool if it succeeds in attempting to download.
         if (SteamAPI_ISteamUGC_DownloadItem(SteamAPI_SteamUGC(), contentId, true)) {
           itemState = SteamAPI_ISteamUGC_GetItemState(SteamAPI_SteamUGC(), contentId);
-          m_currentDownloadState[contentId] = !(itemState & k_EItemStateDownloading);
+          m_currentDownloadState[contentId] = (itemState & k_EItemStateInstalled)
+              && !(itemState & (k_EItemStateNeedsUpdate | k_EItemStateDownloading));
         } else {
-          // DownloadItem failed for some reason. Just set this to true to skip this item and prevent an infinite loop.
-          m_currentDownloadState[contentId] = true;
+          m_downloadError = ApplicationException::format("Steam rejected download of content {}", contentId);
+          return std::unexpected(*m_downloadError);
         }
       } else {
         m_currentDownloadState[contentId] = true;
@@ -103,9 +110,14 @@ UserGeneratedContentService::UGCState SteamUserGeneratedContentService::triggerC
   }
 }
 
-void SteamUserGeneratedContentService::onDownloadResult(DownloadItemResult_t* result) {
+std::expected<void, StarException> SteamUserGeneratedContentService::onDownloadResult(DownloadItemResult_t* result) {
   PublishedFileId_t file = result->m_nPublishedFileId;
+  if (result->m_eResult != k_EResultOK) {
+    m_downloadError = ApplicationException::format("Steam download of content {} failed with code {}", file, (int)result->m_eResult);
+    return {};
+  }
   m_currentDownloadState[file] = true;
+  return {};
 }
 
 }

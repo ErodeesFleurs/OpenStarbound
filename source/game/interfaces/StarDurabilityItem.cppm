@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 
 
 namespace Star {
@@ -15,7 +16,8 @@ public:
   }
 
   virtual ~DurabilityItem() {}
-  virtual float durabilityStatus() = 0;
+  [[nodiscard]]
+  virtual std::expected<float, StarException> durabilityStatus() = 0;
 };
 
 }

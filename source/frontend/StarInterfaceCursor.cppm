@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 
 import star.string;
 import star.data_stream;
@@ -25,23 +26,24 @@ class GuiContext;
 
 class InterfaceCursor {
 public:
-  InterfaceCursor(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<InterfaceCursor>, StarException> create(GuiContext& context);
 
   // Sets the cursor to the default defined in interface.config
-  void resetCursor();
+  [[nodiscard]] std::expected<void, StarException> resetCursor();
 
   // Sets the cursor config to the given config IF the config is different than
   // the current one.  Expects a full asset path to the cursor config.
-  void setCursor(String const& configFile);
+  [[nodiscard]] std::expected<void, StarException> setCursor(String const& configFile);
 
-  Drawable drawable() const;
+  [[nodiscard]] std::expected<Drawable, StarException> drawable() const;
   Vec2I size() const;
   Vec2I offset() const;
   float scale(float interfaceScale = 0) const;
 
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 private:
+  explicit InterfaceCursor(GuiContext& context);
   GuiContext* m_guiContext;
   String m_configFile;
   Vec2I m_offset;

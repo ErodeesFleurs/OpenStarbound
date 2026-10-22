@@ -76,31 +76,44 @@ Widget::~Widget() {
   removeAllChildren();
 }
 
-void Widget::update(float dt) {
-  for (auto& widget : m_members)
-    widget->update(dt);
+std::expected<void, StarException> Widget::update(float dt) {
+  for (auto& widget : m_members) {
+    auto result = widget->update(dt);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 GuiContext* Widget::context() const {
   return m_context;
 }
 
-void Widget::render(RectI const& region) {
+std::expected<void, StarException> Widget::render(RectI const& region) {
   if (!m_visible)
-    return;
+    return {};
 
-  if (!setupDrawRegion(region))
-    return;
+  auto drawRegion = setupDrawRegion(region);
+  if (!drawRegion)
+    return std::unexpected(std::move(drawRegion.error()));
+  if (!*drawRegion)
+    return {};
 
-  renderImpl();
-  drawChildren();
+  auto rendered = renderImpl();
+  if (!rendered)
+    return std::unexpected(std::move(rendered.error()));
+  return drawChildren();
 }
 
-void Widget::renderImpl() {}
+std::expected<void, StarException> Widget::renderImpl() { return {}; }
 
-void Widget::drawChildren() {
-  for (auto child : m_members)
-    child->render(m_drawingArea);
+std::expected<void, StarException> Widget::drawChildren() {
+  for (auto const& child : m_members) {
+    auto result = child->render(m_drawingArea);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 Vec2I Widget::position() const {
@@ -111,7 +124,7 @@ Vec2I Widget::relativePosition() const {
   return m_position;
 }
 
-bool Widget::setupDrawRegion(RectI const& region) {
+std::expected<bool, StarException> Widget::setupDrawRegion(RectI const& region) {
   RectI scissorRect;
   if (m_doScissor) {
     scissorRect = getScissorRect();
@@ -122,7 +135,9 @@ bool Widget::setupDrawRegion(RectI const& region) {
   if (m_drawingArea.isEmpty())
     return false;
 
-  m_context->setInterfaceScissorRect(m_drawingArea);
+  auto scissor = m_context->setInterfaceScissorRect(m_drawingArea);
+  if (!scissor)
+    return std::unexpected(std::move(scissor.error()));
   return true;
 }
 
@@ -185,24 +200,29 @@ void Widget::markAsContainer() {
   m_container = true;
 }
 
-std::shared_ptr<Widget> Widget::keyboardCapturer() const {
+std::expected<std::shared_ptr<Widget>, StarException> Widget::keyboardCapturer() const {
   if (active()) {
     for (auto const& member : m_members) {
       auto mode = member->keyboardCaptureMode();
-      if (mode != KeyboardCaptureMode::None)
+      if (!mode)
+        return std::unexpected(std::move(mode.error()));
+      if (*mode != KeyboardCaptureMode::None)
         return member;
-      else if (auto capturer = member->keyboardCapturer())
+      auto capturer = member->keyboardCapturer();
+      if (!capturer)
+        return std::unexpected(std::move(capturer.error()));
+      if (*capturer)
         return capturer;
     }
   }
-  return {};
+  return std::shared_ptr<Widget>{};
 }
 
-KeyboardCaptureMode Widget::keyboardCaptureMode() const {
+std::expected<KeyboardCaptureMode, StarException> Widget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-std::optional<std::pair<RectI, int>> Widget::keyboardCaptureArea() const {
+std::expected<std::optional<std::pair<RectI, int>>, StarException> Widget::keyboardCaptureArea() const {
   return {};
 }
 
@@ -243,23 +263,26 @@ bool Widget::inMember(Vec2I const& position) const {
   return false;
 }
 
-bool Widget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> Widget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  for (auto child : std::views::reverse(m_members)) {
-    if (child->sendEvent(event))
+  for (auto const& child : std::views::reverse(m_members)) {
+    auto handled = child->sendEvent(event);
+    if (!handled)
+      return std::unexpected(std::move(handled.error()));
+    if (*handled)
       return true;
   }
 
   return false;
 }
 
-void Widget::mouseOver() {}
+std::expected<void, StarException> Widget::mouseOver() { return {}; }
 
-void Widget::mouseOut() {}
+std::expected<void, StarException> Widget::mouseOut() { return {}; }
 
-void Widget::mouseReturnStillDown() {}
+std::expected<void, StarException> Widget::mouseReturnStillDown() { return {}; }
 
 void Widget::setMouseTransparent(bool transparent) {
   m_mouseTransparent = transparent;
@@ -277,27 +300,27 @@ void Widget::setParent(Widget* parent) {
   m_parent = parent;
 }
 
-void Widget::show() {
+std::expected<void, StarException> Widget::show() {
   m_visible = true;
+  return {};
 }
 
-void Widget::hide() {
+std::expected<void, StarException> Widget::hide() {
   m_visible = false;
+  return {};
 }
 
 bool Widget::visibility() const {
   return m_visible;
 }
 
-void Widget::toggleVisibility() {
+std::expected<void, StarException> Widget::toggleVisibility() {
   m_visible = !m_visible;
+  return {};
 }
 
-void Widget::setVisibility(bool visibility) {
-  if (visibility)
-    show();
-  else
-    hide();
+std::expected<void, StarException> Widget::setVisibility(bool visibility) {
+  return visibility ? show() : hide();
 }
 
 bool Widget::active() const {
@@ -308,32 +331,40 @@ bool Widget::interactive() const {
   return true;
 }
 
-bool Widget::hasFocus() const {
+std::expected<bool, StarException> Widget::hasFocus() const {
   return m_focus;
 }
 
-void Widget::focus() {
+std::expected<void, StarException> Widget::focus() {
+  if (auto w = window()) {
+    auto result = w->setFocus(this);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   m_focus = true;
-  if (auto w = window())
-    w->setFocus(this);
+  return {};
 }
 
-void Widget::blur() {
+std::expected<void, StarException> Widget::blur() {
   m_focus = false;
   if (window())
     window()->removeFocus(this);
+  return {};
 }
 
-unsigned Widget::windowHeight() const {
+std::expected<unsigned, StarException> Widget::windowHeight() const {
   return context()->windowHeight();
 }
 
-unsigned Widget::windowWidth() const {
+std::expected<unsigned, StarException> Widget::windowWidth() const {
   return context()->windowWidth();
 }
 
-Vec2I Widget::windowSize() const {
-  return Vec2I(context()->windowSize());
+std::expected<Vec2I, StarException> Widget::windowSize() const {
+  auto size = context()->windowSize();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  return Vec2I(*size);
 }
 
 Pane* Widget::window() {
@@ -348,21 +379,23 @@ Pane const* Widget::window() const {
   return nullptr;
 }
 
-void Widget::addChild(String const& name, std::shared_ptr<Widget> member) {
+std::expected<void, StarException> Widget::addChild(String const& name, std::shared_ptr<Widget> member) {
   member->setName(name);
   m_members.push_back(member);
   m_memberHash[member->name()] = member;
   member->setParent(this);
+  return {};
 }
 
-void Widget::addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at) {
+std::expected<void, StarException> Widget::addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at) {
   if (at > m_members.size())
-    throw GuiException("Attempted to insert item after the end of the list.");
+    return std::unexpected(GuiException("Attempted to insert item after the end of the list."));
 
   m_members.insert(m_members.begin() + at, member);
   m_memberHash[name] = member;
   member->setName(name);
   member->setParent(this);
+  return {};
 }
 
 bool Widget::removeChild(Widget* member) {
@@ -399,9 +432,9 @@ bool Widget::removeChildAt(std::size_t at) {
   if (at >= m_members.size())
     return false;
 
-  m_memberHash.erase(m_members.at(at)->name());
+  m_memberHash.erase(m_members[at]->name());
 
-  m_members.at(at)->setParent(nullptr);
+  m_members[at]->setParent(nullptr);
   m_members.erase(m_members.begin() + at);
   return true;
 }
@@ -414,33 +447,44 @@ void Widget::removeAllChildren() {
   m_memberHash.clear();
 }
 
-bool Widget::containsChild(String const& name) {
-  if (fetchChild(name))
-    return true;
-  return false;
+std::expected<bool, StarException> Widget::containsChild(String const& name) {
+  auto child = fetchChild(name);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  return bool(*child);
 }
 
-std::shared_ptr<Widget> Widget::fetchChild(String const& name) {
-  std::shared_ptr<Widget> res;
-  if (name.contains(".")) {
-    StringList nameList = name.split(".", 1);
-    if (auto child = m_memberHash.value(nameList[0], {}))
-      return child->fetchChild(nameList[1]);
+std::expected<std::shared_ptr<Widget>, StarException> Widget::fetchChild(String const& name) {
+  auto dotted = name.contains(".");
+  if (!dotted)
+    return std::unexpected(std::move(dotted.error()));
+  if (*dotted) {
+    auto nameList = name.split(".", 1);
+    if (!nameList)
+      return std::unexpected(std::move(nameList.error()));
+    if (auto child = m_memberHash.value((*nameList)[0], {}))
+      return child->fetchChild((*nameList)[1]);
   } else {
     if (auto child = m_memberHash.value(name, {}))
       return child;
   }
-  return {};
+  return std::shared_ptr<Widget>{};
 }
 
-std::shared_ptr<Widget> Widget::findChild(String const& name) {
-  if (auto found = fetchChild(name))
+std::expected<std::shared_ptr<Widget>, StarException> Widget::findChild(String const& name) {
+  auto found = fetchChild(name);
+  if (!found)
+    return std::unexpected(std::move(found.error()));
+  if (*found)
     return found;
   for (auto const& child : m_members) {
-    if (auto found = child->findChild(name))
-      return found;
+    auto nested = child->findChild(name);
+    if (!nested)
+      return std::unexpected(std::move(nested.error()));
+    if (*nested)
+      return nested;
   }
-  return {};
+  return std::shared_ptr<Widget>{};
 }
 
 std::shared_ptr<Widget> Widget::childPtr(Widget const* child) const {
@@ -471,8 +515,10 @@ std::size_t Widget::numChildren() const {
   return m_members.size();
 }
 
-std::shared_ptr<Widget> Widget::getChildNum(std::size_t num) const {
-  return m_members.at(num);
+std::expected<std::shared_ptr<Widget>, StarException> Widget::getChildNum(std::size_t num) const {
+  if (num >= m_members.size())
+    return std::unexpected(GuiException::format("Widget child index {} is out of range", num));
+  return m_members[num];
 }
 
 String const& Widget::name() const {
@@ -525,13 +571,15 @@ String Widget::toStringImpl(int indentLevel) const {
   return output;
 }
 
-bool Widget::setLabel(String const& name, String const& value) {
-  if (containsChild(name)) {
-    auto child = fetchChild(name);
-    if (auto label = as<LabelWidget>(child)) {
-      label->setText(value);
-      return true;
-    }
+std::expected<bool, StarException> Widget::setLabel(String const& name, String const& value) {
+  auto child = fetchChild(name);
+  if (!child)
+    return std::unexpected(std::move(child.error()));
+  if (auto label = as<LabelWidget>(*child)) {
+    auto result = label->setText(value);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    return true;
   }
   return false;
 }

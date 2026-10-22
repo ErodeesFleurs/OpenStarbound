@@ -38,14 +38,15 @@ struct UniqueStatusEffectConfig {
 
 class StatusEffectDatabase {
 public:
-  explicit StatusEffectDatabase(std::shared_ptr<Assets const> assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatusEffectDatabase>, StarException> create(std::shared_ptr<Assets const> assets);
 
   bool isUniqueEffect(UniqueStatusEffect const& effect) const;
 
-  UniqueStatusEffectConfig uniqueEffectConfig(UniqueStatusEffect const& effect) const;
+  [[nodiscard]] std::expected<UniqueStatusEffectConfig, StarException> uniqueEffectConfig(UniqueStatusEffect const& effect) const;
 
 private:
-  UniqueStatusEffectConfig parseUniqueEffect(Json const& config, String const& path) const;
+  StatusEffectDatabase() = default;
+  [[nodiscard]] std::expected<UniqueStatusEffectConfig, StarException> parseUniqueEffect(Json const& config, String const& path) const;
 
   HashMap<UniqueStatusEffect, UniqueStatusEffectConfig> m_uniqueEffects;
 };

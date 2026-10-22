@@ -1,5 +1,6 @@
 import std;
 import star.json;
+import star.format;
 import star.vector;
 import star.casting;
 import star.input_event;
@@ -70,50 +71,96 @@ import star.quests;
 
 namespace Star {
 
-QuestTrackerPane::QuestTrackerPane(GuiContext& guiContext) : Pane(guiContext) {
+QuestTrackerPane::QuestTrackerPane(GuiContext& guiContext) : Pane(guiContext) {}
+
+std::expected<std::shared_ptr<QuestTrackerPane>, StarException> QuestTrackerPane::create(GuiContext& guiContext) {
+  auto pane = std::shared_ptr<QuestTrackerPane>(new QuestTrackerPane(guiContext));
+  auto base = pane->initializePane();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> QuestTrackerPane::initialize() {
   auto assets = context()->root().assets();
-  auto config = assets->json("/interface/questtracker/questtracker.config");
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/questtracker/questtracker.config");
+  if (!config) return std::unexpected(std::move(config.error()));
 
-  m_progressFrameImage = config.getString("progressFrameImage");
-  m_expandedProgressFrameImage = config.getString("expandedProgressFrameImage");
-
-  m_compassFrameImage = config.getString("compassFrameImage");
-  m_expandedCompassFrameImage = config.getString("expandedCompassFrameImage");
-
-  m_incompleteObjectiveTemplate = config.getString("incompleteObjectiveTemplate");
-  m_completeObjectiveTemplate = config.getString("completeObjectiveTemplate");
-
-  m_expandedFrameMinHeight = config.getInt("expandedFrameMinHeight");
-  m_expandedFramePadding = config.getInt("expandedFramePadding");
+  auto progressFrameImage = config->getString("progressFrameImage");
+  if (!progressFrameImage) return std::unexpected(std::move(progressFrameImage.error()));
+  m_progressFrameImage = std::move(*progressFrameImage);
+  auto expandedProgressFrameImage = config->getString("expandedProgressFrameImage");
+  if (!expandedProgressFrameImage) return std::unexpected(std::move(expandedProgressFrameImage.error()));
+  m_expandedProgressFrameImage = std::move(*expandedProgressFrameImage);
+  auto compassFrameImage = config->getString("compassFrameImage");
+  if (!compassFrameImage) return std::unexpected(std::move(compassFrameImage.error()));
+  m_compassFrameImage = std::move(*compassFrameImage);
+  auto expandedCompassFrameImage = config->getString("expandedCompassFrameImage");
+  if (!expandedCompassFrameImage) return std::unexpected(std::move(expandedCompassFrameImage.error()));
+  m_expandedCompassFrameImage = std::move(*expandedCompassFrameImage);
+  auto incompleteObjectiveTemplate = config->getString("incompleteObjectiveTemplate");
+  if (!incompleteObjectiveTemplate) return std::unexpected(std::move(incompleteObjectiveTemplate.error()));
+  m_incompleteObjectiveTemplate = std::move(*incompleteObjectiveTemplate);
+  auto completeObjectiveTemplate = config->getString("completeObjectiveTemplate");
+  if (!completeObjectiveTemplate) return std::unexpected(std::move(completeObjectiveTemplate.error()));
+  m_completeObjectiveTemplate = std::move(*completeObjectiveTemplate);
+  auto expandedFrameMinHeight = config->getInt("expandedFrameMinHeight");
+  if (!expandedFrameMinHeight) return std::unexpected(std::move(expandedFrameMinHeight.error()));
+  m_expandedFrameMinHeight = *expandedFrameMinHeight;
+  auto expandedFramePadding = config->getInt("expandedFramePadding");
+  if (!expandedFramePadding) return std::unexpected(std::move(expandedFramePadding.error()));
+  m_expandedFramePadding = *expandedFramePadding;
 
   m_compassDirection = 0;
   m_compassSpeed = 0;
-  m_compassAcceleration = config.getFloat("compassAcceleration");
-  m_compassFriction = config.getFloat("compassFriction");
+  auto compassAcceleration = config->getFloat("compassAcceleration");
+  if (!compassAcceleration) return std::unexpected(std::move(compassAcceleration.error()));
+  m_compassAcceleration = *compassAcceleration;
+  auto compassFriction = config->getFloat("compassFriction");
+  if (!compassFriction) return std::unexpected(std::move(compassFriction.error()));
+  m_compassFriction = *compassFriction;
 
   GuiReader reader(*context());
-  reader.construct(config.get("paneLayout"), this);
+  auto layout = config->get("paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
 
-  m_frame = fetchChild<ImageWidget>("imgFrame");
-  m_expandedFrame = fetchChild<ImageStretchWidget>("imgFrameExpanded");
-
-  m_compassFrame = fetchChild<ImageWidget>("imgCompassFrame");
-  m_compass = fetchChild<ImageWidget>("imgCompass");
-
-  m_questObjectiveList = fetchChild<LabelWidget>("lblQuestObjectiveList");
-
-  m_progress = fetchChild<ProgressWidget>("questProgress");
-  m_progressFrame = fetchChild<ImageWidget>("imgProgressFrame");
-
+  auto frame = fetchChild<ImageWidget>("imgFrame");
+  if (!frame) return std::unexpected(std::move(frame.error()));
+  m_frame = std::move(*frame);
+  auto expandedFrame = fetchChild<ImageStretchWidget>("imgFrameExpanded");
+  if (!expandedFrame) return std::unexpected(std::move(expandedFrame.error()));
+  m_expandedFrame = std::move(*expandedFrame);
+  auto compassFrame = fetchChild<ImageWidget>("imgCompassFrame");
+  if (!compassFrame) return std::unexpected(std::move(compassFrame.error()));
+  m_compassFrame = std::move(*compassFrame);
+  auto compass = fetchChild<ImageWidget>("imgCompass");
+  if (!compass) return std::unexpected(std::move(compass.error()));
+  m_compass = std::move(*compass);
+  auto questObjectiveList = fetchChild<LabelWidget>("lblQuestObjectiveList");
+  if (!questObjectiveList) return std::unexpected(std::move(questObjectiveList.error()));
+  m_questObjectiveList = std::move(*questObjectiveList);
+  auto progress = fetchChild<ProgressWidget>("questProgress");
+  if (!progress) return std::unexpected(std::move(progress.error()));
+  m_progress = std::move(*progress);
+  auto progressFrame = fetchChild<ImageWidget>("imgProgressFrame");
+  if (!progressFrame) return std::unexpected(std::move(progressFrame.error()));
+  m_progressFrame = std::move(*progressFrame);
   setExpanded(false);
 
   // allow things like the compass and progress bar to be drawn outside the background
   disableScissoring();
   m_progressFrame->disableScissoring();
+  return {};
 }
 
-bool QuestTrackerPane::sendEvent(InputEvent const& event) {
-  if (Pane::sendEvent(event))
+std::expected<bool, StarException> QuestTrackerPane::sendEvent(InputEvent const& event) {
+  auto consumed = Pane::sendEvent(event);
+  if (!consumed) return std::unexpected(std::move(consumed.error()));
+  if (*consumed)
     return true;
 
   if (std::holds_alternative<MouseButtonDownEvent>(event) && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left) {
@@ -128,65 +175,90 @@ bool QuestTrackerPane::sendEvent(InputEvent const& event) {
   return false;
 }
 
-void QuestTrackerPane::update(float dt) {
+std::expected<void, StarException> QuestTrackerPane::update(float dt) {
   if (m_currentQuest) {
     if (auto objectiveList = m_currentQuest->objectiveList()) {
       if (objectiveList->size() == 0) {
-        m_questObjectiveList->hide();
+        auto hidden = m_questObjectiveList->hide();
+        if (!hidden) return std::unexpected(std::move(hidden.error()));
       } else {
-        m_questObjectiveList->show();
+        auto shown = m_questObjectiveList->show();
+        if (!shown) return std::unexpected(std::move(shown.error()));
         if (m_expanded) {
           String listText = "";
-          for (auto objective : objectiveList.value_or(JsonArray{})) {
-            if (objective.get(1).toBool())
-              listText += m_completeObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});
-            else
-              listText += m_incompleteObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});
+          for (auto const& objective : *objectiveList) {
+            auto completeJson = objective.get(1);
+            if (!completeJson) return std::unexpected(std::move(completeJson.error()));
+            auto complete = completeJson->toBool();
+            if (!complete) return std::unexpected(std::move(complete.error()));
+            auto textJson = objective.get(0);
+            if (!textJson) return std::unexpected(std::move(textJson.error()));
+            auto text = textJson->toString();
+            if (!text) return std::unexpected(std::move(text.error()));
+            listText += (*complete ? m_completeObjectiveTemplate : m_incompleteObjectiveTemplate)
+                .replaceTags(StringMap<String>{{"objective", *text}});
           }
-          m_questObjectiveList->setText(listText);
+          auto updated = m_questObjectiveList->setText(listText);
+          if (!updated) return std::unexpected(std::move(updated.error()));
         } else {
           String displayObjective = "";
-          for (auto objective : objectiveList.value_or(JsonArray{})) {
-            if (displayObjective.empty() || !objective.get(1).toBool()) {
-              if (objective.get(1).toBool()) {
-                displayObjective = m_completeObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});
-              } else {
-                displayObjective = m_incompleteObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});
-                break;
-              }
+          for (auto const& objective : *objectiveList) {
+            auto completeJson = objective.get(1);
+            if (!completeJson) return std::unexpected(std::move(completeJson.error()));
+            auto complete = completeJson->toBool();
+            if (!complete) return std::unexpected(std::move(complete.error()));
+            if (displayObjective.empty() || !*complete) {
+              auto textJson = objective.get(0);
+              if (!textJson) return std::unexpected(std::move(textJson.error()));
+              auto text = textJson->toString();
+              if (!text) return std::unexpected(std::move(text.error()));
+              displayObjective = (*complete ? m_completeObjectiveTemplate : m_incompleteObjectiveTemplate)
+                  .replaceTags(StringMap<String>{{"objective", *text}});
+              if (!*complete) break;
             }
           }
-          m_questObjectiveList->setText(displayObjective);
+          auto updated = m_questObjectiveList->setText(displayObjective);
+          if (!updated) return std::unexpected(std::move(updated.error()));
         }
       }
     } else {
-      m_questObjectiveList->hide();
-      m_questObjectiveList->setText("");
+      auto hidden = m_questObjectiveList->hide();
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
+      auto cleared = m_questObjectiveList->setText("");
+      if (!cleared) return std::unexpected(std::move(cleared.error()));
     }
 
     if (m_expanded) {
-      m_expandedFrame->show();
-      m_frame->hide();
+      auto shown = m_expandedFrame->show();
+      if (!shown) return std::unexpected(std::move(shown.error()));
+      auto hidden = m_frame->hide();
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
 
       int frameHeight = std::max(m_expandedFrameMinHeight, m_questObjectiveList->size()[1] + m_expandedFramePadding * 2);
       m_expandedFrame->setSize(Vec2I(m_expandedFrame->size()[0], frameHeight));
       m_expandedFrame->setPosition(Vec2I(m_expandedFrame->relativePosition()[0], -frameHeight));
     } else {
-      m_frame->show();
-      m_expandedFrame->hide();
+      auto shown = m_frame->show();
+      if (!shown) return std::unexpected(std::move(shown.error()));
+      auto hidden = m_expandedFrame->hide();
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
     }
 
     if (auto progress = m_currentQuest->progress()) {
-      m_progress->show();
-      m_progressFrame->show();
+      auto shown = m_progress->show();
+      if (!shown) return std::unexpected(std::move(shown.error()));
+      auto frameShown = m_progressFrame->show();
+      if (!frameShown) return std::unexpected(std::move(frameShown.error()));
 
       if (m_expanded) {
-        m_progressFrame->setImage(m_expandedProgressFrameImage);
+        auto image = m_progressFrame->setImage(m_expandedProgressFrameImage);
+        if (!image) return std::unexpected(std::move(image.error()));
 
         m_progress->setDrawingOffset(Vec2I(0, -m_expandedFrame->size()[1]));
         m_progressFrame->setDrawingOffset(Vec2I(0, -m_expandedFrame->size()[1]));
       } else {
-        m_progressFrame->setImage(m_progressFrameImage);
+        auto image = m_progressFrame->setImage(m_progressFrameImage);
+        if (!image) return std::unexpected(std::move(image.error()));
 
         m_progress->setDrawingOffset(Vec2I(0, -m_frame->size()[1]));
         m_progressFrame->setDrawingOffset(Vec2I(0, -m_frame->size()[1]));
@@ -194,18 +266,21 @@ void QuestTrackerPane::update(float dt) {
 
       m_progress->setCurrentProgressLevel(*progress);
     } else {
-      m_progress->hide();
-      m_progressFrame->hide();
+      auto hidden = m_progress->hide();
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
+      auto frameHidden = m_progressFrame->hide();
+      if (!frameHidden) return std::unexpected(std::move(frameHidden.error()));
     }
 
     if (auto compassDirection = m_currentQuest->compassDirection()) {
-      m_compass->show();
-      m_compassFrame->show();
+      auto shown = m_compass->show();
+      if (!shown) return std::unexpected(std::move(shown.error()));
+      auto frameShown = m_compassFrame->show();
+      if (!frameShown) return std::unexpected(std::move(frameShown.error()));
 
-      if (m_expanded || m_currentQuest->progress())
-        m_compassFrame->setImage(m_expandedCompassFrameImage);
-      else
-        m_compassFrame->setImage(m_compassFrameImage);
+      auto image = m_compassFrame->setImage((m_expanded || m_currentQuest->progress())
+          ? m_expandedCompassFrameImage : m_compassFrameImage);
+      if (!image) return std::unexpected(std::move(image.error()));
 
       float compassDiff = pfmod(*compassDirection - m_compassDirection, (float)std::numbers::pi * 2);
       if (std::abs(compassDiff) < m_compassAcceleration && std::abs(m_compassSpeed) < m_compassAcceleration) {
@@ -222,14 +297,17 @@ void QuestTrackerPane::update(float dt) {
         m_compassDirection += m_compassSpeed;
       }
 
-      m_compass->setRotation(m_compassDirection);
+      auto rotated = m_compass->setRotation(m_compassDirection);
+      if (!rotated) return std::unexpected(std::move(rotated.error()));
     } else {
-      m_compass->hide();
-      m_compassFrame->hide();
+      auto hidden = m_compass->hide();
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
+      auto frameHidden = m_compassFrame->hide();
+      if (!frameHidden) return std::unexpected(std::move(frameHidden.error()));
     }
   }
 
-  Pane::update(dt);
+  return Pane::update(dt);
 }
 
 void QuestTrackerPane::setQuest(std::shared_ptr<Quest> const& quest) {

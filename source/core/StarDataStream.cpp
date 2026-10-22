@@ -5,324 +5,216 @@ import star.data_stream;
 import star.string;
 import star.format;
 import star.bytes;
-
-
 import star.vlq;
-
 import star.net_compatibility;
 import star.byte_array;
-import star.algorithm;
 namespace Star {
 
 extern unsigned const CurrentStreamVersion = 18; // update OpenProtocolVersion too!
 
 DataStream::DataStream()
-  : m_byteOrder(ByteOrder::BigEndian),
-    m_nullTerminatedStrings(false),
+  : m_byteOrder(ByteOrder::BigEndian), m_nullTerminatedStrings(false),
     m_streamCompatibilityVersion(CurrentStreamVersion) {}
+ByteOrder DataStream::byteOrder() const { return m_byteOrder; }
+void DataStream::setByteOrder(ByteOrder order) { m_byteOrder = order; }
+bool DataStream::nullTerminatedStrings() const { return m_nullTerminatedStrings; }
+void DataStream::setNullTerminatedStrings(bool enabled) { m_nullTerminatedStrings = enabled; }
+unsigned DataStream::streamCompatibilityVersion() const { return m_streamCompatibilityVersion; }
+void DataStream::setStreamCompatibilityVersion(unsigned version) { m_streamCompatibilityVersion = version; }
+void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rules) { m_streamCompatibilityVersion = rules.version(); }
 
-ByteOrder DataStream::byteOrder() const {
-  return m_byteOrder;
+std::expected<ByteArray, StarException> DataStream::readBytes(std::size_t len) {
+  if (len > std::size_t(std::numeric_limits<std::ptrdiff_t>::max()))
+    return std::unexpected(DataStreamException("Byte stream request exceeds addressable size"));
+  ByteArray bytes;
+  bytes.resize(len);
+  auto result = readData(bytes.ptr(), len);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return bytes;
+}
+std::expected<void, StarException> DataStream::writeBytes(ByteArray const& bytes) {
+  return writeData(bytes.ptr(), bytes.size());
 }
 
-void DataStream::setByteOrder(ByteOrder byteOrder) {
-  m_byteOrder = byteOrder;
+namespace {
+template <typename T>
+std::expected<DataStream*, StarException> writeNumber(DataStream& stream, T value) {
+  if constexpr (sizeof(T) > 1) value = toByteOrder(stream.byteOrder(), value);
+  auto result = stream.writeData(reinterpret_cast<char const*>(&value), sizeof(value));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return &stream;
+}
+template <typename T>
+std::expected<DataStream*, StarException> readNumber(DataStream& stream, T& value) {
+  T decoded;
+  auto result = stream.readData(reinterpret_cast<char*>(&decoded), sizeof(decoded));
+  if (!result) return std::unexpected(std::move(result.error()));
+  if constexpr (sizeof(T) > 1) decoded = fromByteOrder(stream.byteOrder(), decoded);
+  value = decoded;
+  return &stream;
+}
 }
 
-bool DataStream::nullTerminatedStrings() const {
-  return m_nullTerminatedStrings;
+std::expected<DataStream*, StarException> DataStream::operator<<(bool value) { return writeNumber(*this, (std::uint8_t)value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(char value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::int8_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::uint8_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::int16_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::uint16_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::int32_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::uint32_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::int64_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(std::uint64_t value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(float value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator<<(double value) { return writeNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(bool& value) {
+  std::uint8_t byte;
+  auto result = readNumber(*this, byte);
+  if (!result) return std::unexpected(std::move(result.error()));
+  // Arbitrary input bytes must not create invalid bool representations.
+  value = byte != 0;
+  return this;
+}
+std::expected<DataStream*, StarException> DataStream::operator>>(char& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::int8_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::uint8_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::int16_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::uint16_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::int32_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::uint32_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::int64_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(std::uint64_t& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(float& value) { return readNumber(*this, value); }
+std::expected<DataStream*, StarException> DataStream::operator>>(double& value) { return readNumber(*this, value); }
+
+std::expected<std::size_t, StarException> DataStream::writeVlqU(std::uint64_t value) {
+  std::uint8_t bytes[10];
+  auto count = Star::writeVlqU(value, bytes);
+  auto result = writeData(reinterpret_cast<char const*>(bytes), count);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return count;
+}
+std::expected<std::size_t, StarException> DataStream::writeVlqI(std::int64_t value) {
+  auto encoded = value < 0 ? (std::uint64_t(-(value + 1)) << 1) | 1 : std::uint64_t(value) << 1;
+  return writeVlqU(encoded);
+}
+std::expected<std::size_t, StarException> DataStream::writeVlqS(std::size_t value) {
+  return writeVlqU(value == NPos ? 0 : std::uint64_t(value) + 1);
+}
+std::expected<std::size_t, StarException> DataStream::readVlqU(std::uint64_t& value) {
+  std::uint64_t decoded = 0;
+  for (std::size_t i = 0; i < 10; ++i) {
+    auto byte = read<std::uint8_t>();
+    if (!byte) return std::unexpected(std::move(byte.error()));
+    decoded = (decoded << 7) | std::uint64_t(*byte & 127);
+    if (!(*byte & 128)) {
+      value = decoded;
+      return i + 1;
+    }
+  }
+  return std::unexpected(DataStreamException("Error reading VLQ encoded integer!"));
+}
+std::expected<std::size_t, StarException> DataStream::readVlqI(std::int64_t& value) {
+  std::uint64_t encoded;
+  auto count = readVlqU(encoded);
+  if (!count) return std::unexpected(std::move(count.error()));
+  value = encoded & 1 ? -std::int64_t(encoded >> 1) - 1 : std::int64_t(encoded >> 1);
+  return *count;
+}
+std::expected<std::size_t, StarException> DataStream::readVlqS(std::size_t& value) {
+  std::uint64_t encoded;
+  auto count = readVlqU(encoded);
+  if (!count) return std::unexpected(std::move(count.error()));
+  value = encoded ? std::size_t(encoded - 1) : NPos;
+  return *count;
+}
+std::expected<std::uint64_t, StarException> DataStream::readVlqU() {
+  std::uint64_t value;
+  auto count = readVlqU(value);
+  if (!count) return std::unexpected(std::move(count.error()));
+  return value;
+}
+std::expected<std::int64_t, StarException> DataStream::readVlqI() {
+  std::int64_t value;
+  auto count = readVlqI(value);
+  if (!count) return std::unexpected(std::move(count.error()));
+  return value;
+}
+std::expected<std::size_t, StarException> DataStream::readVlqS() {
+  std::size_t value;
+  auto count = readVlqS(value);
+  if (!count) return std::unexpected(std::move(count.error()));
+  return value;
 }
 
-void DataStream::setNullTerminatedStrings(bool nullTerminatedStrings) {
-  m_nullTerminatedStrings = nullTerminatedStrings;
+std::expected<DataStream*, StarException> DataStream::operator<<(char const* value) {
+  auto result = writeStringData(value, std::strlen(value));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return this;
 }
-
-unsigned DataStream::streamCompatibilityVersion() const {
-  return m_streamCompatibilityVersion;
+std::expected<DataStream*, StarException> DataStream::operator<<(std::string const& value) {
+  auto result = writeStringData(value.data(), value.size());
+  if (!result) return std::unexpected(std::move(result.error()));
+  return this;
 }
-
-void DataStream::setStreamCompatibilityVersion(unsigned streamCompatibilityVersion) {
-  m_streamCompatibilityVersion = streamCompatibilityVersion;
+std::expected<DataStream*, StarException> DataStream::operator<<(ByteArray const& value) {
+  auto count = writeVlqU(value.size());
+  if (!count) return std::unexpected(std::move(count.error()));
+  auto result = writeData(value.ptr(), value.size());
+  if (!result) return std::unexpected(std::move(result.error()));
+  return this;
 }
-
-void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rules) {
-  m_streamCompatibilityVersion = rules.version();
+std::expected<DataStream*, StarException> DataStream::operator<<(String const& value) {
+  auto result = writeStringData(value.utf8Ptr(), value.utf8Size());
+  if (!result) return std::unexpected(std::move(result.error()));
+  return this;
 }
-
-ByteArray DataStream::readBytes(std::size_t len) {
-  ByteArray ba;
-  ba.resize(len);
-  readData(ba.ptr(), len);
-  return ba;
-}
-
-void DataStream::writeBytes(ByteArray const& ba) {
-  writeData(ba.ptr(), ba.size());
-}
-
-DataStream& DataStream::operator<<(bool d) {
-  operator<<((std::uint8_t)d);
-  return *this;
-}
-
-DataStream& DataStream::operator<<(char c) {
-  writeData(&c, 1);
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::int8_t d) {
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::uint8_t d) {
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::int16_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::uint16_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::int32_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::uint32_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::int64_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::uint64_t d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(float d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(double d) {
-  d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator>>(bool& d) {
-  std::uint8_t bu;
-  readData((char*)&bu, sizeof(bu));
-  // Converting an arbitrary byte to bool is UB when it is neither 0 nor 1, and
-  // a stream can contain anything (a save file written by another version, for
-  // example).  UBSan reports the resulting bool load.
-  d = bu != 0;
-  return *this;
-}
-
-DataStream& DataStream::operator>>(char& c) {
-  readData(&c, 1);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::int8_t& d) {
-  readData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::uint8_t& d) {
-  readData((char*)&d, sizeof(d));
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::int16_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::uint16_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::int32_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::uint32_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::int64_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::uint64_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(float& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(double& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-std::size_t DataStream::writeVlqU(std::uint64_t i) {
-  return Star::writeVlqU(i, makeFunctionOutputIterator([this](std::uint8_t b) { *this << b; }));
-}
-
-std::size_t DataStream::writeVlqI(std::int64_t i) {
-  return Star::writeVlqI(i, makeFunctionOutputIterator([this](std::uint8_t b) { *this << b; }));
-}
-
-std::size_t DataStream::writeVlqS(std::size_t i) {
-  std::uint64_t i64;
-  if (i == NPos)
-    i64 = 0;
-  else
-    i64 = i + 1;
-  return writeVlqU(i64);
-}
-
-std::size_t DataStream::readVlqU(std::uint64_t& i) {
-  std::size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() { return this->read<std::uint8_t>(); }));
-
-  if (bytesRead == NPos)
-    throw DataStreamException("Error reading VLQ encoded integer!");
-
-  return bytesRead;
-}
-
-std::size_t DataStream::readVlqI(std::int64_t& i) {
-  std::size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() { return this->read<std::uint8_t>(); }));
-
-  if (bytesRead == NPos)
-    throw DataStreamException("Error reading VLQ encoded integer!");
-
-  return bytesRead;
-}
-
-std::size_t DataStream::readVlqS(std::size_t& i) {
-  std::uint64_t i64;
-  std::size_t res = readVlqU(i64);
-  if (i64 == 0)
-    i = NPos;
-  else
-    i = (std::size_t)(i64 - 1);
-  return res;
-}
-
-std::uint64_t DataStream::readVlqU() {
-  std::uint64_t i;
-  readVlqU(i);
-  return i;
-}
-
-std::int64_t DataStream::readVlqI() {
-  std::int64_t i;
-  readVlqI(i);
-  return i;
-}
-
-std::size_t DataStream::readVlqS() {
-  std::size_t i;
-  readVlqS(i);
-  return i;
-}
-
-DataStream& DataStream::operator<<(char const* s) {
-  writeStringData(s, std::strlen(s));
-  return *this;
-}
-
-DataStream& DataStream::operator<<(std::string const& d) {
-  writeStringData(d.c_str(), d.size());
-  return *this;
-}
-
-DataStream& DataStream::operator<<(const ByteArray& d) {
-  writeVlqU(d.size());
-  writeData(d.ptr(), d.size());
-  return *this;
-}
-
-DataStream& DataStream::operator<<(const String& s) {
-  writeStringData(s.utf8Ptr(), s.utf8Size());
-  return *this;
-}
-
-DataStream& DataStream::operator>>(std::string& d) {
+std::expected<DataStream*, StarException> DataStream::operator>>(std::string& value) {
+  std::string decoded;
   if (m_nullTerminatedStrings) {
-    d.clear();
-    char c;
-    while (true) {
-      readData((char*)&c, sizeof(c));
-      if (c == '\0')
-        break;
-      d.push_back(c);
+    for (;;) {
+      auto byte = read<char>();
+      if (!byte) return std::unexpected(std::move(byte.error()));
+      if (*byte == '\0') break;
+      decoded.push_back(*byte);
     }
   } else {
-    d.resize((std::size_t)readVlqU());
-    readData(&d[0], d.size());
+    auto length = readVlqU();
+    if (!length) return std::unexpected(std::move(length.error()));
+    if (*length > decoded.max_size())
+      return std::unexpected(DataStreamException("Serialized string exceeds addressable size"));
+    decoded.resize(std::size_t(*length));
+    auto result = readData(decoded.data(), decoded.size());
+    if (!result) return std::unexpected(std::move(result.error()));
   }
-  return *this;
+  value = std::move(decoded);
+  return this;
 }
-
-DataStream& DataStream::operator>>(ByteArray& d) {
-  d.resize((std::size_t)readVlqU());
-  readData(d.ptr(), d.size());
-  return *this;
+std::expected<DataStream*, StarException> DataStream::operator>>(ByteArray& value) {
+  auto length = readVlqU();
+  if (!length) return std::unexpected(std::move(length.error()));
+  if (*length > std::uint64_t(std::numeric_limits<std::ptrdiff_t>::max()))
+    return std::unexpected(DataStreamException("Serialized byte array exceeds addressable size"));
+  auto decoded = readBytes(std::size_t(*length));
+  if (!decoded) return std::unexpected(std::move(decoded.error()));
+  value = std::move(*decoded);
+  return this;
 }
-
-DataStream& DataStream::operator>>(String& s) {
-  std::string string;
-  operator>>(string);
-  s = std::move(string);
-  return *this;
+std::expected<DataStream*, StarException> DataStream::operator>>(String& value) {
+  auto decoded = read<std::string>();
+  if (!decoded) return std::unexpected(std::move(decoded.error()));
+  value = std::move(*decoded);
+  return this;
 }
-
-void DataStream::writeStringData(char const* data, std::size_t len) {
+std::expected<void, StarException> DataStream::writeStringData(char const* data, std::size_t len) {
   if (m_nullTerminatedStrings) {
-    writeData(data, len);
-    operator<<((std::uint8_t)0x00);
-  } else {
-    writeVlqU(len);
-    writeData(data, len);
+    auto result = writeData(data, len);
+    if (!result) return std::unexpected(std::move(result.error()));
+    return write<std::uint8_t>(0);
   }
+  auto count = writeVlqU(len);
+  if (!count) return std::unexpected(std::move(count.error()));
+  return writeData(data, len);
 }
 
 }

@@ -1,3 +1,4 @@
+import star.format;
 import star.poly;
 import star.list;
 import star.bi_map;
@@ -14,13 +15,13 @@ void CollisionGenerator::init(CollisionKindAccessor accessor) {
   m_accessor = accessor;
 }
 
-List<CollisionBlock> CollisionGenerator::getBlocks(RectI const& region) const {
+std::expected<List<CollisionBlock>, StarException> CollisionGenerator::getBlocks(RectI const& region) const {
   if (region.isNull())
-    return {};
+    return List<CollisionBlock>{};
 
   List<CollisionBlock> list;
 
-  populateCollisionBuffer(region);
+  if (auto result = populateCollisionBuffer(region); !result) return std::unexpected(std::move(result.error()));
 
   getBlocksMarchingSquares(list, region, CollisionKind::Dynamic);
   getBlocksPlatforms(list, region, CollisionKind::Platform);
@@ -221,17 +222,22 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
   }
 }
 
-void CollisionGenerator::populateCollisionBuffer(RectI const& region) const {
+std::expected<void, StarException> CollisionGenerator::populateCollisionBuffer(RectI const& region) const {
   int xmin = region.xMin() - BlockInfluenceRadius;
   int ymin = region.yMin() - BlockInfluenceRadius;
   int xmax = region.xMax() + BlockInfluenceRadius;
   int ymax = region.yMax() + BlockInfluenceRadius;
 
+  if (!m_accessor) return std::unexpected(StarException("CollisionGenerator not initialized"));
   m_collisionBufferCorner = {xmin, ymin};
   m_collisionBuffer.resize(xmax - xmin, ymax - ymin);
   for (int x = xmin; x < xmax; ++x)
-    for (int y = ymin; y < ymax; ++y)
-      m_collisionBuffer(x - xmin, y - ymin) = m_accessor(x, y);
+    for (int y = ymin; y < ymax; ++y) {
+      auto kind = m_accessor(x, y);
+      if (!kind) return std::unexpected(std::move(kind.error()));
+      m_collisionBuffer(x - xmin, y - ymin) = *kind;
+    }
+  return {};
 }
 
 CollisionKind CollisionGenerator::collisionKind(int x, int y) const {

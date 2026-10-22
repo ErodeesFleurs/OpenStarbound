@@ -29,43 +29,43 @@ public:
   virtual ~Application() = default;
 
   // Called once on application startup, before any other methods.
-  virtual void startup(StringList const& cmdLineArgs);
+  [[nodiscard]] virtual std::expected<void, StarException> startup(StringList const& cmdLineArgs);
 
   // Available after startup and until this application is destroyed.
   virtual Logger& logger() const = 0;
 
   // Called on application initialization, before rendering initialization.  If
   // overriden, must call base class instance.
-  virtual void applicationInit(std::shared_ptr<ApplicationController> appController);
+  [[nodiscard]] virtual std::expected<void, StarException> applicationInit(std::shared_ptr<ApplicationController> appController);
 
   // Called immediately after application initialization on startup, and then
   // also whenever the renderer invalidated and recreated.  If overridden, must
   // call base class instance.
-  virtual void renderInit(std::shared_ptr<Renderer> renderer);
+  [[nodiscard]] virtual std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer);
 
   // Called when the window mode or size is changed.
-  virtual void windowChanged(WindowMode windowMode, Vec2U screenSize);
+  [[nodiscard]] virtual std::expected<void, StarException> windowChanged(WindowMode windowMode, Vec2U screenSize);
 
   // Called before update, once for every pending event.
-  virtual void processInput(InputEvent const& event);
+  [[nodiscard]] virtual std::expected<void, StarException> processInput(InputEvent const& event);
 
   // Will be called at updateRate hz, or as close as possible.
-  virtual void update();
+  [[nodiscard]] virtual std::expected<void, StarException> update();
   
   // Returns how many frames have been skipped.
   virtual unsigned framesSkipped() const;
 
   // Will be called at updateRate hz, or more or less depending on settings and
   // performance.  update() is always prioritized over render().
-  virtual void render();
+  [[nodiscard]] virtual std::expected<void, StarException> render();
 
   // Will be called *from a different thread* to retrieve audio data (if audio
   // is playing). Default implementation simply fills the buffer with silence.
-  virtual void getAudioData(std::int16_t* sampleData, std::size_t frameCount);
+  [[nodiscard]] virtual std::expected<void, StarException> getAudioData(std::int16_t* sampleData, std::size_t frameCount);
 
   // Will be called once on application shutdown, including when shutting down
   // due to an Application exception.
-  virtual void shutdown();
+  [[nodiscard]] virtual std::expected<void, StarException> shutdown();
 
   std::shared_ptr<ApplicationController> const& appController() const;
   std::shared_ptr<Renderer> const& renderer() const;

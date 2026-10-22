@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.memory;
 import star.json;
 import star.list;
@@ -69,76 +70,99 @@ import star.image_metadata_database;
 
 namespace Star {
 
-TabSetWidget::TabSetWidget(GuiContext& context, TabSetConfig const& tabSetConfig) : Widget(context) {
-  m_tabSetConfig = tabSetConfig;
+TabSetWidget::TabSetWidget(GuiContext& context, TabSetConfig const& config)
+  : Widget(context), m_tabSetConfig(config) {}
 
-  m_tabBar = std::make_shared<FlowLayout>(*this->context());
-  m_tabBar->setSpacing(m_tabSetConfig.tabButtonSpacing);
-  Widget::addChild("tabBar", m_tabBar);
-
-  m_stack = std::make_shared<StackWidget>(*this->context());
-  addChild("tabs", m_stack);
-
-  markAsContainer();
+std::expected<std::shared_ptr<TabSetWidget>, StarException> TabSetWidget::create(GuiContext& context, TabSetConfig const& config) {
+  auto tabs = std::shared_ptr<TabSetWidget>(new TabSetWidget(context, config));
+  auto metadata = context.root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  for (auto image : {&config.tabButtonBaseImage, &config.tabButtonHoverImage, &config.tabButtonPressedImage,
+           &config.tabButtonBaseImageSelected, &config.tabButtonHoverImageSelected, &config.tabButtonPressedImageSelected}) {
+    auto size = (*metadata)->imageSize(*image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    tabs->m_tabHeight = std::max<int>(tabs->m_tabHeight, size->y());
+  }
+  tabs->m_tabBar = std::make_shared<FlowLayout>(context);
+  tabs->m_tabBar->setSpacing(config.tabButtonSpacing);
+  auto bar = tabs->Widget::addChild("tabBar", tabs->m_tabBar);
+  if (!bar)
+    return std::unexpected(std::move(bar.error()));
+  tabs->m_stack = std::make_shared<StackWidget>(context);
+  auto stack = tabs->addChild("tabs", tabs->m_stack);
+  if (!stack)
+    return std::unexpected(std::move(stack.error()));
+  tabs->markAsContainer();
+  return tabs;
 }
 
 void TabSetWidget::setSize(Vec2I const& size) {
-  auto imgMetadata = this->context()->root().imageMetadataDatabase();
-  auto tabHeight = std::max({imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImage).y(),
-      imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImage).y(),
-      imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImage).y(),
-      imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImageSelected).y(),
-      imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImageSelected).y(),
-      imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImageSelected).y()});
-
+  auto tabHeight = m_tabHeight;
   Widget::setSize(Vec2I(size.x(), std::max<int>(size.y(), tabHeight)));
-
   m_tabBar->setSize({size.x(), tabHeight});
   m_tabBar->setPosition({0, size.y() - tabHeight});
   m_stack->setSize({size.x(), size.y() - tabHeight});
 }
 
-void TabSetWidget::addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title) {
-  auto newButton = std::make_shared<ButtonWidget>(*this->context());
-  newButton->setImages(
-      m_tabSetConfig.tabButtonBaseImage, m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);
-  newButton->setCheckedImages(m_tabSetConfig.tabButtonBaseImageSelected,
-      m_tabSetConfig.tabButtonHoverImageSelected,
-      m_tabSetConfig.tabButtonPressedImageSelected);
-  newButton->setCheckable(true);
-  newButton->setText(title);
-  newButton->setTextOffset(m_tabSetConfig.tabButtonTextOffset);
-  newButton->setPressedOffset(m_tabSetConfig.tabButtonPressedOffset);
-
-  std::size_t pageForButton = m_tabBar->numChildren();
-  newButton->setCallback([this, pageForButton](Widget*) { tabSelect(pageForButton); });
-
-  m_tabBar->addChild(toString(pageForButton), newButton);
-  m_stack->addChild(widgetName, widget);
-
+std::expected<void, StarException> TabSetWidget::addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title) {
+  auto created = ButtonWidget::create(*context());
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto button = *created;
+  auto images = button->setImages(m_tabSetConfig.tabButtonBaseImage,
+      m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);
+  if (!images)
+    return std::unexpected(std::move(images.error()));
+  auto checked = button->setCheckedImages(m_tabSetConfig.tabButtonBaseImageSelected,
+      m_tabSetConfig.tabButtonHoverImageSelected, m_tabSetConfig.tabButtonPressedImageSelected);
+  if (!checked)
+    return std::unexpected(std::move(checked.error()));
+  button->setCheckable(true);
+  button->setText(title);
+  button->setTextOffset(m_tabSetConfig.tabButtonTextOffset);
+  button->setPressedOffset(m_tabSetConfig.tabButtonPressedOffset);
+  auto page = m_tabBar->numChildren();
+  button->setCallback([this, page](Widget*) { return tabSelect(page); });
+  auto addedButton = m_tabBar->addChild(toString(page), button);
+  if (!addedButton)
+    return std::unexpected(std::move(addedButton.error()));
+  auto addedPage = m_stack->addChild(widgetName, widget);
+  if (!addedPage)
+    return std::unexpected(std::move(addedPage.error()));
   if (!m_lastSelected)
-    tabSelect(0);
+    return tabSelect(0);
+  return {};
 }
 
 std::size_t TabSetWidget::tabCount() const {
   return m_tabBar->numChildren();
 }
 
-void TabSetWidget::tabSelect(std::size_t page) {
+std::expected<void, StarException> TabSetWidget::tabSelect(std::size_t page) {
+  if (page >= tabCount())
+    return std::unexpected(GuiException("Tab index out of range"));
   if (m_lastSelected != page) {
+    auto shown = m_stack->showPage(page);
+    if (!shown)
+      return std::unexpected(std::move(shown.error()));
     m_lastSelected = page;
-    m_stack->showPage(page);
     for (std::size_t i = 0; i < m_tabBar->numChildren(); ++i) {
-      if (i == page)
-        m_tabBar->getChildNum<ButtonWidget>(i)->setChecked(true);
-      else
-        m_tabBar->getChildNum<ButtonWidget>(i)->setChecked(false);
+      auto button = m_tabBar->getChildNum<ButtonWidget>(i);
+      if (!button)
+        return std::unexpected(std::move(button.error()));
+      (*button)->setChecked(i == page);
     }
     if (m_callback)
-      m_callback(this);
+      return m_callback(this);
   } else {
-    m_tabBar->getChildNum<ButtonWidget>(page)->setChecked(true);
+    auto button = m_tabBar->getChildNum<ButtonWidget>(page);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    (*button)->setChecked(true);
   }
+  return {};
 }
 
 std::size_t TabSetWidget::selectedTab() const {

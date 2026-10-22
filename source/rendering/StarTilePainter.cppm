@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.xx_hash;
 import star.byte_array;
 import star.json;
@@ -98,26 +99,28 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  TilePainter(Root& root, std::shared_ptr<Renderer> renderer);
+  [[nodiscard]] static std::expected<std::shared_ptr<TilePainter>, StarException> create(Root& root, std::shared_ptr<Renderer> renderer);
 
   // Adjusts lighting levels for liquids.
-  void adjustLighting(WorldRenderData& renderData) const;
+  [[nodiscard]] std::expected<void, StarException> adjustLighting(WorldRenderData& renderData) const;
 
   // Sets up chunk data for every chunk that intersects the rendering region
   // and prepares it for rendering.  Do not call cleanup in between calling
   // setup and each render method.
-  void setup(WorldCamera const& camera, WorldRenderData& renderData);
+  [[nodiscard]] std::expected<void, StarException> setup(WorldCamera const& camera, WorldRenderData& renderData);
 
-  void renderBackground(WorldCamera const& camera);
-  void renderMidground(WorldCamera const& camera);
-  void renderLiquid(WorldCamera const& camera);
-  void renderForeground(WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> renderBackground(WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> renderMidground(WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> renderLiquid(WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> renderForeground(WorldCamera const& camera);
 
   // Clears any render data, as well as cleaning up old cached textures and
   // chunks.
   void cleanup();
 
 private:
+  TilePainter(Root& root, std::shared_ptr<Renderer> renderer);
+
   typedef std::uint64_t QuadZLevel;
   typedef std::uint64_t ChunkHash;
 
@@ -145,17 +148,17 @@ private:
   // RenderChunkSize results in the coordinate of the lower left most tile in
   // the render chunk.
 
-  ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
-  ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<ChunkHash, StarException> terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<ChunkHash, StarException> liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
 
-  void renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
+  [[nodiscard]] std::expected<void, StarException> renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
-  std::shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
-  std::shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainChunk const>, StarException> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] std::expected<std::shared_ptr<LiquidChunk const>, StarException> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
 
-  bool produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
+  [[nodiscard]] std::expected<bool, StarException> produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
       TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
-  void produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
+  [[nodiscard]] std::expected<void, StarException> produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
 
   float liquidDrawLevel(float liquidLevel) const;
 

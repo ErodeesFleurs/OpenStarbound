@@ -9,12 +9,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifdef STAR_SYSTEM_MACOSX
-#include <mach-o/dyld.h>
-#elif defined STAR_SYSTEM_FREEBSD
-#include <sys/types.h>
-#include <sys/sysctl.h>
-#endif
 import std;
 import star.file;
 import star.io_device;
@@ -25,9 +19,7 @@ import star.string;
 import star.byte_array;
 import star.encode;
 
-
 namespace Star {
-
 namespace {
   int fdFromHandle(void* ptr) {
     return (int)((std::intptr_t)ptr - 1);
@@ -36,292 +28,308 @@ namespace {
   void* handleFromFd(int handle) {
     return (void*)((std::intptr_t)handle + 1);
   }
+
+  void closeAfterFailure(int fd) {
+    if (::close(fd) < 0) {
+      auto error = errno;
+      std::fprintf(stderr, "Error closing file after failed acquisition: %s\n", std::strerror(error));
+    }
+  }
 }
 
 String File::convertDirSeparators(String const& path) {
-  return path.replace("\\", "/");
+  auto bytes = path.utf8();
+  std::replace(bytes.begin(), bytes.end(), '\\', '/');
+  return String(std::move(bytes));
 }
 
-String File::currentDirectory() {
+std::expected<String, StarException> File::currentDirectory() {
   char buffer[PATH_MAX];
-  if (::getcwd(buffer, PATH_MAX) == NULL)
-    throw IOException("getcwd failed");
-
+  if (::getcwd(buffer, sizeof(buffer)) == nullptr)
+    return std::unexpected(IOException::format("getcwd failed: {}", std::strerror(errno)));
   return String(buffer);
 }
 
-void File::changeDirectory(const String& dirName) {
+std::expected<void, StarException> File::changeDirectory(String const& dirName) {
   if (::chdir(dirName.utf8Ptr()) != 0)
-    throw IOException(strf("could not change directory to {}", dirName));
+    return std::unexpected(IOException::format("could not change directory to '{}': {}", dirName, std::strerror(errno)));
+  return {};
 }
 
-void File::makeDirectory(String const& dirName) {
+std::expected<void, StarException> File::makeDirectory(String const& dirName) {
   if (::mkdir(dirName.utf8Ptr(), 0777) != 0)
-    throw IOException(strf("could not create directory '{}', {}", dirName, std::strerror(errno)));
+    return std::unexpected(IOException::format("could not create directory '{}', {}", dirName, std::strerror(errno)));
+  return {};
 }
 
-List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
-  List<std::pair<String, bool>> fileList;
+std::expected<List<std::pair<String, bool>>, StarException> File::dirList(String const& dirName, bool skipDots) {
   DIR* directory = ::opendir(dirName.utf8Ptr());
-  if (directory == NULL)
-    throw IOException::format("dirList failed on dir: '{}'", dirName);
-
-  for (dirent* entry = ::readdir(directory); entry != NULL; entry = ::readdir(directory)) {
-    String entryString = entry->d_name;
-    if (!skipDots || (entryString != "." && entryString != "..")) {
-      bool isDirectory = false;
-      #ifdef STAR_SYSTEM_HAIKU
-      isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
-      #else
-      if (entry->d_type == DT_DIR) {
-        isDirectory = true;
-      } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
-        isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
-      }
-      #endif
-      fileList.append({entryString, isDirectory});
+  if (!directory)
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, std::strerror(errno)));
+  List<std::pair<String, bool>> fileList;
+  int readError = 0;
+  while (true) {
+    errno = 0;
+    auto entry = ::readdir(directory);
+    if (!entry) {
+      readError = errno;
+      break;
     }
+    String name(entry->d_name);
+    if (skipDots && (name == "." || name == ".."))
+      continue;
+    bool directoryEntry = false;
+#ifndef STAR_SYSTEM_HAIKU
+    if (entry->d_type == DT_DIR) {
+      directoryEntry = true;
+    } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
+#endif
+      auto status = isDirectory(relativeTo(dirName, name));
+      if (!status) {
+        if (::closedir(directory) < 0)
+          std::fprintf(stderr, "Error closing directory after status failure: %s\n", std::strerror(errno));
+        return std::unexpected(std::move(status.error()));
+      }
+      directoryEntry = *status;
+#ifndef STAR_SYSTEM_HAIKU
+    }
+#endif
+    fileList.append({std::move(name), directoryEntry});
   }
-  ::closedir(directory);
-
+  int closed = ::closedir(directory);
+  int closeError = closed < 0 ? errno : 0;
+  if (readError) {
+    if (closeError)
+      std::fprintf(stderr, "Error closing directory after failed listing: %s\n", std::strerror(closeError));
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, std::strerror(readError)));
+  }
+  if (closeError)
+    return std::unexpected(IOException::format("closedir failed on dir '{}': {}", dirName, std::strerror(closeError)));
   return fileList;
 }
 
-String File::baseName(const String& fileName) {
-  String ret;
-
-  std::string file = fileName.utf8();
-  char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
-  fn[file.size()] = 0;
-  ret = String(::basename(fn));
-  delete[] fn;
-
-  return ret;
+String File::baseName(String const& fileName) {
+  auto bytes = fileName.utf8();
+  return String(::basename(bytes.data()));
 }
 
-String File::dirName(const String& fileName) {
-  String ret;
-
-  std::string file = fileName.utf8();
-  char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
-  fn[file.size()] = 0;
-  ret = String(::dirname(fn));
-  delete[] fn;
-
-  return ret;
+String File::dirName(String const& fileName) {
+  auto bytes = fileName.utf8();
+  return String(::dirname(bytes.data()));
 }
 
 String File::relativeTo(String const& relativeTo, String const& path) {
-  if (path.beginsWith("/"))
+  if (path.utf8Size() && path.utf8Ptr()[0] == '/')
     return path;
-  return relativeTo.trimEnd("/") + '/' + path;
+  auto bytes = relativeTo.utf8();
+  while (!bytes.empty() && bytes.back() == '/')
+    bytes.pop_back();
+  bytes.push_back('/');
+  bytes.append(path.utf8());
+  return String(std::move(bytes));
 }
 
-String File::fullPath(const String& fileName) {
+std::expected<String, StarException> File::fullPath(String const& fileName) {
   char buffer[PATH_MAX];
-
-  if (::realpath(fileName.utf8Ptr(), buffer) == NULL)
-    throw IOException::format("realpath failed on file: '{}' problem path was: '{}'", fileName, buffer);
-
+  if (::realpath(fileName.utf8Ptr(), buffer) == nullptr)
+    return std::unexpected(IOException::format("realpath failed on file '{}': {}", fileName, std::strerror(errno)));
   return String(buffer);
 }
 
-String File::temporaryFileName(RandomService& random) {
+std::expected<String, StarException> File::temporaryFileName(RandomService& random) {
   return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(random.randBytes(16))));
 }
 
-std::shared_ptr<File> File::temporaryFile(RandomService& random) {
-  return open(temporaryFileName(random), IOMode::ReadWrite);
+std::expected<std::shared_ptr<File>, StarException> File::temporaryFile(RandomService& random) {
+  auto path = temporaryFileName(random);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  return open(*path, IOMode::ReadWrite);
 }
 
-std::shared_ptr<File> File::ephemeralFile(RandomService&) {
+std::expected<std::shared_ptr<File>, StarException> File::ephemeralFile(RandomService&) {
   auto file = std::make_shared<File>();
-  ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
-  auto res = mkstemp(path.ptr());
-  if (res < 0)
-    throw IOException::format("tmpfile error: {}", std::strerror(errno));
+  auto path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
+  auto fd = ::mkstemp(path.ptr());
+  if (fd < 0)
+    return std::unexpected(IOException::format("tmpfile error: {}", std::strerror(errno)));
   if (::unlink(path.ptr()) < 0) {
     auto error = errno;
-    ::close(res);
-    throw IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", std::strerror(error));
+    closeAfterFailure(fd);
+    return std::unexpected(IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", std::strerror(error)));
   }
-  file->m_file = handleFromFd(res);
+  file->m_file = handleFromFd(fd);
   file->setMode(IOMode::ReadWrite);
   return file;
 }
 
-String File::temporaryDirectory(RandomService& random) {
-  String dirname = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(random.randBytes(16))));
-  makeDirectory(dirname);
-  return dirname;
+std::expected<String, StarException> File::temporaryDirectory(RandomService& random) {
+  String directory = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(random.randBytes(16))));
+  auto made = makeDirectory(directory);
+  if (!made)
+    return std::unexpected(std::move(made.error()));
+  return directory;
 }
 
-bool File::exists(String const& path) {
-  struct stat st_buf;
-  int status = stat(path.utf8Ptr(), &st_buf);
-  return status == 0;
+std::expected<bool, StarException> File::exists(String const& path) {
+  struct stat status;
+  return ::stat(path.utf8Ptr(), &status) == 0;
 }
 
-bool File::isFile(String const& path) {
-  struct stat st_buf;
-  int status = stat(path.utf8Ptr(), &st_buf);
-  if (status != 0)
-    return false;
-
-  return S_ISREG(st_buf.st_mode);
+std::expected<bool, StarException> File::isFile(String const& path) {
+  struct stat status;
+  return ::stat(path.utf8Ptr(), &status) == 0 && S_ISREG(status.st_mode);
 }
 
-bool File::isDirectory(String const& path) {
-  struct stat st_buf;
-  int status = stat(path.utf8Ptr(), &st_buf);
-  if (status != 0)
-    return false;
-
-  return S_ISDIR(st_buf.st_mode);
+std::expected<bool, StarException> File::isDirectory(String const& path) {
+  struct stat status;
+  return ::stat(path.utf8Ptr(), &status) == 0 && S_ISDIR(status.st_mode);
 }
 
-void File::remove(String const& filename) {
+std::expected<bool, StarException> File::isSymlink(String const& path) {
+  struct stat status;
+  return ::lstat(path.utf8Ptr(), &status) == 0 && S_ISLNK(status.st_mode);
+}
+
+std::expected<void, StarException> File::remove(String const& filename) {
   if (std::remove(filename.utf8Ptr()) < 0)
-    throw IOException::format("remove error: {}", std::strerror(errno));
+    return std::unexpected(IOException::format("remove error: {}", std::strerror(errno)));
+  return {};
 }
 
-void File::rename(String const& source, String const& target) {
+std::expected<void, StarException> File::rename(String const& source, String const& target) {
   if (std::rename(source.utf8Ptr(), target.utf8Ptr()) < 0)
-    throw IOException::format("rename error: {}", std::strerror(errno));
+    return std::unexpected(IOException::format("rename error: {}", std::strerror(errno)));
+  return {};
 }
 
-void File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
-  String newFile = filename + newSuffix;
-  writeFile(data, len, newFile);
-  File::rename(newFile, filename);
+std::expected<void, StarException> File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
+  auto newFile = filename + newSuffix;
+  auto written = writeFile(data, len, newFile);
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return rename(newFile, filename);
 }
 
-void* File::fopen(char const* filename, IOMode mode) {
-  int oflag = 0;
-
+std::expected<void*, StarException> File::fopen(char const* filename, IOMode mode) {
+  int flags = 0;
   if (mode & IOMode::Read && mode & IOMode::Write)
-    oflag |= O_RDWR | O_CREAT;
+    flags |= O_RDWR | O_CREAT;
   else if (mode & IOMode::Read)
-    oflag |= O_RDONLY;
+    flags |= O_RDONLY;
   else if (mode & IOMode::Write)
-    oflag |= O_WRONLY | O_CREAT;
-
+    flags |= O_WRONLY | O_CREAT;
+  else
+    return std::unexpected(IOException("Cannot open file with closed IO mode"));
   if (mode & IOMode::Truncate)
-    oflag |= O_TRUNC;
-
-  int fd = ::open(filename, oflag, 0666);
+    flags |= O_TRUNC;
+  int fd = ::open(filename, flags, 0666);
   if (fd < 0)
-    throw IOException::format("Error opening file '{}', error: {}", filename, std::strerror(errno));
-
-  if (mode & IOMode::Append) {
-    if (lseek(fd, 0, SEEK_END) < 0) {
-      auto error = errno;
-      ::close(fd);
-      throw IOException::format("Error opening file '{}', cannot seek: {}", filename, std::strerror(error));
-    }
+    return std::unexpected(IOException::format("Error opening file '{}', error: {}", filename, std::strerror(errno)));
+  if (mode & IOMode::Append && ::lseek(fd, 0, SEEK_END) < 0) {
+    auto error = errno;
+    closeAfterFailure(fd);
+    return std::unexpected(IOException::format("Error opening file '{}', cannot seek: {}", filename, std::strerror(error)));
   }
-
   return handleFromFd(fd);
 }
 
-void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
-  auto fd = fdFromHandle(f);
-  StreamOffset retCode;
-  if (seekMode == IOSeek::Relative)
-    retCode = lseek(fd, offset, SEEK_CUR);
-  else if (seekMode == IOSeek::Absolute)
-    retCode = lseek(fd, offset, SEEK_SET);
-  else
-    retCode = lseek(fd, offset, SEEK_END);
-
-  if (retCode < 0)
-    throw IOException::format("Seek error: {}", std::strerror(errno));
+std::expected<void, StarException> File::fseek(void* file, StreamOffset offset, IOSeek seek) {
+  int origin = seek == IOSeek::Relative ? SEEK_CUR : seek == IOSeek::Absolute ? SEEK_SET : SEEK_END;
+  if (::lseek(fdFromHandle(file), offset, origin) < 0)
+    return std::unexpected(IOException::format("Seek error: {}", std::strerror(errno)));
+  return {};
 }
 
-StreamOffset File::ftell(void* f) {
-  return lseek(fdFromHandle(f), 0, SEEK_CUR);
+std::expected<StreamOffset, StarException> File::ftell(void* file) {
+  auto position = ::lseek(fdFromHandle(file), 0, SEEK_CUR);
+  if (position < 0)
+    return std::unexpected(IOException::format("Tell error: {}", std::strerror(errno)));
+  return position;
 }
 
-std::size_t File::fread(void* file, char* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::fread(void* file, char* data, std::size_t len) {
   if (len == 0)
     return 0;
-
-  auto fd = fdFromHandle(file);
-  auto ret = ::read(fd, data, len);
-  if (ret < 0) {
+  auto result = ::read(fdFromHandle(file), data, len);
+  if (result < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Read error: {}", std::strerror(errno));
-  } else {
-    return ret;
+    return std::unexpected(IOException::format("Read error: {}", std::strerror(errno)));
   }
+  return result;
 }
 
-std::size_t File::fwrite(void* file, char const* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::fwrite(void* file, char const* data, std::size_t len) {
   if (len == 0)
     return 0;
-
-  auto fd = fdFromHandle(file);
-  auto ret = ::write(fd, data, len);
-  if (ret < 0) {
+  auto result = ::write(fdFromHandle(file), data, len);
+  if (result < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Write error: {}", std::strerror(errno));
-  } else {
-    return ret;
+    return std::unexpected(IOException::format("Write error: {}", std::strerror(errno)));
   }
+  return result;
 }
 
-void File::fsync(void* file) {
-  auto fd = fdFromHandle(file);
+std::expected<void, StarException> File::fsync(void* file) {
 #ifdef STAR_SYSTEM_LINUX
-  auto result = ::fdatasync(fd);
+  auto result = ::fdatasync(fdFromHandle(file));
 #else
-  auto result = ::fsync(fd);
+  auto result = ::fsync(fdFromHandle(file));
 #endif
   if (result < 0)
-    throw IOException::format("Sync error: {}", std::strerror(errno));
+    return std::unexpected(IOException::format("Sync error: {}", std::strerror(errno)));
+  return {};
 }
 
-void File::fclose(void* file) {
+std::expected<void, StarException> File::fclose(void* file) {
   if (::close(fdFromHandle(file)) < 0)
-    throw IOException::format("Close error: {}", std::strerror(errno));
+    return std::unexpected(IOException::format("Close error: {}", std::strerror(errno)));
+  return {};
 }
 
-StreamOffset File::fsize(void* file) {
-  StreamOffset pos = ftell(file);
-  StreamOffset size = lseek(fdFromHandle(file), 0, SEEK_END);
-  lseek(fdFromHandle(file), pos, SEEK_SET);
+std::expected<StreamOffset, StarException> File::fsize(void* file) {
+  auto position = ftell(file);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  auto size = ::lseek(fdFromHandle(file), 0, SEEK_END);
+  auto error = size < 0 ? errno : 0;
+  auto restored = fseek(file, *position, IOSeek::Absolute);
+  if (error) {
+    if (!restored)
+      std::fprintf(stderr, "Error restoring file cursor after failed size query: %s\n", restored.error().what());
+    return std::unexpected(IOException::format("File size error: {}", std::strerror(error)));
+  }
+  if (!restored)
+    return std::unexpected(std::move(restored.error()));
   return size;
 }
 
-std::size_t File::pread(void* file, char* data, std::size_t len, StreamOffset position) {
-  auto ret = ::pread(fdFromHandle(file), data, len, position);
-  if (ret < 0) {
+std::expected<std::size_t, StarException> File::pread(void* file, char* data, std::size_t len, StreamOffset position) {
+  auto result = ::pread(fdFromHandle(file), data, len, position);
+  if (result < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Read error: {}", std::strerror(errno));
-  } else {
-    return ret;
+    return std::unexpected(IOException::format("Read error: {}", std::strerror(errno)));
   }
+  return result;
 }
 
-std::size_t File::pwrite(void* file, char const* data, std::size_t len, StreamOffset position) {
-  auto ret = ::pwrite(fdFromHandle(file), data, len, position);
-  if (ret < 0) {
+std::expected<std::size_t, StarException> File::pwrite(void* file, char const* data, std::size_t len, StreamOffset position) {
+  auto result = ::pwrite(fdFromHandle(file), data, len, position);
+  if (result < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Write error: {}", std::strerror(errno));
-  } else {
-    return ret;
+    return std::unexpected(IOException::format("Write error: {}", std::strerror(errno)));
   }
+  return result;
 }
 
-void File::resize(void* f, StreamOffset size) {
-  if (::ftruncate(fdFromHandle(f), size) < 0)
-    throw IOException::format("resize error: {}", std::strerror(errno));
+std::expected<void, StarException> File::resize(void* file, StreamOffset size) {
+  if (::ftruncate(fdFromHandle(file), size) < 0)
+    return std::unexpected(IOException::format("resize error: {}", std::strerror(errno)));
+  return {};
 }
 
 }

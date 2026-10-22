@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -124,204 +125,208 @@ public:
     return Star::typeName<Npc>();
   }
 
-  Npc(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Npc(Root& rootContext, NpcVariant const& npcVariant);
-  Npc(Root& rootContext, NpcVariant const& npcVariant, Json const& initialState);
+  [[nodiscard]] static std::expected<std::shared_ptr<Npc>, StarException> create(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<Npc>, StarException> create(Root& rootContext, NpcVariant const& npcVariant);
+  [[nodiscard]] static std::expected<std::shared_ptr<Npc>, StarException> create(Root& rootContext, NpcVariant const& npcVariant, Json const& initialState);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {});
 
   EntityType entityType() const override;
   ClientEntityMode clientEntityMode() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
-  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
-  Vec2F feetOffset() const;
-  Vec2F headArmorOffset() const;
-  Vec2F chestArmorOffset() const;
-  Vec2F legsArmorOffset() const;
-  Vec2F backArmorOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> mouthOffset(bool ignoreAdjustments = true) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> feetOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> headArmorOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> chestArmorOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> legsArmorOffset() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> backArmorOffset() const;
 
   RectF collisionArea() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint = 0.0f) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
-  String description() const override;
+  [[nodiscard]] std::expected<String, StarException> description() const override;
   String species() const override;
   Gender gender() const;
   String npcType() const;
 
-  Json scriptConfigParameter(String const& parameterName, Json const& defaultValue = Json()) const;
+  [[nodiscard]] std::expected<Json, StarException> scriptConfigParameter(String const& parameterName, Json const& defaultValue = Json()) const;
 
-  std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  [[nodiscard]] std::expected<std::optional<HitType>, StarException> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] std::expected<std::optional<PolyF>, StarException> hitPoly() const override;
 
-  void damagedOther(DamageNotification const& damage) override;
+  [[nodiscard]] std::expected<void, StarException> damagedOther(DamageNotification const& damage) override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> selfDamageNotifications() override;
 
-  bool shouldDestroy() const override;
-  void destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
 
-  void update(float dt, std::uint64_t currentVersion) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentVersion) override;
 
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
 
-  void renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
 
   void setPosition(Vec2F const& pos);
 
-  float maxHealth() const override;
+  [[nodiscard]] std::expected<float, StarException> maxHealth() const override;
   float health() const override;
   DamageBarType damageBar() const override;
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  String name() const override;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> portrait(PortraitMode mode) const override;
+  [[nodiscard]] std::expected<String, StarException> name() const override;
   std::optional<String> statusText() const override;
   bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  [[nodiscard]] std::expected<Vec3B, StarException> nametagColor() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> nametagOrigin() const override;
+  [[nodiscard]] std::expected<String, StarException> nametag() const override;
 
   bool aggressive() const;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> mouthPosition() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> mouthPosition(bool ignoreAdjustments) const override;
   List<ChatAction> pullPendingChatActions() override;
 
   bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
   RectF interactiveBoundBox() const override;
 
   std::optional<EntityAnchorState> loungingIn() const override;
 
-  List<QuestArcDescriptor> offeredQuests() const override;
-  StringSet turnInQuests() const override;
-  Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] std::expected<List<QuestArcDescriptor>, StarException> offeredQuests() const override;
+  [[nodiscard]] std::expected<StringSet, StarException> turnInQuests() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> questIndicatorPosition() const override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const override;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
-  Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
-  Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> handOffset(ToolHand hand, Direction facingDirection) const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
   std::shared_ptr<Item> handItem(ToolHand hand) const override;
-  Vec2F armAdjustment() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> armAdjustment() const override;
   Vec2F velocity() const override;
-  Vec2F aimPosition() const override;
-  float interactRadius() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> aimPosition() const override;
+  [[nodiscard]] std::expected<float, StarException> interactRadius() const override;
   Direction facingDirection() const override;
   Direction walkingDirection() const override;
   bool isAdmin() const override;
   Color favoriteColor() const override;
-  float beamGunRadius() const override;
-  void addParticles(List<Particle> const& particles) override;
-  void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
-  bool inToolRange() const override;
-  bool inToolRange(Vec2F const& position) const override;
-  void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
-  float powerMultiplier() const override;
-  bool fullEnergy() const override;
-  float energy() const override;
-  bool energyLocked() const override;
-  bool consumeEnergy(float energy) override;
-  void queueUIMessage(String const& message) override;
-  bool instrumentPlaying() override;
-  void instrumentEquipped(String const& instrumentKind) override;
-  void interact(InteractAction const& action) override;
-  void addEffectEmitters(StringSet const& emitters) override;
-  void requestEmote(String const& emote) override;
+  [[nodiscard]] std::expected<float, StarException> beamGunRadius() const override;
+  [[nodiscard]] std::expected<void, StarException> addParticles(List<Particle> const& particles) override;
+  [[nodiscard]] std::expected<void, StarException> addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
+  [[nodiscard]] std::expected<bool, StarException> inToolRange() const override;
+  [[nodiscard]] std::expected<bool, StarException> inToolRange(Vec2F const& position) const override;
+  [[nodiscard]] std::expected<void, StarException> addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
+  [[nodiscard]] std::expected<ActiveUniqueStatusEffectSummary, StarException> activeUniqueStatusEffectSummary() const override;
+  [[nodiscard]] std::expected<float, StarException> powerMultiplier() const override;
+  [[nodiscard]] std::expected<bool, StarException> fullEnergy() const override;
+  [[nodiscard]] std::expected<float, StarException> energy() const override;
+  [[nodiscard]] std::expected<bool, StarException> energyLocked() const override;
+  [[nodiscard]] std::expected<bool, StarException> consumeEnergy(float energy) override;
+  [[nodiscard]] std::expected<void, StarException> queueUIMessage(String const& message) override;
+  [[nodiscard]] std::expected<bool, StarException> instrumentPlaying() override;
+  [[nodiscard]] std::expected<void, StarException> instrumentEquipped(String const& instrumentKind) override;
+  [[nodiscard]] std::expected<void, StarException> interact(InteractAction const& action) override;
+  [[nodiscard]] std::expected<void, StarException> addEffectEmitters(StringSet const& emitters) override;
+  [[nodiscard]] std::expected<void, StarException> requestEmote(String const& emote) override;
   ActorMovementController* movementController() override;
   StatusController* statusController() override;
   Songbook* songbook();
   void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) override;
 
-  void playEmote(HumanoidEmote emote) override;
+  [[nodiscard]] std::expected<void, StarException> playEmote(HumanoidEmote emote) override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
 
   using Entity::setUniqueId;
 
   HumanoidIdentity const& identity() const;
-  void updateIdentity();
-  void setIdentity(HumanoidIdentity identity);
+  [[nodiscard]] std::expected<void, StarException> updateIdentity();
+  [[nodiscard]] std::expected<void, StarException> setIdentity(HumanoidIdentity identity);
 
-  void setHumanoidParameter(String key, std::optional<Json> value);
+  [[nodiscard]] std::expected<void, StarException> setHumanoidParameter(String key, std::optional<Json> value);
   std::optional<Json> getHumanoidParameter(String key);
-  void setHumanoidParameters(JsonObject parameters);
+  [[nodiscard]] std::expected<void, StarException> setHumanoidParameters(JsonObject parameters);
   JsonObject getHumanoidParameters();
 
-  void setBodyDirectives(String const& directives);
-  void setEmoteDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setBodyDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setEmoteDirectives(String const& directives);
 
-  void setHairGroup(String const& group);
-  void setHairType(String const& type);
-  void setHairDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setHairGroup(String const& group);
+  [[nodiscard]] std::expected<void, StarException> setHairType(String const& type);
+  [[nodiscard]] std::expected<void, StarException> setHairDirectives(String const& directives);
 
-  void setFacialHairGroup(String const& group);
-  void setFacialHairType(String const& type);
-  void setFacialHairDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setFacialHairGroup(String const& group);
+  [[nodiscard]] std::expected<void, StarException> setFacialHairType(String const& type);
+  [[nodiscard]] std::expected<void, StarException> setFacialHairDirectives(String const& directives);
 
-  void setFacialMaskGroup(String const& group);
-  void setFacialMaskType(String const& type);
-  void setFacialMaskDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setFacialMaskGroup(String const& group);
+  [[nodiscard]] std::expected<void, StarException> setFacialMaskType(String const& type);
+  [[nodiscard]] std::expected<void, StarException> setFacialMaskDirectives(String const& directives);
 
-  void setHair      (String const& group, String const& type, String const& directives);
-  void setFacialHair(String const& group, String const& type, String const& directives);
-  void setFacialMask(String const& group, String const& type, String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setHair(String const& group, String const& type, String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setFacialHair(String const& group, String const& type, String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setFacialMask(String const& group, String const& type, String const& directives);
 
-  void setSpecies(String const& species);
-  void setGender(Gender const& gender);
-  void setPersonality(Personality const& personality);
-  void setImagePath(std::optional<String> const& imagePath);
+  [[nodiscard]] std::expected<void, StarException> setSpecies(String const& species);
+  [[nodiscard]] std::expected<void, StarException> setGender(Gender const& gender);
+  [[nodiscard]] std::expected<void, StarException> setPersonality(Personality const& personality);
+  [[nodiscard]] std::expected<void, StarException> setImagePath(std::optional<String> const& imagePath);
 
-  void setFavoriteColor(Color color);
-  void setName(String const& name);
+  [[nodiscard]] std::expected<void, StarException> setFavoriteColor(Color color);
+  [[nodiscard]] std::expected<void, StarException> setName(String const& name);
   void setDescription(String const& description);
 
-  std::shared_ptr<Humanoid> humanoid();
-  std::shared_ptr<Humanoid> humanoid() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Humanoid>, StarException> humanoid();
+  [[nodiscard]] std::expected<std::shared_ptr<Humanoid>, StarException> humanoid() const;
 
   bool forceNude() const;
 
 private:
-  Vec2F getAbsolutePosition(Vec2F relativePosition) const;
+  explicit Npc(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(NpcVariant const& npcVariant);
+  [[nodiscard]] std::expected<void, StarException> loadState(Json const& diskStore);
 
-  void tickShared(float dt);
-  LuaCallbacks makeNpcCallbacks();
+  [[nodiscard]] std::expected<Vec2F, StarException> getAbsolutePosition(Vec2F relativePosition) const;
 
-  void setupNetStates();
-  void getNetStates(bool initial);
-  void setNetStates();
+  [[nodiscard]] std::expected<void, StarException> tickShared(float dt);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeNpcCallbacks();
 
-  void addChatMessage(String const& message, Json const& config, String const& portrait = "");
+  [[nodiscard]] std::expected<void, StarException> setupNetStates();
+  [[nodiscard]] std::expected<void, StarException> getNetStates(bool initial);
+  [[nodiscard]] std::expected<void, StarException> setNetStates();
+
+  [[nodiscard]] std::expected<void, StarException> addChatMessage(String const& message, Json const& config, String const& portrait = "");
   void addEmote(HumanoidEmote const& emote);
-  void setDance(std::optional<String> const& danceName);
+  [[nodiscard]] std::expected<void, StarException> setDance(std::optional<String> const& danceName);
 
-  bool setItemSlot(String const& slot, ItemDescriptor itemDescriptor);
+  [[nodiscard]] std::expected<bool, StarException> setItemSlot(String const& slot, ItemDescriptor itemDescriptor);
 
-  bool canUseTool() const;
+  [[nodiscard]] std::expected<bool, StarException> canUseTool() const;
 
   void disableWornArmor(bool disable);
 
-  void refreshHumanoidParameters();
+  [[nodiscard]] std::expected<void, StarException> refreshHumanoidParameters();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;

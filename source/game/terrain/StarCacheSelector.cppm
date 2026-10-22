@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 
@@ -15,9 +16,13 @@ export namespace Star {
 struct CacheSelector : TerrainSelector {
   static char const* const Name;
 
-  CacheSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+  [[nodiscard]] static std::expected<std::shared_ptr<CacheSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  CacheSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters) : TerrainSelector(Name, config, parameters) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
   std::shared_ptr<TerrainSelector const> m_source;
   mutable HashLruCache<Vec2I, float> m_cache;
@@ -29,23 +34,38 @@ namespace Star {
 
 char const* const CacheSelector::Name = "cache";
 
-CacheSelector::CacheSelector(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
-  : TerrainSelector(Name, config, parameters) {
+std::expected<std::shared_ptr<CacheSelector>, StarException> CacheSelector::create(
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
+  auto result = std::make_shared<CacheSelector>(ConstructionKey{}, config, parameters);
   auto sourceConfig = config.get("source");
-  String sourceType = sourceConfig.getString("type");
-  std::uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
+  if (!sourceConfig)
+    return std::unexpected(std::move(sourceConfig.error()));
+  auto sourceType = sourceConfig->getString("type");
+  if (!sourceType)
+    return std::unexpected(std::move(sourceType.error()));
+  auto seedBias = sourceConfig->getUInt("seedBias", 0);
+  if (!seedBias)
+    return std::unexpected(std::move(seedBias.error()));
   TerrainSelectorParameters sourceParameters = parameters;
-  sourceParameters.seed += seedBias;
-  m_source = database->createSelectorType(type, sourceConfig, sourceParameters);
-
-  m_cache.setMaxSize(config.getUInt("lruCacheSize", 20000));
+  sourceParameters.seed += *seedBias;
+  auto source = database->createSelectorType(result->type, *sourceConfig, sourceParameters);
+  if (!source)
+    return std::unexpected(std::move(source.error()));
+  result->m_source = std::move(*source);
+  auto cacheSize = config.getUInt("lruCacheSize", 20000);
+  if (!cacheSize)
+    return std::unexpected(std::move(cacheSize.error()));
+  result->m_cache.setMaxSize(*cacheSize);
+  return result;
 }
 
-float CacheSelector::get(int x, int y) const {
-  return m_cache.get(Vec2I(x, y), [this](Vec2I const& key) {
-      return m_source->get(key[0], key[1]);
-    });
+std::expected<float, StarException> CacheSelector::get(int x, int y) const {
+  auto value = m_cache.get(Vec2I(x, y), [this](Vec2I const& key) {
+    return m_source->get(key[0], key[1]);
+  });
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return **value;
 }
 
 }

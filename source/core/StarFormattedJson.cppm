@@ -1,8 +1,8 @@
 module;
+import star.format;
 import star.string;
 import star.list;
 import star.map;
-import star.stream_formatter;
 
 import std;
 
@@ -50,7 +50,7 @@ struct CommaElement {
 using JsonElement = std::variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement>;
 
 
-std::ostream& operator<<(std::ostream& os, JsonElement const& elem);
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonElement const& elem);
 
 // Class representing formatted JSON data. Preserves whitespace and comments.
 class FormattedJson {
@@ -58,8 +58,9 @@ public:
   typedef List<JsonElement> ElementList;
   typedef std::size_t ElementLocation;
 
-  static FormattedJson parse(String const& string);
-  static FormattedJson parseJson(String const& string);
+  static std::expected<FormattedJson, StarException> parse(String const& string);
+  static std::expected<FormattedJson, StarException> parseJson(String const& string);
+  static std::expected<FormattedJson, StarException> create(Json const& json);
 
   static FormattedJson ofType(Json::Type type);
 
@@ -68,42 +69,41 @@ public:
   FormattedJson& operator=(FormattedJson const&) = default;
   FormattedJson(FormattedJson&& other);
   FormattedJson& operator=(FormattedJson&& other);
-  FormattedJson(Json const&);
 
   Json const& toJson() const;
 
-  FormattedJson get(String const& key) const;
-  FormattedJson get(std::size_t index) const;
+  std::expected<FormattedJson, StarException> get(String const& key) const;
+  std::expected<FormattedJson, StarException> get(std::size_t index) const;
 
   // Returns a new FormattedJson with the given values added or erased.
   // Prepend, insert and append update the value in-place if the key already
   // exists.
-  FormattedJson prepend(String const& key, FormattedJson const& value) const;
-  FormattedJson insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const;
-  FormattedJson insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const;
-  FormattedJson append(String const& key, FormattedJson const& value) const;
-  FormattedJson set(String const& key, FormattedJson const& value) const;
-  FormattedJson eraseKey(String const& key) const;
+  std::expected<FormattedJson, StarException> prepend(String const& key, FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const;
+  std::expected<FormattedJson, StarException> insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const;
+  std::expected<FormattedJson, StarException> append(String const& key, FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> set(String const& key, FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> eraseKey(String const& key) const;
 
-  FormattedJson insert(std::size_t index, FormattedJson const& value) const;
-  FormattedJson append(FormattedJson const& value) const;
-  FormattedJson set(std::size_t index, FormattedJson const& value) const;
-  FormattedJson eraseIndex(std::size_t index) const;
+  std::expected<FormattedJson, StarException> insert(std::size_t index, FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> append(FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> set(std::size_t index, FormattedJson const& value) const;
+  std::expected<FormattedJson, StarException> eraseIndex(std::size_t index) const;
 
   // Returns the number of elements in a Json array, or entries in an object.
-  std::size_t size() const;
+  std::expected<std::size_t, StarException> size() const;
 
-  bool contains(String const& key) const;
+  std::expected<bool, StarException> contains(String const& key) const;
 
   Json::Type type() const;
   bool isType(Json::Type type) const;
   String typeName() const;
 
-  String toFormattedDouble() const;
-  String toFormattedInt() const;
+  std::expected<String, StarException> toFormattedDouble() const;
+  std::expected<String, StarException> toFormattedInt() const;
 
-  String repr() const;
-  String printJson() const;
+  std::expected<String, StarException> repr() const;
+  std::expected<String, StarException> printJson() const;
 
   ElementList const& elements() const;
 
@@ -115,14 +115,14 @@ public:
 private:
   friend class FormattedJsonBuilderStream;
 
-  static FormattedJson object(ElementList const& elements);
-  static FormattedJson array(ElementList const& elements);
+  static std::expected<FormattedJson, StarException> object(ElementList const& elements);
+  static std::expected<FormattedJson, StarException> array(ElementList const& elements);
 
-  FormattedJson objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const;
-  void appendElement(JsonElement const& elem);
+  std::expected<FormattedJson, StarException> objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const;
+  std::expected<void, StarException> appendElement(JsonElement const& elem);
 
-  FormattedJson const& getFormattedJson(ElementLocation loc) const;
-  FormattedJson formattedAs(String const& formatting) const;
+  std::expected<FormattedJson const*, StarException> getFormattedJson(ElementLocation loc) const;
+  std::expected<FormattedJson, StarException> formattedAs(String const& formatting) const;
 
   Json m_jsonValue;
   ElementList m_elements;
@@ -134,13 +134,12 @@ private:
   List<ElementLocation> m_arrayElementLocations;
 };
 
-std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, FormattedJson const& json);
 
 }
 
 export module star.formatted_json;
 
-export template <> struct std::formatter<Star::FormattedJson> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::FormattedJson;

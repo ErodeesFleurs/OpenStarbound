@@ -2,7 +2,6 @@ module;
 import std;
 import star.unique_function;
 import star.string;
-import star.list;
 import star.format;
 import star.thread;
 
@@ -15,156 +14,97 @@ using WorkerPoolException = StarError<WorkerPoolExceptionTag, StarException>;
 
 class WorkerPool;
 
-// Shareable handle for a WorkerPool computation that does not produce any
-// value.
+// A shared completion signal carrying an owning failure diagnostic.
 class WorkerPoolHandle {
 public:
-  // Returns true if the work is completed (either due to error or actual
-  // completion, will not re-throw)
   bool done() const;
-
-  // Waits up to given millis for the computation to finish.  Returns true if
-  // the computation finished within the allotted time, false otherwise.  If
-  // the computation is finished but it threw an exception, it will be
-  // re-thrown here.
-  bool wait(unsigned millis) const;
-
-  // synonym for wait(0)
-  bool poll() const;
-
-  // Wait until the computation finishes completely.  If the computation threw
-  // an exception it will be re-thrown by this method.
-  void finish() const;
+  [[nodiscard]] std::expected<bool, StarException> wait(unsigned millis) const;
+  [[nodiscard]] std::expected<bool, StarException> poll() const;
+  [[nodiscard]] std::expected<void, StarException> finish() const;
 
 private:
   friend WorkerPool;
-
   struct Impl {
-    Impl();
-
     Mutex mutex;
     ConditionVariable condition;
-    std::atomic<bool> done;
-    std::exception_ptr exception;
+    std::atomic<bool> done{false};
+    std::optional<StarException> error;
   };
-
   WorkerPoolHandle(std::shared_ptr<Impl> impl);
-
   std::shared_ptr<Impl> m_impl;
 };
 
-// Shareable handle for a WorkerPool computation that produces a value.
+// Results stay owned by the shared promise and can be observed repeatedly.
 template <typename ResultType>
 class WorkerPoolPromise {
 public:
-  // Returns true if the work is completed (either due to error or actual
-  // completion, will not re-throw)
   bool done() const;
-
-  // Waits for the given amount of time for the work to be completed.  If the
-  // work is completed, returns true.  If the producer function throws for any
-  // reason, this method will re-throw the exception.  If millis is zero, does
-  // not wait at all simply polls to see if the computation is finished.
-  bool wait(unsigned millis) const;
-
-  // synonym for wait(0)
-  bool poll() const;
-
-  // Blocks until the work is done, and returns the result.  May be called
-  // multiple times to access the result.  If the computation threw
-  // an exception it will be re-thrown by this method.
-  ResultType& get();
-  ResultType const& get() const;
+  [[nodiscard]] std::expected<bool, StarException> wait(unsigned millis) const;
+  [[nodiscard]] std::expected<bool, StarException> poll() const;
+  [[nodiscard]] std::expected<ResultType*, StarException> get();
+  [[nodiscard]] std::expected<ResultType const*, StarException> get() const;
 
 private:
   friend WorkerPool;
-
   struct Impl {
     Mutex mutex;
     ConditionVariable condition;
     std::optional<ResultType> result;
-    std::exception_ptr exception;
+    std::optional<StarException> error;
     std::atomic<bool> done{false};
   };
-
   WorkerPoolPromise(std::shared_ptr<Impl> impl);
-
   std::shared_ptr<Impl> m_impl;
 };
 
 class WorkerPool {
 public:
-  // Creates a pool that queues work until start() or finish().
+  // A queue-only pool can execute accepted jobs synchronously in finish().
   WorkerPool(String name);
-  // Creates a started pool
-  WorkerPool(String name, unsigned threadCount);
+  [[nodiscard]] static std::expected<std::unique_ptr<WorkerPool>, StarException> create(String name, unsigned threadCount);
   ~WorkerPool();
 
-  // Workers borrow this object's locks and queues; its address must stay stable.
+  // Worker threads borrow this object's locks and queues: its address is fixed.
   WorkerPool(WorkerPool const&) = delete;
   WorkerPool& operator=(WorkerPool const&) = delete;
   WorkerPool(WorkerPool&&) = delete;
   WorkerPool& operator=(WorkerPool&&) = delete;
 
-  // Start the thread pool with the given thread count range, or if it is
-  // already started, reconfigure the thread counts.
-  void start(unsigned threadCount);
-
-  // Stop accepting work, fail queued jobs, and wait for running jobs to finish.
-  // Submissions after stop return an already-failed handle or promise until start.
-  void stop();
-
-  // Stop accepting work, complete all accepted jobs, then stop the threads.
-  // Neither finish nor stop may be called from one of this pool's jobs.
-  void finish();
-
-  // Add the given work to the pool and return a handle for the work.  It not
-  // required that the caller of this method hold on to the worker handle, the
-  // work will be managed and completed regardless of the WorkerPoolHandle
-  // lifetime.
-  WorkerPoolHandle addWork(UniqueFunction<void()> work);
-
-  // Like addWork, but the worker is expected to produce some result.  The
-  // returned promise can be used to get this return value once the producer is
-  // complete.
+  [[nodiscard]] std::expected<void, StarException> start(unsigned threadCount);
+  // Stop accepting work, fail queued jobs, and join running jobs.
+  [[nodiscard]] std::expected<void, StarException> stop();
+  // Drain accepted work and join workers. Do not call from this pool's jobs.
+  [[nodiscard]] std::expected<void, StarException> finish();
+  WorkerPoolHandle addWork(UniqueFunction<std::expected<void, StarException>()> work);
   template <typename ResultType>
-  WorkerPoolPromise<ResultType> addProducer(UniqueFunction<ResultType()> producer);
-
-  // Returns the current number of worker threads.
+  WorkerPoolPromise<ResultType> addProducer(UniqueFunction<std::expected<ResultType, StarException>()> producer);
   std::size_t getWorkerCount() const;
-
-  // Detect nested work without a process-global or thread-local current pool.
   bool isWorkerThread() const;
 
 private:
   class WorkerThread : public Thread {
   public:
-    // Starts automatically
     WorkerThread(WorkerPool* parent);
     ~WorkerThread();
-
-    void run() override;
-
+    [[nodiscard]] std::expected<void, StarException> run() override;
     WorkerPool* parent;
-    std::atomic<bool> shouldStop;
-    std::atomic<bool> waiting;
+    std::atomic<bool> shouldStop{false};
+    std::atomic<bool> waiting{false};
     std::thread::id id;
   };
 
-  // A non-null exception cancels a queued job without invoking its producer.
-  void queueWork(UniqueFunction<void(std::exception_ptr)> work);
-
-  // Lifecycle helpers require m_threadMutex, but never join with m_workMutex held.
-  void stopWorkers();
-  void joinWorkers();
+  using QueuedWork = UniqueFunction<std::expected<void, StarException>(std::optional<StarException>)>;
+  void queueWork(QueuedWork work);
+  // Require m_threadMutex; never join while m_workMutex is held.
+  [[nodiscard]] std::expected<void, StarException> stopWorkers();
+  [[nodiscard]] std::expected<void, StarException> joinWorkers();
 
   String m_name;
   Mutex m_threadMutex;
-  List<std::unique_ptr<WorkerThread>> m_workerThreads;
-
+  std::vector<std::unique_ptr<WorkerThread>> m_workerThreads;
   mutable Mutex m_workMutex;
   ConditionVariable m_workCondition;
-  Deque<UniqueFunction<void(std::exception_ptr)>> m_pendingWork;
+  std::deque<QueuedWork> m_pendingWork;
   std::thread::id m_finishingThread;
   bool m_acceptingWork = true;
 };
@@ -175,9 +115,8 @@ bool WorkerPoolPromise<ResultType>::done() const {
 }
 
 template <typename ResultType>
-bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
+[[nodiscard]] std::expected<bool, StarException> WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
   MutexLocker locker(m_impl->mutex);
-
   auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
   while (!m_impl->done.load(std::memory_order_acquire) && millis != 0) {
     auto remaining = deadline - std::chrono::steady_clock::now();
@@ -186,34 +125,30 @@ bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
     m_impl->condition.wait(m_impl->mutex,
         static_cast<unsigned>(std::chrono::ceil<std::chrono::milliseconds>(remaining).count()));
   }
-
-  if (m_impl->exception)
-    std::rethrow_exception(m_impl->exception);
-
-  if (m_impl->result)
-    return true;
-
-  return false;
+  if (m_impl->error)
+    return std::unexpected(*m_impl->error);
+  return m_impl->done.load(std::memory_order_acquire);
 }
 
 template <typename ResultType>
-bool WorkerPoolPromise<ResultType>::poll() const {
+[[nodiscard]] std::expected<bool, StarException> WorkerPoolPromise<ResultType>::poll() const {
   return wait(0);
 }
 
 template <typename ResultType>
-ResultType& WorkerPoolPromise<ResultType>::get() {
+[[nodiscard]] std::expected<ResultType*, StarException> WorkerPoolPromise<ResultType>::get() {
   m_impl->done.wait(false, std::memory_order_acquire);
-
-  if (m_impl->exception)
-    std::rethrow_exception(m_impl->exception);
-
-  return m_impl->result.value();
+  if (m_impl->error)
+    return std::unexpected(*m_impl->error);
+  return &*m_impl->result;
 }
 
 template <typename ResultType>
-ResultType const& WorkerPoolPromise<ResultType>::get() const {
-  return const_cast<WorkerPoolPromise*>(this)->get();
+[[nodiscard]] std::expected<ResultType const*, StarException> WorkerPoolPromise<ResultType>::get() const {
+  auto result = const_cast<WorkerPoolPromise*>(this)->get();
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return *result;
 }
 
 template <typename ResultType>
@@ -221,30 +156,21 @@ WorkerPoolPromise<ResultType>::WorkerPoolPromise(std::shared_ptr<Impl> impl)
   : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
-WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<ResultType()> producer) {
-  // Construct a worker pool promise and wrap the producer to signal the
-  // promise when finished.
-  auto workerPoolPromiseImpl = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
-  queueWork([workerPoolPromiseImpl, producer = std::move(producer)](std::exception_ptr cancelled) mutable {
-    try {
-      if (cancelled)
-        std::rethrow_exception(cancelled);
-      auto result = producer();
-      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
-      workerPoolPromiseImpl->result.emplace(std::move(result));
-      workerPoolPromiseImpl->done.store(true, std::memory_order_release);
-      workerPoolPromiseImpl->done.notify_all();
-      workerPoolPromiseImpl->condition.broadcast();
-    } catch (...) {
-      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
-      workerPoolPromiseImpl->exception = std::current_exception();
-      workerPoolPromiseImpl->done.store(true, std::memory_order_release);
-      workerPoolPromiseImpl->done.notify_all();
-      workerPoolPromiseImpl->condition.broadcast();
-    }
+WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<std::expected<ResultType, StarException>()> producer) {
+  auto state = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
+  queueWork([state, producer = std::move(producer)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
+    auto result = cancelled ? std::expected<ResultType, StarException>(std::unexpected(std::move(*cancelled))) : producer();
+    MutexLocker lock(state->mutex);
+    if (result)
+      state->result.emplace(std::move(*result));
+    else
+      state->error.emplace(std::move(result.error()));
+    state->done.store(true, std::memory_order_release);
+    state->done.notify_all();
+    state->condition.broadcast();
+    return {};
   });
-
-  return workerPoolPromiseImpl;
+  return state;
 }
 
 }

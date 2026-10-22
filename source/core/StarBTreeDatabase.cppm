@@ -36,18 +36,18 @@ public:
   // for index or leaf nodes that are not completely full.  Cannot be changed
   // once the database is opened.  Defaults to 2048.
   std::uint32_t blockSize() const;
-  void setBlockSize(std::uint32_t blockSize);
+  [[nodiscard]] std::expected<void, StarException> setBlockSize(std::uint32_t blockSize);
 
   // Constant size of the database keys.  Should be much smaller than the block
   // size, cannot be changed once a database is opened.  Defaults zero, which
   // is invalid, so must be set if opening a new database.
   std::uint32_t keySize() const;
-  void setKeySize(std::uint32_t keySize);
+  [[nodiscard]] std::expected<void, StarException> setKeySize(std::uint32_t keySize);
 
   // Must be no greater than ContentIdentifierStringSize large.  May not be
   // called when the database is opened.
   String contentIdentifier() const;
-  void setContentIdentifier(String contentIdentifier);
+  [[nodiscard]] std::expected<void, StarException> setContentIdentifier(String contentIdentifier);
 
   // Cache size for index nodes, defaults to 64
   std::uint32_t indexCacheSize() const;
@@ -56,53 +56,56 @@ public:
   // If true, very write operation will immediately result in a commit.
   // Defaults to true.
   bool autoCommit() const;
-  void setAutoCommit(bool autoCommit);
+  [[nodiscard]] std::expected<void, StarException> setAutoCommit(bool autoCommit);
 
   std::shared_ptr<IODevice> ioDevice() const;
-  void setIODevice(std::shared_ptr<IODevice> device);
+  [[nodiscard]] std::expected<void, StarException> setIODevice(std::shared_ptr<IODevice> device);
 
   // If an existing database is opened, this will update the key size, block
   // size, and content identifier with those from the opened database.
   // Otherwise, it will use the currently set values.  Returns true if a new
   // database was created, false if an existing database was found and opened.
-  bool open();
+  [[nodiscard]] std::expected<bool, StarException> open();
 
   bool isOpen() const;
 
-  bool contains(ByteArray const& k);
+  [[nodiscard]] std::expected<bool, StarException> contains(ByteArray const& k);
 
-  std::optional<ByteArray> find(ByteArray const& k);
-  List<std::pair<ByteArray, ByteArray>> find(ByteArray const& lower, ByteArray const& upper);
+  [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> find(ByteArray const& k);
+  [[nodiscard]] std::expected<List<std::pair<ByteArray, ByteArray>>, StarException> find(ByteArray const& lower, ByteArray const& upper);
 
-  void forEach(ByteArray const& lower, ByteArray const& upper, std::function<void(ByteArray, ByteArray)> v);
-  void forAll(std::function<void(ByteArray, ByteArray)> v);
-  void recoverAll(std::function<void(ByteArray, ByteArray)> v, std::function<void(String const&, ExceptionDiagnostic const&)> e);
+  // Visitors and recovery handlers must report errors through expected.
+  [[nodiscard]] std::expected<void, StarException> forEach(ByteArray const& lower, ByteArray const& upper, std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v);
+  [[nodiscard]] std::expected<void, StarException> forAll(std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v);
+  [[nodiscard]] std::expected<void, StarException> recoverAll(std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v, std::function<std::expected<void, StarException>(String const&, ExceptionDiagnostic const&)> e);
 
+  // A failed mutation or commit leaves the transaction available for explicit
+  // rollback(); it never silently discards earlier uncommitted mutations.
   // Returns true if a value was overwritten
-  bool insert(ByteArray const& k, ByteArray const& data);
+  [[nodiscard]] std::expected<bool, StarException> insert(ByteArray const& k, ByteArray const& data);
 
   // Returns true if the element was found and removed
-  bool remove(ByteArray const& k);
+  [[nodiscard]] std::expected<bool, StarException> remove(ByteArray const& k);
 
   // Remove all elements in the given range, returns keys removed.
-  List<ByteArray> remove(ByteArray const& lower, ByteArray const& upper);
+  [[nodiscard]] std::expected<List<ByteArray>, StarException> remove(ByteArray const& lower, ByteArray const& upper);
 
-  std::uint64_t recordCount();
+  [[nodiscard]] std::expected<std::uint64_t, StarException> recordCount();
 
   // The depth of the index nodes in this database
-  std::uint8_t indexLevels();
+  [[nodiscard]] std::expected<std::uint8_t, StarException> indexLevels();
 
-  std::uint32_t totalBlockCount();
-  std::uint32_t freeBlockCount();
-  std::uint32_t indexBlockCount();
-  std::uint32_t leafBlockCount();
+  [[nodiscard]] std::expected<std::uint32_t, StarException> totalBlockCount();
+  [[nodiscard]] std::expected<std::uint32_t, StarException> freeBlockCount();
+  [[nodiscard]] std::expected<std::uint32_t, StarException> indexBlockCount();
+  [[nodiscard]] std::expected<std::uint32_t, StarException> leafBlockCount();
 
-  void commit();
-  void rollback();
+  [[nodiscard]] std::expected<void, StarException> commit();
+  [[nodiscard]] std::expected<void, StarException> rollback();
 
   // Commits pending changes and optionally closes the device.  A commit
   // failure leaves the database open so the caller can report it or roll back.
-  void close(bool closeDevice = false);
+  [[nodiscard]] std::expected<void, StarException> close(bool closeDevice = false);
 
 private:
   typedef std::uint32_t BlockIndex;
@@ -200,23 +203,23 @@ private:
 
     Pointer rootPointer();
     bool rootIsLeaf();
-    void setNewRoot(Pointer pointer, bool isLeaf);
+    [[nodiscard]] std::expected<void, StarException> setNewRoot(Pointer pointer, bool isLeaf);
 
     Index createIndex(Pointer beginPointer);
-    Index loadIndex(Pointer pointer);
+    [[nodiscard]] std::expected<Index, StarException> loadIndex(Pointer pointer);
     bool indexNeedsShift(Index const& index);
     bool indexShift(Index const& left, Key const& mid, Index const& right);
     std::optional<std::pair<Key, Index>> indexSplit(Index const& index);
-    Pointer storeIndex(Index index);
+    [[nodiscard]] std::expected<Pointer, StarException> storeIndex(Index index);
     void deleteIndex(Index index);
 
     Leaf createLeaf();
-    Leaf loadLeaf(Pointer pointer);
+    [[nodiscard]] std::expected<Leaf, StarException> loadLeaf(Pointer pointer);
     bool leafNeedsShift(Leaf const& l);
     bool leafShift(Leaf& left, Leaf& right);
     std::optional<Leaf> leafSplit(Leaf& leaf);
-    Pointer storeLeaf(Leaf leaf);
-    void deleteLeaf(Leaf leaf);
+    [[nodiscard]] std::expected<Pointer, StarException> storeLeaf(Leaf leaf);
+    [[nodiscard]] std::expected<void, StarException> deleteLeaf(Leaf leaf);
 
     std::size_t indexPointerCount(Index const& index);
     Pointer indexPointer(Index const& index, std::size_t i);
@@ -239,39 +242,36 @@ private:
     BTreeDatabase* parent;
   };
 
-  void readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
-  ByteArray readBlock(BlockIndex blockIndex) const;
-  void updateBlock(BlockIndex blockIndex, ByteArray const& block);
+  [[nodiscard]] std::expected<void, StarException> readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> readBlock(BlockIndex blockIndex) const;
+  [[nodiscard]] std::expected<void, StarException> updateBlock(BlockIndex blockIndex, ByteArray const& block);
 
-  void rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
-  void rawWriteBlock(BlockIndex blockIndex, std::size_t blockOffset, char const* block, std::size_t size);
+  [[nodiscard]] std::expected<void, StarException> rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
+  [[nodiscard]] std::expected<void, StarException> rawWriteBlock(BlockIndex blockIndex, std::size_t blockOffset, char const* block, std::size_t size);
 
-  void updateHeadFreeIndexBlock(BlockIndex newHead);
-
-  FreeIndexBlock readFreeIndexBlock(BlockIndex blockIndex);
-  void writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock indexBlock);
+  [[nodiscard]] std::expected<FreeIndexBlock, StarException> readFreeIndexBlock(BlockIndex blockIndex);
+  [[nodiscard]] std::expected<void, StarException> writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock indexBlock);
 
   std::uint32_t leafSize(std::shared_ptr<LeafNode> const& leaf) const;
   std::uint32_t maxIndexPointers() const;
 
   std::uint32_t dataSize(ByteArray const& d) const;
-  List<BlockIndex> leafTailBlocks(BlockIndex leafPointer);
+  [[nodiscard]] std::expected<List<BlockIndex>, StarException> leafTailBlocks(BlockIndex leafPointer);
 
   void freeBlock(BlockIndex b);
-  BlockIndex reserveBlock();
-  BlockIndex makeEndBlock();
+  [[nodiscard]] std::expected<BlockIndex, StarException> reserveBlock();
+  [[nodiscard]] std::expected<BlockIndex, StarException> makeEndBlock();
 
-  void dirty();
-  void writeRoot();
-  void readRoot();
-  void doCommit();
-  void commitWrites();
-  bool tryFlatten();
-  bool flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
+  [[nodiscard]] std::expected<void, StarException> writeRoot();
+  [[nodiscard]] std::expected<void, StarException> readRoot();
+  [[nodiscard]] std::expected<void, StarException> doCommit();
+  [[nodiscard]] std::expected<void, StarException> commitWrites();
+  [[nodiscard]] std::expected<bool, StarException> tryFlatten();
+  [[nodiscard]] std::expected<bool, StarException> flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
 
-  void checkIfOpen(char const* methodName, bool shouldBeOpen) const;
-  void checkBlockIndex(std::size_t blockIndex) const;
-  void checkKeySize(ByteArray const& k) const;
+  [[nodiscard]] std::expected<void, StarException> checkIfOpen(char const* methodName, bool shouldBeOpen) const;
+  [[nodiscard]] std::expected<void, StarException> checkBlockIndex(std::size_t blockIndex) const;
+  [[nodiscard]] std::expected<void, StarException> checkKeySize(ByteArray const& k) const;
   std::uint32_t maxFreeIndexLength() const;
 
   Logger& m_logger;
@@ -300,7 +300,6 @@ private:
   BlockIndex m_root;
   bool m_rootIsLeaf;
   bool m_usingAltRoot;
-  bool m_dirty;
 
   // Blocks that can be freely allocated and written to without violating
   // atomic consistency.
@@ -318,20 +317,21 @@ private:
 class BTreeSha256Database : private BTreeDatabase {
 public:
   explicit BTreeSha256Database(Logger& logger);
-  BTreeSha256Database(Logger& logger, String const& contentIdentifier);
+  // Creates a closed database with a checked, nonempty content identifier.
+  [[nodiscard]] static std::expected<std::unique_ptr<BTreeSha256Database>, StarException> create(Logger& logger, String const& contentIdentifier);
 
   // Keys can be arbitrary size, actual key is the SHA-256 checksum of the key.
-  bool contains(ByteArray const& key);
-  std::optional<ByteArray> find(ByteArray const& key);
-  bool insert(ByteArray const& key, ByteArray const& value);
-  bool remove(ByteArray const& key);
+  [[nodiscard]] std::expected<bool, StarException> contains(ByteArray const& key);
+  [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> find(ByteArray const& key);
+  [[nodiscard]] std::expected<bool, StarException> insert(ByteArray const& key, ByteArray const& value);
+  [[nodiscard]] std::expected<bool, StarException> remove(ByteArray const& key);
 
   // Convenience string versions of access methods.  Equivalent to the utf8
   // bytes of the string minus the null terminator.
-  bool contains(String const& key);
-  std::optional<ByteArray> find(String const& key);
-  bool insert(String const& key, ByteArray const& value);
-  bool remove(String const& key);
+  [[nodiscard]] std::expected<bool, StarException> contains(String const& key);
+  [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> find(String const& key);
+  [[nodiscard]] std::expected<bool, StarException> insert(String const& key, ByteArray const& value);
+  [[nodiscard]] std::expected<bool, StarException> remove(String const& key);
 
   using BTreeDatabase::ContentIdentifierStringSize;
   using BTreeDatabase::blockSize;

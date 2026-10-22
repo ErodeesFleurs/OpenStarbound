@@ -4,299 +4,368 @@ import star.file;
 import star.io_device;
 import star.string;
 import star.format;
-
 import std;
-
 import star.byte_array;
+
 namespace Star {
 
 namespace {
-  // Removes 'fileName' if it is a symbolic link, without following it, and
-  // returns whether it was one.  Following a link would remove files outside of
-  // the directory being removed, and a link pointing at one of its own parent
-  // directories would walk the same tree until the OS errors out.
-  bool removeSymlink(String const& fileName) {
-    if (!File::isSymlink(fileName))
+  // Delete the link itself, never traverse its target.
+  std::expected<bool, StarException> removeSymlink(String const& fileName) {
+    auto link = File::isSymlink(fileName);
+    if (!link)
+      return std::unexpected(std::move(link.error()));
+    if (!*link)
       return false;
-
-    auto path = std::filesystem::path(fileName.utf8());
-    std::error_code ec;
-    std::filesystem::remove(path, ec);
-    if (ec)
-      throw IOException::format("remove error: {}", ec.message());
+    auto removed = File::remove(fileName);
+    if (!removed)
+      return std::unexpected(std::move(removed.error()));
     return true;
   }
 }
 
-bool File::isSymlink(String const& path) {
-  std::error_code ec;
-  return std::filesystem::is_symlink(std::filesystem::path(path.utf8()), ec);
-}
 
-void File::makeDirectoryRecursive(String const& fileName) {
+std::expected<void, StarException> File::makeDirectoryRecursive(String const& fileName) {
   auto parent = dirName(fileName);
-  if (!isDirectory(parent))
-    makeDirectoryRecursive(parent);
-  if (!isDirectory(fileName))
-    makeDirectory(fileName);
-}
-
-void File::removeDirectoryRecursive(String const& fileName) {
-  if (removeSymlink(fileName))
-    return;
-
-  {
-    String fileInDir;
-    bool isDir;
-
-    for (auto const& p : dirList(fileName)) {
-      std::tie(fileInDir, isDir) = p;
-
-      fileInDir = relativeTo(fileName, fileInDir);
-
-      if (removeSymlink(fileInDir))
-        continue;
-
-      if (isDir)
-        removeDirectoryRecursive(fileInDir);
-      else
-        remove(fileInDir);
-    }
+  auto parentExists = isDirectory(parent);
+  if (!parentExists)
+    return std::unexpected(std::move(parentExists.error()));
+  if (!*parentExists) {
+    if (parent == fileName)
+      return std::unexpected(IOException::format("Cannot create directory ancestor '{}'", parent));
+    auto result = makeDirectoryRecursive(parent);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
-
-  remove(fileName);
+  auto directoryExists = isDirectory(fileName);
+  if (!directoryExists)
+    return std::unexpected(std::move(directoryExists.error()));
+  if (!*directoryExists)
+    return makeDirectory(fileName);
+  return {};
 }
 
-void File::copy(String const& source, String const& target) {
+std::expected<void, StarException> File::removeDirectoryRecursive(String const& fileName) {
+  auto link = removeSymlink(fileName);
+  if (!link)
+    return std::unexpected(std::move(link.error()));
+  if (*link)
+    return {};
+  auto entries = dirList(fileName);
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto const& [entry, isDir] : *entries) {
+    auto path = relativeTo(fileName, entry);
+    auto childLink = removeSymlink(path);
+    if (!childLink)
+      return std::unexpected(std::move(childLink.error()));
+    if (*childLink)
+      continue;
+    auto result = isDir ? removeDirectoryRecursive(path) : remove(path);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return remove(fileName);
+}
+
+std::expected<void, StarException> File::copy(String const& source, String const& target) {
   auto sourceFile = File::open(source, IOMode::Read);
+  if (!sourceFile)
+    return std::unexpected(std::move(sourceFile.error()));
   auto targetFile = File::open(target, IOMode::ReadWrite);
-
-  targetFile->resize(0);
-
-  char buf[1024];
-  while (!sourceFile->atEnd()) {
-    std::size_t r = sourceFile->read(buf, 1024);
-    targetFile->writeFull(buf, r);
+  if (!targetFile)
+    return std::unexpected(std::move(targetFile.error()));
+  auto resized = (*targetFile)->resize(0);
+  if (!resized)
+    return std::unexpected(std::move(resized.error()));
+  char buffer[1024];
+  while (true) {
+    auto end = (*sourceFile)->atEnd();
+    if (!end)
+      return std::unexpected(std::move(end.error()));
+    if (*end)
+      break;
+    auto count = (*sourceFile)->read(buffer, sizeof(buffer));
+    if (!count)
+      return std::unexpected(std::move(count.error()));
+    auto written = (*targetFile)->writeFull(buffer, *count);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
   }
-  targetFile->close();
+  auto closed = (*targetFile)->close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
+  return (*sourceFile)->close();
 }
 
-std::shared_ptr<File> File::open(const String& filename, IOMode mode) {
+std::expected<std::shared_ptr<File>, StarException> File::open(String const& filename, IOMode mode) {
   auto file = std::make_shared<File>(filename);
-  file->open(mode);
+  auto opened = file->open(mode);
+  if (!opened)
+    return std::unexpected(std::move(opened.error()));
   return file;
 }
 
-ByteArray File::readFile(String const& filename) {
-  std::shared_ptr<File> file = File::open(filename, IOMode::Read);
+std::expected<ByteArray, StarException> File::readFile(String const& filename) {
+  auto file = File::open(filename, IOMode::Read);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
   ByteArray bytes;
-  while (!file->atEnd()) {
+  while (true) {
+    auto end = (*file)->atEnd();
+    if (!end)
+      return std::unexpected(std::move(end.error()));
+    if (*end)
+      break;
     char buffer[1024];
-    std::size_t r = file->read(buffer, 1024);
-    bytes.append(buffer, r);
+    auto count = (*file)->read(buffer, sizeof(buffer));
+    if (!count)
+      return std::unexpected(std::move(count.error()));
+    bytes.append(buffer, *count);
   }
-
+  auto closed = (*file)->close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
   return bytes;
 }
 
-String File::readFileString(String const& filename) {
-  std::shared_ptr<File> file = File::open(filename, IOMode::Read);
-  std::string str;
-  while (!file->atEnd()) {
+std::expected<String, StarException> File::readFileString(String const& filename) {
+  auto file = File::open(filename, IOMode::Read);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
+  std::string text;
+  while (true) {
+    auto end = (*file)->atEnd();
+    if (!end)
+      return std::unexpected(std::move(end.error()));
+    if (*end)
+      break;
     char buffer[1024];
-    std::size_t r = file->read(buffer, 1024);
-    for (std::size_t i = 0; i < r; ++i)
-      str.push_back(buffer[i]);
+    auto count = (*file)->read(buffer, sizeof(buffer));
+    if (!count)
+      return std::unexpected(std::move(count.error()));
+    text.append(buffer, *count);
   }
-
-  return str;
+  auto closed = (*file)->close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
+  return String(std::move(text));
 }
 
-StreamOffset File::fileSize(String const& filename) {
-  return File::open(filename, IOMode::Read)->size();
+std::expected<StreamOffset, StarException> File::fileSize(String const& filename) {
+  auto file = File::open(filename, IOMode::Read);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
+  auto result = (*file)->size();
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  auto closed = (*file)->close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
+  return *result;
 }
 
-void File::writeFile(char const* data, std::size_t len, String const& filename) {
-  std::shared_ptr<File> file = File::open(filename, IOMode::Write | IOMode::Truncate);
-  file->writeFull(data, len);
-  file->close();
+std::expected<void, StarException> File::writeFile(char const* data, std::size_t len, String const& filename) {
+  auto file = File::open(filename, IOMode::Write | IOMode::Truncate);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
+  auto written = (*file)->writeFull(data, len);
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return (*file)->close();
 }
 
-void File::writeFile(ByteArray const& data, String const& filename) {
-  writeFile(data.ptr(), data.size(), filename);
+std::expected<void, StarException> File::writeFile(ByteArray const& data, String const& filename) {
+  return writeFile(data.ptr(), data.size(), filename);
 }
 
-void File::writeFile(String const& data, String const& filename) {
-  writeFile(data.utf8Ptr(), data.utf8Size(), filename);
+std::expected<void, StarException> File::writeFile(String const& data, String const& filename) {
+  return writeFile(data.utf8Ptr(), data.utf8Size(), filename);
 }
 
-void File::overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix) {
-  overwriteFileWithRename(data.ptr(), data.size(), filename, newSuffix);
+std::expected<void, StarException> File::overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix) {
+  return overwriteFileWithRename(data.ptr(), data.size(), filename, newSuffix);
 }
 
-void File::overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix) {
-  overwriteFileWithRename(data.utf8Ptr(), data.utf8Size(), filename, newSuffix);
+std::expected<void, StarException> File::overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix) {
+  return overwriteFileWithRename(data.utf8Ptr(), data.utf8Size(), filename, newSuffix);
 }
 
-void File::backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
+std::expected<void, StarException> File::backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
   for (unsigned i = maximumBackups; i > 0; --i) {
     bool initial = i == 1;
     String const& sourceFile = initial ? initialFile : targetFile;
     String curExtension = initial ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
     String nextExtension = strf("{}{}", backupExtensionPrefix, i);
-
-    if (File::isFile(sourceFile + curExtension))
-      File::copy(sourceFile + curExtension, targetFile + nextExtension);
+    auto sourceExists = File::isFile(sourceFile + curExtension);
+    if (!sourceExists)
+      return std::unexpected(std::move(sourceExists.error()));
+    if (*sourceExists) {
+      auto copied = File::copy(sourceFile + curExtension, targetFile + nextExtension);
+      if (!copied)
+        return std::unexpected(std::move(copied.error()));
+    }
   }
+  return {};
 }
 
-void File::backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
-  backupFileInSequence(targetFile, targetFile, maximumBackups, backupExtensionPrefix);
+std::expected<void, StarException> File::backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
+  return backupFileInSequence(targetFile, targetFile, maximumBackups, backupExtensionPrefix);
 }
 
-File::File()
-  : IODevice(IOMode::Closed) {
-  m_file = 0;
-}
+File::File() : IODevice(IOMode::Closed), m_file(nullptr) {}
 
 File::File(String filename)
-  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(0) {}
+  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(nullptr) {}
 
 File::~File() noexcept {
-  try {
-    close();
-  } catch (std::exception const& e) {
-    // Logging may itself own a File or throw.  Cleanup diagnostics must not.
-    std::fprintf(stderr, "Error closing file '%s' during destruction: %s\n", m_filename.utf8Ptr(), e.what());
-  } catch (...) {
-    std::fprintf(stderr, "Unknown error closing file '%s' during destruction\n", m_filename.utf8Ptr());
-  }
+  auto result = close();
+  if (!result)
+    std::fprintf(stderr, "Error closing file '%s' during destruction: %s\n", m_filename.utf8Ptr(), result.error().what());
 }
 
-StreamOffset File::pos() {
+std::expected<StreamOffset, StarException> File::pos() {
   if (!m_file)
-    throw IOException("pos called on closed File");
-
+    return std::unexpected(IOException("pos called on closed File"));
   return ftell(m_file);
 }
 
-void File::seek(StreamOffset offset, IOSeek seekMode) {
+std::expected<void, StarException> File::seek(StreamOffset offset, IOSeek seekMode) {
   if (!m_file)
-    throw IOException("seek called on closed File");
-
-  fseek(m_file, offset, seekMode);
+    return std::unexpected(IOException("seek called on closed File"));
+  return fseek(m_file, offset, seekMode);
 }
 
-StreamOffset File::size() {
+std::expected<StreamOffset, StarException> File::size() {
+  if (!m_file)
+    return std::unexpected(IOException("size called on closed File"));
   return fsize(m_file);
 }
 
-bool File::atEnd() {
-  if (!m_file)
-    throw IOException("eof called on closed File");
-
-  return ftell(m_file) >= fsize(m_file);
+std::expected<bool, StarException> File::atEnd() {
+  auto position = pos();
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  auto length = size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  return *position >= *length;
 }
 
-std::size_t File::read(char* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::read(char* data, std::size_t len) {
   if (!m_file)
-    throw IOException("read called on closed File");
-
+    return std::unexpected(IOException("read called on closed File"));
   if (!isReadable())
-    throw IOException("read called on non-readable File");
-
+    return std::unexpected(IOException("read called on non-readable File"));
   return fread(m_file, data, len);
 }
 
-std::size_t File::write(const char* data, std::size_t len) {
+std::expected<std::size_t, StarException> File::write(char const* data, std::size_t len) {
   if (!m_file)
-    throw IOException("write called on closed File");
-
+    return std::unexpected(IOException("write called on closed File"));
   if (!isWritable())
-    throw IOException("write called on non-writable File");
-
+    return std::unexpected(IOException("write called on non-writable File"));
   return fwrite(m_file, data, len);
 }
 
-std::size_t File::readAbsolute(StreamOffset readPosition, char* data, std::size_t len) {
-  return pread(m_file, data, len, readPosition);
+std::expected<std::size_t, StarException> File::readAbsolute(StreamOffset position, char* data, std::size_t len) {
+  if (!m_file || !isReadable())
+    return std::unexpected(IOException("readAbsolute called on closed or non-readable File"));
+  return pread(m_file, data, len, position);
 }
 
-std::size_t File::writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) {
-  return pwrite(m_file, data, len, writePosition);
+std::expected<std::size_t, StarException> File::writeAbsolute(StreamOffset position, char const* data, std::size_t len) {
+  if (!m_file || !isWritable())
+    return std::unexpected(IOException("writeAbsolute called on closed or non-writable File"));
+  return pwrite(m_file, data, len, position);
 }
 
 String File::fileName() const {
   return m_filename;
 }
 
-void File::setFilename(String filename) {
+std::expected<void, StarException> File::setFilename(String filename) {
   if (isOpen())
-    throw IOException("Cannot call setFilename while File is open");
+    return std::unexpected(IOException("Cannot call setFilename while File is open"));
   m_filename = std::move(filename);
+  return {};
 }
 
-void File::remove() {
-  close();
+std::expected<void, StarException> File::remove() {
+  auto closed = close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
   if (m_filename.empty())
-    throw IOException("Cannot remove file, no filename set");
-  remove(m_filename);
+    return std::unexpected(IOException("Cannot remove file, no filename set"));
+  return remove(m_filename);
 }
 
-void File::resize(StreamOffset s) {
-  bool tempOpen = false;
-  if (!isOpen()) {
-    tempOpen = true;
-    open(mode());
+std::expected<void, StarException> File::resize(StreamOffset length) {
+  bool tempOpen = !isOpen();
+  if (tempOpen) {
+    auto opened = open(mode());
+    if (!opened)
+      return std::unexpected(std::move(opened.error()));
   }
-
-  File::resize(m_file, s);
-
-  if (tempOpen)
-    close();
+  auto result = File::resize(m_file, length);
+  if (tempOpen) {
+    auto closed = close();
+    if (!closed) {
+      if (result)
+        return std::unexpected(std::move(closed.error()));
+      std::fprintf(stderr, "Error closing file '%s' after failed resize: %s\n", m_filename.utf8Ptr(), closed.error().what());
+    }
+  }
+  return result;
 }
 
-void File::sync() {
+std::expected<void, StarException> File::sync() {
   if (!m_file)
-    throw IOException("sync called on closed File");
-
-  fsync(m_file);
+    return std::unexpected(IOException("sync called on closed File"));
+  return fsync(m_file);
 }
 
-void File::open(IOMode m) {
-  close();
+std::expected<void, StarException> File::open(IOMode mode) {
+  auto closed = close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
   if (m_filename.empty())
-    throw IOException("Cannot open file, no filename set");
-
-  m_file = fopen(m_filename.utf8Ptr(), m);
-  setMode(m);
+    return std::unexpected(IOException("Cannot open file, no filename set"));
+  auto opened = fopen(m_filename.utf8Ptr(), mode);
+  if (!opened)
+    return std::unexpected(std::move(opened.error()));
+  m_file = *opened;
+  setMode(mode);
+  return {};
 }
 
-void File::close() {
-  // Consume ownership before the system call: an error (including EINTR on
-  // Unix) must never cause a later close to target a reused descriptor.
+std::expected<void, StarException> File::close() {
+  // Consume first: a failed close must never later close a reused descriptor.
   auto file = std::exchange(m_file, nullptr);
   setMode(IOMode::Closed);
   if (file)
-    fclose(file);
+    return fclose(file);
+  return {};
 }
 
-String File::deviceName() const {
-  if (m_filename.empty())
-    return "<unnamed temp file>";
-  else
-    return m_filename;
+std::expected<String, StarException> File::deviceName() const {
+  return m_filename.empty() ? String("<unnamed temp file>") : m_filename;
 }
 
-std::shared_ptr<IODevice> File::clone() {
+std::expected<std::shared_ptr<IODevice>, StarException> File::clone() {
   auto cloned = std::make_shared<File>(m_filename);
   if (isOpen()) {
-    // Open with same mode
-    cloned->open(mode());
-    // Seek to same position
-    cloned->seek(pos(), IOSeek::Absolute);
+    auto opened = cloned->open(mode());
+    if (!opened)
+      return std::unexpected(std::move(opened.error()));
+    auto position = pos();
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    auto moved = cloned->seek(*position, IOSeek::Absolute);
+    if (!moved)
+      return std::unexpected(std::move(moved.error()));
   }
-  return cloned;
+  return std::shared_ptr<IODevice>(std::move(cloned));
 }
 
 }

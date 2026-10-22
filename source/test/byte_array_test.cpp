@@ -25,11 +25,20 @@ TEST(ByteArrayTest, All) {
   auto g = hexDecode("a0a0a0");
   auto h = hexDecode("8181818181");
   auto i = hexDecode("2121218181");
+  ASSERT_TRUE(a);
+  ASSERT_TRUE(b);
+  ASSERT_TRUE(c);
+  ASSERT_TRUE(d);
+  ASSERT_TRUE(e);
+  ASSERT_TRUE(f);
+  ASSERT_TRUE(g);
+  ASSERT_TRUE(h);
+  ASSERT_TRUE(i);
 
-  EXPECT_EQ(a.andWith(b), e);
-  EXPECT_EQ(a.orWith(b), d);
-  EXPECT_EQ(b.xorWith(c), f);
-  EXPECT_EQ(g.xorWith(h), f);
-  EXPECT_EQ(g.xorWith(h, true), i);
-  EXPECT_EQ(h.xorWith(g, true), i);
+  EXPECT_EQ(a->andWith(*b), *e);
+  EXPECT_EQ(a->orWith(*b), *d);
+  EXPECT_EQ(b->xorWith(*c), *f);
+  EXPECT_EQ(g->xorWith(*h), *f);
+  EXPECT_EQ(g->xorWith(*h, true), *i);
+  EXPECT_EQ(h->xorWith(*g, true), *i);
 }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -117,17 +118,24 @@ public:
     return Star::typeName<CodexItem>();
   }
 
-  CodexItem(Root& root, Json const& config, String const& directory, Json const& data);
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<CodexItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  virtual List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  virtual void fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
 
-  virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables(TileDrawer*) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> iconDrawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer*) const override;
 
 private:
+  explicit CodexItem(Root& root) : Item(root) {}
   String m_codexId;
   List<Drawable> m_iconDrawables;
   List<Drawable> m_worldDrawables;
@@ -137,42 +145,77 @@ private:
 
 namespace Star {
 
-CodexItem::CodexItem(Root& root, Json const& config, String const& directory, Json const& data)
-  : Item(root, config, directory, data), SwingableItem(config) {
-  setWindupTime(0.2f);
-  setCooldownTime(0.5f);
-  m_requireEdgeTrigger = true;
-  m_codexId = instanceValue("codexId").toString();
-  String iconPath = instanceValue("codexIcon").toString();
-  m_iconDrawables = {Drawable::makeImage(*root.imageMetadataDatabase(), iconPath, 1.0f, true, Vec2F())};
-  m_worldDrawables = {Drawable::makeImage(*root.imageMetadataDatabase(), iconPath, 1.0f / TilePixels, true, Vec2F())};
+std::expected<std::shared_ptr<CodexItem>, StarException> CodexItem::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<CodexItem>(new CodexItem(root));
+  auto initialized = item->initialize(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  item->setWindupTime(0.2f);
+  item->setCooldownTime(0.5f);
+  item->m_requireEdgeTrigger = true;
+  auto codexId = item->instanceValue("codexId").and_then([](Json const& value) { return value.toString(); });
+  if (!codexId)
+    return std::unexpected(std::move(codexId.error()));
+  item->m_codexId = std::move(*codexId);
+  auto iconPath = item->instanceValue("codexIcon").and_then([](Json const& value) { return value.toString(); });
+  if (!iconPath)
+    return std::unexpected(std::move(iconPath.error()));
+  auto metadata = root.imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto icon = Drawable::makeImage(**metadata, *iconPath, 1.0f, true, Vec2F());
+  if (!icon)
+    return std::unexpected(std::move(icon.error()));
+  item->m_iconDrawables = {std::move(*icon)};
+  auto worldDrawable = Drawable::makeImage(**metadata, *iconPath, 1.0f / TilePixels, true, Vec2F());
+  if (!worldDrawable)
+    return std::unexpected(std::move(worldDrawable.error()));
+  item->m_worldDrawables = {std::move(*worldDrawable)};
+  return item;
 }
 
-std::shared_ptr<Item> CodexItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> CodexItem::clone() const {
   return std::make_shared<CodexItem>(*this);
 }
 
-List<Drawable> CodexItem::drawables() const {
+std::expected<List<Drawable>, StarException> CodexItem::drawables() const {
   return m_worldDrawables;
 }
 
-void CodexItem::fireTriggered() {
-  if (auto player = as<Player>(owner())) {
+std::expected<void, StarException> CodexItem::fireTriggered() {
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  if (auto player = as<Player>(*itemOwner)) {
     auto codexLearned = player->codexes()->learnCodex(m_codexId);
-    if (codexLearned) {
-      player->queueUIMessage(root().assets()->json("/codex.config:messages.learned").toString());
-    } else {
-      player->codexes()->markCodexUnread(m_codexId);
-      player->queueUIMessage(root().assets()->json("/codex.config:messages.alreadyKnown").toString());
+    if (!codexLearned)
+      return std::unexpected(std::move(codexLearned.error()));
+    auto assets = root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    if (*codexLearned) {
+      auto message = (*assets)->json("/codex.config:messages.learned").and_then([](Json const& value) { return value.toString(); });
+      if (!message)
+        return std::unexpected(std::move(message.error()));
+      return player->queueUIMessage(*message);
     }
+    player->codexes()->markCodexUnread(m_codexId);
+    auto message = (*assets)->json("/codex.config:messages.alreadyKnown").and_then([](Json const& value) { return value.toString(); });
+    if (!message)
+      return std::unexpected(std::move(message.error()));
+    return player->queueUIMessage(*message);
   }
+  return {};
 }
 
-List<Drawable> CodexItem::iconDrawables() const {
+std::expected<List<Drawable>, StarException> CodexItem::iconDrawables() const {
   return m_iconDrawables;
 }
 
-List<Drawable> CodexItem::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> CodexItem::dropDrawables(TileDrawer*) const {
   return m_worldDrawables;
 }
 

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.set;
@@ -84,13 +85,14 @@ public:
   }
 
   FireableItem();
-  FireableItem(Json const& params);
   virtual ~FireableItem() {}
 
   FireableItem(FireableItem const& fireableItem);
 
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered);
-  virtual void endFire(FireMode mode, bool shifting);
+  [[nodiscard]]
+  virtual std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered);
+  [[nodiscard]]
+  virtual std::expected<void, StarException> endFire(FireMode mode, bool shifting);
   virtual FireMode fireMode() const;
   virtual float fireTimer() const;
   virtual void setFireTimer(float fireTimer);
@@ -103,8 +105,10 @@ public:
   virtual bool inUse() const;
   virtual bool walkWhileFiring() const;
   virtual bool stopWhileFiring() const;
-  virtual bool windup() const;
-  virtual void triggerCooldown();
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> windup() const;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> triggerCooldown();
   virtual bool coolingDown() const;
   virtual void setCoolingDown(bool coolingdown);
   virtual float timeFiring() const;
@@ -112,25 +116,38 @@ public:
   virtual Vec2F firePosition() const;
   virtual Vec2F handPosition() const;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
-  virtual void uninit() override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> uninit() override;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]]
+  virtual std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const override;
 
   virtual bool validAimPos(Vec2F const& aimPos);
 
-  Json fireableParam(String const& key) const;
-  Json fireableParam(String const& key, Json const& defaultVal) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> fireableParam(String const& key) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> fireableParam(String const& key, Json const& defaultVal) const;
 
 protected:
-  void setParams(Json const& params);
-  void setFireableParam(String const& key, Json const& value);
-  virtual void startTriggered();
-  virtual void fireTriggered();
+  [[nodiscard]]
+  std::expected<void, StarException> initializeFireable(Json const& params);
+  [[nodiscard]]
+  std::expected<void, StarException> setParams(Json const& params);
+  [[nodiscard]]
+  std::expected<void, StarException> setFireableParam(String const& key, Json const& value);
+  [[nodiscard]]
+  virtual std::expected<void, StarException> startTriggered();
+  [[nodiscard]]
+  virtual std::expected<void, StarException> fireTriggered();
 
   // firePosition translated by the hand in the owner's space
-  Vec2F ownerFirePosition() const;
+  [[nodiscard]]
+  std::expected<Vec2F, StarException> ownerFirePosition() const;
 
   float m_fireTimer;
   float m_cooldownTime;

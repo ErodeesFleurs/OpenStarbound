@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -39,11 +40,11 @@ AssetTextureGroup::AssetTextureGroup(Root& root, std::shared_ptr<TextureGroup> t
   m_reloadSubscription = m_root.registerReloadListener(m_reloadTracker);
 }
 
-TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
+std::expected<TexturePtr, StarException> AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
   return loadTexture(imagePath, false);
 }
 
-TexturePtr AssetTextureGroup::tryTexture(AssetPath const& imagePath) {
+std::expected<TexturePtr, StarException> AssetTextureGroup::tryTexture(AssetPath const& imagePath) {
   return loadTexture(imagePath, true);
 }
 
@@ -76,35 +77,43 @@ void AssetTextureGroup::cleanup(std::int64_t textureTimeout) {
   }
 }
 
-TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
+std::expected<TexturePtr, StarException> AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
   if (auto p = m_textureMap.ptr(imagePath)) {
     p->second = Time::monotonicMilliseconds();
     return p->first;
   }
 
-  auto assets = m_root.assets();
-
-  std::shared_ptr<Image const> image;
-  if (tryTexture)
-    image = assets->tryImage(imagePath);
-  else
-    image = assets->image(imagePath);
-
+  auto assetsResult = m_root.assets();
+  if (!assetsResult)
+    return std::unexpected(std::move(assetsResult.error()));
+  auto assets = *assetsResult;
+  auto imageResult = tryTexture ? assets->tryImage(imagePath) : assets->image(imagePath);
+  if (!imageResult)
+    return std::unexpected(std::move(imageResult.error()));
+  auto image = std::move(*imageResult);
   if (!image)
-    return {};
+    return TexturePtr{};
 
   // Assets will return the same image ptr if two different asset paths point
   // to the same underlying cached image.  We should not make duplicate entries
   // in the texture group for these, so we keep track of the image pointers
   // returned to deduplicate them.
   if (auto existingTexture = m_textureDeduplicationMap.value(image)) {
-    m_textureMap.add(imagePath, {existingTexture, Time::monotonicMilliseconds()});
+    auto inserted = m_textureMap.add(imagePath, {existingTexture, Time::monotonicMilliseconds()});
+    if (!inserted)
+      return std::unexpected(std::move(inserted.error()));
     return existingTexture;
   } else {
     auto texture = m_textureGroup->create(*image);
-    m_textureMap.add(imagePath, {texture, Time::monotonicMilliseconds()});
-    m_textureDeduplicationMap.add(image, texture);
-    return texture;
+    if (!texture)
+      return std::unexpected(std::move(texture.error()));
+    auto inserted = m_textureMap.add(imagePath, {*texture, Time::monotonicMilliseconds()});
+    if (!inserted)
+      return std::unexpected(std::move(inserted.error()));
+    auto deduplicated = m_textureDeduplicationMap.add(image, *texture);
+    if (!deduplicated)
+      return std::unexpected(std::move(deduplicated.error()));
+    return std::move(*texture);
   }
 }
 

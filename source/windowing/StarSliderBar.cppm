@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -62,26 +63,28 @@ public:
     return Star::typeName<SliderBarWidget>();
   }
 
-  SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner = true);
+  [[nodiscard]] static std::expected<std::shared_ptr<SliderBarWidget>, StarException> create(GuiContext& context, String const& grid, bool showSpinner = true);
 
-  void setJogImages(String const& baseImage, String const& hoverImage = "", String const& pressedImage = "", String const& disabledImage = "");
+  [[nodiscard]] std::expected<void, StarException> setJogImages(String const& baseImage, String const& hoverImage = "", String const& pressedImage = "", String const& disabledImage = "");
 
-  void setRange(int low, int high, int delta);
-  void setRange(Vec2I const& range, int delta);
-  void setVal(int val, bool callbackIfChanged = true);
+  [[nodiscard]] std::expected<void, StarException> setRange(int low, int high, int delta);
+  [[nodiscard]] std::expected<void, StarException> setRange(Vec2I const& range, int delta);
+  [[nodiscard]] std::expected<void, StarException> setVal(int val, bool callbackIfChanged = true);
   int val() const;
 
   void setEnabled(bool enabled);
 
   void setCallback(WidgetCallbackFunc callback);
 
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 
-  virtual bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
 private:
-  void leftCallback();
-  void rightCallback();
+  explicit SliderBarWidget(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initialize(String const& grid, bool showSpinner);
+  [[nodiscard]] std::expected<void, StarException> leftCallback();
+  [[nodiscard]] std::expected<void, StarException> rightCallback();
 
   std::shared_ptr<ButtonWidget> m_leftButton;
   std::shared_ptr<ButtonWidget> m_rightButton;

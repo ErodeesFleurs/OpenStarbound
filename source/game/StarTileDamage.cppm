@@ -40,13 +40,13 @@ enum class TileDamageType : std::uint8_t {
   // Can "till" certain materials into others
   Tilling
 };
-extern EnumMap<TileDamageType> const TileDamageTypeNames;
+extern std::expected<EnumMap<TileDamageType>, StarException> const TileDamageTypeNames;
 
 bool tileDamageIsPenetrating(TileDamageType damageType);
 
 struct TileDamage {
-  friend DataStream& operator>>(DataStream& ds, TileDamage& tileDamage);
-  friend DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
   TileDamage();
   TileDamage(TileDamageType type, float amount, unsigned harvestLevel = 1);
 
@@ -55,8 +55,8 @@ struct TileDamage {
   unsigned harvestLevel;
 };
 
-DataStream& operator>>(DataStream& ds, TileDamage& tileDamage);
-DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamage& tileDamage);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamage const& tileDamage);
 
 class TileDamageParameters {
 public:
@@ -64,9 +64,9 @@ public:
 
   // If 'config' is a string type, it is assumed to be a descriptor file,
   // otherwise it should contain map configuration data.
-  explicit TileDamageParameters(Assets const& assets, Json config, std::optional<float> healthOverride = {}, std::optional<unsigned> requiredHarvestLevelOverride = {});
+  [[nodiscard]] static std::expected<TileDamageParameters, StarException> create(Assets const& assets, Json config, std::optional<float> healthOverride = {}, std::optional<unsigned> requiredHarvestLevelOverride = {});
 
-  float damageDone(TileDamage const& damage) const;
+  [[nodiscard]] std::expected<float, StarException> damageDone(TileDamage const& damage) const;
   float recoveryPerSecond() const;
   unsigned requiredHarvestLevel() const;
   float maximumEffectTime() const;
@@ -74,10 +74,10 @@ public:
 
   TileDamageParameters sum(TileDamageParameters const& other) const;
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
-  friend DataStream& operator>>(DataStream& ds, TileDamageParameters& tileDamage);
-  friend DataStream& operator<<(DataStream& ds, TileDamageParameters const& tileDamage);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageParameters& tileDamage);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageParameters const& tileDamage);
 
 private:
   Map<TileDamageType, float> m_damages;
@@ -97,7 +97,7 @@ public:
   TileDamageType damageType() const;
 
   void reset();
-  void damage(TileDamageParameters const& damageParameters, Vec2F const& sourcePosition, TileDamage const& damage);
+  [[nodiscard]] std::expected<void, StarException> damage(TileDamageParameters const& damageParameters, Vec2F const& sourcePosition, TileDamage const& damage);
   void recover(TileDamageParameters const& damageParameters, float dt);
 
   bool healthy() const;
@@ -106,8 +106,8 @@ public:
   bool dead() const;
   bool harvested() const;
 
-  friend DataStream& operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus);
-  friend DataStream& operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus);
 
 private:
   void updateDamageEffectPercentage();
@@ -122,14 +122,14 @@ private:
 
 class EntityTileDamageStatus : public NetElementGroup {
 public:
-  EntityTileDamageStatus();
+  [[nodiscard]] static std::expected<std::shared_ptr<EntityTileDamageStatus>, StarException> create();
 
   float damagePercentage() const;
   float damageEffectPercentage() const;
   TileDamageType damageType() const;
 
   void reset();
-  void damage(TileDamageParameters const& damageParameters, TileDamage const& damage);
+  [[nodiscard]] std::expected<void, StarException> damage(TileDamageParameters const& damageParameters, TileDamage const& damage);
   void recover(TileDamageParameters const& damageParameters, float dt);
 
   bool healthy() const;
@@ -139,6 +139,7 @@ public:
   bool harvested() const;
 
 private:
+  EntityTileDamageStatus();
   NetElementFloat m_damagePercentage;
   NetElementFloat m_damageEffectTimeFactor;
   NetElementBool m_damageHarvested;

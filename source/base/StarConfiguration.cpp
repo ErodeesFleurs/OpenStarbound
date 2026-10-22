@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.thread;
 import star.string;
@@ -21,51 +22,56 @@ Json Configuration::currentConfiguration() const {
   return m_currentConfig;
 }
 
-String Configuration::printConfiguration() const {
+std::expected<String, StarException> Configuration::printConfiguration() const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.printJson(2, true);
 }
 
-Json Configuration::get(String const& key, Json def) const {
+std::expected<Json, StarException> Configuration::get(String const& key, Json def) const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.get(key, def);
 }
 
-Json Configuration::getPath(String const& path, Json def) const {
+std::expected<Json, StarException> Configuration::getPath(String const& path, Json def) const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.query(path, def);
 }
 
-Json Configuration::getDefault(String const& key) const {
+std::expected<Json, StarException> Configuration::getDefault(String const& key) const {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.get(key, {});
 }
 
-Json Configuration::getDefaultPath(String const& path) const {
+std::expected<Json, StarException> Configuration::getDefaultPath(String const& path) const {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.query(path, {});
 }
 
-void Configuration::set(String const& key, Json const& value) {
+std::expected<void, StarException> Configuration::set(String const& key, Json const& value) {
   MutexLocker locker(m_mutex);
   if (key == "configurationVersion")
-    throw ConfigurationException("cannot set configurationVersion");
+    return std::unexpected(ConfigurationException("cannot set configurationVersion"));
 
-  if (value)
-    m_currentConfig = m_currentConfig.set(key, value);
-  else
-    m_currentConfig = m_currentConfig.eraseKey(key);
+  auto updated = value ? m_currentConfig.set(key, value) : m_currentConfig.eraseKey(key);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  m_currentConfig = std::move(*updated);
+  return {};
 }
 
-void Configuration::setPath(String const& path, Json const& value) {
+std::expected<void, StarException> Configuration::setPath(String const& path, Json const& value) {
   MutexLocker locker(m_mutex);
-  if (path.splitAny("[].").get(0) == "configurationVersion")
-    throw ConfigurationException("cannot set configurationVersion");
+  auto components = path.splitAny("[].");
+  if (!components)
+    return std::unexpected(std::move(components.error()));
+  if (!components->empty() && (*components)[0] == "configurationVersion")
+    return std::unexpected(ConfigurationException("cannot set configurationVersion"));
 
-  if (value)
-    m_currentConfig = m_currentConfig.setPath(path, value);
-  else
-    m_currentConfig = m_currentConfig.erasePath(path);
+  auto updated = value ? m_currentConfig.setPath(path, value) : m_currentConfig.erasePath(path);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  m_currentConfig = std::move(*updated);
+  return {};
 }
 
 }

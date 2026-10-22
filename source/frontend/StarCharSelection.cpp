@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -128,51 +129,85 @@ import star.player_storage;
 namespace Star {
 
 CharSelectionPane::CharSelectionPane(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage,
-    CreateCharCallback createCallback,
-    SelectCharacterCallback selectCallback,
-    DeleteCharacterCallback deleteCallback)
-  : Pane(guiContext), m_playerStorage(playerStorage),
-    m_downScroll(0),
-    m_search(""),
-    m_filteredList({}),
-    m_createCallback(createCallback),
-    m_selectCallback(selectCallback),
-    m_deleteCallback(deleteCallback) {
-  auto& root = context()->root();
+    CreateCharCallback createCallback, SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback)
+  : Pane(guiContext), m_playerStorage(std::move(playerStorage)), m_downScroll(0),
+    m_createCallback(std::move(createCallback)), m_selectCallback(std::move(selectCallback)),
+    m_deleteCallback(std::move(deleteCallback)) {}
 
-  GuiReader guiReader(*context());
-
-  guiReader.registerCallback("playerUpButton", [this](Widget*) { shiftCharacters(-1); });
-  guiReader.registerCallback("playerDownButton", [this](Widget*) { shiftCharacters(1); });
-  guiReader.registerCallback("charSelector1", [this](Widget*) { selectCharacter(0); });
-  guiReader.registerCallback("charSelector2", [this](Widget*) { selectCharacter(1); });
-  guiReader.registerCallback("charSelector3", [this](Widget*) { selectCharacter(2); });
-  guiReader.registerCallback("charSelector4", [this](Widget*) { selectCharacter(3); });
-  guiReader.registerCallback("createCharButton", [this](Widget*) { m_createCallback(); });
-  guiReader.registerCallback("searchCharacter", [this](Widget* obj) {
-    m_downScroll = 0;
-    m_search = convert<TextBoxWidget>(obj)->getText().trim().toLower();
-    updateCharacterPlates();
-  });
-  guiReader.registerCallback("clearSearch", [this](Widget*) {
-    fetchChild<TextBoxWidget>("searchCharacter")->setText("");
-  });
-  guiReader.registerCallback("toggleDismissCheckbox", [this](Widget* widget) {
-    auto configuration = context()->root().configuration();
-    configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
-  });
-
-  guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
+std::expected<std::shared_ptr<CharSelectionPane>, StarException> CharSelectionPane::create(
+    GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
+    SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback) {
+  if (!createCallback || !selectCallback || !deleteCallback)
+    return std::unexpected(GuiException("Character selection requires create, select and delete callbacks"));
+  auto pane = std::shared_ptr<CharSelectionPane>(new CharSelectionPane(guiContext, std::move(playerStorage),
+      std::move(createCallback), std::move(selectCallback), std::move(deleteCallback)));
+  if (auto result = pane->initializePane(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = pane->init(); !result)
+    return std::unexpected(std::move(result.error()));
+  return pane;
 }
 
-bool CharSelectionPane::sendEvent(InputEvent const& event) {
+std::expected<void, StarException> CharSelectionPane::init() {
+  GuiReader guiReader(*context());
+  guiReader.registerCallback("playerUpButton", [this](Widget*) { return shiftCharacters(-1); });
+  guiReader.registerCallback("playerDownButton", [this](Widget*) { return shiftCharacters(1); });
+  guiReader.registerCallback("charSelector1", [this](Widget*) { return selectCharacter(0); });
+  guiReader.registerCallback("charSelector2", [this](Widget*) { return selectCharacter(1); });
+  guiReader.registerCallback("charSelector3", [this](Widget*) { return selectCharacter(2); });
+  guiReader.registerCallback("charSelector4", [this](Widget*) { return selectCharacter(3); });
+  guiReader.registerCallback("createCharButton", [this](Widget*) { return m_createCallback(); });
+  guiReader.registerCallback("searchCharacter", [this](Widget* obj) -> std::expected<void, StarException> {
+    m_downScroll = 0;
+    auto textBox = convert<TextBoxWidget>(obj);
+    if (!textBox)
+      return std::unexpected(std::move(textBox.error()));
+    auto trimmed = (*textBox)->getText().trim();
+    if (!trimmed)
+      return std::unexpected(std::move(trimmed.error()));
+    auto lowered = trimmed->toLower();
+    if (!lowered)
+      return std::unexpected(std::move(lowered.error()));
+    m_search = std::move(*lowered);
+    return updateCharacterPlates();
+  });
+  guiReader.registerCallback("clearSearch", [this](Widget*) -> std::expected<void, StarException> {
+    auto search = requireChild<TextBoxWidget>("searchCharacter");
+    if (!search)
+      return std::unexpected(std::move(search.error()));
+    if (auto result = (*search)->setText(""); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  });
+  guiReader.registerCallback("toggleDismissCheckbox", [this](Widget* widget) -> std::expected<void, StarException> {
+    auto configuration = context()->root().configuration();
+    if (!configuration)
+      return std::unexpected(std::move(configuration.error()));
+    auto button = convert<ButtonWidget>(widget);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    return (*configuration)->set("characterSwapDismisses", (*button)->isChecked());
+  });
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/charselection.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  return guiReader.construct(*config, this);
+}
+
+std::expected<bool, StarException> CharSelectionPane::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
       if (inMember(*context()->mousePosition(event))) {
-        if (mouseWheel->mouseWheel == MouseWheel::Down)
-          shiftCharacters(1);
-        else if (mouseWheel->mouseWheel == MouseWheel::Up)
-          shiftCharacters(-1);
+        if (mouseWheel->mouseWheel == MouseWheel::Down) {
+          if (auto result = shiftCharacters(1); !result)
+            return std::unexpected(std::move(result.error()));
+        } else if (mouseWheel->mouseWheel == MouseWheel::Up) {
+          if (auto result = shiftCharacters(-1); !result)
+            return std::unexpected(std::move(result.error()));
+        }
         return true;
       }
     }
@@ -180,76 +215,111 @@ bool CharSelectionPane::sendEvent(InputEvent const& event) {
   return Pane::sendEvent(event);
 }
 
-void CharSelectionPane::show() {
-  Pane::show();
-
+std::expected<void, StarException> CharSelectionPane::show() {
+  if (auto result = Pane::show(); !result)
+    return std::unexpected(std::move(result.error()));
   m_downScroll = 0;
-  fetchChild<TextBoxWidget>("searchCharacter")->setText("");
-  updateCharacterPlates();
+  auto search = requireChild<TextBoxWidget>("searchCharacter");
+  if (!search)
+    return std::unexpected(std::move(search.error()));
+  if (auto result = (*search)->setText(""); !result)
+    return std::unexpected(std::move(result.error()));
+  return updateCharacterPlates();
 }
 
-void CharSelectionPane::shiftCharacters(int shift) {
+std::expected<void, StarException> CharSelectionPane::shiftCharacters(int shift) {
   m_downScroll = std::max<int>(std::min<int>(m_downScroll + shift, m_filteredList.size() - 3), 0);
-  updateCharacterPlates();
+  return updateCharacterPlates();
 }
 
-void CharSelectionPane::selectCharacter(unsigned buttonIndex) {
+std::expected<void, StarException> CharSelectionPane::selectCharacter(unsigned buttonIndex) {
   if (m_downScroll + buttonIndex < m_filteredList.size()) {
     auto playerUuid = m_filteredList[m_downScroll + buttonIndex];
     auto player = m_playerStorage->loadPlayer(playerUuid);
-    if (player->isPermaDead() && !player->isAdmin()) {
-      auto sound = context()->root().random().randValueFrom(
-                       context()->root().assets()->json("/interface.config:buttonClickFailSound").toArray(), "")
-                       .toString();
-      if (!sound.empty())
-        context()->playAudio(sound);
-    } else
-      m_selectCallback(player);
-  } else
-    m_createCallback();
+    if (!player)
+      return std::unexpected(std::move(player.error()));
+    if (!*player)
+      return std::unexpected(GuiException("Selected character could not be loaded"));
+    if ((*player)->isPermaDead() && !(*player)->isAdmin()) {
+      auto assets = context()->root().assets();
+      if (!assets)
+        return std::unexpected(std::move(assets.error()));
+      auto soundsConfig = (*assets)->json("/interface.config:buttonClickFailSound");
+      if (!soundsConfig)
+        return std::unexpected(std::move(soundsConfig.error()));
+      auto sounds = soundsConfig->toArray();
+      if (!sounds)
+        return std::unexpected(std::move(sounds.error()));
+      auto sound = context()->root().random().randValueFrom(*sounds, "").toString();
+      if (!sound)
+        return std::unexpected(std::move(sound.error()));
+      if (!sound->empty()) {
+        if (auto result = context()->playAudio(*sound); !result)
+          return std::unexpected(std::move(result.error()));
+      }
+      return {};
+    }
+    return m_selectCallback(*player);
+  }
+  return m_createCallback();
 }
 
-void CharSelectionPane::updateCharacterPlates() {
-
-  auto updatePlayerLine = [this](String name, unsigned scrollPosition) {
-    m_filteredList = m_playerStorage->playerUuidListByName(m_search);
-    auto charSelector = fetchChild<LargeCharPlateWidget>(name);
-
-    if (m_filteredList.size() > 0 && scrollPosition < m_filteredList.size()) {
+std::expected<void, StarException> CharSelectionPane::updateCharacterPlates() {
+  auto updatePlayerLine = [this](String const& name, unsigned scrollPosition) -> std::expected<void, StarException> {
+    auto filtered = m_playerStorage->playerUuidListByName(m_search);
+    if (!filtered)
+      return std::unexpected(std::move(filtered.error()));
+    m_filteredList = std::move(*filtered);
+    auto selector = requireChild<LargeCharPlateWidget>(name);
+    if (!selector)
+      return std::unexpected(std::move(selector.error()));
+    if (!m_filteredList.empty() && scrollPosition < m_filteredList.size()) {
       auto playerUuid = m_filteredList[scrollPosition];
-      if (auto player = m_playerStorage->loadPlayer(playerUuid)) {
-        charSelector->show();
-        player->humanoid()->setFacingDirection(Direction::Right);
-        charSelector->setPlayer(player);
-        if (!m_readOnly)
-          charSelector->enableDelete([this, playerUuid](Widget*) { m_deleteCallback(playerUuid); });
-        return;
+      auto player = m_playerStorage->loadPlayer(playerUuid);
+      if (!player)
+        return std::unexpected(std::move(player.error()));
+      if (*player) {
+        if (auto result = (*selector)->show(); !result)
+          return std::unexpected(std::move(result.error()));
+        (*player)->humanoid()->setFacingDirection(Direction::Right);
+        if (auto result = (*selector)->setPlayer(*player); !result)
+          return std::unexpected(std::move(result.error()));
+        if (!m_readOnly) {
+          if (auto result = (*selector)->enableDelete([this, playerUuid](Widget*) { return m_deleteCallback(playerUuid); }); !result)
+            return std::unexpected(std::move(result.error()));
+        }
+        return {};
       }
     }
-    charSelector->setPlayer(std::shared_ptr<Player>());
-    charSelector->disableDelete();
+    if (auto result = (*selector)->setPlayer({}); !result)
+      return std::unexpected(std::move(result.error()));
+    (*selector)->disableDelete();
     if (m_readOnly)
-      charSelector->hide();
+      return (*selector)->hide();
+    return {};
   };
-
-  updatePlayerLine("charSelector1", m_downScroll + 0);
-  updatePlayerLine("charSelector2", m_downScroll + 1);
-  updatePlayerLine("charSelector3", m_downScroll + 2);
-  updatePlayerLine("charSelector4", m_downScroll + 3);
-
-  if (m_downScroll > 0)
-    fetchChild("playerUpButton")->show();
-  else
-    fetchChild("playerUpButton")->hide();
-
-  if (m_downScroll < m_filteredList.size() - 3)
-    fetchChild("playerDownButton")->show();
-  else
-    fetchChild("playerDownButton")->hide();
+  for (unsigned i = 0; i < 4; ++i) {
+    if (auto result = updatePlayerLine(strf("charSelector{}", i + 1), m_downScroll + i); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto up = requireChild("playerUpButton");
+  if (!up)
+    return std::unexpected(std::move(up.error()));
+  if (auto result = (*up)->setVisibility(m_downScroll > 0); !result)
+    return std::unexpected(std::move(result.error()));
+  auto down = requireChild("playerDownButton");
+  if (!down)
+    return std::unexpected(std::move(down.error()));
+  return (*down)->setVisibility(m_downScroll < m_filteredList.size() - 3);
 }
 
-void CharSelectionPane::setReadOnly(bool readOnly) {
-  findChild("createCharButton")->setVisibility(!(m_readOnly = readOnly));
+std::expected<void, StarException> CharSelectionPane::setReadOnly(bool readOnly) {
+  auto button = findChild("createCharButton");
+  if (!button)
+    return std::unexpected(std::move(button.error()));
+  if (!*button)
+    return std::unexpected(GuiException("Character selection create button was not found"));
+  return (*button)->setVisibility(!(m_readOnly = readOnly));
 }
 
 }

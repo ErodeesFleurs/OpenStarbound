@@ -80,12 +80,12 @@ public:
   // Fast evaluate of elements in the given range.  If evalEmpty is true, then
   // function will be called even for unloaded sectors (with null pointer).
   // Function is called as function(size_t x, size_t y, Element* element).
-  // Given function should return true to continue, false to stop.  Returns
-  // false if any evaled functions return false.
+  // Given function returns expected<bool, StarException>: true to continue,
+  // false to stop, or an error to propagate.
   template <typename Function>
-  bool eval(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
+  [[nodiscard]] std::expected<bool, StarException> eval(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool eval(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] std::expected<bool, StarException> eval(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
 
   // Individual sectors are stored column-major, so for speed, use this method
   // to get whole columns at a time.  If eval empty is true, function will be
@@ -93,27 +93,27 @@ public:
   // the pointer will be null.  Function will be called as
   // function(size_t x, size_t y, Element* columnElements, size_t columnSize)
   // columnSize is guaranteed never to be greater than SectorSize.  Given
-  // function should return true to continue, false to stop.  Returns false if
-  // any evaled columns return false.
+  // function returns expected<bool, StarException>: false stops traversal,
+  // and an error propagates after all parallel jobs have been drained.
   template <typename Function>
-  bool evalColumns(
+  [[nodiscard]] std::expected<bool, StarException> evalColumns(
       std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool evalColumns(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] std::expected<bool, StarException> evalColumns(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
   template <typename Function>
-  bool evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
+  [[nodiscard]] std::expected<bool, StarException> evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] std::expected<bool, StarException> evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
 
 private:
   typedef MultiArray<std::unique_ptr<Array>, 2> SectorArray;
 
   template <typename Function>
-  bool evalPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] std::expected<bool, StarException> evalPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
-  bool evalColumnsPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] std::expected<bool, StarException> evalColumnsPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
-  bool evalColumnsPrivPar(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] std::expected<bool, StarException> evalColumnsPrivPar(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
 
   SectorArray m_sectors;
   HashSet<Sector> m_loadedSectors;
@@ -282,21 +282,21 @@ typename SectorArray2D<ElementT, SectorSize>::Element* SectorArray2D<ElementT, S
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::eval(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::eval(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
   return const_cast<SectorArray2D*>(this)->evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::eval(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::eval(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   return evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumns(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumns(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
   return const_cast<SectorArray2D*>(this)->evalColumnsPriv(
       minX, minY, width, height, std::forward<Function>(function), evalEmpty);
@@ -304,14 +304,14 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumns(
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumns(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumns(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   return evalColumnsPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
     WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
   return const_cast<SectorArray2D*>(this)->evalColumnsPrivPar(
       workers, minX, minY, width, height, std::forward<Function>(function), evalEmpty);
@@ -319,28 +319,26 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
     WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   return evalColumnsPrivPar(workers, minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalPriv(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalPriv(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   return evalColumnsPriv(minX,
       minY,
       width,
       height,
-      [&function](std::size_t x, std::size_t y, Element* column, std::size_t columnSize) {
+      [&function](std::size_t x, std::size_t y, Element* column, std::size_t columnSize) -> std::expected<bool, StarException> {
         for (std::size_t i = 0; i < columnSize; ++i) {
-          if (column) {
-            if (!function(x, y + i, column + i))
-              return false;
-          } else {
-            if (!function(x, y + i, nullptr))
-              return false;
-          }
+          auto result = function(x, y + i, column ? column + i : nullptr);
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+          if (!*result)
+            return false;
         }
         return true;
       },
@@ -349,7 +347,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalPriv(
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
     std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   if (width == 0 || height == 0)
     return true;
@@ -391,12 +389,18 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
 
       if (!array) {
         for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-          if (!function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1))
+          auto result = function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1);
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+          if (!*result)
             return false;
         }
       } else {
         for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-          if (!function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1))
+          auto result = function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1);
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+          if (!*result)
             return false;
         }
       }
@@ -411,7 +415,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
 // pipeline in the future.
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
+std::expected<bool, StarException> SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
     WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   if (width == 0 || height == 0)
     return true;
@@ -431,8 +435,6 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
   std::vector<WorkerPoolPromise<bool>> futures;
   futures.reserve(sectorCount);
 
-  std::exception_ptr exception;
-  try {
   for (std::size_t xSector = minXSector; xSector <= maxXSector; ++xSector) {
     std::size_t minXi = 0;
     if (xSector == minXSector)
@@ -444,7 +446,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
     std::size_t x_ = xSector * SectorSize;
 
-    futures.push_back(workers.addProducer<bool>([=, &function, this]() {
+    futures.push_back(workers.addProducer<bool>([=, &function, this]() -> std::expected<bool, StarException> {
       for (std::size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
         Array* array = m_sectors(xSector, ySector).get();
 
@@ -463,12 +465,18 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
         if (!array) {
           for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-            if (!function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1))
+            auto result = function(xi + x_, minYi + y_, nullptr, maxYi - minYi + 1);
+            if (!result)
+              return std::unexpected(std::move(result.error()));
+            if (!*result)
               return false;
           }
         } else {
           for (std::size_t xi = minXi; xi <= maxXi; ++xi) {
-            if (!function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1))
+            auto result = function(xi + x_, minYi + y_, &array->elements[xi * SectorSize + minYi], maxYi - minYi + 1);
+            if (!result)
+              return std::unexpected(std::move(result.error()));
+            if (!*result)
               return false;
           }
         }
@@ -476,22 +484,21 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
       return true;
       }));
   }
-  } catch (...) {
-    exception = std::current_exception();
-  }
   bool result = true;
+  std::optional<StarException> firstError;
   // Every worker borrows this array and function. Drain all jobs even after
   // enqueue or callback failure before either borrowed object can disappear.
   for (auto const& future : futures) {
-    try {
-      result = future.get() && result;
-    } catch (...) {
-      if (!exception)
-        exception = std::current_exception();
+    auto completion = future.get();
+    if (!completion) {
+      if (!firstError)
+        firstError.emplace(std::move(completion.error()));
+    } else {
+      result = **completion && result;
     }
   }
-  if (exception)
-    std::rethrow_exception(exception);
+  if (firstError)
+    return std::unexpected(std::move(*firstError));
   return result;
 }
 

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -63,46 +64,48 @@ public:
     return Star::typeName<Chat>();
   }
 
-  Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const&);
+  [[nodiscard]] static std::expected<std::shared_ptr<Chat>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const&);
 
-  void startChat();
-  void startCommand();
-  bool hasFocus() const override;
-  virtual bool sendEvent(InputEvent const& event) override;
-  void stopChat();
-  virtual void renderImpl() override;
-  virtual void hide() override;
+  [[nodiscard]] std::expected<void, StarException> startChat();
+  [[nodiscard]] std::expected<void, StarException> startCommand();
+  [[nodiscard]] std::expected<bool, StarException> hasFocus() const override;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> stopChat();
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl() override;
+  [[nodiscard]] virtual std::expected<void, StarException> hide() override;
 
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 
-  void addLine(String const& text, bool showPane = true);
-  void addMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);
-  void addHistory(String const& chat);
-  void clear(std::size_t count = std::numeric_limits<std::size_t>::max());
+  [[nodiscard]] std::expected<void, StarException> addLine(String const& text, bool showPane = true);
+  [[nodiscard]] std::expected<void, StarException> addMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);
+  [[nodiscard]] std::expected<void, StarException> addHistory(String const& chat);
+  [[nodiscard]] std::expected<void, StarException> clear(std::size_t count = std::numeric_limits<std::size_t>::max());
 
-  String currentChat() const;
-  bool setCurrentChat(String const& chat, bool moveCursor = false);
-  void clearCurrentChat();
+  [[nodiscard]] std::expected<String, StarException> currentChat() const;
+  [[nodiscard]] std::expected<bool, StarException> setCurrentChat(String const& chat, bool moveCursor = false);
+  [[nodiscard]] std::expected<void, StarException> clearCurrentChat();
 
-  ChatSendMode sendMode() const;
+  [[nodiscard]] std::expected<ChatSendMode, StarException> sendMode() const;
 
-  void incrementIndex();
-  void decrementIndex();
+  [[nodiscard]] std::expected<void, StarException> incrementIndex();
+  [[nodiscard]] std::expected<void, StarException> decrementIndex();
 
-  float visible() const;
+  [[nodiscard]] std::expected<float, StarException> visible() const;
 
-  void scrollUp();
-  void scrollDown();
-  void scrollBottom();
+  [[nodiscard]] std::expected<void, StarException> scrollUp();
+  [[nodiscard]] std::expected<void, StarException> scrollDown();
+  [[nodiscard]] std::expected<void, StarException> scrollBottom();
 
 private:
+  Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] std::expected<void, StarException> initialize(Json const& config);
   struct LogMessage {
     MessageContext::Mode mode;
     String portrait;
     String text;
   };
 
-  void updateBottomButton();
+  [[nodiscard]] std::expected<void, StarException> updateBottomButton();
 
   std::shared_ptr<UniverseClient> m_client;
   bool m_scripted;
@@ -130,7 +133,7 @@ private:
   int m_expandedBodyHeight;
   bool m_expanded;
 
-  void updateSize();
+  [[nodiscard]] std::expected<void, StarException> updateSize();
 
   Vec2I m_portraitTextOffset;
   Vec2I m_portraitImageOffset;

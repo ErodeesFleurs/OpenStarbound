@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.json;
 
@@ -23,8 +24,8 @@ namespace Star {
 class ImageMetadataDatabase;
 
 struct Drawable {
-  friend DataStream& operator>>(DataStream& ds, Drawable& drawable);
-  friend DataStream& operator<<(DataStream& ds, Drawable const& drawable);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable);
 
   struct LinePart {
     Line2F line;
@@ -45,18 +46,18 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition = false);
-    ImagePart& addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<ImagePart*, StarException> addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<ImagePart*, StarException> addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition = false);
+    [[nodiscard]] std::expected<ImagePart*, StarException> removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition = false);
   };
 
   static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
   static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
+  [[nodiscard]] static std::expected<Drawable, StarException> makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);
@@ -77,12 +78,12 @@ struct Drawable {
   static void rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase = Vec2F());
 
   template <typename DrawablesContainer>
-  static RectF boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages);
+  [[nodiscard]] static std::expected<RectF, StarException> boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages);
 
   Drawable();
-  Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json);
+  [[nodiscard]] static std::expected<Drawable, StarException> create(ImageMetadataDatabase const& imageMetadata, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   void translate(Vec2F const& translation);
   void rotate(float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -96,7 +97,7 @@ struct Drawable {
   // between them.
   void rebase(Vec2F const& newBase = Vec2F());
 
-  RectF boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const;
+  [[nodiscard]] std::expected<RectF, StarException> boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const;
 
   bool isLine() const;
   LinePart& linePart();
@@ -117,8 +118,8 @@ struct Drawable {
   bool fullbright;
 };
 
-DataStream& operator>>(DataStream& ds, Drawable& drawable);
-DataStream& operator<<(DataStream& ds, Drawable const& drawable);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable);
 
 template <typename DrawablesContainer>
 void Drawable::translateAll(DrawablesContainer& drawables, Vec2F const& translation) {
@@ -157,10 +158,14 @@ void Drawable::rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase) {
 }
 
 template <typename DrawablesContainer>
-RectF Drawable::boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages) {
+[[nodiscard]] std::expected<RectF, StarException> Drawable::boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages) {
   RectF boundBox = RectF::null();
-  for (auto const& drawable : drawables)
-    boundBox.combine(drawable.boundBox(imageMetadata, cropImages));
+  for (auto const& drawable : drawables) {
+    auto bounds = drawable.boundBox(imageMetadata, cropImages);
+    if (!bounds)
+      return std::unexpected(std::move(bounds.error()));
+    boundBox.combine(*bounds);
+  }
   return boundBox;
 }
 

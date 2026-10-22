@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.casting;
@@ -159,21 +160,28 @@ import star.shaders_menu;
 
 namespace Star {
 
-ShadersMenu::ShadersMenu(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client) : BaseScriptPane(guiContext, config) {
-  m_client = std::move(client);
+ShadersMenu::ShadersMenu(GuiContext& guiContext, std::shared_ptr<UniverseClient> client)
+  : BaseScriptPane(guiContext), m_client(std::move(client)) {}
+
+std::expected<std::shared_ptr<ShadersMenu>, StarException> ShadersMenu::create(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client) {
+  auto menu = std::shared_ptr<ShadersMenu>(new ShadersMenu(guiContext, std::move(client)));
+  if (auto result = menu->init(config); !result)
+    return std::unexpected(std::move(result.error()));
+  return menu;
 }
 
-void ShadersMenu::show() {
-  BaseScriptPane::show();
+std::expected<void, StarException> ShadersMenu::show() {
+  return BaseScriptPane::show();
 }
 
-void ShadersMenu::displayed() {
-  m_script.setLuaRoot(m_client->luaRoot());
-  BaseScriptPane::displayed();
+std::expected<void, StarException> ShadersMenu::displayed() {
+  if (auto result = m_script.setLuaRoot(m_client->luaRoot()); !result)
+    return std::unexpected(std::move(result.error()));
+  return BaseScriptPane::displayed();
 }
 
-void ShadersMenu::dismissed() {
-  BaseScriptPane::dismissed();
+std::expected<void, StarException> ShadersMenu::dismissed() {
+  return BaseScriptPane::dismissed();
 }
 
 }

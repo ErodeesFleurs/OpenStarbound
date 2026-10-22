@@ -73,8 +73,8 @@ template <typename T>
 void ObserverStream<T>::tick(std::uint64_t delta) {
   m_nextStep += delta;
   std::uint64_t removeBefore = m_nextStep - std::min(m_nextStep, m_historyLimit);
-  while (!m_values.empty() && m_values.first().first < removeBefore)
-    m_values.removeFirst();
+  while (!m_values.empty() && m_values.front().first < removeBefore)
+    m_values.pop_front();
 }
 
 template <typename T>

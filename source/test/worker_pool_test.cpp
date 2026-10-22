@@ -2,6 +2,7 @@ import std;
 import star.thread;
 import star.list;
 import star.worker_pool;
+import star.format;
 
 #include "gtest/gtest.h"
 
@@ -11,10 +12,11 @@ TEST(WorkerPoolTest, All) {
   int counter = 0;
   Mutex counterMutex;
 
-  auto incCounter = [&counter, &counterMutex]() {
+  auto incCounter = [&counter, &counterMutex]() -> std::expected<void, StarException> {
     Thread::sleep(100);
     MutexLocker locker(counterMutex);
     counter += 1;
+    return {};
   };
 
   Deque<WorkerPoolHandle> handles;
@@ -23,32 +25,43 @@ TEST(WorkerPoolTest, All) {
   for (std::size_t i = 0; i < 10; ++i)
     handles.append(workerPool.addWork(incCounter));
 
-  workerPool.start(10);
+  ASSERT_TRUE(workerPool.start(10));
 
   for (std::size_t i = 0; i < 90; ++i)
     handles.append(workerPool.addWork(incCounter));
 
-  while (handles.size() > 20)
-    handles.takeFirst().finish();
+  while (handles.size() > 20) {
+    auto handle = handles.takeFirst();
+    ASSERT_TRUE(handle);
+    ASSERT_TRUE(handle->finish());
+  }
 
-  workerPool.finish();
+  ASSERT_TRUE(workerPool.finish());
 
   EXPECT_EQ(counter, 100);
 }
 
 TEST(WorkerPoolTest, MoveOnlyTasksPublishResultsToAllWaiters) {
   WorkerPool pool("move-only");
-  pool.start(2);
+  ASSERT_TRUE(pool.start(2));
   std::atomic<bool> release{false};
-  auto result = pool.addProducer<int>([value = std::make_unique<int>(42), &release] {
+  auto result = pool.addProducer<int>([value = std::make_unique<int>(42), &release]() -> std::expected<int, StarException> {
     release.wait(false);
     return *value;
   });
-  EXPECT_FALSE(result.wait(1));
+  auto waiting = result.wait(1);
+  EXPECT_TRUE(waiting);
+  if (waiting)
+    EXPECT_FALSE(*waiting);
   std::array<int, 4> observations{};
   std::vector<std::thread> waiters;
-  for (std::size_t i = 0; i < observations.size(); ++i)
-    waiters.emplace_back([&, i] { observations[i] = result.get(); });
+  for (std::size_t i = 0; i < observations.size(); ++i) {
+    waiters.emplace_back([&, i] {
+      auto value = result.get();
+      ASSERT_TRUE(value);
+      observations[i] = **value;
+    });
+  }
   release.store(true);
   release.notify_all();
   for (auto& waiter : waiters)
@@ -56,11 +69,21 @@ TEST(WorkerPoolTest, MoveOnlyTasksPublishResultsToAllWaiters) {
   for (auto value : observations)
     EXPECT_EQ(value, 42);
   EXPECT_TRUE(result.done());
-  EXPECT_EQ(result.get(), 42);
+  auto value = result.get();
+  ASSERT_TRUE(value);
+  EXPECT_EQ(**value, 42);
   auto empty = pool.addWork({});
-  EXPECT_THROW(empty.finish(), std::bad_function_call);
-  EXPECT_THROW(empty.finish(), std::bad_function_call);
+  auto emptyFinish = empty.finish();
+  ASSERT_FALSE(emptyFinish);
+  auto repeatedFinish = empty.finish();
+  ASSERT_FALSE(repeatedFinish);
+  EXPECT_STREQ(repeatedFinish.error().what(), emptyFinish.error().what());
   auto emptyProducer = pool.addProducer<int>({});
-  EXPECT_THROW(emptyProducer.get(), std::bad_function_call);
-  pool.finish();
+  auto emptyValue = emptyProducer.get();
+  ASSERT_FALSE(emptyValue);
+  auto recovery = pool.addProducer<int>([]() -> std::expected<int, StarException> { return 19; });
+  auto recoveredValue = recovery.get();
+  ASSERT_TRUE(recoveredValue);
+  EXPECT_EQ(**recoveredValue, 19);
+  ASSERT_TRUE(pool.finish());
 }

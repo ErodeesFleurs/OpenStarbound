@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.lua;
 import star.json;
@@ -47,21 +48,23 @@ class Root;
 
 class Companion {
 public:
-  Companion(Root& root, Json const& json);
+  [[nodiscard]] static std::expected<std::shared_ptr<Companion>, StarException> create(Root& root, Json const& json);
   Json toJson() const;
 
-  Uuid podUuid() const;
-  std::optional<String> name() const;
-  std::optional<String> description() const;
+  [[nodiscard]] std::expected<Uuid, StarException> podUuid() const;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> name() const;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> description() const;
 
   List<Drawable> portrait() const;
 
-  std::optional<float> resource(String const& resourceName) const;
-  std::optional<float> resourceMax(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resource(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourceMax(String const& resourceName) const;
 
-  std::optional<float> stat(String const& statName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> stat(String const& statName) const;
 
 private:
+  explicit Companion(Json json) : m_json(std::move(json)) {}
+  [[nodiscard]] std::expected<std::optional<float>, StarException> statusValue(String const& group, String const& name) const;
   Json m_json;
   List<Drawable> m_portrait;
 };
@@ -70,24 +73,24 @@ class PlayerCompanions {
 public:
   PlayerCompanions(Root& root, Json const& config);
 
-  void diskLoad(Json const& diskStore);
-  Json diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
 
   List<std::shared_ptr<Companion>> getCompanions(String const& category) const;
 
-  void init(Entity* player, World* world);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(Entity* player, World* world);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
-  void dismissCompanion(String const& category, Uuid const& podUuid);
+  [[nodiscard]] std::expected<void, StarException> dismissCompanion(String const& category, Uuid const& podUuid);
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  void update(float dt);
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
 private:
   Root& m_root;
-  LuaCallbacks makeCompanionsCallbacks();
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeCompanionsCallbacks();
 
-  World* m_world;
+  World* m_world = nullptr;
   Json m_config;
   StringMap<List<std::shared_ptr<Companion>>> m_companions;
 

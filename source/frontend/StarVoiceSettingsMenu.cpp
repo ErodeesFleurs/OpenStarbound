@@ -1,6 +1,7 @@
 import star.lua_root;
 import std;
 import star.json;
+import star.format;
 import star.casting;
 import star.input_event;
 import star.color;
@@ -68,21 +69,35 @@ import star.voice_lua_bindings;
 
 namespace Star {
 
-VoiceSettingsMenu::VoiceSettingsMenu(GuiContext& guiContext, Json const& config) : BaseScriptPane(guiContext, config) {
-  m_script.setLuaRoot(std::make_shared<LuaRoot>(context()->root()));
-  m_script.addCallbacks("voice", LuaBindings::makeVoiceCallbacks(context()->voice()));
+VoiceSettingsMenu::VoiceSettingsMenu(GuiContext& guiContext) : BaseScriptPane(guiContext) {}
+
+std::expected<std::shared_ptr<VoiceSettingsMenu>, StarException> VoiceSettingsMenu::create(GuiContext& guiContext, Json const& config) {
+  auto menu = std::shared_ptr<VoiceSettingsMenu>(new VoiceSettingsMenu(guiContext));
+  if (auto initialized = menu->init(config); !initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto luaRoot = LuaRoot::create(menu->context()->root());
+  if (!luaRoot) return std::unexpected(std::move(luaRoot.error()));
+  if (auto set = menu->m_script.setLuaRoot(std::move(*luaRoot)); !set)
+    return std::unexpected(std::move(set.error()));
+  auto voice = menu->context()->voice();
+  if (!voice) return std::unexpected(std::move(voice.error()));
+  auto callbacks = LuaBindings::makeVoiceCallbacks(**voice);
+  if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+  if (auto added = menu->m_script.addCallbacks("voice", std::move(*callbacks)); !added)
+    return std::unexpected(std::move(added.error()));
+  return menu;
 }
 
-void VoiceSettingsMenu::show() {
-  BaseScriptPane::show();
+std::expected<void, StarException> VoiceSettingsMenu::show() {
+  return BaseScriptPane::show();
 }
 
-void VoiceSettingsMenu::displayed() {
-  BaseScriptPane::displayed();
+std::expected<void, StarException> VoiceSettingsMenu::displayed() {
+  return BaseScriptPane::displayed();
 }
 
-void VoiceSettingsMenu::dismissed() {
-  BaseScriptPane::dismissed();
+std::expected<void, StarException> VoiceSettingsMenu::dismissed() {
+  return BaseScriptPane::dismissed();
 }
 
 }

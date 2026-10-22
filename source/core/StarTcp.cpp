@@ -21,6 +21,7 @@
 
 import std;
 import star.format;
+import star.output_proxy;
 import star.io_device;
 import star.string;
 import star.either;
@@ -33,24 +34,31 @@ import star.net_impl;
 
 namespace Star {
 
-std::shared_ptr<TcpSocket> TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
+std::expected<std::shared_ptr<TcpSocket>, StarException> TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
   auto socket = std::shared_ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
-  socket->connect(addressWithPort);
+  if (auto status = socket->initialize(SocketType::Tcp); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = socket->connect(addressWithPort); !status)
+    return std::unexpected(std::move(status.error()));
   return socket;
 }
 
-std::shared_ptr<TcpSocket> TcpSocket::listen(Logger& logger, HostAddressWithPort const& addressWithPort) {
+std::expected<std::shared_ptr<TcpSocket>, StarException> TcpSocket::listen(Logger& logger, HostAddressWithPort const& addressWithPort) {
   auto socket = std::shared_ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
-  socket->bind(logger, addressWithPort);
-  ((Socket&)(*socket)).listen(32);
+  if (auto status = socket->initialize(SocketType::Tcp); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = socket->bind(logger, addressWithPort); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = socket->Socket::listen(32); !status)
+    return std::unexpected(std::move(status.error()));
   return socket;
 }
 
-std::shared_ptr<TcpSocket> TcpSocket::accept(Logger& logger) {
+std::expected<std::shared_ptr<TcpSocket>, StarException> TcpSocket::accept(Logger& logger) {
   ReadLocker locker(m_mutex);
 
   if (m_socketMode != SocketMode::Bound)
-    throw SocketClosedException("TcpSocket not bound in TcpSocket::accept");
+    return std::unexpected(SocketClosedException("TcpSocket not bound in TcpSocket::accept"));
 
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen = sizeof(sockAddr);
@@ -59,8 +67,8 @@ std::shared_ptr<TcpSocket> TcpSocket::accept(Logger& logger) {
 
   if (invalidSocketDescriptor(socketDesc)) {
     if (netErrorInterrupt())
-      return {};
-    throw NetworkException(strf("Cannot accept connection: {}", netErrorString()));
+      return std::shared_ptr<TcpSocket>{};
+    return std::unexpected(NetworkException(strf("Cannot accept connection: {}", netErrorString())));
   }
 
   auto socketImpl = std::make_shared<SocketImpl>();
@@ -69,32 +77,36 @@ std::shared_ptr<TcpSocket> TcpSocket::accept(Logger& logger) {
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
   // Don't generate sigpipe
   int set = 1;
-  socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
+  if (auto status = socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int)); !status)
+    return std::unexpected(std::move(status.error()));
 #endif
 
   std::shared_ptr<TcpSocket> sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
+  if (auto status = sockPtr->configure(); !status)
+    return std::unexpected(std::move(status.error()));
 
   sockPtr->m_localAddress = m_localAddress;
-  setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
-  logger.debug("accept from {} ({})", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc);
+  if (auto status = setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = logger.debug("accept from {} ({})", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc); !status)
+    return std::unexpected(std::move(status.error()));
 
   return sockPtr;
 }
 
-void TcpSocket::setNoDelay(bool noDelay) {
+std::expected<void, StarException> TcpSocket::setNoDelay(bool noDelay) {
   ReadLocker locker(m_mutex);
-  checkOpen("TcpSocket::setNoDelay");
+  if (auto status = checkOpen("TcpSocket::setNoDelay"); !status)
+    return std::unexpected(std::move(status.error()));
 
   int flag = noDelay ? 1 : 0;
-  m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
+  return m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 }
 
-std::size_t TcpSocket::receive(char* data, std::size_t size) {
+std::expected<std::size_t, StarException> TcpSocket::receive(char* data, std::size_t size) {
   ReadLocker locker(m_mutex);
-  checkOpen("TcpSocket::receive");
-
-  if (m_socketMode == SocketMode::Closed)
-    throw SocketClosedException("TcpSocket not open in TcpSocket::receive");
+  if (auto status = checkOpen("TcpSocket::receive"); !status)
+    return std::unexpected(std::move(status.error()));
 
   int flags = 0;
 #ifdef STAR_SYSTEM_LINUX
@@ -105,14 +117,14 @@ std::size_t TcpSocket::receive(char* data, std::size_t size) {
   auto r = ::recv(m_impl->socketDesc, data, size, flags);
   if (r < 0) {
     if (m_socketMode == SocketMode::Shutdown) {
-      throw SocketClosedException("Connection closed");
+      return std::unexpected(SocketClosedException("Connection closed"));
     } else if (netErrorConnectionReset()) {
       doShutdown();
-      throw SocketClosedException("Connection reset");
+      return std::unexpected(SocketClosedException("Connection reset"));
     } else if (netErrorInterrupt()) {
       r = 0;
     } else {
-      throw NetworkException(strf("tcp recv error: {}", netErrorString()));
+      return std::unexpected(NetworkException(strf("tcp recv error: {}", netErrorString())));
     }
   } else if (r == 0 && size != 0) {
     doShutdown();
@@ -121,12 +133,10 @@ std::size_t TcpSocket::receive(char* data, std::size_t size) {
   return r;
 }
 
-std::size_t TcpSocket::send(char const* data, std::size_t size) {
+std::expected<std::size_t, StarException> TcpSocket::send(char const* data, std::size_t size) {
   ReadLocker locker(m_mutex);
-  checkOpen("TcpSocket::send");
-
-  if (m_socketMode == SocketMode::Closed)
-    throw SocketClosedException("TcpSocket not open in TcpSocket::send");
+  if (auto status = checkOpen("TcpSocket::send"); !status)
+    return std::unexpected(std::move(status.error()));
 
   int flags = 0;
 #ifdef STAR_SYSTEM_LINUX
@@ -137,14 +147,14 @@ std::size_t TcpSocket::send(char const* data, std::size_t size) {
   auto w = ::send(m_impl->socketDesc, data, size, flags);
   if (w < 0) {
     if (m_socketMode == SocketMode::Shutdown) {
-      throw SocketClosedException("Connection closed");
+      return std::unexpected(SocketClosedException("Connection closed"));
     } else if (netErrorConnectionReset()) {
       doShutdown();
-      throw SocketClosedException("Connection reset");
+      return std::unexpected(SocketClosedException("Connection reset"));
     } else if (netErrorInterrupt()) {
       w = 0;
     } else {
-      throw NetworkException(strf("tcp send error: {}", netErrorString()));
+      return std::unexpected(NetworkException(strf("tcp send error: {}", netErrorString())));
     }
   }
 
@@ -161,93 +171,131 @@ HostAddressWithPort TcpSocket::remoteAddress() const {
   return m_remoteAddress;
 }
 
-TcpSocket::TcpSocket(NetworkMode networkMode) : Socket(SocketType::Tcp, networkMode) {}
+TcpSocket::TcpSocket(NetworkMode networkMode) : Socket(networkMode) {}
 
 TcpSocket::TcpSocket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl) : Socket(networkMode, impl, SocketMode::Connected) {}
 
-void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
+std::expected<void, StarException> TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
-  checkOpen("TcpSocket::connect");
+  if (auto status = checkOpen("TcpSocket::connect"); !status)
+    return std::unexpected(std::move(status.error()));
 
   if (m_networkMode != addressWithPort.address().mode())
-    throw NetworkException("Socket address type mismatch between address and socket.");
+    return std::unexpected(NetworkException("Socket address type mismatch between address and socket."));
 
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen;
-  setNativeFromAddress(addressWithPort, &sockAddr, &sockAddrLen);
+  if (auto status = setNativeFromAddress(addressWithPort, &sockAddr, &sockAddrLen); !status)
+    return std::unexpected(std::move(status.error()));
   if (::connect(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
-    throw NetworkException(strf("cannot connect to {}: {}", addressWithPort, netErrorString()));
+    return std::unexpected(NetworkException(strf("cannot connect to {}: {}", addressWithPort, netErrorString())));
 
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
   // Don't generate sigpipe
   int set = 1;
-  m_impl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(set));
+  if (auto status = m_impl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(set)); !status)
+    return std::unexpected(std::move(status.error()));
 #endif
 
   m_socketMode = SocketMode::Connected;
   m_remoteAddress = addressWithPort;
+  return {};
 }
 
-TcpServer::TcpServer(Logger& logger, HostAddressWithPort const& address) : m_logger(logger), m_hostAddress(address) {
-  m_hostAddress = address;
-  m_listenSocket = TcpSocket::listen(logger, address);
-  m_listenSocket->setNonBlocking(true);
-  m_logger.debug("TcpServer listening on: {}", address);
+TcpServer::TcpServer(Logger& logger, HostAddressWithPort const& address)
+  : m_logger(logger), m_hostAddress(address) {}
+
+std::expected<std::unique_ptr<TcpServer>, StarException> TcpServer::create(Logger& logger, HostAddressWithPort const& address) {
+  auto server = std::unique_ptr<TcpServer>(new TcpServer(logger, address));
+  auto socket = TcpSocket::listen(logger, address);
+  if (!socket)
+    return std::unexpected(std::move(socket.error()));
+  server->m_listenSocket = std::move(*socket);
+  if (auto status = server->m_listenSocket->setNonBlocking(true); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = logger.debug("TcpServer listening on: {}", address); !status)
+    return std::unexpected(std::move(status.error()));
+  return server;
 }
 
-TcpServer::TcpServer(Logger& logger, std::uint16_t port) : TcpServer(logger, HostAddressWithPort("*", port)) {}
+std::expected<std::unique_ptr<TcpServer>, StarException> TcpServer::create(Logger& logger, std::uint16_t port) {
+  return create(logger, HostAddressWithPort(HostAddress(), port));
+}
 
 TcpServer::~TcpServer() {
-  stop();
+  if (auto status = stop(); !status) {
+    if (auto logged = m_logger.error("TcpServer shutdown failed: {}", outputException(ExceptionDiagnostic(status.error()), true)); !logged)
+      EmergencyLog::error("TcpServer shutdown diagnostic failed: {}", outputException(ExceptionDiagnostic(logged.error()), true));
+  }
+  if (!isClosed())
+    fatalError("Cannot destroy a TCP server with an unjoined callback thread", false);
 }
 
-void TcpServer::stop() {
-  m_listenSocket->shutdown();
-  m_callbackThread.finish();
-  m_listenSocket->close();
+std::expected<void, StarException> TcpServer::stop() {
+  if (m_listenSocket)
+    m_listenSocket->shutdown();
+  std::expected<void, StarException> status;
+  // Keep the control block in place on native join failure so stop() can retry.
+  if (!m_callbackThread.isFinished())
+    status = m_callbackThread.finish();
+  if (m_listenSocket)
+    m_listenSocket->close();
+  if (!status)
+    return std::unexpected(std::move(status.error()));
+  return {};
 }
 
 bool TcpServer::isListening() const {
-  return m_listenSocket->isActive();
+  return m_listenSocket && m_listenSocket->isActive();
 }
 
-std::shared_ptr<TcpSocket> TcpServer::accept(unsigned timeout) {
-  MutexLocker locker(m_mutex);
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
-  try {
-    return m_listenSocket->accept(m_logger);
-  } catch (SocketClosedException const&) {
-    return {};
-  }
+bool TcpServer::isClosed() const {
+  return (!m_listenSocket || !m_listenSocket->isOpen()) && m_callbackThread.isFinished();
 }
 
-void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
+std::expected<std::shared_ptr<TcpSocket>, StarException> TcpServer::accept(unsigned timeout) {
   MutexLocker locker(m_mutex);
-  m_callback = callback;
+  if (auto status = Socket::poll({{m_listenSocket, {true, false}}}, timeout); !status)
+    return std::unexpected(std::move(status.error()));
+  auto socket = m_listenSocket->accept(m_logger);
+  if (!socket && socket.error().is<SocketClosedException>())
+    return std::shared_ptr<TcpSocket>{};
+  return socket;
+}
+
+std::expected<void, StarException> TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
+  MutexLocker locker(m_mutex);
+  if (!callback)
+    return std::unexpected(NetworkException("Cannot install an empty TCP accept callback"));
+  m_callback = std::move(callback);
   if (m_listenSocket->isActive() && !m_callbackThread) {
-    m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() {
-        try {
-          while (true) {
-            std::shared_ptr<TcpSocket> conn;
-            try {
-              conn = accept(timeout);
-            } catch (NetworkException const& e) {
-              m_logger.error("TcpServer caught exception accepting connection {}", outputException(e, false));
-            }
-
-            if (conn)
-              m_callback(conn);
-
-            if (!m_listenSocket->isActive())
-              break;
+    auto thread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() -> std::expected<void, StarException> {
+      while (true) {
+        auto connection = accept(timeout);
+        if (!connection) {
+          if (auto logged = m_logger.error("TcpServer caught error accepting connection {}", outputException(ExceptionDiagnostic(connection.error()), false)); !logged) {
+            m_listenSocket->close();
+            return std::unexpected(std::move(logged.error()));
           }
-        } catch (std::exception const&) {
-          ExceptionDiagnostic const e(std::current_exception());
-          m_logger.error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
-          m_listenSocket->close();
+        } else if (*connection) {
+          auto status = m_callback(*connection);
+          if (!status) {
+            auto logged = m_logger.error("TcpServer will close, listener callback failed: {}", outputException(ExceptionDiagnostic(status.error()), true));
+            m_listenSocket->close();
+            if (!logged)
+              return std::unexpected(std::move(logged.error()));
+            return {};
+          }
         }
-      });
+        if (!m_listenSocket->isActive())
+          return {};
+      }
+    });
+    if (!thread)
+      return std::unexpected(std::move(thread.error()));
+    m_callbackThread = std::move(*thread);
   }
+  return {};
 }
 
 }

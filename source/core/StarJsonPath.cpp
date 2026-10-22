@@ -1,81 +1,122 @@
 import std;
+import star.format;
 import star.string;
+import star.unicode;
 import star.json;
 import star.json_extra;
 import star.lexical_cast;
 import star.json_path;
 
-namespace Star {
+namespace Star::JsonPath {
 
-namespace JsonPath {
-
-  TypeHint parsePointer(String& buffer, String const& path, String::const_iterator& iterator, String::const_iterator end) {
-    buffer.clear();
-
-    if (*iterator != '/')
-      throw ParsingException::format("Missing leading '/' in Json pointer \"{}\"", path);
-    iterator++;
-
-    while (iterator != end && *iterator != '/') {
-      if (*iterator == '~') {
-        ++iterator;
-        if (iterator == end)
-          throw ParsingException::format("Incomplete escape sequence in Json pointer \"{}\"", path);
-
-        if (*iterator == '0')
-          buffer.append('~');
-        else if (*iterator == '1')
-          buffer.append('/');
-        else
-          throw ParsingException::format("Invalid escape sequence in Json pointer \"{}\"", path);
-        ++iterator;
-      } else
-        buffer.append(*iterator++);
-    }
-
-    std::optional<std::size_t> index = maybeLexicalCast<std::size_t>(buffer);
-    if (index.has_value() || (buffer == "-" && iterator == end))
-      return TypeHint::Array;
-    return TypeHint::Object;
-  }
-
-  TypeHint parseQueryPath(String& buffer, String const& path, String::const_iterator& iterator, String::const_iterator end) {
-    buffer.clear();
-
-    if (*iterator == '.') {
-      throw ParsingException::format("Entry starts with '.' in query path \"{}\"", path);
-
-    } else if (*iterator == '[') {
-      // Parse array number and ']'
-      // Consume initial '['
-      ++iterator;
-
-      while (iterator != end && *iterator >= '0' && *iterator <= '9')
-        buffer.append(*iterator++);
-
-      if (iterator == end || *iterator != ']')
-        throw ParsingException::format("Array has no trailing ']' or has invalid character in query path \"{}\"", path);
-
-      // Consume trailing ']'
-      ++iterator;
-
-      // Consume trailing '.'
-      if (iterator != end && *iterator == '.')
-        ++iterator;
-
-      return TypeHint::Array;
-
+std::expected<TypeHint, StarException> parsePointer(String& buffer, String const& path, Utf8Cursor& cursor) {
+  buffer.clear();
+  if (cursor.atEnd())
+    return std::unexpected(ParsingException::format("Missing leading '/' in Json pointer \"{}\"", path));
+  auto character = cursor.read();
+  if (!character)
+    return std::unexpected(std::move(character.error()));
+  if (*character != '/')
+    return std::unexpected(ParsingException::format("Missing leading '/' in Json pointer \"{}\"", path));
+  auto advanced = cursor.advance();
+  if (!advanced)
+    return std::unexpected(std::move(advanced.error()));
+  while (!cursor.atEnd()) {
+    character = cursor.read();
+    if (!character)
+      return std::unexpected(std::move(character.error()));
+    if (*character == '/')
+      break;
+    if (*character == '~') {
+      advanced = cursor.advance();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+      if (cursor.atEnd())
+        return std::unexpected(ParsingException::format("Incomplete escape sequence in Json pointer \"{}\"", path));
+      character = cursor.read();
+      if (!character)
+        return std::unexpected(std::move(character.error()));
+      if (*character != '0' && *character != '1')
+        return std::unexpected(ParsingException::format("Invalid escape sequence in Json pointer \"{}\"", path));
+      auto appended = buffer.append(*character == '0' ? '~' : '/');
+      if (!appended)
+        return std::unexpected(std::move(appended.error()));
     } else {
-      // Parse path up to next '.' or '['
-      while (iterator != end && *iterator != '.' && *iterator != '[')
-        buffer.append(*iterator++);
+      auto appended = buffer.append(*character);
+      if (!appended)
+        return std::unexpected(std::move(appended.error()));
+    }
+    advanced = cursor.advance();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+  }
+  auto index = maybeLexicalCast<std::size_t>(buffer);
+  if (index || (buffer == "-" && cursor.atEnd()))
+    return TypeHint::Array;
+  return TypeHint::Object;
+}
 
-      // Consume single trailing '.' if it exists
-      if (iterator != end && *iterator == '.')
-        ++iterator;
-      return TypeHint::Object;
+std::expected<TypeHint, StarException> parseQueryPath(String& buffer, String const& path, Utf8Cursor& cursor) {
+  buffer.clear();
+  if (cursor.atEnd())
+    return TypeHint::Object;
+  auto character = cursor.read();
+  if (!character)
+    return std::unexpected(std::move(character.error()));
+  if (*character == '.')
+    return std::unexpected(ParsingException::format("Entry starts with '.' in query path \"{}\"", path));
+
+  TypeHint hint = TypeHint::Object;
+  if (*character == '[') {
+    hint = TypeHint::Array;
+    auto advanced = cursor.advance();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+    while (!cursor.atEnd()) {
+      character = cursor.read();
+      if (!character)
+        return std::unexpected(std::move(character.error()));
+      if (*character < '0' || *character > '9')
+        break;
+      auto appended = buffer.append(*character);
+      if (!appended)
+        return std::unexpected(std::move(appended.error()));
+      advanced = cursor.advance();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+    }
+    if (cursor.atEnd() || *character != ']')
+      return std::unexpected(ParsingException::format("Array has no trailing ']' or has invalid character in query path \"{}\"", path));
+    advanced = cursor.advance();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+  } else {
+    while (!cursor.atEnd()) {
+      character = cursor.read();
+      if (!character)
+        return std::unexpected(std::move(character.error()));
+      if (*character == '.' || *character == '[')
+        break;
+      auto appended = buffer.append(*character);
+      if (!appended)
+        return std::unexpected(std::move(appended.error()));
+      auto advanced = cursor.advance();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
     }
   }
+  // Consume a single trailing dot without inspecting the following component.
+  if (!cursor.atEnd()) {
+    character = cursor.read();
+    if (!character)
+      return std::unexpected(std::move(character.error()));
+    if (*character == '.') {
+      auto advanced = cursor.advance();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+    }
+  }
+  return hint;
 }
 
 }

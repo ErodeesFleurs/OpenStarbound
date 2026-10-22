@@ -84,62 +84,48 @@ ServerTile& ServerTile::operator=(ServerTile const& serverTile) {
   return *this;
 }
 
-void ServerTile::write(DataStream& ds) const {
-  ds.write(foreground);
-  ds.write(foregroundHueShift);
-  ds.write(foregroundColorVariant);
-  ds.write(foregroundMod);
-  ds.write(foregroundModHueShift);
-  ds.write(background);
-  ds.write(backgroundHueShift);
-  ds.write(backgroundColorVariant);
-  ds.write(backgroundMod);
-  ds.write(backgroundModHueShift);
-  ds.write(liquid.liquid);
-  ds.write(liquid.level);
-  ds.write(liquid.pressure);
-  ds.write(liquid.source);
-  ds.write(collision);
-  ds.write(dungeonId);
-  ds.write(blockBiomeIndex);
-  ds.write(environmentBiomeIndex);
-  ds.write(biomeTransition);
-  ds.write(rootSource);
+std::expected<void, StarException> ServerTile::write(DataStream& ds) const {
+  auto result = ds << foreground << foregroundHueShift << foregroundColorVariant
+      << foregroundMod << foregroundModHueShift << background << backgroundHueShift
+      << backgroundColorVariant << backgroundMod << backgroundModHueShift
+      << liquid.liquid << liquid.level << liquid.pressure << liquid.source
+      << collision << dungeonId << blockBiomeIndex << environmentBiomeIndex
+      << biomeTransition << rootSource;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return {};
 }
 
-void ServerTile::read(DataStream& ds, VersionNumber serializationVersion) {
+std::expected<void, StarException> ServerTile::read(DataStream& ds, VersionNumber serializationVersion) {
   if (serializationVersion < 416 || serializationVersion > CurrentSerializationVersion)
-    throw StarException::format("Cannot read ServerTile - serialization version {} incompatible with current version {}\n", serializationVersion, CurrentSerializationVersion);
+    return std::unexpected(StarException::format("Cannot read ServerTile - serialization version {} incompatible with current version {}\n", serializationVersion, CurrentSerializationVersion));
 
-  ds.read(foreground);
-  ds.read(foregroundHueShift);
-  ds.read(foregroundColorVariant);
-  ds.read(foregroundMod);
-  ds.read(foregroundModHueShift);
-  ds.read(background);
-  ds.read(backgroundHueShift);
-  ds.read(backgroundColorVariant);
-  ds.read(backgroundMod);
-  ds.read(backgroundModHueShift);
-  ds.read(liquid.liquid);
-  ds.read(liquid.level);
-  ds.read(liquid.pressure);
-  ds.read(liquid.source);
-  ds.read(collision);
-  ds.read(dungeonId);
-  ds.read(blockBiomeIndex);
-  ds.read(environmentBiomeIndex);
-  if (serializationVersion < 417)
+  auto result = ds >> foreground >> foregroundHueShift >> foregroundColorVariant
+      >> foregroundMod >> foregroundModHueShift >> background >> backgroundHueShift
+      >> backgroundColorVariant >> backgroundMod >> backgroundModHueShift
+      >> liquid.liquid >> liquid.level >> liquid.pressure >> liquid.source
+      >> collision >> dungeonId >> blockBiomeIndex >> environmentBiomeIndex;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  if (serializationVersion < 417) {
     biomeTransition = false;
-  else
-    ds.read(biomeTransition);
+  } else {
+    auto transition = ds.read(biomeTransition);
+    if (!transition)
+      return std::unexpected(std::move(transition.error()));
+  }
   if (serializationVersion < 418) {
-    ds.readBytes(1);
+    auto legacyRoot = ds.readBytes(1);
+    if (!legacyRoot)
+      return std::unexpected(std::move(legacyRoot.error()));
     rootSource = {};
   } else {
-    ds.read(rootSource);
+    auto source = ds.read(rootSource);
+    if (!source)
+      return std::unexpected(std::move(source.error()));
   }
   collisionCacheDirty = true;
+  return {};
 }
 
 bool ServerTile::updateCollision(CollisionKind kind) {
@@ -187,8 +173,10 @@ PredictedTile::operator bool() const {
   || collision;
 }
 
-DataStream& operator>>(DataStream& ds, NetTile& tile) {
-  ds.read(tile.background);
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& tile) {
+  auto background = ds.read(tile.background);
+  if (!background)
+    return std::unexpected(std::move(background.error()));
   if (tile.background == 0) {
     tile.background = EmptyMaterialId;
     tile.backgroundHueShift = MaterialHue();
@@ -196,17 +184,21 @@ DataStream& operator>>(DataStream& ds, NetTile& tile) {
     tile.backgroundMod = NoModId;
     tile.backgroundModHueShift = MaterialHue();
   } else {
-    ds.read(tile.backgroundHueShift);
-    ds.read(tile.backgroundColorVariant);
-    ds.read(tile.backgroundMod);
+    auto appearance = ds >> tile.backgroundHueShift >> tile.backgroundColorVariant >> tile.backgroundMod;
+    if (!appearance)
+      return std::unexpected(std::move(appearance.error()));
     if (tile.backgroundMod == 0) {
       tile.backgroundMod = NoModId;
       tile.backgroundModHueShift = MaterialHue();
     } else {
-      ds.read(tile.backgroundModHueShift);
+      auto hue = ds.read(tile.backgroundModHueShift);
+      if (!hue)
+        return std::unexpected(std::move(hue.error()));
     }
   }
-  ds.read(tile.foreground);
+  auto foreground = ds.read(tile.foreground);
+  if (!foreground)
+    return std::unexpected(std::move(foreground.error()));
   if (tile.foreground == 0) {
     tile.foreground = EmptyMaterialId;
     tile.foregroundHueShift = MaterialHue();
@@ -214,112 +206,103 @@ DataStream& operator>>(DataStream& ds, NetTile& tile) {
     tile.foregroundMod = NoModId;
     tile.foregroundModHueShift = MaterialHue();
   } else {
-    ds.read(tile.foregroundHueShift);
-    ds.read(tile.foregroundColorVariant);
-    ds.read(tile.foregroundMod);
+    auto appearance = ds >> tile.foregroundHueShift >> tile.foregroundColorVariant >> tile.foregroundMod;
+    if (!appearance)
+      return std::unexpected(std::move(appearance.error()));
     if (tile.foregroundMod == 0) {
       tile.foregroundMod = NoModId;
       tile.foregroundModHueShift = MaterialHue();
     } else {
-      ds.read(tile.foregroundModHueShift);
+      auto hue = ds.read(tile.foregroundModHueShift);
+      if (!hue)
+        return std::unexpected(std::move(hue.error()));
     }
   }
-
-  ds.read(tile.collision);
-  ds.read(tile.blockBiomeIndex);
-  ds.read(tile.environmentBiomeIndex);
-  ds.read(tile.liquid.liquid);
-  if (tile.liquid.liquid != EmptyLiquidId)
-    ds.read(tile.liquid.level);
-  else
+  auto state = ds >> tile.collision >> tile.blockBiomeIndex >> tile.environmentBiomeIndex >> tile.liquid.liquid;
+  if (!state)
+    return std::unexpected(std::move(state.error()));
+  if (tile.liquid.liquid != EmptyLiquidId) {
+    auto level = ds.read(tile.liquid.level);
+    if (!level)
+      return std::unexpected(std::move(level.error()));
+  } else {
     tile.liquid.level = 0.0f;
-
-  ds.vuread(tile.dungeonId);
-
-  return ds;
+  }
+  auto dungeon = ds.vuread(tile.dungeonId);
+  if (!dungeon)
+    return std::unexpected(std::move(dungeon.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, NetTile const& tile) {
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& tile) {
   if (tile.background == EmptyMaterialId) {
-    ds.cwrite<MaterialId>(0);
+    auto empty = ds.cwrite<MaterialId>(0);
+    if (!empty)
+      return std::unexpected(std::move(empty.error()));
   } else {
-    ds.write(tile.background);
-    ds.write(tile.backgroundHueShift);
-    ds.write(tile.backgroundColorVariant);
+    auto appearance = ds << tile.background << tile.backgroundHueShift << tile.backgroundColorVariant;
+    if (!appearance)
+      return std::unexpected(std::move(appearance.error()));
     if (tile.backgroundMod == NoModId) {
-      ds.write<ModId>(0);
+      auto empty = ds.write<ModId>(0);
+      if (!empty)
+        return std::unexpected(std::move(empty.error()));
     } else {
-      ds.write(tile.backgroundMod);
-      ds.write(tile.backgroundModHueShift);
+      auto mod = ds << tile.backgroundMod << tile.backgroundModHueShift;
+      if (!mod)
+        return std::unexpected(std::move(mod.error()));
     }
   }
-
   if (tile.foreground == EmptyMaterialId) {
-    ds.cwrite<MaterialId>(0);
+    auto empty = ds.cwrite<MaterialId>(0);
+    if (!empty)
+      return std::unexpected(std::move(empty.error()));
   } else {
-    ds.write(tile.foreground);
-    ds.write(tile.foregroundHueShift);
-    ds.write(tile.foregroundColorVariant);
+    auto appearance = ds << tile.foreground << tile.foregroundHueShift << tile.foregroundColorVariant;
+    if (!appearance)
+      return std::unexpected(std::move(appearance.error()));
     if (tile.foregroundMod == NoModId) {
-      ds.write<ModId>(0);
+      auto empty = ds.write<ModId>(0);
+      if (!empty)
+        return std::unexpected(std::move(empty.error()));
     } else {
-      ds.write(tile.foregroundMod);
-      ds.write(tile.foregroundModHueShift);
+      auto mod = ds << tile.foregroundMod << tile.foregroundModHueShift;
+      if (!mod)
+        return std::unexpected(std::move(mod.error()));
     }
   }
-
-  ds.write(tile.collision);
-  ds.write(tile.blockBiomeIndex);
-  ds.write(tile.environmentBiomeIndex);
-  ds.write(tile.liquid.liquid);
-  if (tile.liquid.liquid != EmptyLiquidId)
-    ds.write(tile.liquid.level);
-
-  ds.vuwrite(tile.dungeonId);
-
-  return ds;
+  auto state = ds << tile.collision << tile.blockBiomeIndex << tile.environmentBiomeIndex << tile.liquid.liquid;
+  if (!state)
+    return std::unexpected(std::move(state.error()));
+  if (tile.liquid.liquid != EmptyLiquidId) {
+    auto level = ds.write(tile.liquid.level);
+    if (!level)
+      return std::unexpected(std::move(level.error()));
+  }
+  auto dungeon = ds.vuwrite(tile.dungeonId);
+  if (!dungeon)
+    return std::unexpected(std::move(dungeon.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, RenderTile& tile) {
-  ds >> tile.foreground;
-  ds >> tile.foregroundHueShift;
-  ds >> tile.foregroundMod;
-  ds >> tile.foregroundModHueShift;
-  ds >> tile.foregroundColorVariant;
-  ds >> tile.foregroundDamageLevel;
-  ds >> tile.foregroundDamageType;
-  ds >> tile.background;
-  ds >> tile.backgroundHueShift;
-  ds >> tile.backgroundMod;
-  ds >> tile.backgroundModHueShift;
-  ds >> tile.backgroundColorVariant;
-  ds >> tile.backgroundDamageLevel;
-  ds >> tile.backgroundDamageType;
-  ds >> tile.liquidId;
-  ds >> tile.liquidLevel;
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& tile) {
+  return ds >> tile.foreground >> tile.foregroundHueShift >> tile.foregroundMod
+      >> tile.foregroundModHueShift >> tile.foregroundColorVariant
+      >> tile.foregroundDamageLevel >> tile.foregroundDamageType
+      >> tile.background >> tile.backgroundHueShift >> tile.backgroundMod
+      >> tile.backgroundModHueShift >> tile.backgroundColorVariant
+      >> tile.backgroundDamageLevel >> tile.backgroundDamageType
+      >> tile.liquidId >> tile.liquidLevel;
 }
 
-DataStream& operator<<(DataStream& ds, RenderTile const& tile) {
-  ds << tile.foreground;
-  ds << tile.foregroundHueShift;
-  ds << tile.foregroundMod;
-  ds << tile.foregroundModHueShift;
-  ds << tile.foregroundColorVariant;
-  ds << tile.foregroundDamageLevel;
-  ds << tile.foregroundDamageType;
-  ds << tile.background;
-  ds << tile.backgroundHueShift;
-  ds << tile.backgroundMod;
-  ds << tile.backgroundModHueShift;
-  ds << tile.backgroundColorVariant;
-  ds << tile.backgroundDamageLevel;
-  ds << tile.backgroundDamageType;
-  ds << tile.liquidId;
-  ds << tile.liquidLevel;
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& tile) {
+  return ds << tile.foreground << tile.foregroundHueShift << tile.foregroundMod
+      << tile.foregroundModHueShift << tile.foregroundColorVariant
+      << tile.foregroundDamageLevel << tile.foregroundDamageType
+      << tile.background << tile.backgroundHueShift << tile.backgroundMod
+      << tile.backgroundModHueShift << tile.backgroundColorVariant
+      << tile.backgroundDamageLevel << tile.backgroundDamageType
+      << tile.liquidId << tile.liquidLevel;
 }
 
 }

@@ -25,7 +25,7 @@ enum class SkyType : std::uint8_t {
   Warp,
   Space
 };
-extern EnumMap<SkyType> const SkyTypeNames;
+extern std::expected<EnumMap<SkyType>, StarException> const SkyTypeNames;
 
 enum class FlyingType : std::uint8_t {
   None,
@@ -33,20 +33,20 @@ enum class FlyingType : std::uint8_t {
   Warp,
   Arriving
 };
-extern EnumMap<FlyingType> const FlyingTypeNames;
+extern std::expected<EnumMap<FlyingType>, StarException> const FlyingTypeNames;
 
 enum class WarpPhase : std::int8_t {
   SlowingDown = -1,
   Maintain = 0,
   SpeedingUp = 1
 };
-extern EnumMap<WarpPhase> const WarpPhaseNames;
+extern std::expected<EnumMap<WarpPhase>, StarException> const WarpPhaseNames;
 
 struct SkyColoring {
-  friend DataStream& operator>>(DataStream& ds, SkyColoring& value);
-  friend DataStream& operator<<(DataStream& ds, SkyColoring const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& value);
   SkyColoring();
-  explicit SkyColoring(Json const& variant);
+  [[nodiscard]] static std::expected<SkyColoring, StarException> create(Json const& variant);
 
   Json toJson() const;
 
@@ -63,8 +63,8 @@ struct SkyColoring {
   Color nightLightColor;
 };
 
-DataStream& operator>>(DataStream& ds, SkyColoring& skyColoring);
-DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring);
 
 enum class SkyOrbiterType { Sun, Moon, HorizonCloud, SpaceDebris };
 

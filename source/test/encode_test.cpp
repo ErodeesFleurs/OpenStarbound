@@ -2,6 +2,7 @@ import std;
 import star.string;
 import star.byte_array;
 import star.encode;
+import star.format;
 
 #include "gtest/gtest.h"
 
@@ -22,7 +23,9 @@ TEST(EncodeTest, Base64) {
       "IGNhcm5hbCBwbGVhc3VyZS4=";
 
   String encoded = base64Encode(testSource);
-  ByteArray decoded = base64Decode(encoded);
+  auto result1 = base64Decode(encoded);
+  ASSERT_TRUE(result1) << result1.error().what();
+  ByteArray decoded = (*result1);
 
   EXPECT_EQ(encoded, testEncoded);
   EXPECT_EQ(decoded, testSource);
@@ -34,7 +37,9 @@ TEST(EncodeTest, SHA256) {
       "of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, "
       "exceeds the short vehemence of any carnal pleasure.";
   ByteArray testSource = ByteArray(data, std::strlen(data));
-  ByteArray testHash = hexDecode("78fe75026c4390ceccc4e9e6a9428ba8ae5968b458e60b5eebecd682cf24bbf2");
+  auto result2 = hexDecode("78fe75026c4390ceccc4e9e6a9428ba8ae5968b458e60b5eebecd682cf24bbf2");
+  ASSERT_TRUE(result2) << result2.error().what();
+  ByteArray testHash = (*result2);
 
   EXPECT_EQ(sha256(testSource), testHash);
 }
@@ -42,16 +47,26 @@ TEST(EncodeTest, SHA256) {
 TEST(EncodeTest, BorrowedSpans) {
   char output[8]{};
   EXPECT_EQ(hexEncode(std::span<char const>{}, std::span<char>{}), 0u);
-  EXPECT_EQ(hexDecode(std::span<char const>{}, std::span<char>{}), 0u);
-  EXPECT_EQ(nibbleDecode(std::span<char const>{}, std::span<char>{}), 0u);
+  auto result3 = hexDecode(std::span<char const>{}, std::span<char>{});
+  ASSERT_TRUE(result3) << result3.error().what();
+  EXPECT_EQ((*result3), 0u);
+  auto result4 = nibbleDecode(std::span<char const>{}, std::span<char>{});
+  ASSERT_TRUE(result4) << result4.error().what();
+  EXPECT_EQ((*result4), 0u);
   EXPECT_EQ(base64Encode(std::span<char const>{}, std::span<char>{}), 0u);
-  EXPECT_EQ(base64Decode(std::span<char const>{}, std::span<char>{}), 0u);
+  auto result5 = base64Decode(std::span<char const>{}, std::span<char>{});
+  ASSERT_TRUE(result5) << result5.error().what();
+  EXPECT_EQ((*result5), 0u);
 
   EXPECT_EQ(hexEncode({"ab", 2}, {output, 3}), 2u);
   EXPECT_EQ(std::string_view(output, 2), "61");
-  EXPECT_EQ(hexDecode({"g1f", 3}, output), 1u);
+  auto result6 = hexDecode({"g1f", 3}, output);
+  ASSERT_TRUE(result6) << result6.error().what();
+  EXPECT_EQ((*result6), 1u);
   EXPECT_EQ(static_cast<unsigned char>(output[0]), 1u);
-  EXPECT_EQ(nibbleDecode({"gF1", 3}, {output, 2}), 2u);
+  auto result7 = nibbleDecode({"gF1", 3}, {output, 2});
+  ASSERT_TRUE(result7) << result7.error().what();
+  EXPECT_EQ((*result7), 2u);
   EXPECT_EQ(output[0], 0);
   EXPECT_EQ(output[1], 15);
 
@@ -59,12 +74,20 @@ TEST(EncodeTest, BorrowedSpans) {
   EXPECT_EQ(std::string_view(output, 4), "TQ==");
   EXPECT_EQ(base64Encode({"Man", 3}, {output, 2}), 2u);
   EXPECT_EQ(std::string_view(output, 2), "TW");
-  EXPECT_EQ(base64Decode({"TWE", 3}, output), 2u);
+  auto result8 = base64Decode({"TWE", 3}, output);
+  ASSERT_TRUE(result8) << result8.error().what();
+  EXPECT_EQ((*result8), 2u);
   EXPECT_EQ(std::string_view(output, 2), "Ma");
-  EXPECT_EQ(base64Decode({"TQ=ignored", 10}, output), 1u);
+  auto result9 = base64Decode({"TQ=ignored", 10}, output);
+  ASSERT_TRUE(result9) << result9.error().what();
+  EXPECT_EQ((*result9), 1u);
   EXPECT_EQ(output[0], 'M');
-  EXPECT_EQ(base64Decode({"TQ!ignored", 10}, output), 1u);
+  auto result10 = base64Decode({"TQ!ignored", 10}, output);
+  ASSERT_TRUE(result10) << result10.error().what();
+  EXPECT_EQ((*result10), 1u);
   EXPECT_EQ(output[0], 'M');
-  EXPECT_EQ(base64Decode({"TWFu", 4}, {output, 1}), 1u);
+  auto result11 = base64Decode({"TWFu", 4}, {output, 1});
+  ASSERT_TRUE(result11) << result11.error().what();
+  EXPECT_EQ((*result11), 1u);
   EXPECT_EQ(output[0], 'M');
 }

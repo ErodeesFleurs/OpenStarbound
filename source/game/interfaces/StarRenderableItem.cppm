@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.audio;
@@ -40,7 +41,8 @@ namespace Star {
 
     virtual ~RenderableItem() {}
 
-    virtual void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
+    [[nodiscard]]
+    virtual std::expected<void, StarException> render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
   };
 
 }

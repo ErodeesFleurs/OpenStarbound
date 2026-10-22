@@ -53,7 +53,12 @@ import star.gui_context;
 import star.widget;
 import star.image_stretch_widget;
 
+import star.format;
 namespace Star {
+
+std::expected<std::shared_ptr<ImageStretchWidget>, StarException> ImageStretchWidget::create(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction) {
+  return std::shared_ptr<ImageStretchWidget>(new ImageStretchWidget(context, imageStretchSet, direction));
+}
 
 ImageStretchWidget::ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction)
   : Widget(context), m_imageStretchSet(imageStretchSet), m_direction(direction) {
@@ -66,8 +71,8 @@ void ImageStretchWidget::setImageStretchSet(String const& beginImage, String con
   m_imageStretchSet.end = endImage;
 }
 
-void ImageStretchWidget::renderImpl() {
-  context()->drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
+std::expected<void, StarException> ImageStretchWidget::renderImpl() {
+  return context()->drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
 }
 
 }

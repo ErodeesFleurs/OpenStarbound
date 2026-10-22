@@ -38,15 +38,15 @@ public:
     String token;
   };
 
-  List<Token> tokenize(String const& command);
-  StringList tokenizeToStringList(String const& command);
+  std::expected<List<Token>, StarException> tokenize(String const& command);
+  std::expected<StringList, StarException> tokenizeToStringList(String const& command);
 
 private:
-  void init(String const& command);
+  std::expected<void, StarException> init(String const& command);
 
-  String word();
-  Char parseBackslash();
-  Char parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint = {});
+  std::expected<String, StarException> word();
+  std::expected<Char, StarException> parseBackslash();
+  std::expected<Char, StarException> parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint = {});
 
   bool isSpace(Char letter) const;
   bool isQuote(Char letter) const;

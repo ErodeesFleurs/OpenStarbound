@@ -37,6 +37,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
+import star.format;
 
 namespace Star {
 
@@ -57,23 +58,25 @@ public:
     return Star::typeName<QuestLogInterface>();
   }
 
-  QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestLogInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
   virtual ~QuestLogInterface() {}
 
-  virtual void displayed() override;
-  virtual void tick(float dt) override;
-  virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
-  void fetchData();
+  [[nodiscard]] std::expected<void, StarException> fetchData();
 
-  void pollDialog(PaneManager* paneManager);
+  [[nodiscard]] std::expected<void, StarException> pollDialog(PaneManager* paneManager);
 
 private:
-  std::shared_ptr<Widget> getSelected();
-  void setSelected(std::shared_ptr<Widget> selected);
-  void toggleTracking();
-  void abandon();
-  void showQuests(List<std::shared_ptr<Quest>> quests);
+  QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<std::shared_ptr<Widget>, StarException> getSelected();
+  [[nodiscard]] std::expected<void, StarException> setSelected(std::shared_ptr<Widget> selected);
+  [[nodiscard]] std::expected<void, StarException> toggleTracking();
+  [[nodiscard]] std::expected<void, StarException> abandon();
+  [[nodiscard]] std::expected<void, StarException> showQuests(List<std::shared_ptr<Quest>> quests);
 
   std::shared_ptr<QuestManager> m_manager;
   std::shared_ptr<Player> m_player;
@@ -100,11 +103,11 @@ public:
 protected:
   QuestPane(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 
-  void commonSetup(Json config, String bodyText, String const& portraitName);
-  virtual void close();
-  virtual void decline();
-  virtual void accept();
-  virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<void, StarException> commonSetup(Json config, String bodyText, String const& portraitName);
+  [[nodiscard]] virtual std::expected<void, StarException> close();
+  [[nodiscard]] virtual std::expected<void, StarException> decline();
+  [[nodiscard]] virtual std::expected<void, StarException> accept();
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
   std::shared_ptr<Quest> m_quest;
   std::shared_ptr<Player> m_player;
@@ -125,15 +128,17 @@ public:
     Cancelled
   };
 
-  NewQuestInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+  [[nodiscard]] static std::expected<std::shared_ptr<NewQuestInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 
 protected:
-  void close() override;
-  void decline() override;
-  void accept() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> close() override;
+  [[nodiscard]] std::expected<void, StarException> decline() override;
+  [[nodiscard]] std::expected<void, StarException> accept() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
+  NewQuestInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   std::shared_ptr<QuestManager> m_manager;
   QuestDecision m_decision;
 };
@@ -147,12 +152,14 @@ public:
     return Star::typeName<QuestCompleteInterface>();
   }
 
-  QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestCompleteInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
 
 protected:
-  void close() override;
+  [[nodiscard]] std::expected<void, StarException> close() override;
 
 private:
+  QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   std::shared_ptr<Player> m_player;
   std::shared_ptr<Cinematic> m_cinematic;
 };
@@ -166,6 +173,9 @@ public:
     return Star::typeName<QuestFailedInterface>();
   }
 
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestFailedInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+
+private:
   QuestFailedInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 };
 

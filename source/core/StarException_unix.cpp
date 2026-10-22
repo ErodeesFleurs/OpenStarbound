@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #ifdef STAR_USE_CPPTRACE
-#include "cpptrace/cpptrace.hpp"
+#include "cpptrace/basic.hpp"
 #include "cpptrace/formatting.hpp"
 #else
 #include <execinfo.h>
@@ -68,7 +68,7 @@ StarException::StarException(ExceptionDiagnostic cause) noexcept
 StarException::StarException(std::string message, ExceptionDiagnostic cause) noexcept
   : StarException("StarException", std::move(message), std::move(cause)) {}
 
-const char* StarException::what() const throw() {
+const char* StarException::what() const noexcept {
   if (m_whatBuffer.empty()) {
     std::ostringstream os;
     m_printException(os, false);
@@ -79,9 +79,9 @@ const char* StarException::what() const throw() {
 
 StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
 #ifdef STAR_USE_CPPTRACE
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::string stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::string const& stack) {
 #else
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::optional<StackCapture> const& stack) {
 #endif
     os << "(" << type << ")";
     if (!message.empty())
@@ -108,7 +108,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 
 StarException::StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept
   : StarException(type, std::move(message), true) {
-  auto printException = [](std::ostream& os, bool fullStacktrace, std::function<void(std::ostream&, bool)> self, std::function<void(std::ostream&, bool)> cause) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, std::function<void(std::ostream&, bool)> const& self, std::function<void(std::ostream&, bool)> const& cause) {
     self(os, fullStacktrace);
     os << std::endl << "Caused by: ";
     cause(os, fullStacktrace);
@@ -120,21 +120,6 @@ StarException::StarException(char const* type, std::string message, ExceptionDia
 ExceptionDiagnostic::ExceptionDiagnostic(StarException const& exception)
   : m_printException(exception.m_printException) {}
 
-ExceptionDiagnostic::ExceptionDiagnostic(std::exception_ptr exception) {
-  if (!exception)
-    throw std::invalid_argument("ExceptionDiagnostic requires an exception");
-  try {
-    std::rethrow_exception(exception);
-  } catch (StarException const& e) {
-    m_printException = e.m_printException;
-  } catch (std::exception const& e) {
-    m_printException = [what = std::string(e.what())](std::ostream& os, bool) {
-      os << "std::exception: " << what;
-    };
-  } catch (...) {
-    m_printException = [](std::ostream& os, bool) { os << "Unknown exception"; };
-  }
-}
 
 std::string printException(ExceptionDiagnostic const& e, bool fullStacktrace) {
   std::ostringstream os;
@@ -171,17 +156,5 @@ void fatalError(char const* message, bool showStackTrace) {
   std::abort();
 }
 
-void fatalException(ExceptionDiagnostic const& e, bool showStackTrace) {
-  if (showStackTrace)
-#ifdef STAR_USE_CPPTRACE
-    EmergencyLog::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), captureBacktrace());
-#else
-    EmergencyLog::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), outputStack(captureStack()));
-#endif
-  else
-    EmergencyLog::error("Fatal Exception caught: {}", outputException(e, showStackTrace));
-
-  std::abort();
-}
 
 }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.string;
@@ -30,11 +31,11 @@ public:
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.
-  TexturePtr loadTexture(AssetPath const& imagePath);
+  [[nodiscard]] std::expected<TexturePtr, StarException> loadTexture(AssetPath const& imagePath);
 
   // If the texture is loaded and ready, returns the texture pointer, otherwise
   // queues the texture using Assets::tryImage and returns nullptr.
-  TexturePtr tryTexture(AssetPath const& imagePath);
+  [[nodiscard]] std::expected<TexturePtr, StarException> tryTexture(AssetPath const& imagePath);
 
   // Has the texture been loaded?
   bool textureLoaded(AssetPath const& imagePath) const;
@@ -47,7 +48,7 @@ private:
   // Returns the texture parameters.  If tryTexture is true, then returns none
   // if the texture is not loaded, and queues it, otherwise loads texture
   // immediately
-  TexturePtr loadTexture(AssetPath const& imagePath, bool tryTexture);
+  [[nodiscard]] std::expected<TexturePtr, StarException> loadTexture(AssetPath const& imagePath, bool tryTexture);
 
   Root& m_root;
   std::shared_ptr<TextureGroup> m_textureGroup;

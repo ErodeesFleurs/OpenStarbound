@@ -3,6 +3,7 @@ import star.xx_hash;
 import star.json;
 import star.json_extra;
 import star.lua;
+import star.format;
 import star.string;
 import star.either;
 import star.data_stream;
@@ -146,219 +147,369 @@ import star.sky;
 
 
 namespace Star {
-LuaCallbacks LuaBindings::makeCelestialCallbacks(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase) {
   LuaCallbacks callbacks;
   
-  callbacks.registerCallback("planetParameters", [celestialDatabase](Json const& coords) -> Json {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      if (auto celestialParameters = celestialDatabase->parameters(coordinate))
-        return celestialParameters->parameters();
-      return Json();
-    });
-  callbacks.registerCallback("visitableParameters", [celestialDatabase](Json const& coords) -> Json {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      if (auto parameters = celestialDatabase->parameters(coordinate)) {
-        if (auto visitableParameters = parameters->visitableParameters())
-          return visitableParameters->store();
+  if (auto registration = callbacks.registerCallback("planetParameters", [celestialDatabase](Json const& coords) -> std::expected<Json, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto parameters = celestialDatabase->parameters(*coordinate);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    if (*parameters)
+      return (*parameters)->parameters();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("visitableParameters", [celestialDatabase](Json const& coords) -> std::expected<Json, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto parameters = celestialDatabase->parameters(*coordinate);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    if (*parameters)
+      if (auto visitable = (*parameters)->visitableParameters())
+        return visitable->store();
+    return Json();
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("planetName", [celestialDatabase](Json const& coords) -> std::expected<std::optional<String>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto parameters = celestialDatabase->parameters(*coordinate);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    if (*parameters)
+      return (*parameters)->name();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> std::expected<std::optional<std::uint64_t>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto parameters = celestialDatabase->parameters(*coordinate);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    if (*parameters)
+      return (*parameters)->seed();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("planetOres", [&root, celestialDatabase](Json const& coords, float threatLevel) -> std::expected<List<String>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto parameters = celestialDatabase->parameters(*coordinate);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    if (!*parameters)
+      return {};
+    auto visitableParameters = (*parameters)->visitableParameters();
+    if (!visitableParameters)
+      return {};
+    auto biomeDatabase = root.biomeDatabase();
+    if (!biomeDatabase)
+      return std::unexpected(std::move(biomeDatabase.error()));
+    StringSet planetOres;
+    auto addOres = [&](String const& biomeName) -> std::expected<void, StarException> {
+      auto ores = (*biomeDatabase)->biomeOres(biomeName, threatLevel);
+      if (!ores)
+        return std::unexpected(std::move(ores.error()));
+      planetOres.addAll(*ores);
+      return {};
+    };
+    if (auto terrestrial = as<TerrestrialWorldParameters>(visitableParameters)) {
+      auto oreResult0 = addOres(terrestrial->primaryBiome);
+      if (!oreResult0)
+        return std::unexpected(std::move(oreResult0.error()));
+      auto oreResult1 = addOres(terrestrial->surfaceLayer.primaryRegion.biome);
+      if (!oreResult1)
+        return std::unexpected(std::move(oreResult1.error()));
+      auto oreResult2 = addOres(terrestrial->subsurfaceLayer.primaryRegion.biome);
+      if (!oreResult2)
+        return std::unexpected(std::move(oreResult2.error()));
+      for (auto const& layer : terrestrial->undergroundLayers) {
+        auto layerOres = addOres(layer.primaryRegion.biome);
+        if (!layerOres)
+          return std::unexpected(std::move(layerOres.error()));
       }
-      return {};
-    });
-  callbacks.registerCallback("planetName", [celestialDatabase](Json const& coords) -> std::optional<String> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      if (auto parameters = celestialDatabase->parameters(coordinate))
-        return parameters->name();
-      return {};
-    });
-  callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> std::optional<std::uint64_t> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      if (auto parameters = celestialDatabase->parameters(coordinate))
-        return parameters->seed();
-      return {};
-    });
-  callbacks.registerCallback("planetOres", [&root, celestialDatabase](Json const& coords, float threatLevel) -> List<String> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      auto parameters = celestialDatabase->parameters(coordinate);
-      if (!parameters)
-        return {};
+      auto oreResult3 = addOres(terrestrial->coreLayer.primaryRegion.biome);
+      if (!oreResult3)
+        return std::unexpected(std::move(oreResult3.error()));
+    } else if (auto asteroid = as<AsteroidsWorldParameters>(visitableParameters)) {
+      auto asteroidOres = addOres(asteroid->asteroidBiome);
+      if (!asteroidOres)
+        return std::unexpected(std::move(asteroidOres.error()));
+    }
+    return planetOres.values();
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-      auto visitableParameters = parameters->visitableParameters();
-      if (!visitableParameters)
-        return {};
+  if (auto registration = callbacks.registerCallback("hasChildren", [celestialDatabase](Json const& coords) -> std::expected<std::optional<bool>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return celestialDatabase->hasChildren(*coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("children", [celestialDatabase](Json const& coords) -> std::expected<List<Json>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    auto children = celestialDatabase->children(*coordinate);
+    if (!children)
+      return std::unexpected(std::move(children.error()));
+    return children->transformed([](CelestialCoordinate const& c) { return c.toJson(); });
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("childOrbits", [celestialDatabase](Json const& coords) -> std::expected<List<int>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return celestialDatabase->childOrbits(*coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("scanSystems", [celestialDatabase](RectI const& region, std::optional<StringSet> const& includedTypes) -> std::expected<List<Json>, StarException> {
+    auto systems = celestialDatabase->scanSystems(region, includedTypes);
+    if (!systems)
+      return std::unexpected(std::move(systems.error()));
+    return systems->transformed([](CelestialCoordinate const& c) { return c.toJson(); });
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("scanConstellationLines", [celestialDatabase](RectI const& region) -> std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> {
+    return celestialDatabase->scanConstellationLines(region);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("scanRegionFullyLoaded", [celestialDatabase](RectI const& region) -> std::expected<bool, StarException> {
+    return celestialDatabase->scanRegionFullyLoaded(region);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-      auto biomeDatabase = root.biomeDatabase();
-      auto addOres = [biomeDatabase, threatLevel](StringSet& oreList, String const& biomeName) {
-          oreList.addAll(biomeDatabase->biomeOres(biomeName, threatLevel));
-        };
-
-      StringSet planetOres;
-      if (auto const& terrestrialParameters = as<TerrestrialWorldParameters>(visitableParameters)) {
-        addOres(planetOres, terrestrialParameters->primaryBiome);
-        addOres(planetOres, terrestrialParameters->surfaceLayer.primaryRegion.biome);
-        addOres(planetOres, terrestrialParameters->subsurfaceLayer.primaryRegion.biome);
-        for (auto layer : terrestrialParameters->undergroundLayers)
-          addOres(planetOres, layer.primaryRegion.biome);
-        addOres(planetOres, terrestrialParameters->coreLayer.primaryRegion.biome);
-      } else if (auto const& asteroidParameters = as<AsteroidsWorldParameters>(visitableParameters)) {
-        addOres(planetOres, asteroidParameters->asteroidBiome);
-      }
-
-      return planetOres.values();
-    });
-
-  callbacks.registerCallback("hasChildren", [celestialDatabase](Json const& coords) -> std::optional<bool> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return celestialDatabase->hasChildren(coordinate);
-    });
-  callbacks.registerCallback("children", [celestialDatabase](Json const& coords) -> List<Json> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return celestialDatabase->children(coordinate).transformed([](CelestialCoordinate const& c) { return c.toJson(); });
-    });
-  callbacks.registerCallback("childOrbits", [celestialDatabase](Json const& coords) -> List<int> {
-      return celestialDatabase->childOrbits(CelestialCoordinate(coords));
-    });
-  callbacks.registerCallback("scanSystems", [celestialDatabase](RectI const& region, std::optional<StringSet> const& includedTypes) -> List<Json> {
-      return celestialDatabase->scanSystems(region, includedTypes).transformed([](CelestialCoordinate const& c) { return c.toJson(); });
-    });
-  callbacks.registerCallback("scanConstellationLines", [celestialDatabase](RectI const& region) -> List<std::pair<Vec2I, Vec2I>> {
-      return celestialDatabase->scanConstellationLines(region);
-    });
-  callbacks.registerCallback("scanRegionFullyLoaded", [celestialDatabase](RectI const& region) -> bool {
-      return celestialDatabase->scanRegionFullyLoaded(region);
-    });
-
-  callbacks.registerCallback("centralBodyImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawSystemCentralBody(celestialDatabase, coordinate);
-    });
-  callbacks.registerCallback("planetaryObjectImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawSystemPlanetaryObject(celestialDatabase, coordinate);
-    });
-  callbacks.registerCallback("worldImages", [&root, celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawWorld(root, celestialDatabase, coordinate);
-    });
-  callbacks.registerCallback("starImages", [&root, celestialDatabase](Json const& coords, float twinkleTime) -> List<std::pair<String, float>> {
-      CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawSystemTwinkle(root, celestialDatabase, coordinate, twinkleTime);
-    });
+  if (auto registration = callbacks.registerCallback("centralBodyImages", [celestialDatabase](Json const& coords) -> std::expected<List<std::pair<String, float>>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return CelestialGraphics::drawSystemCentralBody(celestialDatabase, *coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("planetaryObjectImages", [celestialDatabase](Json const& coords) -> std::expected<List<std::pair<String, float>>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return CelestialGraphics::drawSystemPlanetaryObject(celestialDatabase, *coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("worldImages", [&root, celestialDatabase](Json const& coords) -> std::expected<List<std::pair<String, float>>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return CelestialGraphics::drawWorld(root, celestialDatabase, *coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("starImages", [&root, celestialDatabase](Json const& coords, float twinkleTime) -> std::expected<List<std::pair<String, float>>, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return CelestialGraphics::drawSystemTwinkle(root, celestialDatabase, *coordinate, twinkleTime);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
   
   return callbacks;
 }
 
-LuaCallbacks LuaBindings::makeCelestialCallbacks(Root& root, Universe* universe) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeCelestialCallbacks(Root& root, Universe* universe) {
   auto celestialDatabase = universe->celestialDatabase();
   
-  LuaCallbacks callbacks = makeCelestialCallbacks(root, celestialDatabase);
+  auto createdCallbacks = makeCelestialCallbacks(root, celestialDatabase);
+  if (!createdCallbacks)
+    return std::unexpected(std::move(createdCallbacks.error()));
+  LuaCallbacks callbacks = std::move(*createdCallbacks);
   
   if (auto client = as<UniverseClient>(universe)) {
     auto systemWorld = client->systemWorldClient();
 
-    callbacks.registerCallback("skyFlying", [client]() {
+    if (auto registration = callbacks.registerCallback("skyFlying", [client]() {
         return client->currentSky()->flying();
-      });
-    callbacks.registerCallback("skyFlyingType", [client]() -> String {
-        return FlyingTypeNames.getRight(client->currentSky()->flyingType());
-      });
-    callbacks.registerCallback("skyWarpPhase", [client]() -> String {
-        return WarpPhaseNames.getRight(client->currentSky()->warpPhase());
-      });
-    callbacks.registerCallback("skyWarpProgress", [client]() -> float {
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("skyFlyingType", [client]() -> std::expected<String, StarException> {
+    if (!FlyingTypeNames)
+      return std::unexpected(FlyingTypeNames.error());
+    auto name = FlyingTypeNames->getRight(client->currentSky()->flyingType());
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return **name;
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("skyWarpPhase", [client]() -> std::expected<String, StarException> {
+    if (!WarpPhaseNames)
+      return std::unexpected(WarpPhaseNames.error());
+    auto name = WarpPhaseNames->getRight(client->currentSky()->warpPhase());
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return **name;
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("skyWarpProgress", [client]() -> float {
         return client->currentSky()->warpProgress();
-      });
-    callbacks.registerCallback("skyInHyperspace", [client]() -> bool {
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("skyInHyperspace", [client]() -> bool {
         return client->currentSky()->inHyperspace();
-      });
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-    callbacks.registerCallback("flyShip", [client,systemWorld](Vec3I const& system, Json const& destination, Json const& settings) {
-        auto location = jsonToSystemLocation(destination);
-        client->flyShip(system, location, settings);
-      });
-    callbacks.registerCallback("flying", [systemWorld]() {
+    if (auto registration = callbacks.registerCallback("flyShip", [client,systemWorld](Vec3I const& system, Json const& destination, Json const& settings)  -> std::expected<void, StarException> {
+    auto location = jsonToSystemLocation(destination);
+    if (!location)
+      return std::unexpected(std::move(location.error()));
+    return client->flyShip(system, *location, settings);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("flying", [systemWorld]() {
         return systemWorld->flying();
-      });
-    callbacks.registerCallback("shipSystemPosition", [systemWorld]() -> std::optional<Vec2F> {
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("shipSystemPosition", [systemWorld]() -> std::optional<Vec2F> {
         return systemWorld->shipPosition();
-      });
-    callbacks.registerCallback("shipDestination", [systemWorld]() -> Json {
-        return jsonFromSystemLocation(systemWorld->shipDestination());
-      });
-    callbacks.registerCallback("shipLocation", [systemWorld]() -> Json {
-        return jsonFromSystemLocation(systemWorld->shipLocation());
-      });
-    callbacks.registerCallback("currentSystem", [systemWorld]() -> Json {
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("shipDestination", [systemWorld]() -> std::expected<Json, StarException> {
+    return jsonFromSystemLocation(systemWorld->shipDestination());
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("shipLocation", [systemWorld]() -> std::expected<Json, StarException> {
+    return jsonFromSystemLocation(systemWorld->shipLocation());
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("currentSystem", [systemWorld]() -> Json {
         return systemWorld->currentSystem().toJson();
-      });
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-    callbacks.registerCallback("planetSize", [systemWorld](Json const& coords) -> float {
-        return systemWorld->planetSize(CelestialCoordinate(coords));
-      });
-    callbacks.registerCallback("planetPosition", [systemWorld](Json const& coords) -> Vec2F {
-        return systemWorld->planetPosition(CelestialCoordinate(coords));
-      });
-    callbacks.registerCallback("clusterSize", [systemWorld](Json const& coords) -> float {
-        return systemWorld->clusterSize(CelestialCoordinate(coords));
-      });
+    if (auto registration = callbacks.registerCallback("planetSize", [systemWorld](Json const& coords) -> std::expected<float, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return systemWorld->planetSize(*coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("planetPosition", [systemWorld](Json const& coords) -> std::expected<Vec2F, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return systemWorld->planetPosition(*coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("clusterSize", [systemWorld](Json const& coords) -> std::expected<float, StarException> {
+    auto coordinate = CelestialCoordinate::create(coords);
+    if (!coordinate)
+      return std::unexpected(std::move(coordinate.error()));
+    return systemWorld->clusterSize(*coordinate);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-    callbacks.registerCallback("systemPosition", [systemWorld](Json const& l) -> std::optional<Vec2F> {
-        auto location = jsonToSystemLocation(l);
-        return systemWorld->systemLocationPosition(location);
-      });
-    callbacks.registerCallback("orbitPosition", [systemWorld](Json const& orbit) -> Vec2F {
-        return systemWorld->orbitPosition(CelestialOrbit::fromJson(orbit));
-      });
+    if (auto registration = callbacks.registerCallback("systemPosition", [systemWorld](Json const& l) -> std::expected<std::optional<Vec2F>, StarException> {
+    auto location = jsonToSystemLocation(l);
+    if (!location)
+      return std::unexpected(std::move(location.error()));
+    return systemWorld->systemLocationPosition(*location);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("orbitPosition", [systemWorld](Json const& orbit) -> std::expected<Vec2F, StarException> {
+    auto parsedOrbit = CelestialOrbit::fromJson(orbit);
+    if (!parsedOrbit)
+      return std::unexpected(std::move(parsedOrbit.error()));
+    return systemWorld->orbitPosition(*parsedOrbit);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-    callbacks.registerCallback("systemObjects", [systemWorld]() -> List<String> {
+    if (auto registration = callbacks.registerCallback("systemObjects", [systemWorld]() -> List<String> {
         return systemWorld->objects().transformed([](std::shared_ptr<SystemObject> object) { return object->uuid().hex(); });
-      });
-    callbacks.registerCallback("objectType", [systemWorld](String const& uuid) -> std::optional<String> {
-        if (auto object = systemWorld->getObject(Uuid(uuid)))
-          return object->name();
-        else
-          return {};
-      });
-    callbacks.registerCallback("objectParameters", [systemWorld](String const& uuid) -> Json {
-        if (auto object = systemWorld->getObject(Uuid(uuid)))
-          return object->parameters();
-        else
-          return {};
-      });
-    callbacks.registerCallback("objectWarpActionWorld", [systemWorld](String const& uuid) -> std::optional<String> {
-        if (std::optional<WarpAction> action = systemWorld->objectWarpAction((Uuid(uuid)))) {
-          if (auto warp = std::get_if<WarpToWorld>(&*action))
-            return printWorldId(warp->world);
-        }
-        return {};
-      });
-    callbacks.registerCallback("objectOrbit", [systemWorld](String const& uuid) -> Json {
-        if (auto object = systemWorld->getObject(Uuid(uuid)))
-          return jsonFromOptional<CelestialOrbit>(object->orbit(), [](CelestialOrbit const& orbit) { return orbit.toJson(); });
-        else
-          return {};
-      });
-    callbacks.registerCallback("objectPosition", [systemWorld](String const& uuid) -> std::optional<Vec2F> {
-        if (auto object = systemWorld->getObject(Uuid(uuid)))
-          return object->position();
-        else
-          return {};
-      });
-    callbacks.registerCallback("objectTypeConfig", [&root](String const& typeName) -> Json {
-        return SystemWorld::systemObjectTypeConfig(root, typeName);
-      });
-    callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, std::optional<Vec2F> const& position, std::optional<String> uuidHex, std::optional<JsonObject> parameters) -> String {
-        std::optional<Uuid> uuid = uuidHex.transform([](auto const& u) { return Uuid(u); });
-        return systemWorld->spawnObject(typeName, position, uuid, parameters.value_or(JsonObject{})).hex();
-      });
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectType", [systemWorld](String const& uuid) -> std::expected<std::optional<String>, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (auto object = systemWorld->getObject(*id))
+      return object->name();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectParameters", [systemWorld](String const& uuid) -> std::expected<Json, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (auto object = systemWorld->getObject(*id))
+      return object->parameters();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectWarpActionWorld", [systemWorld](String const& uuid) -> std::expected<std::optional<String>, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    auto action = systemWorld->objectWarpAction(*id);
+    if (!action)
+      return std::unexpected(std::move(action.error()));
+    if (*action)
+      if (auto warp = std::get_if<WarpToWorld>(&**action))
+        return printWorldId(warp->world);
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectOrbit", [systemWorld](String const& uuid) -> std::expected<Json, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (auto object = systemWorld->getObject(*id))
+      return jsonFromOptional<CelestialOrbit>(object->orbit(), [](CelestialOrbit const& orbit) { return orbit.toJson(); });
+    return Json();
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectPosition", [systemWorld](String const& uuid) -> std::expected<std::optional<Vec2F>, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (auto object = systemWorld->getObject(*id))
+      return object->position();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("objectTypeConfig", [&root](String const& typeName) -> std::expected<Json, StarException> {
+    return SystemWorld::systemObjectTypeConfig(root, typeName);
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, std::optional<Vec2F> const& position, std::optional<String> uuidHex, std::optional<JsonObject> parameters) -> std::expected<String, StarException> {
+    std::optional<Uuid> uuid;
+    if (uuidHex) {
+      auto parsed = Uuid::create(*uuidHex);
+      if (!parsed)
+        return std::unexpected(std::move(parsed.error()));
+      uuid = *parsed;
+    }
+    return systemWorld->spawnObject(typeName, position, uuid, parameters.value_or(JsonObject{})).hex();
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
 
-    callbacks.registerCallback("playerShips", [systemWorld]() -> List<String> {
+    if (auto registration = callbacks.registerCallback("playerShips", [systemWorld]() -> List<String> {
         return systemWorld->ships().transformed([](std::shared_ptr<SystemClientShip> ship) { return ship->uuid().hex(); });
-      });
-    callbacks.registerCallback("playerShipPosition", [systemWorld](String const& uuid) -> std::optional<Vec2F> {
-        if (auto ship = systemWorld->getShip(Uuid(uuid)))
-          return ship->position();
-        else
-          return {};
-      });
+      }); !registration)
+      return std::unexpected(std::move(registration.error()));
+    if (auto registration = callbacks.registerCallback("playerShipPosition", [systemWorld](String const& uuid) -> std::expected<std::optional<Vec2F>, StarException> {
+    auto id = Uuid::create(uuid);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    if (auto ship = systemWorld->getShip(*id))
+      return ship->position();
+    return {};
+  }); !registration)
+      return std::unexpected(std::move(registration.error()));
   }
 
   return callbacks;

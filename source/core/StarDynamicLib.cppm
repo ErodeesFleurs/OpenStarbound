@@ -4,8 +4,8 @@ module;
 #include <windows.h>
 #else
 #include <dlfcn.h>
-#include <stddef.h>
 #endif
+#include <stdio.h>
 import std;
 import star.string;
 import star.format;
@@ -18,29 +18,24 @@ export module star.dynamic_lib;
 
 export namespace Star {
 
+struct DynamicLibExceptionTag {
+  static constexpr char const* name() { return "DynamicLibException"; }
+};
+using DynamicLibException = StarError<DynamicLibExceptionTag, StarException>;
+
 class DynamicLib {
 public:
-  // Returns the library extension normally used on the current platform
-  // including the '.', e.g.  '.dll', '.so', '.dylib'
+  // Includes '.', e.g. '.dll', '.so', '.dylib'.
   static String libraryExtension();
-
-  // Load a dll from the given filename.  If the library is found and
-  // succesfully loaded, returns a handle to the library, otherwise nullptr.
-  static std::unique_ptr<DynamicLib> loadLibrary(String const& fileName);
-
-  // Load a dll from the given name, minus extension.
-  static std::unique_ptr<DynamicLib> loadLibraryBase(String const& baseName);
-
-  // Should return handle to currently running executable.  Will always
-  // succeed.
-  static std::unique_ptr<DynamicLib> currentExecutable();
-
+  // Loading and symbol lookup preserve the native loader diagnostic.
+  [[nodiscard]] static std::expected<std::unique_ptr<DynamicLib>, StarException> loadLibrary(String const& fileName);
+  [[nodiscard]] static std::expected<std::unique_ptr<DynamicLib>, StarException> loadLibraryBase(String const& baseName);
+  [[nodiscard]] static std::expected<std::unique_ptr<DynamicLib>, StarException> currentExecutable();
   virtual ~DynamicLib() = default;
-
-  virtual void* funcPtr(char const* name) = 0;
+  [[nodiscard]] virtual std::expected<void*, StarException> funcPtr(char const* name) = 0;
 };
 
-inline std::unique_ptr<DynamicLib> DynamicLib::loadLibraryBase(String const& baseName) {
+[[nodiscard]] inline std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::loadLibraryBase(String const& baseName) {
   return loadLibrary(baseName + libraryExtension());
 }
 
@@ -52,54 +47,82 @@ namespace Star {
 
 class PrivateDynLib : public DynamicLib {
 public:
-  PrivateDynLib(void* handle)
-    : m_handle(handle) {}
+  PrivateDynLib(HMODULE handle, bool owned)
+    : m_handle(handle), m_owned(owned) {}
 
-  ~PrivateDynLib() {
-    FreeLibrary((HMODULE)m_handle);
+  ~PrivateDynLib() override {
+    // GetModuleHandleW returns a borrowed executable handle, not a reference
+    // acquired by LoadLibraryW. Only release references we actually own.
+    if (m_owned && !FreeLibrary(m_handle)) {
+      auto status = GetLastError();
+      fprintf(stderr, "Failed to unload dynamic library (Windows error %lu)\n", static_cast<unsigned long>(status));
+    }
   }
 
-  void* funcPtr(const char* name) {
-    return (void*)GetProcAddress((HMODULE)m_handle, name);
+  [[nodiscard]] std::expected<void*, StarException> funcPtr(char const* name) override {
+    auto symbol = GetProcAddress(m_handle, name);
+    if (!symbol) {
+      auto status = GetLastError();
+      return std::unexpected(DynamicLibException::format("Cannot find dynamic library symbol '{}' (Windows error {})", name, status));
+    }
+    return reinterpret_cast<void*>(symbol);
   }
 
 private:
-  void* m_handle;
+  HMODULE m_handle;
+  bool m_owned;
 };
 
 String DynamicLib::libraryExtension() {
   return ".dll";
 }
 
-std::unique_ptr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
-  void* handle = LoadLibraryW(stringToUtf16(libraryName).get());
-  if (handle == NULL)
-    return {};
-  return std::make_unique<PrivateDynLib>(handle);
+std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::loadLibrary(String const& libraryName) {
+  auto wideName = stringToUtf16(libraryName);
+  if (!wideName)
+    return std::unexpected(std::move(wideName.error()));
+  auto handle = LoadLibraryW(wideName->get());
+  if (!handle) {
+    auto status = GetLastError();
+    return std::unexpected(DynamicLibException::format("Cannot load dynamic library '{}' (Windows error {})", libraryName, status));
+  }
+  return std::make_unique<PrivateDynLib>(handle, true);
 }
 
-std::unique_ptr<DynamicLib> DynamicLib::currentExecutable() {
-  void* handle = GetModuleHandle(0);
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((handle));
+std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::currentExecutable() {
+  auto handle = GetModuleHandleW(nullptr);
+  if (!handle) {
+    auto status = GetLastError();
+    return std::unexpected(DynamicLibException::format("Cannot obtain current executable (Windows error {})", status));
   }
-  return std::make_unique<PrivateDynLib>(handle);
+  return std::make_unique<PrivateDynLib>(handle, false);
 }
 
 #else
 
-struct PrivateDynLib : public DynamicLib {
-  PrivateDynLib(void* handle)
+class PrivateDynLib : public DynamicLib {
+public:
+  explicit PrivateDynLib(void* handle)
     : m_handle(handle) {}
 
-  ~PrivateDynLib() {
-    dlclose(m_handle);
+  ~PrivateDynLib() override {
+    if (dlclose(m_handle)) {
+      auto detail = dlerror();
+      fprintf(stderr, "Failed to unload dynamic library: %s\n", detail ? detail : "no loader diagnostic");
+    }
   }
 
-  void* funcPtr(const char* name) {
-    return dlsym(m_handle, name);
+  [[nodiscard]] std::expected<void*, StarException> funcPtr(char const* name) override {
+    // A symbol may legally have a null address. Only dlerror distinguishes it
+    // from a failed lookup, and stale loader diagnostics must be cleared first.
+    dlerror();
+    auto symbol = dlsym(m_handle, name);
+    if (auto detail = dlerror())
+      return std::unexpected(DynamicLibException::format("Cannot find dynamic library symbol '{}': {}", name, detail));
+    return symbol;
   }
 
+private:
   void* m_handle;
 };
 
@@ -111,17 +134,20 @@ String DynamicLib::libraryExtension() {
 #endif
 }
 
-std::unique_ptr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
-  void* handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
-  if (handle == NULL)
-    return {};
+std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::loadLibrary(String const& libraryName) {
+  auto handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
+  if (!handle) {
+    auto detail = dlerror();
+    return std::unexpected(DynamicLibException::format("Cannot load dynamic library '{}': {}", libraryName, detail ? detail : "no loader diagnostic"));
+  }
   return std::make_unique<PrivateDynLib>(handle);
 }
 
-std::unique_ptr<DynamicLib> DynamicLib::currentExecutable() {
-  void* handle = dlopen(NULL, 0);
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((handle));
+std::expected<std::unique_ptr<DynamicLib>, StarException> DynamicLib::currentExecutable() {
+  auto handle = dlopen(nullptr, RTLD_NOW);
+  if (!handle) {
+    auto detail = dlerror();
+    return std::unexpected(DynamicLibException::format("Cannot obtain current executable: {}", detail ? detail : "no loader diagnostic"));
   }
   return std::make_unique<PrivateDynLib>(handle);
 }

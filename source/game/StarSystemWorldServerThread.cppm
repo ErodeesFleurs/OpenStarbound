@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.map;
@@ -40,7 +41,7 @@ namespace Star {
 
 struct Packet;
 
-typedef std::function<void(SystemClientShip*)> ClientShipAction;
+typedef std::function<std::expected<void, StarException>(SystemClientShip*)> ClientShipAction;
 
 class SystemWorldServerThread : public Thread {
 public:
@@ -50,30 +51,30 @@ public:
   Vec3I location() const;
 
   List<ConnectionId> clients();
-  void addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location);
-  void removeClient(ConnectionId clientId);
+  [[nodiscard]] std::expected<void, StarException> addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location);
+  [[nodiscard]] std::expected<void, StarException> removeClient(ConnectionId clientId);
 
   void setPause(std::shared_ptr<const std::atomic<bool>> pause);
-  void run() override;
+  [[nodiscard]] std::expected<void, StarException> run() override;
   void stop();
 
-  void update();
+  [[nodiscard]] std::expected<void, StarException> update();
 
   void setClientDestination(ConnectionId clientId, SystemLocation const& location);
-  void executeClientShipAction(ConnectionId clientId, ClientShipAction action);
+  [[nodiscard]] std::expected<void, StarException> executeClientShipAction(ConnectionId clientId, ClientShipAction action);
 
-  SystemLocation clientShipLocation(ConnectionId clientId);
+  [[nodiscard]] std::expected<SystemLocation, StarException> clientShipLocation(ConnectionId clientId);
   std::optional<std::pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
-  SkyParameters clientSkyParameters(ConnectionId clientId);
+  [[nodiscard]] std::expected<SkyParameters, StarException> clientSkyParameters(ConnectionId clientId);
 
   List<InstanceWorldId> activeInstanceWorlds() const;
 
   // callback to be run after update in the server thread
-  void setUpdateAction(std::function<void(SystemWorldServerThread*)> updateAction);
+  void setUpdateAction(std::function<std::expected<void, StarException>(SystemWorldServerThread*)> updateAction);
   void pushIncomingPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
   List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
-  void store();
+  [[nodiscard]] std::expected<void, StarException> store();
 
 private:
   Vec3I m_systemLocation;
@@ -85,7 +86,7 @@ private:
   String m_storageFile;
 
   std::shared_ptr<const std::atomic<bool>> m_pause;
-  std::function<void(SystemWorldServerThread*)> m_updateAction;
+  std::function<std::expected<void, StarException>(SystemWorldServerThread*)> m_updateAction;
 
   ReadersWriterMutex m_mutex;
   ReadersWriterMutex m_queueMutex;

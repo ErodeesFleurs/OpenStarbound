@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.data_stream;
@@ -7,8 +8,8 @@ import star.json;
 namespace Star {
 
 struct GameTimer {
-  friend DataStream& operator>>(DataStream& ds, GameTimer& gt);
-  friend DataStream& operator<<(DataStream& ds, GameTimer const& gt);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt);
   GameTimer();
   explicit GameTimer(float time);
 
@@ -25,8 +26,8 @@ struct GameTimer {
   float percent() const;
 };
 
-DataStream& operator>>(DataStream& ds, GameTimer& gt);
-DataStream& operator<<(DataStream& ds, GameTimer const& gt);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt);
 
 struct SlidingWindow {
   SlidingWindow();
@@ -44,7 +45,7 @@ struct SlidingWindow {
   std::vector<float> window;
 
   void reset(float initialValue);
-  void update(float dt, std::function<float()> sampleFunction);
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::function<std::expected<float, StarException>()> sampleFunction);
   void update(float dt, float newValue);
   void processUpdate(float newValue);
 
@@ -57,7 +58,7 @@ struct SlidingWindow {
 class EpochTimer {
 public:
   EpochTimer();
-  explicit EpochTimer(Json json);
+  [[nodiscard]] static std::expected<EpochTimer, StarException> create(Json json);
 
   Json toJson() const;
 
@@ -66,13 +67,16 @@ public:
   double elapsedTime() const;
   void setElapsedTime(double elapsedTime);
 
-  friend DataStream& operator>>(DataStream& ds, EpochTimer& et);
-  friend DataStream& operator<<(DataStream& ds, EpochTimer const& et);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et);
 
 private:
   std::optional<double> m_lastSeenEpochTime;
   double m_elapsedTime;
 };
+
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et);
 
 }
 

@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.optional;
 import star.data_stream_devices;
 import star.data_stream_extra;
@@ -8,54 +9,41 @@ import star.data_stream_extra;
 using namespace Star;
 
 namespace {
-struct OptionalThrowingMove {
-  std::shared_ptr<int> value;
-  bool fail;
-
-  OptionalThrowingMove(std::shared_ptr<int> value, bool fail)
-    : value(std::move(value)), fail(fail) {}
-  OptionalThrowingMove(OptionalThrowingMove const&) = default;
-  OptionalThrowingMove(OptionalThrowingMove&& other) {
-    if (other.fail)
-      throw std::runtime_error("move");
-    value = std::move(other.value);
-    fail = other.fail;
-  }
-  OptionalThrowingMove& operator=(OptionalThrowingMove const&) = default;
-  OptionalThrowingMove& operator=(OptionalThrowingMove&&) noexcept = default;
-};
-
 template <typename T, std::size_t N>
 void expectVariantWire(T const& value, std::array<unsigned char, N> const& expected) {
   DataStreamBuffer stream;
-  stream << value;
+  auto written = stream << value;
+  ASSERT_TRUE(written);
   ASSERT_EQ(stream.size(), expected.size());
   for (std::size_t i = 0; i < expected.size(); ++i)
     EXPECT_EQ(static_cast<unsigned char>(stream.ptr()[i]), expected[i]);
 
-  stream.seek(0);
+  auto sought = stream.seek(0);
+  ASSERT_TRUE(sought);
   T restored{};
-  stream >> restored;
+  auto read = stream >> restored;
+  ASSERT_TRUE(read);
   EXPECT_EQ(restored, value);
-  EXPECT_TRUE(stream.atEnd());
+  auto atEnd = stream.atEnd();
+  ASSERT_TRUE(atEnd);
+  EXPECT_TRUE(*atEnd);
 }
 }
 
-TEST(OptionalOperations, TakePreservesSourceOnFailureAndTransfersOwnership) {
+TEST(OptionalOperations, TakeTransfersOwnership) {
   auto owner = std::make_shared<int>(42);
   std::weak_ptr<int> weak = owner;
-  std::optional<OptionalThrowingMove> source(std::in_place, owner, true);
+  std::optional<std::shared_ptr<int>> source(owner);
   owner.reset();
-  EXPECT_THROW(takeOptional(source), std::runtime_error);
-  ASSERT_TRUE(source);
-  EXPECT_EQ(*source->value, 42);
-  source->fail = false;
   auto extracted = takeOptional(source);
+  ASSERT_TRUE(extracted);
   EXPECT_FALSE(source);
-  EXPECT_EQ(*extracted.value, 42);
-  EXPECT_THROW(takeOptional(source), std::bad_optional_access);
+  auto empty = takeOptional(source);
+  ASSERT_FALSE(empty);
+  EXPECT_TRUE(empty.error().is<OutOfRangeException>());
+  EXPECT_EQ(**extracted, 42);
   EXPECT_FALSE(weak.expired());
-  extracted.value.reset();
+  extracted->reset();
   EXPECT_TRUE(weak.expired());
 }
 

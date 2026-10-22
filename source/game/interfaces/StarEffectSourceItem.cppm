@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 
@@ -16,7 +17,8 @@ public:
   }
 
   virtual ~EffectSourceItem() {}
-  virtual StringSet effectSources() const = 0;
+  [[nodiscard]]
+  virtual std::expected<StringSet, StarException> effectSources() const = 0;
 };
 
 }

@@ -8,66 +8,53 @@ import star.byte_array;
 import star.io_device;
 import star.string;
 import star.format;
-import star.lexical_cast;
-
 
 export module star.compression;
 
 export namespace Star {
 
 // Zlib compression level, ranges from 0 to 9
-typedef int CompressionLevel;
-
+using CompressionLevel = int;
 CompressionLevel const LowCompression = 2;
 CompressionLevel const MediumCompression = 5;
 CompressionLevel const HighCompression = 9;
 
-// Decompression input can come from mods, asset packs or the network, and both
-// zlib and zstd let the compressed data declare the output size, so nothing is
-// allowed to expand past this.
+// Never trust the decompressed size declared by a mod, asset pack or peer.
 constexpr std::size_t MaxUncompressedSize = 256 * 1024 * 1024;
 
-void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
-ByteArray compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
-
-void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
-ByteArray uncompressData(const char* in, std::size_t inLen, std::size_t limit = 0);
-void uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
-ByteArray uncompressData(ByteArray const& in, std::size_t limit = 0);
-
-void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
-ByteArray uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit = 0);
-void uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
-ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
+[[nodiscard]] std::expected<ByteArray, StarException> compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
+[[nodiscard]] std::expected<void, StarException> uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressData(const char* in, std::size_t inLen, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressData(ByteArray const& in, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit = 0);
+[[nodiscard]] std::expected<void, StarException> uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
+[[nodiscard]] std::expected<ByteArray, StarException> uncompressDataGzip(ByteArray const& in, std::size_t limit = 0);
 
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:
-  static std::shared_ptr<CompressedFile> open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
-
+  [[nodiscard]] static std::expected<std::shared_ptr<CompressedFile>, StarException> open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
   CompressedFile();
   CompressedFile(String filename);
-  virtual ~CompressedFile();
+  ~CompressedFile() override;
 
-  void setFilename(String filename);
-  void setCompression(CompressionLevel compression);
-
-  StreamOffset pos() override;
-  // Only seek forward is supported on writes.  Seek is emulated *slowly* on
-  // reads.
-  void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
-  bool atEnd() override;
-  std::size_t read(char* data, std::size_t len) override;
-  std::size_t write(char const* data, std::size_t len) override;
-
-  void open(IOMode mode) override;
-  // Compression is ignored on read.  Always truncates on write
-  void open(IOMode mode, CompressionLevel compression);
-
-  void sync() override;
-  void close() override;
-
-  std::shared_ptr<IODevice> clone() override;
+  [[nodiscard]] std::expected<void, StarException> setFilename(String filename);
+  [[nodiscard]] std::expected<void, StarException> setCompression(CompressionLevel compression);
+  [[nodiscard]] std::expected<StreamOffset, StarException> pos() override;
+  // Only forward seeks are supported on writes; reads emulate seeks slowly.
+  [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
+  [[nodiscard]] std::expected<bool, StarException> atEnd() override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
+  // Compression is ignored on read. Always truncates on write.
+  [[nodiscard]] std::expected<void, StarException> open(IOMode mode, CompressionLevel compression);
+  [[nodiscard]] std::expected<void, StarException> sync() override;
+  [[nodiscard]] std::expected<void, StarException> close() override;
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> clone() override;
 
 private:
   String m_filename;
@@ -78,298 +65,322 @@ private:
 }
 
 namespace Star {
+namespace {
 
-void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression) {
+std::expected<void, StarException> inflateData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit, int windowBits) {
   out.clear();
-
-  if (in.empty())
-    return;
-
-  const std::size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
-
-  zng_stream strm{};
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  int deflate_res = zng_deflateInit(&strm, compression);
-  if (deflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
-  auto endStream = [](zng_stream* stream) noexcept { zng_deflateEnd(stream); };
-  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
-
-  strm.next_in = (const std::uint8_t*)in.ptr();
-  strm.avail_in = in.size();
-  strm.next_out = tempBuffer.get();
-  strm.avail_out = BUFSIZE;
-  while (deflate_res == Z_OK) {
-    deflate_res = zng_deflate(&strm, Z_FINISH);
-    if (strm.avail_out == 0) {
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
-      strm.next_out = tempBuffer.get();
-      strm.avail_out = BUFSIZE;
-    }
-  }
-
-  if (deflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in uncompressData, deflate_res is {}", deflate_res));
-
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
-}
-
-ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
-  ByteArray out = ByteArray::withReserve(in.size());
-  compressData(in, out, compression);
-  return out;
-}
-
-void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
-  out.clear();
-
   if (!inLen)
-    return;
-
-  const std::size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
-
-  zng_stream strm{};
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  int inflate_res = zng_inflateInit(&strm);
-  if (inflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
-  auto endStream = [](zng_stream* stream) noexcept { zng_inflateEnd(stream); };
-  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
-
-  strm.next_in = (const std::uint8_t*)in;
-  strm.avail_in = inLen;
-  strm.next_out = tempBuffer.get();
-  strm.avail_out = BUFSIZE;
-
-  while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
-    inflate_res = zng_inflate(&strm, Z_FINISH);
-    if (strm.avail_out == 0) {
-      if (limit && out.size() + BUFSIZE > limit) {
-        throw IOException(strf("hit uncompressData limit of {} bytes", limit));
-      }
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
-      strm.next_out = tempBuffer.get();
-      strm.avail_out = BUFSIZE;
-    } else if (inflate_res == Z_BUF_ERROR) {
-      break;
+    return {};
+  constexpr std::size_t BufferSize = 32 * 1024;
+  auto buffer = std::make_unique<std::uint8_t[]>(BufferSize);
+  zng_stream stream{};
+  int status = zng_inflateInit2(&stream, windowBits);
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Failed to initialise inflate ({})", status));
+  auto cleanup = [](zng_stream* stream) noexcept {
+    int status = zng_inflateEnd(stream);
+    if (status != Z_OK)
+      fprintf(stderr, "Failed to end inflate stream (%d)\n", status);
+  };
+  std::unique_ptr<zng_stream, decltype(cleanup)> owner(&stream, cleanup);
+  std::size_t consumed = 0;
+  do {
+    if (!stream.avail_in && consumed < inLen) {
+      auto chunk = std::min(inLen - consumed, std::size_t(std::numeric_limits<decltype(stream.avail_in)>::max()));
+      stream.next_in = reinterpret_cast<std::uint8_t const*>(in + consumed);
+      stream.avail_in = chunk;
+      consumed += chunk;
     }
-  }
-
-  if (inflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in uncompressData, inflate_res is {}", inflate_res));
-
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
+    stream.next_out = buffer.get();
+    stream.avail_out = BufferSize;
+    auto previousInput = stream.avail_in;
+    status = zng_inflate(&stream, Z_NO_FLUSH);
+    if (status != Z_OK && status != Z_STREAM_END && status != Z_BUF_ERROR)
+      return std::unexpected(IOException::format("Decompression error ({}): {}", status, stream.msg ? stream.msg : "no detail"));
+    auto produced = BufferSize - stream.avail_out;
+    if (limit && produced > limit - out.size())
+      return std::unexpected(IOException::format("Decompression exceeds limit of {} bytes", limit));
+    out.append(reinterpret_cast<char const*>(buffer.get()), produced);
+    if (status != Z_STREAM_END && !produced && previousInput == stream.avail_in)
+      return std::unexpected(IOException::format("Incomplete compressed data ({})", status));
+  } while (status != Z_STREAM_END);
+  owner.release();
+  status = zng_inflateEnd(&stream);
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Failed to end inflate stream ({})", status));
+  return {};
 }
 
-ByteArray uncompressData(const char* in, std::size_t inLen, std::size_t limit) {
-  ByteArray out = ByteArray::withReserve(inLen);
-  uncompressData(in, inLen, out, limit);
+IOException compressedFileError(char const* operation, gzFile file) {
+  int status = Z_OK;
+  char const* detail = zng_gzerror(file, &status);
+  return IOException::format("Compressed file {} error ({}): {}", operation, status, detail ? detail : "no detail");
+}
+
+}
+
+std::expected<void, StarException> compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression) {
+  out.clear();
+  if (in.empty())
+    return {};
+  constexpr std::size_t BufferSize = 32 * 1024;
+  auto buffer = std::make_unique<std::uint8_t[]>(BufferSize);
+  zng_stream stream{};
+  int status = zng_deflateInit(&stream, compression);
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Failed to initialise deflate ({})", status));
+  auto cleanup = [](zng_stream* stream) noexcept {
+    int status = zng_deflateEnd(stream);
+    if (status != Z_OK)
+      fprintf(stderr, "Failed to end deflate stream (%d)\n", status);
+  };
+  std::unique_ptr<zng_stream, decltype(cleanup)> owner(&stream, cleanup);
+  std::size_t consumed = 0;
+  do {
+    if (!stream.avail_in && consumed < in.size()) {
+      auto chunk = std::min(in.size() - consumed, std::size_t(std::numeric_limits<decltype(stream.avail_in)>::max()));
+      stream.next_in = reinterpret_cast<std::uint8_t const*>(in.ptr() + consumed);
+      stream.avail_in = chunk;
+      consumed += chunk;
+    }
+    stream.next_out = buffer.get();
+    stream.avail_out = BufferSize;
+    status = zng_deflate(&stream, consumed == in.size() ? Z_FINISH : Z_NO_FLUSH);
+    if (status != Z_OK && status != Z_STREAM_END)
+      return std::unexpected(IOException::format("Compression error ({}): {}", status, stream.msg ? stream.msg : "no detail"));
+    out.append(reinterpret_cast<char const*>(buffer.get()), BufferSize - stream.avail_out);
+  } while (status != Z_STREAM_END);
+  owner.release();
+  status = zng_deflateEnd(&stream);
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Failed to end deflate stream ({})", status));
+  return {};
+}
+
+std::expected<ByteArray, StarException> compressData(ByteArray const& in, CompressionLevel compression) {
+  ByteArray out = ByteArray::withReserve(in.size());
+  auto result = compressData(in, out, compression);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
   return out;
 }
 
-void uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit) {
-  uncompressData(in.ptr(), in.size(), out, limit);
+std::expected<void, StarException> uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
+  return inflateData(in, inLen, out, limit, 15);
 }
 
-ByteArray uncompressData(ByteArray const& in, std::size_t limit) {
+std::expected<ByteArray, StarException> uncompressData(const char* in, std::size_t inLen, std::size_t limit) {
+  ByteArray out;
+  auto result = uncompressData(in, inLen, out, limit);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return out;
+}
+
+std::expected<void, StarException> uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit) {
+  return uncompressData(in.ptr(), in.size(), out, limit);
+}
+
+std::expected<ByteArray, StarException> uncompressData(ByteArray const& in, std::size_t limit) {
   return uncompressData(in.ptr(), in.size(), limit);
 }
 
-void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
-  out.clear();
-
-  if (!inLen)
-    return;
-
-  const std::size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
-
-  zng_stream strm{};
-  strm.zalloc = Z_NULL;
-  strm.zfree = Z_NULL;
-  strm.opaque = Z_NULL;
-  int inflate_res = zng_inflateInit2(&strm, 31);
-  if (inflate_res != Z_OK)
-    throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
-  auto endStream = [](zng_stream* stream) noexcept { zng_inflateEnd(stream); };
-  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
-
-  strm.next_in = (const std::uint8_t*)in;
-  strm.avail_in = inLen;
-  strm.next_out = tempBuffer.get();
-  strm.avail_out = BUFSIZE;
-
-  while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
-    inflate_res = zng_inflate(&strm, Z_FINISH);
-    if (strm.avail_out == 0) {
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
-      strm.next_out = tempBuffer.get();
-      strm.avail_out = BUFSIZE;
-      if (limit && out.size() >= limit) {
-        throw IOException(strf("hit uncompressDataGzip limit of {} bytes", limit));
-      }
-    } else if (inflate_res == Z_BUF_ERROR) {
-      break;
-    }
-  }
-
-  if (inflate_res != Z_STREAM_END)
-    throw IOException(strf("Internal error in uncompressDataGzip, inflate_res is {}", inflate_res));
-
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
+std::expected<void, StarException> uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
+  return inflateData(in, inLen, out, limit, 31);
 }
 
-ByteArray uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit) {
-  ByteArray out = ByteArray::withReserve(inLen);
-  uncompressDataGzip(in, inLen, out, limit);
+std::expected<ByteArray, StarException> uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit) {
+  ByteArray out;
+  auto result = uncompressDataGzip(in, inLen, out, limit);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
   return out;
 }
 
-void uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit) {
-  uncompressDataGzip(in.ptr(), in.size(), out, limit);
+std::expected<void, StarException> uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit) {
+  return uncompressDataGzip(in.ptr(), in.size(), out, limit);
 }
 
-ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit) {
+std::expected<ByteArray, StarException> uncompressDataGzip(ByteArray const& in, std::size_t limit) {
   return uncompressDataGzip(in.ptr(), in.size(), limit);
 }
 
-std::shared_ptr<CompressedFile> CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
-  std::shared_ptr<CompressedFile> f = std::make_shared<CompressedFile>(filename);
-  f->open(mode, comp);
-  return f;
+std::expected<std::shared_ptr<CompressedFile>, StarException> CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
+  auto file = std::make_shared<CompressedFile>(filename);
+  auto result = file->open(mode, comp);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return file;
 }
 
 CompressedFile::CompressedFile()
-  : IODevice(IOMode::Closed), m_file(0), m_compression(MediumCompression) {}
+  : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {}
 
 CompressedFile::CompressedFile(String filename)
-  : IODevice(IOMode::Closed), m_file(0), m_compression(MediumCompression) {
-  setFilename(std::move(filename));
-}
+  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(nullptr), m_compression(MediumCompression) {}
 
 CompressedFile::~CompressedFile() {
-  close();
+  auto result = close();
+  if (!result)
+    fprintf(stderr, "Failed to close compressed file: %s\n", result.error().what());
 }
 
-StreamOffset CompressedFile::pos() {
-  return zng_gztell((gzFile)m_file);
-}
-
-void CompressedFile::seek(StreamOffset offset, IOSeek seekMode) {
-  StreamOffset begPos = pos();
-
-  int retCode;
-  if (seekMode == IOSeek::Relative) {
-    retCode = zng_gzseek((gzFile)m_file, (z_off_t)offset, SEEK_CUR);
-  } else if (seekMode == IOSeek::Absolute) {
-    retCode = zng_gzseek((gzFile)m_file, (z_off_t)offset, SEEK_SET);
-  } else {
-    throw IOException("Cannot seek with SeekEnd in compressed file");
-  }
-
-  StreamOffset endPos = pos();
-
-  if (retCode < 0) {
-    throw IOException::format("Seek error: {}", zng_gzerror((gzFile)m_file, 0));
-  } else if ((seekMode == IOSeek::Relative && begPos + offset != endPos)
-      || (seekMode == IOSeek::Absolute && offset != endPos)) {
-    throw EofException("Error, unexpected end of file found");
-  }
-}
-
-bool CompressedFile::atEnd() {
-  return zng_gzeof((gzFile)m_file);
-}
-
-std::size_t CompressedFile::read(char* data, std::size_t len) {
-  if (len == 0)
-    return 0;
-
-  int ret = zng_gzread((gzFile)m_file, data, len);
-  if (ret == 0)
-    throw EofException("Error, unexpected end of file found");
-  else if (ret == -1)
-    throw IOException::format("Read error: {}", zng_gzerror((gzFile)m_file, 0));
-  else
-    return (std::size_t)ret;
-}
-
-std::size_t CompressedFile::write(const char* data, std::size_t len) {
-  if (len == 0)
-    return 0;
-
-  int ret = zng_gzwrite((gzFile)m_file, data, len);
-  if (ret == 0)
-    throw IOException::format("Write error: {}", zng_gzerror((gzFile)m_file, 0));
-  else
-    return (std::size_t)ret;
-}
-
-void CompressedFile::setFilename(String filename) {
-  if (isOpen())
-    throw IOException("Cannot call setFilename while CompressedFile is open");
-  m_filename = std::move(filename);
-}
-
-void CompressedFile::setCompression(CompressionLevel compression) {
-  if (isOpen())
-    throw IOException("Cannot call setCompression while CompressedFile is open");
-  m_compression = compression;
-}
-
-void CompressedFile::open(IOMode mode, CompressionLevel compression) {
-  close();
-  setCompression(compression);
-  open(mode);
-}
-
-void CompressedFile::sync() {
-  zng_gzflush((gzFile)m_file, Z_FULL_FLUSH);
-}
-
-void CompressedFile::open(IOMode mode) {
-  setMode(mode);
-  String modeString;
-
-  if (mode & IOMode::Append) {
-    throw IOException("CompressedFile not compatible with Append mode");
-  } else if ((mode & IOMode::Read) && (mode & IOMode::Write)) {
-    throw IOException("CompressedFile not compatible with ReadWrite mode");
-  } else if (mode & IOMode::Write) {
-    modeString = "wb";
-  } else if (mode & IOMode::Read) {
-    modeString = "rb";
-  }
-
-  modeString += toString(m_compression);
-
-  m_file = zng_gzopen(m_filename.utf8Ptr(), modeString.utf8Ptr());
-
+std::expected<StreamOffset, StarException> CompressedFile::pos() {
   if (!m_file)
-    throw IOException::format("Cannot open filename '{}'", m_filename);
+    return std::unexpected(IOException("Cannot query position of closed compressed file"));
+  auto position = zng_gztell(static_cast<gzFile>(m_file));
+  if (position < 0)
+    return std::unexpected(compressedFileError("tell", static_cast<gzFile>(m_file)));
+  return position;
 }
 
-void CompressedFile::close() {
-  if (m_file)
-    zng_gzclose((gzFile)m_file);
-  m_file = 0;
+std::expected<void, StarException> CompressedFile::seek(StreamOffset offset, IOSeek seekMode) {
+  auto beginning = pos();
+  if (!beginning)
+    return std::unexpected(std::move(beginning.error()));
+  int whence;
+  if (seekMode == IOSeek::Relative)
+    whence = SEEK_CUR;
+  else if (seekMode == IOSeek::Absolute)
+    whence = SEEK_SET;
+  else
+    return std::unexpected(IOException("Cannot seek with SeekEnd in compressed file"));
+  if (!std::in_range<z_off64_t>(offset))
+    return std::unexpected(IOException("Compressed file seek offset is out of range"));
+  if (seekMode == IOSeek::Relative && ((offset > 0 && *beginning > std::numeric_limits<StreamOffset>::max() - offset)
+      || (offset < 0 && *beginning < std::numeric_limits<StreamOffset>::min() - offset)))
+    return std::unexpected(IOException("Compressed file seek position is out of range"));
+  auto result = zng_gzseek(static_cast<gzFile>(m_file), static_cast<z_off64_t>(offset), whence);
+  if (result < 0)
+    return std::unexpected(compressedFileError("seek", static_cast<gzFile>(m_file)));
+  auto expectedPosition = seekMode == IOSeek::Relative ? *beginning + offset : offset;
+  if (result != expectedPosition)
+    return std::unexpected(EofException("Error, unexpected end of file found"));
+  return {};
+}
+
+std::expected<bool, StarException> CompressedFile::atEnd() {
+  if (!m_file)
+    return std::unexpected(IOException("Cannot query end of closed compressed file"));
+  int status;
+  zng_gzerror(static_cast<gzFile>(m_file), &status);
+  if (status != Z_OK && status != Z_STREAM_END)
+    return std::unexpected(compressedFileError("end query", static_cast<gzFile>(m_file)));
+  return zng_gzeof(static_cast<gzFile>(m_file)) != 0;
+}
+
+std::expected<std::size_t, StarException> CompressedFile::read(char* data, std::size_t len) {
+  if (!len)
+    return 0;
+  if (!m_file || !isReadable())
+    return std::unexpected(IOException("Compressed file is not open for reading"));
+  int result = zng_gzread(static_cast<gzFile>(m_file), data, std::min(len, std::size_t(std::numeric_limits<int>::max())));
+  int status;
+  zng_gzerror(static_cast<gzFile>(m_file), &status);
+  if (result < 0 || (status != Z_OK && status != Z_STREAM_END))
+    return std::unexpected(compressedFileError("read", static_cast<gzFile>(m_file)));
+  if (!result)
+    return std::unexpected(EofException("Error, unexpected end of file found"));
+  return static_cast<std::size_t>(result);
+}
+
+std::expected<std::size_t, StarException> CompressedFile::write(char const* data, std::size_t len) {
+  if (!len)
+    return 0;
+  if (!m_file || !isWritable())
+    return std::unexpected(IOException("Compressed file is not open for writing"));
+  int result = zng_gzwrite(static_cast<gzFile>(m_file), data, std::min(len, std::size_t(std::numeric_limits<int>::max())));
+  if (!result)
+    return std::unexpected(compressedFileError("write", static_cast<gzFile>(m_file)));
+  return static_cast<std::size_t>(result);
+}
+
+std::expected<void, StarException> CompressedFile::setFilename(String filename) {
+  if (isOpen())
+    return std::unexpected(IOException("Cannot call setFilename while CompressedFile is open"));
+  m_filename = std::move(filename);
+  return {};
+}
+
+std::expected<void, StarException> CompressedFile::setCompression(CompressionLevel compression) {
+  if (isOpen())
+    return std::unexpected(IOException("Cannot call setCompression while CompressedFile is open"));
+  if (compression < 0 || compression > 9)
+    return std::unexpected(IOException::format("Invalid compression level {}", compression));
+  m_compression = compression;
+  return {};
+}
+
+std::expected<void, StarException> CompressedFile::open(IOMode mode, CompressionLevel compression) {
+  auto closed = close();
+  if (!closed)
+    return std::unexpected(std::move(closed.error()));
+  auto configured = setCompression(compression);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
+  return open(mode);
+}
+
+std::expected<void, StarException> CompressedFile::sync() {
+  if (!m_file)
+    return std::unexpected(IOException("Cannot sync closed compressed file"));
+  int status = zng_gzflush(static_cast<gzFile>(m_file), Z_FULL_FLUSH);
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Compressed file flush error ({}): {}", status, zng_gzerror(static_cast<gzFile>(m_file), nullptr)));
+  return {};
+}
+
+std::expected<void, StarException> CompressedFile::open(IOMode mode) {
+  if (isOpen())
+    return std::unexpected(IOException("CompressedFile is already open"));
+  String modeString;
+  if (mode & IOMode::Append)
+    return std::unexpected(IOException("CompressedFile not compatible with Append mode"));
+  if ((mode & IOMode::Read) && (mode & IOMode::Write))
+    return std::unexpected(IOException("CompressedFile not compatible with ReadWrite mode"));
+  if (mode & IOMode::Write)
+    modeString = "wb";
+  else if (mode & IOMode::Read)
+    modeString = "rb";
+  else
+    return std::unexpected(IOException("CompressedFile requires Read or Write mode"));
+  modeString += String(std::to_string(m_compression));
+  m_file = zng_gzopen(m_filename.utf8Ptr(), modeString.utf8Ptr());
+  if (!m_file) {
+    int status = errno;
+    return std::unexpected(IOException::format("Cannot open filename '{}' (errno {}): {}", m_filename, status, strerror(status)));
+  }
+  setMode(mode);
+  return {};
+}
+
+std::expected<void, StarException> CompressedFile::close() {
+  auto file = static_cast<gzFile>(std::exchange(m_file, nullptr));
   setMode(IOMode::Closed);
+  if (!file)
+    return {};
+  int status = zng_gzclose(file);
+  int systemStatus = errno;
+  if (status != Z_OK)
+    return std::unexpected(IOException::format("Compressed file close error ({}; errno {}): {}", status, systemStatus, status == Z_ERRNO ? strerror(systemStatus) : zng_zError(status)));
+  return {};
 }
 
-std::shared_ptr<IODevice> CompressedFile::clone() {
+std::expected<std::shared_ptr<IODevice>, StarException> CompressedFile::clone() {
   auto cloned = std::make_shared<CompressedFile>(m_filename);
-  cloned->setCompression(m_compression);
+  auto configured = cloned->setCompression(m_compression);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
   if (isOpen()) {
-    // Open with same mode
-    cloned->open(mode());
-    // Seek to same position
-    cloned->seek(pos());
+    auto opened = cloned->open(mode());
+    if (!opened)
+      return std::unexpected(std::move(opened.error()));
+    auto position = pos();
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    auto sought = cloned->seek(*position);
+    if (!sought)
+      return std::unexpected(std::move(sought.error()));
   }
   return cloned;
 }

@@ -1,4 +1,5 @@
 import std;
+import star.algorithm;
 import star.json;
 import star.json_extra;
 import star.xx_hash;
@@ -217,200 +218,532 @@ import star.statistics;
 
 namespace Star {
 
-InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) : Pane(guiContext) {
+InventoryPane::InventoryPane(GuiContext& guiContext) : Pane(guiContext) {}
+
+std::expected<std::shared_ptr<InventoryPane>, StarException> InventoryPane::create(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
+  auto pane = std::shared_ptr<InventoryPane>(new InventoryPane(guiContext));
+  auto base = pane->initializePane();
+  if (!base)
+    return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize(parent, std::move(player), std::move(containerInteractor));
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> InventoryPane::initialize(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
   m_parent = parent;
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
 
   GuiReader invWindowReader(*context());
-  auto config = context()->root().assets()->json("/interface/windowconfig/playerinventory.config");
+  auto assetsResult1 = context()->root().assets();
+  if (!assetsResult1)
+    return std::unexpected(std::move(assetsResult1.error()));
+  auto jsonResult2 = std::move(*assetsResult1)->json("/interface/windowconfig/playerinventory.config");
+  if (!jsonResult2)
+    return std::unexpected(std::move(jsonResult2.error()));
+  auto config = std::move(*jsonResult2);
 
-  auto leftClickCallback = [this](String const& bagType, Widget* widget) {
-    auto itemGrid = convert<ItemGridWidget>(widget);
+  auto leftClickCallback = [this](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
+    auto convertResult3 = convert<ItemGridWidget>(widget);
+    if (!convertResult3)
+      return std::unexpected(std::move(convertResult3.error()));
+    auto itemGrid = std::move(*convertResult3);
     InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
 
     auto inventory = m_player->inventory();
     if (context()->shiftHeld()) {
-      if (auto sourceItem = itemGrid->selectedItem()) {
-        if (auto activeMerchantPane = m_parent->activeMerchantPane()) {
-          auto remainder = activeMerchantPane->addItems(inventory->takeSlot(inventorySlot));
-          if (remainder && !remainder->empty())
-            inventory->setItem(inventorySlot, remainder);
-        } else if (m_containerInteractor->containerOpen()) {
-          inventory->takeSlot(inventorySlot);
-          m_containerInteractor->addToContainer(sourceItem);
-          m_containerSource = inventorySlot;
-          m_expectingSwap = true;
-        } else {
-          for (std::shared_ptr<Pane>& pane : m_parent->paneManager()->getAllPanes()) {
-            auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
-            if (remainder.has_value()) {
-              inventory->setItem(inventorySlot, remainder.value_or(std::shared_ptr<Item>{}));
-              break;
+      {
+        auto selectedItemResult4 = itemGrid->selectedItem();
+        if (!selectedItemResult4)
+          return std::unexpected(std::move(selectedItemResult4.error()));
+        if (auto sourceItem = std::move(*selectedItemResult4)) {
+          if (auto activeMerchantPane = m_parent->activeMerchantPane()) {
+            auto takeSlotResult5 = inventory->takeSlot(inventorySlot);
+            if (!takeSlotResult5)
+              return std::unexpected(std::move(takeSlotResult5.error()));
+            auto addItemsResult6 = activeMerchantPane->addItems(std::move(*takeSlotResult5));
+            if (!addItemsResult6)
+              return std::unexpected(std::move(addItemsResult6.error()));
+            auto remainder = std::move(*addItemsResult6);
+            if (remainder && !remainder->empty())
+              {
+                auto setItemResult7 = inventory->setItem(inventorySlot, remainder);
+                if (!setItemResult7)
+                  return std::unexpected(std::move(setItemResult7.error()));
+                
+              }
+          } else if (m_containerInteractor->containerOpen()) {
+            auto takeSlotResult8 = inventory->takeSlot(inventorySlot);
+            if (!takeSlotResult8)
+              return std::unexpected(std::move(takeSlotResult8.error()));
+            auto addToContainerResult9 = m_containerInteractor->addToContainer(sourceItem);
+            if (!addToContainerResult9)
+              return std::unexpected(std::move(addToContainerResult9.error()));
+            m_containerSource = inventorySlot;
+            m_expectingSwap = true;
+          } else {
+            for (std::shared_ptr<Pane>& pane : m_parent->paneManager()->getAllPanes()) {
+              auto itemsAtResult10 = inventory->itemsAt(inventorySlot);
+              if (!itemsAtResult10)
+                return std::unexpected(std::move(itemsAtResult10.error()));
+              auto shiftItemFromInventoryResult11 = pane->shiftItemFromInventory(std::move(*itemsAtResult10));
+              if (!shiftItemFromInventoryResult11)
+                return std::unexpected(std::move(shiftItemFromInventoryResult11.error()));
+              auto remainder = std::move(*shiftItemFromInventoryResult11);
+              if (remainder.has_value()) {
+                auto setItemResult12 = inventory->setItem(inventorySlot, remainder.value_or(std::shared_ptr<Item>{}));
+                if (!setItemResult12)
+                  return std::unexpected(std::move(setItemResult12.error()));
+                break;
+              }
             }
           }
         }
       }
     } else {
-      inventory->shiftSwap(inventorySlot);
+      auto shiftSwapResult13 = inventory->shiftSwap(inventorySlot);
+      if (!shiftSwapResult13)
+        return std::unexpected(std::move(shiftSwapResult13.error()));
     }
-  };
+  
+  return {};
+};
 
-  auto rightClickCallback = [this](InventorySlot slot) {
+  auto rightClickCallback = [this](InventorySlot slot)  -> std::expected<void, StarException> {
     auto inventory = m_player->inventory();
-    if (std::shared_ptr<Item> slotItem = inventory->itemsAt(slot)) {
-      auto swapItem = inventory->swapSlotItem();
-      if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
-        std::uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
-        if (context()->shiftHeld())
-          count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
-        else
-          count = 1;
-
-        if (auto taken = slotItem->take(count)) {
-          if (swapItem)
-            swapItem->stackWith(taken);
+    {
+      auto itemsAtResult14 = inventory->itemsAt(slot);
+      if (!itemsAtResult14)
+        return std::unexpected(std::move(itemsAtResult14.error()));
+      if (std::shared_ptr<Item> slotItem = std::move(*itemsAtResult14)) {
+        auto swapItem = inventory->swapSlotItem();
+        if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
+          std::uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
+          if (context()->shiftHeld())
+            count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
           else
-            inventory->setSwapSlotItem(taken);
+            count = 1;
+  
+          {
+            auto takeResult15 = slotItem->take(count);
+            if (!takeResult15)
+              return std::unexpected(std::move(takeResult15.error()));
+            if (auto taken = std::move(*takeResult15)) {
+              if (swapItem)
+                swapItem->stackWith(taken);
+              else
+                {
+                  auto setSwapSlotItemResult16 = inventory->setSwapSlotItem(taken);
+                  if (!setSwapSlotItemResult16)
+                    return std::unexpected(std::move(setSwapSlotItemResult16.error()));
+                  
+                }
+            }
+          }
+        } else if (auto augment = as<AugmentItem>(swapItem)) {
+          {
+            auto applyToResult17 = augment->applyTo(slotItem);
+            if (!applyToResult17)
+              return std::unexpected(std::move(applyToResult17.error()));
+            if (auto augmented = std::move(*applyToResult17))
+              {
+                auto setItemResult18 = inventory->setItem(slot, augmented);
+                if (!setItemResult18)
+                  return std::unexpected(std::move(setItemResult18.error()));
+                
+              }
+          }
         }
-      } else if (auto augment = as<AugmentItem>(swapItem)) {
-        if (auto augmented = augment->applyTo(slotItem))
-          inventory->setItem(slot, augmented);
+      }
+      else if (auto swapSlot = inventory->swapSlotItem()) {
+        if (auto es = std::get_if<EquipmentSlot>(&slot)) {
+          if (inventory->itemAllowedAsEquipment(swapSlot, *es))
+            {
+              auto takeResult19 = swapSlot->take(1);
+              if (!takeResult19)
+                return std::unexpected(std::move(takeResult19.error()));
+              auto setItemResult20 = inventory->setItem(slot, std::move(*takeResult19));
+              if (!setItemResult20)
+                return std::unexpected(std::move(setItemResult20.error()));
+              
+            }
+        } else if (std::holds_alternative<TrashSlot>(slot)) {
+          auto takeResult21 = swapSlot->take(1);
+          if (!takeResult21)
+            return std::unexpected(std::move(takeResult21.error()));
+          auto setItemResult22 = inventory->setItem(slot, std::move(*takeResult21));
+          if (!setItemResult22)
+            return std::unexpected(std::move(setItemResult22.error()));
+        } else if (auto bs = std::get_if<BagSlot>(&slot)) {
+          {
+            auto itemAllowedInBagResult23 = inventory->itemAllowedInBag(swapSlot, bs->first);
+            if (!itemAllowedInBagResult23)
+              return std::unexpected(std::move(itemAllowedInBagResult23.error()));
+            if (std::move(*itemAllowedInBagResult23))
+              {
+                auto takeResult24 = swapSlot->take(1);
+                if (!takeResult24)
+                  return std::unexpected(std::move(takeResult24.error()));
+                auto setItemResult25 = inventory->setItem(slot, std::move(*takeResult24));
+                if (!setItemResult25)
+                  return std::unexpected(std::move(setItemResult25.error()));
+                
+              }
+          }
+        }
       }
     }
-    else if (auto swapSlot = inventory->swapSlotItem()) {
-      if (auto es = std::get_if<EquipmentSlot>(&slot)) {
-        if (inventory->itemAllowedAsEquipment(swapSlot, *es))
-          inventory->setItem(slot, swapSlot->take(1));
-      } else if (std::holds_alternative<TrashSlot>(slot)) {
-        inventory->setItem(slot, swapSlot->take(1));
-      } else if (auto bs = std::get_if<BagSlot>(&slot)) {
-        if (inventory->itemAllowedInBag(swapSlot, bs->first))
-          inventory->setItem(slot, swapSlot->take(1));
-      }
-    }
-  };
+  
+  return {};
+};
 
-  auto bagGridCallback = [rightClickCallback](String const& bagType, Widget* widget) {
-    auto slot = BagSlot(bagType, convert<ItemGridWidget>(widget)->selectedIndex());
-    rightClickCallback(slot);
-  };
+  auto bagGridCallback = [rightClickCallback](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
+    auto convertResult26 = convert<ItemGridWidget>(widget);
+    if (!convertResult26)
+      return std::unexpected(std::move(convertResult26.error()));
+    auto slot = BagSlot(bagType, std::move(*convertResult26)->selectedIndex());
+    auto rightClickCallbackResult27 = rightClickCallback(slot);
+    if (!rightClickCallbackResult27)
+      return std::unexpected(std::move(rightClickCallbackResult27.error()));
+  
+  return {};
+};
 
-  auto middleClickCallback = [this](String const& bagType, Widget* widget) {
+  auto middleClickCallback = [this](String const& bagType, Widget* widget)  -> std::expected<void, StarException> {
     if (!m_player->inWorld()) 
-      return;
+      return {};
 
-    auto itemGrid = convert<ItemGridWidget>(widget);
+    auto convertResult28 = convert<ItemGridWidget>(widget);
+    if (!convertResult28)
+      return std::unexpected(std::move(convertResult28.error()));
+    auto itemGrid = std::move(*convertResult28);
     InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
     auto inventory = m_player->inventory();
-    if (auto sourceItem = as<ObjectItem>(itemGrid->selectedItem())) {
-      if (auto actionTypeName = sourceItem->instanceValue("interactAction")) {
-        auto actionType = InteractActionTypeNames.getLeft(actionTypeName.toString());
-        if (actionType >= InteractActionType::OpenCraftingInterface && actionType <= InteractActionType::ScriptPane) {
-          auto actionData = sourceItem->instanceValue("interactData", Json());
-          if (actionData.isType(Json::Type::Object))
-            actionData = actionData.set("openWithInventory", false);
-          InteractAction action(actionType, NullEntityId, actionData);
-          m_player->interact(action);
+    {
+      auto selectedItemResult29 = itemGrid->selectedItem();
+      if (!selectedItemResult29)
+        return std::unexpected(std::move(selectedItemResult29.error()));
+      if (auto sourceItem = as<ObjectItem>(std::move(*selectedItemResult29))) {
+        {
+          auto instanceValueResult30 = sourceItem->instanceValue("interactAction");
+          if (!instanceValueResult30)
+            return std::unexpected(std::move(instanceValueResult30.error()));
+          if (auto actionTypeName = std::move(*instanceValueResult30)) {
+            auto const& enumResult31 = InteractActionTypeNames;
+            if (!enumResult31)
+              return std::unexpected(enumResult31.error());
+            auto toStringResult32 = actionTypeName.toString();
+            if (!toStringResult32)
+              return std::unexpected(std::move(toStringResult32.error()));
+            auto getLeftResult33 = (*enumResult31).getLeft(std::move(*toStringResult32));
+            if (!getLeftResult33)
+              return std::unexpected(std::move(getLeftResult33.error()));
+            auto actionType = (**getLeftResult33);
+            if (actionType >= InteractActionType::OpenCraftingInterface && actionType <= InteractActionType::ScriptPane) {
+              auto instanceValueResult34 = sourceItem->instanceValue("interactData", Json());
+              if (!instanceValueResult34)
+                return std::unexpected(std::move(instanceValueResult34.error()));
+              auto actionData = std::move(*instanceValueResult34);
+              if (actionData.isType(Json::Type::Object))
+                {
+                  auto setResult35 = actionData.set("openWithInventory", false);
+                  if (!setResult35)
+                    return std::unexpected(std::move(setResult35.error()));
+                  actionData = std::move(*setResult35);
+                }
+              InteractAction action(actionType, NullEntityId, actionData);
+              auto interactResult36 = m_player->interact(action);
+              if (!interactResult36)
+                return std::unexpected(std::move(interactResult36.error()));
+            }
+          }
         }
       }
     }
-  };
+  
+  return {};
+};
 
-  Json itemBagConfig = config.get("bagConfig");
-  auto bagOrder = itemBagConfig.toObject().keys().sorted([&itemBagConfig](String const& a, String const& b) {
-    return itemBagConfig.get(a).getInt("order", 0) < itemBagConfig.get(b).getInt("order", 0);
-  });
+  auto getResult37 = config.get("bagConfig");
+  if (!getResult37)
+    return std::unexpected(std::move(getResult37.error()));
+  Json itemBagConfig = std::move(*getResult37);
+  auto toObjectResult38 = itemBagConfig.toObject();
+  if (!toObjectResult38)
+    return std::unexpected(std::move(toObjectResult38.error()));
+  auto bagOrder = std::move(*toObjectResult38).keys();
+  auto sortByComputedValueResult41 = sortByComputedValue(bagOrder, [&itemBagConfig](String const& name) -> std::expected<std::int64_t, StarException> {
+      auto getResult39 = itemBagConfig.get(name);
+      if (!getResult39)
+        return std::unexpected(std::move(getResult39.error()));
+      auto getIntResult40 = std::move(*getResult39).getInt("order", 0);
+      if (!getIntResult40)
+        return std::unexpected(std::move(getIntResult40.error()));
+      return std::move(*getIntResult40);
+    });
+  if (!sortByComputedValueResult41)
+    return std::unexpected(std::move(sortByComputedValueResult41.error()));
   for (auto name : bagOrder) {
-    auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
+    auto getResult42 = itemBagConfig.get(name);
+    if (!getResult42)
+      return std::unexpected(std::move(getResult42.error()));
+    auto getStringResult43 = std::move(*getResult42).getString("itemGrid");
+    if (!getStringResult43)
+      return std::unexpected(std::move(getStringResult43.error()));
+    auto itemGrid = std::move(*getStringResult43);
     invWindowReader.registerCallback(itemGrid, std::bind(leftClickCallback, name, std::placeholders::_1));
     invWindowReader.registerCallback(itemGrid + ".right", std::bind(bagGridCallback, name, std::placeholders::_1));
     invWindowReader.registerCallback(itemGrid + ".middle", std::bind(middleClickCallback, name, std::placeholders::_1));
   }
 
-  invWindowReader.registerCallback("close", [this](Widget*) {
+  invWindowReader.registerCallback("close", [this](Widget*)  -> std::expected<void, StarException> {
       dismiss();
-    });
+    
+  return {};
+});
 
-  invWindowReader.registerCallback("sort", [this](Widget*) {
-      m_player->inventory()->condenseBagStacks(m_selectedTab);
-      m_player->inventory()->sortBag(m_selectedTab);
+  invWindowReader.registerCallback("sort", [this](Widget*)  -> std::expected<void, StarException> {
+      auto condenseBagStacksResult44 = m_player->inventory()->condenseBagStacks(m_selectedTab);
+      if (!condenseBagStacksResult44)
+        return std::unexpected(std::move(condenseBagStacksResult44.error()));
+      auto sortBagResult45 = m_player->inventory()->sortBag(m_selectedTab);
+      if (!sortBagResult45)
+        return std::unexpected(std::move(sortBagResult45.error()));
       // Don't show sorted items as new items
-      m_itemGrids[m_selectedTab]->updateItemState();
+      auto updateItemStateResult46 = m_itemGrids[m_selectedTab]->updateItemState();
+      if (!updateItemStateResult46)
+        return std::unexpected(std::move(updateItemStateResult46.error()));
       m_itemGrids[m_selectedTab]->clearChangedSlots();
-    });
+    
+  return {};
+});
 
-  invWindowReader.registerCallback("gridModeSelector", [this](Widget* widget) {
-      auto selected = convert<ButtonWidget>(widget)->data().toString();
-      selectTab(m_tabButtonData.keyOf(selected));
-    });
+  invWindowReader.registerCallback("gridModeSelector", [this](Widget* widget)  -> std::expected<void, StarException> {
+      auto convertResult47 = convert<ButtonWidget>(widget);
+      if (!convertResult47)
+        return std::unexpected(std::move(convertResult47.error()));
+      auto toStringResult48 = std::move(*convertResult47)->data().toString();
+      if (!toStringResult48)
+        return std::unexpected(std::move(toStringResult48.error()));
+      auto selected = std::move(*toStringResult48);
+      auto keyOfResult49 = m_tabButtonData.keyOf(selected);
+      if (!keyOfResult49)
+        return std::unexpected(std::move(keyOfResult49.error()));
+      auto selectTabResult50 = selectTab(std::move(*keyOfResult49));
+      if (!selectTabResult50)
+        return std::unexpected(std::move(selectTabResult50.error()));
+    
+  return {};
+});
 
-  auto registerSlotCallbacks = [&](String name, InventorySlot slot) {
-    invWindowReader.registerCallback(name, [this, slot](Widget* paneObj) {
+  auto registerSlotCallbacks = [&](String name, InventorySlot slot)  -> std::expected<void, StarException> {
+    invWindowReader.registerCallback(name, [this, slot](Widget* paneObj)  -> std::expected<void, StarException> {
         if (as<ItemSlotWidget>(paneObj))
-          m_player->inventory()->shiftSwap(slot);
+          {
+            auto shiftSwapResult51 = m_player->inventory()->shiftSwap(slot);
+            if (!shiftSwapResult51)
+              return std::unexpected(std::move(shiftSwapResult51.error()));
+            
+          }
         else
-          throw GuiException("Invalid object type, expected ItemSlotWidget");
-      });
-    invWindowReader.registerCallback(name + ".right", [slot, rightClickCallback](Widget* paneObj) {
+          return std::unexpected(GuiException("Invalid object type, expected ItemSlotWidget"));
+      
+  return {};
+});
+    invWindowReader.registerCallback(name + ".right", [slot, rightClickCallback](Widget* paneObj)  -> std::expected<void, StarException> {
         if (as<ItemSlotWidget>(paneObj))
-          rightClickCallback(slot);
+          {
+            auto rightClickCallbackResult52 = rightClickCallback(slot);
+            if (!rightClickCallbackResult52)
+              return std::unexpected(std::move(rightClickCallbackResult52.error()));
+            
+          }
         else
-          throw GuiException("Invalid object type, expected ItemSlotWidget");
-      });
-  };
+          return std::unexpected(GuiException("Invalid object type, expected ItemSlotWidget"));
+      
+  return {};
+});
+  
+  return {};
+};
 
-  for (auto const p : EquipmentSlotNames) {
-    EquipmentSlot slot = p.first;
-    registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*) {
-      auto inventory = m_player->inventory();
-      inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
-    });
+  {
+    auto const& enumResult53 = EquipmentSlotNames;
+    if (!enumResult53)
+      return std::unexpected(enumResult53.error());
+    for (auto const p : (*enumResult53)) {
+      EquipmentSlot slot = p.first;
+      auto registerSlotCallbacksResult54 = registerSlotCallbacks(p.second, slot);
+      if (!registerSlotCallbacksResult54)
+        return std::unexpected(std::move(registerSlotCallbacksResult54.error()));
+      invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*)  -> std::expected<void, StarException> {
+        auto inventory = m_player->inventory();
+        inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
+      
+    return {};
+  });
+    }
   }
-  registerSlotCallbacks("trash", TrashSlot());
+  auto registerSlotCallbacksResult55 = registerSlotCallbacks("trash", TrashSlot());
+  if (!registerSlotCallbacksResult55)
+    return std::unexpected(std::move(registerSlotCallbacksResult55.error()));
 
-  invWindowReader.construct(config.get("paneLayout"), this);
+  auto getResult56 = config.get("paneLayout");
+  if (!getResult56)
+    return std::unexpected(std::move(getResult56.error()));
+  auto constructResult57 = invWindowReader.construct(std::move(*getResult56), this);
+  if (!constructResult57)
+    return std::unexpected(std::move(constructResult57.error()));
 
-  m_trashSlot = fetchChild<ItemSlotWidget>("trash");
-  m_trashBurn = GameTimer(config.get("trashBurnTimeout").toFloat());
+  auto fetchChildResult58 = fetchChild<ItemSlotWidget>("trash");
+  if (!fetchChildResult58)
+    return std::unexpected(std::move(fetchChildResult58.error()));
+  m_trashSlot = std::move(*fetchChildResult58);
+  auto getResult59 = config.get("trashBurnTimeout");
+  if (!getResult59)
+    return std::unexpected(std::move(getResult59.error()));
+  auto toFloatResult60 = std::move(*getResult59).toFloat();
+  if (!toFloatResult60)
+    return std::unexpected(std::move(toFloatResult60.error()));
+  m_trashBurn = GameTimer(std::move(*toFloatResult60));
 
-  m_disabledTechOverlays.append(fetchChild<ImageWidget>("techHeadDisabled"));
-  m_disabledTechOverlays.append(fetchChild<ImageWidget>("techBodyDisabled"));
-  m_disabledTechOverlays.append(fetchChild<ImageWidget>("techLegsDisabled"));
+  auto fetchChildResult61 = fetchChild<ImageWidget>("techHeadDisabled");
+  if (!fetchChildResult61)
+    return std::unexpected(std::move(fetchChildResult61.error()));
+  m_disabledTechOverlays.append(std::move(*fetchChildResult61));
+  auto fetchChildResult62 = fetchChild<ImageWidget>("techBodyDisabled");
+  if (!fetchChildResult62)
+    return std::unexpected(std::move(fetchChildResult62.error()));
+  m_disabledTechOverlays.append(std::move(*fetchChildResult62));
+  auto fetchChildResult63 = fetchChild<ImageWidget>("techLegsDisabled");
+  if (!fetchChildResult63)
+    return std::unexpected(std::move(fetchChildResult63.error()));
+  m_disabledTechOverlays.append(std::move(*fetchChildResult63));
 
-  for (auto const p : EquipmentSlotNames) {
-    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-      itemSlot->setItem(m_player->inventory()->itemsAt(p.first));
-      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
-        indicator->setVisibility(!m_player->inventory()->equipmentVisibility(p.first));
-      if (p.first >= EquipmentSlot::Cosmetic1)
-        itemSlot->hide();
+  {
+    auto const& enumResult64 = EquipmentSlotNames;
+    if (!enumResult64)
+      return std::unexpected(enumResult64.error());
+    for (auto const p : (*enumResult64)) {
+      {
+        auto fetchChildResult65 = fetchChild<ItemSlotWidget>(p.second);
+        if (!fetchChildResult65)
+          return std::unexpected(std::move(fetchChildResult65.error()));
+        if (auto itemSlot = std::move(*fetchChildResult65)) {
+          auto itemsAtResult66 = m_player->inventory()->itemsAt(p.first);
+          if (!itemsAtResult66)
+            return std::unexpected(std::move(itemsAtResult66.error()));
+          itemSlot->setItem(std::move(*itemsAtResult66));
+          {
+            auto findChildResult67 = itemSlot->findChild<ImageWidget>("hidden");
+            if (!findChildResult67)
+              return std::unexpected(std::move(findChildResult67.error()));
+            if (auto indicator = std::move(*findChildResult67))
+              {
+                auto setVisibilityResult68 = indicator->setVisibility(!m_player->inventory()->equipmentVisibility(p.first));
+                if (!setVisibilityResult68)
+                  return std::unexpected(std::move(setVisibilityResult68.error()));
+                
+              }
+          }
+          if (p.first >= EquipmentSlot::Cosmetic1)
+            {
+              auto hideResult69 = itemSlot->hide();
+              if (!hideResult69)
+                return std::unexpected(std::move(hideResult69.error()));
+              
+            }
+        }
+      }
     }
   }
 
   for (auto name : bagOrder) {
-    auto itemTab = itemBagConfig.get(name);
-    m_itemGrids[name] = fetchChild<ItemGridWidget>(itemTab.getString("itemGrid"));
-    m_itemGrids[name]->setItemBag(m_player->inventory()->bagContents(name));
-    m_itemGrids[name]->hide();
-    m_newItemMarkers[name] = fetchChild<Widget>(itemTab.getString("newItemMarker"));
-    m_tabButtonData[name] = itemTab.getString("tabButtonData");
+    auto getResult70 = itemBagConfig.get(name);
+    if (!getResult70)
+      return std::unexpected(std::move(getResult70.error()));
+    auto itemTab = std::move(*getResult70);
+    auto getStringResult71 = itemTab.getString("itemGrid");
+    if (!getStringResult71)
+      return std::unexpected(std::move(getStringResult71.error()));
+    auto fetchChildResult72 = fetchChild<ItemGridWidget>(std::move(*getStringResult71));
+    if (!fetchChildResult72)
+      return std::unexpected(std::move(fetchChildResult72.error()));
+    m_itemGrids[name] = std::move(*fetchChildResult72);
+    auto setItemBagResult73 = m_itemGrids[name]->setItemBag(m_player->inventory()->bagContents(name));
+    if (!setItemBagResult73)
+      return std::unexpected(std::move(setItemBagResult73.error()));
+    auto hideResult74 = m_itemGrids[name]->hide();
+    if (!hideResult74)
+      return std::unexpected(std::move(hideResult74.error()));
+    auto getStringResult75 = itemTab.getString("newItemMarker");
+    if (!getStringResult75)
+      return std::unexpected(std::move(getStringResult75.error()));
+    auto fetchChildResult76 = fetchChild<Widget>(std::move(*getStringResult75));
+    if (!fetchChildResult76)
+      return std::unexpected(std::move(fetchChildResult76.error()));
+    m_newItemMarkers[name] = std::move(*fetchChildResult76);
+    auto getStringResult77 = itemTab.getString("tabButtonData");
+    if (!getStringResult77)
+      return std::unexpected(std::move(getStringResult77.error()));
+    m_tabButtonData[name] = std::move(*getStringResult77);
   }
-  selectTab(bagOrder[0]);
+  auto selectTabResult78 = selectTab(bagOrder[0]);
+  if (!selectTabResult78)
+    return std::unexpected(std::move(selectTabResult78.error()));
 
-  auto centralPortrait = fetchChild<PortraitWidget>("portrait");
-  centralPortrait->setEntity(m_player);
+  auto fetchChildResult79 = fetchChild<PortraitWidget>("portrait");
+  if (!fetchChildResult79)
+    return std::unexpected(std::move(fetchChildResult79.error()));
+  auto centralPortrait = std::move(*fetchChildResult79);
+  auto setEntityResult80 = centralPortrait->setEntity(m_player);
+  if (!setEntityResult80)
+    return std::unexpected(std::move(setEntityResult80.error()));
 
-  auto portrait = std::make_shared<PortraitWidget>(*context(), m_player, PortraitMode::Bust);
-  portrait->setIconMode();
-  setTitle(portrait, m_player->name(), config.getString("subtitle"));
+  auto createResult81 = PortraitWidget::create(*context(), m_player, PortraitMode::Bust);
+  if (!createResult81)
+    return std::unexpected(std::move(createResult81.error()));
+  auto portrait = std::move(*createResult81);
+  auto setIconModeResult82 = portrait->setIconMode();
+  if (!setIconModeResult82)
+    return std::unexpected(std::move(setIconModeResult82.error()));
+  auto nameResult83 = m_player->name();
+  if (!nameResult83)
+    return std::unexpected(std::move(nameResult83.error()));
+  auto getStringResult84 = config.getString("subtitle");
+  if (!getStringResult84)
+    return std::unexpected(std::move(getStringResult84.error()));
+  auto setTitleResult85 = setTitle(portrait, std::move(*nameResult83), std::move(*getStringResult84));
+  if (!setTitleResult85)
+    return std::unexpected(std::move(setTitleResult85.error()));
 
-  if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = config.getBool("alwaysDisplayCosmetics", false))) {
-    for (auto const& p : EquipmentSlotNames) {
-      if (p.first >= EquipmentSlot::Cosmetic1) {
-        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
-          itemSlot->setVisibility(true);
+  {
+    auto getBoolResult86 = config.getBool("alwaysDisplayCosmetics", false);
+    if (!getBoolResult86)
+      return std::unexpected(std::move(getBoolResult86.error()));
+    if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = std::move(*getBoolResult86))) {
+      {
+        auto const& enumResult87 = EquipmentSlotNames;
+        if (!enumResult87)
+          return std::unexpected(enumResult87.error());
+        for (auto const& p : (*enumResult87)) {
+          if (p.first >= EquipmentSlot::Cosmetic1) {
+            {
+              auto fetchChildResult88 = fetchChild<ItemSlotWidget>(p.second);
+              if (!fetchChildResult88)
+                return std::unexpected(std::move(fetchChildResult88.error()));
+              if (auto itemSlot = std::move(*fetchChildResult88))
+                {
+                  auto setVisibilityResult89 = itemSlot->setVisibility(true);
+                  if (!setVisibilityResult89)
+                    return std::unexpected(std::move(setVisibilityResult89.error()));
+                  
+                }
+            }
+          }
+        }
       }
     }
   }
@@ -419,22 +752,68 @@ InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface* parent, std:
 
   if (auto item = m_player->inventory()->swapSlotItem())
     m_currentSwapSlotItem = item->descriptor();
-  m_pickUpSounds = jsonToStringList(config.get("sounds").get("pickup"));
-  m_putDownSounds = jsonToStringList(config.get("sounds").get("putdown"));
-  m_someUpSounds = jsonToStringList(config.get("sounds").get("someup"));
-  m_someDownSounds = jsonToStringList(config.get("sounds").get("somedown"));
+  auto getResult90 = config.get("sounds");
+  if (!getResult90)
+    return std::unexpected(std::move(getResult90.error()));
+  auto getResult91 = std::move(*getResult90).get("pickup");
+  if (!getResult91)
+    return std::unexpected(std::move(getResult91.error()));
+  auto jsonToStringListResult92 = jsonToStringList(std::move(*getResult91));
+  if (!jsonToStringListResult92)
+    return std::unexpected(std::move(jsonToStringListResult92.error()));
+  m_pickUpSounds = std::move(*jsonToStringListResult92);
+  auto getResult93 = config.get("sounds");
+  if (!getResult93)
+    return std::unexpected(std::move(getResult93.error()));
+  auto getResult94 = std::move(*getResult93).get("putdown");
+  if (!getResult94)
+    return std::unexpected(std::move(getResult94.error()));
+  auto jsonToStringListResult95 = jsonToStringList(std::move(*getResult94));
+  if (!jsonToStringListResult95)
+    return std::unexpected(std::move(jsonToStringListResult95.error()));
+  m_putDownSounds = std::move(*jsonToStringListResult95);
+  auto getResult96 = config.get("sounds");
+  if (!getResult96)
+    return std::unexpected(std::move(getResult96.error()));
+  auto getResult97 = std::move(*getResult96).get("someup");
+  if (!getResult97)
+    return std::unexpected(std::move(getResult97.error()));
+  auto jsonToStringListResult98 = jsonToStringList(std::move(*getResult97));
+  if (!jsonToStringListResult98)
+    return std::unexpected(std::move(jsonToStringListResult98.error()));
+  m_someUpSounds = std::move(*jsonToStringListResult98);
+  auto getResult99 = config.get("sounds");
+  if (!getResult99)
+    return std::unexpected(std::move(getResult99.error()));
+  auto getResult100 = std::move(*getResult99).get("somedown");
+  if (!getResult100)
+    return std::unexpected(std::move(getResult100.error()));
+  auto jsonToStringListResult101 = jsonToStringList(std::move(*getResult100));
+  if (!jsonToStringListResult101)
+    return std::unexpected(std::move(jsonToStringListResult101.error()));
+  m_someDownSounds = std::move(*jsonToStringListResult101);
+
+return {};
 }
 
-void InventoryPane::displayed() {
-  Pane::displayed();
+std::expected<void, StarException> InventoryPane::displayed() {
+  auto displayedResult102 = Pane::displayed();
+  if (!displayedResult102)
+    return std::unexpected(std::move(displayedResult102.error()));
   m_expectingSwap = false;
 
   for (auto grid : m_itemGrids)
-    grid.second->updateItemState();
+    {
+      auto updateItemStateResult103 = grid.second->updateItemState();
+      if (!updateItemStateResult103)
+        return std::unexpected(std::move(updateItemStateResult103.error()));
+      
+    }
   m_itemGrids[m_selectedTab]->indicateChangedSlots();
+  return {};
 }
 
-std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) {
+std::expected<std::shared_ptr<Pane>, StarException> InventoryPane::createTooltip(Vec2I const& screenPosition) {
   std::shared_ptr<Item> item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child)) {
@@ -442,24 +821,65 @@ std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) 
       if (!item) {
         auto widgetData = itemSlot->data();
         if (widgetData && widgetData.type() == Json::Type::Object) {
-          if (auto text = widgetData.optString("tooltipText"))
-            return SimpleTooltipBuilder::buildTooltip(*context(), *text);
+          {
+            auto optStringResult104 = widgetData.optString("tooltipText");
+            if (!optStringResult104)
+              return std::unexpected(std::move(optStringResult104.error()));
+            if (auto text = std::move(*optStringResult104))
+              {
+                auto buildTooltipResult105 = SimpleTooltipBuilder::buildTooltip(*context(), *text);
+                if (!buildTooltipResult105)
+                  return std::unexpected(std::move(buildTooltipResult105.error()));
+                return std::move(*buildTooltipResult105);
+              }
+          }
         }
       }
     }
     if (auto itemGrid = as<ItemGridWidget>(child))
-      item = itemGrid->itemAt(screenPosition);
+      {
+        auto itemAtResult106 = itemGrid->itemAt(screenPosition);
+        if (!itemAtResult106)
+          return std::unexpected(std::move(itemAtResult106.error()));
+        item = std::move(*itemAtResult106);
+      }
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+    {
+      auto buildItemTooltipResult107 = ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
+      if (!buildItemTooltipResult107)
+        return std::unexpected(std::move(buildItemTooltipResult107.error()));
+      return std::move(*buildItemTooltipResult107);
+    }
 
-  auto techDatabase = context()->root().techDatabase();
-  for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
-      if (techIcon->screenBoundRect().contains(screenPosition)) {
-        if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
-          if (techDatabase->contains(*techModule))
-            return SimpleTooltipBuilder::buildTooltip(*context(), techDatabase->tech(*techModule).description);
+  auto techDatabaseResult108 = context()->root().techDatabase();
+  if (!techDatabaseResult108)
+    return std::unexpected(std::move(techDatabaseResult108.error()));
+  auto techDatabase = std::move(*techDatabaseResult108);
+  {
+    auto const& enumResult109 = TechTypeNames;
+    if (!enumResult109)
+      return std::unexpected(enumResult109.error());
+    for (auto const& p : (*enumResult109)) {
+      {
+        auto fetchChildResult110 = fetchChild<ImageWidget>(strf("tech{}", p.second));
+        if (!fetchChildResult110)
+          return std::unexpected(std::move(fetchChildResult110.error()));
+        if (auto techIcon = std::move(*fetchChildResult110)) {
+          if (techIcon->screenBoundRect().contains(screenPosition)) {
+            if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
+              if (techDatabase->contains(*techModule))
+                {
+                  auto techResult111 = techDatabase->tech(*techModule);
+                  if (!techResult111)
+                    return std::unexpected(std::move(techResult111.error()));
+                  auto buildTooltipResult112 = SimpleTooltipBuilder::buildTooltip(*context(), std::move(*techResult111).description);
+                  if (!buildTooltipResult112)
+                    return std::unexpected(std::move(buildTooltipResult112.error()));
+                  return std::move(*buildTooltipResult112);
+                }
+          }
+        }
       }
     }
   }
@@ -467,55 +887,105 @@ std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) 
   return {};
 }
 
-bool InventoryPane::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> InventoryPane::sendEvent(InputEvent const& event) {
   if (m_alwaysDisplayCosmetics)
-    return Pane::sendEvent(event);
+    {
+      auto sendEventResult113 = Pane::sendEvent(event);
+      if (!sendEventResult113)
+        return std::unexpected(std::move(sendEventResult113.error()));
+      return std::move(*sendEventResult113);
+    }
 
   if (auto mousePosition = Widget::context()->mousePosition(event)) {
     bool displayingCosmetics = false;
-    for (auto const& p : EquipmentSlotNames) {
-      if (p.first >= EquipmentSlot::HeadCosmetic) {
-        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-          if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
-            break;
+    {
+      auto const& enumResult114 = EquipmentSlotNames;
+      if (!enumResult114)
+        return std::unexpected(enumResult114.error());
+      for (auto const& p : (*enumResult114)) {
+        if (p.first >= EquipmentSlot::HeadCosmetic) {
+          {
+            auto fetchChildResult115 = fetchChild<ItemSlotWidget>(p.second);
+            if (!fetchChildResult115)
+              return std::unexpected(std::move(fetchChildResult115.error()));
+            if (auto itemSlot = std::move(*fetchChildResult115)) {
+              if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
+                break;
+            }
+          }
         }
       }
     }
 
     if (m_displayingCosmetics != displayingCosmetics) {
-      for (auto const& p : EquipmentSlotNames) {
-        if (p.first >= EquipmentSlot::Cosmetic1) {
-          if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
-            itemSlot->setVisibility(displayingCosmetics);
+      {
+        auto const& enumResult116 = EquipmentSlotNames;
+        if (!enumResult116)
+          return std::unexpected(enumResult116.error());
+        for (auto const& p : (*enumResult116)) {
+          if (p.first >= EquipmentSlot::Cosmetic1) {
+            {
+              auto fetchChildResult117 = fetchChild<ItemSlotWidget>(p.second);
+              if (!fetchChildResult117)
+                return std::unexpected(std::move(fetchChildResult117.error()));
+              if (auto itemSlot = std::move(*fetchChildResult117))
+                {
+                  auto setVisibilityResult118 = itemSlot->setVisibility(displayingCosmetics);
+                  if (!setVisibilityResult118)
+                    return std::unexpected(std::move(setVisibilityResult118.error()));
+                  
+                }
+            }
+          }
         }
       }
       m_displayingCosmetics = displayingCosmetics;
     }
   }
 
-  return Pane::sendEvent(event);
+  auto sendEventResult119 = Pane::sendEvent(event);
+  if (!sendEventResult119)
+    return std::unexpected(std::move(sendEventResult119.error()));
+  return std::move(*sendEventResult119);
 }
 
-bool InventoryPane::giveContainerResult(ContainerResult result) {
+std::expected<bool, StarException> InventoryPane::giveContainerResult(ContainerResult result) {
   if (!m_expectingSwap)
     return false;
 
   for (auto& item : result) {
     auto inv = m_player->inventory();
-    m_player->triggerPickupEvents(item);
+    auto triggerPickupEventsResult120 = m_player->triggerPickupEvents(item);
+    if (!triggerPickupEventsResult120)
+      return std::unexpected(std::move(triggerPickupEventsResult120.error()));
 
-    auto remainder = inv->stackWith(m_containerSource, item);
+    auto stackWithResult121 = inv->stackWith(m_containerSource, item);
+    if (!stackWithResult121)
+      return std::unexpected(std::move(stackWithResult121.error()));
+    auto remainder = std::move(*stackWithResult121);
     if (remainder && !remainder->empty())
-      m_player->giveItem(remainder);
+      {
+        auto giveItemResult122 = m_player->giveItem(remainder);
+        if (!giveItemResult122)
+          return std::unexpected(std::move(giveItemResult122.error()));
+        
+      }
   }
 
   m_expectingSwap = false;
   return true;
 }
 
-void InventoryPane::updateItems() {
+std::expected<void, StarException> InventoryPane::updateItems() {
   for (auto& p : m_itemGrids)
-    p.second->updateItemState();
+    {
+      auto updateItemStateResult123 = p.second->updateItemState();
+      if (!updateItemStateResult123)
+        return std::unexpected(std::move(updateItemStateResult123.error()));
+      
+    }
+
+return {};
 }
 
 bool InventoryPane::containsNewItems() const {
@@ -526,30 +996,56 @@ bool InventoryPane::containsNewItems() const {
   return false;
 }
 
-void InventoryPane::clearChangedSlots() {
+std::expected<void, StarException> InventoryPane::clearChangedSlots() {
   for (auto& p : m_itemGrids) {
-    p.second->updateItemState();
+    auto updateItemStateResult124 = p.second->updateItemState();
+    if (!updateItemStateResult124)
+      return std::unexpected(std::move(updateItemStateResult124.error()));
     p.second->clearChangedSlots();
   }
+  return {};
 }
 
-void InventoryPane::update(float dt) {
+std::expected<void, StarException> InventoryPane::update(float dt) {
   auto inventory = m_player->inventory();
   auto context = Widget::context();
 
   HashSet<std::shared_ptr<Item>> customBarItems;
   for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
-    if (auto primarySlot = inventory->customBarPrimarySlot(i)) {
-      if (auto primaryItem = inventory->itemsAt(*primarySlot))
-        customBarItems.add(primaryItem);
+    {
+      auto customBarPrimarySlotResult125 = inventory->customBarPrimarySlot(i);
+      if (!customBarPrimarySlotResult125)
+        return std::unexpected(std::move(customBarPrimarySlotResult125.error()));
+      if (auto primarySlot = std::move(*customBarPrimarySlotResult125)) {
+        {
+          auto itemsAtResult126 = inventory->itemsAt(*primarySlot);
+          if (!itemsAtResult126)
+            return std::unexpected(std::move(itemsAtResult126.error()));
+          if (auto primaryItem = std::move(*itemsAtResult126))
+            customBarItems.add(primaryItem);
+        }
+      }
     }
-    if (auto secondarySlot = inventory->customBarSecondarySlot(i)) {
-      if (auto secondaryItem = inventory->itemsAt(*secondarySlot))
-        customBarItems.add(secondaryItem);
+    {
+      auto customBarSecondarySlotResult127 = inventory->customBarSecondarySlot(i);
+      if (!customBarSecondarySlotResult127)
+        return std::unexpected(std::move(customBarSecondarySlotResult127.error()));
+      if (auto secondarySlot = std::move(*customBarSecondarySlotResult127)) {
+        {
+          auto itemsAtResult128 = inventory->itemsAt(*secondarySlot);
+          if (!itemsAtResult128)
+            return std::unexpected(std::move(itemsAtResult128.error()));
+          if (auto secondaryItem = std::move(*itemsAtResult128))
+            customBarItems.add(secondaryItem);
+        }
+      }
     }
   }
 
-  m_trashSlot->setItem(inventory->itemsAt(TrashSlot()));
+  auto itemsAtResult129 = inventory->itemsAt(TrashSlot());
+  if (!itemsAtResult129)
+    return std::unexpected(std::move(itemsAtResult129.error()));
+  m_trashSlot->setItem(std::move(*itemsAtResult129));
   m_trashSlot->showLinkIndicator(customBarItems.contains(m_trashSlot->item()));
   if (auto trashItem = m_trashSlot->item()) {
     if (m_trashBurn.tick(dt) && trashItem->count() > 0) {
@@ -558,53 +1054,121 @@ void InventoryPane::update(float dt) {
           {"count", trashItem->count()},
           {"category", trashItem->category()}
         });
-      trashItem->take(trashItem->count());
+      auto takeResult130 = trashItem->take(trashItem->count());
+      if (!takeResult130)
+        return std::unexpected(std::move(takeResult130.error()));
     }
   } else {
     m_trashBurn.reset();
   }
   m_trashSlot->setProgress(m_trashBurn.timer / m_trashBurn.time);
 
-  for (auto const& p : EquipmentSlotNames) {
-    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-      itemSlot->setItem(inventory->itemsAt(p.first));
-      itemSlot->showLinkIndicator(customBarItems.contains(itemSlot->item()));
-      if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
-        indicator->setVisibility(!inventory->equipmentVisibility(p.first));
+  {
+    auto const& enumResult131 = EquipmentSlotNames;
+    if (!enumResult131)
+      return std::unexpected(enumResult131.error());
+    for (auto const& p : (*enumResult131)) {
+      {
+        auto fetchChildResult132 = fetchChild<ItemSlotWidget>(p.second);
+        if (!fetchChildResult132)
+          return std::unexpected(std::move(fetchChildResult132.error()));
+        if (auto itemSlot = std::move(*fetchChildResult132)) {
+          auto itemsAtResult133 = inventory->itemsAt(p.first);
+          if (!itemsAtResult133)
+            return std::unexpected(std::move(itemsAtResult133.error()));
+          itemSlot->setItem(std::move(*itemsAtResult133));
+          itemSlot->showLinkIndicator(customBarItems.contains(itemSlot->item()));
+          {
+            auto findChildResult134 = itemSlot->findChild<ImageWidget>("hidden");
+            if (!findChildResult134)
+              return std::unexpected(std::move(findChildResult134.error()));
+            if (auto indicator = std::move(*findChildResult134))
+              {
+                auto setVisibilityResult135 = indicator->setVisibility(!inventory->equipmentVisibility(p.first));
+                if (!setVisibilityResult135)
+                  return std::unexpected(std::move(setVisibilityResult135.error()));
+                
+              }
+          }
+        }
+      }
     }
   }
 
-  auto techDatabase = context->root().techDatabase();
-  for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
-      if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
-        if (techDatabase->contains(*techModule)) {
-          techIcon->setImage(techDatabase->tech(*techModule).icon);
-          continue;
+  auto techDatabaseResult136 = context->root().techDatabase();
+  if (!techDatabaseResult136)
+    return std::unexpected(std::move(techDatabaseResult136.error()));
+  auto techDatabase = std::move(*techDatabaseResult136);
+  {
+    auto const& enumResult137 = TechTypeNames;
+    if (!enumResult137)
+      return std::unexpected(enumResult137.error());
+    for (auto const& p : (*enumResult137)) {
+      {
+        auto fetchChildResult138 = fetchChild<ImageWidget>(strf("tech{}", p.second));
+        if (!fetchChildResult138)
+          return std::unexpected(std::move(fetchChildResult138.error()));
+        if (auto techIcon = std::move(*fetchChildResult138)) {
+          if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
+            if (techDatabase->contains(*techModule)) {
+              auto techResult139 = techDatabase->tech(*techModule);
+              if (!techResult139)
+                return std::unexpected(std::move(techResult139.error()));
+              auto setImageResult140 = techIcon->setImage(std::move(*techResult139).icon);
+              if (!setImageResult140)
+                return std::unexpected(std::move(setImageResult140.error()));
+              continue;
+            }
+          }
+          auto setImageResult141 = techIcon->setImage("");
+          if (!setImageResult141)
+            return std::unexpected(std::move(setImageResult141.error()));
         }
       }
-      techIcon->setImage("");
     }
   }
 
   if (std::shared_ptr<Item> swapSlot = inventory->swapSlotItem()) {
-    if (!inventory->itemAllowedInBag(swapSlot, m_selectedTab)) {
-      for (auto& pair : m_itemGrids) {
-        if (pair.first != m_selectedTab && inventory->itemAllowedInBag(swapSlot, pair.first)) {
-          selectTab(pair.first);
-          break;
+    {
+      auto itemAllowedInBagResult142 = inventory->itemAllowedInBag(swapSlot, m_selectedTab);
+      if (!itemAllowedInBagResult142)
+        return std::unexpected(std::move(itemAllowedInBagResult142.error()));
+      if (!std::move(*itemAllowedInBagResult142)) {
+        for (auto& pair : m_itemGrids) {
+          {
+            bool condition144 = static_cast<bool>(pair.first != m_selectedTab);
+            if (condition144) {
+              auto itemAllowedInBagResult143 = inventory->itemAllowedInBag(swapSlot, pair.first);
+              if (!itemAllowedInBagResult143)
+                return std::unexpected(std::move(itemAllowedInBagResult143.error()));
+              condition144 = static_cast<bool>(std::move(*itemAllowedInBagResult143));
+            }
+            if (condition144) {
+              auto selectTabResult145 = selectTab(pair.first);
+              if (!selectTabResult145)
+                return std::unexpected(std::move(selectTabResult145.error()));
+              break;
+            }
+          }
         }
       }
     }
   }
 
   for (auto p : m_itemGrids) {
-    p.second->updateItemState();
+    auto updateItemStateResult146 = p.second->updateItemState();
+    if (!updateItemStateResult146)
+      return std::unexpected(std::move(updateItemStateResult146.error()));
     for (std::size_t i = 0; i < p.second->itemSlots(); ++i) {
       if (auto itemWidget = p.second->itemWidgetAt(i))
         itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
       else
-        context->root().logger().warn("Could not find item widget {} in item grid {}!", i, p.first);
+        {
+          auto warnResult147 = context->root().logger().warn("Could not find item widget {} in item grid {}!", i, p.first);
+          if (!warnResult147)
+            return std::unexpected(std::move(warnResult147.error()));
+          
+        }
     }
   }
 
@@ -612,128 +1176,377 @@ void InventoryPane::update(float dt) {
 
   for (auto& pair : m_newItemMarkers) {
     if (m_itemGrids[pair.first]->slotsChanged())
-      pair.second->show();
+      {
+        auto showResult148 = pair.second->show();
+        if (!showResult148)
+          return std::unexpected(std::move(showResult148.error()));
+        
+      }
     else
-      pair.second->hide();
+      {
+        auto hideResult149 = pair.second->hide();
+        if (!hideResult149)
+          return std::unexpected(std::move(hideResult149.error()));
+        
+      }
   }
 
   for (auto& techOverlay : m_disabledTechOverlays)
-    techOverlay->setVisibility(m_player->techOverridden());
+    {
+      auto setVisibilityResult150 = techOverlay->setVisibility(m_player->techOverridden());
+      if (!setVisibilityResult150)
+        return std::unexpected(std::move(setVisibilityResult150.error()));
+      
+    }
 
-  auto healthLabel = fetchChild<LabelWidget>("healthtext");
-  healthLabel->setText(strf("{:.1f}", m_player->maxHealth()));
-  auto energyLabel = fetchChild<LabelWidget>("energytext");
-  energyLabel->setText(strf("{:.1f}", m_player->maxEnergy()));
-  auto weaponLabel = fetchChild<LabelWidget>("weapontext");
-  weaponLabel->setText(strf("{:.1f}%", m_player->powerMultiplier() * 100));
-  auto defenseLabel = fetchChild<LabelWidget>("defensetext");
+  auto fetchChildResult151 = fetchChild<LabelWidget>("healthtext");
+  if (!fetchChildResult151)
+    return std::unexpected(std::move(fetchChildResult151.error()));
+  auto healthLabel = std::move(*fetchChildResult151);
+  auto maxHealthResult152 = m_player->maxHealth();
+  if (!maxHealthResult152)
+    return std::unexpected(std::move(maxHealthResult152.error()));
+  auto setTextResult153 = healthLabel->setText(strf("{:.1f}", std::move(*maxHealthResult152)));
+  if (!setTextResult153)
+    return std::unexpected(std::move(setTextResult153.error()));
+  auto fetchChildResult154 = fetchChild<LabelWidget>("energytext");
+  if (!fetchChildResult154)
+    return std::unexpected(std::move(fetchChildResult154.error()));
+  auto energyLabel = std::move(*fetchChildResult154);
+  auto maxEnergyResult155 = m_player->maxEnergy();
+  if (!maxEnergyResult155)
+    return std::unexpected(std::move(maxEnergyResult155.error()));
+  auto setTextResult156 = energyLabel->setText(strf("{:.1f}", std::move(*maxEnergyResult155)));
+  if (!setTextResult156)
+    return std::unexpected(std::move(setTextResult156.error()));
+  auto fetchChildResult157 = fetchChild<LabelWidget>("weapontext");
+  if (!fetchChildResult157)
+    return std::unexpected(std::move(fetchChildResult157.error()));
+  auto weaponLabel = std::move(*fetchChildResult157);
+  auto powerMultiplierResult158 = m_player->powerMultiplier();
+  if (!powerMultiplierResult158)
+    return std::unexpected(std::move(powerMultiplierResult158.error()));
+  auto setTextResult159 = weaponLabel->setText(strf("{:.1f}%", std::move(*powerMultiplierResult158) * 100));
+  if (!setTextResult159)
+    return std::unexpected(std::move(setTextResult159.error()));
+  auto fetchChildResult160 = fetchChild<LabelWidget>("defensetext");
+  if (!fetchChildResult160)
+    return std::unexpected(std::move(fetchChildResult160.error()));
+  auto defenseLabel = std::move(*fetchChildResult160);
   if (m_player->protection() == 0)
-    defenseLabel->setText("--");
+    {
+      auto setTextResult161 = defenseLabel->setText("--");
+      if (!setTextResult161)
+        return std::unexpected(std::move(setTextResult161.error()));
+      
+    }
   else
-    defenseLabel->setText(strf("{:.1f}", m_player->protection()));
+    {
+      auto setTextResult162 = defenseLabel->setText(strf("{:.1f}", m_player->protection()));
+      if (!setTextResult162)
+        return std::unexpected(std::move(setTextResult162.error()));
+      
+    }
 
-  auto moneyLabel = fetchChild<LabelWidget>("lblMoney");
-  moneyLabel->setText(toString(m_player->currency("money")));
+  auto fetchChildResult163 = fetchChild<LabelWidget>("lblMoney");
+  if (!fetchChildResult163)
+    return std::unexpected(std::move(fetchChildResult163.error()));
+  auto moneyLabel = std::move(*fetchChildResult163);
+  auto setTextResult164 = moneyLabel->setText(toString(m_player->currency("money")));
+  if (!setTextResult164)
+    return std::unexpected(std::move(setTextResult164.error()));
 
   if (m_player->currency("essence") > 0) {
-    fetchChild<ImageWidget>("imgEssenceIcon")->show();
-    auto essenceLabel = fetchChild<LabelWidget>("lblEssence");
-    essenceLabel->show();
-    essenceLabel->setText(toString(m_player->currency("essence")));
+    auto fetchChildResult165 = fetchChild<ImageWidget>("imgEssenceIcon");
+    if (!fetchChildResult165)
+      return std::unexpected(std::move(fetchChildResult165.error()));
+    auto showResult166 = std::move(*fetchChildResult165)->show();
+    if (!showResult166)
+      return std::unexpected(std::move(showResult166.error()));
+    auto fetchChildResult167 = fetchChild<LabelWidget>("lblEssence");
+    if (!fetchChildResult167)
+      return std::unexpected(std::move(fetchChildResult167.error()));
+    auto essenceLabel = std::move(*fetchChildResult167);
+    auto showResult168 = essenceLabel->show();
+    if (!showResult168)
+      return std::unexpected(std::move(showResult168.error()));
+    auto setTextResult169 = essenceLabel->setText(toString(m_player->currency("essence")));
+    if (!setTextResult169)
+      return std::unexpected(std::move(setTextResult169.error()));
   } else {
-    fetchChild<ImageWidget>("imgEssenceIcon")->hide();
-    fetchChild<LabelWidget>("lblEssence")->hide();
+    auto fetchChildResult170 = fetchChild<ImageWidget>("imgEssenceIcon");
+    if (!fetchChildResult170)
+      return std::unexpected(std::move(fetchChildResult170.error()));
+    auto hideResult171 = std::move(*fetchChildResult170)->hide();
+    if (!hideResult171)
+      return std::unexpected(std::move(hideResult171.error()));
+    auto fetchChildResult172 = fetchChild<LabelWidget>("lblEssence");
+    if (!fetchChildResult172)
+      return std::unexpected(std::move(fetchChildResult172.error()));
+    auto hideResult173 = std::move(*fetchChildResult172)->hide();
+    if (!hideResult173)
+      return std::unexpected(std::move(hideResult173.error()));
   }
 
-  auto config = context->root().assets()->json("/interface/windowconfig/playerinventory.config");
+  auto assetsResult174 = context->root().assets();
+  if (!assetsResult174)
+    return std::unexpected(std::move(assetsResult174.error()));
+  auto jsonResult175 = std::move(*assetsResult174)->json("/interface/windowconfig/playerinventory.config");
+  if (!jsonResult175)
+    return std::unexpected(std::move(jsonResult175.error()));
+  auto config = std::move(*jsonResult175);
 
   auto pets = m_player->companions()->getCompanions("pets");
   if (pets.size() > 0) {
-    auto pet = pets.first();
-    auto companionImage = fetchChild<ImageWidget>("companionSlot");
-    companionImage->setVisibility(true);
+    auto firstResult176 = pets.first();
+    if (!firstResult176)
+      return std::unexpected(std::move(firstResult176.error()));
+    auto pet = (**firstResult176);
+    auto fetchChildResult177 = fetchChild<ImageWidget>("companionSlot");
+    if (!fetchChildResult177)
+      return std::unexpected(std::move(fetchChildResult177.error()));
+    auto companionImage = std::move(*fetchChildResult177);
+    auto setVisibilityResult178 = companionImage->setVisibility(true);
+    if (!setVisibilityResult178)
+      return std::unexpected(std::move(setVisibilityResult178.error()));
 
-    companionImage->setDrawables(pet->portrait());
-    auto nameLabel = fetchChild<LabelWidget>("companionName");
-    if (auto name = pet->name()) {
-      nameLabel->setText(pet->name()->toUpper());
-    } else {
-      nameLabel->setText(config.getString("defaultPetNameLabel"));
-    }
-
-    auto attackLabel = fetchChild<LabelWidget>("companionAttackStat");
-    if (auto attack = pet->stat("attack")) {
-      attackLabel->setText(strf("{:.1f}", *attack));
-    } else {
-      attackLabel->setText("");
-    }
-
-    auto defenseLabel = fetchChild<LabelWidget>("companionDefenseStat");
-    if (auto defense = pet->stat("defense")) {
-      defenseLabel->setText(strf("{:.1f}", *defense));
-    } else {
-      defenseLabel->setText("");
-    }
-
-    if (containsChild("companionHealthBar")) {
-      auto healthBar = fetchChild<ProgressWidget>("companionHealthBar");
-      std::optional<float> health = pet->resource("health");
-      std::optional<float> healthMax = pet->resourceMax("health");
-      if (health && healthMax) {
-        healthBar->setCurrentProgressLevel(*health);
-        healthBar->setMaxProgressLevel(*healthMax);
+    auto setDrawablesResult179 = companionImage->setDrawables(pet->portrait());
+    if (!setDrawablesResult179)
+      return std::unexpected(std::move(setDrawablesResult179.error()));
+    auto fetchChildResult180 = fetchChild<LabelWidget>("companionName");
+    if (!fetchChildResult180)
+      return std::unexpected(std::move(fetchChildResult180.error()));
+    auto nameLabel = std::move(*fetchChildResult180);
+    {
+      auto nameResult181 = pet->name();
+      if (!nameResult181)
+        return std::unexpected(std::move(nameResult181.error()));
+      if (auto name = std::move(*nameResult181)) {
+        auto nameResult182 = pet->name();
+        if (!nameResult182)
+          return std::unexpected(std::move(nameResult182.error()));
+        auto toUpperResult183 = std::move(*nameResult182)->toUpper();
+        if (!toUpperResult183)
+          return std::unexpected(std::move(toUpperResult183.error()));
+        auto setTextResult184 = nameLabel->setText(std::move(*toUpperResult183));
+        if (!setTextResult184)
+          return std::unexpected(std::move(setTextResult184.error()));
       } else {
-        healthBar->setCurrentProgressLevel(0);
-        healthBar->setMaxProgressLevel(1);
+        auto getStringResult185 = config.getString("defaultPetNameLabel");
+        if (!getStringResult185)
+          return std::unexpected(std::move(getStringResult185.error()));
+        auto setTextResult186 = nameLabel->setText(std::move(*getStringResult185));
+        if (!setTextResult186)
+          return std::unexpected(std::move(setTextResult186.error()));
+      }
+    }
+
+    auto fetchChildResult187 = fetchChild<LabelWidget>("companionAttackStat");
+    if (!fetchChildResult187)
+      return std::unexpected(std::move(fetchChildResult187.error()));
+    auto attackLabel = std::move(*fetchChildResult187);
+    {
+      auto statResult188 = pet->stat("attack");
+      if (!statResult188)
+        return std::unexpected(std::move(statResult188.error()));
+      if (auto attack = std::move(*statResult188)) {
+        auto setTextResult189 = attackLabel->setText(strf("{:.1f}", *attack));
+        if (!setTextResult189)
+          return std::unexpected(std::move(setTextResult189.error()));
+      } else {
+        auto setTextResult190 = attackLabel->setText("");
+        if (!setTextResult190)
+          return std::unexpected(std::move(setTextResult190.error()));
+      }
+    }
+
+    auto fetchChildResult191 = fetchChild<LabelWidget>("companionDefenseStat");
+    if (!fetchChildResult191)
+      return std::unexpected(std::move(fetchChildResult191.error()));
+    auto defenseLabel = std::move(*fetchChildResult191);
+    {
+      auto statResult192 = pet->stat("defense");
+      if (!statResult192)
+        return std::unexpected(std::move(statResult192.error()));
+      if (auto defense = std::move(*statResult192)) {
+        auto setTextResult193 = defenseLabel->setText(strf("{:.1f}", *defense));
+        if (!setTextResult193)
+          return std::unexpected(std::move(setTextResult193.error()));
+      } else {
+        auto setTextResult194 = defenseLabel->setText("");
+        if (!setTextResult194)
+          return std::unexpected(std::move(setTextResult194.error()));
+      }
+    }
+
+    {
+      auto containsChildResult195 = containsChild("companionHealthBar");
+      if (!containsChildResult195)
+        return std::unexpected(std::move(containsChildResult195.error()));
+      if (std::move(*containsChildResult195)) {
+        auto fetchChildResult196 = fetchChild<ProgressWidget>("companionHealthBar");
+        if (!fetchChildResult196)
+          return std::unexpected(std::move(fetchChildResult196.error()));
+        auto healthBar = std::move(*fetchChildResult196);
+        auto resourceResult197 = pet->resource("health");
+        if (!resourceResult197)
+          return std::unexpected(std::move(resourceResult197.error()));
+        std::optional<float> health = std::move(*resourceResult197);
+        auto resourceMaxResult198 = pet->resourceMax("health");
+        if (!resourceMaxResult198)
+          return std::unexpected(std::move(resourceMaxResult198.error()));
+        std::optional<float> healthMax = std::move(*resourceMaxResult198);
+        if (health && healthMax) {
+          healthBar->setCurrentProgressLevel(*health);
+          healthBar->setMaxProgressLevel(*healthMax);
+        } else {
+          healthBar->setCurrentProgressLevel(0);
+          healthBar->setMaxProgressLevel(1);
+        }
       }
     }
   } else {
-    fetchChild<ImageWidget>("companionSlot")->setVisibility(false);
+    auto fetchChildResult199 = fetchChild<ImageWidget>("companionSlot");
+    if (!fetchChildResult199)
+      return std::unexpected(std::move(fetchChildResult199.error()));
+    auto setVisibilityResult200 = std::move(*fetchChildResult199)->setVisibility(false);
+    if (!setVisibilityResult200)
+      return std::unexpected(std::move(setVisibilityResult200.error()));
 
-    fetchChild<LabelWidget>("companionName")->setText(config.getString("defaultPetNameLabel"));
+    auto fetchChildResult201 = fetchChild<LabelWidget>("companionName");
+    if (!fetchChildResult201)
+      return std::unexpected(std::move(fetchChildResult201.error()));
+    auto getStringResult202 = config.getString("defaultPetNameLabel");
+    if (!getStringResult202)
+      return std::unexpected(std::move(getStringResult202.error()));
+    auto setTextResult203 = std::move(*fetchChildResult201)->setText(std::move(*getStringResult202));
+    if (!setTextResult203)
+      return std::unexpected(std::move(setTextResult203.error()));
 
-    fetchChild<LabelWidget>("companionAttackStat")->setText("");
-    fetchChild<LabelWidget>("companionDefenseStat")->setText("");
+    auto fetchChildResult204 = fetchChild<LabelWidget>("companionAttackStat");
+    if (!fetchChildResult204)
+      return std::unexpected(std::move(fetchChildResult204.error()));
+    auto setTextResult205 = std::move(*fetchChildResult204)->setText("");
+    if (!setTextResult205)
+      return std::unexpected(std::move(setTextResult205.error()));
+    auto fetchChildResult206 = fetchChild<LabelWidget>("companionDefenseStat");
+    if (!fetchChildResult206)
+      return std::unexpected(std::move(fetchChildResult206.error()));
+    auto setTextResult207 = std::move(*fetchChildResult206)->setText("");
+    if (!setTextResult207)
+      return std::unexpected(std::move(setTextResult207.error()));
 
-    if (containsChild("companionHealthBar")) {
-      auto healthBar = fetchChild<ProgressWidget>("companionHealthBar");
-      healthBar->setCurrentProgressLevel(0);
-      healthBar->setMaxProgressLevel(1);
+    {
+      auto containsChildResult208 = containsChild("companionHealthBar");
+      if (!containsChildResult208)
+        return std::unexpected(std::move(containsChildResult208.error()));
+      if (std::move(*containsChildResult208)) {
+        auto fetchChildResult209 = fetchChild<ProgressWidget>("companionHealthBar");
+        if (!fetchChildResult209)
+          return std::unexpected(std::move(fetchChildResult209.error()));
+        auto healthBar = std::move(*fetchChildResult209);
+        healthBar->setCurrentProgressLevel(0);
+        healthBar->setMaxProgressLevel(1);
+      }
     }
   }
 
   if (auto item = inventory->swapSlotItem()) {
     float pitch = 1.f - ((float)item->count() / (float)item->maxStack()) * .2f;
     if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
-      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_pickUpSounds), 0, 1.f, pitch);
+      {
+        auto randFromResult210 = RandomSource(context->root().random().randu64()).randFrom(m_pickUpSounds);
+        if (!randFromResult210)
+          return std::unexpected(std::move(randFromResult210.error()));
+        auto playAudioResult211 = context->playAudio((**randFromResult210), 0, 1.f, pitch);
+        if (!playAudioResult211)
+          return std::unexpected(std::move(playAudioResult211.error()));
+        
+      }
     else if (item->count() > m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_someUpSounds), 0, 1.f, pitch);
+      {
+        auto randFromResult212 = RandomSource(context->root().random().randu64()).randFrom(m_someUpSounds);
+        if (!randFromResult212)
+          return std::unexpected(std::move(randFromResult212.error()));
+        auto playAudioResult213 = context->playAudio((**randFromResult212), 0, 1.f, pitch);
+        if (!playAudioResult213)
+          return std::unexpected(std::move(playAudioResult213.error()));
+        
+      }
     else if (item->count() < m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_someDownSounds), 0, 1.f, pitch);
+      {
+        auto randFromResult214 = RandomSource(context->root().random().randu64()).randFrom(m_someDownSounds);
+        if (!randFromResult214)
+          return std::unexpected(std::move(randFromResult214.error()));
+        auto playAudioResult215 = context->playAudio((**randFromResult214), 0, 1.f, pitch);
+        if (!playAudioResult215)
+          return std::unexpected(std::move(playAudioResult215.error()));
+        
+      }
 
     m_currentSwapSlotItem = item->descriptor();
   } else {
     if (m_currentSwapSlotItem)
-      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_putDownSounds));
+      {
+        auto randFromResult216 = RandomSource(context->root().random().randu64()).randFrom(m_putDownSounds);
+        if (!randFromResult216)
+          return std::unexpected(std::move(randFromResult216.error()));
+        auto playAudioResult217 = context->playAudio((**randFromResult216));
+        if (!playAudioResult217)
+          return std::unexpected(std::move(playAudioResult217.error()));
+        
+      }
     m_currentSwapSlotItem = {};
   }
 
-  m_title = m_player->name();
+  auto nameResult218 = m_player->name();
+  if (!nameResult218)
+    return std::unexpected(std::move(nameResult218.error()));
+  m_title = std::move(*nameResult218);
 
-  Pane::update(dt);
+  auto updateResult219 = Pane::update(dt);
+  if (!updateResult219)
+    return std::unexpected(std::move(updateResult219.error()));
+
+return {};
 }
 
-void InventoryPane::selectTab(String const& selected) {
+std::expected<void, StarException> InventoryPane::selectTab(String const& selected) {
   for (auto grid : m_itemGrids)
-    grid.second->hide();
+    {
+      auto hideResult220 = grid.second->hide();
+      if (!hideResult220)
+        return std::unexpected(std::move(hideResult220.error()));
+      
+    }
   m_selectedTab = selected;
-  m_itemGrids[m_selectedTab]->show();
+  auto showResult221 = m_itemGrids[m_selectedTab]->show();
+  if (!showResult221)
+    return std::unexpected(std::move(showResult221.error()));
   m_itemGrids[m_selectedTab]->indicateChangedSlots();
 
-  auto tabs = fetchChild<ButtonGroupWidget>("gridModeSelector");
+  auto fetchChildResult222 = fetchChild<ButtonGroupWidget>("gridModeSelector");
+  if (!fetchChildResult222)
+    return std::unexpected(std::move(fetchChildResult222.error()));
+  auto tabs = std::move(*fetchChildResult222);
   for (auto button : tabs->buttons())
-    if (button->data().toString().equalsIgnoreCase(m_tabButtonData[selected]))
-      tabs->select(tabs->id(button));
+    {
+      auto toStringResult223 = button->data().toString();
+      if (!toStringResult223)
+        return std::unexpected(std::move(toStringResult223.error()));
+      auto equalsIgnoreCaseResult224 = std::move(*toStringResult223).equalsIgnoreCase(m_tabButtonData[selected]);
+      if (!equalsIgnoreCaseResult224)
+        return std::unexpected(std::move(equalsIgnoreCaseResult224.error()));
+      if (std::move(*equalsIgnoreCaseResult224))
+        {
+          auto selectResult225 = tabs->select(tabs->id(button));
+          if (!selectResult225)
+            return std::unexpected(std::move(selectResult225.error()));
+          
+        }
+    }
+
+return {};
 }
 
 }

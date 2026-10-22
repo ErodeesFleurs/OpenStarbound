@@ -5,6 +5,18 @@ import star.output_proxy;
 
 namespace Star {
 
+template <typename T>
+struct AlgorithmResultInfo {
+  using Value = T;
+  static constexpr bool Fallible = false;
+};
+
+template <typename T>
+struct AlgorithmResultInfo<std::expected<T, StarException>> {
+  using Value = T;
+  static constexpr bool Fallible = true;
+};
+
 // Function that does nothing and takes any number of arguments
 template <typename... T>
 void nothing(T&&...) {}
@@ -21,8 +33,23 @@ struct construct {
 template <typename Func>
 struct SwallowReturn {
   template <typename... T>
-  void operator()(T&&... args) {
-    func(std::forward<T>(args)...);
+  [[nodiscard]] auto operator()(T&&... args) {
+    using Result = std::remove_cvref_t<std::invoke_result_t<Func&, T...>>;
+    constexpr bool nullable = requires { func == nullptr; };
+    if constexpr (nullable) {
+      if (func == nullptr)
+        return std::expected<void, StarException>(std::unexpected(StarException("Cannot invoke an empty callback")));
+    }
+    if constexpr (AlgorithmResultInfo<Result>::Fallible) {
+      auto result = std::invoke(func, std::forward<T>(args)...);
+      if (!result)
+        return std::expected<void, StarException>(std::unexpected(std::move(result.error())));
+      return std::expected<void, StarException>();
+    } else {
+      std::invoke(func, std::forward<T>(args)...);
+      if constexpr (nullable)
+        return std::expected<void, StarException>();
+    }
   }
 
   Func func;
@@ -45,24 +72,58 @@ struct Empty {
 
 // Return intersection of sorted containers.
 template <typename Container>
-Container intersect(Container const& a, Container const& b) {
+[[nodiscard]] auto intersect(Container const& a, Container const& b) {
+  using Insertion = decltype(std::declval<Container&>().insert(std::declval<Container&>().end(), *a.begin()));
+  constexpr bool fallible = AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible;
+  using Result = std::conditional_t<fallible, std::expected<Container, StarException>, Container>;
   Container r;
-  std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), std::inserter(r, r.end()));
-  return r;
+  auto ai = a.begin();
+  auto bi = b.begin();
+  while (ai != a.end() && bi != b.end()) {
+    if (*ai < *bi) {
+      ++ai;
+    } else if (*bi < *ai) {
+      ++bi;
+    } else {
+      if constexpr (fallible) {
+        auto inserted = r.insert(r.end(), *ai);
+        if (!inserted)
+          return Result(std::unexpected(std::move(inserted.error())));
+      } else {
+        r.insert(r.end(), *ai);
+      }
+      ++ai;
+      ++bi;
+    }
+  }
+  return Result(std::move(r));
 }
 
 template <typename MapType1, typename MapType2>
-bool mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
+[[nodiscard]] auto mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
+  using Insertion = std::remove_cvref_t<decltype(targetMap.insert(*sourceMap.begin()))>;
+  constexpr bool fallible = AlgorithmResultInfo<Insertion>::Fallible;
+  using Result = std::conditional_t<fallible, std::expected<bool, StarException>, bool>;
   bool noCommonKeys = true;
   for (auto i = sourceMap.begin(); i != sourceMap.end(); ++i) {
     auto res = targetMap.insert(*i);
-    if (!res.second) {
-      noCommonKeys = false;
-      if (overwrite)
-        res.first->second = i->second;
+    if constexpr (fallible) {
+      if (!res)
+        return Result(std::unexpected(std::move(res.error())));
+      if (!res->second) {
+        noCommonKeys = false;
+        if (overwrite)
+          res->first->second = i->second;
+      }
+    } else {
+      if (!res.second) {
+        noCommonKeys = false;
+        if (overwrite)
+          res.first->second = i->second;
+      }
     }
   }
-  return noCommonKeys;
+  return Result(noCommonKeys);
 }
 
 template <typename MapType1, typename MapType2>
@@ -83,41 +144,101 @@ bool mapsEqual(MapType1 const& m1, MapType2 const& m2) {
 }
 
 template <typename Container, typename Filter>
-void filter(Container& container, Filter&& filter) {
+[[nodiscard]] auto filter(Container& container, Filter&& filter) {
+  using Predicate = std::remove_cvref_t<std::invoke_result_t<Filter&, decltype(*std::begin(container))>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Predicate>::Fallible, std::expected<void, StarException>, void>;
   auto p = std::begin(container);
   while (p != std::end(container)) {
-    if (!filter(*p))
+    if constexpr (AlgorithmResultInfo<Predicate>::Fallible && requires { filter == nullptr; }) {
+      if (filter == nullptr)
+        return Result(std::unexpected(StarException("Cannot invoke an empty filter")));
+    }
+    auto decision = std::invoke(filter, *p);
+    bool keep;
+    if constexpr (AlgorithmResultInfo<Predicate>::Fallible) {
+      if (!decision)
+        return Result(std::unexpected(std::move(decision.error())));
+      keep = *decision;
+    } else {
+      keep = decision;
+    }
+    if (!keep)
       p = container.erase(p);
     else
       ++p;
   }
+  if constexpr (AlgorithmResultInfo<Predicate>::Fallible)
+    return Result();
 }
 
 template <typename OutContainer, typename InContainer, typename Filter>
-OutContainer filtered(InContainer const& input, Filter&& filter) {
+[[nodiscard]] auto filtered(InContainer const& input, Filter&& filter) {
+  using Predicate = std::remove_cvref_t<std::invoke_result_t<Filter&, decltype(*std::begin(input))>>;
+  using Insertion = decltype(std::declval<OutContainer&>().insert(std::declval<OutContainer&>().end(), *std::begin(input)));
+  constexpr bool fallible = AlgorithmResultInfo<Predicate>::Fallible || AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible;
+  using Result = std::conditional_t<fallible, std::expected<OutContainer, StarException>, OutContainer>;
   OutContainer out;
   auto p = std::begin(input);
   while (p != std::end(input)) {
-    if (filter(*p))
-      out.insert(out.end(), *p);
+    if constexpr (fallible && requires { filter == nullptr; }) {
+      if (filter == nullptr)
+        return Result(std::unexpected(StarException("Cannot invoke an empty filter")));
+    }
+    auto decision = std::invoke(filter, *p);
+    bool keep;
+    if constexpr (AlgorithmResultInfo<Predicate>::Fallible) {
+      if (!decision)
+        return Result(std::unexpected(std::move(decision.error())));
+      keep = *decision;
+    } else {
+      keep = decision;
+    }
+    if (keep) {
+      if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible) {
+        auto inserted = out.insert(out.end(), *p);
+        if (!inserted)
+          return Result(std::unexpected(std::move(inserted.error())));
+      } else {
+        out.insert(out.end(), *p);
+      }
+    }
     ++p;
   }
-  return out;
+  return Result(std::move(out));
 }
 
 template <typename Container, typename Cond>
-void eraseWhere(Container& container, Cond&& cond) {
+[[nodiscard]] auto eraseWhere(Container& container, Cond&& cond) {
+  using Predicate = std::remove_cvref_t<std::invoke_result_t<Cond&, decltype(*std::begin(container))>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Predicate>::Fallible, std::expected<void, StarException>, void>;
   auto p = std::begin(container);
   while (p != std::end(container)) {
-    if (cond(*p))
+    if constexpr (AlgorithmResultInfo<Predicate>::Fallible && requires { cond == nullptr; }) {
+      if (cond == nullptr)
+        return Result(std::unexpected(StarException("Cannot invoke an empty erase predicate")));
+    }
+    auto decision = std::invoke(cond, *p);
+    bool erase;
+    if constexpr (AlgorithmResultInfo<Predicate>::Fallible) {
+      if (!decision)
+        return Result(std::unexpected(std::move(decision.error())));
+      erase = *decision;
+    } else {
+      erase = decision;
+    }
+    if (erase)
       p = container.erase(p);
     else
       ++p;
   }
+  if constexpr (AlgorithmResultInfo<Predicate>::Fallible)
+    return Result();
 }
 
 template <typename Container, typename Compare>
 Container sorted(Container const& c, Compare comp) {
+  static_assert(std::is_invocable_r_v<bool, Compare&, typename Container::value_type const&, typename Container::value_type const&>,
+      "Sort comparison must be nonfallible; check fallible keys with sortByComputedValue first");
   auto c2 = c;
   std::sort(c2.begin(), c2.end(), comp);
   return c2;
@@ -125,6 +246,8 @@ Container sorted(Container const& c, Compare comp) {
 
 template <typename Container, typename Compare>
 Container stableSorted(Container const& c, Compare comp) {
+  static_assert(std::is_invocable_r_v<bool, Compare&, typename Container::value_type const&, typename Container::value_type const&>,
+      "Sort comparison must be nonfallible; check fallible keys with sortByComputedValue first");
   auto c2 = c;
   std::sort(c2.begin(), c2.end(), comp);
   return c2;
@@ -150,19 +273,38 @@ Container stableSorted(Container const& c) {
 // floating point values.  Container must have size() and operator[], and also
 // must be constructable with Container(size_t).
 template <typename Container, typename Getter>
-void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable = false) {
-  typedef typename Container::value_type ContainerValue;
-  typedef decltype(valueGetter(ContainerValue())) ComputedValue;
-  typedef std::pair<ComputedValue, std::size_t> ComputedPair;
+[[nodiscard]] auto sortByComputedValue(Container& container, Getter&& valueGetter, bool stable = false)
+    -> std::conditional_t<AlgorithmResultInfo<std::remove_cvref_t<std::invoke_result_t<Getter&, typename Container::value_type&>>>::Fallible,
+        std::expected<void, StarException>, void> {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Getter&, typename Container::value_type&>>;
+  using ComputedValue = typename AlgorithmResultInfo<Invocation>::Value;
+  using ComputedPair = std::pair<ComputedValue, std::size_t>;
+  static_assert(std::is_convertible_v<decltype(std::declval<ComputedValue const&>() < std::declval<ComputedValue const&>()), bool>,
+      "Computed sort keys must provide a nonfallible bool ordering");
 
   std::size_t containerSize = container.size();
-
-  if (containerSize <= 1)
-    return;
+  if (containerSize <= 1) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+      return {};
+    else
+      return;
+  }
 
   std::vector<ComputedPair> work(containerSize);
-  for (std::size_t i = 0; i < containerSize; ++i)
-    work[i] = {valueGetter(container[i]), i};
+  for (std::size_t i = 0; i < containerSize; ++i) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      if constexpr (requires { valueGetter == nullptr; }) {
+        if (valueGetter == nullptr)
+          return std::unexpected(StarException("Cannot invoke an empty sort key getter"));
+      }
+      auto computed = std::invoke(valueGetter, container[i]);
+      if (!computed)
+        return std::unexpected(std::move(computed.error()));
+      work[i] = {std::move(*computed), i};
+    } else {
+      work[i] = {std::invoke(valueGetter, container[i]), i};
+    }
+  }
 
   auto compare = [](ComputedPair const& a, ComputedPair const& b) { return a.first < b.first; };
 
@@ -184,10 +326,12 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
     swap(container, result);
   else
     std::swap(container, result);
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return {};
 }
 
 template <typename Container, typename Getter>
-void stableSortByComputedValue(Container& container, Getter&& valueGetter) {
+[[nodiscard]] auto stableSortByComputedValue(Container& container, Getter&& valueGetter) {
   return sortByComputedValue(container, std::forward<Getter>(valueGetter), true);
 }
 
@@ -203,20 +347,56 @@ T copy(T c) {
 }
 
 template <typename OutContainer, typename InContainer, typename Function>
-void transformInto(OutContainer& outContainer, InContainer&& inContainer, Function&& function) {
+[[nodiscard]] auto transformInto(OutContainer& outContainer, InContainer&& inContainer, Function&& function) {
+  using Input = decltype(std::forward_like<InContainer>(*std::begin(inContainer)));
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, Input>>;
+  using Value = typename AlgorithmResultInfo<Invocation>::Value;
+  using Insertion = decltype(outContainer.insert(outContainer.end(), std::declval<Value>()));
+  constexpr bool fallible = AlgorithmResultInfo<Invocation>::Fallible || AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible;
+  using Result = std::conditional_t<fallible, std::expected<void, StarException>, void>;
   for (auto&& elem : inContainer) {
-    if (std::is_rvalue_reference<InContainer&&>::value)
-      outContainer.insert(outContainer.end(), function(std::move(elem)));
-    else
-      outContainer.insert(outContainer.end(), function(elem));
+    if constexpr (fallible && requires { function == nullptr; }) {
+      if (function == nullptr)
+        return Result(std::unexpected(StarException("Cannot invoke an empty transform callback")));
+    }
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto value = std::invoke(function, std::forward_like<InContainer>(elem));
+      if (!value)
+        return Result(std::unexpected(std::move(value.error())));
+      if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible) {
+        auto inserted = outContainer.insert(outContainer.end(), std::move(*value));
+        if (!inserted)
+          return Result(std::unexpected(std::move(inserted.error())));
+      } else {
+        outContainer.insert(outContainer.end(), std::move(*value));
+      }
+    } else {
+      if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible) {
+        auto inserted = outContainer.insert(outContainer.end(), std::invoke(function, std::forward_like<InContainer>(elem)));
+        if (!inserted)
+          return Result(std::unexpected(std::move(inserted.error())));
+      } else {
+        outContainer.insert(outContainer.end(), std::invoke(function, std::forward_like<InContainer>(elem)));
+      }
+    }
   }
+  if constexpr (fallible)
+    return Result();
 }
 
 template <typename OutContainer, typename InContainer, typename Function>
-OutContainer transform(InContainer&& container, Function&& function) {
+[[nodiscard]] auto transform(InContainer&& container, Function&& function) {
   OutContainer res;
-  transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function));
-  return res;
+  using Status = decltype(transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function)));
+  if constexpr (std::is_void_v<Status>) {
+    transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function));
+    return res;
+  } else {
+    auto transformed = transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function));
+    if (!transformed)
+      return std::expected<OutContainer, StarException>(std::unexpected(std::move(transformed.error())));
+    return std::expected<OutContainer, StarException>(std::move(res));
+  }
 }
 
 // Moves the given value and into an rvalue.  Works whether or not the type has
@@ -248,6 +428,8 @@ public:
 
     template <typename T>
     OutputProxy& operator=(T&& value) {
+      static_assert(!AlgorithmResultInfo<std::remove_cvref_t<std::invoke_result_t<UnaryFunction&, T>>>::Fallible,
+          "Fallible output callbacks require an explicit checked loop");
       m_function(std::forward<T>(value));
       return *this;
     }
@@ -256,8 +438,13 @@ public:
     UnaryFunction& m_function;
   };
 
-  explicit FunctionOutputIterator(UnaryFunction f = UnaryFunction())
-    : m_function(std::move(f)) {}
+  [[nodiscard]] static std::expected<FunctionOutputIterator, StarException> create(UnaryFunction f) {
+    if constexpr (requires { f == nullptr; }) {
+      if (f == nullptr)
+        return std::unexpected(StarException("Cannot create an output iterator with an empty callback"));
+    }
+    return FunctionOutputIterator(std::move(f));
+  }
 
   OutputProxy operator*() {
     return OutputProxy(m_function);
@@ -272,12 +459,15 @@ public:
   }
 
 private:
+  explicit FunctionOutputIterator(UnaryFunction f)
+    : m_function(std::move(f)) {}
+
   UnaryFunction m_function;
 };
 
 template <typename UnaryFunction>
-FunctionOutputIterator<UnaryFunction> makeFunctionOutputIterator(UnaryFunction f) {
-  return FunctionOutputIterator<UnaryFunction>(std::move(f));
+[[nodiscard]] auto makeFunctionOutputIterator(UnaryFunction f) {
+  return FunctionOutputIterator<UnaryFunction>::create(std::move(f));
 }
 
 // Wraps a nullary function to produce an input iterator
@@ -290,13 +480,29 @@ public:
   typedef void pointer;
   typedef void reference;
 
-  using FunctionReturnType = std::invoke_result_t<NullaryFunction&>;
+  using Invocation = std::invoke_result_t<NullaryFunction&>;
+  using Value = std::conditional_t<std::is_reference_v<Invocation>, std::remove_reference_t<Invocation>*, Invocation>;
+  using FunctionReturnType = std::conditional_t<AlgorithmResultInfo<std::remove_cvref_t<Invocation>>::Fallible,
+      std::remove_cvref_t<Invocation>, std::expected<Value, StarException>>;
 
   explicit FunctionInputIterator(NullaryFunction f = {})
     : m_function(std::move(f)) {}
 
-  FunctionReturnType operator*() {
-    return m_function();
+  [[nodiscard]] FunctionReturnType operator*() {
+    if constexpr (requires { m_function == nullptr; }) {
+      if (m_function == nullptr)
+        return std::unexpected(StarException("Cannot invoke an empty input iterator callback"));
+    }
+    if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Invocation>>::Fallible) {
+      return std::invoke(m_function);
+    } else if constexpr (std::is_reference_v<Invocation>) {
+      return &std::invoke(m_function);
+    } else if constexpr (std::is_void_v<Invocation>) {
+      std::invoke(m_function);
+      return {};
+    } else {
+      return std::invoke(m_function);
+    }
   }
 
   FunctionInputIterator& operator++() {
@@ -333,6 +539,8 @@ public:
   }
 
   ~FinallyGuard() {
+    static_assert(std::is_void_v<std::invoke_result_t<Functor&>>,
+        "Cleanup callbacks must handle their errors at the cleanup boundary");
     if (!dismiss)
       functor();
   }
@@ -354,31 +562,64 @@ FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
 
 // Unpack a parameter expansion into a container
 
-template <typename Container>
-void unpackVariadicImpl(Container&) {}
-
-template <typename Container, typename TFirst, typename... TRest>
-void unpackVariadicImpl(Container& container, TFirst&& tfirst, TRest&&... trest) {
-  container.insert(container.end(), std::forward<TFirst>(tfirst));
-  unpackVariadicImpl(container, std::forward<TRest>(trest)...);
-}
-
 template <typename Container, typename... T>
-Container unpackVariadic(T&&... t) {
+[[nodiscard]] auto unpackVariadic(T&&... t) {
+  constexpr bool fallible = (AlgorithmResultInfo<std::remove_cvref_t<decltype(
+      std::declval<Container&>().insert(std::declval<Container&>().end(), std::declval<T>()))>>::Fallible || ...);
   Container c;
-  unpackVariadicImpl(c, std::forward<T>(t)...);
-  return c;
+  if constexpr (fallible) {
+    std::expected<void, StarException> status;
+    auto insert = [&](auto&& value) {
+      if (!status)
+        return;
+      using Insertion = decltype(c.insert(c.end(), std::forward<decltype(value)>(value)));
+      if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible) {
+        auto result = c.insert(c.end(), std::forward<decltype(value)>(value));
+        if (!result)
+          status = std::unexpected(std::move(result.error()));
+      } else {
+        c.insert(c.end(), std::forward<decltype(value)>(value));
+      }
+    };
+    (insert(std::forward<T>(t)), ...);
+    if (!status)
+      return std::expected<Container, StarException>(std::unexpected(std::move(status.error())));
+    return std::expected<Container, StarException>(std::move(c));
+  } else {
+    (c.insert(c.end(), std::forward<T>(t)), ...);
+    return c;
+  }
 }
 
 // Call a function on each entry in a variadic parameter set
 
-template <typename Function>
-void callFunctionVariadic(Function&&) {}
-
-template <typename Function, typename Arg1, typename... ArgRest>
-void callFunctionVariadic(Function&& function, Arg1&& arg1, ArgRest&&... argRest) {
-  function(arg1);
-  callFunctionVariadic(std::forward<Function>(function), std::forward<ArgRest>(argRest)...);
+template <typename Function, typename... Args>
+[[nodiscard]] auto callFunctionVariadic(Function&& function, Args&&... args) {
+  constexpr bool fallible = (AlgorithmResultInfo<std::remove_cvref_t<std::invoke_result_t<Function&, std::remove_reference_t<Args>&>>>::Fallible || ...)
+      || requires { function == nullptr; };
+  if constexpr (fallible) {
+    if constexpr (requires { function == nullptr; }) {
+      if (function == nullptr)
+        return std::expected<void, StarException>(std::unexpected(StarException("Cannot invoke an empty variadic callback")));
+    }
+    std::expected<void, StarException> status;
+    auto invoke = [&](auto& arg) {
+      if (!status)
+        return;
+      using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, decltype(arg)>>;
+      if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+        auto result = std::invoke(function, arg);
+        if (!result)
+          status = std::unexpected(std::move(result.error()));
+      } else {
+        std::invoke(function, arg);
+      }
+    };
+    (invoke(args), ...);
+    return status;
+  } else {
+    (std::invoke(function, args), ...);
+  }
 }
 
 template <typename... Rest>
@@ -449,6 +690,7 @@ struct FunctionTraits<T const&&> : public FunctionTraits<T> {};
 export module star.algorithm;
 
 export namespace Star {
+  using ::Star::AlgorithmResultInfo;
   using ::Star::nothing;
   using ::Star::construct;
   using ::Star::SwallowReturn;
@@ -475,7 +717,6 @@ export namespace Star {
   using ::Star::makeFunctionInputIterator;
   using ::Star::FinallyGuard;
   using ::Star::finally;
-  using ::Star::unpackVariadicImpl;
   using ::Star::unpackVariadic;
   using ::Star::callFunctionVariadic;
   using ::Star::VariadicTypedef;

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -91,16 +92,19 @@ public:
 
   // Root must outlive this drawer. Runtime consumers borrow this instance
   // explicitly; absent renderers pass nullptr rather than constructing a drawer.
-  explicit TileDrawer(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<TileDrawer>, StarException> create(Root& root);
 
-  bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
+  [[nodiscard]] std::expected<bool, StarException> produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
     WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {});
 
   WorldRenderData& renderData();
   MutexLocker lockRenderData();
 
   template <typename Function>
-  static void forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
+  [[nodiscard]] static std::expected<void, StarException> forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
+protected:
+  explicit TileDrawer(Root& root) : m_root(root) {}
+  [[nodiscard]] std::expected<void, StarException> initializeTileDrawer();
 private:
   friend class TilePainter;
 
@@ -110,7 +114,7 @@ private:
   static QuadZLevel modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
   static QuadZLevel damageZLevel();
 
-  static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
+  [[nodiscard]] static std::expected<bool, StarException> determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);
 
   Root& m_root;
@@ -123,15 +127,20 @@ private:
 };
 
 template <typename Function>
-void TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function) {
+[[nodiscard]] std::expected<void, StarException> TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function) {
   RectI indexRect = RectI::withSize(Vec2I(renderData.geometry.pdiff(worldCoordRange.min()[0], renderData.tileMinPosition[0]), worldCoordRange.min()[1] - renderData.tileMinPosition[1]), worldCoordRange.size());
   indexRect.limit(RectI::withSize(Vec2I(0, 0), Vec2I(renderData.tiles.size())));
-
   if (!indexRect.isEmpty()) {
-    renderData.tiles.forEach(Array2S(indexRect.min()), Array2S(indexRect.size()), [&](Array2S const& index, RenderTile const& tile) {
-      return function(worldCoordRange.min() + (Vec2I(index) - indexRect.min()), tile);
-      });
+    for (int x = indexRect.xMin(); x < indexRect.xMax(); ++x) {
+      for (int y = indexRect.yMin(); y < indexRect.yMax(); ++y) {
+        Array2S index(x, y);
+        auto applied = function(worldCoordRange.min() + (Vec2I(index) - indexRect.min()), renderData.tiles(index));
+        if (!applied)
+          return std::unexpected(std::move(applied.error()));
+      }
+    }
   }
+  return {};
 }
 
 }

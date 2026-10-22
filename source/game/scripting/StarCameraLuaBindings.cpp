@@ -20,6 +20,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 
 import star.world_geometry;
@@ -36,25 +37,37 @@ module star.camera_lua_bindings;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeCameraCallbacks(Root& root, WorldCamera* camera) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeCameraCallbacks(Root& root, WorldCamera* camera) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera));
-  callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera));
-  callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, std::optional<bool> smooth) {
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, std::optional<bool> smooth) -> std::expected<void, StarException> {
     if (smooth.value_or(false))
       camera->setTargetPixelRatio(pixelRatio);
     else
       camera->setPixelRatio(pixelRatio);
-    root.configuration()->set("zoomLevel", pixelRatio);
-  });
+    auto configuration = root.configuration();
+    if (!configuration)
+      return std::unexpected(std::move(configuration.error()));
+    return (*configuration)->set("zoomLevel", pixelRatio);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
 
-  callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, camera));
-  callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", std::bind(&WorldCamera::worldScreenRect, camera));
-  callbacks.registerCallbackWithSignature<RectI>("worldTileRect", std::bind(&WorldCamera::worldTileRect, camera));
-  callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", std::bind(&WorldCamera::tileMinScreen, camera));
-  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", std::bind(&WorldCamera::screenToWorld, camera, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", std::bind(&WorldCamera::worldToScreen, camera, std::placeholders::_1));
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", std::bind(&WorldCamera::worldScreenRect, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<RectI>("worldTileRect", std::bind(&WorldCamera::worldTileRect, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", std::bind(&WorldCamera::tileMinScreen, camera)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", std::bind(&WorldCamera::screenToWorld, camera, std::placeholders::_1)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", std::bind(&WorldCamera::worldToScreen, camera, std::placeholders::_1)); !result)
+    return std::unexpected(std::move(result.error()));
 
   return callbacks;
 }

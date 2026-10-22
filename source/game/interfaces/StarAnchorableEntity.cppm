@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -40,16 +41,16 @@ struct EntityAnchor {
 };
 
 struct EntityAnchorState {
-  friend DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState);
-  friend DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
   EntityId entityId;
   std::size_t positionIndex;
 
   bool operator==(EntityAnchorState const& eas) const;
 };
 
-DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState);
-DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState);
 
 class AnchorableEntity : public virtual Entity {
 public:
@@ -61,7 +62,7 @@ public:
   }
 
   virtual std::size_t anchorCount() const = 0;
-  virtual std::shared_ptr<EntityAnchor const> anchor(std::size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<EntityAnchor const>, StarException> anchor(std::size_t anchorPositionIndex) const = 0;
 };
 
 }

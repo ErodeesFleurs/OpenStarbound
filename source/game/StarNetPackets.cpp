@@ -90,7 +90,7 @@ namespace Star {
 
 extern VersionNumber const StarProtocolVersion = 747;
 
-extern EnumMap<PacketType> const PacketTypeNames{
+extern std::expected<EnumMap<PacketType>, StarException> const PacketTypeNames = EnumMap<PacketType>::create({
   {PacketType::ProtocolRequest, "ProtocolRequest"},
   {PacketType::ProtocolResponse, "ProtocolResponse"},
   {PacketType::ServerDisconnect, "ServerDisconnect"},
@@ -173,21 +173,21 @@ extern EnumMap<PacketType> const PacketTypeNames{
   {PacketType::LogMapUpdate, "LogMapUpdate"},
   {PacketType::UniverseMessage, "UniverseMessage"},
   {PacketType::UniverseMessageResponse, "UniverseMessageResponse"}
-};
+});
 
-extern EnumMap<NetCompressionMode> const NetCompressionModeNames {
+extern std::expected<EnumMap<NetCompressionMode>, StarException> const NetCompressionModeNames = EnumMap<NetCompressionMode>::create({
   {NetCompressionMode::None, "None"},
   {NetCompressionMode::Zstd, "Zstd"}
-};
+});
 
 Packet::~Packet() {}
 
-void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); ((void)(netRules)); }
-void Packet::read(DataStream& ds) { ((void)(ds)); }
-void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); ((void)(netRules)); }
-void Packet::write(DataStream& ds) const { ((void)(ds)); }
-void Packet::readJson(Json const& json) { ((void)(json)); }
-Json Packet::writeJson() const  { return JsonObject{}; }
+std::expected<void, StarException> Packet::read(DataStream& ds, NetCompatibilityRules) { return read(ds); }
+std::expected<void, StarException> Packet::read(DataStream&) { return {}; }
+std::expected<void, StarException> Packet::write(DataStream& ds, NetCompatibilityRules) const { return write(ds); }
+std::expected<void, StarException> Packet::write(DataStream&) const { return {}; }
+std::expected<void, StarException> Packet::readJson(Json const&) { return {}; }
+std::expected<Json, StarException> Packet::writeJson() const  { return JsonObject{}; }
 
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
 void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compressionMode = compressionMode; }
@@ -200,7 +200,7 @@ Uuid unfilledPacketUuid() {
 }
 }
 
-std::shared_ptr<Packet> createPacket(PacketType type) {
+std::expected<std::shared_ptr<Packet>, StarException> createPacket(PacketType type) {
   switch (type) {
     case PacketType::ProtocolRequest: return std::make_shared<ProtocolRequestPacket>();
     case PacketType::ProtocolResponse: return std::make_shared<ProtocolResponsePacket>();
@@ -285,12 +285,15 @@ std::shared_ptr<Packet> createPacket(PacketType type) {
     case PacketType::UniverseMessage: return std::make_shared<UniverseMessage>();
     case PacketType::UniverseMessageResponse: return std::make_shared<UniverseMessageResponse>();
     default:
-      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
+      return std::unexpected(StarPacketException::format("Unrecognized packet type {}", (unsigned int)type));
   }
 }
 
-std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args) {
-  auto packet = createPacket(type);
+std::expected<std::shared_ptr<Packet>, StarException> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args) {
+  auto created = createPacket(type);
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto packet = std::move(*created);
   // The raw Lua packet API also permits omitted JSON fields. Preserve its
   // generated identities explicitly; decoding through createPacket(type) never
   // consumes the domain's random stream.
@@ -335,8 +338,11 @@ std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, std
       break;
   }
 
-  if (args && !args->isNull())
-    packet->readJson(*args);
+  if (args && !args->isNull()) {
+    auto read = packet->readJson(*args);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+  }
 
   return packet;
 }
@@ -347,12 +353,22 @@ ProtocolRequestPacket::ProtocolRequestPacket()
 ProtocolRequestPacket::ProtocolRequestPacket(VersionNumber requestProtocolVersion)
   : requestProtocolVersion(requestProtocolVersion) {}
 
-void ProtocolRequestPacket::read(DataStream& ds) {
-  ds.read(requestProtocolVersion);
+std::expected<void, StarException> ProtocolRequestPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(requestProtocolVersion);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ProtocolRequestPacket::write(DataStream& ds) const {
-  ds.write(requestProtocolVersion);
+std::expected<void, StarException> ProtocolRequestPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(requestProtocolVersion);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ProtocolResponsePacket::ProtocolResponsePacket() : ProtocolResponsePacket(false, {}) {}
@@ -360,21 +376,45 @@ ProtocolResponsePacket::ProtocolResponsePacket() : ProtocolResponsePacket(false,
 ProtocolResponsePacket::ProtocolResponsePacket(bool allowed, Json info)
   : allowed(allowed), info(info) {}
 
-void ProtocolResponsePacket::read(DataStream& ds) {
-  ds.read(allowed);
+std::expected<void, StarException> ProtocolResponsePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(allowed);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (compressionMode() == PacketCompressionMode::Enabled) {
     // gross hack for backwards compatibility with older OpenSB servers
     // can be removed later
     auto externalBuffer = as<DataStreamExternalBuffer>(&ds);
-    if (!externalBuffer || !externalBuffer->atEnd())
-      ds.read(info);
+    bool readInfo = !externalBuffer;
+    if (externalBuffer) {
+      auto ended = externalBuffer->atEnd();
+      if (!ended)
+        return std::unexpected(std::move(ended.error()));
+      readInfo = !*ended;
+    }
+    if (readInfo) {
+      auto result = ds.read(info);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
-void ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
-  ds.write(allowed);
+std::expected<void, StarException> ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  {
+    auto result = ds.write(allowed);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!netRules.isLegacy())
-    ds.write(info);
+    {
+      auto result = ds.write(info);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
 ConnectSuccessPacket::ConnectSuccessPacket() : serverUuid(unfilledPacketUuid()) {}
@@ -383,61 +423,127 @@ ConnectSuccessPacket::ConnectSuccessPacket(
     ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation)
   : clientId(clientId), serverUuid(std::move(serverUuid)), celestialInformation(std::move(celestialInformation)) {}
 
-void ConnectSuccessPacket::read(DataStream& ds) {
-  ds.vuread(clientId);
-  ds.read(serverUuid);
-  ds.read(celestialInformation);
+std::expected<void, StarException> ConnectSuccessPacket::read(DataStream& ds) {
+  {
+    auto result = ds.vuread(clientId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(serverUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(celestialInformation);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ConnectSuccessPacket::write(DataStream& ds) const {
-  ds.vuwrite(clientId);
-  ds.write(serverUuid);
-  ds.write(celestialInformation);
+std::expected<void, StarException> ConnectSuccessPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.vuwrite(clientId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(serverUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(celestialInformation);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ConnectFailurePacket::ConnectFailurePacket() {}
 
 ConnectFailurePacket::ConnectFailurePacket(String reason) : reason(std::move(reason)) {}
 
-void ConnectFailurePacket::read(DataStream& ds) {
-  ds.read(reason);
+std::expected<void, StarException> ConnectFailurePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ConnectFailurePacket::write(DataStream& ds) const {
-  ds.write(reason);
+std::expected<void, StarException> ConnectFailurePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 HandshakeChallengePacket::HandshakeChallengePacket() {}
 
 HandshakeChallengePacket::HandshakeChallengePacket(ByteArray const& passwordSalt) : passwordSalt(passwordSalt) {}
 
-void HandshakeChallengePacket::read(DataStream& ds) {
-  ds.read(passwordSalt);
+std::expected<void, StarException> HandshakeChallengePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(passwordSalt);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void HandshakeChallengePacket::write(DataStream& ds) const {
-  ds.write(passwordSalt);
+std::expected<void, StarException> HandshakeChallengePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(passwordSalt);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ChatReceivePacket::ChatReceivePacket() {}
 
 ChatReceivePacket::ChatReceivePacket(ChatReceivedMessage receivedMessage) : receivedMessage(receivedMessage) {}
 
-void ChatReceivePacket::read(DataStream& ds) {
-  ds.read(receivedMessage);
+std::expected<void, StarException> ChatReceivePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(receivedMessage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ChatReceivePacket::write(DataStream& ds) const {
-  ds.write(receivedMessage);
+std::expected<void, StarException> ChatReceivePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(receivedMessage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ChatReceivePacket::readJson(Json const& json) {
-  receivedMessage = ChatReceivedMessage(json.get("receivedMessage"));
+std::expected<void, StarException> ChatReceivePacket::readJson(Json const& json) {
+  auto data = json.get("receivedMessage");
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  auto decoded = ChatReceivedMessage::create(*data);
+  if (!decoded)
+    return std::unexpected(std::move(decoded.error()));
+  receivedMessage = std::move(*decoded);
+  return {};
 }
 
-Json ChatReceivePacket::writeJson() const {
+std::expected<Json, StarException> ChatReceivePacket::writeJson() const {
+  auto encoded = receivedMessage.toJson();
+  if (!encoded)
+    return std::unexpected(std::move(encoded.error()));
   return JsonObject{
-    {"receivedMessage", receivedMessage.toJson()}
+    {"receivedMessage", std::move(*encoded)}
   };
 }
 
@@ -447,24 +553,44 @@ UniverseTimeUpdatePacket::UniverseTimeUpdatePacket() {
 
 UniverseTimeUpdatePacket::UniverseTimeUpdatePacket(double universeTime) : universeTime(universeTime) {}
 
-void UniverseTimeUpdatePacket::read(DataStream& ds) {
-  ds.vfread(universeTime, 0.05);
+std::expected<void, StarException> UniverseTimeUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.vfread(universeTime, 0.05);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UniverseTimeUpdatePacket::write(DataStream& ds) const {
-  ds.vfwrite(universeTime, 0.05);
+std::expected<void, StarException> UniverseTimeUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.vfwrite(universeTime, 0.05);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 CelestialResponsePacket::CelestialResponsePacket() {}
 
 CelestialResponsePacket::CelestialResponsePacket(List<CelestialResponse> responses) : responses(std::move(responses)) {}
 
-void CelestialResponsePacket::read(DataStream& ds) {
-  ds.read(responses);
+std::expected<void, StarException> CelestialResponsePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(responses);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void CelestialResponsePacket::write(DataStream& ds) const {
-  ds.write(responses);
+std::expected<void, StarException> CelestialResponsePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(responses);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PlayerWarpResultPacket::PlayerWarpResultPacket() : warpActionInvalid(false) {}
@@ -472,16 +598,42 @@ PlayerWarpResultPacket::PlayerWarpResultPacket() : warpActionInvalid(false) {}
 PlayerWarpResultPacket::PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid)
   : success(success), warpAction(std::move(warpAction)), warpActionInvalid(warpActionInvalid) {}
 
-void PlayerWarpResultPacket::read(DataStream& ds) {
-  ds.read(success);
-  ds.read(warpAction);
-  ds.read(warpActionInvalid);
+std::expected<void, StarException> PlayerWarpResultPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(success);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(warpAction);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(warpActionInvalid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void PlayerWarpResultPacket::write(DataStream& ds) const {
-  ds.write(success);
-  ds.write(warpAction);
-  ds.write(warpActionInvalid);
+std::expected<void, StarException> PlayerWarpResultPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(success);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(warpAction);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(warpActionInvalid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() {}
@@ -489,38 +641,77 @@ PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() {}
 PlanetTypeUpdatePacket::PlanetTypeUpdatePacket(CelestialCoordinate coordinate)
   : coordinate(coordinate) {}
 
-void PlanetTypeUpdatePacket::read(DataStream& ds) {
-  ds.read(coordinate);
+std::expected<void, StarException> PlanetTypeUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(coordinate);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void PlanetTypeUpdatePacket::write(DataStream& ds) const {
-  ds.write(coordinate);
+std::expected<void, StarException> PlanetTypeUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(coordinate);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PausePacket::PausePacket() {}
 
 PausePacket::PausePacket(bool pause, float timescale) : pause(pause), timescale(timescale) {}
 
-void PausePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
-  ds.read(pause);
+std::expected<void, StarException> PausePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  {
+    auto result = ds.read(pause);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!netRules.isLegacy())
-    ds.read(timescale);
+    {
+      auto result = ds.read(timescale);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   else
     timescale = 1.0f;
+  return {};
 }
 
-void PausePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
-  ds.write(pause);
+std::expected<void, StarException> PausePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  {
+    auto result = ds.write(pause);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!netRules.isLegacy())
-    ds.write(timescale);
+    {
+      auto result = ds.write(timescale);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void PausePacket::readJson(Json const& json) {
-  pause = json.getBool("pause");
-  timescale = json.getFloat("timescale", 1.0f);
+std::expected<void, StarException> PausePacket::readJson(Json const& json) {
+  {
+    auto result = json.getBool("pause");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    pause = std::move(*result);
+  }
+  {
+    auto result = json.getFloat("timescale", 1.0f);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    timescale = std::move(*result);
+  }
+  return {};
 }
 
-Json PausePacket::writeJson() const {
+std::expected<Json, StarException> PausePacket::writeJson() const {
   return JsonObject{
     {"pause", pause},
     {"timescale", timescale}
@@ -533,24 +724,53 @@ ServerInfoPacket::ServerInfoPacket(std::uint16_t players, std::uint16_t maxPlaye
   players(players),
   maxPlayers(maxPlayers) {}
 
-void ServerInfoPacket::read(DataStream& ds)
+std::expected<void, StarException> ServerInfoPacket::read(DataStream& ds)
 {
-  ds.read(players);
-  ds.read(maxPlayers);
+  {
+    auto result = ds.read(players);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(maxPlayers);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ServerInfoPacket::write(DataStream& ds) const
+std::expected<void, StarException> ServerInfoPacket::write(DataStream& ds) const
 {
-  ds.write(players);
-  ds.write(maxPlayers);
+  {
+    auto result = ds.write(players);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(maxPlayers);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ServerInfoPacket::readJson(Json const& json) {
-  players = json.getUInt("players");
-  maxPlayers = json.getUInt("maxPlayers");
+std::expected<void, StarException> ServerInfoPacket::readJson(Json const& json) {
+  {
+    auto result = json.getUInt("players");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    players = std::move(*result);
+  }
+  {
+    auto result = json.getUInt("maxPlayers");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    maxPlayers = std::move(*result);
+  }
+  return {};
 }
 
-Json ServerInfoPacket::writeJson() const {
+std::expected<Json, StarException> ServerInfoPacket::writeJson() const {
   return JsonObject{
     {"players", players},
     {"maxPlayers", maxPlayers}
@@ -567,88 +787,234 @@ ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAsset
     shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
 
-void ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
-  ds.read(assetsDigest);
-  ds.read(allowAssetsMismatch);
-  ds.read(playerUuid);
-  ds.read(playerName);
-  ds.read(shipSpecies);
-  ds.read(shipChunks);
-  ds.read(shipUpgrades);
-  ds.read(introComplete);
-  ds.read(account);
+std::expected<void, StarException> ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  {
+    auto result = ds.read(assetsDigest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(allowAssetsMismatch);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(playerUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(playerName);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(shipSpecies);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(shipChunks);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(shipUpgrades);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(introComplete);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(account);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!netRules.isLegacy())
-    ds.read(info);
+    {
+      auto result = ds.read(info);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
-  ds.write(assetsDigest);
-  ds.write(allowAssetsMismatch);
-  ds.write(playerUuid);
-  ds.write(playerName);
-  ds.write(shipSpecies);
-  ds.write(shipChunks);
-  ds.write(shipUpgrades);
-  ds.write(introComplete);
-  ds.write(account);
+std::expected<void, StarException> ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  {
+    auto result = ds.write(assetsDigest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(allowAssetsMismatch);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(playerUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(playerName);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(shipSpecies);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(shipChunks);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(shipUpgrades);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(introComplete);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(account);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (!netRules.isLegacy())
-    ds.write(info);
+    {
+      auto result = ds.write(info);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
 ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}
 
-void ClientDisconnectRequestPacket::read(DataStream& ds) {
+std::expected<void, StarException> ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.read<std::uint8_t>();
+  {
+    auto result = ds.read<std::uint8_t>();
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientDisconnectRequestPacket::write(DataStream& ds) const {
+std::expected<void, StarException> ClientDisconnectRequestPacket::write(DataStream& ds) const {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.write<std::uint8_t>(0);
+  {
+    auto result = ds.write<std::uint8_t>(0);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 HandshakeResponsePacket::HandshakeResponsePacket() {}
 
 HandshakeResponsePacket::HandshakeResponsePacket(ByteArray const& passHash) : passHash(passHash) {}
 
-void HandshakeResponsePacket::read(DataStream& ds) {
-  ds.read(passHash);
+std::expected<void, StarException> HandshakeResponsePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(passHash);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void HandshakeResponsePacket::write(DataStream& ds) const {
-  ds.write(passHash);
+std::expected<void, StarException> HandshakeResponsePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(passHash);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PlayerWarpPacket::PlayerWarpPacket() {}
 
 PlayerWarpPacket::PlayerWarpPacket(WarpAction action, bool deploy) : action(std::move(action)), deploy(std::move(deploy)) {}
 
-void PlayerWarpPacket::read(DataStream& ds) {
-  ds.read(action);
-  ds.read(deploy);
+std::expected<void, StarException> PlayerWarpPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(action);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(deploy);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void PlayerWarpPacket::write(DataStream& ds) const {
-  ds.write(action);
-  ds.write(deploy);
+std::expected<void, StarException> PlayerWarpPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(action);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(deploy);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 FlyShipPacket::FlyShipPacket() {}
 
 FlyShipPacket::FlyShipPacket(Vec3I system, SystemLocation location, Json settings) : system(std::move(system)), location(std::move(location)), settings(std::move(settings)) {}
 
-void FlyShipPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
-  ds.read(system);
-  ds.read(location);
+std::expected<void, StarException> FlyShipPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+  {
+    auto result = ds.read(system);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(location);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (netRules.version() >= 3)
-    ds.read(settings);
+    {
+      auto result = ds.read(settings);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void FlyShipPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
-  ds.write(system);
-  ds.write(location);
+std::expected<void, StarException> FlyShipPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+  {
+    auto result = ds.write(system);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(location);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (netRules.version() >= 3)
-    ds.write(settings);
+    {
+      auto result = ds.write(settings);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
 ChatSendPacket::ChatSendPacket() : sendMode(ChatSendMode::Broadcast) {}
@@ -657,161 +1023,413 @@ ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode) : text(std::m
 
 ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data) : text(std::move(text)), sendMode(sendMode), data(std::move(data)) {}
 
-void ChatSendPacket::read(DataStream& ds) {
-  ds.read(text);
-  ds.read(sendMode);
+std::expected<void, StarException> ChatSendPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(text);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(sendMode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (ds.streamCompatibilityVersion() >= 5)
-    ds.read(data);
+    {
+      auto result = ds.read(data);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
-void ChatSendPacket::write(DataStream& ds) const {
-  ds.write(text);
-  ds.write(sendMode);
+std::expected<void, StarException> ChatSendPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(text);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(sendMode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (ds.streamCompatibilityVersion() >= 5)
-    ds.write(data);
+    {
+      auto result = ds.write(data);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
 CelestialRequestPacket::CelestialRequestPacket() {}
 
 CelestialRequestPacket::CelestialRequestPacket(List<CelestialRequest> requests) : requests(std::move(requests)) {}
 
-void CelestialRequestPacket::read(DataStream& ds) {
-  ds.read(requests);
+std::expected<void, StarException> CelestialRequestPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(requests);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void CelestialRequestPacket::write(DataStream& ds) const {
-  ds.write(requests);
+std::expected<void, StarException> CelestialRequestPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(requests);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ClientContextUpdatePacket::ClientContextUpdatePacket() {}
 
 ClientContextUpdatePacket::ClientContextUpdatePacket(ByteArray updateData) : updateData(std::move(updateData)) {}
 
-void ClientContextUpdatePacket::read(DataStream& ds) {
-  ds.read(updateData);
+std::expected<void, StarException> ClientContextUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(updateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientContextUpdatePacket::write(DataStream& ds) const {
-  ds.write(updateData);
+std::expected<void, StarException> ClientContextUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(updateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldStartPacket::WorldStartPacket() : clientId(), localInterpolationMode() {}
 
-void WorldStartPacket::read(DataStream& ds) {
-  ds.read(templateData);
-  ds.read(skyData);
-  ds.read(weatherData);
-  ds.read(playerStart);
-  ds.read(playerRespawn);
-  ds.read(respawnInWorld);
-  ds.read(worldProperties);
-  ds.read(dungeonIdGravity);
-  ds.read(dungeonIdBreathable);
-  ds.read(protectedDungeonIds);
-  ds.read(clientId);
-  ds.read(localInterpolationMode);
+std::expected<void, StarException> WorldStartPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(skyData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(weatherData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(playerStart);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(playerRespawn);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(respawnInWorld);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(worldProperties);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(dungeonIdGravity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(dungeonIdBreathable);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(protectedDungeonIds);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(clientId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(localInterpolationMode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldStartPacket::write(DataStream& ds) const {
-  ds.write(templateData);
-  ds.write(skyData);
-  ds.write(weatherData);
-  ds.write(playerStart);
-  ds.write(playerRespawn);
-  ds.write(respawnInWorld);
-  ds.write(worldProperties);
-  ds.write(dungeonIdGravity);
-  ds.write(dungeonIdBreathable);
-  ds.write(protectedDungeonIds);
-  ds.write(clientId);
-  ds.write(localInterpolationMode);
+std::expected<void, StarException> WorldStartPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(skyData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(weatherData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(playerStart);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(playerRespawn);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(respawnInWorld);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(worldProperties);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(dungeonIdGravity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(dungeonIdBreathable);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(protectedDungeonIds);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(clientId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(localInterpolationMode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldStopPacket::WorldStopPacket() {}
 
 WorldStopPacket::WorldStopPacket(String const& reason) : reason(reason) {}
 
-void WorldStopPacket::read(DataStream& ds) {
-  ds.read(reason);
+std::expected<void, StarException> WorldStopPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldStopPacket::write(DataStream& ds) const {
-  ds.write(reason);
+std::expected<void, StarException> WorldStopPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldLayoutUpdatePacket::WorldLayoutUpdatePacket() {}
 
 WorldLayoutUpdatePacket::WorldLayoutUpdatePacket(Json const& layoutData) : layoutData(layoutData) {}
 
-void WorldLayoutUpdatePacket::read(DataStream& ds) {
-  ds.read(layoutData);
+std::expected<void, StarException> WorldLayoutUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(layoutData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldLayoutUpdatePacket::write(DataStream& ds) const {
-  ds.write(layoutData);
+std::expected<void, StarException> WorldLayoutUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(layoutData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldParametersUpdatePacket::WorldParametersUpdatePacket() {}
 
 WorldParametersUpdatePacket::WorldParametersUpdatePacket(ByteArray const& parametersData) : parametersData(parametersData) {}
 
-void WorldParametersUpdatePacket::read(DataStream& ds) {
-  ds.read(parametersData);
+std::expected<void, StarException> WorldParametersUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(parametersData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldParametersUpdatePacket::write(DataStream& ds) const {
-  ds.write(parametersData);
+std::expected<void, StarException> WorldParametersUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(parametersData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 CentralStructureUpdatePacket::CentralStructureUpdatePacket() {}
 
 CentralStructureUpdatePacket::CentralStructureUpdatePacket(Json structureData) : structureData(std::move(structureData)) {}
 
-void CentralStructureUpdatePacket::read(DataStream& ds) {
-  ds.read(structureData);
+std::expected<void, StarException> CentralStructureUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(structureData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void CentralStructureUpdatePacket::write(DataStream& ds) const {
-  ds.write(structureData);
+std::expected<void, StarException> CentralStructureUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(structureData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 TileArrayUpdatePacket::TileArrayUpdatePacket() {}
 
-void TileArrayUpdatePacket::read(DataStream& ds) {
-  ds.viread(min[0]);
-  ds.viread(min[1]);
+std::expected<void, StarException> TileArrayUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(min[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viread(min[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
 
   std::size_t width, height;
-  ds.vuread(width);
-  ds.vuread(height);
+  {
+    auto result = ds.vuread(width);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.vuread(height);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   array.resize(width, height);
   for (std::size_t y = 0; y < height; ++y) {
     for (std::size_t x = 0; x < width; ++x)
-      ds.read(array(x, y));
+      {
+        auto result = ds.read(array(x, y));
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+      }
   }
+  return {};
 }
 
-void TileArrayUpdatePacket::write(DataStream& ds) const {
-  ds.viwrite(min[0]);
-  ds.viwrite(min[1]);
-  ds.vuwrite(array.size(0));
-  ds.vuwrite(array.size(1));
+std::expected<void, StarException> TileArrayUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(min[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viwrite(min[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.vuwrite(array.size(0));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.vuwrite(array.size(1));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   for (std::size_t y = 0; y < array.size(1); ++y) {
     for (std::size_t x = 0; x < array.size(0); ++x)
-      ds.write(array(x, y));
+      {
+        auto result = ds.write(array(x, y));
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+      }
   }
+  return {};
 }
 
-void TileUpdatePacket::read(DataStream& ds) {
-  ds.viread(position[0]);
-  ds.viread(position[1]);
-  ds.read(tile);
+std::expected<void, StarException> TileUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(position[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viread(position[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(tile);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void TileUpdatePacket::write(DataStream& ds) const {
-  ds.viwrite(position[0]);
-  ds.viwrite(position[1]);
-  ds.write(tile);
+std::expected<void, StarException> TileUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(position[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viwrite(position[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(tile);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 TileLiquidUpdatePacket::TileLiquidUpdatePacket() {}
@@ -819,18 +1437,52 @@ TileLiquidUpdatePacket::TileLiquidUpdatePacket() {}
 TileLiquidUpdatePacket::TileLiquidUpdatePacket(Vec2I const& position, LiquidNetUpdate liquidUpdate)
   : position(position), liquidUpdate(liquidUpdate) {}
 
-void TileLiquidUpdatePacket::read(DataStream& ds) {
-  ds.viread(position[0]);
-  ds.viread(position[1]);
-  ds.read(liquidUpdate.liquid);
-  ds.read(liquidUpdate.level);
+std::expected<void, StarException> TileLiquidUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(position[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viread(position[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(liquidUpdate.liquid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(liquidUpdate.level);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void TileLiquidUpdatePacket::write(DataStream& ds) const {
-  ds.viwrite(position[0]);
-  ds.viwrite(position[1]);
-  ds.write(liquidUpdate.liquid);
-  ds.write(liquidUpdate.level);
+std::expected<void, StarException> TileLiquidUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(position[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viwrite(position[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(liquidUpdate.liquid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(liquidUpdate.level);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 TileDamageUpdatePacket::TileDamageUpdatePacket() : layer(TileLayer::Foreground) {}
@@ -839,16 +1491,42 @@ TileDamageUpdatePacket::TileDamageUpdatePacket(
     Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage)
   : position(position), layer(layer), tileDamage(tileDamage) {}
 
-void TileDamageUpdatePacket::read(DataStream& ds) {
-  ds.read(position);
-  ds.read(layer);
-  ds.read(tileDamage);
+std::expected<void, StarException> TileDamageUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(position);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(layer);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void TileDamageUpdatePacket::write(DataStream& ds) const {
-  ds.write(position);
-  ds.write(layer);
-  ds.write(tileDamage);
+std::expected<void, StarException> TileDamageUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(position);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(layer);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 TileModificationFailurePacket::TileModificationFailurePacket() {}
@@ -856,31 +1534,58 @@ TileModificationFailurePacket::TileModificationFailurePacket() {}
 TileModificationFailurePacket::TileModificationFailurePacket(TileModificationList modifications)
   : modifications(modifications) {}
 
-void TileModificationFailurePacket::read(DataStream& ds) {
-  ds.readContainer(modifications);
+std::expected<void, StarException> TileModificationFailurePacket::read(DataStream& ds) {
+  {
+    auto result = ds.readContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void TileModificationFailurePacket::write(DataStream& ds) const {
-  ds.writeContainer(modifications);
+std::expected<void, StarException> TileModificationFailurePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 GiveItemPacket::GiveItemPacket() {}
 
 GiveItemPacket::GiveItemPacket(ItemDescriptor const& item) : item(item) {}
 
-void GiveItemPacket::read(DataStream& ds) {
-  ds.read(item);
+std::expected<void, StarException> GiveItemPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(item);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void GiveItemPacket::write(DataStream& ds) const {
-  ds.write(item);
+std::expected<void, StarException> GiveItemPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(item);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void GiveItemPacket::readJson(Json const& json) {
-  item = ItemDescriptor(json.get("item"));
+std::expected<void, StarException> GiveItemPacket::readJson(Json const& json) {
+  auto data = json.get("item");
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  auto decoded = ItemDescriptor::create(*data);
+  if (!decoded)
+    return std::unexpected(std::move(decoded.error()));
+  item = std::move(*decoded);
+  return {};
 }
 
-Json GiveItemPacket::writeJson() const {
+std::expected<Json, StarException> GiveItemPacket::writeJson() const {
   return JsonObject{
     {"item", item.toJson()}
   };
@@ -891,14 +1596,32 @@ EnvironmentUpdatePacket::EnvironmentUpdatePacket() {}
 EnvironmentUpdatePacket::EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta)
   : skyDelta(std::move(skyDelta)), weatherDelta(std::move(weatherDelta)) {}
 
-void EnvironmentUpdatePacket::read(DataStream& ds) {
-  ds.read(skyDelta);
-  ds.read(weatherDelta);
+std::expected<void, StarException> EnvironmentUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(skyDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(weatherDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EnvironmentUpdatePacket::write(DataStream& ds) const {
-  ds.write(skyDelta);
-  ds.write(weatherDelta);
+std::expected<void, StarException> EnvironmentUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(skyDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(weatherDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ModifyTileListPacket::ModifyTileListPacket() : allowEntityOverlap() {}
@@ -906,14 +1629,32 @@ ModifyTileListPacket::ModifyTileListPacket() : allowEntityOverlap() {}
 ModifyTileListPacket::ModifyTileListPacket(TileModificationList modifications, bool allowEntityOverlap)
   : modifications(modifications), allowEntityOverlap(allowEntityOverlap) {}
 
-void ModifyTileListPacket::read(DataStream& ds) {
-  ds.readContainer(modifications);
-  ds.read(allowEntityOverlap);
+std::expected<void, StarException> ModifyTileListPacket::read(DataStream& ds) {
+  {
+    auto result = ds.readContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(allowEntityOverlap);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ModifyTileListPacket::write(DataStream& ds) const {
-  ds.writeContainer(modifications);
-  ds.write(allowEntityOverlap);
+std::expected<void, StarException> ModifyTileListPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(allowEntityOverlap);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
@@ -921,20 +1662,46 @@ ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
 ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage)
   : modifications(modifications), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
 
-void ReplaceTileListPacket::read(DataStream& ds) {
-  ds.readContainer(modifications);
-  ds.read(tileDamage);
+std::expected<void, StarException> ReplaceTileListPacket::read(DataStream& ds) {
+  {
+    auto result = ds.readContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (ds.streamCompatibilityVersion() >= 7)
-    ds.read(applyDamage);
+    {
+      auto result = ds.read(applyDamage);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   else
     applyDamage = false;
+  return {};
 }
 
-void ReplaceTileListPacket::write(DataStream& ds) const {
-  ds.writeContainer(modifications);
-  ds.write(tileDamage);
+std::expected<void, StarException> ReplaceTileListPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeContainer(modifications);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   if (ds.streamCompatibilityVersion() >= 7)
-    ds.write(applyDamage);
+    {
+      auto result = ds.write(applyDamage);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  return {};
 }
 
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
@@ -943,20 +1710,62 @@ DamageTileGroupPacket::DamageTileGroupPacket(
     List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity)
   : tilePositions(std::move(tilePositions)), layer(layer), sourcePosition(sourcePosition), tileDamage(std::move(tileDamage)), sourceEntity(std::move(sourceEntity)) {}
 
-void DamageTileGroupPacket::read(DataStream& ds) {
-  ds.readContainer(tilePositions);
-  ds.read(layer);
-  ds.read(sourcePosition);
-  ds.read(tileDamage);
-  ds.read(sourceEntity);
+std::expected<void, StarException> DamageTileGroupPacket::read(DataStream& ds) {
+  {
+    auto result = ds.readContainer(tilePositions);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(layer);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(sourcePosition);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(sourceEntity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void DamageTileGroupPacket::write(DataStream& ds) const {
-  ds.writeContainer(tilePositions);
-  ds.write(layer);
-  ds.write(sourcePosition);
-  ds.write(tileDamage);
-  ds.write(sourceEntity);
+std::expected<void, StarException> DamageTileGroupPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeContainer(tilePositions);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(layer);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(sourcePosition);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(tileDamage);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(sourceEntity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 CollectLiquidPacket::CollectLiquidPacket() {}
@@ -964,14 +1773,32 @@ CollectLiquidPacket::CollectLiquidPacket() {}
 CollectLiquidPacket::CollectLiquidPacket(List<Vec2I> tilePositions, LiquidId liquidId)
   : tilePositions(std::move(tilePositions)), liquidId(liquidId) {}
 
-void CollectLiquidPacket::read(DataStream& ds) {
-  ds.readContainer(tilePositions);
-  ds.read(liquidId);
+std::expected<void, StarException> CollectLiquidPacket::read(DataStream& ds) {
+  {
+    auto result = ds.readContainer(tilePositions);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(liquidId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void CollectLiquidPacket::write(DataStream& ds) const {
-  ds.writeContainer(tilePositions);
-  ds.write(liquidId);
+std::expected<void, StarException> CollectLiquidPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeContainer(tilePositions);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(liquidId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 RequestDropPacket::RequestDropPacket() {
@@ -980,12 +1807,22 @@ RequestDropPacket::RequestDropPacket() {
 
 RequestDropPacket::RequestDropPacket(EntityId dropEntityId) : dropEntityId(dropEntityId) {}
 
-void RequestDropPacket::read(DataStream& ds) {
-  ds.viread(dropEntityId);
+std::expected<void, StarException> RequestDropPacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(dropEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void RequestDropPacket::write(DataStream& ds) const {
-  ds.viwrite(dropEntityId);
+std::expected<void, StarException> RequestDropPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(dropEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SpawnEntityPacket::SpawnEntityPacket() {}
@@ -993,16 +1830,42 @@ SpawnEntityPacket::SpawnEntityPacket() {}
 SpawnEntityPacket::SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState)
   : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)) {}
 
-void SpawnEntityPacket::read(DataStream& ds) {
-  ds.read(entityType);
-  ds.read(storeData);
-  ds.read(firstNetState);
+std::expected<void, StarException> SpawnEntityPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(entityType);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(storeData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(firstNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SpawnEntityPacket::write(DataStream& ds) const {
-  ds.write(entityType);
-  ds.write(storeData);
-  ds.write(firstNetState);
+std::expected<void, StarException> SpawnEntityPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(entityType);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(storeData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(firstNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 EntityInteractPacket::EntityInteractPacket() : requestId(unfilledPacketUuid()) {}
@@ -1010,14 +1873,32 @@ EntityInteractPacket::EntityInteractPacket() : requestId(unfilledPacketUuid()) {
 EntityInteractPacket::EntityInteractPacket(InteractRequest interactRequest, Uuid requestId)
   : interactRequest(interactRequest), requestId(requestId) {}
 
-void EntityInteractPacket::read(DataStream& ds) {
-  ds.read(interactRequest);
-  ds.read(requestId);
+std::expected<void, StarException> EntityInteractPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(interactRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(requestId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityInteractPacket::write(DataStream& ds) const {
-  ds.write(interactRequest);
-  ds.write(requestId);
+std::expected<void, StarException> EntityInteractPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(interactRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(requestId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 EntityInteractResultPacket::EntityInteractResultPacket() : requestId(unfilledPacketUuid()) {}
@@ -1025,16 +1906,42 @@ EntityInteractResultPacket::EntityInteractResultPacket() : requestId(unfilledPac
 EntityInteractResultPacket::EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId)
   : action(action), requestId(requestId), sourceEntityId(sourceEntityId) {}
 
-void EntityInteractResultPacket::read(DataStream& ds) {
-  ds.read(action);
-  ds.read(requestId);
-  ds.read(sourceEntityId);
+std::expected<void, StarException> EntityInteractResultPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(action);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(requestId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(sourceEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityInteractResultPacket::write(DataStream& ds) const {
-  ds.write(action);
-  ds.write(requestId);
-  ds.write(sourceEntityId);
+std::expected<void, StarException> EntityInteractResultPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(action);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(requestId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(sourceEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 EntityCreatePacket::EntityCreatePacket() {
@@ -1045,12 +1952,22 @@ ServerDisconnectPacket::ServerDisconnectPacket() {}
 
 ServerDisconnectPacket::ServerDisconnectPacket(String reason) : reason(std::move(reason)) {}
 
-void ServerDisconnectPacket::read(DataStream& ds) {
-  ds.read(reason);
+std::expected<void, StarException> ServerDisconnectPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ServerDisconnectPacket::write(DataStream& ds) const {
-  ds.write(reason);
+std::expected<void, StarException> ServerDisconnectPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(reason);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ConnectWirePacket::ConnectWirePacket() {}
@@ -1058,14 +1975,32 @@ ConnectWirePacket::ConnectWirePacket() {}
 ConnectWirePacket::ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection)
   : outputConnection(outputConnection), inputConnection(inputConnection) {}
 
-void ConnectWirePacket::read(DataStream& ds) {
-  ds.read(outputConnection);
-  ds.read(inputConnection);
+std::expected<void, StarException> ConnectWirePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(outputConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(inputConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ConnectWirePacket::write(DataStream& ds) const {
-  ds.write(outputConnection);
-  ds.write(inputConnection);
+std::expected<void, StarException> ConnectWirePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(outputConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(inputConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 DisconnectAllWiresPacket::DisconnectAllWiresPacket() {}
@@ -1073,16 +2008,42 @@ DisconnectAllWiresPacket::DisconnectAllWiresPacket() {}
 DisconnectAllWiresPacket::DisconnectAllWiresPacket(Vec2I entityPosition, WireNode wireNode)
   : entityPosition(entityPosition), wireNode(wireNode) {}
 
-void DisconnectAllWiresPacket::read(DataStream& ds) {
-  ds.viread(entityPosition[0]);
-  ds.viread(entityPosition[1]);
-  ds.read(wireNode);
+std::expected<void, StarException> DisconnectAllWiresPacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(entityPosition[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viread(entityPosition[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(wireNode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void DisconnectAllWiresPacket::write(DataStream& ds) const {
-  ds.viwrite(entityPosition[0]);
-  ds.viwrite(entityPosition[1]);
-  ds.write(wireNode);
+std::expected<void, StarException> DisconnectAllWiresPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(entityPosition[0]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viwrite(entityPosition[1]);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(wireNode);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() {}
@@ -1090,12 +2051,22 @@ WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() {}
 WorldClientStateUpdatePacket::WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta)
   : worldClientStateDelta(worldClientStateDelta) {}
 
-void WorldClientStateUpdatePacket::read(DataStream& ds) {
-  ds.read(worldClientStateDelta);
+std::expected<void, StarException> WorldClientStateUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(worldClientStateDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldClientStateUpdatePacket::write(DataStream& ds) const {
-  ds.write(worldClientStateDelta);
+std::expected<void, StarException> WorldClientStateUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(worldClientStateDelta);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 FindUniqueEntityPacket::FindUniqueEntityPacket() {}
@@ -1103,84 +2074,175 @@ FindUniqueEntityPacket::FindUniqueEntityPacket() {}
 FindUniqueEntityPacket::FindUniqueEntityPacket(String uniqueEntityId)
   : uniqueEntityId(std::move(uniqueEntityId)) {}
 
-void FindUniqueEntityPacket::read(DataStream& ds) {
-  ds.read(uniqueEntityId);
+std::expected<void, StarException> FindUniqueEntityPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(uniqueEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void FindUniqueEntityPacket::write(DataStream& ds) const {
-  ds.write(uniqueEntityId);
+std::expected<void, StarException> FindUniqueEntityPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(uniqueEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 WorldStartAcknowledgePacket::WorldStartAcknowledgePacket() {}
 
-void WorldStartAcknowledgePacket::read(DataStream& ds) {
+std::expected<void, StarException> WorldStartAcknowledgePacket::read(DataStream& ds) {
   // Packets can't be empty, read the trash data
-  ds.read<bool>();
+  {
+    auto result = ds.read<bool>();
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void WorldStartAcknowledgePacket::write(DataStream& ds) const {
+std::expected<void, StarException> WorldStartAcknowledgePacket::write(DataStream& ds) const {
   // Packets can't be empty, write some trash data
-  ds.write<bool>(false);
+  {
+    auto result = ds.write<bool>(false);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PingPacket::PingPacket() {}
 PingPacket::PingPacket(std::int64_t time) : time(time) {}
 
-void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+std::expected<void, StarException> PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     // Packets can't be empty, read the trash data
-    ds.read<bool>();
+    {
+      auto result = ds.read<bool>();
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
     time = 0;
   } else {
-    ds.readVlqI(time);
+    {
+      auto result = ds.readVlqI(time);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
-void PingPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+std::expected<void, StarException> PingPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
     // Packets can't be empty, write some trash data
-    ds.write<bool>(false);
+    {
+      auto result = ds.write<bool>(false);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   } else {
-    ds.writeVlqI(time);
+    {
+      auto result = ds.writeVlqI(time);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
 EntityCreatePacket::EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId)
   : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)), entityId(entityId) {}
 
-void EntityCreatePacket::read(DataStream& ds) {
-  ds.read(entityType);
-  ds.read(storeData);
-  ds.read(firstNetState);
-  ds.viread(entityId);
+std::expected<void, StarException> EntityCreatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(entityType);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(storeData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(firstNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viread(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityCreatePacket::write(DataStream& ds) const {
-  ds.write(entityType);
-  ds.write(storeData);
-  ds.write(firstNetState);
-  ds.viwrite(entityId);
+std::expected<void, StarException> EntityCreatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(entityType);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(storeData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(firstNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.viwrite(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 EntityUpdateSetPacket::EntityUpdateSetPacket() : EntityUpdateSetPacket(ServerConnectionId) {}
 
 EntityUpdateSetPacket::EntityUpdateSetPacket(ConnectionId forConnection) : forConnection(forConnection) {}
 
-void EntityUpdateSetPacket::read(DataStream& ds) {
-  ds.vuread(forConnection);
-  ds.readMapContainer(deltas,
-      [](DataStream& ds, EntityId& entityId, ByteArray& delta) {
-        ds.viread(entityId);
-        ds.read(delta);
+std::expected<void, StarException> EntityUpdateSetPacket::read(DataStream& ds) {
+  {
+    auto result = ds.vuread(forConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto decoded = ds.readMapContainer(deltas,
+      [](DataStream& ds, EntityId& entityId, ByteArray& delta) -> std::expected<void, StarException> {
+        auto id = ds.viread(entityId);
+        if (!id)
+          return std::unexpected(std::move(id.error()));
+        return ds.read(delta);
       });
+  if (!decoded)
+    return std::unexpected(std::move(decoded.error()));
+  return {};
 }
 
-void EntityUpdateSetPacket::write(DataStream& ds) const {
-  ds.vuwrite(forConnection);
-  ds.writeMapContainer(deltas, [](DataStream& ds, EntityId const& entityId, ByteArray const& delta) {
-      ds.viwrite(entityId);
-      ds.write(delta);
-    });
+std::expected<void, StarException> EntityUpdateSetPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.vuwrite(forConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto encoded = ds.writeMapContainer(deltas,
+      [](DataStream& ds, EntityId const& entityId, ByteArray const& delta) -> std::expected<void, StarException> {
+        auto id = ds.viwrite(entityId);
+        if (!id)
+          return std::unexpected(std::move(id.error()));
+        return ds.write(delta);
+      });
+  if (!encoded)
+    return std::unexpected(std::move(encoded.error()));
+  return {};
 }
 
 EntityDestroyPacket::EntityDestroyPacket() {
@@ -1191,28 +2253,64 @@ EntityDestroyPacket::EntityDestroyPacket() {
 EntityDestroyPacket::EntityDestroyPacket(EntityId entityId, ByteArray finalNetState, bool death)
   : entityId(entityId), finalNetState(std::move(finalNetState)), death(death) {}
 
-void EntityDestroyPacket::read(DataStream& ds) {
-  ds.viread(entityId);
-  ds.read(finalNetState);
-  ds.read(death);
+std::expected<void, StarException> EntityDestroyPacket::read(DataStream& ds) {
+  {
+    auto result = ds.viread(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(finalNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(death);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityDestroyPacket::write(DataStream& ds) const {
-  ds.viwrite(entityId);
-  ds.write(finalNetState);
-  ds.write(death);
+std::expected<void, StarException> EntityDestroyPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.viwrite(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(finalNetState);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(death);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 HitRequestPacket::HitRequestPacket() {}
 
 HitRequestPacket::HitRequestPacket(RemoteHitRequest remoteHitRequest) : remoteHitRequest(std::move(remoteHitRequest)) {}
 
-void HitRequestPacket::read(DataStream& ds) {
-  ds.read(remoteHitRequest);
+std::expected<void, StarException> HitRequestPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(remoteHitRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void HitRequestPacket::write(DataStream& ds) const {
-  ds.write(remoteHitRequest);
+std::expected<void, StarException> HitRequestPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(remoteHitRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 DamageRequestPacket::DamageRequestPacket() {}
@@ -1220,12 +2318,22 @@ DamageRequestPacket::DamageRequestPacket() {}
 DamageRequestPacket::DamageRequestPacket(RemoteDamageRequest remoteDamageRequest)
   : remoteDamageRequest(std::move(remoteDamageRequest)) {}
 
-void DamageRequestPacket::read(DataStream& ds) {
-  ds.read(remoteDamageRequest);
+std::expected<void, StarException> DamageRequestPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(remoteDamageRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void DamageRequestPacket::write(DataStream& ds) const {
-  ds.write(remoteDamageRequest);
+std::expected<void, StarException> DamageRequestPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(remoteDamageRequest);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 DamageNotificationPacket::DamageNotificationPacket() {}
@@ -1233,12 +2341,22 @@ DamageNotificationPacket::DamageNotificationPacket() {}
 DamageNotificationPacket::DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification)
   : remoteDamageNotification(std::move(remoteDamageNotification)) {}
 
-void DamageNotificationPacket::read(DataStream& ds) {
-  ds.read(remoteDamageNotification);
+std::expected<void, StarException> DamageNotificationPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(remoteDamageNotification);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void DamageNotificationPacket::write(DataStream& ds) const {
-  ds.write(remoteDamageNotification);
+std::expected<void, StarException> DamageNotificationPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(remoteDamageNotification);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 EntityMessagePacket::EntityMessagePacket() : uuid(unfilledPacketUuid()) {}
@@ -1246,35 +2364,102 @@ EntityMessagePacket::EntityMessagePacket() : uuid(unfilledPacketUuid()) {}
 EntityMessagePacket::EntityMessagePacket(std::variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : entityId(entityId), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
 
-void EntityMessagePacket::read(DataStream& ds) {
-  ds.read(entityId);
-  ds.read(message);
-  ds.read(args);
-  ds.read(uuid);
-  ds.read(fromConnection);
+std::expected<void, StarException> EntityMessagePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(message);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(args);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(fromConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityMessagePacket::write(DataStream& ds) const {
-  ds.write(entityId);
-  ds.write(message);
-  ds.write(args);
-  ds.write(uuid);
-  ds.write(fromConnection);
+std::expected<void, StarException> EntityMessagePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(entityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(message);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(args);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(fromConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityMessagePacket::readJson(Json const& json) {
+std::expected<void, StarException> EntityMessagePacket::readJson(Json const& json) {
   auto jEntityId = json.get("entityId");
-  if (jEntityId.canConvert(Json::Type::Int))
-    entityId = (EntityId)jEntityId.toInt();
-  else
-    entityId = jEntityId.toString();
-  message = json.getString("message");
-  args = json.getArray("args");
-  uuid = Uuid(json.getString("uuid"));
-  fromConnection = json.getUInt("fromConnection");
+  if (!jEntityId)
+    return std::unexpected(std::move(jEntityId.error()));
+  if (jEntityId->canConvert(Json::Type::Int)) {
+    auto id = jEntityId->toInt();
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    entityId = (EntityId)*id;
+  } else {
+    auto id = jEntityId->toString();
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    entityId = std::move(*id);
+  }
+  auto decodedMessage = json.getString("message");
+  if (!decodedMessage)
+    return std::unexpected(std::move(decodedMessage.error()));
+  message = std::move(*decodedMessage);
+  auto decodedArgs = json.getArray("args");
+  if (!decodedArgs)
+    return std::unexpected(std::move(decodedArgs.error()));
+  args = std::move(*decodedArgs);
+  auto uuidString = json.getString("uuid");
+  if (!uuidString)
+    return std::unexpected(std::move(uuidString.error()));
+  auto decodedUuid = Uuid::create(*uuidString);
+  if (!decodedUuid)
+    return std::unexpected(std::move(decodedUuid.error()));
+  uuid = std::move(*decodedUuid);
+  auto from = json.getUInt("fromConnection");
+  if (!from)
+    return std::unexpected(std::move(from.error()));
+  fromConnection = *from;
+  return {};
 }
 
-Json EntityMessagePacket::writeJson() const {
+std::expected<Json, StarException> EntityMessagePacket::writeJson() const {
   return JsonObject{
     {"entityId", std::holds_alternative<EntityId>(entityId) ? Json(std::get<EntityId>(entityId)) : Json(std::get<String>(entityId))},
     {"message", message},
@@ -1289,14 +2474,32 @@ EntityMessageResponsePacket::EntityMessageResponsePacket() : uuid(unfilledPacket
 EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
   : response(std::move(response)), uuid(uuid) {}
 
-void EntityMessageResponsePacket::read(DataStream& ds) {
-  ds.read(response);
-  ds.read(uuid);
+std::expected<void, StarException> EntityMessageResponsePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(response);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void EntityMessageResponsePacket::write(DataStream& ds) const {
-  ds.write(response);
-  ds.write(uuid);
+std::expected<void, StarException> EntityMessageResponsePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(response);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() {}
@@ -1304,20 +2507,36 @@ UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() {}
 UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket(JsonObject const& updatedProperties)
   : updatedProperties(updatedProperties) {}
 
-void UpdateWorldPropertiesPacket::read(DataStream& ds) {
-  ds.readMapContainer(updatedProperties);
+std::expected<void, StarException> UpdateWorldPropertiesPacket::read(DataStream& ds) {
+  {
+    auto result = ds.readMapContainer(updatedProperties);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UpdateWorldPropertiesPacket::write(DataStream& ds) const {
-  ds.writeMapContainer(updatedProperties);
+std::expected<void, StarException> UpdateWorldPropertiesPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.writeMapContainer(updatedProperties);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 
-void UpdateWorldPropertiesPacket::readJson(Json const& json) {
-  updatedProperties = json.getObject("updatedProperties");
+std::expected<void, StarException> UpdateWorldPropertiesPacket::readJson(Json const& json) {
+  {
+    auto result = json.getObject("updatedProperties");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    updatedProperties = std::move(*result);
+  }
+  return {};
 }
 
-Json UpdateWorldPropertiesPacket::writeJson() const {
+std::expected<Json, StarException> UpdateWorldPropertiesPacket::writeJson() const {
   return JsonObject{
     {"updatedProperties", updatedProperties},
   };
@@ -1328,22 +2547,51 @@ UpdateTileProtectionPacket::UpdateTileProtectionPacket() {}
 UpdateTileProtectionPacket::UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected)
   : dungeonId(dungeonId), isProtected(isProtected) {}
 
-void UpdateTileProtectionPacket::read(DataStream& ds) {
-  ds.read(dungeonId);
-  ds.read(isProtected);
+std::expected<void, StarException> UpdateTileProtectionPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(isProtected);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UpdateTileProtectionPacket::write(DataStream& ds) const {
-  ds.write(dungeonId);
-  ds.write(isProtected);
+std::expected<void, StarException> UpdateTileProtectionPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(isProtected);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UpdateTileProtectionPacket::readJson(Json const& json) {
-  dungeonId = json.getUInt("dungeonId");
-  isProtected = json.getBool("isProtected");
+std::expected<void, StarException> UpdateTileProtectionPacket::readJson(Json const& json) {
+  {
+    auto result = json.getUInt("dungeonId");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    dungeonId = std::move(*result);
+  }
+  {
+    auto result = json.getBool("isProtected");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    isProtected = std::move(*result);
+  }
+  return {};
 }
 
-Json UpdateTileProtectionPacket::writeJson() const {
+std::expected<Json, StarException> UpdateTileProtectionPacket::writeJson() const {
   return JsonObject{
     {"dungeonId", dungeonId},
     {"isProtected", isProtected}
@@ -1355,22 +2603,51 @@ SetDungeonGravityPacket::SetDungeonGravityPacket() {}
 SetDungeonGravityPacket::SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity)
   : dungeonId(std::move(dungeonId)), gravity(std::move(gravity)) {}
 
-void SetDungeonGravityPacket::read(DataStream& ds) {
-  ds.read(dungeonId);
-  ds.read(gravity);
+std::expected<void, StarException> SetDungeonGravityPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(gravity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetDungeonGravityPacket::write(DataStream& ds) const {
-  ds.write(dungeonId);
-  ds.write(gravity);
+std::expected<void, StarException> SetDungeonGravityPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(gravity);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetDungeonGravityPacket::readJson(Json const& json) {
-  dungeonId = json.getUInt("dungeonId");
-  gravity = json.optFloat("gravity");
+std::expected<void, StarException> SetDungeonGravityPacket::readJson(Json const& json) {
+  {
+    auto result = json.getUInt("dungeonId");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    dungeonId = std::move(*result);
+  }
+  {
+    auto result = json.optFloat("gravity");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    gravity = std::move(*result);
+  }
+  return {};
 }
 
-Json SetDungeonGravityPacket::writeJson() const {
+std::expected<Json, StarException> SetDungeonGravityPacket::writeJson() const {
   return JsonObject{
     {"dungeonId", dungeonId},
     {"gravity", jsonFromOptional<float>(gravity)}
@@ -1382,22 +2659,51 @@ SetDungeonBreathablePacket::SetDungeonBreathablePacket() {}
 SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable)
   : dungeonId(std::move(dungeonId)), breathable(std::move(breathable)) {}
 
-void SetDungeonBreathablePacket::read(DataStream& ds) {
-  ds.read(dungeonId);
-  ds.read(breathable);
+std::expected<void, StarException> SetDungeonBreathablePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(breathable);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetDungeonBreathablePacket::write(DataStream& ds) const {
-  ds.write(dungeonId);
-  ds.write(breathable);
+std::expected<void, StarException> SetDungeonBreathablePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(dungeonId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(breathable);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetDungeonBreathablePacket::readJson(Json const& json) {
-  dungeonId = json.getUInt("dungeonId");
-  breathable = json.optBool("breathable");
+std::expected<void, StarException> SetDungeonBreathablePacket::readJson(Json const& json) {
+  {
+    auto result = json.getUInt("dungeonId");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    dungeonId = std::move(*result);
+  }
+  {
+    auto result = json.optBool("breathable");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    breathable = std::move(*result);
+  }
+  return {};
 }
 
-Json SetDungeonBreathablePacket::writeJson() const {
+std::expected<Json, StarException> SetDungeonBreathablePacket::writeJson() const {
   return JsonObject{
     {"dungeonId", dungeonId},
     {"breathable", jsonFromOptional<bool>(breathable)}
@@ -1408,22 +2714,52 @@ SetPlayerStartPacket::SetPlayerStartPacket() {}
 
 SetPlayerStartPacket::SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld) : playerStart(playerStart), respawnInWorld(respawnInWorld) {}
 
-void SetPlayerStartPacket::read(DataStream& ds) {
-  ds.read(playerStart);
-  ds.read(respawnInWorld);
+std::expected<void, StarException> SetPlayerStartPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(playerStart);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(respawnInWorld);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetPlayerStartPacket::write(DataStream& ds) const {
-  ds.write(playerStart);
-  ds.write(respawnInWorld);
+std::expected<void, StarException> SetPlayerStartPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(playerStart);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(respawnInWorld);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SetPlayerStartPacket::readJson(Json const& json) {
-  playerStart = jsonToVec2F(json.get("playerStart"));
-  respawnInWorld = json.getBool("respawnInWorld");
+std::expected<void, StarException> SetPlayerStartPacket::readJson(Json const& json) {
+  auto startData = json.get("playerStart");
+  if (!startData)
+    return std::unexpected(std::move(startData.error()));
+  auto start = jsonToVec2F(*startData);
+  if (!start)
+    return std::unexpected(std::move(start.error()));
+  playerStart = *start;
+  {
+    auto result = json.getBool("respawnInWorld");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    respawnInWorld = std::move(*result);
+  }
+  return {};
 }
 
-Json SetPlayerStartPacket::writeJson() const {
+std::expected<Json, StarException> SetPlayerStartPacket::writeJson() const {
   return JsonObject{
     {"playerStart", jsonFromVec2F(playerStart)},
     {"respawnInWorld", respawnInWorld}
@@ -1435,38 +2771,74 @@ FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() {}
 FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition)
   : uniqueEntityId(std::move(uniqueEntityId)), entityPosition(std::move(entityPosition)) {}
 
-void FindUniqueEntityResponsePacket::read(DataStream& ds) {
-  ds.read(uniqueEntityId);
-  ds.read(entityPosition);
+std::expected<void, StarException> FindUniqueEntityResponsePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(uniqueEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(entityPosition);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
-  ds.write(uniqueEntityId);
-  ds.write(entityPosition);
+std::expected<void, StarException> FindUniqueEntityResponsePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(uniqueEntityId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(entityPosition);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 PongPacket::PongPacket() {}
 PongPacket::PongPacket(std::int64_t time) : time(time) {}
 
 
-void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+std::expected<void, StarException> PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     // Packets can't be empty, read the trash data
-    ds.read<bool>();
+    {
+      auto result = ds.read<bool>();
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
     time = 0;
   } else {
-    ds.readVlqI(time);
+    {
+      auto result = ds.readVlqI(time);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
 
+  return {};
 }
 
-void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+std::expected<void, StarException> PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
     // Packets can't be empty, write some trash data
-    ds.write<bool>(false);
+    {
+      auto result = ds.write<bool>(false);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   } else {
-    ds.writeVlqI(time);
+    {
+      auto result = ds.writeVlqI(time);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
 StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
@@ -1474,21 +2846,37 @@ StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
 StepUpdatePacket::StepUpdatePacket(double remoteTime) : remoteTime(remoteTime) {}
 
 
-void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
+std::expected<void, StarException> StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     auto steps = ds.readVlqU();
-    remoteTime = double(steps) / 60.0;
+    if (!steps)
+      return std::unexpected(std::move(steps.error()));
+    remoteTime = double(*steps) / 60.0;
   } else {
-    ds.read(remoteTime);
+    {
+      auto result = ds.read(remoteTime);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
-void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
+std::expected<void, StarException> StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((std::uint64_t)std::round(remoteTime * 60.0));
+    {
+      auto result = ds.writeVlqU((std::uint64_t)std::round(remoteTime * 60.0));
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   } else {
-    ds.write(remoteTime);
+    {
+      auto result = ds.write(remoteTime);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
 SystemWorldStartPacket::SystemWorldStartPacket() : clientShip(unfilledPacketUuid(), SystemLocation()) {}
@@ -1496,18 +2884,52 @@ SystemWorldStartPacket::SystemWorldStartPacket() : clientShip(unfilledPacketUuid
 SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip)
   : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
 
-void SystemWorldStartPacket::read(DataStream& ds) {
-  ds.read(location);
-  ds.read(objectStores);
-  ds.read(shipStores);
-  ds.read(clientShip);
+std::expected<void, StarException> SystemWorldStartPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(location);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(objectStores);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(shipStores);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(clientShip);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemWorldStartPacket::write(DataStream& ds) const {
-  ds.write(location);
-  ds.write(objectStores);
-  ds.write(shipStores);
-  ds.write(clientShip);
+std::expected<void, StarException> SystemWorldStartPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(location);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(objectStores);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(shipStores);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(clientShip);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemWorldUpdatePacket::SystemWorldUpdatePacket() {}
@@ -1515,62 +2937,120 @@ SystemWorldUpdatePacket::SystemWorldUpdatePacket() {}
 SystemWorldUpdatePacket::SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates)
   : objectUpdates(std::move(objectUpdates)), shipUpdates(std::move(shipUpdates)) {}
 
-void SystemWorldUpdatePacket::read(DataStream& ds) {
-  ds.read(objectUpdates);
-  ds.read(shipUpdates);
+std::expected<void, StarException> SystemWorldUpdatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(objectUpdates);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(shipUpdates);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemWorldUpdatePacket::write(DataStream& ds) const {
-  ds.write(objectUpdates);
-  ds.write(shipUpdates);
+std::expected<void, StarException> SystemWorldUpdatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(objectUpdates);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(shipUpdates);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemObjectCreatePacket::SystemObjectCreatePacket() {}
 
 SystemObjectCreatePacket::SystemObjectCreatePacket(ByteArray objectStore) : objectStore(std::move(objectStore)) {}
 
-void SystemObjectCreatePacket::read(DataStream& ds) {
-  ds.read(objectStore);
+std::expected<void, StarException> SystemObjectCreatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(objectStore);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemObjectCreatePacket::write(DataStream& ds) const {
-  ds.write(objectStore);
+std::expected<void, StarException> SystemObjectCreatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(objectStore);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemObjectDestroyPacket::SystemObjectDestroyPacket() : objectUuid(unfilledPacketUuid()) {}
 
 SystemObjectDestroyPacket::SystemObjectDestroyPacket(Uuid objectUuid) : objectUuid(std::move(objectUuid)) {}
 
-void SystemObjectDestroyPacket::read(DataStream& ds) {
-  ds.read(objectUuid);
+std::expected<void, StarException> SystemObjectDestroyPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(objectUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemObjectDestroyPacket::write(DataStream& ds) const {
-  ds.write(objectUuid);
+std::expected<void, StarException> SystemObjectDestroyPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(objectUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemShipCreatePacket::SystemShipCreatePacket() {}
 
 SystemShipCreatePacket::SystemShipCreatePacket(ByteArray shipStore) : shipStore(std::move(shipStore)) {}
 
-void SystemShipCreatePacket::read(DataStream& ds) {
-  ds.read(shipStore);
+std::expected<void, StarException> SystemShipCreatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(shipStore);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemShipCreatePacket::write(DataStream& ds) const {
-  ds.write(shipStore);
+std::expected<void, StarException> SystemShipCreatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(shipStore);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemShipDestroyPacket::SystemShipDestroyPacket() : shipUuid(unfilledPacketUuid()) {}
 
 SystemShipDestroyPacket::SystemShipDestroyPacket(Uuid shipUuid) : shipUuid(std::move(shipUuid)) {}
 
-void SystemShipDestroyPacket::read(DataStream& ds) {
-  ds.read(shipUuid);
+std::expected<void, StarException> SystemShipDestroyPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(shipUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemShipDestroyPacket::write(DataStream& ds) const {
-  ds.write(shipUuid);
+std::expected<void, StarException> SystemShipDestroyPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(shipUuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket() : uuid(unfilledPacketUuid()) {}
@@ -1578,30 +3058,74 @@ SystemObjectSpawnPacket::SystemObjectSpawnPacket() : uuid(unfilledPacketUuid()) 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters)
   : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
 
-void SystemObjectSpawnPacket::read(DataStream& ds) {
-  ds.read(typeName);
-  ds.read(uuid);
-  ds.read(position);
-  ds.read(parameters);
+std::expected<void, StarException> SystemObjectSpawnPacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(typeName);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(position);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(parameters);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void SystemObjectSpawnPacket::write(DataStream& ds) const {
-  ds.write(typeName);
-  ds.write(uuid);
-  ds.write(position);
-  ds.write(parameters);
+std::expected<void, StarException> SystemObjectSpawnPacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(typeName);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(position);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(parameters);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() {}
 
 UpdateWorldTemplatePacket::UpdateWorldTemplatePacket(Json templateData) : templateData(std::move(templateData)) {}
 
-void UpdateWorldTemplatePacket::read(DataStream& ds) {
-  ds.read(templateData);
+std::expected<void, StarException> UpdateWorldTemplatePacket::read(DataStream& ds) {
+  {
+    auto result = ds.read(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UpdateWorldTemplatePacket::write(DataStream& ds) const {
-  ds.write(templateData);
+std::expected<void, StarException> UpdateWorldTemplatePacket::write(DataStream& ds) const {
+  {
+    auto result = ds.write(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 
@@ -1610,116 +3134,239 @@ ClientCustomWorldRequest::ClientCustomWorldRequest() {}
 
 ClientCustomWorldRequest::ClientCustomWorldRequest(String name) : name(std::move(name)) {}
 
-void ClientCustomWorldRequest::read(DataStream& ds) {
-  ds.read(name);
+std::expected<void, StarException> ClientCustomWorldRequest::read(DataStream& ds) {
+  {
+    auto result = ds.read(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientCustomWorldRequest::write(DataStream& ds) const {
-  ds.write(name);
+std::expected<void, StarException> ClientCustomWorldRequest::write(DataStream& ds) const {
+  {
+    auto result = ds.write(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ClientCustomWorldResponse::ClientCustomWorldResponse() {}
 
 ClientCustomWorldResponse::ClientCustomWorldResponse(String name, WorldChunks chunks) : name(std::move(name)), chunks(std::move(chunks)) {}
 
-void ClientCustomWorldResponse::read(DataStream& ds) {
-  ds.read(name);
-  ds.read(chunks);
+std::expected<void, StarException> ClientCustomWorldResponse::read(DataStream& ds) {
+  {
+    auto result = ds.read(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(chunks);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientCustomWorldResponse::write(DataStream& ds) const {
-  ds.write(name);
-  ds.write(chunks);
+std::expected<void, StarException> ClientCustomWorldResponse::write(DataStream& ds) const {
+  {
+    auto result = ds.write(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(chunks);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ClientCustomWorldCreate::ClientCustomWorldCreate() {}
 
 ClientCustomWorldCreate::ClientCustomWorldCreate(String name, Json templateData) : name(std::move(name)), templateData(std::move(templateData)) {}
 
-void ClientCustomWorldCreate::read(DataStream& ds) {
-  ds.read(name);
-  ds.read(templateData);
+std::expected<void, StarException> ClientCustomWorldCreate::read(DataStream& ds) {
+  {
+    auto result = ds.read(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientCustomWorldCreate::write(DataStream& ds) const {
-  ds.write(name);
-  ds.write(templateData);
+std::expected<void, StarException> ClientCustomWorldCreate::write(DataStream& ds) const {
+  {
+    auto result = ds.write(name);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(templateData);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ClientSubWorldPackets::ClientSubWorldPackets() {}
 
 ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<std::shared_ptr<Packet>> packets) : subWorldId(subWorldId), packets(std::move(packets)) {}
 
-void ClientSubWorldPackets::read(DataStream& ds) {
-  ds.read(subWorldId);
-  // note: this approach may have an issue with packet size
-  std::uint32_t count = ds.read<std::uint32_t>();
-  for (std::uint32_t i = 0; i < count; i++) {
-    auto packetType = ds.read<PacketType>();
-    std::shared_ptr<Packet> packet = createPacket(packetType);
-    packet->read(ds);
-    packets.append(packet);
+std::expected<void, StarException> ClientSubWorldPackets::read(DataStream& ds) {
+  {
+    auto result = ds.read(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
+  // note: this approach may have an issue with packet size
+  auto count = ds.read<std::uint32_t>();
+  if (!count)
+    return std::unexpected(std::move(count.error()));
+  for (std::uint32_t i = 0; i < *count; i++) {
+    auto packetType = ds.read<PacketType>();
+    if (!packetType)
+      return std::unexpected(std::move(packetType.error()));
+    auto created = createPacket(*packetType);
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+    auto packet = std::move(*created);
+    auto read = packet->read(ds);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    packets.append(std::move(packet));
+  }
+  return {};
 }
 
-void ClientSubWorldPackets::write(DataStream& ds) const {
-  ds.write(subWorldId);
-  ds.write<std::uint32_t>(packets.count());
+std::expected<void, StarException> ClientSubWorldPackets::write(DataStream& ds) const {
+  {
+    auto result = ds.write(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write<std::uint32_t>(packets.count());
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   for (std::shared_ptr<Packet> const& packet : packets) {
     auto packetType = packet->type();
-    ds.write(packetType);
-    packet->write(ds);
+    {
+      auto result = ds.write(packetType);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+    auto written = packet->write(ds);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
   }
+  return {};
 }
 
 ClientSubWorldRequest::ClientSubWorldRequest() {}
 
 ClientSubWorldRequest::ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId) : subWorldId(subWorldId), worldId(std::move(worldId)) {}
 
-void ClientSubWorldRequest::read(DataStream& ds) {
-  ds.read(subWorldId);
-  ds.read(worldId);
+std::expected<void, StarException> ClientSubWorldRequest::read(DataStream& ds) {
+  {
+    auto result = ds.read(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(worldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientSubWorldRequest::write(DataStream& ds) const {
-  ds.write(subWorldId);
-  ds.write(worldId);
+std::expected<void, StarException> ClientSubWorldRequest::write(DataStream& ds) const {
+  {
+    auto result = ds.write(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(worldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 ClientSubWorldReject::ClientSubWorldReject() {}
 
 ClientSubWorldReject::ClientSubWorldReject(ClientSubWorldId const& subWorldId) : subWorldId(subWorldId) {}
 
-void ClientSubWorldReject::read(DataStream& ds) {
-  ds.read(subWorldId);
+std::expected<void, StarException> ClientSubWorldReject::read(DataStream& ds) {
+  {
+    auto result = ds.read(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void ClientSubWorldReject::write(DataStream& ds) const {
-  ds.write(subWorldId);
+std::expected<void, StarException> ClientSubWorldReject::write(DataStream& ds) const {
+  {
+    auto result = ds.write(subWorldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 NotifyWorldLoad::NotifyWorldLoad() {}
 
 NotifyWorldLoad::NotifyWorldLoad(WorldId worldId) : worldId(std::move(worldId)) {}
 
-void NotifyWorldLoad::read(DataStream& ds) {
-  ds.read(worldId);
+std::expected<void, StarException> NotifyWorldLoad::read(DataStream& ds) {
+  {
+    auto result = ds.read(worldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void NotifyWorldLoad::write(DataStream& ds) const {
-  ds.write(worldId);
+std::expected<void, StarException> NotifyWorldLoad::write(DataStream& ds) const {
+  {
+    auto result = ds.write(worldId);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 LogMapUpdate::LogMapUpdate() {}
 
 LogMapUpdate::LogMapUpdate(Map<String,String> map) : map(std::move(map)) {}
 
-void LogMapUpdate::read(DataStream& ds) {
-  ds.read(map);
+std::expected<void, StarException> LogMapUpdate::read(DataStream& ds) {
+  {
+    auto result = ds.read(map);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void LogMapUpdate::write(DataStream& ds) const {
-  ds.write(map);
+std::expected<void, StarException> LogMapUpdate::write(DataStream& ds) const {
+  {
+    auto result = ds.write(map);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 UniverseMessage::UniverseMessage() : uuid(unfilledPacketUuid()) {}
@@ -1727,31 +3374,100 @@ UniverseMessage::UniverseMessage() : uuid(unfilledPacketUuid()) {}
 UniverseMessage::UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : connection(connection), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
 
-void UniverseMessage::read(DataStream& ds) {
-  ds.read(connection);
-  ds.read(message);
-  ds.read(args);
-  ds.read(uuid);
-  ds.read(fromConnection);
+std::expected<void, StarException> UniverseMessage::read(DataStream& ds) {
+  {
+    auto result = ds.read(connection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(message);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(args);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(fromConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UniverseMessage::write(DataStream& ds) const {
-  ds.write(connection);
-  ds.write(message);
-  ds.write(args);
-  ds.write(uuid);
-  ds.write(fromConnection);
+std::expected<void, StarException> UniverseMessage::write(DataStream& ds) const {
+  {
+    auto result = ds.write(connection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(message);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(args);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(fromConnection);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UniverseMessage::readJson(Json const& json) {
-  connection = json.getUInt("connection");
-  message = json.getString("message");
-  args = json.getArray("args");
-  uuid = Uuid(json.getString("uuid"));
-  fromConnection = json.getUInt("fromConnection");
+std::expected<void, StarException> UniverseMessage::readJson(Json const& json) {
+  {
+    auto result = json.getUInt("connection");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    connection = std::move(*result);
+  }
+  {
+    auto result = json.getString("message");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    message = std::move(*result);
+  }
+  {
+    auto result = json.getArray("args");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    args = std::move(*result);
+  }
+  auto uuidString = json.getString("uuid");
+  if (!uuidString)
+    return std::unexpected(std::move(uuidString.error()));
+  auto decodedUuid = Uuid::create(*uuidString);
+  if (!decodedUuid)
+    return std::unexpected(std::move(decodedUuid.error()));
+  uuid = std::move(*decodedUuid);
+  {
+    auto result = json.getUInt("fromConnection");
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    fromConnection = std::move(*result);
+  }
+  return {};
 }
 
-Json UniverseMessage::writeJson() const {
+std::expected<Json, StarException> UniverseMessage::writeJson() const {
   return JsonObject{
     {"connection", connection},
     {"message", message},
@@ -1766,14 +3482,32 @@ UniverseMessageResponse::UniverseMessageResponse() : uuid(unfilledPacketUuid()) 
 UniverseMessageResponse::UniverseMessageResponse(Either<String, Json> response, Uuid uuid)
   : response(std::move(response)), uuid(uuid) {}
 
-void UniverseMessageResponse::read(DataStream& ds) {
-  ds.read(response);
-  ds.read(uuid);
+std::expected<void, StarException> UniverseMessageResponse::read(DataStream& ds) {
+  {
+    auto result = ds.read(response);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.read(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void UniverseMessageResponse::write(DataStream& ds) const {
-  ds.write(response);
-  ds.write(uuid);
+std::expected<void, StarException> UniverseMessageResponse::write(DataStream& ds) const {
+  {
+    auto result = ds.write(response);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  {
+    auto result = ds.write(uuid);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 }

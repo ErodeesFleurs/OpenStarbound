@@ -48,6 +48,7 @@ import star.widget;
 import star.progress_widget;
 import star.animation;
 
+import star.format;
 namespace Star {
 
 class Item;
@@ -63,10 +64,10 @@ public:
     return Star::typeName<ItemSlotWidget>();
   }
 
-  ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage);
+  [[nodiscard]] static std::expected<std::shared_ptr<ItemSlotWidget>, StarException> create(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage);
 
-  virtual void update(float dt) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
@@ -88,9 +89,10 @@ public:
   void setHighlightEnabled(bool highlight);
 
 protected:
-  virtual void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
+  ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage, Animation newItemIndicator, Animation highlightAnimation);
   std::shared_ptr<Item> m_item;
 
   String m_backingImage;

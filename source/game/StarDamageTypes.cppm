@@ -1,7 +1,7 @@
 module;
 import std;
 import star.json;
-
+import star.format;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
@@ -9,10 +9,10 @@ import star.game_types;
 namespace Star {
 
 enum DamageType : std::uint8_t { NoDamage, Damage, IgnoresDef, Knockback, Environment, Status };
-extern EnumMap<DamageType> const DamageTypeNames;
+extern std::expected<EnumMap<DamageType>, StarException> const DamageTypeNames;
 
 enum class HitType { Hit, StrongHit, WeakHit, ShieldHit, Kill };
-extern EnumMap<HitType> const HitTypeNames;
+extern std::expected<EnumMap<HitType>, StarException> const HitTypeNames;
 
 enum class TeamType : std::uint8_t {
   Null,
@@ -34,18 +34,18 @@ enum class TeamType : std::uint8_t {
   // cannot damage friendlies and cannot be damaged by anything
   Assistant
 };
-extern EnumMap<TeamType> const TeamTypeNames;
+extern std::expected<EnumMap<TeamType>, StarException> const TeamTypeNames;
 
 typedef std::uint16_t TeamNumber;
 
 struct EntityDamageTeam {
-  friend DataStream& operator>>(DataStream& ds, EntityDamageTeam& value);
-  friend DataStream& operator<<(DataStream& ds, EntityDamageTeam const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& value);
   EntityDamageTeam();
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
-  explicit EntityDamageTeam(Json const& json);
+  [[nodiscard]] static std::expected<EntityDamageTeam, StarException> create(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   bool canDamage(EntityDamageTeam victim, bool victimIsSelf) const;
 
@@ -54,8 +54,8 @@ struct EntityDamageTeam {
   TeamType type;
   TeamNumber team;
 };
-DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team);
-DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityDamageTeam const& team);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityDamageTeam& team);
 
 TeamNumber soloPvpTeam(ConnectionId clientId);
 }

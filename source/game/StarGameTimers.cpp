@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.data_stream;
 import star.json;
@@ -50,16 +51,16 @@ float GameTimer::percent() const {
     return 0.0f;
 }
 
-DataStream& operator>>(DataStream& ds, GameTimer& gt) {
-  ds >> gt.time;
-  ds >> gt.timer;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, GameTimer& gt) {
+  if (auto r = ds >> gt.time; !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds >> gt.timer; !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, GameTimer const& gt) {
-  ds << gt.time;
-  ds << gt.timer;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, GameTimer const& gt) {
+  if (auto r = ds << gt.time; !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds << gt.timer; !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
 SlidingWindow::SlidingWindow() : windowSize(1.0f), resolution(1) {}
@@ -80,10 +81,14 @@ void SlidingWindow::reset(float initialValue) {
   std::fill(window.begin(), window.end(), initialValue);
 }
 
-void SlidingWindow::update(float dt, std::function<float()> sampleFunction) {
+std::expected<void, StarException> SlidingWindow::update(float dt, std::function<std::expected<float, StarException>()> sampleFunction) {
   if (sampleTimer.wrapTick(dt)) {
-    processUpdate(sampleFunction());
+    if (!sampleFunction) return std::unexpected(StarException("SlidingWindow sample function is empty"));
+    auto sample = sampleFunction();
+    if (!sample) return std::unexpected(std::move(sample.error()));
+    processUpdate(*sample);
   }
+  return {};
 }
 
 void SlidingWindow::update(float dt, float newValue) {
@@ -122,9 +127,17 @@ float SlidingWindow::average() {
 
 EpochTimer::EpochTimer() : m_elapsedTime(0.0) {}
 
-EpochTimer::EpochTimer(Json json) {
-  m_lastSeenEpochTime = json.get("lastEpochTime").optDouble();
-  m_elapsedTime = json.getDouble("elapsedTime");
+std::expected<EpochTimer, StarException> EpochTimer::create(Json json) {
+  EpochTimer result;
+  auto last = json.get("lastEpochTime");
+  if (!last) return std::unexpected(std::move(last.error()));
+  auto lastTime = last->optDouble();
+  if (!lastTime) return std::unexpected(std::move(lastTime.error()));
+  result.m_lastSeenEpochTime = *lastTime;
+  auto elapsed = json.getDouble("elapsedTime");
+  if (!elapsed) return std::unexpected(std::move(elapsed.error()));
+  result.m_elapsedTime = *elapsed;
+  return result;
 }
 
 Json EpochTimer::toJson() const {
@@ -152,16 +165,16 @@ void EpochTimer::setElapsedTime(double elapsedTime) {
   m_elapsedTime = elapsedTime;
 }
 
-DataStream& operator>>(DataStream& ds, EpochTimer& et) {
-  ds >> et.m_lastSeenEpochTime;
-  ds >> et.m_elapsedTime;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, EpochTimer& et) {
+  if (auto r = ds >> et.m_lastSeenEpochTime; !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds >> et.m_elapsedTime; !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, EpochTimer const& et) {
-  ds << et.m_lastSeenEpochTime;
-  ds << et.m_elapsedTime;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, EpochTimer const& et) {
+  if (auto r = ds << et.m_lastSeenEpochTime; !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds << et.m_elapsedTime; !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
 }

@@ -19,6 +19,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.listener;
 import star.format;
+import star.output_proxy;
 import star.version;
 import star.logging;
 
@@ -39,7 +40,7 @@ constexpr unsigned KeyChordModMask = [] {
   return mask;
 }();
 
-extern EnumMap<InterfaceAction> const InterfaceActionNames{
+extern std::expected<EnumMap<InterfaceAction>, StarException> const InterfaceActionNames = EnumMap<InterfaceAction>::create({
     {InterfaceAction::None, "None"},
     {InterfaceAction::PlayerUp, "PlayerUp"},
     {InterfaceAction::PlayerDown, "PlayerDown"},
@@ -110,78 +111,121 @@ extern EnumMap<InterfaceAction> const InterfaceActionNames{
     {InterfaceAction::InterfaceCodex, "InterfaceCodex"},
     {InterfaceAction::InterfaceQuest, "InterfaceQuest"},
     {InterfaceAction::InterfaceCrafting, "InterfaceCrafting"},
-};
+});
 
-KeyChord inputDescriptorFromJson(Json const& json) {
+std::expected<KeyChord, StarException> inputDescriptorFromJson(Json const& json) {
+  if (!KeyNames)
+    return std::unexpected(KeyNames.error());
+  if (!KeyModNames)
+    return std::unexpected(KeyModNames.error());
   Key key;
   auto type = json.getString("type");
-  if (type == "key") {
-    auto value = json.get("value");
-    if (value.isType(Json::Type::String)) {
-      key = KeyNames.getLeft(value.toString());
-    } else if (value.canConvert(Json::Type::Int)) {
-      key = (Key)value.toUInt();
-    } else {
-      throw StarException::format("Improper key value '{}'", value);
-    }
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  if (*type != "key")
+    return std::unexpected(StarException::format("Improper bindings type '{}'", *type));
+  auto value = json.get("value");
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (value->isType(Json::Type::String)) {
+    auto name = value->toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto parsed = KeyNames->getLeft(*name);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    key = **parsed;
+  } else if (value->canConvert(Json::Type::Int)) {
+    auto number = value->toUInt();
+    if (!number)
+      return std::unexpected(std::move(number.error()));
+    key = (Key)*number;
   } else {
-    throw StarException::format("Improper bindings type '{}'", type);
+    auto repr = value->repr();
+    if (!repr)
+      return std::unexpected(std::move(repr.error()));
+    return std::unexpected(StarException::format("Improper key value '{}'", *repr));
   }
-
+  auto modsJson = json.get("mods");
+  if (!modsJson)
+    return std::unexpected(std::move(modsJson.error()));
+  auto entries = modsJson->iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
   KeyMod mods = KeyMod::NoMod;
-  for (auto mod : json.get("mods").iterateArray())
-    mods |= KeyModNames.getLeft(mod.toString());
-
-  return {key, mods};
+  for (auto const& entry : *entries) {
+    auto name = entry.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto parsed = KeyModNames->getLeft(*name);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    mods |= **parsed;
+  }
+  return KeyChord{key, mods};
 }
 
-Json inputDescriptorToJson(KeyChord const& chord) {
+std::expected<Json, StarException> inputDescriptorToJson(KeyChord const& chord) {
+  if (!KeyNames)
+    return std::unexpected(KeyNames.error());
+  if (!KeyModNames)
+    return std::unexpected(KeyModNames.error());
   JsonArray modNames;
-  for (auto const& p : KeyModNames) {
+  for (auto const& p : *KeyModNames) {
     if ((chord.mods & p.first) != KeyMod::NoMod)
       modNames.append(p.second);
   }
-  return JsonObject{
-    {"type", "key"},
-    {"value", KeyNames.getRight(chord.key)},
-    {"mods", modNames}
-  };
+  auto name = KeyNames->getRight(chord.key);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  return JsonObject{{"type", "key"}, {"value", **name}, {"mods", modNames}};
 }
 
-String printInputDescriptor(KeyChord chord) {
+std::expected<String, StarException> printInputDescriptor(KeyChord chord) {
+  if (!KeyNames)
+    return std::unexpected(KeyNames.error());
+  if (!KeyModNames)
+    return std::unexpected(KeyModNames.error());
   StringList modNames;
-  for (auto const& p : KeyModNames) {
+  for (auto const& p : *KeyModNames) {
     if ((chord.mods & p.first) != KeyMod::NoMod)
       modNames.append(p.second);
   }
-
-  return String::joinWith(" + ", modNames.join(" + "), KeyNames.getRight(chord.key));
+  auto name = KeyNames->getRight(chord.key);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  return String::joinWith(" + ", modNames.join(" + "), **name);
 }
 
-KeyBindings::KeyBindings() {}
+KeyBindings::KeyBindings() = default;
 
-KeyBindings::KeyBindings(Root& root, Json const& json) {
-  Map<Key, List<std::pair<KeyMod, InterfaceAction>>> actions;
-  try {
-    for (auto const& kvpair : json.iterateObject()) {
-      InterfaceAction action = InterfaceActionNames.getLeft(kvpair.first);
-
-      for (auto const& input : kvpair.second.iterateArray()) {
-        try {
-          auto chord = inputDescriptorFromJson(input);
-          actions[chord.key].append({chord.mods, action});
-        } catch (StarException const& e) {
-          root.logger().warn("Could not load keybinding for {}: {}\n",
-              InterfaceActionNames.getRight(action),
-              outputException(e, false));
-        }
+std::expected<KeyBindings, StarException> KeyBindings::create(Root& root, Json const& json) {
+  if (!InterfaceActionNames)
+    return std::unexpected(InterfaceActionNames.error().withContext("Could not set keybindings from configuration"));
+  KeyBindings bindings;
+  auto entries = json.iterateObject();
+  if (!entries)
+    return std::unexpected(entries.error().withContext("Could not set keybindings from configuration"));
+  for (auto const& entry : *entries) {
+    auto action = InterfaceActionNames->getLeft(entry.first);
+    if (!action)
+      return std::unexpected(action.error().withContext("Could not set keybindings from configuration"));
+    auto inputs = entry.second.iterateArray();
+    if (!inputs)
+      return std::unexpected(inputs.error().withContext("Could not set keybindings from configuration"));
+    for (auto const& input : *inputs) {
+      auto chord = inputDescriptorFromJson(input);
+      if (!chord) {
+        auto logged = root.logger().warn("Could not load keybinding for {}: {}\n",
+            entry.first, outputException(ExceptionDiagnostic(chord.error()), false));
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+        continue;
       }
+      bindings.m_actions[chord->key].append({chord->mods, **action});
     }
-
-    m_actions = std::move(actions);
-  } catch (StarException const& e) {
-    throw StarException(strf("Could not set keybindings from configuration. {}", outputException(e, false)));
   }
+  return bindings;
 }
 
 Set<InterfaceAction> KeyBindings::actions(Key key) const {

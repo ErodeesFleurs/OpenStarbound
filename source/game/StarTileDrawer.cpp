@@ -108,19 +108,52 @@ RenderTile const TileDrawer::DefaultRenderTile{
     0
 };
 
-TileDrawer::TileDrawer(Root& root) : m_root(root) {
-  auto assets = m_root.assets();
-
-  m_backgroundLayerColor = jsonToColor(assets->json("/rendering.config:backgroundLayerColor")).toRgba();
-  m_foregroundLayerColor = jsonToColor(assets->json("/rendering.config:foregroundLayerColor")).toRgba();
-  m_liquidDrawLevels = jsonToVec2F(assets->json("/rendering.config:liquidDrawLevels"));
+std::expected<std::shared_ptr<TileDrawer>, StarException> TileDrawer::create(Root& root) {
+  auto drawer = std::shared_ptr<TileDrawer>(new TileDrawer(root));
+  auto initialized = drawer->initializeTileDrawer();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return drawer;
 }
 
-bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
-  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) {
+std::expected<void, StarException> TileDrawer::initializeTileDrawer() {
   auto assets = m_root.assets();
-  auto materialDatabase = m_root.materialDatabase();
-  auto imageMetadata = m_root.imageMetadataDatabase();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto backgroundConfig = (*assets)->json("/rendering.config:backgroundLayerColor");
+  if (!backgroundConfig)
+    return std::unexpected(std::move(backgroundConfig.error()));
+  auto background = jsonToColor(*backgroundConfig);
+  if (!background)
+    return std::unexpected(std::move(background.error()));
+  m_backgroundLayerColor = background->toRgba();
+  auto foregroundConfig = (*assets)->json("/rendering.config:foregroundLayerColor");
+  if (!foregroundConfig)
+    return std::unexpected(std::move(foregroundConfig.error()));
+  auto foreground = jsonToColor(*foregroundConfig);
+  if (!foreground)
+    return std::unexpected(std::move(foreground.error()));
+  m_foregroundLayerColor = foreground->toRgba();
+  auto liquidConfig = (*assets)->json("/rendering.config:liquidDrawLevels");
+  if (!liquidConfig)
+    return std::unexpected(std::move(liquidConfig.error()));
+  auto liquid = jsonToVec2F(*liquidConfig);
+  if (!liquid)
+    return std::unexpected(std::move(liquid.error()));
+  m_liquidDrawLevels = *liquid;
+  return {};
+}
+
+std::expected<bool, StarException> TileDrawer::produceTerrainDrawables(Drawables& drawables,
+  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) {
+  auto materialDatabaseResult = m_root.materialDatabase();
+  if (!materialDatabaseResult)
+    return std::unexpected(std::move(materialDatabaseResult.error()));
+  auto const& materialDatabase = *materialDatabaseResult;
+  auto imageMetadataResult = m_root.imageMetadataDatabase();
+  if (!imageMetadataResult)
+    return std::unexpected(std::move(imageMetadataResult.error()));
+  auto const& imageMetadata = *imageMetadataResult;
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 
@@ -156,7 +189,10 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   }
 
   // render non-block colliding things in the midground
-  bool isBlock = BlockCollisionSet.contains(materialDatabase->materialCollisionKind(material));
+  auto collision = materialDatabase->materialCollisionKind(material);
+  if (!collision)
+    return std::unexpected(std::move(collision.error()));
+  bool isBlock = BlockCollisionSet.contains(*collision);
   if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
     return false;
 
@@ -182,18 +218,29 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
-    determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
+    auto matched = determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
-    Directives const* directives = materialRenderProfile->colorDirectives.empty()
-      ? nullptr
-      : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
+    if (!matched)
+      return std::unexpected(std::move(matched.error()));
+    Directives const* directives = nullptr;
+    if (!materialRenderProfile->colorDirectives.empty()) {
+      auto selected = materialRenderProfile->colorDirectives.wrap(materialColorVariant);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
+      directives = *selected;
+    }
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
       if (!variant) variant = piecePair.first->variants.ptr(0);
       if (!variant) continue;
-      auto& textureCoords = variant->wrap(variance);
-      auto image = getPieceImage(piecePair.first, textureCoords, materialHue, directives);
-      drawList.emplace_back(Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      auto textureCoords = variant->wrap(variance);
+      if (!textureCoords)
+        return std::unexpected(std::move(textureCoords.error()));
+      auto image = getPieceImage(piecePair.first, **textureCoords, materialHue, directives);
+      auto drawable = Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color);
+      if (!drawable)
+        return std::unexpected(std::move(drawable.error()));
+      drawList.emplace_back(std::move(*drawable));
     }
   }
 
@@ -203,26 +250,41 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
-    determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
+    auto matched = determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
-    Directives const* directives = modRenderProfile->colorDirectives.empty()
-      ? nullptr
-      : &modRenderProfile->colorDirectives.wrap(modColorVariant);
+    if (!matched)
+      return std::unexpected(std::move(matched.error()));
+    Directives const* directives = nullptr;
+    if (!modRenderProfile->colorDirectives.empty()) {
+      auto selected = modRenderProfile->colorDirectives.wrap(modColorVariant);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
+      directives = *selected;
+    }
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(modColorVariant);
       if (!variant) variant = piecePair.first->variants.ptr(0);
       if (!variant) continue;
-      auto& textureCoords = variant->wrap(variance);
-      auto image = getPieceImage(piecePair.first, textureCoords, modHue, directives);
-      drawList.emplace_back(Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      auto textureCoords = variant->wrap(variance);
+      if (!textureCoords)
+        return std::unexpected(std::move(textureCoords.error()));
+      auto image = getPieceImage(piecePair.first, **textureCoords, modHue, directives);
+      auto drawable = Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color);
+      if (!drawable)
+        return std::unexpected(std::move(drawable.error()));
+      drawList.emplace_back(std::move(*drawable));
     }
   }
 
   if (materialRenderProfile && damageLevel > 0 && isBlock) {
     auto& drawList = drawables[damageZLevel()];
-    auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
-
-    drawList.emplace_back(Drawable::makeImage(*imageMetadata, crackingImage.first, scale, false, crackingImage.second * scale + Vec2F(pos), color));
+    auto crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
+    if (!crackingImage)
+      return std::unexpected(std::move(crackingImage.error()));
+    auto drawable = Drawable::makeImage(*imageMetadata, (*crackingImage)->first, scale, false, (*crackingImage)->second * scale + Vec2F(pos), color);
+    if (!drawable)
+      return std::unexpected(std::move(drawable.error()));
+    drawList.emplace_back(std::move(*drawable));
   }
 
   return occlude;
@@ -269,11 +331,11 @@ TileDrawer::QuadZLevel TileDrawer::damageZLevel() {
   return (std::uint64_t)(-1);
 }
 
-bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
+std::expected<bool, StarException> TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) {
   RenderTile const& tile = getRenderTile(renderData, basePos);
 
-  auto matchSetMatches = [&](std::shared_ptr<MaterialRenderMatch const> const& match) -> bool {
+  auto matchSetMatches = [&](std::shared_ptr<MaterialRenderMatch const> const& match) -> std::expected<bool, StarException> {
     if (match->requiredLayer && *match->requiredLayer != layer)
       return false;
 
@@ -316,10 +378,14 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
           } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
             valid = neighborMod == equalsId->id;
           } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
-            if (auto profile = materialDb->modRenderProfile(neighborMod))
-              valid = profile->ruleProperties.get(propertyEquals->propertyName, Json()) == propertyEquals->compare;
-            else
+            if (auto profile = materialDb->modRenderProfile(neighborMod)) {
+              auto property = profile->ruleProperties.get(propertyEquals->propertyName, Json());
+              if (!property)
+                return std::unexpected(std::move(property.error()));
+              valid = *property == propertyEquals->compare;
+            } else {
               valid = false;
+            }
           }
         } else {
           if (std::holds_alternative<MaterialRule::RuleEmpty>(ruleEntry.rule)) {
@@ -335,10 +401,14 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
           } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
             valid = neighborMaterial == equalsId->id;
           } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
-            if (auto profile = materialDb->materialRenderProfile(neighborMaterial))
-              valid = profile->ruleProperties.get(propertyEquals->propertyName) == propertyEquals->compare;
-            else
+            if (auto profile = materialDb->materialRenderProfile(neighborMaterial)) {
+              auto property = profile->ruleProperties.get(propertyEquals->propertyName);
+              if (!property)
+                return std::unexpected(std::move(property.error()));
+              valid = *property == propertyEquals->compare;
+            } else {
               valid = false;
+            }
           }
         }
         if (ruleEntry.inverse)
@@ -366,16 +436,22 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
 
   bool subMatchResult = false;
   for (auto const& match : matchList) {
-    if (matchSetMatches(match)) {
+    auto matches = matchSetMatches(match);
+    if (!matches)
+      return std::unexpected(std::move(matches.error()));
+    if (*matches) {
       if (match->occlude)
-        *occlude = match->occlude.value();
+        *occlude = *match->occlude;
 
       subMatchResult = true;
 
       for (auto const& piecePair : match->resultingPieces)
         resultList.append({piecePair.first, piecePair.second});
 
-      if (determineMatchingPieces(resultList, occlude, materialDb, match->subMatches, renderData, basePos, layer, isMod) && match->haltOnSubMatch)
+      auto matched = determineMatchingPieces(resultList, occlude, materialDb, match->subMatches, renderData, basePos, layer, isMod);
+      if (!matched)
+        return std::unexpected(std::move(matched.error()));
+      if (*matched && match->haltOnSubMatch)
         break;
 
       if (match->haltOnMatch)

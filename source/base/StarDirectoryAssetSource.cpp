@@ -9,14 +9,10 @@ import star.directory_asset_source;
 import star.file;
 import star.json_extra;
 import star.logging;
-
-
 import star.byte_array;
-namespace Star {
 
+namespace Star {
 namespace {
-  // True when 'directory' resolves to one of the directories the scan is
-  // currently inside of, which can only happen through a symlink loop.
   bool resolvesToAncestor(String const& directory, List<String> const& ancestors) {
     std::error_code ec;
     std::filesystem::path directoryPath(directory.utf8());
@@ -29,102 +25,148 @@ namespace {
 }
 
 DirectoryAssetSource::DirectoryAssetSource(Logger& logger, String const& baseDirectory, StringList const& ignorePatterns)
-  : m_logger(logger) {
-  m_baseDirectory = baseDirectory;
-  m_ignorePatterns = ignorePatterns;
+  : m_logger(logger), m_baseDirectory(baseDirectory), m_ignorePatterns(ignorePatterns) {}
 
+std::expected<std::shared_ptr<DirectoryAssetSource>, StarException> DirectoryAssetSource::create(
+    Logger& logger, String const& baseDirectory, StringList const& ignorePatterns) {
+  auto source = std::shared_ptr<DirectoryAssetSource>(new DirectoryAssetSource(logger, baseDirectory, ignorePatterns));
   // Load metadata from either /_metadata or /.metadata, in that order.
   for (auto fileName : {"/_metadata", "/.metadata"}) {
-    String metadataFile = toFilesystem(fileName);
-    if (File::isFile(metadataFile)) {
-      try {
-        m_metadataFile = String(fileName);
-        m_metadata = Json::parseJson(File::readFileString(metadataFile)).toObject();
-        break;
-      } catch (JsonException const& e) {
-        throw AssetSourceException(strf("Could not load metadata file '{}' from assets", metadataFile), e);
-      }
+    auto metadataFile = source->toFilesystem(fileName);
+    if (!metadataFile)
+      return std::unexpected(std::move(metadataFile.error()));
+    auto exists = File::isFile(*metadataFile);
+    if (!exists)
+      return std::unexpected(std::move(exists.error()));
+    if (*exists) {
+      auto contents = File::readFileString(*metadataFile);
+      if (!contents)
+        return std::unexpected(std::move(contents.error()));
+      auto parsed = Json::parseJson(*contents);
+      if (!parsed)
+        return std::unexpected(AssetSourceException(strf("Could not load metadata file '{}' from assets", *metadataFile), parsed.error()));
+      auto metadata = parsed->toObject();
+      if (!metadata)
+        return std::unexpected(AssetSourceException(strf("Could not load metadata file '{}' from assets", *metadataFile), metadata.error()));
+      source->m_metadataFile = String(fileName);
+      source->m_metadata = std::move(*metadata);
+      break;
     }
   }
-
-  // Don't scan metadata files
-  m_ignorePatterns.append("^/_metadata$");
-  m_ignorePatterns.append("^/\\.metadata$");
-
-  scanAll("/", m_assetPaths, {toFilesystem("/")});
-
-  m_assetPaths.sort();
+  source->m_ignorePatterns.append("^/_metadata$");
+  source->m_ignorePatterns.append("^/\\.metadata$");
+  auto root = source->toFilesystem("/");
+  if (!root)
+    return std::unexpected(std::move(root.error()));
+  auto scanned = source->scanAll("/", source->m_assetPaths, {*root});
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
+  source->m_assetPaths.sort();
+  return source;
 }
 
-JsonObject DirectoryAssetSource::metadata() const {
-  return m_metadata;
+JsonObject DirectoryAssetSource::metadata() const { return m_metadata; }
+StringList DirectoryAssetSource::assetPaths() const { return m_assetPaths; }
+
+std::expected<std::shared_ptr<IODevice>, StarException> DirectoryAssetSource::open(String const& path) {
+  auto filesystem = toFilesystem(path);
+  if (!filesystem)
+    return std::unexpected(std::move(filesystem.error()));
+  auto file = File::open(*filesystem, IOMode::Read);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
+  return std::shared_ptr<IODevice>(std::move(*file));
 }
 
-StringList DirectoryAssetSource::assetPaths() const {
-  return m_assetPaths;
-}
-
-std::shared_ptr<IODevice> DirectoryAssetSource::open(String const& path) {
-  auto file = std::make_shared<File>(toFilesystem(path));
-  file->open(IOMode::Read);
-  return file;
-}
-
-ByteArray DirectoryAssetSource::read(String const& path) {
+std::expected<ByteArray, StarException> DirectoryAssetSource::read(String const& path) {
   auto device = open(path);
-  return device->readBytes(device->size());
+  if (!device)
+    return std::unexpected(std::move(device.error()));
+  auto size = (*device)->size();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  return (*device)->readBytes(*size);
 }
 
-String DirectoryAssetSource::toFilesystem(String const& path) const {
-  if (!path.beginsWith("/"))
-    throw AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path);
-  else
-    return File::relativeTo(m_baseDirectory, File::convertDirSeparators(path.substr(1)));
+std::expected<String, StarException> DirectoryAssetSource::toFilesystem(String const& path) const {
+  auto absolute = path.beginsWith("/");
+  if (!absolute)
+    return std::unexpected(std::move(absolute.error()));
+  if (!*absolute)
+    return std::unexpected(AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path));
+  auto relative = path.substr(1);
+  if (!relative)
+    return std::unexpected(std::move(relative.error()));
+  return File::relativeTo(m_baseDirectory, File::convertDirSeparators(*relative));
 }
 
-void DirectoryAssetSource::setMetadata(JsonObject metadata) {
+std::expected<void, StarException> DirectoryAssetSource::setMetadata(JsonObject metadata) {
   if (metadata != m_metadata) {
-    if (!m_metadataFile)
-      m_metadataFile = String("/_metadata");
-
+    String metadataFile = m_metadataFile ? *m_metadataFile : String("/_metadata");
+    auto filesystem = toFilesystem(metadataFile);
+    if (!filesystem)
+      return std::unexpected(std::move(filesystem.error()));
+    if (metadata.empty()) {
+      auto removed = File::remove(*filesystem);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+    } else {
+      auto printed = Json(metadata).printJson(2, true);
+      if (!printed)
+        return std::unexpected(std::move(printed.error()));
+      auto written = File::writeFile(*printed, *filesystem);
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+    }
+    m_metadataFile = std::move(metadataFile);
     m_metadata = std::move(metadata);
-
-    if (m_metadata.empty())
-      File::remove(toFilesystem(*m_metadataFile));
-    else
-      File::writeFile(Json(m_metadata).printJson(2, true), toFilesystem(*m_metadataFile));
   }
+  return {};
 }
 
-void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& output, List<String> const& ancestorDirectories) const {
-  auto shouldIgnore = [this](String const& assetPath) {
+std::expected<void, StarException> DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& output,
+    List<String> const& ancestorDirectories) const {
+  auto shouldIgnore = [this](String const& assetPath) -> std::expected<bool, StarException> {
     for (auto const& pattern : m_ignorePatterns) {
-      if (assetPath.regexMatch(pattern, false, false))
+      auto matches = assetPath.regexMatch(pattern, false, false);
+      if (!matches)
+        return std::unexpected(std::move(matches.error()));
+      if (*matches)
         return true;
     }
     return false;
   };
-
-  // path must be passed in including the trailing '/'
-  String fsDirectory = toFilesystem(assetDirectory);
-  for (auto entry : File::dirList(fsDirectory)) {
+  auto fsDirectory = toFilesystem(assetDirectory);
+  if (!fsDirectory)
+    return std::unexpected(std::move(fsDirectory.error()));
+  auto entries = File::dirList(*fsDirectory);
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto entry : *entries) {
     String assetPath = assetDirectory + entry.first;
     if (entry.second) {
-      String childDirectory = toFilesystem(assetPath);
-      if (resolvesToAncestor(childDirectory, ancestorDirectories)) {
-        m_logger.warn(
-            "DirectoryAssetSource: '{}' resolves to one of its own parent directories, not scanning it", assetPath);
+      auto childDirectory = toFilesystem(assetPath);
+      if (!childDirectory)
+        return std::unexpected(std::move(childDirectory.error()));
+      if (resolvesToAncestor(*childDirectory, ancestorDirectories)) {
+        auto warned = m_logger.warn("DirectoryAssetSource: '{}' resolves to one of its own parent directories, not scanning it", assetPath);
+        if (!warned)
+          return std::unexpected(std::move(warned.error()));
         continue;
       }
-
       auto childAncestors = ancestorDirectories;
-      childAncestors.append(std::move(childDirectory));
-      scanAll(assetPath + "/", output, childAncestors);
+      childAncestors.append(std::move(*childDirectory));
+      auto scanned = scanAll(assetPath + "/", output, childAncestors);
+      if (!scanned)
+        return std::unexpected(std::move(scanned.error()));
     } else {
-      if (!shouldIgnore(assetPath))
+      auto ignored = shouldIgnore(assetPath);
+      if (!ignored)
+        return std::unexpected(std::move(ignored.error()));
+      if (!*ignored)
         output.append(std::move(assetPath));
     }
   }
+  return {};
 }
-
 }

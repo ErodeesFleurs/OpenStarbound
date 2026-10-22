@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -16,50 +17,77 @@ import star.stat_collection;
 
 namespace Star {
 
-StatCollection::StatCollection(Json const& config) {
-  for (auto const& stat : config.getObject("stats", {}))
-    m_stats.addStat(stat.first, stat.second.getFloat("baseValue", 0.0));
+std::expected<std::shared_ptr<StatCollection>, StarException> StatCollection::create(Json const& config) {
+  auto collection = std::shared_ptr<StatCollection>(new StatCollection());
+  auto stats = config.getObject("stats", {});
+  if (!stats) return std::unexpected(std::move(stats.error()));
+  for (auto const& stat : *stats) {
+    auto baseValue = stat.second.getFloat("baseValue", 0.0);
+    if (!baseValue) return std::unexpected(std::move(baseValue.error()));
+    auto added = collection->m_stats.addStat(stat.first, *baseValue);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
-  for (auto const& resource : config.getObject("resources", {})) {
-    auto statOrValue = [&resource](String const& statName, String const& valueName, std::variant<std::monostate, String, float> def = {}) -> std::variant<std::monostate, String, float> {
-      if (auto maxStat = resource.second.optString(statName))
-        return *maxStat;
-      else if (auto maxValue = resource.second.optFloat(valueName))
-        return *maxValue;
-      else
-        return def;
+  auto resources = config.getObject("resources", {});
+  if (!resources) return std::unexpected(std::move(resources.error()));
+  for (auto const& resource : *resources) {
+    auto statOrValue = [&resource](String const& statName, String const& valueName) -> std::expected<std::variant<std::monostate, String, float>, StarException> {
+      auto stat = resource.second.optString(statName);
+      if (!stat) return std::unexpected(std::move(stat.error()));
+      if (*stat)
+        return std::variant<std::monostate, String, float>(std::move(**stat));
+      auto value = resource.second.optFloat(valueName);
+      if (!value) return std::unexpected(std::move(value.error()));
+      if (*value)
+        return std::variant<std::monostate, String, float>(**value);
+      return std::variant<std::monostate, String, float>{};
     };
-
-    std::variant<std::monostate, String, float> resourceMax = statOrValue("maxStat", "maxValue");
-    std::variant<std::monostate, String, float> resourceDelta = statOrValue("deltaStat", "deltaValue");
-    m_stats.addResource(resource.first, resourceMax, resourceDelta);
-
-    if (auto initialValue = resource.second.optFloat("initialValue")) {
-      m_stats.setResourceValue(resource.first, *initialValue);
-      m_defaultResourceValues[resource.first] = makeLeft(*initialValue);
-    } else if (auto percentage = resource.second.optFloat("initialPercentage")) {
-      m_stats.setResourcePercentage(resource.first, *percentage);
-      m_defaultResourceValues[resource.first] = makeRight(*percentage);
+    auto resourceMax = statOrValue("maxStat", "maxValue");
+    if (!resourceMax) return std::unexpected(std::move(resourceMax.error()));
+    auto resourceDelta = statOrValue("deltaStat", "deltaValue");
+    if (!resourceDelta) return std::unexpected(std::move(resourceDelta.error()));
+    auto added = collection->m_stats.addResource(resource.first, std::move(*resourceMax), std::move(*resourceDelta));
+    if (!added) return std::unexpected(std::move(added.error()));
+    auto initialValue = resource.second.optFloat("initialValue");
+    if (!initialValue) return std::unexpected(std::move(initialValue.error()));
+    if (*initialValue) {
+      auto set = collection->m_stats.setResourceValue(resource.first, **initialValue);
+      if (!set) return std::unexpected(std::move(set.error()));
+      collection->m_defaultResourceValues[resource.first] = makeLeft(**initialValue);
     } else {
-      if (!std::holds_alternative<std::monostate>(m_stats.resourceMax(resource.first))) {
-        m_stats.setResourcePercentage(resource.first, 1.0f);
-        m_defaultResourceValues[resource.first] = makeRight(1.0f);
+      auto percentage = resource.second.optFloat("initialPercentage");
+      if (!percentage) return std::unexpected(std::move(percentage.error()));
+      if (*percentage) {
+        auto set = collection->m_stats.setResourcePercentage(resource.first, **percentage);
+        if (!set) return std::unexpected(std::move(set.error()));
+        collection->m_defaultResourceValues[resource.first] = makeRight(**percentage);
       } else {
-        m_stats.setResourceValue(resource.first, 0.0f);
-        m_defaultResourceValues[resource.first] = makeLeft(0.0f);
+        auto maximum = collection->m_stats.resourceMax(resource.first);
+        if (!maximum) return std::unexpected(std::move(maximum.error()));
+        if (!std::holds_alternative<std::monostate>(*maximum)) {
+          auto set = collection->m_stats.setResourcePercentage(resource.first, 1.0f);
+          if (!set) return std::unexpected(std::move(set.error()));
+          collection->m_defaultResourceValues[resource.first] = makeRight(1.0f);
+        } else {
+          auto set = collection->m_stats.setResourceValue(resource.first, 0.0f);
+          if (!set) return std::unexpected(std::move(set.error()));
+          collection->m_defaultResourceValues[resource.first] = makeLeft(0.0f);
+        }
       }
     }
   }
 
-  addNetElement(&m_statModifiersNetState);
-
-  // Sort resource names alphabetically to ensure the same order on master and
-  // slaves.
-  for (auto const& resource : m_stats.resourceNames().sorted()) {
-    auto& resourceNetState = m_resourceValuesNetStates[resource];
-    addNetElement(&resourceNetState);
-    addNetElement(&m_resourceLockedNetStates[resource]);
+  auto modifiers = collection->addNetElement(&collection->m_statModifiersNetState);
+  if (!modifiers) return std::unexpected(std::move(modifiers.error()));
+  // Sort resource names alphabetically to ensure the same order on master and slaves.
+  for (auto const& resource : collection->m_stats.resourceNames().sorted()) {
+    auto& resourceNetState = collection->m_resourceValuesNetStates[resource];
+    auto valueAdded = collection->addNetElement(&resourceNetState);
+    if (!valueAdded) return std::unexpected(std::move(valueAdded.error()));
+    auto lockAdded = collection->addNetElement(&collection->m_resourceLockedNetStates[resource]);
+    if (!lockAdded) return std::unexpected(std::move(lockAdded.error()));
   }
+  return collection;
 }
 
 StringList StatCollection::statNames() const {
@@ -90,70 +118,87 @@ bool StatCollection::resourcePositive(String const& resourceName) const {
   return resource(resourceName) > 0.0f;
 }
 
-void StatCollection::setResource(String const& resourceName, float value) {
-  m_stats.setResourceValue(resourceName, value);
+std::expected<void, StarException> StatCollection::setResource(String const& resourceName, float value) {
+  auto set = m_stats.setResourceValue(resourceName, value);
+  if (!set) return std::unexpected(std::move(set.error()));
+  return {};
 }
 
-void StatCollection::modifyResource(String const& resourceName, float amount) {
-  m_stats.modifyResourceValue(resourceName, amount);
+std::expected<void, StarException> StatCollection::modifyResource(String const& resourceName, float amount) {
+  auto modified = m_stats.modifyResourceValue(resourceName, amount);
+  if (!modified) return std::unexpected(std::move(modified.error()));
+  return {};
 }
 
 float StatCollection::giveResource(String const& resourceName, float amount) {
   return m_stats.giveResourceValue(resourceName, amount);
 }
 
-bool StatCollection::consumeResource(String const& resourceName, float amount) {
+std::expected<bool, StarException> StatCollection::consumeResource(String const& resourceName, float amount) {
   return m_stats.consumeResourceValue(resourceName, amount);
 }
 
-bool StatCollection::overConsumeResource(String const& resourceName, float amount) {
+std::expected<bool, StarException> StatCollection::overConsumeResource(String const& resourceName, float amount) {
   return m_stats.overConsumeResourceValue(resourceName, amount);
 }
 
-bool StatCollection::resourceLocked(String const& resourceName) const {
+std::expected<bool, StarException> StatCollection::resourceLocked(String const& resourceName) const {
   return m_stats.resourceLocked(resourceName);
 }
 
-void StatCollection::setResourceLocked(String const& resourceName, bool locked) {
-  m_stats.setResourceLocked(resourceName, locked);
+std::expected<void, StarException> StatCollection::setResourceLocked(String const& resourceName, bool locked) {
+  return m_stats.setResourceLocked(resourceName, locked);
 }
 
-void StatCollection::resetResource(String const& resourceName) {
-  m_stats.setResourceLocked(resourceName, false);
+std::expected<void, StarException> StatCollection::resetResource(String const& resourceName) {
+  auto unlocked = m_stats.setResourceLocked(resourceName, false);
+  if (!unlocked) return std::unexpected(std::move(unlocked.error()));
   auto def = m_defaultResourceValues.get(resourceName);
-  if (def.isLeft())
-    m_stats.setResourceValue(resourceName, def.left());
-  else
-    m_stats.setResourcePercentage(resourceName, def.right());
+  if (!def) return std::unexpected(std::move(def.error()));
+  if (auto value = (*def)->leftPtr()) {
+    auto set = m_stats.setResourceValue(resourceName, *value);
+    if (!set) return std::unexpected(std::move(set.error()));
+  } else {
+    auto percentage = (*def)->right();
+    if (!percentage) return std::unexpected(std::move(percentage.error()));
+    auto set = m_stats.setResourcePercentage(resourceName, **percentage);
+    if (!set) return std::unexpected(std::move(set.error()));
+  }
+  return {};
 }
 
-void StatCollection::resetAllResources() {
-  for (auto const& resourceName : m_stats.resourceNames())
-    resetResource(resourceName);
+std::expected<void, StarException> StatCollection::resetAllResources() {
+  for (auto const& resourceName : m_stats.resourceNames()) {
+    auto reset = resetResource(resourceName);
+    if (!reset) return std::unexpected(std::move(reset.error()));
+  }
+  return {};
 }
 
-std::optional<float> StatCollection::resourceMax(String const& resourceName) const {
+std::expected<std::optional<float>, StarException> StatCollection::resourceMax(String const& resourceName) const {
   return m_stats.resourceMaxValue(resourceName);
 }
 
-std::optional<float> StatCollection::resourcePercentage(String const& resourceName) const {
+std::expected<std::optional<float>, StarException> StatCollection::resourcePercentage(String const& resourceName) const {
   return m_stats.resourcePercentage(resourceName);
 }
 
-float StatCollection::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+std::expected<float, StarException> StatCollection::setResourcePercentage(String const& resourceName, float resourcePercentage) {
   return m_stats.setResourcePercentage(resourceName, resourcePercentage);
 }
 
-float StatCollection::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+std::expected<float, StarException> StatCollection::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
   return m_stats.modifyResourcePercentage(resourceName, resourcePercentage);
 }
 
-StatModifierGroupId StatCollection::addStatModifierGroup(List<StatModifier> modifiers) {
-  return m_stats.addStatModifierGroup(modifiers);
+std::expected<StatModifierGroupId, StarException> StatCollection::addStatModifierGroup(List<StatModifier> modifiers) {
+  return m_stats.addStatModifierGroup(std::move(modifiers));
 }
 
-void StatCollection::setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers) {
-  m_stats.setStatModifierGroup(modifierGroupId, modifiers);
+std::expected<void, StarException> StatCollection::setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers) {
+  auto set = m_stats.setStatModifierGroup(modifierGroupId, std::move(modifiers));
+  if (!set) return std::unexpected(std::move(set.error()));
+  return {};
 }
 
 void StatCollection::removeStatModifierGroup(StatModifierGroupId modifierGroupId) {
@@ -172,29 +217,36 @@ void StatCollection::tickSlave(float) {
   m_stats.update(0.0f);
 }
 
-void StatCollection::netElementsNeedLoad(bool) {
+std::expected<void, StarException> StatCollection::netElementsNeedLoad(bool) {
   if (m_statModifiersNetState.pullUpdated()) {
     StatModifierGroupMap allModifiers;
-    for (auto const& p : m_statModifiersNetState)
-      allModifiers.add(p.first, p.second);
+    for (auto const& p : m_statModifiersNetState) {
+      auto added = allModifiers.add(p.first, p.second);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
     m_stats.setAllStatModifierGroups(std::move(allModifiers));
   }
-
-  for (auto const& pair : m_resourceValuesNetStates)
-    m_stats.setResourceValue(pair.first, pair.second.get());
-
-  for (auto& pair : m_resourceLockedNetStates)
-    m_stats.setResourceLocked(pair.first, pair.second.get());
+  for (auto const& pair : m_resourceValuesNetStates) {
+    auto set = m_stats.setResourceValue(pair.first, pair.second.get());
+    if (!set) return std::unexpected(std::move(set.error()));
+  }
+  for (auto& pair : m_resourceLockedNetStates) {
+    auto set = m_stats.setResourceLocked(pair.first, pair.second.get());
+    if (!set) return std::unexpected(std::move(set.error()));
+  }
+  return {};
 }
 
-void StatCollection::netElementsNeedStore() {
+std::expected<void, StarException> StatCollection::netElementsNeedStore() {
   m_statModifiersNetState.setContents(m_stats.allStatModifierGroups());
-
   for (auto& pair : m_resourceValuesNetStates)
     pair.second.set(m_stats.resourceValue(pair.first));
-
-  for (auto& pair : m_resourceLockedNetStates)
-    pair.second.set(m_stats.resourceLocked(pair.first));
+  for (auto& pair : m_resourceLockedNetStates) {
+    auto locked = m_stats.resourceLocked(pair.first);
+    if (!locked) return std::unexpected(std::move(locked.error()));
+    pair.second.set(*locked);
+  }
+  return {};
 }
 
 }

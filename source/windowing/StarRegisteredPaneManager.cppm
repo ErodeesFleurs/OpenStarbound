@@ -61,26 +61,38 @@ public:
 
   explicit RegisteredPaneManager(GuiContext& context) : PaneManager(context) {}
 
-  void registerPane(KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss = {});
-  std::shared_ptr<Pane> deregisterPane(KeyT const& paneId);
-  void deregisterAllPanes();
+  [[nodiscard]] std::expected<void, StarException> initialize() {
+    return initializePaneManager();
+  }
+
+  [[nodiscard]] static std::expected<std::shared_ptr<RegisteredPaneManager>, StarException> create(GuiContext& context) {
+    auto manager = std::make_shared<RegisteredPaneManager>(context);
+    auto initialized = manager->initialize();
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    return manager;
+  }
+
+  [[nodiscard]] std::expected<void, StarException> registerPane(KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss = {});
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> deregisterPane(KeyT const& paneId);
+  [[nodiscard]] std::expected<void, StarException> deregisterAllPanes();
 
   template <typename T = Pane>
-  std::shared_ptr<T> registeredPane(KeyT const& paneId) const;
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> registeredPane(KeyT const& paneId) const;
   template <typename T = Pane>
-  std::shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> maybeRegisteredPane(KeyT const& paneId) const;
 
   // Displays a registred pane if it is not already displayed.  Returns true
   // if it is newly displayed.
-  bool displayRegisteredPane(KeyT const& paneId);
-  bool registeredPaneIsDisplayed(KeyT const& paneId) const;
+  [[nodiscard]] std::expected<bool, StarException> displayRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] std::expected<bool, StarException> registeredPaneIsDisplayed(KeyT const& paneId) const;
 
   // Dismisses a registred pane if it is displayed.  Returns true if it
   // has been dismissed.
-  bool dismissRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] std::expected<bool, StarException> dismissRegisteredPane(KeyT const& paneId);
 
   // Returns whether the pane is now displayed.
-  bool toggleRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] std::expected<bool, StarException> toggleRegisteredPane(KeyT const& paneId);
 
 private:
   struct PaneInfo {
@@ -89,7 +101,7 @@ private:
     DismissCallback dismissCallback;
   };
 
-  PaneInfo const& getRegisteredPaneInfo(KeyT const& paneId) const;
+  [[nodiscard]] std::expected<PaneInfo const*, StarException> getRegisteredPaneInfo(KeyT const& paneId) const;
 
   // Map of registered panes by name.
   HashMap<KeyT, PaneInfo> m_registeredPanes;
@@ -97,87 +109,112 @@ private:
 
 template <typename KeyT>
 template <typename T>
-std::shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
     return convert<T>(v->pane);
-  throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager", outputAny(paneId)));
+  return std::unexpected(GuiException(strf("No pane named '{}' found in RegisteredPaneManager", outputAny(paneId))));
 }
 
 template <typename KeyT>
 template <typename T>
-std::shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
     return convert<T>(v->pane);
+  return std::shared_ptr<T>{};
+}
+
+template <typename KeyT>
+[[nodiscard]] std::expected<void, StarException> RegisteredPaneManager<KeyT>::registerPane(
+    KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss) {
+  if (!m_registeredPanes.insert(std::move(paneId), {std::move(paneLayer), std::move(pane), std::move(onDismiss)}).second)
+    return std::unexpected(GuiException(
+        strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
+            outputAny(paneId))));
   return {};
 }
 
 template <typename KeyT>
-void RegisteredPaneManager<KeyT>::registerPane(
-    KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss) {
-  if (!m_registeredPanes.insert(std::move(paneId), {std::move(paneLayer), std::move(pane), std::move(onDismiss)}).second)
-    throw GuiException(
-        strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
-            outputAny(paneId)));
-}
-
-template <typename KeyT>
-std::shared_ptr<Pane> RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
+[[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
   if (auto v = m_registeredPanes.maybeTake(paneId)) {
-    if (isDisplayed(v->pane))
-      dismissPane(v->pane);
+    if (isDisplayed(v->pane)) {
+      auto dismissed = dismissPane(v->pane);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    }
     return v->pane;
   }
-  throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager::deregisterPane", outputAny(paneId)));
+  return std::unexpected(GuiException(strf("No pane named '{}' found in RegisteredPaneManager::deregisterPane", outputAny(paneId))));
 }
 
 template <typename KeyT>
-void RegisteredPaneManager<KeyT>::deregisterAllPanes() {
-  for (auto const& k : m_registeredPanes.keys())
-    deregisterPane(k);
+[[nodiscard]] std::expected<void, StarException> RegisteredPaneManager<KeyT>::deregisterAllPanes() {
+  for (auto const& k : m_registeredPanes.keys()) {
+    auto deregistered = deregisterPane(k);
+    if (!deregistered)
+      return std::unexpected(std::move(deregistered.error()));
+  }
+  return {};
 }
 
 template <typename KeyT>
-bool RegisteredPaneManager<KeyT>::displayRegisteredPane(KeyT const& paneId) {
-  auto const& paneInfo = getRegisteredPaneInfo(paneId);
-  if (!isDisplayed(paneInfo.pane)) {
-    displayPane(paneInfo.layer, paneInfo.pane, paneInfo.dismissCallback);
+[[nodiscard]] std::expected<bool, StarException> RegisteredPaneManager<KeyT>::displayRegisteredPane(KeyT const& paneId) {
+  auto paneInfo = getRegisteredPaneInfo(paneId);
+  if (!paneInfo)
+    return std::unexpected(std::move(paneInfo.error()));
+  if (!isDisplayed((*paneInfo)->pane)) {
+    auto displayed = displayPane((*paneInfo)->layer, (*paneInfo)->pane, (*paneInfo)->dismissCallback);
+    if (!displayed)
+      return std::unexpected(std::move(displayed.error()));
     return true;
   }
   return false;
 }
 
 template <typename KeyT>
-bool RegisteredPaneManager<KeyT>::registeredPaneIsDisplayed(KeyT const& paneId) const {
-  return isDisplayed(getRegisteredPaneInfo(paneId).pane);
+[[nodiscard]] std::expected<bool, StarException> RegisteredPaneManager<KeyT>::registeredPaneIsDisplayed(KeyT const& paneId) const {
+  auto paneInfo = getRegisteredPaneInfo(paneId);
+  if (!paneInfo)
+    return std::unexpected(std::move(paneInfo.error()));
+  return isDisplayed((*paneInfo)->pane);
 }
 
 template <typename KeyT>
-bool RegisteredPaneManager<KeyT>::dismissRegisteredPane(KeyT const& paneId) {
-  auto const& paneInfo = getRegisteredPaneInfo(paneId);
-  if (isDisplayed(paneInfo.pane)) {
-    dismissPane(paneInfo.pane);
+[[nodiscard]] std::expected<bool, StarException> RegisteredPaneManager<KeyT>::dismissRegisteredPane(KeyT const& paneId) {
+  auto paneInfo = getRegisteredPaneInfo(paneId);
+  if (!paneInfo)
+    return std::unexpected(std::move(paneInfo.error()));
+  if (isDisplayed((*paneInfo)->pane)) {
+    auto dismissed = dismissPane((*paneInfo)->pane);
+    if (!dismissed)
+      return std::unexpected(std::move(dismissed.error()));
     return true;
   }
   return false;
 }
 
 template <typename KeyT>
-bool RegisteredPaneManager<KeyT>::toggleRegisteredPane(KeyT const& paneId) {
-  if (registeredPaneIsDisplayed(paneId)) {
-    dismissRegisteredPane(paneId);
+[[nodiscard]] std::expected<bool, StarException> RegisteredPaneManager<KeyT>::toggleRegisteredPane(KeyT const& paneId) {
+  auto displayed = registeredPaneIsDisplayed(paneId);
+  if (!displayed)
+    return std::unexpected(std::move(displayed.error()));
+  if (*displayed) {
+    auto dismissed = dismissRegisteredPane(paneId);
+    if (!dismissed)
+      return std::unexpected(std::move(dismissed.error()));
     return false;
-  } else {
-    displayRegisteredPane(paneId);
-    return true;
   }
+  auto shown = displayRegisteredPane(paneId);
+  if (!shown)
+    return std::unexpected(std::move(shown.error()));
+  return true;
 }
 
 template <typename KeyT>
-typename RegisteredPaneManager<KeyT>::PaneInfo const& RegisteredPaneManager<KeyT>::getRegisteredPaneInfo(
+[[nodiscard]] std::expected<typename RegisteredPaneManager<KeyT>::PaneInfo const*, StarException> RegisteredPaneManager<KeyT>::getRegisteredPaneInfo(
     KeyT const& paneId) const {
   if (auto p = m_registeredPanes.ptr(paneId))
-    return *p;
-  throw GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId)));
+    return p;
+  return std::unexpected(GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId))));
 }
 }
 

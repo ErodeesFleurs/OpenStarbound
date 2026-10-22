@@ -39,6 +39,7 @@ import star.gui_context;
 import star.widget;
 import star.pane;
 import star.player_codexes;
+import star.format;
 
 namespace Star {
 
@@ -60,25 +61,26 @@ public:
     return Star::typeName<CodexInterface>();
   }
 
-  CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
+  [[nodiscard]] static std::expected<std::shared_ptr<CodexInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<Player> player);
 
-  virtual void show() override;
-  virtual void tick(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
-  void showTitles();
-  void showSelectedContents();
-  void showContents(String const& codexId);
-  void showContents(std::shared_ptr<Codex const> codex);
+  [[nodiscard]] std::expected<void, StarException> showSelectedContents();
+  [[nodiscard]] std::expected<void, StarException> showContents(String const& codexId);
+  [[nodiscard]] std::expected<void, StarException> showContents(std::shared_ptr<Codex const> codex);
 
-  void forwardPage();
-  void backwardPage();
+  [[nodiscard]] std::expected<void, StarException> forwardPage();
+  [[nodiscard]] std::expected<void, StarException> backwardPage();
 
-  bool showNewCodex();
+  [[nodiscard]] std::expected<bool, StarException> showNewCodex();
 
 private:
-  void updateSpecies();
-  void setupPageText();
-  void updateCodexList();
+  CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> updateSpecies();
+  [[nodiscard]] std::expected<void, StarException> setupPageText();
+  [[nodiscard]] std::expected<void, StarException> updateCodexList();
 
   std::shared_ptr<StackWidget> m_stack;
 

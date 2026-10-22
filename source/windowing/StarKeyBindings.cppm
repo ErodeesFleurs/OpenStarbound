@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.list;
@@ -85,7 +86,7 @@ enum class InterfaceAction {
   InterfaceQuest,
   InterfaceCrafting,
 };
-extern EnumMap<InterfaceAction> const InterfaceActionNames;
+extern std::expected<EnumMap<InterfaceAction>, StarException> const InterfaceActionNames;
 
 // Modifier keys accepted in key chords; lock-state bits are excluded.
 inline constexpr std::array<std::pair<Key, KeyMod>, 9> KeyChordMods{{
@@ -108,15 +109,15 @@ struct KeyChord {
   auto operator<=>(KeyChord const& rhs) const = default;
 };
 
-KeyChord inputDescriptorFromJson(Json const& json);
-Json inputDescriptorToJson(KeyChord const& chord);
+[[nodiscard]] std::expected<KeyChord, StarException> inputDescriptorFromJson(Json const& json);
+[[nodiscard]] std::expected<Json, StarException> inputDescriptorToJson(KeyChord const& chord);
 
-String printInputDescriptor(KeyChord chord);
+[[nodiscard]] std::expected<String, StarException> printInputDescriptor(KeyChord chord);
 
 class KeyBindings {
 public:
   KeyBindings();
-  KeyBindings(Root& root, Json const& json);
+  [[nodiscard]] static std::expected<KeyBindings, StarException> create(Root& root, Json const& json);
 
   Set<InterfaceAction> actions(Key key) const;
   Set<InterfaceAction> actions(InputEvent const& event) const;

@@ -140,8 +140,9 @@ public:
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   
-  WorldClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
-  WorldClient(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldClient>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
+  [[nodiscard]] std::expected<void, StarException> close();
   ~WorldClient();
 
   ConnectionId connection() const override;
@@ -153,58 +154,58 @@ public:
   MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
   MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const override;
   LiquidLevel liquidLevel(Vec2I const& pos) const override;
-  LiquidLevel liquidLevel(RectF const& region) const override;
-  TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
-  TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
-  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
-  bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
+  [[nodiscard]] std::expected<LiquidLevel, StarException> liquidLevel(RectF const& region) const override;
+  [[nodiscard]] std::expected<TileModificationList, StarException> validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
+  [[nodiscard]] std::expected<TileModificationList, StarException> applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
+  [[nodiscard]] std::expected<TileModificationList, StarException> replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
+  [[nodiscard]] std::expected<bool, StarException> damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
   std::shared_ptr<Entity> entity(EntityId entityId) const override;
-  void addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) override;
-  std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
-  void forAllEntities(EntityCallback entityCallback) const override;
-  void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
-  void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback callback) const override;
-  void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const override;
-  std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
-  std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
-  std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
-  bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
-  CollisionKind tileCollisionKind(Vec2I const& pos) const override;
-  void forEachCollisionBlock(RectI const& region, std::function<void(CollisionBlock const&)> const& iterator) const override;
-  bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
-  bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
-  bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) override;
-  std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
-  bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
-  RpcPromise<InteractAction> interact(InteractRequest const& request) override;
-  float gravity(Vec2F const& pos) const override;
-  float windLevel(Vec2F const& pos) const override;
-  float lightLevel(Vec2F const& pos) const override;
-  bool breathable(Vec2F const& pos) const override;
-  float threatLevel() const override;
-  StringList environmentStatusEffects(Vec2F const& pos) const override;
-  StringList weatherStatusEffects(Vec2F const& pos) const override;
-  bool exposedToWeather(Vec2F const& pos) const override;
-  std::optional<String> activeWeather(Vec2F const& pos) const override;
-  bool isUnderground(Vec2F const& pos) const override;
-  bool disableDeathDrops() const override;
-  List<PhysicsForceRegion> forceRegions() const override;
-  Json getProperty(String const& propertyName, Json const& def = Json()) const override;
-  void setProperty(String const& propertyName, Json const& property) override;
+  [[nodiscard]] std::expected<void, StarException> addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
+  [[nodiscard]] std::expected<void, StarException> forAllEntities(EntityCallback entityCallback) const override;
+  [[nodiscard]] std::expected<void, StarException> forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
+  [[nodiscard]] std::expected<void, StarException> forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback callback) const override;
+  [[nodiscard]] std::expected<void, StarException> forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const override;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
+  [[nodiscard]] std::expected<bool, StarException> tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
+  [[nodiscard]] std::expected<CollisionKind, StarException> tileCollisionKind(Vec2I const& pos) const override;
+  [[nodiscard]] std::expected<void, StarException> forEachCollisionBlock(RectI const& region, std::function<std::expected<void, StarException>(CollisionBlock const&)> const& iterator) const override;
+  [[nodiscard]] std::expected<bool, StarException> isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
+  [[nodiscard]] std::expected<bool, StarException> pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] std::expected<bool, StarException> lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] std::expected<List<Vec2I>, StarException> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
+  [[nodiscard]] std::expected<bool, StarException> rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] std::expected<TileDamageResult, StarException> damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) override;
+  [[nodiscard]] std::expected<std::shared_ptr<InteractiveEntity>, StarException> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
+  [[nodiscard]] std::expected<bool, StarException> canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
+  [[nodiscard]] std::expected<RpcPromise<InteractAction>, StarException> interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<float, StarException> gravity(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<float, StarException> windLevel(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<float, StarException> lightLevel(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<bool, StarException> breathable(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<float, StarException> threatLevel() const override;
+  [[nodiscard]] std::expected<StringList, StarException> environmentStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<StringList, StarException> weatherStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<bool, StarException> exposedToWeather(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> activeWeather(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<bool, StarException> isUnderground(Vec2F const& pos) const override;
+  [[nodiscard]] std::expected<bool, StarException> disableDeathDrops() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
+  [[nodiscard]] std::expected<Json, StarException> getProperty(String const& propertyName, Json const& def = Json()) const override;
+  [[nodiscard]] std::expected<void, StarException> setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
   double epochTime() const override;
   std::uint32_t day() const override;
   float dayLength() const override;
   float timeOfDay() const override;
   std::shared_ptr<LuaRoot> luaRoot() override;
-  RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
-  RpcPromise<Json> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] std::expected<RpcPromise<Vec2F>, StarException> findUniqueEntity(String const& uniqueId) override;
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
-  StringMap<LuaCallbacks> luaThreadCallbacks() const override;
+  [[nodiscard]] std::expected<StringMap<LuaCallbacks>, StarException> luaThreadCallbacks() const override;
 
   // Is this WorldClient properly initialized in a world
   bool inWorld() const;
@@ -216,14 +217,14 @@ public:
   bool flying() const;
 
   bool mainPlayerDead() const;
-  void reviveMainPlayer();
+  [[nodiscard]] std::expected<void, StarException> reviveMainPlayer();
   bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
   std::int64_t latency() const;
 
-  void resendEntity(EntityId entityId);
-  void removeEntity(EntityId entityId, bool andDie);
+  [[nodiscard]] std::expected<void, StarException> resendEntity(EntityId entityId);
+  [[nodiscard]] std::expected<void, StarException> removeEntity(EntityId entityId, bool andDie);
 
   std::shared_ptr<WorldTemplate const> currentTemplate() const;
   void setTemplate(Json newTemplate);
@@ -248,7 +249,7 @@ public:
   bool collisionDebug() const;
   void setCollisionDebug(bool collisionDebug);
 
-  void handleIncomingPackets(List<std::shared_ptr<Packet>> const& packets);
+  [[nodiscard]] std::expected<void, StarException> handleIncomingPackets(List<std::shared_ptr<Packet>> const& packets);
   List<std::shared_ptr<Packet>> getOutgoingPackets();
 
   // Set the rendering window for this client.
@@ -259,18 +260,18 @@ public:
   RectI clientWindow() const;
   WorldClientState& clientState();
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   std::shared_ptr<WorldClient::ScriptComponent> scriptContext(String const& contextName);
 
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
-  void render(WorldRenderData& renderData, unsigned borderTiles, TileDrawer* tileDrawer);
+  [[nodiscard]] std::expected<void, StarException> render(WorldRenderData& renderData, unsigned borderTiles, TileDrawer* tileDrawer);
   List<std::shared_ptr<AudioInstance>> pullPendingAudio();
   List<std::shared_ptr<AudioInstance>> pullPendingMusic();
 
-  bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
+  [[nodiscard]] std::expected<bool, StarException> playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
 
   void disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node);
   void wire(Vec2I const& outputPosition, std::size_t outputIndex, Vec2I const& inputPosition, std::size_t inputIndex);
@@ -280,19 +281,19 @@ public:
   // on completely vanilla servers by smuggling it through a DamageNotification.
   // It's cursed as fuck, but it works.
   bool sendSecretBroadcast(StringView broadcast, bool raw = false, bool compress = true);
-  bool handleSecretBroadcast(std::shared_ptr<Player> player, StringView broadcast);
+  [[nodiscard]] std::expected<bool, StarException> handleSecretBroadcast(std::shared_ptr<Player> player, StringView broadcast);
 
-  List<ChatAction> pullPendingChatActions();
+  [[nodiscard]] std::expected<List<ChatAction>, StarException> pullPendingChatActions();
 
   WorldStructure const& centralStructure() const;
 
   DungeonId dungeonId(Vec2I const& pos) const;
 
-  void collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
+  [[nodiscard]] std::expected<void, StarException> collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  bool waitForLighting(WorldRenderData* renderData = nullptr);
+  [[nodiscard]] std::expected<bool, StarException> waitForLighting(WorldRenderData* renderData = nullptr);
 
-  typedef std::function<bool(std::shared_ptr<Player>, StringView)> BroadcastCallback;
+  typedef std::function<std::expected<bool, StarException>(std::shared_ptr<Player>, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
   
   bool shouldExpire();
@@ -301,18 +302,22 @@ public:
   void requestDestroy();
 
 private:
+  explicit WorldClient(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
+  [[nodiscard]] std::expected<void, StarException> initialize(ClientSubWorldId subWorldId, UniverseClient* universe);
+
   static const float DropDist;
 
   struct ClientRenderCallback : RenderCallback {
     explicit ClientRenderCallback(TileDrawer* drawer) : m_tileDrawer(drawer) {}
     TileDrawer* tileDrawer() const override { return m_tileDrawer; }
     TileDrawer* m_tileDrawer;
-    void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) override;
-    void addLightSource(LightSource lightSource) override;
-    void addParticle(Particle particle) override;
-    void addAudio(std::shared_ptr<AudioInstance> audio) override;
-    void addTilePreview(PreviewTile preview) override;
-    void addOverheadBar(OverheadBar bar) override;
+    [[nodiscard]] std::expected<void, StarException> addDrawable(Drawable drawable, EntityRenderLayer renderLayer) override;
+    [[nodiscard]] std::expected<void, StarException> addLightSource(LightSource lightSource) override;
+    [[nodiscard]] std::expected<void, StarException> addParticle(Particle particle) override;
+    [[nodiscard]] std::expected<void, StarException> addAudio(std::shared_ptr<AudioInstance> audio) override;
+    [[nodiscard]] std::expected<void, StarException> addTilePreview(PreviewTile preview) override;
+    [[nodiscard]] std::expected<void, StarException> addOverheadBar(OverheadBar bar) override;
 
     Map<EntityRenderLayer, List<Drawable>> drawables;
     List<LightSource> lightSources;
@@ -336,48 +341,48 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
-  typedef std::function<ClientTile const& (Vec2I)> ClientTileGetter;
+  typedef std::function<std::expected<ClientTile const*, StarException>(Vec2I)> ClientTileGetter;
 
-  void lightingTileGather();
-  void lightingCalc();
-  void lightingMain();
+  [[nodiscard]] std::expected<void, StarException> lightingTileGather();
+  [[nodiscard]] std::expected<void, StarException> lightingCalc();
+  [[nodiscard]] std::expected<void, StarException> lightingMain();
 
-  void initWorld(WorldStartPacket const& packet);
-  void clearWorld();
-  void tryGiveMainPlayerItem(std::shared_ptr<Item> item, bool silent = false);
+  [[nodiscard]] std::expected<void, StarException> initWorld(WorldStartPacket const& packet);
+  [[nodiscard]] std::expected<void, StarException> clearWorld();
+  [[nodiscard]] std::expected<void, StarException> tryGiveMainPlayerItem(std::shared_ptr<Item> item, bool silent = false);
 
-  void notifyEntityCreate(std::shared_ptr<Entity> const& entity);
+  [[nodiscard]] std::expected<void, StarException> notifyEntityCreate(std::shared_ptr<Entity> const& entity);
 
   // Queues pending (step based) updates to server,
-  void queueUpdatePackets(bool sendEntityUpdates);
-  void handleDamageNotifications();
+  [[nodiscard]] std::expected<void, StarException> queueUpdatePackets(bool sendEntityUpdates);
+  [[nodiscard]] std::expected<void, StarException> handleDamageNotifications();
 
-  void sparkDamagedBlocks();
+  [[nodiscard]] std::expected<void, StarException> sparkDamagedBlocks();
 
   Vec2I environmentBiomeTrackPosition() const;
-  std::optional<String> currentWeatherDomain() const;
-  std::shared_ptr<AmbientNoisesDescription> currentAmbientNoises() const;
-  std::shared_ptr<WeatherNoisesDescription> currentWeatherNoises() const;
-  std::shared_ptr<AmbientNoisesDescription> currentMusicTrack() const;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> currentWeatherDomain() const;
+  [[nodiscard]] std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> currentAmbientNoises() const;
+  [[nodiscard]] std::expected<std::shared_ptr<WeatherNoisesDescription>, StarException> currentWeatherNoises() const;
+  [[nodiscard]] std::expected<std::shared_ptr<AmbientNoisesDescription>, StarException> currentMusicTrack() const;
   std::shared_ptr<AmbientNoisesDescription> currentAltMusicTrack() const;
 
   void playAltMusic(StringList const& newTracks, float fadeTime, int loops = -1);
   void stopAltMusic(float fadeTime);
 
-  std::shared_ptr<Biome const> mainEnvironmentBiome() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Biome const>, StarException> mainEnvironmentBiome() const;
 
   // Populates foregroundTransparent / backgroundTransparent flag on ClientTile
   // based on transparency rules.
-  bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
+  [[nodiscard]] std::expected<bool, StarException> readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
   void dirtyCollision(RectI const& region);
-  void freshenCollision(RectI const& region);
-  void renderCollisionDebug();
+  [[nodiscard]] std::expected<void, StarException> freshenCollision(RectI const& region);
+  [[nodiscard]] std::expected<void, StarException> renderCollisionDebug();
 
-  void informTilePrediction(Vec2I const& pos, TileModification const& modification);
+  [[nodiscard]] std::expected<void, StarException> informTilePrediction(Vec2I const& pos, TileModification const& modification);
 
   void setTileProtection(DungeonId dungeonId, bool isProtected);
 
-  void setupForceRegions();
+  [[nodiscard]] std::expected<void, StarException> setupForceRegions();
 
   Json m_clientConfig;
   std::shared_ptr<WorldTemplate> m_worldTemplate;
@@ -400,6 +405,7 @@ private:
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   ThreadFunction<void> m_lightingThread;
+  bool m_lightingThreadStarted = false;
   
   Mutex m_lightingMutex;
   ConditionVariable m_lightingCond;
@@ -421,7 +427,7 @@ private:
 
   CollisionGenerator m_collisionGenerator;
 
-  WorldClientState m_clientState;
+  std::shared_ptr<WorldClientState> m_clientState;
   std::optional<ConnectionId> m_clientId;
 
   std::shared_ptr<Player> m_mainPlayer;
@@ -458,7 +464,7 @@ private:
 
   std::optional<float> m_overrideGravity;
 
-  ClientWeather m_weather;
+  std::shared_ptr<ClientWeather> m_weather;
   std::shared_ptr<ParticleManager> m_particles;
 
   List<std::shared_ptr<AudioInstance>> m_samples;

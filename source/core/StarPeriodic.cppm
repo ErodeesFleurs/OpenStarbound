@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.math_common;
 import star.random;
 
@@ -63,10 +64,14 @@ private:
 class RatePeriodic {
 public:
   explicit RatePeriodic(RandomService& random)
-    : RatePeriodic(random, 1, 0) {}
+    : m_random(random), m_period(1), m_noise(0), m_counter(1 + random.randf() * 0), m_elapsed(0.0) {}
 
-  RatePeriodic(RandomService& random, double period, double noise = 0)
-    : m_random(random), m_period(period), m_noise(noise), m_counter(period + random.randf(-noise, noise)), m_elapsed(0.0) {}
+  [[nodiscard]] static std::expected<RatePeriodic, StarException> create(RandomService& random, double period, double noise = 0) {
+    auto draw = random.randf(-noise, noise);
+    if (!draw)
+      return std::unexpected(std::move(draw.error()));
+    return RatePeriodic(random, period, noise, period + *draw);
+  }
 
   double period() const {
     return m_period;
@@ -77,22 +82,31 @@ public:
   }
 
   template <typename Function>
-  void update(double amount, Function&& function) {
+  [[nodiscard]] std::expected<void, StarException> update(double amount, Function&& function) {
     double subAmount = std::min(amount, m_counter);
     m_counter -= subAmount;
     amount -= subAmount;
     m_elapsed += subAmount;
 
     if (m_counter <= 0.0) {
-      m_counter = m_period + m_random.get().randf(-m_noise, m_noise);
-      function(m_elapsed);
+      auto draw = m_random.get().randf(-m_noise, m_noise);
+      if (!draw)
+        return std::unexpected(std::move(draw.error()));
+      m_counter = m_period + *draw;
+      auto result = function(m_elapsed);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
       m_elapsed = 0.0;
       if (amount > 0.0)
-        update(amount, std::forward<Function>(function));
+        return update(amount, std::forward<Function>(function));
     }
+    return {};
   }
 
 private:
+  RatePeriodic(RandomService& random, double period, double noise, double counter)
+    : m_random(random), m_period(period), m_noise(noise), m_counter(counter), m_elapsed(0.0) {}
+
   std::reference_wrapper<RandomService> m_random;
   double m_period;
   double m_noise;

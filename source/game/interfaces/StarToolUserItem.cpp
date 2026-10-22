@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.set;
 import star.json;
 import star.id_map;
@@ -53,56 +54,61 @@ namespace Star {
 
 ToolUserItem::ToolUserItem() : m_owner(nullptr) {}
 
-void ToolUserItem::init(ToolUserEntity* owner, ToolHand hand) {
+std::expected<void, StarException> ToolUserItem::init(ToolUserEntity* owner, ToolHand hand) {
   m_owner = owner;
   m_hand = hand;
+  return {};
 }
 
-void ToolUserItem::uninit() {
+std::expected<void, StarException> ToolUserItem::uninit() {
   m_owner = nullptr;
   m_hand = {};
+  return {};
 }
 
-void ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&) {}
+std::expected<void, StarException> ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&) { return {}; }
 
 bool ToolUserItem::initialized() const {
   return (bool)m_owner;
 }
 
-ToolUserEntity* ToolUserItem::owner() const {
+std::expected<ToolUserEntity*, StarException> ToolUserItem::owner() const {
   if (!m_owner)
-    throw ToolUserItemException("Not initialized in ToolUserItem::owner");
+    return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::owner"));
   return m_owner;
 }
 
-EntityMode ToolUserItem::entityMode() const {
+std::expected<EntityMode, StarException> ToolUserItem::entityMode() const {
   if (!m_owner)
-    throw ToolUserItemException("Not initialized in ToolUserItem::entityMode");
-  return m_owner->entityMode().value();
+    return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::entityMode"));
+  auto mode = m_owner->entityMode();
+  if (!mode)
+    return std::unexpected(ToolUserItemException("Owner is uninitialized in ToolUserItem::entityMode"));
+  return *mode;
 }
 
-ToolHand ToolUserItem::hand() const {
-  if (!m_owner)
-    throw ToolUserItemException("Not initialized in ToolUserItem::hand");
-  return m_hand.value();
+std::expected<ToolHand, StarException> ToolUserItem::hand() const {
+  if (!m_owner || !m_hand)
+    return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::hand"));
+  return *m_hand;
 }
 
-World* ToolUserItem::world() const {
+std::expected<World*, StarException> ToolUserItem::world() const {
   if (!m_owner)
-    throw ToolUserItemException("Not initialized in ToolUserItem::world");
+    return std::unexpected(ToolUserItemException("Not initialized in ToolUserItem::world"));
   return m_owner->world();
 }
 
-List<DamageSource> ToolUserItem::damageSources() const {
-  return {};
+std::expected<List<DamageSource>, StarException> ToolUserItem::damageSources() const {
+  return List<DamageSource>{};
 }
 
-List<PolyF> ToolUserItem::shieldPolys() const {
-  return {};
+std::expected<List<PolyF>, StarException> ToolUserItem::shieldPolys() const {
+  return List<PolyF>{};
 }
 
-List<PhysicsForceRegion> ToolUserItem::forceRegions() const {
-  return {};
+std::expected<List<PhysicsForceRegion>, StarException> ToolUserItem::forceRegions() const {
+  return List<PhysicsForceRegion>{};
 }
 
 }

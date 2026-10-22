@@ -51,12 +51,14 @@ inline String netErrorString() {
       0,
       NULL);
 
-  String result = strf("{} - {}", error, utf16ToString(lpMsgBuf));
-
+  auto text = lpMsgBuf ? utf16ToString(lpMsgBuf) : std::expected<String, StarException>(String{});
   if (lpMsgBuf != NULL)
     LocalFree(lpMsgBuf);
-
-  return result;
+  // This is already a diagnostic boundary: preserve the native status even if
+  // its human-readable message cannot be converted to UTF-8.
+  if (!text)
+    return strf("{} - native error text conversion failed: {}", error, text.error().what());
+  return strf("{} - {}", error, *text);
 #else
   return strf("{} - {}", errno, std::strerror(errno));
 #endif
@@ -78,7 +80,7 @@ inline bool netErrorInterrupt() {
 #endif
 }
 
-inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMode mode, struct sockaddr_storage* sockAddr) {
+[[nodiscard]] inline std::expected<void, StarException> setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMode mode, struct sockaddr_storage* sockAddr) {
   switch (mode) {
     case NetworkMode::IPv4: {
       struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
@@ -91,11 +93,12 @@ inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMo
       break;
     }
     default:
-      throw NetworkException("Invalid network mode for setAddressFromNative");
+      return std::unexpected(NetworkException("Invalid network mode for setAddressFromNative"));
   }
+  return {};
 }
 
-inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, struct sockaddr_storage* sockAddr, socklen_t* sockAddrLen) {
+[[nodiscard]] inline std::expected<void, StarException> setNativeFromAddress(HostAddressWithPort const& addressWithPort, struct sockaddr_storage* sockAddr, socklen_t* sockAddrLen) {
   switch (addressWithPort.address().mode()) {
     case NetworkMode::IPv4: {
       struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
@@ -119,8 +122,9 @@ inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, str
       break;
     }
     default:
-      throw NetworkException("Invalid network mode for setNativeFromAddress");
+      return std::unexpected(NetworkException("Invalid network mode for setNativeFromAddress"));
   }
+  return {};
 }
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
@@ -152,18 +156,19 @@ struct SocketImpl {
 #endif
   }
 
-  void setSockOpt(int level, int optname, const void* optval, socklen_t len) {
+  [[nodiscard]] std::expected<void, StarException> setSockOpt(int level, int optname, const void* optval, socklen_t len) {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
     int ret = ::setsockopt(socketDesc, level, optname, (const char*)optval, len);
 #else
     int ret = ::setsockopt(socketDesc, level, optname, optval, len);
 #endif
     if (ret < 0)
-      throw NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, netErrorString()));
+      return std::unexpected(NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, netErrorString())));
+    return {};
   }
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  SOCKET prepareWait() {
+  [[nodiscard]] std::expected<SOCKET, StarException> prepareWait() {
     std::lock_guard locker(waitMutex);
     if (invalidSocketDescriptor(wakeReader)) {
       // select does not reliably wake when a retained data socket is shut down.
@@ -173,20 +178,20 @@ struct SocketImpl {
       reader.socketDesc = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
       writer.socketDesc = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
       if (invalidSocketDescriptor(reader.socketDesc) || invalidSocketDescriptor(writer.socketDesc))
-        throw NetworkException::format("Cannot create socket readiness wake channel: {}", netErrorString());
+        return std::unexpected(NetworkException::format("Cannot create socket readiness wake channel: {}", netErrorString()));
       sockaddr_in address{};
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
       if (::bind(reader.socketDesc, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != 0)
-        throw NetworkException::format("Cannot bind socket readiness wake channel: {}", netErrorString());
+        return std::unexpected(NetworkException::format("Cannot bind socket readiness wake channel: {}", netErrorString()));
       int length = sizeof(address);
       if (::getsockname(reader.socketDesc, reinterpret_cast<sockaddr*>(&address), &length) != 0
           || ::connect(writer.socketDesc, reinterpret_cast<sockaddr*>(&address), length) != 0)
-        throw NetworkException::format("Cannot connect socket readiness wake channel: {}", netErrorString());
+        return std::unexpected(NetworkException::format("Cannot connect socket readiness wake channel: {}", netErrorString()));
       unsigned long nonblocking = 1;
       if (::ioctlsocket(reader.socketDesc, FIONBIO, &nonblocking) != 0
           || ::ioctlsocket(writer.socketDesc, FIONBIO, &nonblocking) != 0)
-        throw NetworkException::format("Cannot configure socket readiness wake channel: {}", netErrorString());
+        return std::unexpected(NetworkException::format("Cannot configure socket readiness wake channel: {}", netErrorString()));
       wakeReader = std::exchange(reader.socketDesc, INVALID_SOCKET);
       wakeWriter = std::exchange(writer.socketDesc, INVALID_SOCKET);
     }

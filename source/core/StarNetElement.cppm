@@ -4,6 +4,7 @@ import star.type_identity;
 import star.net_compatibility;
 import star.version;
 import star.data_stream;
+import star.format;
 
 namespace Star {
 
@@ -37,8 +38,8 @@ public:
   virtual void initNetVersion(NetElementVersion const* version = nullptr) = 0;
 
   // Full store / load of the entire element.
-  virtual void netStore(DataStream& ds, NetCompatibilityRules rules) const = 0;
-  virtual void netLoad(DataStream& ds, NetCompatibilityRules rules) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) = 0;
 
   // Enables interpolation mode.  If interpolation mode is enabled, then
   // NetElements will delay presenting incoming delta data for the
@@ -47,23 +48,23 @@ public:
   // be periodically called to smooth values forward in time.  If
   // extrapolationHint is given, this may be used as a hint for the amount of
   // time to extrapolate forward if no deltas are received.
-  virtual void enableNetInterpolation(float extrapolationHint = 0.0f);
-  virtual void disableNetInterpolation();
-  virtual void tickNetInterpolation(float dt);
+  [[nodiscard]] virtual std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f);
+  [[nodiscard]] virtual std::expected<void, StarException> disableNetInterpolation();
+  [[nodiscard]] virtual std::expected<void, StarException> tickNetInterpolation(float dt);
 
   // Write all the state changes that have happened since (and including)
   // fromVersion.  The normal way to use this would be to call writeDelta with
   // the version at the time of the *last* call to writeDelta, + 1.  If
   // fromVersion is 0, this will always write the full state.  Should return
   // true if a delta was needed and was written to DataStream, false otherwise.
-  virtual bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
   // Read a delta written by writeNetDelta.  'interpolationTime' is the time in
   // the future that data from this delta should be delayed and smoothed into,
   // if interpolation is enabled.
-  virtual void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) = 0;
   // When extrapolating, it is important to notify when a delta WOULD have been
   // received even if no deltas are produced, so no extrapolation takes place.
-  virtual void blankNetDelta(float interpolationTime);
+  [[nodiscard]] virtual std::expected<void, StarException> blankNetDelta(float interpolationTime);
 
   VersionNumber compatibilityVersion() const;
   void setCompatibilityVersion(VersionNumber version);

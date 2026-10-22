@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.type_identity;
 import star.json;
@@ -78,19 +79,20 @@ public:
     return Star::typeName<LoungeableObject>();
   }
 
-  LoungeableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
+  [[nodiscard]] static std::expected<std::shared_ptr<LoungeableObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
 
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
 
   std::size_t anchorCount() const override;
-  std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t positionIndex) const override;
+  [[nodiscard]] std::expected<std::shared_ptr<LoungeAnchor const>, StarException> loungeAnchor(std::size_t positionIndex) const override;
 
 protected:
-  void setOrientationIndex(std::size_t orientationIndex) override;
+  [[nodiscard]] std::expected<void, StarException> setOrientationIndex(std::size_t orientationIndex) override;
 
 private:
+  explicit LoungeableObject(Root& rootContext);
   List<Vec2F> m_sitPositions;
   bool m_sitFlipDirection;
   LoungeOrientation m_sitOrientation;

@@ -39,64 +39,175 @@ import star.root;
 
 namespace Star {
 
-Item::Item(Root& root, Json config, String directory, Json parameters) : m_root(&root) {
+Item::Item(Root& root) : m_root(&root), m_count(1), m_maxStack(0), m_rarity(), m_twoHanded(false), m_timeToLive(0), m_price(0) {}
+
+std::expected<void, StarException> Item::initialize(Json config, String directory, Json parameters) {
   m_config = std::move(config);
   m_directory = std::move(directory);
   m_parameters = std::move(parameters);
-  m_name = m_config.getString("itemName");
-  m_count = 1;
+  if (!m_parameters.isType(Json::Type::Object))
+    return std::unexpected(ItemException("Item parameters not an object"));
+  auto name = m_config.getString("itemName");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  m_name = std::move(*name);
 
-  m_maxStack = instanceValue("maxStack", root.assets()->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
-  m_shortDescription = instanceValue("shortdescription", "").toString();
-  m_description = instanceValue("description", "").toString();
+  auto assets = root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto defaults = (*assets)->json("/items/defaultParameters.config");
+  if (!defaults)
+    return std::unexpected(std::move(defaults.error()));
+  auto defaultMaxStack = defaults->get("defaultMaxStack").and_then([](Json const& value) { return value.toInt(); });
+  if (!defaultMaxStack)
+    return std::unexpected(std::move(defaultMaxStack.error()));
+  auto maxStack = instanceValue("maxStack", *defaultMaxStack).and_then([](Json const& value) { return value.toInt(); });
+  if (!maxStack)
+    return std::unexpected(std::move(maxStack.error()));
+  m_maxStack = *maxStack;
+  auto shortDescription = instanceValue("shortdescription", "").and_then([](Json const& value) { return value.toString(); });
+  if (!shortDescription)
+    return std::unexpected(std::move(shortDescription.error()));
+  m_shortDescription = std::move(*shortDescription);
+  auto description = instanceValue("description", "").and_then([](Json const& value) { return value.toString(); });
+  if (!description)
+    return std::unexpected(std::move(description.error()));
+  m_description = std::move(*description);
+  auto rarity = instanceValue("rarity").and_then([](Json const& value) { return value.toString(); });
+  if (!rarity)
+    return std::unexpected(std::move(rarity.error()));
+  if (!RarityNames)
+    return std::unexpected(RarityNames.error());
+  auto rarityValue = RarityNames->getLeft(*rarity);
+  if (!rarityValue)
+    return std::unexpected(std::move(rarityValue.error()));
+  m_rarity = **rarityValue;
 
-  m_rarity = RarityNames.getLeft(instanceValue("rarity").toString());
-
-  auto inventoryIcon = instanceValue("inventoryIcon", root.assets()->json("/items/defaultParameters.config:missingIcon"));
-  if (inventoryIcon.type() == Json::Type::Array) {
-    setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
-      if (auto image = config.optString("image"))
-        return Drawable(*root.imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(*root.imageMetadataDatabase(), config);
-    }));
-  } else {
-    auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
-    setIconDrawables({Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
-  }
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto loadIcon = [&](Json const& icon) -> std::expected<List<Drawable>, StarException> {
+    List<Drawable> drawables;
+    if (icon.type() == Json::Type::Array) {
+      auto array = icon.iterateArray();
+      if (!array)
+        return std::unexpected(std::move(array.error()));
+      for (auto imageConfig : *array) {
+        auto image = imageConfig.optString("image");
+        if (!image)
+          return std::unexpected(std::move(image.error()));
+        if (*image) {
+          auto relative = imageConfig.set("image", AssetPath::relativeTo(m_directory, **image));
+          if (!relative)
+            return std::unexpected(std::move(relative.error()));
+          imageConfig = std::move(*relative);
+        }
+        auto drawable = Drawable::create(**metadata, imageConfig);
+        if (!drawable)
+          return std::unexpected(std::move(drawable.error()));
+        drawables.append(std::move(*drawable));
+      }
+    } else {
+      auto image = icon.toString();
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+      auto drawable = Drawable::makeImage(**metadata, AssetPath::relativeTo(m_directory, *image), 1.0f, true, Vec2F());
+      if (!drawable)
+        return std::unexpected(std::move(drawable.error()));
+      drawables.append(std::move(*drawable));
+    }
+    return drawables;
+  };
+  auto missingIcon = defaults->get("missingIcon");
+  if (!missingIcon)
+    return std::unexpected(std::move(missingIcon.error()));
+  auto inventoryIcon = instanceValue("inventoryIcon", *missingIcon);
+  if (!inventoryIcon)
+    return std::unexpected(std::move(inventoryIcon.error()));
+  auto icons = loadIcon(*inventoryIcon);
+  if (!icons)
+    return std::unexpected(std::move(icons.error()));
+  auto setIcons = setIconDrawables(std::move(*icons));
+  if (!setIcons)
+    return std::unexpected(std::move(setIcons.error()));
   auto secondaryIcon = instanceValue("secondaryIcon", Json());
-  if (secondaryIcon.type() == Json::Type::Array) {
-    setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
-      if (auto image = config.optString("image"))
-        return Drawable(*root.imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(*root.imageMetadataDatabase(), config);
-    }));
-  } else if (secondaryIcon.type() == Json::Type::String) {
-    auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(List<Drawable>{Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
+  if (!secondaryIcon)
+    return std::unexpected(std::move(secondaryIcon.error()));
+  if (secondaryIcon->isType(Json::Type::Array) || secondaryIcon->isType(Json::Type::String)) {
+    auto secondary = loadIcon(*secondaryIcon);
+    if (!secondary)
+      return std::unexpected(std::move(secondary.error()));
+    auto setSecondary = setSecondaryIconDrawables(std::move(*secondary));
+    if (!setSecondary)
+      return std::unexpected(std::move(setSecondary.error()));
   } else {
-    setSecondaryIconDrawables(std::optional<List<Drawable>>());
+    m_secondaryIconDrawables.reset();
   }
 
-  auto assets = root.assets();
-  m_twoHanded = instanceValue("twoHanded", false).toBool();
-  m_price = instanceValue("price", assets->json("/items/defaultParameters.config:defaultPrice")).toInt();
-  m_tooltipKind = instanceValue("tooltipKind", "").toString();
+  auto twoHanded = instanceValue("twoHanded", false).and_then([](Json const& value) { return value.toBool(); });
+  if (!twoHanded)
+    return std::unexpected(std::move(twoHanded.error()));
+  m_twoHanded = *twoHanded;
+  auto defaultPrice = defaults->get("defaultPrice");
+  if (!defaultPrice)
+    return std::unexpected(std::move(defaultPrice.error()));
+  auto price = instanceValue("price", *defaultPrice).and_then([](Json const& value) { return value.toInt(); });
+  if (!price)
+    return std::unexpected(std::move(price.error()));
+  m_price = *price;
+  auto tooltipKind = instanceValue("tooltipKind", "").and_then([](Json const& value) { return value.toString(); });
+  if (!tooltipKind)
+    return std::unexpected(std::move(tooltipKind.error()));
+  m_tooltipKind = std::move(*tooltipKind);
   auto largeImage = instanceValue("largeImage");
-  if (!largeImage.isNull())
-    m_largeImage = AssetPath::relativeTo(m_directory, largeImage.toString());
-
-  m_category = instanceValue("category", "").toString();
-  m_pickupSounds = jsonToStringSet(m_config.get("pickupSounds", JsonArray{}));
-  if (!m_pickupSounds.size())
-    m_pickupSounds = jsonToStringSet(assets->json("/items/defaultParameters.config:pickupSounds"));
-
-  m_timeToLive = instanceValue("timeToLive", root.assets()->json("/items/defaultParameters.config:defaultTimeToLive").toFloat()).toFloat();
-
-  for (auto b : jsonToStringList(instanceValue("learnBlueprintsOnPickup", JsonArray{})))
-    m_learnBlueprintsOnPickup.append(ItemDescriptor(b));
-
-  for (auto pair : instanceValue("collectablesOnPickup", JsonObject{}).iterateObject())
-    m_collectablesOnPickup[pair.first] = pair.second.toString();
+  if (!largeImage)
+    return std::unexpected(std::move(largeImage.error()));
+  if (!largeImage->isNull()) {
+    auto image = largeImage->toString();
+    if (!image)
+      return std::unexpected(std::move(image.error()));
+    m_largeImage = AssetPath::relativeTo(m_directory, *image);
+  }
+  auto category = instanceValue("category", "").and_then([](Json const& value) { return value.toString(); });
+  if (!category)
+    return std::unexpected(std::move(category.error()));
+  m_category = std::move(*category);
+  auto pickupSounds = m_config.get("pickupSounds", JsonArray{}).and_then([](Json const& value) { return jsonToStringSet(value); });
+  if (!pickupSounds)
+    return std::unexpected(std::move(pickupSounds.error()));
+  m_pickupSounds = std::move(*pickupSounds);
+  if (m_pickupSounds.empty()) {
+    auto sounds = defaults->get("pickupSounds").and_then([](Json const& value) { return jsonToStringSet(value); });
+    if (!sounds)
+      return std::unexpected(std::move(sounds.error()));
+    m_pickupSounds = std::move(*sounds);
+  }
+  auto defaultTimeToLive = defaults->get("defaultTimeToLive").and_then([](Json const& value) { return value.toFloat(); });
+  if (!defaultTimeToLive)
+    return std::unexpected(std::move(defaultTimeToLive.error()));
+  auto timeToLive = instanceValue("timeToLive", *defaultTimeToLive).and_then([](Json const& value) { return value.toFloat(); });
+  if (!timeToLive)
+    return std::unexpected(std::move(timeToLive.error()));
+  m_timeToLive = *timeToLive;
+  auto blueprints = instanceValue("learnBlueprintsOnPickup", JsonArray{}).and_then([](Json const& value) { return jsonToStringList(value); });
+  if (!blueprints)
+    return std::unexpected(std::move(blueprints.error()));
+  for (auto const& blueprint : *blueprints) {
+    auto descriptor = ItemDescriptor::create(Json(blueprint));
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    m_learnBlueprintsOnPickup.append(std::move(*descriptor));
+  }
+  auto collectables = instanceValue("collectablesOnPickup", JsonObject{}).and_then([](Json const& value) { return value.iterateObject(); });
+  if (!collectables)
+    return std::unexpected(std::move(collectables.error()));
+  for (auto const& pair : *collectables) {
+    auto value = pair.second.toString();
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_collectablesOnPickup[pair.first] = std::move(*value);
+  }
+  return {};
 }
 
 Item::~Item() {}
@@ -166,19 +277,22 @@ bool Item::consume(std::uint64_t count) {
   }
 }
 
-std::shared_ptr<Item> Item::take(std::uint64_t max) {
+std::expected<std::shared_ptr<Item>, StarException> Item::take(std::uint64_t max) {
   std::uint64_t takeCount = std::min(m_count, max);
-  if (takeCount != 0) {
-    if (auto newItems = clone()) {
-      m_count -= takeCount;
-      newItems->setCount(takeCount, false);
-      return newItems;
-    } else {
-      root().logger().warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);
-    }
+  if (takeCount == 0)
+    return std::shared_ptr<Item>();
+  auto newItems = clone();
+  if (!newItems)
+    return std::unexpected(std::move(newItems.error()));
+  if (*newItems) {
+    m_count -= takeCount;
+    (*newItems)->setCount(takeCount, false);
+    return std::move(*newItems);
   }
-
-  return {};
+  auto logged = root().logger().warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  return std::shared_ptr<Item>();
 }
 
 bool Item::empty() const {
@@ -186,7 +300,7 @@ bool Item::empty() const {
 }
 
 ItemDescriptor Item::descriptor() const {
-  return ItemDescriptor(m_name, m_count, m_parameters);
+  return ItemDescriptor(m_name, m_count, m_parameters, {});
 }
 
 String Item::description() const {
@@ -201,11 +315,11 @@ Rarity Item::rarity() const {
   return m_rarity;
 }
 
-List<Drawable> Item::iconDrawables() const {
+std::expected<List<Drawable>, StarException> Item::iconDrawables() const {
   return m_iconDrawables;
 }
 
-std::optional<List<Drawable>> Item::secondaryDrawables() const {
+std::expected<std::optional<List<Drawable>>, StarException> Item::secondaryDrawables() const {
   return m_secondaryIconDrawables;
 }
 
@@ -213,9 +327,11 @@ bool Item::hasSecondaryDrawables() const {
   return m_secondaryIconDrawables.has_value();
 }
 
-List<Drawable> Item::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> Item::dropDrawables(TileDrawer*) const {
   auto drawables = iconDrawables();
-  Drawable::scaleAll(drawables, 1.0f / TilePixels);
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  Drawable::scaleAll(*drawables, 1.0f / TilePixels);
   return drawables;
 }
 
@@ -243,8 +359,11 @@ String Item::category() const {
   return m_category;
 }
 
-String Item::pickupSound() const {
-  return root().random().randFrom(m_pickupSounds);
+std::expected<String, StarException> Item::pickupSound() const {
+  auto sound = root().random().randFrom(m_pickupSounds);
+  if (!sound)
+    return std::unexpected(std::move(sound.error()));
+  return **sound;
 }
 
 void Item::setMaxStack(std::uint64_t maxStack) {
@@ -267,39 +386,48 @@ void Item::setPrice(std::uint64_t price) {
   m_price = price;
 }
 
-void Item::setIconDrawables(List<Drawable> drawables) {
-  m_iconDrawables = std::move(drawables);
-  auto boundBox = Drawable::boundBoxAll(*root().imageMetadataDatabase(), m_iconDrawables, true);
-  if (!boundBox.isEmpty()) {
-    for (auto& drawable : m_iconDrawables)
-      drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+std::expected<void, StarException> Item::setIconDrawables(List<Drawable> drawables) {
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto boundBox = Drawable::boundBoxAll(**metadata, drawables, true);
+  if (!boundBox)
+    return std::unexpected(std::move(boundBox.error()));
+  if (!boundBox->isEmpty()) {
+    for (auto& drawable : drawables)
+      drawable.translate(-boundBox->center());
+    float zoom = 16.0f / std::max(boundBox->width(), boundBox->height());
     if (zoom < 1) {
-      for (auto& drawable : m_iconDrawables)
+      for (auto& drawable : drawables)
         drawable.scale(zoom);
     }
   }
+  m_iconDrawables = std::move(drawables);
+  return {};
 }
 
-void Item::setSecondaryIconDrawables(std::optional<List<Drawable>> drawables) {
-  m_secondaryIconDrawables = std::move(drawables);
-  if (!m_secondaryIconDrawables.has_value())
-    return;
-
-  auto boundBox = Drawable::boundBoxAll(*root().imageMetadataDatabase(), *m_secondaryIconDrawables, true);
-  if (!boundBox.isEmpty()) {
-    for (auto& drawable : *m_secondaryIconDrawables)
-      drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+std::expected<void, StarException> Item::setSecondaryIconDrawables(std::optional<List<Drawable>> drawables) {
+  if (!drawables) {
+    m_secondaryIconDrawables.reset();
+    return {};
+  }
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto boundBox = Drawable::boundBoxAll(**metadata, *drawables, true);
+  if (!boundBox)
+    return std::unexpected(std::move(boundBox.error()));
+  if (!boundBox->isEmpty()) {
+    for (auto& drawable : *drawables)
+      drawable.translate(-boundBox->center());
+    float zoom = 16.0f / std::max(boundBox->width(), boundBox->height());
     if (zoom < 1) {
-      for (auto& drawable : *m_secondaryIconDrawables)
+      for (auto& drawable : *drawables)
         drawable.scale(zoom);
     }
   }
+  m_secondaryIconDrawables = std::move(drawables);
+  return {};
 }
 
 void Item::setTwoHanded(bool twoHanded) {
@@ -310,33 +438,49 @@ void Item::setTimeToLive(float timeToLive) {
   m_timeToLive = timeToLive;
 }
 
-List<QuestArcDescriptor> Item::pickupQuestTemplates() const {
-  return instanceValue("pickupQuestTemplates", JsonArray{}).toArray().transformed([this](Json const& quest) {
-    return QuestArcDescriptor::fromJson(root(), quest);
-  });
+std::expected<List<QuestArcDescriptor>, StarException> Item::pickupQuestTemplates() const {
+  auto templates = instanceValue("pickupQuestTemplates", JsonArray{}).and_then([](Json const& value) { return value.iterateArray(); });
+  if (!templates)
+    return std::unexpected(std::move(templates.error()));
+  List<QuestArcDescriptor> result;
+  for (auto const& quest : *templates) {
+    auto descriptor = QuestArcDescriptor::fromJson(root(), quest);
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    result.append(std::move(*descriptor));
+  }
+  return result;
 }
 
-StringSet Item::itemTags() const {
-  return jsonToStringSet(m_config.get("itemTags", JsonArray{}));
+std::expected<StringSet, StarException> Item::itemTags() const {
+  return m_config.get("itemTags", JsonArray{}).and_then([](Json const& value) { return jsonToStringSet(value); });
 }
 
-bool Item::hasItemTag(String const& itemTag) const {
-  return itemTags().contains(itemTag);
+std::expected<bool, StarException> Item::hasItemTag(String const& itemTag) const {
+  auto tags = itemTags();
+  if (!tags)
+    return std::unexpected(std::move(tags.error()));
+  return tags->contains(itemTag);
 }
 
-Json Item::instanceValue(String const& name, Json const& def) const {
+std::expected<Json, StarException> Item::instanceValue(String const& name, Json const& def) const {
   return jsonMergeQueryDef(name, def, m_config, m_parameters);
 }
 
-Json Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
+std::expected<Json, StarException> Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
   auto value = instanceValue(name, def);
-  if (value.isType(type))
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (value->isType(type))
     return value;
   return def;
 }
 
-Json Item::instanceValues() const {
-  return m_config.setAll(m_parameters.toObject());
+std::expected<Json, StarException> Item::instanceValues() const {
+  auto parameters = m_parameters.toObject();
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  return m_config.setAll(std::move(*parameters));
 }
 
 Json Item::config() const {
@@ -347,9 +491,17 @@ Json Item::parameters() const {
   return m_parameters;
 }
 
-void Item::setInstanceValue(String const& name, Json const& value) {
-  if (m_parameters.get(name, {}) != value)
-    m_parameters = m_parameters.setAll(JsonObject{{name, value}});
+std::expected<void, StarException> Item::setInstanceValue(String const& name, Json const& value) {
+  auto current = m_parameters.get(name, {});
+  if (!current)
+    return std::unexpected(std::move(current.error()));
+  if (*current != value) {
+    auto parameters = m_parameters.setAll(JsonObject{{name, value}});
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    m_parameters = std::move(*parameters);
+  }
+  return {};
 }
 
 String const& Item::directory() const {
@@ -364,10 +516,15 @@ StringMap<String> Item::collectablesOnPickup() const {
   return m_collectablesOnPickup;
 }
 
-GenericItem::GenericItem(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters) {}
+std::expected<std::shared_ptr<GenericItem>, StarException> GenericItem::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<GenericItem>(new GenericItem(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return item;
+}
 
-std::shared_ptr<Item> GenericItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> GenericItem::clone() const {
   return std::make_shared<GenericItem>(*this);
 }
 

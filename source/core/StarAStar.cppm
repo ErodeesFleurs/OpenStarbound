@@ -8,6 +8,7 @@ import star.set;
 import star.math_common;
 import star.block_allocator;
 import star.lexical_cast;
+import star.format;
 
 namespace Star {
 namespace AStar {
@@ -32,11 +33,11 @@ namespace AStar {
   template <class Edge, class Node>
   class Search {
   public:
-    using HeuristicFunction = std::function<double(Node, Node)>;
-    using NeighborFunction = std::function<void(Node, List<Edge>& neighbors)>;
-    using GoalFunction = std::function<bool(Node)>;
+    using HeuristicFunction = std::function<std::expected<double, StarException>(Node, Node)>;
+    using NeighborFunction = std::function<std::expected<void, StarException>(Node, List<Edge>& neighbors)>;
+    using GoalFunction = std::function<std::expected<bool, StarException>(Node)>;
     using CompareFunction = std::function<bool(Node, Node)>;
-    using ValidateEndFunction = std::function<bool(Edge)>;
+    using ValidateEndFunction = std::function<std::expected<bool, StarException>(Edge)>;
 
     Search(HeuristicFunction heuristicCost,
         NeighborFunction getAdjacent,
@@ -75,51 +76,41 @@ namespace AStar {
         m_getAdjacent = std::move(other.m_getAdjacent);
         m_goalReached = std::move(other.m_goalReached);
         m_returnBestIfFailed = other.m_returnBestIfFailed;
-        if (other.m_validateEnd)
-          m_validateEnd.emplace(takeOptional(other.m_validateEnd));
-        else
-          m_validateEnd.reset();
-        if (other.m_maxFScore)
-          m_maxFScore.emplace(takeOptional(other.m_maxFScore));
-        else
-          m_maxFScore.reset();
-        if (other.m_maxNodesToSearch)
-          m_maxNodesToSearch.emplace(takeOptional(other.m_maxNodesToSearch));
-        else
-          m_maxNodesToSearch.reset();
+        m_validateEnd = std::move(other.m_validateEnd);
+        other.m_validateEnd.reset();
+        m_maxFScore = std::move(other.m_maxFScore);
+        other.m_maxFScore.reset();
+        m_maxNodesToSearch = std::move(other.m_maxNodesToSearch);
+        other.m_maxNodesToSearch.reset();
         m_goal = std::move(other.m_goal);
         m_nodeMeta = std::move(other.m_nodeMeta);
         m_openQueue = std::move(other.m_openQueue);
         m_openSet = std::move(other.m_openSet);
         m_closedSet = std::move(other.m_closedSet);
-        if (other.m_earlyExploration)
-          m_earlyExploration.emplace(takeOptional(other.m_earlyExploration));
-        else
-          m_earlyExploration.reset();
+        m_earlyExploration = std::move(other.m_earlyExploration);
+        other.m_earlyExploration.reset();
         m_finished = other.m_finished;
-        if (other.m_result)
-          m_result.emplace(takeOptional(other.m_result));
-        else
-          m_result.reset();
+        m_result = std::move(other.m_result);
+        other.m_result.reset();
       }
       return *this;
     }
 
     // Start a new exploration, resets result if it was found before.
-    void start(Node startNode, Node goalNode);
+    [[nodiscard]] std::expected<void, StarException> start(Node startNode, Node goalNode);
     // Explore the given number of nodes in the search space.  If
     // maxNodesToSearch is reached, or the search space is exhausted, will
     // return
     // false to signal failure.  On success, will return true.  If the given
     // maxExploreNodes is exhausted before success or failure, will return
     // nothing.
-    std::optional<bool> explore(std::optional<unsigned> maxExploreNodes = {});
+    [[nodiscard]] std::expected<std::optional<bool>, StarException> explore(std::optional<unsigned> maxExploreNodes = {});
     // Returns the result if it was found.
     std::optional<Path<Edge>> const& result() const;
 
     // Convenience, equivalent to calling start, then explore({}) and returns
     // result()
-    std::optional<Path<Edge>> const& findPath(Node startNode, Node goalNode);
+    [[nodiscard]] std::expected<std::optional<Path<Edge>> const*, StarException> findPath(Node startNode, Node goalNode);
 
   private:
     struct ScoredNode {
@@ -176,7 +167,7 @@ namespace AStar {
       m_maxNodesToSearch(maxNodesToSearch) {}
 
   template <class Edge, class Node>
-  void Search<Edge, Node>::start(Node startNode, Node goalNode) {
+  std::expected<void, StarException> Search<Edge, Node>::start(Node startNode, Node goalNode) {
     m_goal = std::move(goalNode);
     m_nodeMeta.clear();
     m_openQueue = std::priority_queue<ScoredNode>();
@@ -188,16 +179,22 @@ namespace AStar {
 
     Score startScore;
     startScore.gScore = 0;
-    startScore.hScore = m_heuristicCost(startNode, m_goal);
+    if (!m_heuristicCost)
+      return std::unexpected(StarException("AStar search requires a heuristic callback"));
+    auto heuristicCost = m_heuristicCost(startNode, m_goal);
+    if (!heuristicCost)
+      return std::unexpected(std::move(heuristicCost.error()));
+    startScore.hScore = *heuristicCost;
     startScore.fScore = startScore.hScore;
     m_nodeMeta[startNode].score = startScore;
 
     m_openSet.insert(startNode);
     m_openQueue.push(ScoredNode{startScore, std::move(startNode)});
+    return {};
   }
 
   template <class Edge, class Node>
-  std::optional<bool> Search<Edge, Node>::explore(std::optional<unsigned> maxExploreNodes) {
+  std::expected<std::optional<bool>, StarException> Search<Edge, Node>::explore(std::optional<unsigned> maxExploreNodes) {
     if (m_finished)
       return m_result.has_value();
 
@@ -214,8 +211,15 @@ namespace AStar {
           std::optional<Node> bestNode;
           for (Node node : m_closedSet) {
             NodeMeta const& nodeMeta = m_nodeMeta[node];
-            if (m_validateEnd && nodeMeta.cameFrom && !(*m_validateEnd)(*nodeMeta.cameFrom))
-              continue;
+            if (m_validateEnd && nodeMeta.cameFrom) {
+              if (!*m_validateEnd)
+                return std::unexpected(StarException("AStar search requires a callable end validator"));
+              auto validEnd = (*m_validateEnd)(*nodeMeta.cameFrom);
+              if (!validEnd)
+                return std::unexpected(std::move(validEnd.error()));
+              if (!*validEnd)
+                continue;
+            }
             if (nodeMeta.score.hScore < bestScore) {
               bestScore = nodeMeta.score.hScore;
               bestNode = node;
@@ -237,7 +241,8 @@ namespace AStar {
 
       ScoredNode currentScoredNode;
       if (m_earlyExploration) {
-        currentScoredNode = takeOptional(m_earlyExploration);
+        currentScoredNode = std::move(*m_earlyExploration);
+        m_earlyExploration.reset();
       } else {
         currentScoredNode = m_openQueue.top();
         m_openQueue.pop();
@@ -251,7 +256,12 @@ namespace AStar {
       Node const& current = currentScoredNode.node;
       Score const& currentScore = currentScoredNode.score;
 
-      if (m_goalReached(current)) {
+      if (!m_goalReached)
+        return std::unexpected(StarException("AStar search requires a goal callback"));
+      auto goalReached = m_goalReached(current);
+      if (!goalReached)
+        return std::unexpected(std::move(goalReached.error()));
+      if (*goalReached) {
         m_finished = true;
         m_result = reconstructPath(current);
         return true;
@@ -260,7 +270,11 @@ namespace AStar {
       m_closedSet.insert(current);
 
       neighbors.clear();
-      m_getAdjacent(current, neighbors);
+      if (!m_getAdjacent)
+        return std::unexpected(StarException("AStar search requires a neighbor callback"));
+      auto adjacent = m_getAdjacent(current, neighbors);
+      if (!adjacent)
+        return std::unexpected(std::move(adjacent.error()));
 
       for (Edge const& edge : neighbors) {
         if (m_closedSet.find(edge.target) != m_closedSet.end() || m_nodeMeta.contains(edge.target))
@@ -273,7 +287,12 @@ namespace AStar {
         if (m_openSet.find(edge.target) == m_openSet.end() || newGScore < targetScore.gScore) {
           targetMeta.cameFrom = edge;
           targetScore.gScore = newGScore;
-          targetScore.hScore = m_heuristicCost(edge.target, m_goal);
+          if (!m_heuristicCost)
+            return std::unexpected(StarException("AStar search requires a heuristic callback"));
+          auto heuristicCost = m_heuristicCost(edge.target, m_goal);
+          if (!heuristicCost)
+            return std::unexpected(std::move(heuristicCost.error()));
+          targetScore.hScore = *heuristicCost;
           targetScore.fScore = targetScore.gScore + targetScore.hScore;
 
           if (m_maxFScore && targetScore.fScore > *m_maxFScore)
@@ -306,10 +325,14 @@ namespace AStar {
   }
 
   template <class Edge, class Node>
-  std::optional<Path<Edge>> const& Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
-    start(std::move(startNode), std::move(goalNode));
-    explore();
-    return result();
+  std::expected<std::optional<Path<Edge>> const*, StarException> Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
+    auto started = start(std::move(startNode), std::move(goalNode));
+    if (!started)
+      return std::unexpected(std::move(started.error()));
+    auto explored = explore();
+    if (!explored)
+      return std::unexpected(std::move(explored.error()));
+    return &result();
   }
 
   template <class Edge, class Node>

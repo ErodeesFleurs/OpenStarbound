@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -101,22 +102,33 @@ public:
     return Star::typeName<ConsumableItem>();
   }
 
-  ConsumableItem(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ConsumableItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void fireTriggered() override;
-  void uninit() override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> uninit() override;
 
 private:
-  bool canUse() const;
+  explicit ConsumableItem(Root& root) : Item(root) {}
+  [[nodiscard]]
+  std::expected<bool, StarException> canUse() const;
 
-  void triggerEffects();
-  void maybeConsume();
+  [[nodiscard]]
+  std::expected<void, StarException> triggerEffects();
+  [[nodiscard]]
+  std::expected<void, StarException> maybeConsume();
 
   StringSet m_blockingEffects;
   std::optional<float> m_foodValue;
@@ -129,105 +141,195 @@ private:
 
 namespace Star {
 
-ConsumableItem::ConsumableItem(Root& root, Json const& config, String const& directory, Json const& data)
-  : Item(root, config, directory, data), SwingableItem(config) {
-  setWindupTime(0);
-  setCooldownTime(0.25f);
-  m_requireEdgeTrigger = true;
-  m_swingStart = config.getFloat("swingStart", -60) * std::numbers::pi / 180;
-  m_swingFinish = config.getFloat("swingFinish", 40) * std::numbers::pi / 180;
-  m_swingAimFactor = config.getFloat("swingAimFactor", 0.2f);
-  m_blockingEffects = jsonToStringSet(instanceValue("blockingEffects", JsonArray()));
-  if (auto foodValue = instanceValue("foodValue")) {
-    m_foodValue = foodValue.toFloat();
-    m_blockingEffects.add("wellfed");
+std::expected<std::shared_ptr<ConsumableItem>, StarException> ConsumableItem::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<ConsumableItem>(new ConsumableItem(root));
+  auto initialized = item->initialize(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  item->setWindupTime(0);
+  item->setCooldownTime(0.25f);
+  item->m_requireEdgeTrigger = true;
+  auto start = config.getFloat("swingStart", -60);
+  if (!start)
+    return std::unexpected(std::move(start.error()));
+  item->m_swingStart = *start * std::numbers::pi / 180;
+  auto finish = config.getFloat("swingFinish", 40);
+  if (!finish)
+    return std::unexpected(std::move(finish.error()));
+  item->m_swingFinish = *finish * std::numbers::pi / 180;
+  auto aim = config.getFloat("swingAimFactor", 0.2f);
+  if (!aim)
+    return std::unexpected(std::move(aim.error()));
+  item->m_swingAimFactor = *aim;
+  auto blocking = item->instanceValue("blockingEffects", JsonArray()).and_then(jsonToStringSet);
+  if (!blocking)
+    return std::unexpected(std::move(blocking.error()));
+  item->m_blockingEffects = std::move(*blocking);
+  auto food = item->instanceValue("foodValue");
+  if (!food)
+    return std::unexpected(std::move(food.error()));
+  if (*food) {
+    auto foodValue = food->toFloat();
+    if (!foodValue)
+      return std::unexpected(std::move(foodValue.error()));
+    item->m_foodValue = *foodValue;
+    item->m_blockingEffects.add("wellfed");
   }
-  m_emitters = jsonToStringSet(instanceValue("emitters", JsonArray{"eating"}));
-  m_emote = instanceValue("emote", "eat").toString();
-  m_consuming = false;
+  auto emitters = item->instanceValue("emitters", JsonArray{"eating"}).and_then(jsonToStringSet);
+  if (!emitters)
+    return std::unexpected(std::move(emitters.error()));
+  item->m_emitters = std::move(*emitters);
+  auto emote = item->instanceValue("emote", "eat").and_then([](Json const& value) { return value.toString(); });
+  if (!emote)
+    return std::unexpected(std::move(emote.error()));
+  item->m_emote = std::move(*emote);
+  item->m_consuming = false;
+  return item;
 }
 
-std::shared_ptr<Item> ConsumableItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> ConsumableItem::clone() const {
   return std::make_shared<ConsumableItem>(*this);
 }
 
-List<Drawable> ConsumableItem::drawables() const {
+std::expected<List<Drawable>, StarException> ConsumableItem::drawables() const {
   auto drawables = iconDrawables();
-  Drawable::scaleAll(drawables, 1.0f / TilePixels);
-  Drawable::translateAll(drawables, -handPosition() / TilePixels);
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  Drawable::scaleAll(*drawables, 1.0f / TilePixels);
+  Drawable::translateAll(*drawables, -handPosition() / TilePixels);
   return drawables;
 }
 
-void ConsumableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(dt, fireMode, shifting, moves);
-
-  if (entityMode() == EntityMode::Master) {
-    if (m_consuming)
-      owner()->addEffectEmitters(m_emitters);
+std::expected<void, StarException> ConsumableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto updated = SwingableItem::update(dt, fireMode, shifting, moves);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master) {
+    if (m_consuming) {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto emitted = (*itemOwner)->addEffectEmitters(m_emitters);
+      if (!emitted)
+        return std::unexpected(std::move(emitted.error()));
+    }
     if (ready())
-      maybeConsume();
+      return maybeConsume();
   }
+  return {};
 }
 
-void ConsumableItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
-  if (canUse())
-    FireableItem::fire(mode, shifting, edgeTriggered);
+std::expected<void, StarException> ConsumableItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+  auto usable = canUse();
+  if (!usable)
+    return std::unexpected(std::move(usable.error()));
+  if (*usable)
+    return FireableItem::fire(mode, shifting, edgeTriggered);
+  return {};
 }
 
-void ConsumableItem::fireTriggered() {
-  if (canUse()) {
-    triggerEffects();
-    FireableItem::fireTriggered();
+std::expected<void, StarException> ConsumableItem::fireTriggered() {
+  auto usable = canUse();
+  if (!usable)
+    return std::unexpected(std::move(usable.error()));
+  if (*usable) {
+    auto triggered = triggerEffects();
+    if (!triggered)
+      return std::unexpected(std::move(triggered.error()));
+    return FireableItem::fireTriggered();
   }
+  return {};
 }
 
-void ConsumableItem::uninit() {
-  maybeConsume();
-  FireableItem::uninit();
+std::expected<void, StarException> ConsumableItem::uninit() {
+  auto consumed = maybeConsume();
+  if (!consumed)
+    return std::unexpected(std::move(consumed.error()));
+  return FireableItem::uninit();
 }
 
-bool ConsumableItem::canUse() const {
+std::expected<bool, StarException> ConsumableItem::canUse() const {
   if (!count() || m_consuming)
     return false;
-
-  for (auto pair : owner()->statusController()->activeUniqueStatusEffectSummary()) {
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  for (auto const& pair : (*itemOwner)->statusController()->activeUniqueStatusEffectSummary()) {
     if (m_blockingEffects.contains(pair.first))
       return false;
   }
   return true;
 }
 
-void ConsumableItem::triggerEffects() {
-  auto options = instanceValue("effects", JsonArray()).toArray();
-  if (options.size()) {
-    auto option = root().random().randFrom(options).toArray().transformed(jsonToEphemeralStatusEffect);
-    owner()->statusController()->addEphemeralEffects(option);
+std::expected<void, StarException> ConsumableItem::triggerEffects() {
+  auto options = instanceValue("effects", JsonArray()).and_then([](Json const& value) { return value.toArray(); });
+  if (!options)
+    return std::unexpected(std::move(options.error()));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  if (options->size()) {
+    auto selected = root().random().randFrom(*options);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+    auto option = (*selected)->toArray();
+    if (!option)
+      return std::unexpected(std::move(option.error()));
+    List<EphemeralStatusEffect> effects;
+    for (auto const& value : *option) {
+      auto effect = jsonToEphemeralStatusEffect(value);
+      if (!effect)
+        return std::unexpected(std::move(effect.error()));
+      effects.append(std::move(*effect));
+    }
+    auto added = (*itemOwner)->statusController()->addEphemeralEffects(effects);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
-
   if (m_foodValue) {
-    owner()->statusController()->giveResource("food", *m_foodValue);
-    if (owner()->statusController()->resourcePercentage("food") == 1.0f)
-      owner()->statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
+    (*itemOwner)->statusController()->giveResource("food", *m_foodValue);
+    auto percentage = (*itemOwner)->statusController()->resourcePercentage("food");
+    if (!percentage)
+      return std::unexpected(std::move(percentage.error()));
+    if (*percentage == 1.0f) {
+      auto added = (*itemOwner)->statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+    }
   }
-
-  if (!m_emote.empty())
-    owner()->requestEmote(m_emote);
-
+  if (!m_emote.empty()) {
+    auto emote = (*itemOwner)->requestEmote(m_emote);
+    if (!emote)
+      return std::unexpected(std::move(emote.error()));
+  }
   m_consuming = true;
+  return {};
 }
 
-void ConsumableItem::maybeConsume() {
+std::expected<void, StarException> ConsumableItem::maybeConsume() {
   if (m_consuming) {
     m_consuming = false;
-
-    world()->sendEntityMessage(owner()->entityId(), "recordEvent", {"useItem", JsonObject {
-      {"itemType", name()}
-    }});
+    auto itemWorld = world();
+    if (!itemWorld)
+      return std::unexpected(std::move(itemWorld.error()));
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto sent = (*itemWorld)->sendEntityMessage((*itemOwner)->entityId(), "recordEvent", {"useItem", JsonObject{{"itemType", name()}}});
+    if (!sent)
+      return std::unexpected(std::move(sent.error()));
     if (count())
       setCount(count() - 1);
     else
       setCount(0);
   }
+  return {};
 }
 
 }

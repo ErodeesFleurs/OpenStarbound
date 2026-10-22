@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -66,16 +67,18 @@ public:
     return Star::typeName<ActionBar>();
   }
 
-  ActionBar(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
+  [[nodiscard]] static std::expected<std::shared_ptr<ActionBar>, StarException> create(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
 
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
-  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> cursorOverride(Vec2I const& screenPosition) override;
 
 private:
+  explicit ActionBar(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
   struct CustomBarEntry {
     std::shared_ptr<ItemSlotWidget> left;
     std::shared_ptr<ItemSlotWidget> right;
@@ -83,10 +86,10 @@ private:
     std::shared_ptr<ImageWidget> rightOverlay;
   };
 
-  void customBarClick(std::uint8_t index, bool primary);
-  void customBarClickRight(std::uint8_t index, bool primary);
-  void essentialBarClick(std::uint8_t index);
-  void swapCustomBar();
+  [[nodiscard]] std::expected<void, StarException> customBarClick(std::uint8_t index, bool primary);
+  [[nodiscard]] std::expected<void, StarException> customBarClickRight(std::uint8_t index, bool primary);
+  [[nodiscard]] std::expected<void, StarException> essentialBarClick(std::uint8_t index);
+  [[nodiscard]] std::expected<void, StarException> swapCustomBar();
 
   MainInterfacePaneManager* m_paneManager;
   std::shared_ptr<Player> m_player;

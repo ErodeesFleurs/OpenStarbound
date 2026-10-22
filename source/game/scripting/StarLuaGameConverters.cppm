@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.lua;
 import star.lua_converters;
 import star.inventory_types;
@@ -28,104 +29,104 @@ enum class NodeStatus;
 
 template <>
 struct LuaConverter<InventorySlot> {
-  static LuaValue from(LuaEngine& engine, InventorySlot k);
-  static std::optional<InventorySlot> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, InventorySlot k);
+  [[nodiscard]] static std::expected<std::optional<InventorySlot>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<CollisionKind> {
-  static LuaValue from(LuaEngine& engine, CollisionKind k);
-  static std::optional<CollisionKind> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, CollisionKind k);
+  [[nodiscard]] static std::expected<std::optional<CollisionKind>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<CollisionSet> {
-  static LuaValue from(LuaEngine& engine, CollisionSet const& s);
-  static std::optional<CollisionSet> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, CollisionSet const& s);
+  [[nodiscard]] static std::expected<std::optional<CollisionSet>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<PlatformerAStar::Path> {
-  static LuaValue from(LuaEngine& engine, PlatformerAStar::Path const& path);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, PlatformerAStar::Path const& path);
 };
 
 template <>
-struct LuaConverter<PlatformerAStar::PathFinder> : LuaUserDataConverter<PlatformerAStar::PathFinder> {};
+struct LuaConverter<std::shared_ptr<PlatformerAStar::PathFinder>> : LuaUserDataConverter<std::shared_ptr<PlatformerAStar::PathFinder>> {};
 
 template <>
-struct LuaUserDataMethods<PlatformerAStar::PathFinder> {
-  static LuaMethods<PlatformerAStar::PathFinder> make();
+struct LuaUserDataMethods<std::shared_ptr<PlatformerAStar::PathFinder>> {
+  [[nodiscard]] static std::expected<LuaMethods<std::shared_ptr<PlatformerAStar::PathFinder>>, StarException> make();
 };
 
 template <>
 struct LuaConverter<PlatformerAStar::Parameters> {
-  static std::optional<PlatformerAStar::Parameters> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<std::optional<PlatformerAStar::Parameters>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorJumpProfile> {
-  static LuaValue from(LuaEngine& engine, ActorJumpProfile const& v);
-  static std::optional<ActorJumpProfile> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, ActorJumpProfile const& v);
+  [[nodiscard]] static std::expected<std::optional<ActorJumpProfile>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorMovementParameters> {
-  static LuaValue from(LuaEngine& engine, ActorMovementParameters const& v);
-  static std::optional<ActorMovementParameters> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, ActorMovementParameters const& v);
+  [[nodiscard]] static std::expected<std::optional<ActorMovementParameters>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorMovementModifiers> {
-  static LuaValue from(LuaEngine& engine, ActorMovementModifiers const& v);
-  static std::optional<ActorMovementModifiers> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, ActorMovementModifiers const& v);
+  [[nodiscard]] static std::expected<std::optional<ActorMovementModifiers>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<StatModifier> {
-  static LuaValue from(LuaEngine& engine, StatModifier const& v);
-  static std::optional<StatModifier> to(LuaEngine& engine, LuaValue v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, StatModifier const& v);
+  [[nodiscard]] static std::expected<std::optional<StatModifier>, StarException> to(LuaEngine& engine, LuaValue v);
 };
 
 template <>
 struct LuaConverter<EphemeralStatusEffect> {
-  static LuaValue from(LuaEngine& engine, EphemeralStatusEffect const& v);
-  static std::optional<EphemeralStatusEffect> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, EphemeralStatusEffect const& v);
+  [[nodiscard]] static std::expected<std::optional<EphemeralStatusEffect>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<DamageRequest> {
-  static LuaValue from(LuaEngine& engine, DamageRequest const& v);
-  static std::optional<DamageRequest> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, DamageRequest const& v);
+  [[nodiscard]] static std::expected<std::optional<DamageRequest>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<DamageNotification> {
-  static LuaValue from(LuaEngine& engine, DamageNotification const& v);
-  static std::optional<DamageNotification> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, DamageNotification const& v);
+  [[nodiscard]] static std::expected<std::optional<DamageNotification>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<LiquidLevel> {
-  static LuaValue from(LuaEngine& engine, LiquidLevel const& v);
-  static std::optional<LiquidLevel> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, LiquidLevel const& v);
+  [[nodiscard]] static std::expected<std::optional<LiquidLevel>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<Drawable> {
-  static LuaValue from(LuaEngine& engine, Drawable const& v);
-  static std::optional<Drawable> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Drawable const& v);
+  [[nodiscard]] static std::expected<std::optional<Drawable>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<Collection> {
-  static LuaValue from(LuaEngine& engine, Collection const& c);
-  static std::optional<Collection> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Collection const& c);
+  [[nodiscard]] static std::expected<std::optional<Collection>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<Collectable> {
-  static LuaValue from(LuaEngine& engine, Collectable const& c);
-  static std::optional<Collectable> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Collectable const& c);
+  [[nodiscard]] static std::expected<std::optional<Collectable>, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 // BehaviorState contains Lua references, putting it in a UserData violates
@@ -136,18 +137,18 @@ struct LuaConverter<std::weak_ptr<BehaviorState>> : LuaUserDataConverter<std::we
 
 template <>
 struct LuaUserDataMethods<std::weak_ptr<BehaviorState>> {
-  static LuaMethods<std::weak_ptr<BehaviorState>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::weak_ptr<BehaviorState>>, StarException> make();
 };
 
 template <>
 struct LuaConverter<NodeStatus> {
-  static LuaValue from(LuaEngine& engine, NodeStatus const& status);
-  static NodeStatus to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, NodeStatus const& status);
+  [[nodiscard]] static std::expected<NodeStatus, StarException> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<PhysicsMovingCollision> {
-  static LuaValue from(LuaEngine& engine, PhysicsMovingCollision const& v);
+  [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, PhysicsMovingCollision const& v);
 };
 
 // Weak pointer for the same reasons as BehaviorState.
@@ -156,7 +157,7 @@ struct LuaConverter<std::weak_ptr<Blackboard>> : LuaUserDataConverter<std::weak_
 
 template <>
 struct LuaUserDataMethods<std::weak_ptr<Blackboard>> {
-  static LuaMethods<std::weak_ptr<Blackboard>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::weak_ptr<Blackboard>>, StarException> make();
 };
 
 template <>
@@ -164,7 +165,7 @@ struct LuaConverter<std::shared_ptr<Entity>> : LuaUserDataConverter<std::shared_
 
 template <>
 struct LuaUserDataMethods<std::shared_ptr<Entity>> {
-  static LuaMethods<std::shared_ptr<Entity>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::shared_ptr<Entity>>, StarException> make();
 };
 
 template <>
@@ -172,7 +173,7 @@ struct LuaConverter<std::shared_ptr<AudioInstance>> : LuaUserDataConverter<std::
 
 template <>
 struct LuaUserDataMethods<std::shared_ptr<AudioInstance>> {
-  static LuaMethods<std::shared_ptr<AudioInstance>> make();
+  [[nodiscard]] static std::expected<LuaMethods<std::shared_ptr<AudioInstance>>, StarException> make();
 };
 
 }
@@ -189,9 +190,9 @@ export namespace Star {
   template <>
   struct LuaConverter<PlatformerAStar::Path>;
   template <>
-  struct LuaConverter<PlatformerAStar::PathFinder>;
+  struct LuaConverter<std::shared_ptr<PlatformerAStar::PathFinder>>;
   template <>
-  struct LuaUserDataMethods<PlatformerAStar::PathFinder>;
+  struct LuaUserDataMethods<std::shared_ptr<PlatformerAStar::PathFinder>>;
   template <>
   struct LuaConverter<PlatformerAStar::Parameters>;
   template <>

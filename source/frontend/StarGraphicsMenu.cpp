@@ -178,153 +178,255 @@ import star.shaders_menu;
 
 namespace Star {
 
-GraphicsMenu::GraphicsMenu(GuiContext& guiContext, PaneManager* manager,std::shared_ptr<UniverseClient> client)
-  : Pane(guiContext), m_paneManager(manager) {
+GraphicsMenu::GraphicsMenu(GuiContext& guiContext, PaneManager* manager)
+  : Pane(guiContext), m_paneManager(manager) {}
+
+std::expected<std::shared_ptr<GraphicsMenu>, StarException> GraphicsMenu::create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client) {
+  auto menu = std::shared_ptr<GraphicsMenu>(new GraphicsMenu(guiContext, manager));
+  if (auto result = menu->initializePane(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = menu->init(std::move(client)); !result)
+    return std::unexpected(std::move(result.error()));
+  return menu;
+}
+
+std::expected<void, StarException> GraphicsMenu::init(std::shared_ptr<UniverseClient> client) {
   GuiReader reader(*context());
-  reader.registerCallback("cancel",
-      [&](Widget*) {
-        dismiss();
-      });
-  reader.registerCallback("accept",
-      [&](Widget*) {
-        apply();
-        applyWindowSettings();
-      });
-  reader.registerCallback("resSlider", [this](Widget*) {
-      Vec2U res = m_resList[fetchChild<SliderBarWidget>("resSlider")->val()];
-      m_localChanges.set("fullscreenResolution", jsonFromVec2U(res));
-      syncGui();
-    });
-  reader.registerCallback("interfaceScaleSlider", [this](Widget*) {
-      auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-      m_localChanges.set("interfaceScale", m_interfaceScaleList[interfaceScaleSlider->val()]);
-      syncGui();
-    });
-  reader.registerCallback("zoomSlider", [this](Widget*) {
-      auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
-      m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
-      context()->root().configuration()->set("zoomLevel", m_zoomList[zoomSlider->val()]);
-      syncGui();
-    });
-  reader.registerCallback("cameraSpeedSlider", [this](Widget*) {
-      auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
-      m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
-      context()->root().configuration()->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
-      syncGui();
-    });
-  reader.registerCallback("speechBubbleCheckbox", [this](Widget*) {
-      auto button = fetchChild<ButtonWidget>("speechBubbleCheckbox");
-      m_localChanges.set("speechBubbles", button->isChecked());
-      context()->root().configuration()->set("speechBubbles", button->isChecked());
-      syncGui();
-    });
-  reader.registerCallback("interactiveHighlightCheckbox", [this](Widget*) {
-      auto button = fetchChild<ButtonWidget>("interactiveHighlightCheckbox");
-      m_localChanges.set("interactiveHighlight", button->isChecked());
-      context()->root().configuration()->set("interactiveHighlight", button->isChecked());
-      syncGui();
-    });
-  reader.registerCallback("fullscreenCheckbox", [this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("fullscreenCheckbox")->isChecked();
-      m_localChanges.set("fullscreen", checked);
-      if (checked)
-        m_localChanges.set("borderless", !checked);
-      syncGui();
-    });
-  reader.registerCallback("borderlessCheckbox", [this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("borderlessCheckbox")->isChecked();
-      m_localChanges.set("borderless", checked);
-      if (checked)
-        m_localChanges.set("fullscreen", !checked);
-      syncGui();
-    });
-  reader.registerCallback("textureLimitCheckbox", [this](Widget*) {
-      m_localChanges.set("limitTextureAtlasSize", fetchChild<ButtonWidget>("textureLimitCheckbox")->isChecked());
-      syncGui();
-    });
-  reader.registerCallback("multiTextureCheckbox", [this](Widget*) {
-      m_localChanges.set("useMultiTexturing", fetchChild<ButtonWidget>("multiTextureCheckbox")->isChecked());
-      syncGui();
-    });
-  reader.registerCallback("antiAliasingCheckbox", [this](Widget*) {
-    bool checked = fetchChild<ButtonWidget>("antiAliasingCheckbox")->isChecked();
-    m_localChanges.set("antiAliasing", checked);
-    context()->root().configuration()->set("antiAliasing", checked);
-    syncGui();
+  reader.registerCallback("cancel", [this](Widget*) -> std::expected<void, StarException> {
+    dismiss();
+    return {};
   });
-  reader.registerCallback("hardwareCursorCheckbox", [this](Widget*) {
-    bool checked = fetchChild<ButtonWidget>("hardwareCursorCheckbox")->isChecked();
+  reader.registerCallback("accept", [this](Widget*) -> std::expected<void, StarException> {
+    if (auto result = apply(); !result)
+      return std::unexpected(std::move(result.error()));
+    return applyWindowSettings();
+  });
+  reader.registerCallback("resSlider", [this](Widget*) -> std::expected<void, StarException> {
+    auto slider = requireChild<SliderBarWidget>("resSlider");
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    auto resolution = m_resList.at((*slider)->val());
+    if (!resolution)
+      return std::unexpected(std::move(resolution.error()));
+    m_localChanges.set("fullscreenResolution", jsonFromVec2U(**resolution));
+    return syncGui();
+  });
+  reader.registerCallback("interfaceScaleSlider", [this](Widget*) -> std::expected<void, StarException> {
+    auto slider = requireChild<SliderBarWidget>("interfaceScaleSlider");
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    auto value = m_interfaceScaleList.at((*slider)->val());
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_localChanges.set("interfaceScale", **value);
+    return syncGui();
+  });
+  reader.registerCallback("zoomSlider", [this](Widget*) -> std::expected<void, StarException> {
+    auto slider = requireChild<SliderBarWidget>("zoomSlider");
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    auto value = m_zoomList.at((*slider)->val());
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_localChanges.set("zoomLevel", **value);
+    auto config = context()->root().configuration();
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if (auto result = (*config)->set("zoomLevel", **value); !result)
+      return std::unexpected(std::move(result.error()));
+    return syncGui();
+  });
+  reader.registerCallback("cameraSpeedSlider", [this](Widget*) -> std::expected<void, StarException> {
+    auto slider = requireChild<SliderBarWidget>("cameraSpeedSlider");
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    auto value = m_cameraSpeedList.at((*slider)->val());
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_localChanges.set("cameraSpeedFactor", **value);
+    auto config = context()->root().configuration();
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if (auto result = (*config)->set("cameraSpeedFactor", **value); !result)
+      return std::unexpected(std::move(result.error()));
+    return syncGui();
+  });
+  for (auto const& [callback, key] : {
+      std::pair{"speechBubbleCheckbox", "speechBubbles"},
+      std::pair{"interactiveHighlightCheckbox", "interactiveHighlight"},
+      std::pair{"antiAliasingCheckbox", "antiAliasing"},
+      std::pair{"monochromeCheckbox", "monochromeLighting"},
+      std::pair{"newLightingCheckbox", "newLighting"},
+      std::pair{"hdrCheckbox", "hdr"}}) {
+    reader.registerCallback(callback, [this, callback, key](Widget*) -> std::expected<void, StarException> {
+      auto button = requireChild<ButtonWidget>(callback);
+      if (!button)
+        return std::unexpected(std::move(button.error()));
+      bool checked = (*button)->isChecked();
+      m_localChanges.set(key, checked);
+      auto config = context()->root().configuration();
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      if (auto result = (*config)->set(key, checked); !result)
+        return std::unexpected(std::move(result.error()));
+      return syncGui();
+    });
+  }
+  reader.registerCallback("fullscreenCheckbox", [this](Widget*) -> std::expected<void, StarException> {
+    auto button = requireChild<ButtonWidget>("fullscreenCheckbox");
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    bool checked = (*button)->isChecked();
+    m_localChanges.set("fullscreen", checked);
+    if (checked)
+      m_localChanges.set("borderless", !checked);
+    return syncGui();
+  });
+  reader.registerCallback("borderlessCheckbox", [this](Widget*) -> std::expected<void, StarException> {
+    auto button = requireChild<ButtonWidget>("borderlessCheckbox");
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    bool checked = (*button)->isChecked();
+    m_localChanges.set("borderless", checked);
+    if (checked)
+      m_localChanges.set("fullscreen", !checked);
+    return syncGui();
+  });
+  reader.registerCallback("textureLimitCheckbox", [this](Widget*) -> std::expected<void, StarException> {
+    auto button = requireChild<ButtonWidget>("textureLimitCheckbox");
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    m_localChanges.set("limitTextureAtlasSize", (*button)->isChecked());
+    return syncGui();
+  });
+  reader.registerCallback("multiTextureCheckbox", [this](Widget*) -> std::expected<void, StarException> {
+    auto button = requireChild<ButtonWidget>("multiTextureCheckbox");
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    m_localChanges.set("useMultiTexturing", (*button)->isChecked());
+    return syncGui();
+  });
+  reader.registerCallback("hardwareCursorCheckbox", [this](Widget*) -> std::expected<void, StarException> {
+    auto button = requireChild<ButtonWidget>("hardwareCursorCheckbox");
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    bool checked = (*button)->isChecked();
     m_localChanges.set("hardwareCursor", checked);
-    context()->root().configuration()->set("hardwareCursor", checked);
+    auto config = context()->root().configuration();
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if (auto result = (*config)->set("hardwareCursor", checked); !result)
+      return std::unexpected(std::move(result.error()));
     context()->applicationController()->setCursorHardware(checked);
+    return {};
   });
-  reader.registerCallback("monochromeCheckbox", [this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
-      m_localChanges.set("monochromeLighting", checked);
-      context()->root().configuration()->set("monochromeLighting", checked);
-      syncGui();
-    });
-  reader.registerCallback("newLightingCheckbox", [this](Widget*) {
-    bool checked = fetchChild<ButtonWidget>("newLightingCheckbox")->isChecked();
-    m_localChanges.set("newLighting", checked);
-    context()->root().configuration()->set("newLighting", checked);
-    syncGui();
-  });
-  reader.registerCallback("hdrCheckbox", [this](Widget*) {
-    bool checked = fetchChild<ButtonWidget>("hdrCheckbox")->isChecked();
-    m_localChanges.set("hdr", checked);
-    context()->root().configuration()->set("hdr", checked);
-    syncGui();
-  });
-  reader.registerCallback("showShadersMenu", [this](Widget*) {
-      displayShaders();
-    });
-
+  reader.registerCallback("showShadersMenu", [this](Widget*) { return displayShaders(); });
   auto assets = context()->root().assets();
-
-  auto config = assets->json("/interface/windowconfig/graphicsmenu.config");
-  Json paneLayout = config.get("paneLayout");
-
-  m_interfaceScaleList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:interfaceScaleList"));
-  m_resList = jsonToVec2UList(assets->json("/interface/windowconfig/graphicsmenu.config:resolutionList"));
-  m_zoomList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:zoomList"));
-  m_cameraSpeedList = jsonToFloatList(assets->json("/interface/windowconfig/graphicsmenu.config:cameraSpeedList"));
-
-  reader.construct(paneLayout, this);
-
-  fetchChild<SliderBarWidget>("interfaceScaleSlider")->setRange(0, m_interfaceScaleList.size() - 1, 1);
-  fetchChild<SliderBarWidget>("resSlider")->setRange(0, m_resList.size() - 1, 1);
-  fetchChild<SliderBarWidget>("zoomSlider")->setRange(0, m_zoomList.size() - 1, 1);
-  fetchChild<SliderBarWidget>("cameraSpeedSlider")->setRange(0, m_cameraSpeedList.size() - 1, 1);
-
-  initConfig();
-  syncGui();
-  
-  m_shadersMenu = std::make_shared<ShadersMenu>(*context(), assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/graphicsmenu.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto layout = config->get("paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  auto interfaceScalesJson = (*assets)->json("/interface/windowconfig/graphicsmenu.config:interfaceScaleList");
+  if (!interfaceScalesJson)
+    return std::unexpected(std::move(interfaceScalesJson.error()));
+  auto interfaceScales = jsonToFloatList(*interfaceScalesJson);
+  if (!interfaceScales)
+    return std::unexpected(std::move(interfaceScales.error()));
+  m_interfaceScaleList = std::move(*interfaceScales);
+  auto resolutionsJson = (*assets)->json("/interface/windowconfig/graphicsmenu.config:resolutionList");
+  if (!resolutionsJson)
+    return std::unexpected(std::move(resolutionsJson.error()));
+  auto resolutions = jsonToVec2UList(*resolutionsJson);
+  if (!resolutions)
+    return std::unexpected(std::move(resolutions.error()));
+  m_resList = std::move(*resolutions);
+  auto zoomsJson = (*assets)->json("/interface/windowconfig/graphicsmenu.config:zoomList");
+  if (!zoomsJson)
+    return std::unexpected(std::move(zoomsJson.error()));
+  auto zooms = jsonToFloatList(*zoomsJson);
+  if (!zooms)
+    return std::unexpected(std::move(zooms.error()));
+  m_zoomList = std::move(*zooms);
+  auto speedsJson = (*assets)->json("/interface/windowconfig/graphicsmenu.config:cameraSpeedList");
+  if (!speedsJson)
+    return std::unexpected(std::move(speedsJson.error()));
+  auto speeds = jsonToFloatList(*speedsJson);
+  if (!speeds)
+    return std::unexpected(std::move(speeds.error()));
+  m_cameraSpeedList = std::move(*speeds);
+  if (m_interfaceScaleList.empty() || m_resList.empty() || m_zoomList.empty() || m_cameraSpeedList.empty())
+    return std::unexpected(GuiException("Graphics menu slider value lists must not be empty"));
+  if (auto result = reader.construct(*layout, this); !result)
+    return std::unexpected(std::move(result.error()));
+  for (auto const& [name, count] : {
+      std::pair{"interfaceScaleSlider", m_interfaceScaleList.size()},
+      std::pair{"resSlider", m_resList.size()},
+      std::pair{"zoomSlider", m_zoomList.size()},
+      std::pair{"cameraSpeedSlider", m_cameraSpeedList.size()}}) {
+    auto slider = requireChild<SliderBarWidget>(name);
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    if (auto result = (*slider)->setRange(0, count - 1, 1); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  if (auto result = initConfig(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = syncGui(); !result)
+    return std::unexpected(std::move(result.error()));
+  auto shadersPath = config->getString("shadersPanePath", "/interface/opensb/shaders/shaders.config");
+  if (!shadersPath)
+    return std::unexpected(std::move(shadersPath.error()));
+  auto shadersConfig = (*assets)->json(*shadersPath);
+  if (!shadersConfig)
+    return std::unexpected(std::move(shadersConfig.error()));
+  auto shaders = ShadersMenu::create(*context(), *shadersConfig, std::move(client));
+  if (!shaders)
+    return std::unexpected(std::move(shaders.error()));
+  m_shadersMenu = std::move(*shaders);
+  return {};
 }
 
-void GraphicsMenu::show() {
-  Pane::show();
-  initConfig();
-  syncGui();
+std::expected<void, StarException> GraphicsMenu::show() {
+  if (auto result = Pane::show(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = initConfig(); !result)
+    return std::unexpected(std::move(result.error()));
+  return syncGui();
 }
 
-void GraphicsMenu::dismissed() {
-  Pane::dismissed();
+std::expected<void, StarException> GraphicsMenu::dismissed() {
+  return Pane::dismissed();
 }
 
-void GraphicsMenu::toggleFullscreen() {  
-  bool fullscreen = m_localChanges.get("fullscreen").toBool();
-  bool borderless = m_localChanges.get("borderless").toBool();
-
-  m_localChanges.set("fullscreen", !(fullscreen || borderless));
-  context()->root().configuration()->set("fullscreen", !(fullscreen || borderless));
-
+std::expected<void, StarException> GraphicsMenu::toggleFullscreen() {
+  auto fullscreenSetting = m_localChanges.get("fullscreen");
+  if (!fullscreenSetting)
+    return std::unexpected(std::move(fullscreenSetting.error()));
+  auto fullscreen = (*fullscreenSetting)->toBool();
+  if (!fullscreen)
+    return std::unexpected(std::move(fullscreen.error()));
+  auto borderlessSetting = m_localChanges.get("borderless");
+  if (!borderlessSetting)
+    return std::unexpected(std::move(borderlessSetting.error()));
+  auto borderless = (*borderlessSetting)->toBool();
+  if (!borderless)
+    return std::unexpected(std::move(borderless.error()));
+  auto config = context()->root().configuration();
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  m_localChanges.set("fullscreen", !(*fullscreen || *borderless));
+  if (auto result = (*config)->set("fullscreen", !(*fullscreen || *borderless)); !result)
+    return std::unexpected(std::move(result.error()));
   m_localChanges.set("borderless", false);
-  context()->root().configuration()->set("borderless", false);
-
-  applyWindowSettings();
-  syncGui();
+  if (auto result = (*config)->set("borderless", false); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = applyWindowSettings(); !result)
+    return std::unexpected(std::move(result.error()));
+  return syncGui();
 }
 
 StringList const GraphicsMenu::ConfigKeys = {
@@ -345,97 +447,184 @@ StringList const GraphicsMenu::ConfigKeys = {
   "hdr"
 };
 
-void GraphicsMenu::initConfig() {
+std::expected<void, StarException> GraphicsMenu::initConfig() {
   auto configuration = context()->root().configuration();
-
-  for (auto key : ConfigKeys) {
-    m_localChanges.set(key, configuration->get(key));
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  for (auto const& key : ConfigKeys) {
+    auto value = (*configuration)->get(key);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    m_localChanges.set(key, std::move(*value));
   }
+  return {};
 }
 
-void GraphicsMenu::syncGui() {
-  Vec2U res = jsonToVec2U(m_localChanges.get("fullscreenResolution"));
-  auto resSlider = fetchChild<SliderBarWidget>("resSlider");
-  auto resIt = std::lower_bound(m_resList.begin(), m_resList.end(), res, [&](Vec2U const& a, Vec2U const& b) {
-      return a[0] * a[1] < b[0] * b[1]; // sort by number of pixels
-    });
+std::expected<void, StarException> GraphicsMenu::syncGui() {
+  auto setRequiredLabel = [this](String const& name, String const& text) -> std::expected<void, StarException> {
+    auto label = requireChild<LabelWidget>(name);
+    if (!label)
+      return std::unexpected(std::move(label.error()));
+    return (*label)->setText(text);
+  };
+  auto resolutionSetting = m_localChanges.get("fullscreenResolution");
+  if (!resolutionSetting)
+    return std::unexpected(std::move(resolutionSetting.error()));
+  auto resolution = jsonToVec2U(**resolutionSetting);
+  if (!resolution)
+    return std::unexpected(std::move(resolution.error()));
+  auto resSlider = requireChild<SliderBarWidget>("resSlider");
+  if (!resSlider)
+    return std::unexpected(std::move(resSlider.error()));
+  auto resIt = std::lower_bound(m_resList.begin(), m_resList.end(), *resolution, [](Vec2U const& a, Vec2U const& b) {
+    return a[0] * a[1] < b[0] * b[1];
+  });
   if (resIt != m_resList.end()) {
-    std::size_t resIndex = resIt - m_resList.begin();
-    resIndex = std::min(resIndex, m_resList.size() - 1);
-    resSlider->setVal(resIndex, false);
-  } else {
-    resSlider->setVal(m_resList.size() - 1);
+    std::size_t index = std::min<std::size_t>(resIt - m_resList.begin(), m_resList.size() - 1);
+    if (auto result = (*resSlider)->setVal(index, false); !result)
+      return std::unexpected(std::move(result.error()));
+  } else if (auto result = (*resSlider)->setVal(m_resList.size() - 1); !result) {
+    return std::unexpected(std::move(result.error()));
   }
-  fetchChild<LabelWidget>("resValueLabel")->setText(strf("{}x{}", res[0], res[1]));
+  if (auto result = setRequiredLabel("resValueLabel", strf("{}x{}", (*resolution)[0], (*resolution)[1])); !result)
+    return std::unexpected(std::move(result.error()));
 
-  auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-  auto interfaceScale = m_localChanges.get("interfaceScale").optFloat().value_or(0.0f);
-  auto interfaceScaleIt = std::lower_bound(m_interfaceScaleList.begin(), m_interfaceScaleList.end(), interfaceScale);
-  if (interfaceScaleIt != m_interfaceScaleList.end()) {
-    std::size_t scaleIndex = interfaceScaleIt - m_interfaceScaleList.begin();
-    interfaceScaleSlider->setVal(std::min(scaleIndex, m_interfaceScaleList.size() - 1), false);
-  } else {
-    interfaceScaleSlider->setVal(m_interfaceScaleList.size() - 1);
+  auto scaleSetting = m_localChanges.get("interfaceScale");
+  if (!scaleSetting)
+    return std::unexpected(std::move(scaleSetting.error()));
+  auto scale = (*scaleSetting)->optFloat();
+  if (!scale)
+    return std::unexpected(std::move(scale.error()));
+  float interfaceScale = scale->value_or(0.0f);
+  auto updateFloatSlider = [this](char const* name, List<float> const& values, float value) -> std::expected<void, StarException> {
+    auto slider = requireChild<SliderBarWidget>(name);
+    if (!slider)
+      return std::unexpected(std::move(slider.error()));
+    auto it = std::lower_bound(values.begin(), values.end(), value);
+    if (it != values.end())
+      return (*slider)->setVal(std::min<std::size_t>(it - values.begin(), values.size() - 1), false);
+    return (*slider)->setVal(values.size() - 1);
+  };
+  if (auto result = updateFloatSlider("interfaceScaleSlider", m_interfaceScaleList, interfaceScale); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = setRequiredLabel("interfaceScaleValueLabel", interfaceScale != 0 ? toString(interfaceScale) : "AUTO"); !result)
+    return std::unexpected(std::move(result.error()));
+  auto zoomSetting = m_localChanges.get("zoomLevel");
+  if (!zoomSetting)
+    return std::unexpected(std::move(zoomSetting.error()));
+  auto zoom = (*zoomSetting)->toFloat();
+  if (!zoom)
+    return std::unexpected(std::move(zoom.error()));
+  if (auto result = updateFloatSlider("zoomSlider", m_zoomList, *zoom); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = setRequiredLabel("zoomValueLabel", strf("{}x", *zoom)); !result)
+    return std::unexpected(std::move(result.error()));
+  auto speedSetting = m_localChanges.get("cameraSpeedFactor");
+  if (!speedSetting)
+    return std::unexpected(std::move(speedSetting.error()));
+  auto speed = (*speedSetting)->toFloat();
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  if (auto result = updateFloatSlider("cameraSpeedSlider", m_cameraSpeedList, *speed); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = setRequiredLabel("cameraSpeedValueLabel", strf("{}x", *speed)); !result)
+    return std::unexpected(std::move(result.error()));
+  for (auto const& [name, key] : {
+      std::pair{"speechBubbleCheckbox", "speechBubbles"},
+      std::pair{"interactiveHighlightCheckbox", "interactiveHighlight"},
+      std::pair{"fullscreenCheckbox", "fullscreen"},
+      std::pair{"borderlessCheckbox", "borderless"},
+      std::pair{"textureLimitCheckbox", "limitTextureAtlasSize"},
+      std::pair{"antiAliasingCheckbox", "antiAliasing"},
+      std::pair{"monochromeCheckbox", "monochromeLighting"},
+      std::pair{"hardwareCursorCheckbox", "hardwareCursor"}}) {
+    auto button = requireChild<ButtonWidget>(name);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    auto setting = m_localChanges.get(key);
+    if (!setting)
+      return std::unexpected(std::move(setting.error()));
+    auto checked = (*setting)->toBool();
+    if (!checked)
+      return std::unexpected(std::move(checked.error()));
+    (*button)->setChecked(*checked);
   }
-  fetchChild<LabelWidget>("interfaceScaleValueLabel")->setText(interfaceScale != 0 ? toString(interfaceScale) : "AUTO");
-
-  auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
-  auto zoomLevel = m_localChanges.get("zoomLevel").toFloat();
-  auto zoomIt = std::lower_bound(m_zoomList.begin(), m_zoomList.end(), zoomLevel);
-  if (zoomIt != m_zoomList.end()) {
-    std::size_t zoomIndex = zoomIt - m_zoomList.begin();
-    zoomSlider->setVal(std::min(zoomIndex, m_zoomList.size() - 1), false);
-  } else {
-    zoomSlider->setVal(m_zoomList.size() - 1);
+  for (auto const& [name, key] : {
+      std::pair{"multiTextureCheckbox", "useMultiTexturing"},
+      std::pair{"newLightingCheckbox", "newLighting"},
+      std::pair{"hdrCheckbox", "hdr"}}) {
+    auto button = requireChild<ButtonWidget>(name);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    auto setting = m_localChanges.get(key);
+    if (!setting)
+      return std::unexpected(std::move(setting.error()));
+    auto checked = (*setting)->optBool();
+    if (!checked)
+      return std::unexpected(std::move(checked.error()));
+    (*button)->setChecked(checked->value_or(true));
   }
-  fetchChild<LabelWidget>("zoomValueLabel")->setText(strf("{}x", zoomLevel));
-
-  auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
-  auto cameraSpeedFactor = m_localChanges.get("cameraSpeedFactor").toFloat();
-  auto speedIt = std::lower_bound(m_cameraSpeedList.begin(), m_cameraSpeedList.end(), cameraSpeedFactor);
-  if (speedIt != m_cameraSpeedList.end()) {
-    std::size_t speedIndex = speedIt - m_cameraSpeedList.begin();
-    cameraSpeedSlider->setVal(std::min(speedIndex, m_cameraSpeedList.size() - 1), false);
-  } else {
-    cameraSpeedSlider->setVal(m_cameraSpeedList.size() - 1);
-  }
-  fetchChild<LabelWidget>("cameraSpeedValueLabel")->setText(strf("{}x", cameraSpeedFactor));
-
-  fetchChild<ButtonWidget>("speechBubbleCheckbox")->setChecked(m_localChanges.get("speechBubbles").toBool());
-  fetchChild<ButtonWidget>("interactiveHighlightCheckbox")->setChecked(m_localChanges.get("interactiveHighlight").toBool());
-  fetchChild<ButtonWidget>("fullscreenCheckbox")->setChecked(m_localChanges.get("fullscreen").toBool());
-  fetchChild<ButtonWidget>("borderlessCheckbox")->setChecked(m_localChanges.get("borderless").toBool());
-  fetchChild<ButtonWidget>("textureLimitCheckbox")->setChecked(m_localChanges.get("limitTextureAtlasSize").toBool());
-  fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value_or(true));
-  fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
-  fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
-  fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value_or(true));
-  fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
-  fetchChild<ButtonWidget>("hdrCheckbox")->setChecked(m_localChanges.get("hdr").optBool().value_or(true));
+  return {};
 }
 
-void GraphicsMenu::apply() {
+std::expected<void, StarException> GraphicsMenu::apply() {
   auto configuration = context()->root().configuration();
-  for (auto p : m_localChanges) {
-    configuration->set(p.first, p.second);
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  for (auto const& [key, value] : m_localChanges) {
+    if (auto result = (*configuration)->set(key, value); !result)
+      return std::unexpected(std::move(result.error()));
   }
+  return {};
 }
 
-void GraphicsMenu::displayShaders() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_shadersMenu);
+std::expected<void, StarException> GraphicsMenu::displayShaders() {
+  return m_paneManager->displayPane(PaneLayer::ModalWindow, m_shadersMenu);
 }
 
-void GraphicsMenu::applyWindowSettings() {
+std::expected<void, StarException> GraphicsMenu::applyWindowSettings() {
   auto configuration = context()->root().configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto getBool = [&](char const* key) -> std::expected<bool, StarException> {
+    auto value = (*configuration)->get(key);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return value->toBool();
+  };
   auto appController = context()->applicationController();
-  if (configuration->get("fullscreen").toBool())
-    appController->setFullscreenWindow(jsonToVec2U(configuration->get("fullscreenResolution")));
-  else if (configuration->get("borderless").toBool())
-    appController->setBorderlessWindow();
-  else if (configuration->get("maximized").toBool())
+  auto fullscreen = getBool("fullscreen");
+  if (!fullscreen)
+    return std::unexpected(std::move(fullscreen.error()));
+  if (*fullscreen) {
+    auto value = (*configuration)->get("fullscreenResolution");
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto resolution = jsonToVec2U(*value);
+    if (!resolution)
+      return std::unexpected(std::move(resolution.error()));
+    return appController->setFullscreenWindow(*resolution);
+  }
+  auto borderless = getBool("borderless");
+  if (!borderless)
+    return std::unexpected(std::move(borderless.error()));
+  if (*borderless)
+    return appController->setBorderlessWindow();
+  auto maximized = getBool("maximized");
+  if (!maximized)
+    return std::unexpected(std::move(maximized.error()));
+  if (*maximized) {
     appController->setMaximizedWindow();
-  else
-    appController->setNormalWindow(jsonToVec2U(configuration->get("windowedResolution")));
+  } else {
+    auto value = (*configuration)->get("windowedResolution");
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto resolution = jsonToVec2U(*value);
+    if (!resolution)
+      return std::unexpected(std::move(resolution.error()));
+    appController->setNormalWindow(*resolution);
+  }
+  return {};
 }
 
 }

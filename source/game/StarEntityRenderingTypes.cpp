@@ -19,11 +19,13 @@ import star.liquid_types;
 import star.material_types;
 import star.entity_rendering_types;
 import star.lexical_cast;
+import star.format;
 
 namespace Star {
 
-EntityRenderLayer parseRenderLayer(String renderLayer) {
-  static CaseInsensitiveStringMap<EntityRenderLayer> const RenderLayerMap{
+std::expected<EntityRenderLayer, StarException> parseRenderLayer(String renderLayer) {
+  static auto const RenderLayerMap = []() -> std::expected<CaseInsensitiveStringMap<EntityRenderLayer>, StarException> {
+    std::initializer_list<std::pair<String, EntityRenderLayer>> layers{
     {"BackgroundOverlay", RenderLayerBackgroundOverlay},
     {"BackgroundTile", RenderLayerBackgroundTile},
     {"Platform", RenderLayerPlatform},
@@ -46,20 +48,49 @@ EntityRenderLayer parseRenderLayer(String renderLayer) {
     {"ForegroundOverlay", RenderLayerForegroundOverlay},
     {"FrontParticle", RenderLayerFrontParticle},
     {"Overlay", RenderLayerOverlay},
-  };
+    };
+    CaseInsensitiveStringMap<EntityRenderLayer> result;
+    for (auto const& [name, layer] : layers) {
+      auto key = CaseInsensitiveString::create(name);
+      if (!key) return std::unexpected(std::move(key.error()));
+      result.set(std::move(*key), layer);
+    }
+    return result;
+  }();
 
   int offset = 0;
-  if (renderLayer.contains("+")) {
-    StringList parts = renderLayer.split("+", 1);
-    renderLayer = parts.at(0);
-    offset = lexicalCast<int>(parts.at(1));
-  } else if (renderLayer.contains("-")) {
-    StringList parts = renderLayer.split("-", 1);
-    renderLayer = parts.at(0);
-    offset = -lexicalCast<int>(parts.at(1));
+  auto plus = renderLayer.contains("+");
+  if (!plus)
+    return std::unexpected(std::move(plus.error()));
+  auto minus = renderLayer.contains("-");
+  if (!minus)
+    return std::unexpected(std::move(minus.error()));
+  if (*plus || *minus) {
+    auto parts = renderLayer.split(*plus ? "+" : "-", 1);
+    if (!parts)
+      return std::unexpected(std::move(parts.error()));
+    auto name = parts->at(0);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto amount = parts->at(1);
+    if (!amount)
+      return std::unexpected(std::move(amount.error()));
+    auto parsed = lexicalCast<int>(**amount);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    renderLayer = **name;
+    offset = *plus ? *parsed : -*parsed;
   }
 
-  return RenderLayerMap.get(renderLayer) + offset;
+  if (!RenderLayerMap)
+    return std::unexpected(RenderLayerMap.error());
+  auto key = CaseInsensitiveStringView::create(renderLayer);
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  auto layer = RenderLayerMap->get(*key);
+  if (!layer)
+    return std::unexpected(std::move(layer.error()));
+  return **layer + offset;
 }
 
 PreviewTile::PreviewTile()
@@ -123,23 +154,48 @@ PreviewTile::PreviewTile(Vec2I const& position, LiquidId liqId)
 
 OverheadBar::OverheadBar() : percentage(0.0f), detailOnly(false) {}
 
-OverheadBar::OverheadBar(Json const& json) {
-  entityPosition = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
-  icon = json.optString("icon");
-  percentage = json.getFloat("percentage");
-  color = jsonToColor(json.get("color"));
-  detailOnly = json.getBool("detailOnly", false);
+std::expected<OverheadBar, StarException> OverheadBar::create(Json const& json) {
+  OverheadBar bar;
+  auto position = json.opt("position");
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  if (*position) {
+    auto parsed = jsonToVec2F(**position);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    bar.entityPosition = *parsed;
+  }
+  auto icon = json.optString("icon");
+  if (!icon)
+    return std::unexpected(std::move(icon.error()));
+  bar.icon = std::move(*icon);
+  auto percentage = json.getFloat("percentage");
+  if (!percentage)
+    return std::unexpected(std::move(percentage.error()));
+  bar.percentage = *percentage;
+  auto colorConfig = json.get("color");
+  if (!colorConfig)
+    return std::unexpected(std::move(colorConfig.error()));
+  auto color = jsonToColor(*colorConfig);
+  if (!color)
+    return std::unexpected(std::move(color.error()));
+  bar.color = std::move(*color);
+  auto detailOnly = json.getBool("detailOnly", false);
+  if (!detailOnly)
+    return std::unexpected(std::move(detailOnly.error()));
+  bar.detailOnly = *detailOnly;
+  return bar;
 }
 
 OverheadBar::OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly)
   : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
 
-extern EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames{
+extern std::expected<EnumMap<EntityHighlightEffectType>, StarException> const EntityHighlightEffectTypeNames = EnumMap<EntityHighlightEffectType>::create({
   {EntityHighlightEffectType::None, "none"},
   {EntityHighlightEffectType::Interactive, "interactive"},
   {EntityHighlightEffectType::Inspectable, "inspectable"},
   {EntityHighlightEffectType::Interesting, "interesting"},
   {EntityHighlightEffectType::Inspected, "inspected"}
-};
+});
 
 }

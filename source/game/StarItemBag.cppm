@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 import star.json;
 
@@ -29,16 +30,21 @@ public:
 
   explicit ItemBag(Root& root, std::size_t size = 0);
 
-  static ItemBag fromJson(Root& root, Json const& spec);
-  static ItemBag loadStore(Root& root, Json const& store);
+  [[nodiscard]]
+  static std::expected<ItemBag, StarException> fromJson(Root& root, Json const& spec);
+  [[nodiscard]]
+  static std::expected<ItemBag, StarException> loadStore(Root& root, Json const& store);
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> diskStore() const;
 
   std::size_t size() const;
   // May reshape the container, but will try not to lose any container
   // contents.  Returns overflow.
-  List<std::shared_ptr<Item>> resize(std::size_t size);
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> resize(std::size_t size);
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
@@ -52,26 +58,33 @@ public:
   List<std::shared_ptr<Item>> const& items() const;
 
   // Pure query: an externally exhausted stack is observed as an empty slot.
-  std::shared_ptr<Item> at(std::size_t i) const;
-  std::shared_ptr<Item>& at(std::size_t i);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> at(std::size_t i) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>*, StarException> at(std::size_t i);
 
   // Returns all non-empty items and clears container contents
   List<std::shared_ptr<Item>> takeAll();
 
   // Directly set the value of an item at a given slot
-  void setItem(std::size_t pos, std::shared_ptr<Item> item);
+  [[nodiscard]]
+  std::expected<void, StarException> setItem(std::size_t pos, std::shared_ptr<Item> item);
 
   // Put items into the given slot.  Returns number of items left over
-  std::shared_ptr<Item> putItems(std::size_t pos, std::shared_ptr<Item> items);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> putItems(std::size_t pos, std::shared_ptr<Item> items);
   // Take a maximum number of items from the given position, defaults to all.
-  std::shared_ptr<Item> takeItems(std::size_t pos, std::uint64_t count = std::numeric_limits<std::uint64_t>::max());
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> takeItems(std::size_t pos, std::uint64_t count = std::numeric_limits<std::uint64_t>::max());
   // Put items in the slot by combining, or swap the current items with the
   // given items.
-  std::shared_ptr<Item> swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine = true);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine = true);
 
   // Destroys the given number of items, only if the entirety of count is
   // available, returns success.
-  bool consumeItems(std::size_t pos, std::uint64_t count);
+  [[nodiscard]]
+  std::expected<bool, StarException> consumeItems(std::size_t pos, std::uint64_t count);
 
   // Consume any items from any stack that matches the given item descriptor,
   // only if the entirety of the count is available.  Returns success.
@@ -93,18 +106,23 @@ public:
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
-  std::shared_ptr<Item> addItems(std::shared_ptr<Item> items);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> addItems(std::shared_ptr<Item> items);
 
   // Add items to the bag, but only if they stack with existing items in the
   // bag.
-  std::shared_ptr<Item> stackItems(std::shared_ptr<Item> items);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> stackItems(std::shared_ptr<Item> items);
 
   // Attempt to condense all stacks in the given bag
-  void condenseStacks();
+  [[nodiscard]]
+  std::expected<void, StarException> condenseStacks();
 
   // Resolves the current ItemDatabase through the borrowed Root when reading.
-  void read(DataStream& ds);
-  void write(DataStream& ds) const;
+  [[nodiscard]]
+  std::expected<void, StarException> read(DataStream& ds);
+  [[nodiscard]]
+  std::expected<void, StarException> write(DataStream& ds) const;
 
 private:
   // If the from item can stack into the given to item, returns the amount that

@@ -66,9 +66,9 @@ public:
   // "foo?" and "?bar" with "?" also becomes "foo?bar".  Also, if left or right
   // is empty, does not add a joiner, for example "" and "baz" joined with "?"
   // produces "baz".
-  static String joinWith(String const& join, String const& left, String const& right);
+  [[nodiscard]] static std::expected<String, StarException> joinWith(String const& join, String const& left, String const& right);
   template <typename... StringType>
-  static String joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest);
+  [[nodiscard]] static std::expected<String, StarException> joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest);
 
   String();
   String(String const& s);
@@ -80,12 +80,11 @@ public:
   String(std::string const& s);
   String(std::string&& s) noexcept;
 
-  String(std::wstring const& s);
-  String(Char const* s);
-  String(Char const* s, std::size_t n);
-  String(Char c, std::size_t n);
-
-  explicit String(Char c);
+  [[nodiscard]] static std::expected<String, StarException> create(std::wstring const& s);
+  [[nodiscard]] static std::expected<String, StarException> create(Char const* s);
+  [[nodiscard]] static std::expected<String, StarException> create(Char const* s, std::size_t n);
+  [[nodiscard]] static std::expected<String, StarException> create(Char c, std::size_t n);
+  [[nodiscard]] static std::expected<String, StarException> create(Char c);
 
   // const& to internal utf8 data
   std::string const& utf8() const;
@@ -95,135 +94,128 @@ public:
   char const* utf8Ptr() const;
   std::size_t utf8Size() const;
 
-  std::wstring wstring() const;
-  WideString wideString() const;
+  [[nodiscard]] std::expected<std::wstring, StarException> wstring() const;
+  [[nodiscard]] std::expected<WideString, StarException> wideString() const;
 
-  const_iterator begin() const;
+  [[nodiscard]] std::expected<const_iterator, StarException> begin() const;
   const_iterator end() const;
 
-  std::size_t size() const;
-  std::size_t length() const;
+  [[nodiscard]] std::expected<std::size_t, StarException> size() const;
+  [[nodiscard]] std::expected<std::size_t, StarException> length() const;
 
   void clear();
   void reserve(std::size_t n);
   bool empty() const;
 
-  Char operator[](std::size_t i) const;
-  // Throws StringException if i out of range.
-  Char at(std::size_t i) const;
+  [[nodiscard]] std::expected<Char, StarException> operator[](std::size_t i) const;
+  [[nodiscard]] std::expected<Char, StarException> at(std::size_t i) const;
 
-  String toUpper() const;
-  String toLower() const;
-  String titleCase() const;
+  [[nodiscard]] std::expected<String, StarException> toUpper() const;
+  [[nodiscard]] std::expected<String, StarException> toLower() const;
+  [[nodiscard]] std::expected<String, StarException> titleCase() const;
 
-  bool endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const;
-  bool endsWith(Char end, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> endsWith(Char end, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const;
 
-  String reverse() const;
+  [[nodiscard]] std::expected<String, StarException> reverse() const;
+  [[nodiscard]] std::expected<String, StarException> rot13() const;
 
-  String rot13() const;
-
-  StringList split(Char c, std::size_t maxSplit = NPos) const;
-  StringList split(String const& pattern, std::size_t maxSplit = NPos) const;
-  StringList rsplit(Char c, std::size_t maxSplit = NPos) const;
-  StringList rsplit(String const& pattern, std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> split(Char c, std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> split(String const& pattern, std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> rsplit(Char c, std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> rsplit(String const& pattern, std::size_t maxSplit = NPos) const;
 
   // Splits on any number of contiguous instances of any of the given
   // characters.  Behaves differently than regular split in that leading and
   // trailing instances of the characters are also ignored, and in general no
   // empty strings will be in the resulting split list.  If chars is empty,
   // then splits on any whitespace.
-  StringList splitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
-  StringList rsplitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> splitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> rsplitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
 
-  // Split any with '\n\r'
-  StringList splitLines(std::size_t maxSplit = NPos) const;
-  // Shorthand for splitAny("");
-  StringList splitWhitespace(std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> splitLines(std::size_t maxSplit = NPos) const;
+  [[nodiscard]] std::expected<StringList, StarException> splitWhitespace(std::size_t maxSplit = NPos) const;
 
   // Splits a string once based on the given characters (defaulting to
   // whitespace), and returns the first part.  This string is set to the
   // second part.
-  String extract(String const& chars = "");
-  String rextract(String const& chars = "");
+  [[nodiscard]] std::expected<String, StarException> extract(String const& chars = "");
+  [[nodiscard]] std::expected<String, StarException> rextract(String const& chars = "");
 
-  bool hasChar(Char c) const;
+  [[nodiscard]] std::expected<bool, StarException> hasChar(Char c) const;
   // Identical to hasChar, except, if string is empty, tests if c is
   // whitespace.
-  bool hasCharOrWhitespace(Char c) const;
+  [[nodiscard]] std::expected<bool, StarException> hasCharOrWhitespace(Char c) const;
 
-  String replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<String, StarException> replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
 
-  String trimEnd(String const& chars = "") const;
-  String trimBeg(String const& chars = "") const;
-  String trim(String const& chars = "") const;
+  [[nodiscard]] std::expected<String, StarException> trimEnd(String const& chars = "") const;
+  [[nodiscard]] std::expected<String, StarException> trimBeg(String const& chars = "") const;
+  [[nodiscard]] std::expected<String, StarException> trim(String const& chars = "") const;
 
-  std::size_t find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  std::size_t find(String const& s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  std::size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
-  std::size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> find(String const& s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
 
   // If pattern is empty, finds first whitespace
-  std::size_t findFirstOf(String const& chars = "", std::size_t beg = 0) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findFirstOf(String const& chars = "", std::size_t beg = 0) const;
 
   // If pattern is empty, finds first non-whitespace
-  std::size_t findFirstNotOf(String const& chars = "", std::size_t beg = 0) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findFirstNotOf(String const& chars = "", std::size_t beg = 0) const;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  std::size_t findNextBoundary(std::size_t index, bool backwards = false) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findNextBoundary(std::size_t index, bool backwards = false) const;
 
-  String slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] std::expected<String, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   void append(String const& s);
   void append(std::string const& s);
-  void append(Char const* s);
-  void append(Char const* s, std::size_t n);
+  [[nodiscard]] std::expected<void, StarException> append(Char const* s);
+  [[nodiscard]] std::expected<void, StarException> append(Char const* s, std::size_t n);
   void append(char const* s);
   void append(char const* s, std::size_t n);
-  void append(Char c);
+  [[nodiscard]] std::expected<void, StarException> append(Char c);
 
   void prepend(String const& s);
   void prepend(std::string const& s);
-  void prepend(Char const* s);
-  void prepend(Char const* s, std::size_t n);
+  [[nodiscard]] std::expected<void, StarException> prepend(Char const* s);
+  [[nodiscard]] std::expected<void, StarException> prepend(Char const* s, std::size_t n);
   void prepend(char const* s);
   void prepend(char const* s, std::size_t n);
-  void prepend(Char c);
+  [[nodiscard]] std::expected<void, StarException> prepend(Char c);
 
-  void push_back(Char c);
-  void push_front(Char c);
+  [[nodiscard]] std::expected<void, StarException> push_back(Char c);
+  [[nodiscard]] std::expected<void, StarException> push_front(Char c);
 
-  bool contains(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> contains(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const;
 
-  // Does this string match the given regular expression?
-  bool regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const;
+  [[nodiscard]] std::expected<int, StarException> compare(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> equals(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> equalsIgnoreCase(String const& s) const;
 
-  int compare(String const& s, CaseSensitivity cs = CaseSensitive) const;
-  bool equals(String const& s, CaseSensitivity cs = CaseSensitive) const;
-  // Synonym for equals(s, String::CaseInsensitive)
-  bool equalsIgnoreCase(String const& s) const;
+  [[nodiscard]] std::expected<String, StarException> substr(std::size_t position, std::size_t n = NPos) const;
+  [[nodiscard]] std::expected<void, StarException> erase(std::size_t pos = 0, std::size_t n = NPos);
 
-  String substr(std::size_t position, std::size_t n = NPos) const;
-  void erase(std::size_t pos = 0, std::size_t n = NPos);
-
-  String padLeft(std::size_t size, String const& filler) const;
-  String padRight(std::size_t size, String const& filler) const;
+  [[nodiscard]] std::expected<String, StarException> padLeft(std::size_t size, String const& filler) const;
+  [[nodiscard]] std::expected<String, StarException> padRight(std::size_t size, String const& filler) const;
 
   // Replace angle bracket tags in the string with values given by the given
   // lookup function.  Will be called as:
-  // String lookup(String const& key);
+  // String lookup(String const& key), or expected<String, StarException>.
   template <typename Lookup>
-  String lookupTags(Lookup&& lookup) const;
+  [[nodiscard]] auto lookupTags(Lookup&& lookup) const;
 
   // StringView variant
   template <typename Lookup>
-  std::optional<String> maybeLookupTagsView(Lookup&& lookup) const;
+  [[nodiscard]] auto maybeLookupTagsView(Lookup&& lookup) const;
 
   template <typename Lookup>
-  String lookupTagsView(Lookup&& lookup) const;
+  [[nodiscard]] auto lookupTagsView(Lookup&& lookup) const;
 
   // Replace angle bracket tags in the string with values given by the tags
   // map.  If replaceWithDefault is true, then values that are not found in the
@@ -237,17 +229,17 @@ public:
 
   String& operator+=(String const& s);
   String& operator+=(std::string const& s);
-  String& operator+=(Char const* s);
+  [[nodiscard]] std::expected<String*, StarException> operator+=(Char const* s);
   String& operator+=(char const* s);
-  String& operator+=(Char c);
+  [[nodiscard]] std::expected<String*, StarException> operator+=(Char c);
 
   friend bool operator==(String const& s1, String const& s2);
   friend bool operator==(String const& s1, std::string const& s2);
   friend bool operator==(String const& s1, std::string_view s2) { return s1.m_string == s2; }
-  friend bool operator==(String const& s1, Char const* s2);
+  friend std::expected<bool, StarException> operator==(String const& s1, Char const* s2);
   friend bool operator==(String const& s1, char const* s2);
   friend bool operator==(std::string const& s1, String const& s2);
-  friend bool operator==(Char const* s1, String const& s2);
+  friend std::expected<bool, StarException> operator==(Char const* s1, String const& s2);
   friend bool operator==(char const* s1, String const& s2);
 
   // C++20 rewrites !=, >, <= and >= from these, including the mixed operand
@@ -255,22 +247,22 @@ public:
   // with a worse conversion is needed, and every form has a <=> here.
   friend std::strong_ordering operator<=>(String const& s1, String const& s2);
   friend std::strong_ordering operator<=>(String const& s1, std::string const& s2);
-  friend std::strong_ordering operator<=>(String const& s1, Char const* s2);
+  friend std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, Char const* s2);
   friend std::strong_ordering operator<=>(String const& s1, char const* s2);
   friend std::strong_ordering operator<=>(std::string const& s1, String const& s2);
-  friend std::strong_ordering operator<=>(Char const* s1, String const& s2);
+  friend std::expected<std::strong_ordering, StarException> operator<=>(Char const* s1, String const& s2);
   friend std::strong_ordering operator<=>(char const* s1, String const& s2);
 
   friend String operator+(String s1, String const& s2);
   friend String operator+(String s1, std::string const& s2);
-  friend String operator+(String s1, Char const* s2);
+  friend std::expected<String, StarException> operator+(String s1, Char const* s2);
   friend String operator+(String s1, char const* s2);
   friend String operator+(std::string const& s1, String const& s2);
-  friend String operator+(Char const* s1, String const& s2);
+  friend std::expected<String, StarException> operator+(Char const* s1, String const& s2);
   friend String operator+(char const* s1, String const& s2);
 
-  friend String operator+(String s, Char c);
-  friend String operator+(Char c, String const& s);
+  friend std::expected<String, StarException> operator+(String s, Char c);
+  friend std::expected<String, StarException> operator+(Char c, String const& s);
 
   friend String operator*(String const& s, unsigned times);
   friend String operator*(unsigned times, String const& s);
@@ -286,7 +278,7 @@ public:
   String& operator+=(std::string_view s);
 
 private:
-  int compare(std::size_t selfOffset,
+  [[nodiscard]] std::expected<int, StarException> compare(std::size_t selfOffset,
       std::size_t selfLen,
       String const& other,
       std::size_t otherOffset,
@@ -295,6 +287,15 @@ private:
 
   std::string m_string;
 };
+
+[[nodiscard]] std::expected<bool, StarException> operator==(String const& s1, String::Char const* s2);
+[[nodiscard]] std::expected<bool, StarException> operator==(String::Char const* s1, String const& s2);
+[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(String const& s1, String::Char const* s2);
+[[nodiscard]] std::expected<std::strong_ordering, StarException> operator<=>(String::Char const* s1, String const& s2);
+[[nodiscard]] std::expected<String, StarException> operator+(String s1, String::Char const* s2);
+[[nodiscard]] std::expected<String, StarException> operator+(String::Char const* s1, String const& s2);
+[[nodiscard]] std::expected<String, StarException> operator+(String s, String::Char c);
+[[nodiscard]] std::expected<String, StarException> operator+(String::Char c, String const& s);
 
 
 class StringList : public List<String> {
@@ -315,7 +316,7 @@ public:
   StringList(Base&& l);
   StringList(StringList const& l);
   StringList(StringList&& l);
-  StringList(std::size_t len, String::Char const* const* list);
+  [[nodiscard]] static std::expected<StringList, StarException> create(std::size_t len, String::Char const* const* list);
   StringList(std::size_t len, char const* const* list);
   explicit StringList(std::size_t len, String const& s1 = String());
   StringList(std::initializer_list<String> list);
@@ -330,14 +331,14 @@ public:
   StringList& operator=(StringList&& rhs);
   StringList& operator=(std::initializer_list<String> list);
 
-  bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
-  StringList trimAll(String const& chars = "") const;
+  [[nodiscard]] std::expected<bool, StarException> contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
+  [[nodiscard]] std::expected<StringList, StarException> trimAll(String const& chars = "") const;
   String join(String const& separator = "") const;
 
-  StringList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] std::expected<StringList, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  StringList filtered(Filter&& filter) const;
+  [[nodiscard]] auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   StringList sorted(Comparator&& comparator) const;
@@ -362,38 +363,73 @@ struct hash<String> {
   std::size_t operator()(std::string const& s) const { return (*this)(std::string_view(s)); }
 };
 
+class CaseInsensitiveString;
+
+// Borrowed validated key. Source bytes must outlive this view and must not be
+// mutated while it is used.
+class CaseInsensitiveStringView {
+public:
+  [[nodiscard]] static std::expected<CaseInsensitiveStringView, StarException> create(String const& string);
+  [[nodiscard]] static std::expected<CaseInsensitiveStringView, StarException> create(String&&) = delete;
+  [[nodiscard]] static std::expected<CaseInsensitiveStringView, StarException> create(String const&&) = delete;
+  [[nodiscard]] static std::expected<CaseInsensitiveStringView, StarException> create(std::string_view bytes);
+  std::string_view utf8() const { return m_bytes; }
+  std::size_t hash() const { return m_hash; }
+  friend std::ostream& operator<<(std::ostream& stream, CaseInsensitiveStringView const& key) { return stream << key.utf8(); }
+private:
+  friend class CaseInsensitiveString;
+  CaseInsensitiveStringView(std::string_view bytes, std::size_t hash) : m_bytes(bytes), m_hash(hash) {}
+  std::string_view m_bytes;
+  std::size_t m_hash;
+};
+
+// Standard hash/equality callbacks cannot carry input errors. This owning key
+// validates at creation and caches the original codepoint hash.
+class CaseInsensitiveString {
+public:
+  CaseInsensitiveString();
+  CaseInsensitiveString(CaseInsensitiveString const&) = default;
+  CaseInsensitiveString& operator=(CaseInsensitiveString const&) = default;
+  CaseInsensitiveString(CaseInsensitiveString&& other) noexcept
+    : m_string(std::move(other.m_string)), m_hash(std::exchange(other.m_hash, PLHasher().hash())) { other.m_string.clear(); }
+  CaseInsensitiveString& operator=(CaseInsensitiveString&& other) noexcept {
+    if (this != &other) {
+      m_string = std::move(other.m_string);
+      m_hash = std::exchange(other.m_hash, PLHasher().hash());
+      other.m_string.clear();
+    }
+    return *this;
+  }
+  [[nodiscard]] static std::expected<CaseInsensitiveString, StarException> create(String string);
+  String const& string() const { return m_string; }
+  std::size_t hash() const { return m_hash; }
+  CaseInsensitiveStringView view() const & { return CaseInsensitiveStringView(m_string.utf8(), m_hash); }
+  CaseInsensitiveStringView view() const && = delete;
+  friend std::ostream& operator<<(std::ostream& stream, CaseInsensitiveString const& key) { return stream << key.string(); }
+  friend bool operator==(CaseInsensitiveString const& lhs, CaseInsensitiveString const& rhs);
+private:
+  CaseInsensitiveString(String&& string, std::size_t hash) : m_string(std::move(string)), m_hash(hash) {}
+  String m_string;
+  std::size_t m_hash;
+};
+
 struct CaseInsensitiveStringHash {
   using is_transparent = void;
-  std::size_t operator()(String const& s) const;
-  std::size_t operator()(StringView const& s) const;
-  std::size_t operator()(std::string_view s) const;
-  std::size_t operator()(char const* s) const { return (*this)(std::string_view(s)); }
-  std::size_t operator()(std::string const& s) const { return (*this)(std::string_view(s)); }
+  std::size_t operator()(CaseInsensitiveString const& s) const { return s.hash(); }
+  std::size_t operator()(CaseInsensitiveStringView const& s) const { return s.hash(); }
 };
 
 struct CaseInsensitiveStringCompare {
   using is_transparent = void;
-  bool operator()(String const& lhs, String const& rhs) const;
-  bool operator()(String const& lhs, StringView const& rhs) const;
-  bool operator()(StringView const& lhs, String const& rhs) const;
-  bool operator()(StringView const& lhs, StringView const& rhs) const;
-  bool operator()(String const& lhs, std::string_view rhs) const;
-  bool operator()(std::string_view lhs, String const& rhs) const;
-  bool operator()(String const& lhs, char const* rhs) const { return (*this)(lhs, std::string_view(rhs)); }
-  bool operator()(char const* lhs, String const& rhs) const { return (*this)(std::string_view(lhs), rhs); }
-  bool operator()(String const& lhs, std::string const& rhs) const { return (*this)(lhs, std::string_view(rhs)); }
-  bool operator()(std::string const& lhs, String const& rhs) const { return (*this)(std::string_view(lhs), rhs); }
-  bool operator()(std::string_view lhs, std::string_view rhs) const;
-  template <typename Left, typename Right>
-    requires (std::convertible_to<Left const&, std::string_view> && std::convertible_to<Right const&, std::string_view>)
-  bool operator()(Left const& lhs, Right const& rhs) const {
-    return (*this)(std::string_view(lhs), std::string_view(rhs));
-  }
+  bool operator()(CaseInsensitiveStringView const& lhs, CaseInsensitiveStringView const& rhs) const;
+  bool operator()(CaseInsensitiveString const& lhs, CaseInsensitiveString const& rhs) const { return (*this)(lhs.view(), rhs.view()); }
+  bool operator()(CaseInsensitiveString const& lhs, CaseInsensitiveStringView const& rhs) const { return (*this)(lhs.view(), rhs); }
+  bool operator()(CaseInsensitiveStringView const& lhs, CaseInsensitiveString const& rhs) const { return (*this)(lhs, rhs.view()); }
 };
 
 typedef HashSet<String> StringSet;
 
-typedef HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
+typedef HashSet<CaseInsensitiveString, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
 
 template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<>>
 using StringMap = HashMap<String, MappedT, HashT, ComparatorT>;
@@ -402,7 +438,7 @@ template <typename MappedT, typename HashT = hash<String>, typename ComparatorT 
 using StableStringMap = StableHashMap<String, MappedT, HashT, ComparatorT>;
 
 template <typename MappedT>
-using CaseInsensitiveStringMap = StringMap<MappedT, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>;
+using CaseInsensitiveStringMap = HashMap<CaseInsensitiveString, MappedT, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>;
 
 template <>
 struct hash<StringList> {
@@ -410,28 +446,28 @@ struct hash<StringList> {
 };
 
 template <typename... StringType>
-String String::joinWith(
+[[nodiscard]] std::expected<String, StarException> String::joinWith(
     String const& join, String const& first, String const& second, String const& third, StringType const&... rest) {
-  return joinWith(join, joinWith(join, first, second), third, rest...);
+  auto pair = joinWith(join, first, second);
+  if (!pair) return std::unexpected(std::move(pair.error()));
+  return joinWith(join, *pair, third, rest...);
 }
 
 template <typename Lookup>
-String String::lookupTags(Lookup&& lookup) const {
-  // Operates directly on the utf8 representation of the strings, rather than
-  // using unicode find / replace methods
+[[nodiscard]] auto String::lookupTags(Lookup&& lookup) const {
+  using Replacement = std::remove_cvref_t<std::invoke_result_t<Lookup&, String const&>>;
+  constexpr bool fallible = std::same_as<Replacement, std::expected<String, StarException>>;
+  using Result = std::conditional_t<fallible, std::expected<String, StarException>, String>;
+  // Tag delimiters and offsets are bytes, not codepoints.
 
   auto substrInto = [](std::string const& ref, std::size_t position, std::size_t n, std::string& result) {
-    auto len = ref.size();
-    if (position > len)
-      throw OutOfRangeException(strf("out of range in substrInto: {}", position));
-
-    result.append(ref, position, n);
+    result.append(ref.data() + position, std::min(n, ref.size() - position));
   };
 
   std::string finalString;
 
   std::size_t start = 0;
-  std::size_t size = String::size();
+  std::size_t size = m_string.size();
 
   finalString.reserve(size);
 
@@ -446,7 +482,13 @@ String String::lookupTags(Lookup&& lookup) const {
     if (beginTag != NPos && endTag != NPos) {
       substrInto(m_string, beginTag + 1, endTag - beginTag - 1, key.m_string);
       substrInto(m_string, start, beginTag - start, finalString);
-      finalString += lookup(key).m_string;
+      decltype(auto) replacement = lookup(key);
+      if constexpr (fallible) {
+        if (!replacement) return Result(std::unexpected(std::move(replacement.error())));
+        finalString += replacement->m_string;
+      } else {
+        finalString += replacement.m_string;
+      }
       key.m_string.clear();
       start = endTag + 1;
 
@@ -456,11 +498,14 @@ String String::lookupTags(Lookup&& lookup) const {
     }
   }
 
-  return finalString;
+  return Result(String(std::move(finalString)));
 }
 
 template <typename Lookup>
-std::optional<String> String::maybeLookupTagsView(Lookup&& lookup) const {
+[[nodiscard]] auto String::maybeLookupTagsView(Lookup&& lookup) const {
+  using Replacement = std::remove_cvref_t<std::invoke_result_t<Lookup&, std::string_view>>;
+  constexpr bool fallible = std::same_as<Replacement, std::expected<String, StarException>>;
+  using Result = std::conditional_t<fallible, std::expected<std::optional<String>, StarException>, std::optional<String>>;
   std::string finalString;
   std::string_view view(utf8());
 
@@ -471,7 +516,7 @@ std::optional<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 
     std::size_t beginTag = view.find_first_of('<', start);
     if (beginTag == NPos && !start)
-      return std::optional<String>();
+      return Result(std::optional<String>());
 
     std::size_t endTag = view.find_first_of('>', beginTag);
     if (beginTag != NPos && endTag != NPos) {
@@ -479,7 +524,12 @@ std::optional<String> String::maybeLookupTagsView(Lookup&& lookup) const {
         finalString.reserve(view.size());
       finalString.append(view.substr(start, beginTag - start));
       decltype(auto) replacement = lookup(view.substr(beginTag + 1, endTag - beginTag - 1));
-      finalString.append(replacement.utf8());
+      if constexpr (fallible) {
+        if (!replacement) return Result(std::unexpected(std::move(replacement.error())));
+        finalString.append(replacement->utf8());
+      } else {
+        finalString.append(replacement.utf8());
+      }
       start = endTag + 1;
     } else {
       finalString.append(view.substr(start));
@@ -487,13 +537,20 @@ std::optional<String> String::maybeLookupTagsView(Lookup&& lookup) const {
     }
   }
 
-  return String(std::move(finalString));
+  return Result(std::optional<String>(String(std::move(finalString))));
 }
 
 template <typename Lookup>
-String String::lookupTagsView(Lookup&& lookup) const {
+[[nodiscard]] auto String::lookupTagsView(Lookup&& lookup) const {
+  using Replacement = std::remove_cvref_t<std::invoke_result_t<Lookup&, std::string_view>>;
+  constexpr bool fallible = std::same_as<Replacement, std::expected<String, StarException>>;
   auto result = maybeLookupTagsView(lookup);
-  return result ? std::move(result.value()) : String();
+  if constexpr (fallible) {
+    if (!result) return std::expected<String, StarException>(std::unexpected(std::move(result.error())));
+    return std::expected<String, StarException>(*result ? std::move(**result) : String());
+  } else {
+    return result ? std::move(*result) : String();
+  }
 }
 
 template <typename MapType>
@@ -524,10 +581,17 @@ StringList StringList::from(Container const& m) {
 }
 
 template <typename Filter>
-StringList StringList::filtered(Filter&& filter) const {
+[[nodiscard]] auto StringList::filtered(Filter&& filter) const {
   StringList l;
-  l.filter(std::forward<Filter>(filter));
-  return l;
+  if constexpr (std::is_void_v<decltype(l.filter(std::forward<Filter>(filter)))>) {
+    l.filter(std::forward<Filter>(filter));
+    return l;
+  } else {
+    auto filtered = l.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<StringList, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<StringList, StarException>(std::move(l));
+  }
 }
 
 template <typename Comparator>
@@ -555,6 +619,8 @@ export namespace Star {
   using ::Star::String;
   using ::Star::StringList;
   using ::Star::StringView;
+  using ::Star::CaseInsensitiveString;
+  using ::Star::CaseInsensitiveStringView;
   using ::Star::CaseInsensitiveStringHash;
   using ::Star::CaseInsensitiveStringCompare;
   using ::Star::StringSet;
@@ -570,5 +636,12 @@ export template <> struct std::formatter<Star::String> : std::formatter<std::str
   template <typename Context>
   auto format(Star::String const& s, Context& ctx) const -> typename Context::iterator {
     return std::formatter<std::string>::format(s.utf8(), ctx);
+  }
+};
+
+export template <> struct std::formatter<Star::CaseInsensitiveString> : std::formatter<std::string> {
+  template <typename Context>
+  auto format(Star::CaseInsensitiveString const& key, Context& ctx) const -> typename Context::iterator {
+    return std::formatter<std::string>::format(key.string().utf8(), ctx);
   }
 };

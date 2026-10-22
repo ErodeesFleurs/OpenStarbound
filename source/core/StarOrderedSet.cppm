@@ -81,14 +81,14 @@ public:
 
   void clear();
 
-  value_type const& first() const;
-  value_type const& last() const;
+  [[nodiscard]] std::expected<value_type const*, StarException> first() const;
+  [[nodiscard]] std::expected<value_type const*, StarException> last() const;
 
-  void removeFirst();
-  void removeLast();
+  [[nodiscard]] std::expected<void, StarException> removeFirst();
+  [[nodiscard]] std::expected<void, StarException> removeLast();
 
-  value_type takeFirst();
-  value_type takeLast();
+  [[nodiscard]] std::expected<value_type, StarException> takeFirst();
+  [[nodiscard]] std::expected<value_type, StarException> takeLast();
 
   template <typename Compare>
   void sort(Compare comp);
@@ -106,8 +106,8 @@ public:
 
   std::optional<std::size_t> indexOf(value_type const& v) const;
 
-  value_type const& at(std::size_t i) const;
-  value_type& at(std::size_t i);
+  [[nodiscard]] std::expected<value_type const*, StarException> at(std::size_t i) const;
+  [[nodiscard]] std::expected<value_type const*, StarException> at(std::size_t i);
 
   OrderedSetWrapper intersection(OrderedSetWrapper const& s) const;
   OrderedSetWrapper difference(OrderedSetWrapper const& s) const;
@@ -274,44 +274,46 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::clear() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> value_type const& {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> std::expected<value_type const*, StarException> {
   if (empty())
-    throw SetException("first() called on empty OrderedSet");
-  return *begin();
+    return std::unexpected(SetException("first() called on empty OrderedSet"));
+  return &*begin();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> value_type const& {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> std::expected<value_type const*, StarException> {
   if (empty())
-    throw SetException("last() called on empty OrderedSet");
-  return *(std::prev(end()));
+    return std::unexpected(SetException("last() called on empty OrderedSet"));
+  return &*(std::prev(end()));
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-void OrderedSetWrapper<Map, Value, Allocator, Args...>::removeFirst() {
+std::expected<void, StarException> OrderedSetWrapper<Map, Value, Allocator, Args...>::removeFirst() {
   if (empty())
-    throw SetException("OrderedSet::removeFirst() called on empty OrderedSet");
+    return std::unexpected(SetException("OrderedSet::removeFirst() called on empty OrderedSet"));
 
   auto i = m_order.begin();
   m_map.erase(*i);
   m_order.erase(i);
+  return {};
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-void OrderedSetWrapper<Map, Value, Allocator, Args...>::removeLast() {
+std::expected<void, StarException> OrderedSetWrapper<Map, Value, Allocator, Args...>::removeLast() {
   if (empty())
-    throw SetException("OrderedSet::removeLast() called on empty OrderedSet");
+    return std::unexpected(SetException("OrderedSet::removeLast() called on empty OrderedSet"));
 
   auto i = m_order.end();
   --i;
   m_map.erase(*i);
   m_order.erase(i);
+  return {};
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::takeFirst() -> value_type {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::takeFirst() -> std::expected<value_type, StarException> {
   if (empty())
-    throw SetException("OrderedSet::takeFirst() called on empty OrderedSet");
+    return std::unexpected(SetException("OrderedSet::takeFirst() called on empty OrderedSet"));
 
   auto i = m_order.begin();
   m_map.erase(*i);
@@ -321,9 +323,9 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::takeFirst() -> value_typ
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::takeLast() -> value_type {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::takeLast() -> std::expected<value_type, StarException> {
   if (empty())
-    throw SetException("OrderedSet::takeLast() called on empty OrderedSet");
+    return std::unexpected(SetException("OrderedSet::takeLast() called on empty OrderedSet"));
 
   auto i = m_order.end();
   --i;
@@ -384,17 +386,17 @@ std::optional<std::size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::in
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) const -> value_type const& {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) const -> std::expected<value_type const*, StarException> {
+  if (i >= size())
+    return std::unexpected(SetException("OrderedSet::at() index out of range"));
   auto it = begin();
   std::advance(it, i);
-  return *it;
+  return &*it;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) -> value_type& {
-  auto it = begin();
-  std::advance(it, i);
-  return *it;
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) -> std::expected<value_type const*, StarException> {
+  return std::as_const(*this).at(i);
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>

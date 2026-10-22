@@ -35,56 +35,68 @@ namespace Star {
 
 double const StoredFunction::DefaultSearchTolerance = 0.001;
 
-StoredFunction::StoredFunction(ParametricFunction<double, double> data) {
+StoredFunction::StoredFunction(ParametricFunction<double, double> data, Monotonicity monotonicity)
+  : m_monotonicity(monotonicity), m_function(std::move(data)) {}
+
+std::expected<std::shared_ptr<StoredFunction>, StarException> StoredFunction::create(ParametricFunction<double, double> data) {
   if (data.empty())
-    throw StoredFunctionException("StoredFunction constructor called on function with no data points");
-
-  m_function = std::move(data);
-
-  // Determine whether the function is monotonically increasing, monotonically
-  // decreasing, totally flat (technically both monotonically increasing and
-  // decreasing) or neither.
-  m_monotonicity = Monotonicity::Flat;
-  for (std::size_t i = 0; i < m_function.size() - 1; ++i) {
-    if (m_function.value(i) < m_function.value(i + 1)) {
-      if (m_monotonicity == Monotonicity::Flat)
-        m_monotonicity = Monotonicity::Increasing;
-      else if (m_monotonicity == Monotonicity::Decreasing)
-        m_monotonicity = Monotonicity::None;
-    } else if (m_function.value(i + 1) < m_function.value(i)) {
-      if (m_monotonicity == Monotonicity::Flat)
-        m_monotonicity = Monotonicity::Decreasing;
-      else if (m_monotonicity == Monotonicity::Increasing)
-        m_monotonicity = Monotonicity::None;
+    return std::unexpected(StoredFunctionException("StoredFunction constructor called on function with no data points"));
+  Monotonicity monotonicity = Monotonicity::Flat;
+  for (std::size_t i = 0; i + 1 < data.size(); ++i) {
+    auto current = data.value(i);
+    if (!current)
+      return std::unexpected(std::move(current.error()));
+    auto next = data.value(i + 1);
+    if (!next)
+      return std::unexpected(std::move(next.error()));
+    if (**current < **next) {
+      if (monotonicity == Monotonicity::Flat)
+        monotonicity = Monotonicity::Increasing;
+      else if (monotonicity == Monotonicity::Decreasing)
+        monotonicity = Monotonicity::None;
+    } else if (**next < **current) {
+      if (monotonicity == Monotonicity::Flat)
+        monotonicity = Monotonicity::Decreasing;
+      else if (monotonicity == Monotonicity::Increasing)
+        monotonicity = Monotonicity::None;
     }
-    if (m_monotonicity == Monotonicity::None)
+    if (monotonicity == Monotonicity::None)
       break;
   }
+  return std::shared_ptr<StoredFunction>(new StoredFunction(std::move(data), monotonicity));
 }
 
 Monotonicity StoredFunction::monotonicity() const {
   return m_monotonicity;
 }
 
-double StoredFunction::evaluate(double value) const {
+std::expected<double, StarException> StoredFunction::evaluate(double value) const {
   return m_function.interpolate(value);
 }
 
-StoredFunction::SearchResult StoredFunction::search(double targetValue, double valueTolerance) const {
-  double minIndex = m_function.index(0);
-  double minValue = m_function.value(0);
-
-  double maxIndex = m_function.index(m_function.size() - 1);
-  double maxValue = m_function.value(m_function.size() - 1);
-
+std::expected<StoredFunction::SearchResult, StarException> StoredFunction::search(double targetValue, double valueTolerance) const {
+  auto firstIndex = m_function.index(0);
+  if (!firstIndex)
+    return std::unexpected(std::move(firstIndex.error()));
+  auto firstValue = m_function.value(0);
+  if (!firstValue)
+    return std::unexpected(std::move(firstValue.error()));
+  auto lastIndex = m_function.index(m_function.size() - 1);
+  if (!lastIndex)
+    return std::unexpected(std::move(lastIndex.error()));
+  auto lastValue = m_function.value(m_function.size() - 1);
+  if (!lastValue)
+    return std::unexpected(std::move(lastValue.error()));
+  double minIndex = **firstIndex;
+  double minValue = **firstValue;
+  double maxIndex = **lastIndex;
+  double maxValue = **lastValue;
   if (maxValue < minValue) {
     std::swap(minIndex, maxIndex);
     std::swap(minValue, maxValue);
   }
-
   double index;
   double value;
-
   if (targetValue < minValue) {
     index = minIndex;
     value = minValue;
@@ -93,12 +105,13 @@ StoredFunction::SearchResult StoredFunction::search(double targetValue, double v
     value = maxValue;
   } else {
     index = (minIndex + maxIndex) / 2;
-    value = m_function.interpolate(index);
-
+    auto initial = m_function.interpolate(index);
+    if (!initial)
+      return std::unexpected(std::move(initial.error()));
+    value = *initial;
     int searchDepth = 0;
-
-    while ((std::fabs(targetValue - value) > valueTolerance) && (searchDepth < 64)) {
-      searchDepth++;
+    while (std::fabs(targetValue - value) > valueTolerance && searchDepth < 64) {
+      ++searchDepth;
       if (value < targetValue) {
         minIndex = index;
         minValue = value;
@@ -106,36 +119,22 @@ StoredFunction::SearchResult StoredFunction::search(double targetValue, double v
         maxIndex = index;
         maxValue = value;
       }
-
       double newIndex = (minIndex + maxIndex) / 2;
-      double newValue = m_function.interpolate(newIndex);
-
-      // If at any point we move outside of the established upper and lower
-      // bound
-      // the function is not monotonic increasing or decreasing, and binary
-      // search
-      // can not be used so we have to bail out.
-      if (newValue > maxValue || newValue < minValue)
-        throw StarException("StoredFunction is not monotonic.");
-
+      auto newValue = m_function.interpolate(newIndex);
+      if (!newValue)
+        return std::unexpected(std::move(newValue.error()));
+      if (*newValue > maxValue || *newValue < minValue)
+        return std::unexpected(StarException("StoredFunction is not monotonic."));
       index = newIndex;
-      value = newValue;
+      value = *newValue;
     }
   }
-
-  SearchResult result;
-  result.targetValue = targetValue;
-  result.searchTolerance = valueTolerance;
-  result.found = std::fabs(targetValue - value) <= valueTolerance;
-  result.solution = index;
-  result.value = value;
-
-  return result;
+  return SearchResult{targetValue, valueTolerance, std::fabs(targetValue - value) <= valueTolerance, index, value};
 }
 
 StoredFunction2::StoredFunction2(MultiTable2D table) : table(std::move(table)) {}
 
-double StoredFunction2::evaluate(double x, double y) const {
+std::expected<double, StarException> StoredFunction2::evaluate(double x, double y) const {
   return table.interpolate({x, y});
 }
 
@@ -143,46 +142,88 @@ StoredConfigFunction::StoredConfigFunction(ParametricTable<int, Json> data) {
   m_data = std::move(data);
 }
 
-Json StoredConfigFunction::get(double value) const {
-  return m_data.get(value);
+std::expected<Json, StarException> StoredConfigFunction::get(double value) const {
+  auto result = m_data.get(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return **result;
 }
 
-FunctionDatabase::FunctionDatabase(std::shared_ptr<Assets const> const& assets) {
-
-  auto& functions = assets->scanExtension("functions");
-  auto& sndFunctions = assets->scanExtension("2functions");
-  auto& configFunctions = assets->scanExtension("configfunctions");
-
-  assets->queueJsons(functions);
-  assets->queueJsons(sndFunctions);
-  assets->queueJsons(configFunctions);
-
-  for (auto& file : functions) {
-    for (auto const& functionPair : assets->json(file).iterateObject()) {
-      if (m_functions.contains(functionPair.first))
-        throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions[functionPair.first] = std::make_shared<StoredFunction>(parametricFunctionFromConfig(functionPair.second));
+std::expected<std::shared_ptr<FunctionDatabase>, StarException> FunctionDatabase::create(std::shared_ptr<Assets const> const& assets) {
+  auto result = std::shared_ptr<FunctionDatabase>(new FunctionDatabase());
+  auto functions = assets->scanExtension("functions");
+  if (!functions)
+    return std::unexpected(std::move(functions.error()));
+  auto functions2 = assets->scanExtension("2functions");
+  if (!functions2)
+    return std::unexpected(std::move(functions2.error()));
+  auto configFunctions = assets->scanExtension("configfunctions");
+  if (!configFunctions)
+    return std::unexpected(std::move(configFunctions.error()));
+  auto queuedFunctions = assets->queueJsons(**functions);
+  if (!queuedFunctions)
+    return std::unexpected(std::move(queuedFunctions.error()));
+  auto queuedFunctions2 = assets->queueJsons(**functions2);
+  if (!queuedFunctions2)
+    return std::unexpected(std::move(queuedFunctions2.error()));
+  auto queuedConfigFunctions = assets->queueJsons(**configFunctions);
+  if (!queuedConfigFunctions)
+    return std::unexpected(std::move(queuedConfigFunctions.error()));
+  for (auto const& assetFile : **functions) {
+    auto const& file = assetFile.string();
+    auto config = assets->json(file);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto entries = config->iterateObject();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      if (result->m_functions.contains(entry.first))
+        return std::unexpected(StarException(strf("Named Function '{}' defined twice, second time from {}", entry.first, file)));
+      auto data = parametricFunctionFromConfig(entry.second);
+      if (!data)
+        return std::unexpected(std::move(data.error()));
+      auto function = StoredFunction::create(std::move(*data));
+      if (!function)
+        return std::unexpected(std::move(function.error()));
+      result->m_functions[entry.first] = std::move(*function);
     }
   }
-
-  for (auto& file : sndFunctions) {
-    for (auto const& functionPair : assets->json(file).iterateObject()) {
-      if (m_functions2.contains(functionPair.first))
-        throw StarException(
-            strf("Named 2-ary Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions2[functionPair.first] = std::make_shared<StoredFunction2>(multiTable2DFromConfig(functionPair.second));
+  for (auto const& assetFile : **functions2) {
+    auto const& file = assetFile.string();
+    auto config = assets->json(file);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto entries = config->iterateObject();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      if (result->m_functions2.contains(entry.first))
+        return std::unexpected(StarException(strf("Named 2-ary Function '{}' defined twice, second time from {}", entry.first, file)));
+      auto data = multiTable2DFromConfig(entry.second);
+      if (!data)
+        return std::unexpected(std::move(data.error()));
+      result->m_functions2[entry.first] = std::make_shared<StoredFunction2>(std::move(*data));
     }
   }
-
-  for (auto& file : configFunctions) {
-    for (auto const& tablePair : assets->json(file).iterateObject()) {
-      if (m_configFunctions.contains(tablePair.first))
-        throw StarException(
-            strf("Named config function '{}' defined twice, second time from {}", tablePair.first, file));
-      m_configFunctions[tablePair.first] =
-          std::make_shared<StoredConfigFunction>(parametricTableFromConfig(tablePair.second));
+  for (auto const& assetFile : **configFunctions) {
+    auto const& file = assetFile.string();
+    auto config = assets->json(file);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto entries = config->iterateObject();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      if (result->m_configFunctions.contains(entry.first))
+        return std::unexpected(StarException(strf("Named config function '{}' defined twice, second time from {}", entry.first, file)));
+      auto data = parametricTableFromConfig(entry.second);
+      if (!data)
+        return std::unexpected(std::move(data.error()));
+      result->m_configFunctions[entry.first] = std::make_shared<StoredConfigFunction>(std::move(*data));
     }
   }
+  return result;
 }
 
 StringList FunctionDatabase::namedFunctions() const {
@@ -197,146 +238,228 @@ StringList FunctionDatabase::namedConfigFunctions() const {
   return m_configFunctions.keys();
 }
 
-std::shared_ptr<StoredFunction> FunctionDatabase::function(Json const& configOrName) const {
-  if (configOrName.type() == Json::Type::String)
-    return m_functions.get(configOrName.toString());
-  else
-    return std::make_shared<StoredFunction>(parametricFunctionFromConfig(configOrName));
+std::expected<std::shared_ptr<StoredFunction>, StarException> FunctionDatabase::function(Json const& configOrName) const {
+  if (configOrName.isType(Json::Type::String)) {
+    auto name = configOrName.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto value = m_functions.get(*name);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return **value;
+  }
+  auto data = parametricFunctionFromConfig(configOrName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return StoredFunction::create(std::move(*data));
 }
 
-std::shared_ptr<StoredFunction2> FunctionDatabase::function2(Json const& configOrName) const {
-  if (configOrName.type() == Json::Type::String)
-    return m_functions2.get(configOrName.toString());
-  else
-    return std::make_shared<StoredFunction2>(multiTable2DFromConfig(configOrName));
+std::expected<std::shared_ptr<StoredFunction2>, StarException> FunctionDatabase::function2(Json const& configOrName) const {
+  if (configOrName.isType(Json::Type::String)) {
+    auto name = configOrName.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto value = m_functions2.get(*name);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return **value;
+  }
+  auto data = multiTable2DFromConfig(configOrName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return std::make_shared<StoredFunction2>(std::move(*data));
 }
 
-std::shared_ptr<StoredConfigFunction> FunctionDatabase::configFunction(Json const& configOrName) const {
-  if (configOrName.type() == Json::Type::String)
-    return m_configFunctions.get(configOrName.toString());
-  else
-    return std::make_shared<StoredConfigFunction>(parametricTableFromConfig(configOrName));
+std::expected<std::shared_ptr<StoredConfigFunction>, StarException> FunctionDatabase::configFunction(Json const& configOrName) const {
+  if (configOrName.isType(Json::Type::String)) {
+    auto name = configOrName.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto value = m_configFunctions.get(*name);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return **value;
+  }
+  auto data = parametricTableFromConfig(configOrName);
+  if (!data)
+    return std::unexpected(std::move(data.error()));
+  return std::make_shared<StoredConfigFunction>(std::move(*data));
 }
 
-ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfig(Json descriptor) {
-  try {
-    String interpolationModeString = descriptor.getString(0);
-    String boundModeString = descriptor.getString(1);
+namespace {
 
+[[nodiscard]] std::expected<InterpolationMode, StarException> storedInterpolationMode(String const& name) {
+  auto halfStep = name.equalsIgnoreCase("HalfStep");
+  if (!halfStep)
+    return std::unexpected(std::move(halfStep.error()));
+  if (*halfStep)
+    return InterpolationMode::HalfStep;
+  auto linear = name.equalsIgnoreCase("Linear");
+  if (!linear)
+    return std::unexpected(std::move(linear.error()));
+  if (*linear)
+    return InterpolationMode::Linear;
+  auto cubic = name.equalsIgnoreCase("Cubic");
+  if (!cubic)
+    return std::unexpected(std::move(cubic.error()));
+  if (*cubic)
+    return InterpolationMode::Cubic;
+  return std::unexpected(StoredFunctionException(strf("Unrecognized InterpolationMode '{}'", name)));
+}
+
+[[nodiscard]] std::expected<BoundMode, StarException> storedBoundMode(String const& name) {
+  auto clamp = name.equalsIgnoreCase("Clamp");
+  if (!clamp)
+    return std::unexpected(std::move(clamp.error()));
+  if (*clamp)
+    return BoundMode::Clamp;
+  auto extrapolate = name.equalsIgnoreCase("Extrapolate");
+  if (!extrapolate)
+    return std::unexpected(std::move(extrapolate.error()));
+  if (*extrapolate)
+    return BoundMode::Extrapolate;
+  auto wrap = name.equalsIgnoreCase("Wrap");
+  if (!wrap)
+    return std::unexpected(std::move(wrap.error()));
+  if (*wrap)
+    return BoundMode::Wrap;
+  return std::unexpected(StoredFunctionException(strf("Unrecognized BoundMode '{}'", name)));
+}
+
+}
+
+std::expected<ParametricFunction<double, double>, StarException> FunctionDatabase::parametricFunctionFromConfig(Json descriptor) {
+  auto parsed = [&]() -> std::expected<ParametricFunction<double, double>, StarException> {
+    auto interpolationName = descriptor.getString(0);
+    if (!interpolationName)
+      return std::unexpected(std::move(interpolationName.error()));
+    auto boundName = descriptor.getString(1);
+    if (!boundName)
+      return std::unexpected(std::move(boundName.error()));
+    auto size = descriptor.size();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
     List<std::pair<double, double>> points;
-    for (std::size_t i = 2; i < descriptor.size(); ++i) {
-      auto pointPair = descriptor.get(i);
-      if (pointPair.size() != 2)
-        throw StoredFunctionException("Each point must be a list of size 2");
-      points.append({pointPair.getDouble(0), pointPair.getDouble(1)});
+    for (std::size_t i = 2; i < *size; ++i) {
+      auto pair = descriptor.get(i).and_then([](Json const& value) { return value.arrayPtr(); });
+      if (!pair)
+        return std::unexpected(std::move(pair.error()));
+      if ((*pair)->size() != 2)
+        return std::unexpected(StoredFunctionException("Each point must be a list of size 2"));
+      auto index = (**pair)[0].toDouble();
+      if (!index)
+        return std::unexpected(std::move(index.error()));
+      auto value = (**pair)[1].toDouble();
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      points.append({*index, *value});
     }
-
-    InterpolationMode interpolationMode;
-    if (interpolationModeString.equalsIgnoreCase("HalfStep")) {
-      interpolationMode = InterpolationMode::HalfStep;
-    } else if (interpolationModeString.equalsIgnoreCase("Linear")) {
-      interpolationMode = InterpolationMode::Linear;
-    } else if (interpolationModeString.equalsIgnoreCase("Cubic")) {
-      interpolationMode = InterpolationMode::Cubic;
-    } else {
-      throw StoredFunctionException(strf("Unrecognized InterpolationMode '{}'", interpolationModeString));
-    }
-
-    BoundMode boundMode;
-    if (boundModeString.equalsIgnoreCase("Clamp")) {
-      boundMode = BoundMode::Clamp;
-    } else if (boundModeString.equalsIgnoreCase("Extrapolate")) {
-      boundMode = BoundMode::Extrapolate;
-    } else if (boundModeString.equalsIgnoreCase("Wrap")) {
-      boundMode = BoundMode::Wrap;
-    } else {
-      throw StoredFunctionException(strf("Unrecognized BoundMode '{}'", boundModeString));
-    }
-
-    return ParametricFunction<double, double>(points, interpolationMode, boundMode);
-  } catch (StarException const& e) {
-    throw StoredFunctionException("Error parsing StoredFunction descriptor", e);
-  }
+    auto interpolation = storedInterpolationMode(*interpolationName);
+    if (!interpolation)
+      return std::unexpected(std::move(interpolation.error()));
+    auto bound = storedBoundMode(*boundName);
+    if (!bound)
+      return std::unexpected(std::move(bound.error()));
+    return ParametricFunction<double, double>::create(std::move(points), *interpolation, *bound);
+  }();
+  if (!parsed)
+    return std::unexpected(StoredFunctionException("Error parsing StoredFunction descriptor", parsed.error()));
+  return parsed;
 }
 
-ParametricTable<int, Json> FunctionDatabase::parametricTableFromConfig(Json descriptor) {
-  try {
+std::expected<ParametricTable<int, Json>, StarException> FunctionDatabase::parametricTableFromConfig(Json descriptor) {
+  auto parsed = [&]() -> std::expected<ParametricTable<int, Json>, StarException> {
+    auto entries = descriptor.iterateArray();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
     List<std::pair<int, Json>> points;
-    for (std::size_t i = 0; i < descriptor.size(); ++i) {
-      auto pointPair = descriptor.get(i);
-      if (pointPair.size() != 2)
-        throw StoredFunctionException("Each point must be a list of size 2");
-      points.append({pointPair.getInt(0), pointPair.get(1)});
+    for (auto const& entry : *entries) {
+      auto pair = entry.arrayPtr();
+      if (!pair)
+        return std::unexpected(std::move(pair.error()));
+      if ((*pair)->size() != 2)
+        return std::unexpected(StoredFunctionException("Each point must be a list of size 2"));
+      auto index = (**pair)[0].toInt();
+      if (!index)
+        return std::unexpected(std::move(index.error()));
+      points.append({*index, (**pair)[1]});
     }
-
-    return ParametricTable<int, Json>(points);
-  } catch (StarException const& e) {
-    throw StoredFunctionException("Error parsing StoredConfigFunction descriptor", e);
-  }
+    return ParametricTable<int, Json>::create(std::move(points));
+  }();
+  if (!parsed)
+    return std::unexpected(StoredFunctionException("Error parsing StoredConfigFunction descriptor", parsed.error()));
+  return parsed;
 }
 
-MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
-  try {
-    String interpolationModeString = descriptor.getString(0);
-    String boundModeString = descriptor.getString(1);
-
+std::expected<MultiTable2D, StarException> FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
+  auto parsed = [&]() -> std::expected<MultiTable2D, StarException> {
+    auto interpolationName = descriptor.getString(0);
+    if (!interpolationName)
+      return std::unexpected(std::move(interpolationName.error()));
+    auto boundName = descriptor.getString(1);
+    if (!boundName)
+      return std::unexpected(std::move(boundName.error()));
+    auto grid = descriptor.get(2).and_then([](Json const& value) { return value.arrayPtr(); });
+    if (!grid)
+      return std::unexpected(std::move(grid.error()));
+    if ((*grid)->empty())
+      return std::unexpected(StoredFunctionException("Function2 grid must contain an axis row"));
     List<double> xaxis;
     List<double> yaxis;
     MultiArray2D points;
-
-    auto grid = descriptor.getArray(2);
-
-    for (std::size_t y = 0; y < grid.size(); ++y) {
-      auto row = grid[y].toArray();
+    for (std::size_t y = 0; y < (*grid)->size(); ++y) {
+      auto row = (**grid)[y].arrayPtr();
+      if (!row)
+        return std::unexpected(std::move(row.error()));
       if (y == 0) {
-        for (std::size_t x = 0; x < row.size(); ++x) {
-          if (x > 0)
-            xaxis.append(row[x].toFloat());
+        if ((*row)->empty())
+          return std::unexpected(StoredFunctionException("Function2 axis row must contain a header"));
+        for (std::size_t x = 1; x < (*row)->size(); ++x) {
+          auto value = (**row)[x].toFloat();
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          xaxis.append(*value);
         }
-        points.resize({row.size() - 1, grid.size() - 1});
+        points.resize({(*row)->size() - 1, (*grid)->size() - 1});
       } else {
-        yaxis.append(row[0].toFloat());
-        auto cells = row[1].toArray();
-        if (cells.size() != xaxis.size())
-          throw StarException("Number of sample points doesn't match axis size.");
-        for (std::size_t x = 0; x < cells.size(); x++)
-          points.set({x, y - 1}, cells[x].toFloat());
+        if ((*row)->size() < 2)
+          return std::unexpected(StoredFunctionException("Function2 row must contain an axis and samples"));
+        auto axis = (**row)[0].toFloat();
+        if (!axis)
+          return std::unexpected(std::move(axis.error()));
+        yaxis.append(*axis);
+        auto cells = (**row)[1].arrayPtr();
+        if (!cells)
+          return std::unexpected(std::move(cells.error()));
+        if ((*cells)->size() != xaxis.size())
+          return std::unexpected(StarException("Number of sample points doesn't match axis size."));
+        for (std::size_t x = 0; x < (*cells)->size(); ++x) {
+          auto value = (**cells)[x].toFloat();
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          auto set = points.set({x, y - 1}, *value);
+          if (!set)
+            return std::unexpected(std::move(set.error()));
+        }
       }
     }
-
-    InterpolationMode interpolationMode;
-    if (interpolationModeString.equalsIgnoreCase("HalfStep")) {
-      interpolationMode = InterpolationMode::HalfStep;
-    } else if (interpolationModeString.equalsIgnoreCase("Linear")) {
-      interpolationMode = InterpolationMode::Linear;
-    } else if (interpolationModeString.equalsIgnoreCase("Cubic")) {
-      interpolationMode = InterpolationMode::Cubic;
-    } else {
-      throw StoredFunctionException(strf("Unrecognized InterpolationMode '{}'", interpolationModeString));
-    }
-
-    BoundMode boundMode;
-    if (boundModeString.equalsIgnoreCase("Clamp")) {
-      boundMode = BoundMode::Clamp;
-    } else if (boundModeString.equalsIgnoreCase("Extrapolate")) {
-      boundMode = BoundMode::Extrapolate;
-    } else if (boundModeString.equalsIgnoreCase("Wrap")) {
-      boundMode = BoundMode::Wrap;
-    } else {
-      throw StoredFunctionException(strf("Unrecognized BoundMode '{}'", boundModeString));
-    }
-
+    auto interpolation = storedInterpolationMode(*interpolationName);
+    if (!interpolation)
+      return std::unexpected(std::move(interpolation.error()));
+    auto bound = storedBoundMode(*boundName);
+    if (!bound)
+      return std::unexpected(std::move(bound.error()));
     MultiTable2D table;
-    table.setRange(0, std::vector<double>(xaxis.begin(), xaxis.end()));
-    table.setRange(1, std::vector<double>(yaxis.begin(), yaxis.end()));
-    table.setInterpolationMode(interpolationMode);
-    table.setBoundMode(boundMode);
-    table.array() = points;
-
+    table.setRange(0, xaxis);
+    table.setRange(1, yaxis);
+    table.setInterpolationMode(*interpolation);
+    table.setBoundMode(*bound);
+    table.array() = std::move(points);
     return table;
-  } catch (StarException const& e) {
-    throw StoredFunctionException("Error parsing function2 descriptor", e);
-  }
+  }();
+  if (!parsed)
+    return std::unexpected(StoredFunctionException("Error parsing function2 descriptor", parsed.error()));
+  return parsed;
 }
 
 }

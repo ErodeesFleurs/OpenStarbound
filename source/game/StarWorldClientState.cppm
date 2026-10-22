@@ -6,6 +6,7 @@ import star.rect;
 import star.vector;
 import star.net_compatibility;
 import star.game_types;
+import star.format;
 
 import star.byte_array;
 import star.net_element_basic_fields;
@@ -18,7 +19,12 @@ class Root;
 // and player entity id.
 class WorldClientState {
 public:
-  WorldClientState(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<WorldClientState>, StarException> create(Root& root);
+  WorldClientState(WorldClientState const&) = delete;
+  WorldClientState& operator=(WorldClientState const&) = delete;
+  WorldClientState(WorldClientState&&) = delete;
+  WorldClientState& operator=(WorldClientState&&) = delete;
 
   // Actual area of the client visible screen (rounded to nearest block)
   RectI window() const;
@@ -39,8 +45,10 @@ public:
   // resolve an entity id to its bound box.
   List<RectI> monitoringRegions(std::function<std::optional<RectI>(EntityId)> entityBounds) const;
 
-  ByteArray writeDelta();
-  void readDelta(ByteArray delta);
+  [[nodiscard]]
+  std::expected<ByteArray, StarException> writeDelta();
+  [[nodiscard]]
+  std::expected<void, StarException> readDelta(ByteArray delta);
 
   void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
   NetCompatibilityRules netCompatibilityRules() const;
@@ -48,6 +56,8 @@ public:
   void reset();
 
 private:
+  WorldClientState();
+
   int m_windowMonitoringBorder;
   int m_presenceEntityMonitoringBorder;
 

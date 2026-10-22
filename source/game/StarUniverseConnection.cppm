@@ -77,33 +77,33 @@ public:
   void close();
 
   // Push packets onto the send queue.
-  void push(List<std::shared_ptr<Packet>> packets);
-  void pushSingle(std::shared_ptr<Packet> packet);
+  [[nodiscard]] std::expected<void, StarException> push(List<std::shared_ptr<Packet>> packets);
+  [[nodiscard]] std::expected<void, StarException> pushSingle(std::shared_ptr<Packet> packet);
 
   // Pull packets from the receive queue.
-  List<std::shared_ptr<Packet>> pull();
-  std::shared_ptr<Packet> pullSingle();
+  [[nodiscard]] std::expected<List<std::shared_ptr<Packet>>, StarException> pull();
+  [[nodiscard]] std::expected<std::shared_ptr<Packet>, StarException> pullSingle();
 
   // Send all data that we can without blocking, returns true if any data was
   // sent.
-  bool send();
+  [[nodiscard]] std::expected<bool, StarException> send();
 
   // Block, trying to send the entire send queue before the given timeout.
   // Returns true if the entire send queue was sent before the timeout, false
   // otherwise.
-  bool sendAll(unsigned timeout);
+  [[nodiscard]] std::expected<bool, StarException> sendAll(unsigned timeout);
 
   // Receive all the data that we can without blocking, returns true if any
   // data was received.
-  bool receive();
+  [[nodiscard]] std::expected<bool, StarException> receive();
 
   // Block, trying to read at least one packet into the receive queue before
   // the timeout.  Returns true once any packets are on the receive queue,
   // false if the timeout was reached with no packets receivable.
-  bool receiveAny(unsigned timeout);
+  [[nodiscard]] std::expected<bool, StarException> receiveAny(unsigned timeout);
 
   // Returns a reference to the packet socket.
-  PacketSocket& packetSocket();
+  [[nodiscard]] std::expected<PacketSocket*, StarException> packetSocket();
 
   // Packet stats for the most recent one second window of activity incoming
   // and outgoing.  Will only return valid stats if the underlying PacketSocket
@@ -127,25 +127,31 @@ private:
 class UniverseConnectionServer {
 public:
   // The packet receive callback is called asynchronously on every packet group
-  // received.  It will be called such that it is safe to recursively call any
-  // method on the UniverseConnectionServer without deadlocking.  The receive
-  // callback will not be called for any client until the previous callback for
-  // that client is complete.
-  typedef std::function<void(UniverseConnectionServer*, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
+  // received.  It may recursively call connection-management methods without
+  // deadlocking, but not the owner-side close().  The receive callback will not
+  // be called for any client until the previous callback for that client is
+  // complete.
+  typedef std::function<std::expected<void, StarException>(UniverseConnectionServer*, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
 
-  UniverseConnectionServer(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
+  [[nodiscard]] static std::expected<std::shared_ptr<UniverseConnectionServer>, StarException> create(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
+
+  // Serialized owner-side drain; never call while holding locks needed by the
+  // packet callback.  A worker diagnostic can accompany a completed drain.
+  // Borrowed callback state must remain alive until isClosed() is true.
+  [[nodiscard]] std::expected<void, StarException> close();
+  bool isClosed() const;
 
   bool hasConnection(ConnectionId clientId) const;
   List<ConnectionId> allConnections() const;
-  bool connectionIsOpen(ConnectionId clientId) const;
-  std::int64_t lastActivityTime(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<bool, StarException> connectionIsOpen(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<std::int64_t, StarException> lastActivityTime(ConnectionId clientId) const;
 
-  void addConnection(ConnectionId clientId, UniverseConnection connection);
-  UniverseConnection removeConnection(ConnectionId clientId);
+  [[nodiscard]] std::expected<void, StarException> addConnection(ConnectionId clientId, UniverseConnection connection);
+  [[nodiscard]] std::expected<UniverseConnection, StarException> removeConnection(ConnectionId clientId);
   List<UniverseConnection> removeAllConnections();
 
-  void sendPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
+  [[nodiscard]] std::expected<void, StarException> sendPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
 
   // Get total packets processed across all worker threads
   std::uint64_t totalPacketsProcessed() const;
@@ -153,6 +159,9 @@ public:
   std::size_t numWorkerThreads() const;
 
 private:
+  UniverseConnectionServer(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> processConnections(std::size_t shard);
   struct Connection {
     Mutex mutex;
     std::unique_ptr<PacketSocket> packetSocket;
@@ -193,6 +202,7 @@ private:
   List<HashMap<ConnectionId, std::shared_ptr<Connection>>> m_connections;
 
   std::atomic<bool> m_shutdown;
+  std::atomic<bool> m_closed{false};
   std::size_t m_numWorkerThreads;
   std::mutex m_workMutex;
   std::condition_variable m_workCondition;

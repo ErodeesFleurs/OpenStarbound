@@ -67,31 +67,49 @@ import star.item_grid_widget;
 
 import star.item_bag;
 
+import star.format;
 namespace Star {
 
-ItemGridWidget::ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
-  : ItemGridWidget(context, bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
+std::expected<std::shared_ptr<ItemGridWidget>, StarException> ItemGridWidget::create(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset) {
+  return create(context, std::move(bag), dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset);
+}
 
-ItemGridWidget::ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
+std::expected<std::shared_ptr<ItemGridWidget>, StarException> ItemGridWidget::create(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset) {
+  auto widget = std::shared_ptr<ItemGridWidget>(new ItemGridWidget(context, dimensions, rowSpacing, columnSpacing, backingImage, bagOffset));
+  auto assets = context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto areaJson = (*assets)->json("/interface.config:itemDraggableArea");
+  if (!areaJson) return std::unexpected(std::move(areaJson.error()));
+  auto area = jsonToRectI(*areaJson);
+  if (!area) return std::unexpected(std::move(area.error()));
+  widget->m_itemDraggableArea = *area;
+  auto durabilityJson = (*assets)->json("/interface.config:itemIconDurabilityOffset");
+  if (!durabilityJson) return std::unexpected(std::move(durabilityJson.error()));
+  auto durabilityOffset = jsonToVec2I(*durabilityJson);
+  if (!durabilityOffset) return std::unexpected(std::move(durabilityOffset.error()));
+  auto anchorJson = (*assets)->json("/interface.config:itemCountRightAnchor");
+  if (!anchorJson) return std::unexpected(std::move(anchorJson.error()));
+  auto anchor = jsonToVec2I(*anchorJson);
+  if (!anchor) return std::unexpected(std::move(anchor.error()));
+  widget->m_scissorExtra = (*durabilityOffset * -1).piecewiseMax(*anchor * -1).piecewiseMax(Vec2I());
+  Vec2I calculatedSize = {
+    dimensions[0] * rowSpacing[0] + dimensions[1] * columnSpacing[0],
+    dimensions[0] * rowSpacing[1] + dimensions[1] * columnSpacing[1]
+  };
+  widget->setSize(calculatedSize.piecewiseMax(area->size()));
+  auto result = widget->setItemBag(std::move(bag));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return widget;
+}
+
+ItemGridWidget::ItemGridWidget(GuiContext& context, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
   : Widget(context), m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
   m_selectedIndex = 0;
   m_progress = 1;
-
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
   m_showDurability = false;
   m_highlightEmpty = false;
-
-  setItemBag(bag);
-
-  auto assets = this->context()->root().assets();
-  m_itemDraggableArea = jsonToRectI(assets->json("/interface.config:itemDraggableArea"));
-  Vec2I calculatedSize = {
-    m_dimensions[0] * m_rowSpacing[0] + m_dimensions[1] * m_columnSpacing[0],
-    m_dimensions[0] * m_rowSpacing[1] + m_dimensions[1] * m_columnSpacing[1]
-  };
-  setSize(calculatedSize.piecewiseMax(m_itemDraggableArea.size()));
-
   disableScissoring();
   markAsContainer();
 }
@@ -100,29 +118,30 @@ std::shared_ptr<ItemBag const> ItemGridWidget::bag() const {
   return m_bag;
 }
 
-std::shared_ptr<Item> ItemGridWidget::itemAt(Vec2I const& position) const {
+std::expected<std::shared_ptr<Item>, StarException> ItemGridWidget::itemAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
   if (pos != NPos && m_bag)
     return m_bag->at(pos);
 
-  return {};
+  return std::shared_ptr<Item>{};
 }
 
-std::shared_ptr<Item> ItemGridWidget::itemAt(std::size_t index) const {
-  if (index < m_bag->size())
+std::expected<std::shared_ptr<Item>, StarException> ItemGridWidget::itemAt(std::size_t index) const {
+  if (m_bag && index < m_bag->size())
     return m_bag->at(index);
-  return {};
+  return std::shared_ptr<Item>{};
 }
 
-std::shared_ptr<Item> ItemGridWidget::selectedItem() const {
+std::expected<std::shared_ptr<Item>, StarException> ItemGridWidget::selectedItem() const {
   return itemAt(selectedIndex());
 }
 
-std::shared_ptr<ItemSlotWidget> ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
+std::expected<std::shared_ptr<ItemSlotWidget>, StarException> ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
-  if (pos != NPos)
-    return m_slots[pos];
-  return {};
+  if (pos == NPos) return std::shared_ptr<ItemSlotWidget>{};
+  auto slot = m_slots.at(pos);
+  if (!slot) return std::unexpected(std::move(slot.error()));
+  return **slot;
 }
 
 std::shared_ptr<ItemSlotWidget> ItemGridWidget::itemWidgetAt(std::size_t index) const {
@@ -163,11 +182,13 @@ std::size_t ItemGridWidget::bagLocationAt(Vec2I const& position) const {
   return NPos;
 }
 
-Vec2I ItemGridWidget::positionOfSlot(std::size_t slotNumber) {
-  return m_slots.at(slotNumber)->position() + position();
+std::expected<Vec2I, StarException> ItemGridWidget::positionOfSlot(std::size_t slotNumber) {
+  auto slot = m_slots.at(slotNumber);
+  if (!slot) return std::unexpected(std::move(slot.error()));
+  return (**slot)->position() + position();
 }
 
-bool ItemGridWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> ItemGridWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseButton = std::get_if<MouseButtonDownEvent>(&event)) {
       if (mouseButton->mouseButton == MouseButton::Left
@@ -180,12 +201,11 @@ bool ItemGridWidget::sendEvent(InputEvent const& event) {
 
           if (bagItemArea.contains(mousePos)) {
             m_selectedIndex = i;
-            if (mouseButton->mouseButton == MouseButton::Right)
-              m_rightClickCallback(this);
-            else if (mouseButton->mouseButton == MouseButton::Middle)
-              m_middleClickCallback(this);
-            else
-              m_callback(this);
+            auto const& callback = mouseButton->mouseButton == MouseButton::Right ? m_rightClickCallback
+              : mouseButton->mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
+            if (!callback) return std::unexpected(GuiException("Item grid has no click callback"));
+            auto result = callback(this);
+            if (!result) return std::unexpected(std::move(result.error()));
             return true;
           }
         }
@@ -217,65 +237,68 @@ void ItemGridWidget::setMiddleClickCallback(WidgetCallbackFunc callback) {
   m_middleClickCallback = callback;
 }
 
-void ItemGridWidget::setItemBag(std::shared_ptr<ItemBag const> bag) {
-  m_bag = bag;
-
-  if (!m_bag)
-    return;
-
+std::expected<void, StarException> ItemGridWidget::setItemBag(std::shared_ptr<ItemBag const> bag) {
+  m_bag = std::move(bag);
+  if (!m_bag) return {};
   removeAllChildren();
   m_slots.clear();
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
-    auto itemSlot = std::make_shared<ItemSlotWidget>(*this->context(), m_bag->at(i), m_backingImage);
-    addChild(toString(i), itemSlot);
-    m_slots.append(itemSlot);
-    itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
-    itemSlot->setProgress(m_progress);
-    itemSlot->setPosition(locOfItemSlot(i));
-    itemSlot->showDurability(m_showDurability);
+    auto item = m_bag->at(i);
+    if (!item) return std::unexpected(std::move(item.error()));
+    auto slot = ItemSlotWidget::create(*context(), *item, m_backingImage);
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    auto child = addChild(toString(i), *slot);
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_slots.append(*slot);
+    (*slot)->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
+    (*slot)->setProgress(m_progress);
+    (*slot)->setPosition(locOfItemSlot(i));
+    (*slot)->showDurability(m_showDurability);
   }
-
   m_itemNames = slotItemNames();
+  return {};
 }
 
-void ItemGridWidget::setProgress(float progress) {
+std::expected<void, StarException> ItemGridWidget::setProgress(float progress) {
   m_progress = progress;
-
-  if (!m_bag)
-    return;
-
+  if (!m_bag) return {};
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
-    auto itemSlot = m_slots.at(i);
-    itemSlot->setProgress(m_progress);
+    auto slot = m_slots.at(i);
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    (**slot)->setProgress(m_progress);
   }
+  return {};
 }
 
 std::size_t ItemGridWidget::selectedIndex() const {
   return m_selectedIndex + m_bagOffset;
 }
 
-void ItemGridWidget::updateAllItemSlots() {
-  if (!m_bag)
-    return;
-
+std::expected<void, StarException> ItemGridWidget::updateAllItemSlots() {
+  if (!m_bag) return {};
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
     auto item = m_bag->at(i + m_bagOffset);
+    if (!item) return std::unexpected(std::move(item.error()));
     auto slot = m_slots.at(i);
-    slot->setItem(item);
-    slot->setHighlightEnabled(!item && m_highlightEmpty);
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    (**slot)->setItem(*item);
+    (**slot)->setHighlightEnabled(!*item && m_highlightEmpty);
   }
+  return {};
 }
 
-void ItemGridWidget::updateItemState() {
-  updateAllItemSlots();
+std::expected<void, StarException> ItemGridWidget::updateItemState() {
+  auto result = updateAllItemSlots();
+  if (!result) return std::unexpected(std::move(result.error()));
   auto newState = slotItemNames();
   for (std::size_t i = 0; i < newState.size(); ++i) {
     if (newState[i].empty())
       m_changedSlots.remove(i);
-    else if (newState[i].compare(m_itemNames[i]) != 0)
+    else if (newState[i] != m_itemNames[i])
       m_changedSlots.insert(i);
   }
-  m_itemNames = newState;
+  m_itemNames = std::move(newState);
+  return {};
 }
 
 void ItemGridWidget::indicateChangedSlots() {
@@ -317,42 +340,35 @@ List<String> ItemGridWidget::slotItemNames() {
   return itemNames;
 }
 
-void ItemGridWidget::setBackingImageAffinity(bool full, bool empty) {
+std::expected<void, StarException> ItemGridWidget::setBackingImageAffinity(bool full, bool empty) {
   m_drawBackingImageWhenFull = full;
   m_drawBackingImageWhenEmpty = empty;
-
-  if (!m_bag)
-    return;
-
+  if (!m_bag) return {};
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
-    auto itemSlot = m_slots.at(i);
-    itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
+    auto slot = m_slots.at(i);
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    (**slot)->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
   }
+  return {};
 }
 
-void ItemGridWidget::showDurability(bool show) {
+std::expected<void, StarException> ItemGridWidget::showDurability(bool show) {
   m_showDurability = show;
-
-  if (!m_bag)
-    return;
-
+  if (!m_bag) return {};
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
-    auto itemSlot = m_slots.at(i);
-    itemSlot->showDurability(m_showDurability);
+    auto slot = m_slots.at(i);
+    if (!slot) return std::unexpected(std::move(slot.error()));
+    (**slot)->showDurability(m_showDurability);
   }
+  return {};
 }
 
 RectI ItemGridWidget::getScissorRect() const {
-  auto assets = this->context()->root().assets();
-  auto durabilityOffset = jsonToVec2I(assets->json("/interface.config:itemIconDurabilityOffset"));
-  auto itemCountRightAnchor = jsonToVec2I(assets->json("/interface.config:itemCountRightAnchor"));
-
-  Vec2I extra = Vec2I(durabilityOffset * -1).piecewiseMax(itemCountRightAnchor * -1).piecewiseMax(Vec2I());
-  return RectI::withSize(screenPosition() - extra, size() + extra);
+  return RectI::withSize(screenPosition() - m_scissorExtra, size() + m_scissorExtra);
 }
 
-void ItemGridWidget::renderImpl() {
-  updateAllItemSlots();
+std::expected<void, StarException> ItemGridWidget::renderImpl() {
+  return updateAllItemSlots();
 }
 
 }

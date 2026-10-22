@@ -1,3 +1,4 @@
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.data_stream_extra;
@@ -100,7 +101,15 @@ import star.algorithm;
 namespace Star {
 
 SystemWorldClient::SystemWorldClient(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap)
-  : SystemWorld(root, universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
+  : SystemWorld(root, std::move(universeClock), std::move(celestialDatabase)), m_universeMap(std::move(universeMap)) {}
+
+std::expected<std::shared_ptr<SystemWorldClient>, StarException> SystemWorldClient::create(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap) {
+  auto client = std::shared_ptr<SystemWorldClient>(new SystemWorldClient(root, std::move(universeClock), std::move(celestialDatabase), std::move(universeMap)));
+  auto initialized = client->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return client;
+}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);
@@ -134,42 +143,66 @@ bool SystemWorldClient::flying() const {
   return true;
 }
 
-void SystemWorldClient::update(float dt) {
+std::expected<void, StarException> SystemWorldClient::update(float dt) {
   if (!m_ship)
-    return;
-
-  m_ship->clientUpdate(dt);
-
+    return {};
+  auto updated = m_ship->clientUpdate(dt);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
   auto location = m_ship->systemLocation();
   if (auto uuid = std::get_if<Uuid>(&location)) {
     if (auto object = getObject(*uuid)) {
-      std::optional<CelestialOrbit> orbit;
-
-      if (object->permanent())
-        m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name(), object->orbit(), object->parameters());
-      else
-        m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name());
+      if (object->permanent()) {
+        auto parameters = object->parameters();
+        if (!parameters)
+          return std::unexpected(std::move(parameters.error()));
+        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name(), object->orbit(), std::move(*parameters));
+        if (!mapped)
+          return std::unexpected(std::move(mapped.error()));
+      } else {
+        auto mapped = m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name());
+        if (!mapped)
+          return std::unexpected(std::move(mapped.error()));
+      }
     }
   } else if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
-    if (coordinate->isPlanetaryBody() || coordinate->isSatelliteBody())
-      m_universeMap->addMappedCoordinate(coordinate->planet());
+    if (coordinate->isPlanetaryBody() || coordinate->isSatelliteBody()) {
+      auto planet = coordinate->planet();
+      if (!planet)
+        return std::unexpected(std::move(planet.error()));
+      auto mapped = m_universeMap->addMappedCoordinate(*planet);
+      if (!mapped)
+        return std::unexpected(std::move(mapped.error()));
+    }
   } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
-    if (orbit->target.isPlanetaryBody() || orbit->target.isSatelliteBody())
-      m_universeMap->addMappedCoordinate(orbit->target.planet());
+    if (orbit->target.isPlanetaryBody() || orbit->target.isSatelliteBody()) {
+      auto planet = orbit->target.planet();
+      if (!planet)
+        return std::unexpected(std::move(planet.error()));
+      auto mapped = m_universeMap->addMappedCoordinate(*planet);
+      if (!mapped)
+        return std::unexpected(std::move(mapped.error()));
+    }
   }
-
-  for (auto p : m_clientShips)
-    p.second->clientUpdate(dt);
-  for (auto p : m_objects)
-    p.second->clientUpdate(dt);
-
+  for (auto const& entry : m_clientShips) {
+    auto updated = entry.second->clientUpdate(dt);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+  }
+  for (auto const& entry : m_objects) {
+    auto updated = entry.second->clientUpdate(dt);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+  }
   if (currentSystem().isNull()) {
     m_objects.clear();
     m_clientShips.clear();
-    m_ship = {};
+    m_ship.reset();
     m_location = Vec3I();
-  } else if (auto celestialSlave = as<CelestialSlaveDatabase>(m_celestialDatabase))
-    celestialSlave->signalSystem(currentSystem()); // keeps the celestial chunk for our current system alive
+  } else if (auto slave = as<CelestialSlaveDatabase>(m_celestialDatabase)) {
+    return slave->signalSystem(currentSystem());
+  }
+  return {};
 }
 
 List<std::shared_ptr<SystemObject>> SystemWorldClient::objects() const {
@@ -200,57 +233,74 @@ Uuid SystemWorldClient::spawnObject(String typeName, std::optional<Vec2F> positi
   return objectUuid;
 }
 
-bool SystemWorldClient::handleIncomingPacket(std::shared_ptr<Packet> packet) {
+std::expected<bool, StarException> SystemWorldClient::handleIncomingPacket(std::shared_ptr<Packet> packet) {
   if (auto updatePacket = as<SystemWorldUpdatePacket>(packet)) {
-    auto location = m_ship->systemLocation();
-    for (auto p : updatePacket->shipUpdates) {
-      if (m_ship && p.first == m_ship->uuid())
-        m_ship->readNetState(p.second, SystemWorldTimestep);
-      else
-        m_clientShips[p.first]->readNetState(p.second, SystemWorldTimestep);
+    for (auto const& entry : updatePacket->shipUpdates) {
+      auto ship = m_ship && entry.first == m_ship->uuid() ? m_ship : getShip(entry.first);
+      if (!ship)
+        return std::unexpected(StarPacketException::format("System update references missing ship {}", entry.first.hex()));
+      auto updated = ship->readNetState(entry.second, SystemWorldTimestep);
+      if (!updated)
+        return std::unexpected(std::move(updated.error()));
     }
-    for (auto p : updatePacket->objectUpdates) {
-      auto object = getObject(p.first);
-      object->readNetState(p.second, SystemWorldTimestep);
+    for (auto const& entry : updatePacket->objectUpdates) {
+      auto object = getObject(entry.first);
+      if (!object)
+        return std::unexpected(StarPacketException::format("System update references missing object {}", entry.first.hex()));
+      auto updated = object->readNetState(entry.second, SystemWorldTimestep);
+      if (!updated)
+        return std::unexpected(std::move(updated.error()));
     }
-
-  } else if (auto createPacket = as<SystemObjectCreatePacket>(packet)) {
-    auto object = netLoadObject(createPacket->objectStore);
-    m_objects.set(object->uuid(), object);
-
-  } else if (auto destroyPacket = as<SystemObjectDestroyPacket>(packet)) {
-    m_objects.remove(destroyPacket->objectUuid);
-    m_universeMap->removeMappedObject(CelestialCoordinate(m_location), destroyPacket->objectUuid);
-
-  } else if (auto shipCreatePacket = as<SystemShipCreatePacket>(packet)) {
-    auto ship = netLoadShip(shipCreatePacket->shipStore);
-    m_clientShips.set(ship->uuid(), ship);
-
-  } else if (auto shipDestroyPacket = as<SystemShipDestroyPacket>(packet)) {
-    m_clientShips.remove(shipDestroyPacket->shipUuid);
-
-  } else if (auto startPacket = as<SystemWorldStartPacket>(packet)) {
+  } else if (auto created = as<SystemObjectCreatePacket>(packet)) {
+    auto object = netLoadObject(created->objectStore);
+    if (!object)
+      return std::unexpected(std::move(object.error()));
+    auto uuid = (*object)->uuid();
+    m_objects.set(uuid, std::move(*object));
+  } else if (auto destroyed = as<SystemObjectDestroyPacket>(packet)) {
+    m_objects.remove(destroyed->objectUuid);
+    auto removed = m_universeMap->removeMappedObject(CelestialCoordinate(m_location), destroyed->objectUuid);
+    if (!removed)
+      return std::unexpected(std::move(removed.error()));
+  } else if (auto created = as<SystemShipCreatePacket>(packet)) {
+    auto ship = netLoadShip(created->shipStore);
+    if (!ship)
+      return std::unexpected(std::move(ship.error()));
+    auto uuid = (*ship)->uuid();
+    m_clientShips.set(uuid, std::move(*ship));
+  } else if (auto destroyed = as<SystemShipDestroyPacket>(packet)) {
+    m_clientShips.remove(destroyed->shipUuid);
+  } else if (auto started = as<SystemWorldStartPacket>(packet)) {
     m_objects.clear();
     m_clientShips.clear();
-    m_location = startPacket->location;
-    for (auto netStore: startPacket->objectStores) {
-      auto object = netLoadObject(netStore);
-      m_objects.set(object->uuid(), object);
+    m_location = started->location;
+    for (auto const& store : started->objectStores) {
+      auto object = netLoadObject(store);
+      if (!object)
+        return std::unexpected(std::move(object.error()));
+      auto uuid = (*object)->uuid();
+      m_objects.set(uuid, std::move(*object));
     }
-    for (auto netStore : startPacket->shipStores) {
-      auto ship = netLoadShip(netStore);
-      m_clientShips.set(ship->uuid(), ship);
+    for (auto const& store : started->shipStores) {
+      auto ship = netLoadShip(store);
+      if (!ship)
+        return std::unexpected(std::move(ship.error()));
+      auto uuid = (*ship)->uuid();
+      m_clientShips.set(uuid, std::move(*ship));
     }
-    m_ship = std::make_shared<SystemClientShip>(this, startPacket->clientShip.first, startPacket->clientShip.second);
-
-    m_universeMap->addMappedCoordinate(CelestialCoordinate(m_location));
-    m_universeMap->filterMappedObjects(CelestialCoordinate(m_location), m_objects.keys());
+    auto ship = SystemClientShip::create(this, started->clientShip.first, started->clientShip.second);
+    if (!ship)
+      return std::unexpected(std::move(ship.error()));
+    m_ship = std::move(*ship);
+    auto mapped = m_universeMap->addMappedCoordinate(CelestialCoordinate(m_location));
+    if (!mapped)
+      return std::unexpected(std::move(mapped.error()));
+    auto filtered = m_universeMap->filterMappedObjects(CelestialCoordinate(m_location), m_objects.keys());
+    if (!filtered)
+      return std::unexpected(std::move(filtered.error()));
   } else {
-    // packet type not handled by system world client
     return false;
   }
-
-  // packet was handled
   return true;
 }
 
@@ -258,25 +308,35 @@ List<std::shared_ptr<Packet>> SystemWorldClient::pullOutgoingPackets() {
   return take(m_outgoingPackets);
 }
 
-std::shared_ptr<SystemObject> SystemWorldClient::netLoadObject(ByteArray netStore) {
+std::expected<std::shared_ptr<SystemObject>, StarException> SystemWorldClient::netLoadObject(ByteArray netStore) {
   DataStreamBuffer ds(std::move(netStore));
-  Uuid uuid = ds.read<Uuid>();
-
-  String name = ds.read<String>();
-  auto objectConfig = systemObjectConfig(name, uuid);
-
-  Vec2F position = ds.read<Vec2F>();
-
-  JsonObject parameters = ds.read<JsonObject>();
-  return std::make_shared<SystemObject>(this->root(), objectConfig, uuid, position, parameters);
+  auto uuid = ds.read<Uuid>();
+  if (!uuid)
+    return std::unexpected(std::move(uuid.error()));
+  auto name = ds.read<String>();
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto config = systemObjectConfig(*name, *uuid);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto position = ds.read<Vec2F>();
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  auto parameters = ds.read<JsonObject>();
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  return SystemObject::create(root(), std::move(*config), std::move(*uuid), *position, std::move(*parameters));
 }
 
-std::shared_ptr<SystemClientShip> SystemWorldClient::netLoadShip(ByteArray netStore)
-{
+std::expected<std::shared_ptr<SystemClientShip>, StarException> SystemWorldClient::netLoadShip(ByteArray netStore) {
   DataStreamBuffer ds(std::move(netStore));
-  Uuid uuid = ds.read<Uuid>();
-  SystemLocation location = ds.read<SystemLocation>();
-  return std::make_shared<SystemClientShip>(this, uuid, location);
+  auto uuid = ds.read<Uuid>();
+  if (!uuid)
+    return std::unexpected(std::move(uuid.error()));
+  auto location = ds.read<SystemLocation>();
+  if (!location)
+    return std::unexpected(std::move(location.error()));
+  return SystemClientShip::create(this, std::move(*uuid), *location);
 }
 
 }

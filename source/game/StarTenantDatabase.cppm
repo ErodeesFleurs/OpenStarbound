@@ -64,18 +64,19 @@ struct Tenant {
 
 class TenantDatabase {
 public:
-  explicit TenantDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<TenantDatabase>, StarException> create(Root& root);
 
   void cleanup();
 
-  std::shared_ptr<Tenant> getTenant(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Tenant>, StarException> getTenant(String const& name) const;
 
   // Return the list of all tenants for which colonyTags is a superset of
   // colonyTagCriteria
-  List<std::shared_ptr<Tenant>> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Tenant>>, StarException> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
 
 private:
-  static std::shared_ptr<Tenant> readTenant(Assets const& assets, String const& path);
+  explicit TenantDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<Tenant>, StarException> readTenant(Assets const& assets, String const& path);
 
   Root& m_root;
   Map<String, String> m_paths;

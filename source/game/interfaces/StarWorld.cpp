@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.poly;
@@ -44,36 +45,66 @@ bool World::isClient() const {
   return !isServer();
 }
 
-List<std::shared_ptr<Entity>> World::entityQuery(RectF const& boundBox, EntityFilter selector) const {
+std::expected<List<std::shared_ptr<Entity>>, StarException> World::entityQuery(RectF const& boundBox, EntityFilter selector) const {
   List<std::shared_ptr<Entity>> list;
-  forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) {
-      if (!selector || selector(entity))
-        list.append(entity);
-    });
+  auto scanned = forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+    if (selector) {
+      auto accepted = selector(entity);
+      if (!accepted)
+        return std::unexpected(std::move(accepted.error()));
+      if (!*accepted)
+        return {};
+    }
+    list.append(entity);
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
 
-List<std::shared_ptr<Entity>> World::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector) const {
+std::expected<List<std::shared_ptr<Entity>>, StarException> World::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector) const {
   List<std::shared_ptr<Entity>> list;
-  forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> const& entity) {
-      if (!selector || selector(entity))
-        list.append(entity);
-    });
+  auto scanned = forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+    if (selector) {
+      auto accepted = selector(entity);
+      if (!accepted)
+        return std::unexpected(std::move(accepted.error()));
+      if (!*accepted)
+        return {};
+    }
+    list.append(entity);
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
 
-List<std::shared_ptr<TileEntity>> World::entitiesAtTile(Vec2I const& pos, EntityFilter selector) const {
+std::expected<List<std::shared_ptr<TileEntity>>, StarException> World::entitiesAtTile(Vec2I const& pos, EntityFilter selector) const {
   List<std::shared_ptr<TileEntity>> list;
-  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> entity) {
-      if (!selector || selector(entity))
-        list.append(std::move(entity));
-    });
+  auto scanned = forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) -> std::expected<void, StarException> {
+    if (selector) {
+      auto accepted = selector(entity);
+      if (!accepted)
+        return std::unexpected(std::move(accepted.error()));
+      if (!*accepted)
+        return {};
+    }
+    list.append(entity);
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return list;
 }
 
-List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, std::size_t maxAmount, bool excludeEphemeral) const {
+std::expected<List<Vec2I>, StarException> World::findEmptyTiles(Vec2I pos, unsigned maxDist, std::size_t maxAmount, bool excludeEphemeral) const {
   List<Vec2I> res;
-  if (!tileIsOccupied(pos, TileLayer::Foreground, excludeEphemeral))
+  auto occupied = tileIsOccupied(pos, TileLayer::Foreground, excludeEphemeral);
+  if (!occupied)
+    return std::unexpected(std::move(occupied.error()));
+  if (!*occupied)
     res.append(pos);
 
   if (res.size() >= maxAmount)
@@ -87,7 +118,10 @@ List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, std::size_t maxAm
     int dx = -1;
     int dy = 1;
     for (int i = 0; i < totalSpots; i++) {
-      if (!tileIsOccupied(pos + Vec2I(xDiff, yDiff), TileLayer::Foreground)) {
+      auto nextOccupied = tileIsOccupied(pos + Vec2I(xDiff, yDiff), TileLayer::Foreground);
+      if (!nextOccupied)
+        return std::unexpected(std::move(nextOccupied.error()));
+      if (!*nextOccupied) {
         res.append(pos + Vec2I(xDiff, yDiff));
         if (res.size() >= maxAmount) {
           return res;
@@ -105,46 +139,62 @@ List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, std::size_t maxAm
   return res;
 }
 
-bool World::canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const {
-  return !validTileModifications({{pos, modification}}, allowEntityOverlap).empty();
+std::expected<bool, StarException> World::canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const {
+  auto valid = validTileModifications({{pos, modification}}, allowEntityOverlap);
+  if (!valid)
+    return std::unexpected(std::move(valid.error()));
+  return !valid->empty();
 }
 
-bool World::modifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) {
-  return applyTileModifications({{pos, modification}}, allowEntityOverlap).empty();
+std::expected<bool, StarException> World::modifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) {
+  auto remaining = applyTileModifications({{pos, modification}}, allowEntityOverlap);
+  if (!remaining)
+    return std::unexpected(std::move(remaining.error()));
+  return remaining->empty();
 }
 
-TileDamageResult World::damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
+std::expected<TileDamageResult, StarException> World::damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
   return damageTiles({tilePosition}, layer, sourcePosition, tileDamage, sourceEntity);
 }
 
-std::shared_ptr<Entity> World::closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilter selector) const {
-  return closestEntity(center, radius, [=, this](std::shared_ptr<Entity> const& entity) {
-      return selector(entity) && !lineTileCollision(center, entity->position(), collisionSet);
-    });
+std::expected<std::shared_ptr<Entity>, StarException> World::closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilter selector) const {
+  return closestEntity(center, radius, [=, this](std::shared_ptr<Entity> const& entity) -> std::expected<bool, StarException> {
+    if (selector) {
+      auto accepted = selector(entity);
+      if (!accepted)
+        return std::unexpected(std::move(accepted.error()));
+      if (!*accepted)
+        return false;
+    }
+    auto collision = lineTileCollision(center, entity->position(), collisionSet);
+    if (!collision)
+      return std::unexpected(std::move(collision.error()));
+    return !*collision;
+  });
 }
 
-bool World::pointCollision(Vec2F const& point, CollisionSet const& collisionSet) const {
+std::expected<bool, StarException> World::pointCollision(Vec2F const& point, CollisionSet const& collisionSet) const {
   bool collided = false;
-
-  forEachCollisionBlock(RectI::withCenter(Vec2I(point), {3, 3}), [&](CollisionBlock const& block) {
-      if (collided || !isColliding(block.kind, collisionSet))
-        return;
-
-      if (block.poly.contains(point))
-        collided = true;
-    });
-
+  auto scanned = forEachCollisionBlock(RectI::withCenter(Vec2I(point), {3, 3}), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
+    if (collided || !isColliding(block.kind, collisionSet))
+      return {};
+    if (block.poly.contains(point))
+      collided = true;
+    return {};
+  });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return collided;
 }
 
-std::optional<std::pair<Vec2F, std::optional<Vec2F>>> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
+std::expected<std::optional<std::pair<Vec2F, std::optional<Vec2F>>>, StarException> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
   auto geometry = this->geometry();
   std::optional<PolyF> intersectPoly;
   std::optional<PolyF::LineIntersectResult> closestIntersection;
 
-  forEachCollisionBlock(RectI::integral(RectF::boundBoxOf(line.min(), line.max()).padded(1)), [&](CollisionBlock const& block) {
+  auto scanned = forEachCollisionBlock(RectI::integral(RectF::boundBoxOf(line.min(), line.max()).padded(1)), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
       if (block.poly.isNull() || !isColliding(block.kind, collisionSet))
-        return;
+        return {};
 
       Vec2F nearMin = geometry.nearestTo(block.poly.center(), line.min());
       auto intersection = block.poly.lineIntersection(Line2F(nearMin, nearMin + line.diff()));
@@ -152,7 +202,10 @@ std::optional<std::pair<Vec2F, std::optional<Vec2F>>> World::lineCollision(Line2
         intersectPoly = block.poly;
         closestIntersection = intersection;
       }
+      return {};
     });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
 
   if (closestIntersection) {
     auto point = line.eval(closestIntersection->along);
@@ -162,15 +215,15 @@ std::optional<std::pair<Vec2F, std::optional<Vec2F>>> World::lineCollision(Line2
   return {};
 }
 
-bool World::polyCollision(PolyF const& poly, CollisionSet const& collisionSet) const {
+std::expected<bool, StarException> World::polyCollision(PolyF const& poly, CollisionSet const& collisionSet) const {
   auto geometry = this->geometry();
   Vec2F polyCenter = poly.center();
   PolyF translatedPoly;
   bool collided = false;
 
-  forEachCollisionBlock(RectI::integral(poly.boundBox()).padded(1), [&](CollisionBlock const& block) {
+  auto scanned = forEachCollisionBlock(RectI::integral(poly.boundBox()).padded(1), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
       if (collided || !isColliding(block.kind, collisionSet))
-        return;
+        return {};
 
       Vec2F center = block.poly.center();
       Vec2F newCenter = geometry.nearestTo(polyCenter, center);
@@ -178,7 +231,10 @@ bool World::polyCollision(PolyF const& poly, CollisionSet const& collisionSet) c
       translatedPoly.translate(newCenter - center);
       if (poly.intersects(translatedPoly))
         collided = true;
+      return {};
     });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
 
   return collided;
 }

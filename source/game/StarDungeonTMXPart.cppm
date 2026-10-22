@@ -36,15 +36,16 @@ namespace Dungeon {
 
   class TMXTilesets {
   public:
-    TMXTilesets(Root& root, Json const& tmx);
+    [[nodiscard]] static std::expected<std::shared_ptr<TMXTilesets>, StarException> create(Root& root, Json const& tmx);
 
-    Tiled::Tile const& getTile(unsigned gid, TileLayer layer) const;
+    [[nodiscard]] std::expected<Tiled::Tile const*, StarException> getTile(unsigned gid, TileLayer layer) const;
 
     Tiled::Tile const& nullTile() const {
       return *m_nullTile;
     }
 
   private:
+    TMXTilesets() = default;
     struct TilesetInfo {
       Tiled::Tileset const* tileset;
       std::size_t firstGid;
@@ -70,9 +71,9 @@ namespace Dungeon {
 
   class TMXTileLayer {
   public:
-    TMXTileLayer(Json const& tmx);
+    [[nodiscard]] static std::expected<std::shared_ptr<TMXTileLayer>, StarException> create(Json const& tmx);
 
-    Tiled::Tile const& getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const;
+    [[nodiscard]] std::expected<Tiled::Tile const*, StarException> getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const;
 
     unsigned width() const {
       return m_rect.xMax() - m_rect.xMin() + 1;
@@ -92,10 +93,11 @@ namespace Dungeon {
       return m_layer;
     }
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
+    TMXTileLayer() = default;
     RectI m_rect;
     String m_name;
     TileLayer m_layer;
@@ -120,7 +122,7 @@ namespace Dungeon {
 
   class TMXObject {
   public:
-    TMXObject(Root& root, std::optional<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
+    [[nodiscard]] static std::expected<std::shared_ptr<TMXObject>, StarException> create(Root& root, std::optional<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     Vec2I const& pos() const {
       return m_rect.min();
@@ -135,10 +137,11 @@ namespace Dungeon {
       return m_kind;
     }
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
+    TMXObject() = default;
     // "Tile Objects" in Tiled are objects that contain an image from a tileset,
     // and have a bunch of their own Tile Object-specific properties.
     struct TileObjectInfo {
@@ -146,14 +149,14 @@ namespace Dungeon {
       unsigned flipBits;
     };
 
-    static Vec2I getSize(Json const& tmx);
-    static Vec2I getImagePosition(Tiled::Properties const& properties);
-    static ObjectKind getObjectKind(Json const& tmx, std::optional<Json >const& objectProperties);
-    static std::optional<TileObjectInfo> getTileObjectInfo(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer);
-    static TileLayer getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties);
+    [[nodiscard]] static std::expected<Vec2I, StarException> getSize(Json const& tmx);
+    [[nodiscard]] static std::expected<Vec2I, StarException> getImagePosition(Tiled::Properties const& properties);
+    [[nodiscard]] static std::expected<ObjectKind, StarException> getObjectKind(Json const& tmx, std::optional<Json> const& objectProperties);
+    [[nodiscard]] static std::expected<std::optional<TileObjectInfo>, StarException> getTileObjectInfo(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer);
+    [[nodiscard]] static std::expected<TileLayer, StarException> getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties);
 
-    static Vec2I getPos(Json const& tmx);
-    static StarException tmxObjectError(Json const& tmx, String const& msg);
+    [[nodiscard]] static std::expected<Vec2I, StarException> getPos(Json const& tmx);
+    static StarException tmxObjectError(Vec2I position, String const& msg);
 
     RectI m_rect;
     std::shared_ptr<Tiled::Tile const> m_tile;
@@ -165,7 +168,7 @@ namespace Dungeon {
 
   class TMXObjectGroup {
   public:
-    TMXObjectGroup(Root& root, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
+    [[nodiscard]] static std::expected<std::shared_ptr<TMXObjectGroup>, StarException> create(Root& root, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     List<std::shared_ptr<TMXObject>> const& objects() const {
       return m_objects;
@@ -173,17 +176,20 @@ namespace Dungeon {
 
     String name() const;
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
+    TMXObjectGroup() = default;
     String m_name;
     List<std::shared_ptr<TMXObject>> m_objects;
   };
 
   class TMXMap {
+  // Factories report malformed maps and unavailable tilesets without publishing
+  // a partially initialized map.
   public:
-    TMXMap(Root& root, Json const& tmx);
+    [[nodiscard]] static std::expected<std::shared_ptr<TMXMap>, StarException> create(Root& root, Json const& tmx);
 
     List<std::shared_ptr<TMXTileLayer>> const& tileLayers() const {
       return m_tileLayers;
@@ -201,10 +207,11 @@ namespace Dungeon {
       return m_height;
     }
 
-    bool forEachTile(TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTile(TileCallback const& callback) const;
+    [[nodiscard]] std::expected<bool, StarException> forEachTileAt(Vec2I pos, TileCallback const& callback) const;
 
   private:
+    TMXMap() = default;
     List<std::shared_ptr<TMXTileLayer>> m_tileLayers;
     List<std::shared_ptr<TMXObjectGroup>> m_objectGroups;
 
@@ -216,16 +223,14 @@ namespace Dungeon {
     Root& m_root;
   public:
     explicit TMXPartReader(Root& root) : m_root(root) {}
-    virtual void readAsset(String const& asset) override;
+    [[nodiscard]] virtual std::expected<void, StarException> readAsset(String const& asset) override;
 
     virtual Vec2U size() const override;
 
-    virtual void forEachTile(TileCallback const& callback) const override;
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> forEachTile(TileCallback const& callback) const override;
+    [[nodiscard]] virtual std::expected<void, StarException> forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
   private:
-    // Return true in the callback to exit early without processing later maps
-    void forEachMap(std::function<bool(std::shared_ptr<TMXMap const> const&)> func) const;
 
     List<std::pair<String, std::shared_ptr<TMXMap const>>> m_maps;
   };

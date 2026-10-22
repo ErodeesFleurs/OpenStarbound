@@ -131,147 +131,190 @@ import star.button_widget;
 import star.algorithm;
 namespace Star {
 
-CodexInterface::CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player) : Pane(guiContext) {
-  m_player = player;
+CodexInterface::CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player)
+  : Pane(guiContext), m_currentPage(0), m_player(std::move(player)) {}
 
+std::expected<std::shared_ptr<CodexInterface>, StarException> CodexInterface::create(GuiContext& guiContext, std::shared_ptr<Player> player) {
+  auto pane = std::shared_ptr<CodexInterface>(new CodexInterface(guiContext, std::move(player)));
+  auto base = pane->initializePane();
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> CodexInterface::initialize() {
   auto assets = context()->root().assets();
-
+  if (!assets) return std::unexpected(std::move(assets.error()));
   GuiReader reader(*context());
+  reader.registerCallback("close", [this](Widget*) -> std::expected<void, StarException> { dismiss(); return {}; });
+  reader.registerCallback("prevButton", [this](Widget*) { return backwardPage(); });
+  reader.registerCallback("nextButton", [this](Widget*) { return forwardPage(); });
+  reader.registerCallback("selectCodex", [this](Widget*) { return showSelectedContents(); });
+  reader.registerCallback("updateSpecies", [this](Widget*) { return updateSpecies(); });
+  auto layout = (*assets)->json("/interface/windowconfig/codex.config:paneLayout");
+  if (!layout) return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
+  auto speciesTabs = fetchChild<ButtonGroupWidget>("speciesTabs");
+  if (!speciesTabs) return std::unexpected(std::move(speciesTabs.error()));
+  m_speciesTabs = std::move(*speciesTabs);
+  auto selectLabel = fetchChild<LabelWidget>("selectLabel");
+  if (!selectLabel) return std::unexpected(std::move(selectLabel.error()));
+  m_selectLabel = std::move(*selectLabel);
+  auto titleLabel = fetchChild<LabelWidget>("titleLabel");
+  if (!titleLabel) return std::unexpected(std::move(titleLabel.error()));
+  m_titleLabel = std::move(*titleLabel);
+  auto bookList = fetchChild<ListWidget>("scrollArea.bookList");
+  if (!bookList) return std::unexpected(std::move(bookList.error()));
+  m_bookList = std::move(*bookList);
+  auto pageContent = fetchChild<LabelWidget>("pageText");
+  if (!pageContent) return std::unexpected(std::move(pageContent.error()));
+  m_pageContent = std::move(*pageContent);
+  auto pageLabel = fetchChild<LabelWidget>("pageLabel");
+  if (!pageLabel) return std::unexpected(std::move(pageLabel.error()));
+  m_pageLabelWidget = std::move(*pageLabel);
+  auto pageNumber = fetchChild<LabelWidget>("pageNum");
+  if (!pageNumber) return std::unexpected(std::move(pageNumber.error()));
+  m_pageNumberWidget = std::move(*pageNumber);
+  auto prevPage = fetchChild<ButtonWidget>("prevButton");
+  if (!prevPage) return std::unexpected(std::move(prevPage.error()));
+  m_prevPageButton = std::move(*prevPage);
+  auto nextPage = fetchChild<ButtonWidget>("nextButton");
+  if (!nextPage) return std::unexpected(std::move(nextPage.error()));
+  m_nextPageButton = std::move(*nextPage);
+  auto selectConfig = (*assets)->json("/interface/windowconfig/codex.config:selectText");
+  if (!selectConfig) return std::unexpected(std::move(selectConfig.error()));
+  auto selectText = selectConfig->toString();
+  if (!selectText) return std::unexpected(std::move(selectText.error()));
+  m_selectText = std::move(*selectText);
+  auto species = updateSpecies();
+  if (!species) return std::unexpected(std::move(species.error()));
+  return setupPageText();
+}
 
-  reader.registerCallback("close", [this](Widget*) { dismiss(); });
-  reader.registerCallback("prevButton", [this](Widget*) { backwardPage(); });
-  reader.registerCallback("nextButton", [this](Widget*) { forwardPage(); });
-  reader.registerCallback("selectCodex", [this](Widget*) { showSelectedContents(); });
-  reader.registerCallback("updateSpecies", [this](Widget*) { updateSpecies(); });
+std::expected<void, StarException> CodexInterface::show() {
+  auto shown = Pane::show();
+  if (!shown) return std::unexpected(std::move(shown.error()));
+  return updateCodexList();
+}
 
-  reader.construct(assets->json("/interface/windowconfig/codex.config:paneLayout"), this);
+std::expected<void, StarException> CodexInterface::tick(float) {
+  return updateCodexList();
+}
 
-  m_speciesTabs = fetchChild<ButtonGroupWidget>("speciesTabs");
-  m_selectLabel = fetchChild<LabelWidget>("selectLabel");
-  m_titleLabel = fetchChild<LabelWidget>("titleLabel");
-  m_bookList = fetchChild<ListWidget>("scrollArea.bookList");
-  m_pageContent = fetchChild<LabelWidget>("pageText");
-  m_pageLabelWidget = fetchChild<LabelWidget>("pageLabel");
-  m_pageNumberWidget = fetchChild<LabelWidget>("pageNum");
-  m_prevPageButton = fetchChild<ButtonWidget>("prevButton");
-  m_nextPageButton = fetchChild<ButtonWidget>("nextButton");
+std::expected<void, StarException> CodexInterface::showSelectedContents() {
+  if (m_bookList->selectedItem() == NPos || m_bookList->selectedItem() >= m_codexList.size()) return {};
+  return showContents(m_codexList[m_bookList->selectedItem()].first);
+}
 
-  m_selectText = assets->json("/interface/windowconfig/codex.config:selectText").toString();
+std::expected<void, StarException> CodexInterface::showContents(String const& codexId) {
+  for (auto const& entry : m_codexList)
+    if (entry.first->id() == codexId) return showContents(entry.first);
+  return {};
+}
 
+std::expected<void, StarException> CodexInterface::showContents(std::shared_ptr<Codex const> codex) {
+  if (m_player->codexes()->markCodexRead(codex->id())) {
+    auto updated = updateCodexList();
+    if (!updated) return std::unexpected(std::move(updated.error()));
+  }
+  m_currentCodex = std::move(codex);
   m_currentPage = 0;
-  updateSpecies();
-  setupPageText();
+  return setupPageText();
 }
 
-void CodexInterface::show() {
-  Pane::show();
-  updateCodexList();
-}
-
-void CodexInterface::tick(float) {
-  updateCodexList();
-}
-
-void CodexInterface::showSelectedContents() {
-  if (m_bookList->selectedItem() == NPos || m_bookList->selectedItem() >= m_codexList.size())
-    return;
-
-  showContents(m_codexList[m_bookList->selectedItem()].first);
-}
-
-void CodexInterface::showContents(String const& codexId) {
-  std::shared_ptr<Codex const> result;
-  for (auto entry : m_codexList)
-    if (entry.first->id() == codexId) {
-      result = entry.first;
-      break;
-    }
-  if (result)
-    showContents(result);
-}
-
-void CodexInterface::showContents(std::shared_ptr<Codex const> codex) {
-  if (m_player->codexes()->markCodexRead(codex->id()))
-    updateCodexList();
-  m_currentCodex = codex;
-  m_currentPage = 0;
-  setupPageText();
-}
-
-void CodexInterface::forwardPage() {
+std::expected<void, StarException> CodexInterface::forwardPage() {
   if (m_currentCodex && m_currentPage < m_currentCodex->pageCount() - 1) {
     ++m_currentPage;
-    setupPageText();
+    return setupPageText();
   }
+  return {};
 }
 
-void CodexInterface::backwardPage() {
+std::expected<void, StarException> CodexInterface::backwardPage() {
   if (m_currentCodex && m_currentPage > 0) {
     --m_currentPage;
-    setupPageText();
+    return setupPageText();
   }
+  return {};
 }
 
-bool CodexInterface::showNewCodex() {
+std::expected<bool, StarException> CodexInterface::showNewCodex() {
   if (auto newCodex = m_player->codexes()->firstNewCodex()) {
-    for (auto button : m_speciesTabs->buttons()) {
-      if (button->data().getString("species") == newCodex->species()) {
-        m_speciesTabs->select(m_speciesTabs->id(button));
+    for (auto const& button : m_speciesTabs->buttons()) {
+      auto species = button->data().getString("species");
+      if (!species) return std::unexpected(std::move(species.error()));
+      if (*species == newCodex->species()) {
+        auto selected = m_speciesTabs->select(m_speciesTabs->id(button));
+        if (!selected) return std::unexpected(std::move(selected.error()));
         break;
       }
     }
-    showContents(newCodex);
+    auto shown = showContents(newCodex);
+    if (!shown) return std::unexpected(std::move(shown.error()));
     return true;
   }
-
   return false;
 }
 
-void CodexInterface::updateSpecies() {
+std::expected<void, StarException> CodexInterface::updateSpecies() {
   String newSpecies = "other";
-  if (auto speciesButton = m_speciesTabs->checkedButton())
-    newSpecies = speciesButton->data().getString("species");
+  if (auto speciesButton = m_speciesTabs->checkedButton()) {
+    auto species = speciesButton->data().getString("species");
+    if (!species) return std::unexpected(std::move(species.error()));
+    newSpecies = std::move(*species);
+  }
   if (newSpecies != m_currentSpecies) {
     m_currentCodex = {};
-    m_currentSpecies = newSpecies;
-    m_bookList->clearSelected();
-    setupPageText();
+    m_currentSpecies = std::move(newSpecies);
+    auto cleared = m_bookList->clearSelected();
+    if (!cleared) return std::unexpected(std::move(cleared.error()));
+    auto page = setupPageText();
+    if (!page) return std::unexpected(std::move(page.error()));
   }
-  m_selectLabel->setText(m_selectText.replaceTags(StringMap<String>{{"species", m_currentSpecies}}).titleCase());
+  auto text = m_selectText.replaceTags(StringMap<String>{{"species", m_currentSpecies}}).titleCase();
+  if (!text) return std::unexpected(std::move(text.error()));
+  return m_selectLabel->setText(*text);
 }
 
-void CodexInterface::setupPageText() {
-  if (m_currentCodex) {
-    m_pageContent->setText(m_currentCodex->page(m_currentPage));
-    m_pageLabelWidget->show();
-    m_pageNumberWidget->setText(strf("{} of {}", m_currentPage + 1, m_currentCodex->pageCount()));
-    m_titleLabel->setText(m_currentCodex->title());
-    m_nextPageButton->setEnabled(m_currentPage < m_currentCodex->pageCount() - 1);
-    m_prevPageButton->setEnabled(m_currentPage > 0);
-  } else {
-    m_pageContent->setText("");
-    m_pageLabelWidget->hide();
-    m_pageNumberWidget->setText("");
-    m_titleLabel->setText("");
-    m_nextPageButton->disable();
-    m_prevPageButton->disable();
-  }
+std::expected<void, StarException> CodexInterface::setupPageText() {
+  String content;
+  if (m_currentCodex)
+    content = m_currentCodex->page(m_currentPage);
+  auto text = m_pageContent->setText(content);
+  if (!text) return std::unexpected(std::move(text.error()));
+  auto label = m_pageLabelWidget->setVisibility(bool(m_currentCodex));
+  if (!label) return std::unexpected(std::move(label.error()));
+  auto number = m_pageNumberWidget->setText(m_currentCodex ? strf("{} of {}", m_currentPage + 1, m_currentCodex->pageCount()) : "");
+  if (!number) return std::unexpected(std::move(number.error()));
+  auto title = m_titleLabel->setText(m_currentCodex ? m_currentCodex->title() : "");
+  if (!title) return std::unexpected(std::move(title.error()));
+  m_nextPageButton->setEnabled(m_currentCodex && m_currentPage < m_currentCodex->pageCount() - 1);
+  m_prevPageButton->setEnabled(m_currentCodex && m_currentPage > 0);
+  return {};
 }
 
-void CodexInterface::updateCodexList() {
+std::expected<void, StarException> CodexInterface::updateCodexList() {
   auto newCodexList = m_player->codexes()->codexes();
-  filter(newCodexList, [&](auto const& p) {
-      return p.first->species() == m_currentSpecies;
-    });
+  filter(newCodexList, [&](auto const& p) { return p.first->species() == m_currentSpecies; });
   if (m_codexList != newCodexList) {
     m_bookList->removeAllChildren();
-    m_codexList = newCodexList;
-    for (auto entry : m_codexList) {
+    m_codexList = std::move(newCodexList);
+    for (auto const& entry : m_codexList) {
       auto newEntry = m_bookList->addItem();
-      newEntry->fetchChild<LabelWidget>("bookName")->setText(entry.first->title());
-      newEntry->fetchChild<ImageWidget>("bookIcon")->setImage(entry.first->icon());
+      if (!newEntry) return std::unexpected(std::move(newEntry.error()));
+      auto bookName = (*newEntry)->fetchChild<LabelWidget>("bookName");
+      if (!bookName) return std::unexpected(std::move(bookName.error()));
+      auto text = (*bookName)->setText(entry.first->title());
+      if (!text) return std::unexpected(std::move(text.error()));
+      auto bookIcon = (*newEntry)->fetchChild<ImageWidget>("bookIcon");
+      if (!bookIcon) return std::unexpected(std::move(bookIcon.error()));
+      auto image = (*bookIcon)->setImage(entry.first->icon());
+      if (!image) return std::unexpected(std::move(image.error()));
     }
   }
+  return {};
 }
 
 }

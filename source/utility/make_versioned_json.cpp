@@ -1,5 +1,6 @@
 import std;
 import star.format;
+import star.output_proxy;
 import star.file;
 import star.json;
 
@@ -9,19 +10,35 @@ import star.native_runtime;
 using namespace Star;
 
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
+  auto nativeRuntime = Star::NativeRuntime::create();
+  if (!nativeRuntime) {
+    coutf("Error! Caught exception {}\n", outputException(ExceptionDiagnostic(nativeRuntime.error()), true));
+    return 1;
+  }
+  auto run = [&]() -> std::expected<int, StarException> {
     if (argc != 3) {
       coutf("Usage, {} <versioned_json_json> <versioned_json_binary>\n", argv[0]);
       return -1;
     }
 
-    auto versionedJson = VersionedJson::fromJson(Json::parse(File::readFileString(argv[1])));
-    VersionedJson::writeFile(versionedJson, argv[2]);
+    auto text = File::readFileString(argv[1]);
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto json = Json::parse(*text);
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto versionedJson = VersionedJson::fromJson(*json);
+    if (!versionedJson)
+      return std::unexpected(std::move(versionedJson.error()));
+    auto written = VersionedJson::writeFile(*versionedJson, argv[2]);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
     return 0;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    coutf("Error! Caught exception {}\n", outputException(e, true));
+  };
+  auto result = run();
+  if (!result) {
+    coutf("Error! Caught exception {}\n", outputException(ExceptionDiagnostic(result.error()), true));
     return 1;
   }
+  return *result;
 }

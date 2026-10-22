@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -63,23 +64,25 @@ public:
     return Star::typeName<GraphicsMenu>();
   }
 
-  GraphicsMenu(GuiContext& guiContext, PaneManager* manager,std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<GraphicsMenu>, StarException> create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
 
-  void show() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
-  void toggleFullscreen();
+  [[nodiscard]] std::expected<void, StarException> toggleFullscreen();
 
 private:
+  GraphicsMenu(GuiContext& guiContext, PaneManager* manager);
+  [[nodiscard]] std::expected<void, StarException> init(std::shared_ptr<UniverseClient> client);
   static StringList const ConfigKeys;
 
-  void initConfig();
-  void syncGui();
+  [[nodiscard]] std::expected<void, StarException> initConfig();
+  [[nodiscard]] std::expected<void, StarException> syncGui();
 
-  void apply();
-  void applyWindowSettings();
-  
-  void displayShaders();
+  [[nodiscard]] std::expected<void, StarException> apply();
+  [[nodiscard]] std::expected<void, StarException> applyWindowSettings();
+
+  [[nodiscard]] std::expected<void, StarException> displayShaders();
 
   List<Vec2U> m_resList;
   List<float> m_interfaceScaleList;

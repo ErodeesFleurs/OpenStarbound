@@ -69,6 +69,7 @@ import star.durability_item;
 
 import star.image_metadata_database;
 
+import star.format;
 namespace Star {
 
 static String formatShortSize(std::uint64_t n) {
@@ -110,41 +111,13 @@ static String formatShortSize(std::uint64_t n) {
       return strf("{}.{:02d}{:c}", whole, frac / 10, suffix);
 }
 
-ItemSlotWidget::ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage)
-  : Widget(context), m_item(item), m_backingImage(backingImage), m_newItemIndicator(context.root()), m_highlightAnimation(context.root()) {
+ItemSlotWidget::ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage, Animation newItemIndicator, Animation highlightAnimation)
+  : Widget(context), m_item(item), m_backingImage(backingImage), m_newItemIndicator(std::move(newItemIndicator)), m_highlightAnimation(std::move(highlightAnimation)) {
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
   m_progress = 1;
-
-  auto assets = this->context()->root().assets();
-  auto interfaceConfig = assets->json("/interface.config");
-  m_countPosition = TextPositioning(jsonToVec2F(interfaceConfig.get("itemCountRightAnchor")), HorizontalAnchor::RightAnchor);
   m_countFontMode = FontMode::Normal;
-  m_textStyle = interfaceConfig.get("itemSlotTextStyle");
-  m_itemDraggableArea = jsonToRectI(interfaceConfig.get("itemDraggableArea"));
-  m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
-
-  auto newItemIndicatorConfig = interfaceConfig.get("newItemAnimation");
-  m_newItemIndicator = Animation(this->context()->root(), newItemIndicatorConfig);
-  // End animation before it begins, only display when triggered
-  m_newItemIndicator.update(newItemIndicatorConfig.getDouble("animationCycle") * newItemIndicatorConfig.getDouble("loops", 1.0f));
-
-  Json highlightAnimationConfig = interfaceConfig.get("highlightAnimation");
-  m_highlightAnimation = Animation(this->context()->root(), highlightAnimationConfig);
   m_highlightEnabled = false;
-
-  Vec2I backingImageSize;
-  if (m_backingImage.size()) {
-    auto imgMetadata = this->context()->root().imageMetadataDatabase();
-    backingImageSize = Vec2I(imgMetadata->imageSize(m_backingImage));
-  }
-  setSize(m_itemDraggableArea.max().piecewiseMax(backingImageSize));
-
-  WidgetParser parser(*this->context());
-
-  parser.construct(assets->json("/interface/itemSlot.config").get("config"), this);
-  m_durabilityBar = fetchChild<ProgressWidget>("durabilityBar");
-  m_durabilityBar->hide();
   m_showDurability = false;
   m_showCount = true;
   m_showRarity = true;
@@ -153,15 +126,78 @@ ItemSlotWidget::ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const&
   disableScissoring();
 }
 
-void ItemSlotWidget::update(float dt) {
+std::expected<std::shared_ptr<ItemSlotWidget>, StarException> ItemSlotWidget::create(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage) {
+  auto assets = context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto newConfig = config->get("newItemAnimation");
+  if (!newConfig) return std::unexpected(std::move(newConfig.error()));
+  auto indicator = Animation::create(context.root(), *newConfig);
+  if (!indicator) return std::unexpected(std::move(indicator.error()));
+  auto cycle = newConfig->getDouble("animationCycle");
+  if (!cycle) return std::unexpected(std::move(cycle.error()));
+  auto loops = newConfig->getDouble("loops", 1.0f);
+  if (!loops) return std::unexpected(std::move(loops.error()));
+  indicator->update(*cycle * *loops);
+  auto highlightConfig = config->get("highlightAnimation");
+  if (!highlightConfig) return std::unexpected(std::move(highlightConfig.error()));
+  auto highlight = Animation::create(context.root(), *highlightConfig);
+  if (!highlight) return std::unexpected(std::move(highlight.error()));
+  auto widget = std::shared_ptr<ItemSlotWidget>(new ItemSlotWidget(context, item, backingImage, std::move(*indicator), std::move(*highlight)));
+  auto countJson = config->get("itemCountRightAnchor");
+  if (!countJson) return std::unexpected(std::move(countJson.error()));
+  auto count = jsonToVec2F(*countJson);
+  if (!count) return std::unexpected(std::move(count.error()));
+  widget->m_countPosition = TextPositioning(*count, HorizontalAnchor::RightAnchor);
+  auto styleJson = config->get("itemSlotTextStyle");
+  if (!styleJson) return std::unexpected(std::move(styleJson.error()));
+  auto style = TextStyle::create(*styleJson);
+  if (!style) return std::unexpected(std::move(style.error()));
+  widget->m_textStyle = std::move(*style);
+  auto areaJson = config->get("itemDraggableArea");
+  if (!areaJson) return std::unexpected(std::move(areaJson.error()));
+  auto area = jsonToRectI(*areaJson);
+  if (!area) return std::unexpected(std::move(area.error()));
+  widget->m_itemDraggableArea = *area;
+  auto offsetJson = config->get("itemIconDurabilityOffset");
+  if (!offsetJson) return std::unexpected(std::move(offsetJson.error()));
+  auto offset = jsonToVec2I(*offsetJson);
+  if (!offset) return std::unexpected(std::move(offset.error()));
+  widget->m_durabilityOffset = *offset;
+  Vec2I backingSize;
+  if (!backingImage.empty()) {
+    auto metadata = context.root().imageMetadataDatabase();
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    auto size = (*metadata)->imageSize(backingImage);
+    if (!size) return std::unexpected(std::move(size.error()));
+    backingSize = Vec2I(*size);
+  }
+  widget->setSize(area->max().piecewiseMax(backingSize));
+  auto slotConfig = (*assets)->json("/interface/itemSlot.config");
+  if (!slotConfig) return std::unexpected(std::move(slotConfig.error()));
+  auto children = slotConfig->get("config");
+  if (!children) return std::unexpected(std::move(children.error()));
+  WidgetParser parser(context);
+  auto parsed = parser.construct(*children, widget.get());
+  if (!parsed) return std::unexpected(std::move(parsed.error()));
+  auto bar = widget->requireChild<ProgressWidget>("durabilityBar");
+  if (!bar) return std::unexpected(std::move(bar.error()));
+  widget->m_durabilityBar = *bar;
+  auto hidden = widget->m_durabilityBar->hide();
+  if (!hidden) return std::unexpected(std::move(hidden.error()));
+  return widget;
+}
+
+std::expected<void, StarException> ItemSlotWidget::update(float dt) {
   if (m_item)
     m_newItemIndicator.update(dt);
   if (m_highlightEnabled)
     m_highlightAnimation.update(dt);
-  Widget::update(dt);
+  return Widget::update(dt);
 }
 
-bool ItemSlotWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> ItemSlotWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseButton = std::get_if<MouseButtonDownEvent>(&event)) {
       if (mouseButton->mouseButton == MouseButton::Left
@@ -170,12 +206,11 @@ bool ItemSlotWidget::sendEvent(InputEvent const& event) {
         Vec2I mousePos = *context()->mousePosition(event);
         RectI itemArea = m_itemDraggableArea.translated(screenPosition());
         if (itemArea.contains(mousePos)) {
-          if (mouseButton->mouseButton == MouseButton::Right)
-            m_rightClickCallback(this);
-          else if (mouseButton->mouseButton == MouseButton::Middle)
-            m_middleClickCallback(this);
-          else
-            m_callback(this);
+          auto const& callback = mouseButton->mouseButton == MouseButton::Right ? m_rightClickCallback
+            : mouseButton->mouseButton == MouseButton::Middle ? m_middleClickCallback : m_callback;
+          if (!callback) return std::unexpected(GuiException("Item slot has no click callback"));
+          auto result = callback(this);
+          if (!result) return std::unexpected(std::move(result.error()));
           return true;
         }
       }
@@ -252,65 +287,87 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
   m_highlightEnabled = highlight;
 }
 
-void ItemSlotWidget::renderImpl() {
-  auto drawCooldown = [this]() {
-    int frame = (int)std::roundf(m_progress * 18);// TODO: Hardcoded lol
-    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
+std::expected<void, StarException> ItemSlotWidget::renderImpl() {
+  auto drawCooldown = [this]() -> std::expected<void, StarException> {
+    int frame = (int)std::roundf(m_progress * 18);
+    return context()->drawInterfaceQuad(AssetPath(String(strf("/interface/cooldown.png:{}", frame))), Vec2F(screenPosition()));
   };
   if (m_item) {
-    if (m_drawBackingImageWhenFull && m_backingImage != "")
-      context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
-
-    List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value_or(m_item->iconDrawables()) : m_item->iconDrawables();
-
+    if (m_drawBackingImageWhenFull && !m_backingImage.empty()) {
+      auto result = context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
+    auto icons = m_item->iconDrawables();
+    if (!icons) return std::unexpected(std::move(icons.error()));
+    if (m_showSecondaryIcon) {
+      auto secondary = m_item->secondaryDrawables();
+      if (!secondary) return std::unexpected(std::move(secondary.error()));
+      if (*secondary) *icons = std::move(**secondary);
+    }
     if (m_showRarity) {
-      String border = rarityBorder(m_item->instanceValue("rarityBorder", RarityNames.getRight(m_item->rarity())).toString());
-      context()->drawInterfaceQuad(border, Vec2F(screenPosition()));
+      if (!RarityNames) return std::unexpected(RarityNames.error());
+      auto rarity = RarityNames->getRight(m_item->rarity());
+      if (!rarity) return std::unexpected(std::move(rarity.error()));
+      auto value = m_item->instanceValue("rarityBorder", **rarity);
+      if (!value) return std::unexpected(std::move(value.error()));
+      auto name = value->toString();
+      if (!name) return std::unexpected(std::move(name.error()));
+      auto border = rarityBorder(std::move(*name));
+      if (!border) return std::unexpected(std::move(border.error()));
+      auto result = context()->drawInterfaceQuad(*border, Vec2F(screenPosition()));
+      if (!result) return std::unexpected(std::move(result.error()));
     }
-
     if (m_showLinkIndicator) {
-      // TODO: Hardcoded
-      context()->drawInterfaceQuad(String("/interface/inventory/itemlinkindicator.png"), Vec2F(screenPosition() - Vec2I(1, 1)));
+      auto result = context()->drawInterfaceQuad("/interface/inventory/itemlinkindicator.png", Vec2F(screenPosition() - Vec2I(1, 1)));
+      if (!result) return std::unexpected(std::move(result.error()));
     }
-
-    for (auto i : iconDrawables)
-      context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + size() / 2));
-
-    if (!m_newItemIndicator.isComplete())
-      context()->drawInterfaceDrawable(m_newItemIndicator.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
-
+    for (auto const& icon : *icons) {
+      auto result = context()->drawInterfaceDrawable(icon, Vec2F(screenPosition() + size() / 2));
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
+    if (!m_newItemIndicator.isComplete()) {
+      auto drawable = m_newItemIndicator.drawable(1.0);
+      if (!drawable) return std::unexpected(std::move(drawable.error()));
+      auto result = context()->drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+      if (!result) return std::unexpected(std::move(result.error()));
+    }
     if (m_showDurability) {
-      if (auto durabilityItem = as<DurabilityItem>(m_item)) {
-        float amount = durabilityItem->durabilityStatus();
-        m_durabilityBar->setCurrentProgressLevel(amount);
-
-        if (amount < 1)
-          m_durabilityBar->show();
-        else
-          m_durabilityBar->hide();
-      } else {
-        m_durabilityBar->hide();
+      bool visible = false;
+      if (auto item = as<DurabilityItem>(m_item)) {
+        auto amount = item->durabilityStatus();
+        if (!amount) return std::unexpected(std::move(amount.error()));
+        m_durabilityBar->setCurrentProgressLevel(*amount);
+        visible = *amount < 1;
       }
+      auto result = m_durabilityBar->setVisibility(visible);
+      if (!result) return std::unexpected(std::move(result.error()));
     }
-
-    drawCooldown();
-    if (m_item->count() > 1 && m_showCount) {// we don't need to tell people that there's only 1 of something
-      context()->setTextStyle(m_textStyle);
-      context()->setFontMode(m_countFontMode);
-      context()->renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
-      context()->clearTextStyle();
+    auto cooldown = drawCooldown();
+    if (!cooldown) return std::unexpected(std::move(cooldown.error()));
+    if (m_item->count() > 1 && m_showCount) {
+      auto style = context()->setTextStyle(m_textStyle);
+      if (!style) return std::unexpected(std::move(style.error()));
+      auto mode = context()->setFontMode(m_countFontMode);
+      if (!mode) return std::unexpected(std::move(mode.error()));
+      auto text = context()->renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
+      auto cleared = context()->clearTextStyle();
+      if (!text) return std::unexpected(std::move(text.error()));
+      if (!cleared) return std::unexpected(std::move(cleared.error()));
     }
-  } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
-    context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
-    drawCooldown();
+  } else if (m_drawBackingImageWhenEmpty && !m_backingImage.empty()) {
+    auto result = context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+    if (!result) return std::unexpected(std::move(result.error()));
+    auto cooldown = drawCooldown();
+    if (!cooldown) return std::unexpected(std::move(cooldown.error()));
   }
-
   if (m_highlightEnabled) {
-    context()->drawInterfaceDrawable(m_highlightAnimation.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+    auto drawable = m_highlightAnimation.drawable(1.0);
+    if (!drawable) return std::unexpected(std::move(drawable.error()));
+    auto result = context()->drawInterfaceDrawable(*drawable, Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+    if (!result) return std::unexpected(std::move(result.error()));
   }
-
-  if (!m_item)
-    m_durabilityBar->hide();
+  if (!m_item) return m_durabilityBar->hide();
+  return {};
 }
 
 }

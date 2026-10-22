@@ -7,6 +7,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 import star.color;
 import star.bi_map;
@@ -73,11 +74,12 @@ using namespace Star;
 
 namespace {
 
-static WorldTemplate makeGardenWorld(Root& root, std::shared_ptr<::Star::TerrestrialWorldParameters> parameters, std::uint64_t seed) {
-  return WorldTemplate(root, parameters, SkyParameters(), seed);
+[[nodiscard]] static std::expected<std::shared_ptr<WorldTemplate>, StarException> makeGardenWorld(
+    Root& root, std::shared_ptr<::Star::TerrestrialWorldParameters> parameters, std::uint64_t seed) {
+  return WorldTemplate::create(root, std::move(parameters), SkyParameters(), seed);
 }
 
-static WorldTemplate::WeatherLayer const* layerAt(WorldTemplate const& world, int height) {
+[[nodiscard]] static std::expected<WorldTemplate::WeatherLayer const*, StarException> layerAt(WorldTemplate const& world, int height) {
   return world.weatherLayerAt({0, height});
 }
 
@@ -86,54 +88,72 @@ static WorldTemplate::WeatherLayer const* layerAt(WorldTemplate const& world, in
 const GameTestRegistration weatherDomainDefaultTerrestrialOwnership("WeatherDomainTest", "DefaultTerrestrialOwnership", [](GameTest& fixture) {
   std::uint64_t seed = 1234;
   auto parameters = generateTerrestrialWorldParameters(fixture.root(), "garden", "small", seed);
-  auto world = makeGardenWorld(fixture.root(), parameters, seed);
+  ASSERT_TRUE(parameters);
+  auto world = makeGardenWorld(fixture.root(), *parameters, seed);
+  ASSERT_TRUE(world);
 
-  auto surface = layerAt(world, parameters->surfaceLayer.layerMinHeight);
-  auto atmosphere = layerAt(world, parameters->atmosphereLayer.layerMinHeight);
-  auto subsurface = layerAt(world, parameters->subsurfaceLayer.layerMinHeight);
-  auto space = layerAt(world, parameters->spaceLayer.layerMinHeight);
-  auto core = layerAt(world, parameters->coreLayer.layerMinHeight);
+  auto surface = layerAt(**world, (*parameters)->surfaceLayer.layerMinHeight);
+  auto atmosphere = layerAt(**world, (*parameters)->atmosphereLayer.layerMinHeight);
+  auto subsurface = layerAt(**world, (*parameters)->subsurfaceLayer.layerMinHeight);
+  auto space = layerAt(**world, (*parameters)->spaceLayer.layerMinHeight);
+  auto core = layerAt(**world, (*parameters)->coreLayer.layerMinHeight);
 
-  ASSERT_NE(surface, nullptr);
-  ASSERT_NE(atmosphere, nullptr);
-  ASSERT_NE(subsurface, nullptr);
-  ASSERT_NE(space, nullptr);
-  ASSERT_NE(core, nullptr);
-  EXPECT_EQ(surface->domain, std::optional<String>(String("surface")));
-  EXPECT_EQ(atmosphere->domain, surface->domain);
-  EXPECT_EQ(subsurface->domain, surface->domain);
-  EXPECT_FALSE(space->domain);
-  EXPECT_FALSE(core->domain);
+  ASSERT_TRUE(surface);
+  ASSERT_TRUE(atmosphere);
+  ASSERT_TRUE(subsurface);
+  ASSERT_TRUE(space);
+  ASSERT_TRUE(core);
+  ASSERT_NE(*surface, nullptr);
+  ASSERT_NE(*atmosphere, nullptr);
+  ASSERT_NE(*subsurface, nullptr);
+  ASSERT_NE(*space, nullptr);
+  ASSERT_NE(*core, nullptr);
+  EXPECT_EQ((*surface)->domain, std::optional<String>(String("surface")));
+  EXPECT_EQ((*atmosphere)->domain, (*surface)->domain);
+  EXPECT_EQ((*subsurface)->domain, (*surface)->domain);
+  EXPECT_FALSE((*space)->domain);
+  EXPECT_FALSE((*core)->domain);
 
-  for (auto const& underground : parameters->undergroundLayers) {
-    auto layer = layerAt(world, underground.layerMinHeight);
-    ASSERT_NE(layer, nullptr);
-    EXPECT_FALSE(layer->domain);
+  for (auto const& underground : (*parameters)->undergroundLayers) {
+    auto layer = layerAt(**world, underground.layerMinHeight);
+    ASSERT_TRUE(layer);
+    ASSERT_NE(*layer, nullptr);
+    EXPECT_FALSE((*layer)->domain);
   }
 
-  auto surfaceDomain = world.weatherDomain("surface");
-  ASSERT_NE(surfaceDomain, nullptr);
-  EXPECT_EQ(surfaceDomain->effectsMinHeight, parameters->subsurfaceLayer.layerMinHeight);
+  auto surfaceDomain = (*world)->weatherDomain("surface");
+  ASSERT_TRUE(surfaceDomain);
+  ASSERT_NE(*surfaceDomain, nullptr);
+  EXPECT_EQ((*surfaceDomain)->effectsMinHeight, (*parameters)->subsurfaceLayer.layerMinHeight);
 });
 
 const GameTestRegistration weatherDomainExplicitLayerWeatherCreatesIndependentDomain("WeatherDomainTest", "ExplicitLayerWeatherCreatesIndependentDomain", [](GameTest& fixture) {
   std::uint64_t seed = 5678;
   auto parameters = generateTerrestrialWorldParameters(fixture.root(), "garden", "small", seed);
-  parameters->atmosphereLayer.primaryRegion.biome = "garden";
-  auto world = makeGardenWorld(fixture.root(), parameters, seed);
+  ASSERT_TRUE(parameters);
+  (*parameters)->atmosphereLayer.primaryRegion.biome = "garden";
+  auto world = makeGardenWorld(fixture.root(), *parameters, seed);
+  ASSERT_TRUE(world);
 
-  auto atmosphere = layerAt(world, parameters->atmosphereLayer.layerMinHeight);
-  ASSERT_NE(atmosphere, nullptr);
-  EXPECT_EQ(atmosphere->domain, std::optional<String>(String("atmosphere")));
+  auto atmosphere = layerAt(**world, (*parameters)->atmosphereLayer.layerMinHeight);
+  ASSERT_TRUE(atmosphere);
+  ASSERT_NE(*atmosphere, nullptr);
+  EXPECT_EQ((*atmosphere)->domain, std::optional<String>(String("atmosphere")));
 
-  auto atmosphereDomain = world.weatherDomain("atmosphere");
-  ASSERT_NE(atmosphereDomain, nullptr);
-  EXPECT_FALSE(atmosphereDomain->pool.empty());
-  EXPECT_EQ(atmosphereDomain->effectsMinHeight, parameters->atmosphereLayer.layerMinHeight);
+  auto atmosphereDomain = (*world)->weatherDomain("atmosphere");
+  ASSERT_TRUE(atmosphereDomain);
+  ASSERT_NE(*atmosphereDomain, nullptr);
+  EXPECT_FALSE((*atmosphereDomain)->pool.empty());
+  EXPECT_EQ((*atmosphereDomain)->effectsMinHeight, (*parameters)->atmosphereLayer.layerMinHeight);
 });
 
 const GameTestRegistration weatherDomainWeatherPropertyPresenceIsDistinctFromOmission("WeatherDomainTest", "WeatherPropertyPresenceIsDistinctFromOmission", [](GameTest& fixture) {
   auto biomes = fixture.root().biomeDatabase();
-  EXPECT_TRUE(biomes->biomeHasWeather("garden"));
-  EXPECT_FALSE(biomes->biomeHasWeather("atmosphere"));
+  ASSERT_TRUE(biomes);
+  auto garden = (*biomes)->biomeHasWeather("garden");
+  ASSERT_TRUE(garden);
+  EXPECT_TRUE(*garden);
+  auto atmosphere = (*biomes)->biomeHasWeather("atmosphere");
+  ASSERT_TRUE(atmosphere);
+  EXPECT_FALSE(*atmosphere);
 });

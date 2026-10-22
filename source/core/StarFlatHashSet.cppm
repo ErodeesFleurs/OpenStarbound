@@ -135,6 +135,24 @@ public:
   std::size_t count(key_type const& key) const;
   const_iterator find(key_type const& key) const;
   iterator find(key_type const& key);
+
+  template <typename LookupKey>
+    requires requires(hasher const& h, key_equal const& equal, key_type const& stored, LookupKey const& query) {
+      typename hasher::is_transparent;
+      typename key_equal::is_transparent;
+      { h(query) } -> std::convertible_to<std::size_t>;
+      { equal(stored, query) } -> std::convertible_to<bool>;
+    }
+  const_iterator find(LookupKey const& key) const { return const_iterator{m_table.find(key)}; }
+
+  template <typename LookupKey>
+    requires requires(hasher const& h, key_equal const& equal, key_type const& stored, LookupKey const& query) {
+      typename hasher::is_transparent;
+      typename key_equal::is_transparent;
+      { h(query) } -> std::convertible_to<std::size_t>;
+      { equal(stored, query) } -> std::convertible_to<bool>;
+    }
+  iterator find(LookupKey const& key) { return iterator{m_table.find(key)}; }
   std::pair<iterator, iterator> equal_range(key_type const& key);
   std::pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
 

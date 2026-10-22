@@ -1,232 +1,320 @@
-import star.json;
-import star.native_runtime;
-import star.set;
-import star.string;
-import star.color;
-import star.list;
-import star.image_processing;
-import star.hash;
-import star.data_stream;
-import star.string_view;
-import star.thread;
-import star.directives;
-import star.asset_path;
-import star.strong_typedef;
-import star.bi_map;
-import star.game_types;
-import star.file;
-import star.lexical_cast;
-import star.image;
-import star.ordered_map;
-import star.ordered_set;
 import std;
 import star.format;
-import star.version;
-import star.io_device;
-import star.ref_ptr;
+import star.output_proxy;
+import star.json;
+import star.native_runtime;
+import star.string;
+import star.list;
+import star.set;
+import star.map;
 import star.logging;
-import star.listener;
-
-import star.drawable;
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.item;
-import star.item_descriptor;
-import star.item_recipe;
 import star.option_parser;
-import star.version_option_parser;
-import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
 import star.root_loader;
 
-
-import star.item_database;
-
 using namespace Star;
 
+[[nodiscard]]
+std::expected<int, StarException> countWords(String const& text) {
+  auto words = text.split(" ");
+  if (!words)
+    return std::unexpected(std::move(words.error()));
+  return static_cast<int>(words->count());
+}
+
+[[nodiscard]]
+std::expected<int, StarException> countFields(Json const& json, std::initializer_list<char const*> fields) {
+  int count = 0;
+  for (auto field : fields) {
+    auto text = json.getString(field, "");
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto words = countWords(*text);
+    if (!words)
+      return std::unexpected(std::move(words.error()));
+    count += *words;
+  }
+  return count;
+}
+
+[[nodiscard]]
+std::expected<int, StarException> countOnlyStrings(Json const& json) {
+  int count = 0;
+  if (json.isType(Json::Type::Object)) {
+    auto entries = json.iterateObject();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto words = countOnlyStrings(entry.second);
+      if (!words)
+        return std::unexpected(std::move(words.error()));
+      count += *words;
+    }
+  } else if (json.isType(Json::Type::Array)) {
+    auto entries = json.iterateArray();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto words = countOnlyStrings(entry);
+      if (!words)
+        return std::unexpected(std::move(words.error()));
+      count += *words;
+    }
+  } else if (json.isType(Json::Type::String)) {
+    auto text = json.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    auto assetPath = text->beginsWith("/");
+    if (!assetPath)
+      return std::unexpected(std::move(assetPath.error()));
+    if (!*assetPath)
+      return countWords(*text);
+  }
+  return count;
+}
+
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-
-    rootLoader.setSummary("Calculate a (very approximate) word count of user-facing text in assets");
-
-    std::unique_ptr<::Star::Root> root;
-    OptionParser::Options options;
-    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
-
-    StringMap<int> wordCounts;
+  auto run = [&]() -> std::expected<int, StarException> {
+    auto nativeRuntime = NativeRuntime::create();
+    if (!nativeRuntime)
+      return std::unexpected(std::move(nativeRuntime.error()));
+    auto rootLoader = RootLoader::create({{}, {}, {}, LogLevel::Error, false, {}});
+    if (!rootLoader)
+      return std::unexpected(std::move(rootLoader.error()));
+    rootLoader->setSummary("Calculate a (very approximate) word count of user-facing text in assets");
+    auto initialized = rootLoader->commandInitOrDie(argc, argv);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    auto& root = initialized->first;
     auto assets = root->assets();
-
-    auto countWordsInType = [&](String const& type, std::function<int(Json const&)> countFunction, std::optional<std::function<bool(String const&)>> filterFunction = {}, std::optional<String> wordCountKey = {}) {
-      auto files = assets->scanExtension(type).values();
-      if (filterFunction)
-        files.filter(*filterFunction);
-      assets->queueJsons(files);
-      for (auto& path : files) {
-        auto json = assets->json(path);
-        if (json.isNull())
-          continue;
-
-        String countKey = wordCountKey ? *wordCountKey : strf(".{} files", type);
-        wordCounts[countKey] += countFunction(json);
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    StringMap<int> wordCounts;
+    using CountFunction = std::function<std::expected<int, StarException>(Json const&)>;
+    using FilterFunction = std::function<std::expected<bool, StarException>(String const&)>;
+    auto countWordsInType = [&](String const& type, CountFunction countFunction, std::optional<FilterFunction> filterFunction = {}, std::optional<String> wordCountKey = {}) -> std::expected<void, StarException> {
+      auto scanned = (*assets)->scanExtension(type);
+      if (!scanned)
+        return std::unexpected(std::move(scanned.error()));
+      StringList files;
+      for (auto const& key : **scanned) {
+        auto const& path = key.string();
+        if (filterFunction) {
+          auto include = (*filterFunction)(path);
+          if (!include)
+            return std::unexpected(std::move(include.error()));
+          if (!*include)
+            continue;
+        }
+        files.append(path);
       }
+      auto queued = (*assets)->queueJsons(files);
+      if (!queued)
+        return std::unexpected(std::move(queued.error()));
+      for (auto const& path : files) {
+        auto json = (*assets)->json(path);
+        if (!json)
+          return std::unexpected(std::move(json.error()));
+        if (json->isNull())
+          continue;
+        auto count = countFunction(*json);
+        if (!count)
+          return std::unexpected(std::move(count.error()));
+        String countKey = wordCountKey ? *wordCountKey : String(strf(".{} files", type));
+        wordCounts[countKey] += *count;
+      }
+      return {};
     };
 
     StringList itemFileTypes = {
-        "tech",
-        "item",
-        "liqitem",
-        "matitem",
-        "miningtool",
-        "flashlight",
-        "wiretool",
-        "beamaxe",
-        "tillingtool",
-        "painttool",
-        "harvestingtool",
-        "head",
-        "chest",
-        "legs",
-        "back",
-        "currencyitem",
-        "consumable",
-        "blueprint",
-        "inspectiontool",
-        "instrument",
-        "thrownitem",
-        "unlock",
-        "activeitem",
-        "augment" };
-
-    for (auto& itemFileType : itemFileTypes) {
-      countWordsInType(itemFileType, [](Json const& json) {
-          int wordCount = 0;
-          wordCount += json.getString("shortdescription", "").split(" ").count();
-          wordCount += json.getString("description", "").split(" ").count();
-          return wordCount;
-        });
+      "tech", "item", "liqitem", "matitem", "miningtool", "flashlight", "wiretool", "beamaxe", "tillingtool", "painttool", "harvestingtool", "head", "chest", "legs", "back", "currencyitem", "consumable", "blueprint", "inspectiontool", "instrument", "thrownitem", "unlock", "activeitem", "augment"
+    };
+    for (auto const& itemFileType : itemFileTypes) {
+      auto counted = countWordsInType(itemFileType, [](Json const& json) { return countFields(json, {"shortdescription", "description"}); });
+      if (!counted)
+        return std::unexpected(std::move(counted.error()));
     }
-
-    countWordsInType("object", [](Json const& json) {
-        int wordCount = 0;
-        wordCount += json.getString("shortdescription", "").split(" ").count();
-        wordCount += json.getString("description", "").split(" ").count();
-        wordCount += json.getString("apexDescription", "").split(" ").count();
-        wordCount += json.getString("avianDescription", "").split(" ").count();
-        wordCount += json.getString("glitchDescription", "").split(" ").count();
-        wordCount += json.getString("floranDescription", "").split(" ").count();
-        wordCount += json.getString("humanDescription", "").split(" ").count();
-        wordCount += json.getString("hylotlDescription", "").split(" ").count();
-        wordCount += json.getString("novakidDescription", "").split(" ").count();
-        return wordCount;
-      });
-
-    countWordsInType("codex", [](Json const& json) {
-        int wordCount = 0;
-        wordCount += json.getString("title", "").split(" ").count();
-        wordCount += json.getString("description", "").split(" ").count();
-        for (auto contentPage : json.getArray("contentPages", JsonArray()))
-          wordCount += contentPage.toString().split(" ").count();
-        return wordCount;
-      });
-
-    countWordsInType("monstertype", [](Json const& json) {
-        return json.getString("description", "").split(" ").count();
-      });
-
-    countWordsInType("radiomessages", [](Json const& json) {
-        auto wordCount = 0;
-        for (auto messageConfigPair : json.iterateObject())
-          wordCount += messageConfigPair.second.getString("text", "").split(" ").count();
-        return wordCount;
-      });
-
-    std::function<int(Json const& json)> countOnlyStrings;
-    countOnlyStrings = [&](Json const& json) {
-      int wordCount = 0;
-      if (json.isType(Json::Type::Object)) {
-        for (auto entry : json.iterateObject())
-          wordCount += countOnlyStrings(entry.second);
-      } else if (json.isType(Json::Type::Array)) {
-        for (auto entry : json.iterateArray())
-          wordCount += countOnlyStrings(entry);
-      } else if (json.isType(Json::Type::String)) {
-        if (!json.toString().beginsWith("/")) {
-          wordCount += json.toString().split(" ").count();
+    auto counted = countWordsInType("object", [](Json const& json) {
+      return countFields(json, {"shortdescription", "description", "apexDescription", "avianDescription", "glitchDescription", "floranDescription", "humanDescription", "hylotlDescription", "novakidDescription"});
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("codex", [](Json const& json) -> std::expected<int, StarException> {
+      auto count = countFields(json, {"title", "description"});
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      auto pages = json.getArray("contentPages", JsonArray());
+      if (!pages)
+        return std::unexpected(std::move(pages.error()));
+      for (auto const& page : *pages) {
+        auto text = page.toString();
+        if (!text)
+          return std::unexpected(std::move(text.error()));
+        auto words = countWords(*text);
+        if (!words)
+          return std::unexpected(std::move(words.error()));
+        *count += *words;
+      }
+      return *count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("monstertype", [](Json const& json) { return countFields(json, {"description"}); });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("radiomessages", [](Json const& json) -> std::expected<int, StarException> {
+      auto messages = json.iterateObject();
+      if (!messages)
+        return std::unexpected(std::move(messages.error()));
+      int count = 0;
+      for (auto const& message : *messages) {
+        auto words = countFields(message.second, {"text"});
+        if (!words)
+          return std::unexpected(std::move(words.error()));
+        count += *words;
+      }
+      return count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    FilterFunction dialogFilter = [](String const& path) { return path.beginsWith("/dialog/"); };
+    counted = countWordsInType("config", countOnlyStrings, dialogFilter, String("NPC dialog (.config files)"));
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("npctype", [](Json const& json) -> std::expected<int, StarException> {
+      auto config = json.get("scriptConfig", Json());
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      if (!*config)
+        return 0;
+      auto dialog = config->get("dialog", Json());
+      if (!dialog)
+        return std::unexpected(std::move(dialog.error()));
+      return countOnlyStrings(*dialog);
+    }, {}, String("NPC dialog (.npctype files)"));
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("questtemplate", [](Json const& json) -> std::expected<int, StarException> {
+      auto count = countFields(json, {"title", "text", "completionText"});
+      if (!count)
+        return std::unexpected(std::move(count.error()));
+      auto config = json.get("scriptConfig", Json());
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      if (*config) {
+        auto text = config->get("generatedText", Json());
+        if (!text)
+          return std::unexpected(std::move(text.error()));
+        auto words = countOnlyStrings(*text);
+        if (!words)
+          return std::unexpected(std::move(words.error()));
+        *count += *words;
+      }
+      return *count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("collection", [](Json const& json) -> std::expected<int, StarException> {
+      auto collectables = json.get("collectables", Json());
+      if (!collectables)
+        return std::unexpected(std::move(collectables.error()));
+      auto entries = collectables->iterateObject();
+      if (!entries)
+        return std::unexpected(std::move(entries.error()));
+      int count = 0;
+      for (auto const& entry : *entries) {
+        auto words = countFields(entry.second, {"description"});
+        if (!words)
+          return std::unexpected(std::move(words.error()));
+        count += *words;
+      }
+      return count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("cinematic", [](Json const& json) -> std::expected<int, StarException> {
+      auto panels = json.get("panels", Json());
+      if (!panels)
+        return std::unexpected(std::move(panels.error()));
+      auto entries = panels->iterateArray();
+      if (!entries)
+        return std::unexpected(std::move(entries.error()));
+      int count = 0;
+      for (auto const& panel : *entries) {
+        auto text = panel.optString("text");
+        if (!text)
+          return std::unexpected(std::move(text.error()));
+        if (!*text)
+          continue;
+        // Ignore the pipe-separated lists of backer names in the credits.
+        auto backerNames = (**text).contains("|");
+        if (!backerNames)
+          return std::unexpected(std::move(backerNames.error()));
+        if (!*backerNames) {
+          auto words = countWords(**text);
+          if (!words)
+            return std::unexpected(std::move(words.error()));
+          count += *words;
         }
       }
-      return wordCount;
-    };
-
-    std::function<bool(String const&)> dialogFilter = [](String const& filePath) { return filePath.beginsWith("/dialog/"); };
-    countWordsInType("config", countOnlyStrings, dialogFilter, String("NPC dialog (.config files)"));
-
-    countWordsInType("npctype", [&](Json const& json) {
-        if (auto scriptConfig = json.get("scriptConfig", Json()))
-          return countOnlyStrings(scriptConfig.get("dialog", Json()));
-        return 0;
-      }, {}, String("NPC dialog (.npctype files)"));
-
-    countWordsInType("questtemplate", [&](Json const& json) {
-        int wordCount = 0;
-        wordCount += json.getString("title", "").split(" ").count();
-        wordCount += json.getString("text", "").split(" ").count();
-        wordCount += json.getString("completionText", "").split(" ").count();
-        if (auto scriptConfig = json.get("scriptConfig", Json()))
-          wordCount += countOnlyStrings(scriptConfig.get("generatedText", Json()));
-        return wordCount;
-      });
-
-    countWordsInType("collection", [&](Json const& json) {
-        int wordCount = 0;
-        for (auto entry : json.get("collectables", Json()).iterateObject())
-          wordCount += entry.second.getString("description", "").split(" ").count();
-        return wordCount;
-      });
-
-    countWordsInType("cinematic", [&](Json const& json) {
-        int wordCount = 0;
-        for (auto panel : json.get("panels", Json()).iterateArray()) {
-          auto panelText = panel.optString("text");
-          // filter on pipes to ignore those long lists of backer names in the credits
-          if (panelText && !panelText->contains("|"))
-            wordCount += panelText->split(" ").count();
+      return count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    counted = countWordsInType("aimission", [](Json const& json) -> std::expected<int, StarException> {
+      auto species = json.get("speciesText", Json());
+      if (!species)
+        return std::unexpected(std::move(species.error()));
+      auto entries = species->iterateObject();
+      if (!entries)
+        return std::unexpected(std::move(entries.error()));
+      int count = 0;
+      for (auto const& entry : *entries) {
+        auto words = countFields(entry.second, {"buttonText", "repeatButtonText"});
+        if (!words)
+          return std::unexpected(std::move(words.error()));
+        count += *words;
+        auto speech = entry.second.get("selectSpeech");
+        if (!speech)
+          return std::unexpected(std::move(speech.error()));
+        if (*speech) {
+          auto speechWords = countFields(*speech, {"text"});
+          if (!speechWords)
+            return std::unexpected(std::move(speechWords.error()));
+          count += *speechWords;
         }
-        return wordCount;
-      });
-
-    countWordsInType("aimission", [&](Json const& json) {
-        int wordCount = 0;
-        for (auto entry : json.get("speciesText", Json()).iterateObject()) {
-          wordCount += entry.second.getString("buttonText", "").split(" ").count();
-          wordCount += entry.second.getString("repeatButtonText", "").split(" ").count();
-          if (auto selectSpeech = entry.second.get("selectSpeech"))
-            wordCount += selectSpeech.getString("text", "").split(" ").count();
-        }
-        return wordCount;
-      });
-
-    auto cockpitConfig = assets->json("/interface/cockpit/cockpit.config");
-    int cockpitWordCount = 0;
-    cockpitWordCount += countOnlyStrings(cockpitConfig.get("visitableTypeDescription"));
-    cockpitWordCount += countOnlyStrings(cockpitConfig.get("worldTypeDescription"));
-    wordCounts["planet descriptions (cockpit.config)"] = cockpitWordCount;
-
-    int totalWordCount = 0;
-    for (auto countPair : wordCounts) {
-      coutf("{} words in {}\n", countPair.second, countPair.first);
-      totalWordCount += countPair.second;
+      }
+      return count;
+    });
+    if (!counted)
+      return std::unexpected(std::move(counted.error()));
+    auto cockpit = (*assets)->json("/interface/cockpit/cockpit.config");
+    if (!cockpit)
+      return std::unexpected(std::move(cockpit.error()));
+    int cockpitCount = 0;
+    for (auto field : {"visitableTypeDescription", "worldTypeDescription"}) {
+      auto descriptions = cockpit->get(field);
+      if (!descriptions)
+        return std::unexpected(std::move(descriptions.error()));
+      auto words = countOnlyStrings(*descriptions);
+      if (!words)
+        return std::unexpected(std::move(words.error()));
+      cockpitCount += *words;
     }
-    coutf("approximately {} words total\n", totalWordCount);
-
+    wordCounts["planet descriptions (cockpit.config)"] = cockpitCount;
+    int total = 0;
+    for (auto const& count : wordCounts) {
+      coutf("{} words in {}\n", count.second, count.first);
+      total += count.second;
+    }
+    coutf("approximately {} words total\n", total);
     return 0;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("exception caught: {}\n", outputException(e, true));
+  };
+  auto result = run();
+  if (!result) {
+    cerrf("exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
     return 1;
   }
+  return *result;
 }

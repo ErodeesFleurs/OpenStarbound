@@ -26,8 +26,8 @@ TEST(NetElements, DataRounding) {
   NetElementFloat masterField2;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
 
   masterField1.setFixedPointBase(0.1f);
   masterField2.setFixedPointBase(0.5);
@@ -42,14 +42,15 @@ TEST(NetElements, DataRounding) {
   NetElementFloat slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
 
   slaveField1.setFixedPointBase(0.1f);
   slaveField2.setFixedPointBase(0.5);
 
   auto masterUpdate1 = master.writeNetState();
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
 
   EXPECT_LT(std::fabs(slaveField1.get() - 2.2f), 0.00001f);
   EXPECT_LT(std::fabs(slaveField2.get() - 100), 0.0000001);
@@ -62,16 +63,18 @@ TEST(NetElements, DataRounding) {
   masterField2.set(99.96);
   masterField2.set(100.00);
 
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  EXPECT_TRUE(masterUpdate2.first.empty());
-  slave.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  EXPECT_TRUE(masterUpdate2->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first));
 
   masterField1.set(10.0f);
   masterField2.set(50.0f);
 
-  auto masterUpdate3 = master.writeNetState(masterUpdate2.second);
-  EXPECT_FALSE(masterUpdate3.first.empty());
-  slave.readNetState(masterUpdate3.first);
+  auto masterUpdate3 = master.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  EXPECT_FALSE(masterUpdate3->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate3->first));
 
   EXPECT_LT(std::fabs(slaveField1.get() - 10.0f), 0.00001f);
   EXPECT_LT(std::fabs(slaveField2.get() - 50.0f), 0.0000001);
@@ -84,10 +87,10 @@ TEST(NetElements, DirectWriteRead) {
   NetElementUInt masterField4;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
-  master.addNetElement(&masterField4);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(&masterField4));
 
   masterField1.set(1);
   masterField2.set(2);
@@ -100,13 +103,14 @@ TEST(NetElements, DirectWriteRead) {
   NetElementUInt slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
-  slave.addNetElement(&slaveField3);
-  slave.addNetElement(&slaveField4);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(&slaveField3));
+  ASSERT_TRUE(slave.addNetElement(&slaveField4));
 
   auto masterUpdate1 = master.writeNetState();
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
 
   EXPECT_EQ(slaveField1.get(), 1u);
   EXPECT_EQ(slaveField2.get(), 2u);
@@ -116,8 +120,9 @@ TEST(NetElements, DirectWriteRead) {
   masterField1.set(10);
   masterField3.set(30);
 
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  slave.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first));
 
   EXPECT_EQ(slaveField1.get(), 10u);
   EXPECT_EQ(slaveField2.get(), 2u);
@@ -127,8 +132,9 @@ TEST(NetElements, DirectWriteRead) {
   masterField2.set(20);
   masterField4.set(40);
 
-  auto masterUpdate3 = master.writeNetState(masterUpdate2.second);
-  slave.readNetState(masterUpdate3.first);
+  auto masterUpdate3 = master.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  ASSERT_TRUE(slave.readNetState(masterUpdate3->first));
 
   EXPECT_EQ(slaveField1.get(), 10u);
   EXPECT_EQ(slaveField2.get(), 20u);
@@ -143,10 +149,10 @@ TEST(NetElements, DeltaSize) {
   NetElementSize masterField4;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
-  master.addNetElement(&masterField4);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(&masterField4));
 
   NetElementInt slaveField1;
   NetElementUInt slaveField2;
@@ -154,10 +160,10 @@ TEST(NetElements, DeltaSize) {
   NetElementSize slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
-  slave.addNetElement(&slaveField3);
-  slave.addNetElement(&slaveField4);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(&slaveField3));
+  ASSERT_TRUE(slave.addNetElement(&slaveField4));
 
   masterField1.set(10);
   masterField2.set(20);
@@ -170,25 +176,27 @@ TEST(NetElements, DeltaSize) {
   EXPECT_EQ(masterField4.get(), 40u);
 
   auto masterUpdate1 = master.writeNetState();
+  ASSERT_TRUE(masterUpdate1);
 
   // Initial state should be 5 bytes, 1 byte for header, then 4 1 byte values.
-  EXPECT_EQ(masterUpdate1.first.size(), 5u);
+  EXPECT_EQ(masterUpdate1->first.size(), 5u);
 
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
   EXPECT_EQ(slaveField1.get(), 10);
   EXPECT_EQ(slaveField2.get(), 20u);
   EXPECT_EQ(slaveField3.get(), 30u);
   EXPECT_EQ(slaveField4.get(), 40u);
 
   masterField1.set(50);
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
 
   // Second delta should be not include any other data than the single 1 byte
   // changed state, so make sure that it is 1 byte for header, 1 byte for field
   // number, 1 byte for state, 1 byte for end marker.
-  EXPECT_EQ(masterUpdate2.first.size(), 4u);
+  EXPECT_EQ(masterUpdate2->first.size(), 4u);
 
-  slave.readNetState(masterUpdate2.first);
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first));
   EXPECT_EQ(slaveField1.get(), 50);
 }
 
@@ -197,31 +205,33 @@ TEST(NetElements, Forwarding) {
   NetElementData<String> masterField2;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
 
   NetElementInt forwarderField1;
   NetElementData<String> forwarderField2;
 
   NetElementTop<NetElementGroup> forwarder;
-  forwarder.addNetElement(&forwarderField1);
-  forwarder.addNetElement(&forwarderField2);
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
 
   NetElementInt slaveField1;
   NetElementData<String> slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
 
   masterField1.set(413);
   masterField2.set("foo");
 
   auto masterUpdate1 = master.writeNetState();
-  forwarder.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(forwarder.readNetState(masterUpdate1->first));
 
   auto forwarderUpdate1 = forwarder.writeNetState();
-  slave.readNetState(forwarderUpdate1.first);
+  ASSERT_TRUE(forwarderUpdate1);
+  ASSERT_TRUE(slave.readNetState(forwarderUpdate1->first));
 
   EXPECT_EQ(forwarderField1.get(), 413);
   EXPECT_EQ(forwarderField2.get(), "foo");
@@ -234,22 +244,22 @@ TEST(NetElements, StepForwarding) {
   NetElementInt masterField2;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
 
   NetElementInt forwarderField1;
   NetElementInt forwarderField2;
 
   NetElementTop<NetElementGroup> forwarder;
-  forwarder.addNetElement(&forwarderField1);
-  forwarder.addNetElement(&forwarderField2);
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
 
   NetElementInt slaveField1;
   NetElementInt slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
 
   // First emulate store / load that would happen in entity initialization.
 
@@ -257,10 +267,12 @@ TEST(NetElements, StepForwarding) {
   masterField2.set(20);
 
   auto masterUpdate1 = master.writeNetState();
-  forwarder.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(forwarder.readNetState(masterUpdate1->first));
 
   auto forwarderUpdate1 = forwarder.writeNetState();
-  slave.readNetState(forwarderUpdate1.first);
+  ASSERT_TRUE(forwarderUpdate1);
+  ASSERT_TRUE(slave.readNetState(forwarderUpdate1->first));
 
   EXPECT_EQ(forwarderField1.get(), 10);
   EXPECT_EQ(forwarderField2.get(), 20);
@@ -272,12 +284,14 @@ TEST(NetElements, StepForwarding) {
 
   masterField1.set(413);
 
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  forwarder.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  ASSERT_TRUE(forwarder.readNetState(masterUpdate2->first));
   EXPECT_EQ(forwarderField1.get(), 413);
 
-  auto forwarderUpdate2 = forwarder.writeNetState(forwarderUpdate1.second);
-  slave.readNetState(forwarderUpdate2.first);
+  auto forwarderUpdate2 = forwarder.writeNetState(forwarderUpdate1->second);
+  ASSERT_TRUE(forwarderUpdate2);
+  ASSERT_TRUE(slave.readNetState(forwarderUpdate2->first));
   EXPECT_EQ(slaveField1.get(), 413);
 
   EXPECT_EQ(forwarderField1.get(), 413);
@@ -293,40 +307,42 @@ TEST(NetElements, InterpolationForwarding) {
   NetElementData<String> masterField3;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
 
   NetElementInt forwarderField1;
   NetElementFloat forwarderField2;
   NetElementData<String> forwarderField3;
 
   NetElementTop<NetElementGroup> forwarder;
-  forwarder.addNetElement(&forwarderField1);
-  forwarder.addNetElement(&forwarderField2);
-  forwarder.addNetElement(&forwarderField3);
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField1));
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField2));
+  ASSERT_TRUE(forwarder.addNetElement(&forwarderField3));
 
   NetElementInt slaveField1;
   NetElementFloat slaveField2;
   NetElementData<String> slaveField3;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
-  slave.addNetElement(&slaveField3);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(&slaveField3));
 
-  forwarder.enableNetInterpolation();
-  slave.enableNetInterpolation();
+  ASSERT_TRUE(forwarder.enableNetInterpolation());
+  ASSERT_TRUE(slave.enableNetInterpolation());
 
   masterField1.set(10);
   masterField2.set(10.0f);
   masterField3.set("10");
 
   auto masterUpdate1 = master.writeNetState();
-  forwarder.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(forwarder.readNetState(masterUpdate1->first));
 
   auto forwarderUpdate1 = forwarder.writeNetState();
-  slave.readNetState(forwarderUpdate1.first);
+  ASSERT_TRUE(forwarderUpdate1);
+  ASSERT_TRUE(slave.readNetState(forwarderUpdate1->first));
 
   EXPECT_EQ(forwarderField1.get(), 10);
   EXPECT_EQ(forwarderField2.get(), 10.0f);
@@ -340,8 +356,9 @@ TEST(NetElements, InterpolationForwarding) {
   masterField2.set(20.0f);
   masterField3.set("20");
 
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  forwarder.readNetState(masterUpdate2.first, 1.0f);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  ASSERT_TRUE(forwarder.readNetState(masterUpdate2->first, 1.0f));
 
   // Forwarder should not be updated yet, still 1.0f interpolationTime behind
   EXPECT_EQ(forwarderField1.get(), 10);
@@ -350,8 +367,9 @@ TEST(NetElements, InterpolationForwarding) {
 
   // But the forwarder should STILL forward the absolute latest data to the
   // slave
-  auto forwarderUpdate2 = forwarder.writeNetState(forwarderUpdate1.second);
-  slave.readNetState(forwarderUpdate2.first, 1.0f);
+  auto forwarderUpdate2 = forwarder.writeNetState(forwarderUpdate1->second);
+  ASSERT_TRUE(forwarderUpdate2);
+  ASSERT_TRUE(slave.readNetState(forwarderUpdate2->first, 1.0f));
 
   // Slave should not be updated yet, still 1.0f interpolationTime behind
   EXPECT_EQ(slaveField1.get(), 10);
@@ -361,12 +379,12 @@ TEST(NetElements, InterpolationForwarding) {
   // After ticking forward interpolation, both the forwarder and the slave
   // should both pick up the new values.
 
-  forwarder.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(forwarder.tickNetInterpolation(1.0f));
   EXPECT_EQ(forwarderField1.get(), 20);
   EXPECT_EQ(forwarderField2.get(), 20.0f);
   EXPECT_EQ(forwarderField3.get(), "20");
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_EQ(slaveField1.get(), 20);
   EXPECT_EQ(slaveField2.get(), 20.0f);
   EXPECT_EQ(slaveField3.get(), "20");
@@ -381,9 +399,9 @@ TEST(NetElements, MasterSetGet) {
   NetElementEvent masterField3;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
 
   EXPECT_EQ(masterField3.pullOccurrences(), 0u);
 
@@ -436,15 +454,15 @@ TEST(NetElements, EventTest) {
   NetElementEvent masterField2;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
 
   NetElementData<String> slaveField1;
   NetElementEvent slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
 
   // Events should always start with occurred false.
   EXPECT_EQ(slaveField1.pullUpdated(), false);
@@ -456,7 +474,8 @@ TEST(NetElements, EventTest) {
   EXPECT_FALSE(masterField1.pullUpdated());
 
   auto masterUpdate1 = master.writeNetState();
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
 
   EXPECT_TRUE(slaveField1.pullUpdated());
   EXPECT_FALSE(slaveField1.pullUpdated());
@@ -464,17 +483,19 @@ TEST(NetElements, EventTest) {
   EXPECT_EQ(slaveField2.pullOccurrences(), 0u);
 
   // Delta should be empty, nothing happened on step 1.
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  EXPECT_TRUE(masterUpdate2.first.empty());
-  slave.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  EXPECT_TRUE(masterUpdate2->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first));
 
   EXPECT_EQ(slaveField2.pullOccurrences(), 0u);
 
   masterField2.trigger();
 
-  auto masterUpdate3 = master.writeNetState(masterUpdate2.second);
-  EXPECT_FALSE(masterUpdate3.first.empty());
-  slave.readNetState(masterUpdate3.first);
+  auto masterUpdate3 = master.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  EXPECT_FALSE(masterUpdate3->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate3->first));
 
   EXPECT_EQ(slaveField2.pullOccurrences(), 1u);
   EXPECT_EQ(slaveField2.pullOccurrences(), 0u);
@@ -487,10 +508,10 @@ TEST(NetElements, FieldUpdated) {
   NetElementEvent masterField4;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
-  master.addNetElement(&masterField4);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(&masterField4));
 
   NetElementData<String> slaveField1;
   NetElementInt slaveField2;
@@ -498,10 +519,10 @@ TEST(NetElements, FieldUpdated) {
   NetElementEvent slaveField4;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
-  slave.addNetElement(&slaveField3);
-  slave.addNetElement(&slaveField4);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(&slaveField3));
+  ASSERT_TRUE(slave.addNetElement(&slaveField4));
 
   slaveField4.setIgnoreOccurrencesOnNetLoad(true);
 
@@ -511,7 +532,8 @@ TEST(NetElements, FieldUpdated) {
   masterField4.trigger();
 
   auto masterUpdate1 = master.writeNetState();
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
 
   EXPECT_EQ(slaveField1.pullUpdated(), true);
   EXPECT_EQ(slaveField1.get(), "foo");
@@ -527,34 +549,38 @@ TEST(NetElements, FieldUpdated) {
 
   masterField1.set("baz");
 
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  EXPECT_FALSE(masterUpdate2.first.empty());
-  slave.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  EXPECT_FALSE(masterUpdate2->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first));
 
   EXPECT_EQ(slaveField1.get(), "baz");
   EXPECT_EQ(slaveField1.pullUpdated(), true);
 
   masterField1.set("bar");
 
-  auto masterUpdate3 = master.writeNetState(masterUpdate2.second);
-  EXPECT_FALSE(masterUpdate3.first.empty());
-  slave.readNetState(masterUpdate3.first);
+  auto masterUpdate3 = master.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  EXPECT_FALSE(masterUpdate3->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate3->first));
 
   EXPECT_EQ(slaveField1.get(), "bar");
   EXPECT_EQ(slaveField1.pullUpdated(), true);
 
   masterField1.push("bar");
 
-  auto masterUpdate4 = master.writeNetState(masterUpdate3.second);
-  EXPECT_FALSE(masterUpdate4.first.empty());
-  slave.readNetState(masterUpdate4.first);
+  auto masterUpdate4 = master.writeNetState(masterUpdate3->second);
+  ASSERT_TRUE(masterUpdate4);
+  EXPECT_FALSE(masterUpdate4->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate4->first));
 
   EXPECT_EQ(slaveField1.get(), "bar");
   EXPECT_EQ(slaveField1.pullUpdated(), true);
 
-  auto masterUpdate5 = master.writeNetState(masterUpdate4.second);
-  EXPECT_TRUE(masterUpdate5.first.empty());
-  slave.readNetState(masterUpdate5.first);
+  auto masterUpdate5 = master.writeNetState(masterUpdate4->second);
+  ASSERT_TRUE(masterUpdate5);
+  EXPECT_TRUE(masterUpdate5->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate5->first));
 
   EXPECT_EQ(slaveField1.get(), "bar");
   EXPECT_EQ(slaveField1.pullUpdated(), false);
@@ -562,9 +588,10 @@ TEST(NetElements, FieldUpdated) {
   masterField3.trigger();
   masterField3.trigger();
 
-  auto masterUpdate6 = master.writeNetState(masterUpdate5.second);
-  EXPECT_FALSE(masterUpdate6.first.empty());
-  slave.readNetState(masterUpdate6.first);
+  auto masterUpdate6 = master.writeNetState(masterUpdate5->second);
+  ASSERT_TRUE(masterUpdate6);
+  EXPECT_FALSE(masterUpdate6->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate6->first));
 
   slaveField3.ignoreOccurrences();
   // occurrence should not come through after "ignoreOccurrences"
@@ -575,9 +602,10 @@ TEST(NetElements, FieldUpdated) {
   masterField3.trigger();
   masterField3.ignoreOccurrences();
 
-  auto masterUpdate7 = master.writeNetState(masterUpdate6.second);
-  EXPECT_FALSE(masterUpdate7.first.empty());
-  slave.readNetState(masterUpdate7.first);
+  auto masterUpdate7 = master.writeNetState(masterUpdate6->second);
+  ASSERT_TRUE(masterUpdate7);
+  EXPECT_FALSE(masterUpdate7->first.empty());
+  ASSERT_TRUE(slave.readNetState(masterUpdate7->first));
 
   // ignoreOccurrences is LOCAL only, so events should still go through to the
   // slave
@@ -591,8 +619,8 @@ TEST(NetElements, Interpolation) {
   NetElementData<String> masterField2;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
 
   masterField1.set(1.0f);
   masterField2.set("yes");
@@ -601,61 +629,65 @@ TEST(NetElements, Interpolation) {
   NetElementData<String> slaveField2;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
 
   slaveField1.setInterpolator(lerp<double, double>);
 
-  slave.enableNetInterpolation();
+  ASSERT_TRUE(slave.enableNetInterpolation());
 
   auto masterUpdate1 = master.writeNetState();
-  slave.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slave.readNetState(masterUpdate1->first));
 
   masterField1.set(2.0f);
   masterField2.set("no");
-  auto masterUpdate2 = master.writeNetState(masterUpdate1.second);
-  slave.readNetState(masterUpdate2.first, 2.0);
+  auto masterUpdate2 = master.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  ASSERT_TRUE(slave.readNetState(masterUpdate2->first, 2.0));
 
   masterField1.set(3.0f);
   masterField2.set("yes");
-  auto masterUpdate3 = master.writeNetState(masterUpdate2.second);
-  slave.readNetState(masterUpdate3.first, 4.0);
+  auto masterUpdate3 = master.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  ASSERT_TRUE(slave.readNetState(masterUpdate3->first, 4.0));
 
   masterField1.set(4.0f);
   masterField2.set("no");
-  auto masterUpdate4 = master.writeNetState(masterUpdate3.second);
-  slave.readNetState(masterUpdate4.first, 6.0);
+  auto masterUpdate4 = master.writeNetState(masterUpdate3->second);
+  ASSERT_TRUE(masterUpdate4);
+  ASSERT_TRUE(slave.readNetState(masterUpdate4->first, 6.0));
 
   EXPECT_TRUE(std::fabs(slaveField1.get() - 1.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 1.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 2.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "no");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 2.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "no");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 3.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 3.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
-  slave.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slave.tickNetInterpolation(1.0f));
   EXPECT_TRUE(std::fabs(slaveField1.get() - 4.0) < 0.001);
   EXPECT_EQ(slaveField2.pullUpdated(), true);
   EXPECT_EQ(slaveField2.get(), "no");
@@ -683,17 +715,17 @@ TEST(NetElements, AllTypes) {
   NetElementData<Vec2F> masterField11;
 
   NetElementTop<NetElementGroup> master;
-  master.addNetElement(&masterField1);
-  master.addNetElement(&masterField2);
-  master.addNetElement(&masterField3);
-  master.addNetElement(&masterField4);
-  master.addNetElement(&masterField5);
-  master.addNetElement(&masterField6);
-  master.addNetElement(&masterField7);
-  master.addNetElement(&masterField8);
-  master.addNetElement(&masterField9);
-  master.addNetElement(&masterField10);
-  master.addNetElement(&masterField11);
+  ASSERT_TRUE(master.addNetElement(&masterField1));
+  ASSERT_TRUE(master.addNetElement(&masterField2));
+  ASSERT_TRUE(master.addNetElement(&masterField3));
+  ASSERT_TRUE(master.addNetElement(&masterField4));
+  ASSERT_TRUE(master.addNetElement(&masterField5));
+  ASSERT_TRUE(master.addNetElement(&masterField6));
+  ASSERT_TRUE(master.addNetElement(&masterField7));
+  ASSERT_TRUE(master.addNetElement(&masterField8));
+  ASSERT_TRUE(master.addNetElement(&masterField9));
+  ASSERT_TRUE(master.addNetElement(&masterField10));
+  ASSERT_TRUE(master.addNetElement(&masterField11));
 
   masterField1.set(567);
   masterField2.set(17000);
@@ -734,19 +766,21 @@ TEST(NetElements, AllTypes) {
   NetElementData<Vec2F> slaveField11;
 
   NetElementTop<NetElementGroup> slave;
-  slave.addNetElement(&slaveField1);
-  slave.addNetElement(&slaveField2);
-  slave.addNetElement(&slaveField3);
-  slave.addNetElement(&slaveField4);
-  slave.addNetElement(&slaveField5);
-  slave.addNetElement(&slaveField6);
-  slave.addNetElement(&slaveField7);
-  slave.addNetElement(&slaveField8);
-  slave.addNetElement(&slaveField9);
-  slave.addNetElement(&slaveField10);
-  slave.addNetElement(&slaveField11);
+  ASSERT_TRUE(slave.addNetElement(&slaveField1));
+  ASSERT_TRUE(slave.addNetElement(&slaveField2));
+  ASSERT_TRUE(slave.addNetElement(&slaveField3));
+  ASSERT_TRUE(slave.addNetElement(&slaveField4));
+  ASSERT_TRUE(slave.addNetElement(&slaveField5));
+  ASSERT_TRUE(slave.addNetElement(&slaveField6));
+  ASSERT_TRUE(slave.addNetElement(&slaveField7));
+  ASSERT_TRUE(slave.addNetElement(&slaveField8));
+  ASSERT_TRUE(slave.addNetElement(&slaveField9));
+  ASSERT_TRUE(slave.addNetElement(&slaveField10));
+  ASSERT_TRUE(slave.addNetElement(&slaveField11));
 
-  slave.readNetState(master.writeNetState().first);
+  auto state = master.writeNetState();
+  ASSERT_TRUE(state);
+  ASSERT_TRUE(slave.readNetState(state->first));
 
   EXPECT_EQ(slaveField1.get(), 567);
   EXPECT_EQ(slaveField2.get(), 17000u);
@@ -764,9 +798,13 @@ TEST(NetElements, AllTypes) {
 TEST(NetElements, NetElementDynamicGroup) {
   class TestElement : public NetElementGroup {
   public:
-    TestElement(int value = 0) {
-      addNetElement(&dataState);
-      dataState.set(value);
+    [[nodiscard]] static std::expected<std::shared_ptr<TestElement>, StarException> create(int value = 0) {
+      auto element = std::shared_ptr<TestElement>(new TestElement());
+      auto added = element->addNetElement(&element->dataState);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      element->dataState.set(value);
+      return element;
     }
 
     void setData(int value) {
@@ -778,107 +816,293 @@ TEST(NetElements, NetElementDynamicGroup) {
     }
 
   private:
+    TestElement() = default;
     NetElementInt dataState;
   };
 
-  NetElementTop<NetElementDynamicGroup<TestElement>> masterGroup;
+  NetElementTop<NetElementDynamicGroup<TestElement>> masterGroup([] { return TestElement::create(); });
 
-  NetElementTop<NetElementDynamicGroup<TestElement>> slaveGroup;
+  NetElementTop<NetElementDynamicGroup<TestElement>> slaveGroup([] { return TestElement::create(); });
   std::uint64_t lastSlaveUpdateVersion = 0;
-  auto sendSlaveUpdate = [&]() {
+  auto sendSlaveUpdate = [&]() -> std::expected<void, StarException> {
     auto p = masterGroup.writeNetState(lastSlaveUpdateVersion);
-    lastSlaveUpdateVersion = p.second;
-    slaveGroup.readNetState(p.first);
+    if (!p)
+      return std::unexpected(std::move(p.error()));
+    lastSlaveUpdateVersion = p->second;
+    auto read = slaveGroup.readNetState(p->first);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    return {};
   };
 
-  auto objId1 = masterGroup.addNetElement(std::make_shared<TestElement>(1000));
-  auto objId2 = masterGroup.addNetElement(std::make_shared<TestElement>(2000));
+  auto element1 = TestElement::create(1000);
+  ASSERT_TRUE(element1);
+  auto objId1Result = masterGroup.addNetElement(std::move(*element1));
+  ASSERT_TRUE(objId1Result);
+  auto objId1 = *objId1Result;
+  auto element2 = TestElement::create(2000);
+  ASSERT_TRUE(element2);
+  auto objId2Result = masterGroup.addNetElement(std::move(*element2));
+  ASSERT_TRUE(objId2Result);
+  auto objId2 = *objId2Result;
 
   EXPECT_EQ(masterGroup.netElementIds().size(), 2u);
-  EXPECT_EQ(masterGroup.getNetElement(objId1)->getData(), 1000);
-  EXPECT_EQ(masterGroup.getNetElement(objId2)->getData(), 2000);
+  {
+    auto element = masterGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1000);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2000);
+  }
 
-  sendSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
 
   EXPECT_EQ(slaveGroup.netElementIds().size(), 2u);
-  EXPECT_EQ(slaveGroup.getNetElement(objId1)->getData(), 1000);
-  EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2000);
+  {
+    auto element = slaveGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1000);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2000);
+  }
 
-  masterGroup.getNetElement(objId1)->setData(1001);
-  masterGroup.getNetElement(objId2)->setData(2001);
+  {
+    auto element = masterGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(1001);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(2001);
+  }
 
-  sendSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
 
-  EXPECT_EQ(slaveGroup.getNetElement(objId1)->getData(), 1001);
-  EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2001);
+  {
+    auto element = slaveGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1001);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2001);
+  }
 
-  masterGroup.getNetElement(objId1)->setData(1002);
-  masterGroup.getNetElement(objId2)->setData(2002);
+  {
+    auto element = masterGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(1002);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(2002);
+  }
 
-  sendSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
 
-  EXPECT_EQ(masterGroup.getNetElement(objId1)->getData(), 1002);
-  EXPECT_EQ(masterGroup.getNetElement(objId2)->getData(), 2002);
-  EXPECT_EQ(slaveGroup.getNetElement(objId1)->getData(), 1002);
-  EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2002);
+  {
+    auto element = masterGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1002);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2002);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1002);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2002);
+  }
 
-  auto objId3 = masterGroup.addNetElement(std::make_shared<TestElement>(3001));
+  auto element3 = TestElement::create(3001);
+  ASSERT_TRUE(element3);
+  auto objId3Result = masterGroup.addNetElement(std::move(*element3));
+  ASSERT_TRUE(objId3Result);
+  auto objId3 = *objId3Result;
 
-  sendSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
 
   EXPECT_EQ(slaveGroup.netElementIds().size(), 3u);
-  EXPECT_EQ(slaveGroup.getNetElement(objId3)->getData(), 3001);
+  {
+    auto element = slaveGroup.getNetElement(objId3);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 3001);
+  }
 
   // Delta must be greater than MaxChangeDataSteps
-  auto objId4 = masterGroup.addNetElement(std::make_shared<TestElement>(4001));
-  masterGroup.getNetElement(objId3)->setData(3002);
-  masterGroup.getNetElement(objId4)->setData(4002);
+  auto element4 = TestElement::create(4001);
+  ASSERT_TRUE(element4);
+  auto objId4Result = masterGroup.addNetElement(std::move(*element4));
+  ASSERT_TRUE(objId4Result);
+  auto objId4 = *objId4Result;
+  {
+    auto element = masterGroup.getNetElement(objId3);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(3002);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(4002);
+  }
 
-  sendSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
 
   EXPECT_EQ(slaveGroup.netElementIds().size(), 4u);
-  EXPECT_EQ(slaveGroup.getNetElement(objId1)->getData(), 1002);
-  EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2002);
-  EXPECT_EQ(slaveGroup.getNetElement(objId3)->getData(), 3002);
-  EXPECT_EQ(slaveGroup.getNetElement(objId4)->getData(), 4002);
+  {
+    auto element = slaveGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1002);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2002);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId3);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 3002);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 4002);
+  }
 
-  NetElementTop<NetElementDynamicGroup<TestElement>> forwardedSlaveGroup;
+  NetElementTop<NetElementDynamicGroup<TestElement>> forwardedSlaveGroup([] { return TestElement::create(); });
   std::uint64_t lastForwardedSlaveUpdateVersion = 0;
-  auto sendForwardedSlaveUpdate = [&]() {
+  auto sendForwardedSlaveUpdate = [&]() -> std::expected<void, StarException> {
     auto p = slaveGroup.writeNetState(lastForwardedSlaveUpdateVersion);
-    lastForwardedSlaveUpdateVersion = p.second;
-    forwardedSlaveGroup.readNetState(p.first);
+    if (!p)
+      return std::unexpected(std::move(p.error()));
+    lastForwardedSlaveUpdateVersion = p->second;
+    auto read = forwardedSlaveGroup.readNetState(p->first);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    return {};
   };
 
-  sendForwardedSlaveUpdate();
+  ASSERT_TRUE(sendForwardedSlaveUpdate());
 
   EXPECT_EQ(forwardedSlaveGroup.netElementIds().size(), 4u);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId1)->getData(), 1002);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId2)->getData(), 2002);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId3)->getData(), 3002);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId4)->getData(), 4002);
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId1);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 1002);
+  }
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2002);
+  }
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId3);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 3002);
+  }
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 4002);
+  }
 
   masterGroup.removeNetElement(objId1);
   masterGroup.removeNetElement(objId3);
-  masterGroup.getNetElement(objId2)->setData(2003);
-  masterGroup.getNetElement(objId4)->setData(4003);
+  {
+    auto element = masterGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(2003);
+  }
+  {
+    auto element = masterGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    (*element)->setData(4003);
+  }
 
-  sendSlaveUpdate();
-  sendForwardedSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
+  ASSERT_TRUE(sendForwardedSlaveUpdate());
 
-  auto obj5 = masterGroup.addNetElement(std::make_shared<TestElement>(5001));
+  auto element5 = TestElement::create(5001);
+  ASSERT_TRUE(element5);
+  auto obj5Result = masterGroup.addNetElement(std::move(*element5));
+  ASSERT_TRUE(obj5Result);
+  auto obj5 = *obj5Result;
   masterGroup.removeNetElement(obj5);
 
-  sendSlaveUpdate();
-  sendForwardedSlaveUpdate();
+  ASSERT_TRUE(sendSlaveUpdate());
+  ASSERT_TRUE(sendForwardedSlaveUpdate());
 
   EXPECT_EQ(slaveGroup.netElementIds().size(), 2u);
-  EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2003);
-  EXPECT_EQ(slaveGroup.getNetElement(objId4)->getData(), 4003);
+  {
+    auto element = slaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2003);
+  }
+  {
+    auto element = slaveGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 4003);
+  }
 
   EXPECT_EQ(forwardedSlaveGroup.netElementIds().size(), 2u);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId2)->getData(), 2003);
-  EXPECT_EQ(forwardedSlaveGroup.getNetElement(objId4)->getData(), 4003);
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId2);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 2003);
+  }
+  {
+    auto element = forwardedSlaveGroup.getNetElement(objId4);
+    ASSERT_TRUE(element);
+    ASSERT_TRUE(*element);
+    EXPECT_EQ((*element)->getData(), 4003);
+  }
 }
 
 TEST(NetElements, NetElementMap) {
@@ -887,53 +1111,84 @@ TEST(NetElements, NetElementMap) {
 
   std::uint64_t lastUpdateVersion = 0;
 
-  auto sendUpdate = [&]() {
-    DataStreamBuffer ds;
+  auto sendUpdate = [&]() -> std::expected<bool, StarException> {
     auto p = masterMap.writeNetState(lastUpdateVersion);
-    slaveMap.readNetState(p.first);
-    lastUpdateVersion = p.second;
-    return !p.first.empty();
+    if (!p)
+      return std::unexpected(std::move(p.error()));
+    auto read = slaveMap.readNetState(p->first);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    lastUpdateVersion = p->second;
+    return !p->first.empty();
   };
 
-  masterMap.add("foo", "bar");
-  masterMap.add("baz", "bof");
+  ASSERT_TRUE(masterMap.add("foo", "bar"));
+  ASSERT_TRUE(masterMap.add("baz", "bof"));
 
   EXPECT_EQ(masterMap.size(), 2u);
 
-  sendUpdate();
+  ASSERT_TRUE(sendUpdate());
 
   EXPECT_EQ(slaveMap.size(), 2u);
-  EXPECT_EQ(slaveMap.get("foo"), "bar");
-  EXPECT_EQ(slaveMap.get("baz"), "bof");
+  {
+    auto value = slaveMap.get("foo");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bar");
+  }
+  {
+    auto value = slaveMap.get("baz");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bof");
+  }
 
-  masterMap.add("bif", "fob");
+  ASSERT_TRUE(masterMap.add("bif", "fob"));
   masterMap.remove("foo");
 
-  sendUpdate();
+  ASSERT_TRUE(sendUpdate());
 
   EXPECT_EQ(slaveMap.size(), 2u);
-  EXPECT_EQ(slaveMap.get("bif"), "fob");
+  {
+    auto value = slaveMap.get("bif");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fob");
+  }
 
   masterMap.clear();
   masterMap.set("fib", "fab");
 
-  sendUpdate();
+  ASSERT_TRUE(sendUpdate());
 
   EXPECT_EQ(slaveMap.size(), 1u);
-  EXPECT_EQ(slaveMap.get("fib"), "fab");
+  {
+    auto value = slaveMap.get("fib");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fab");
+  }
 
   masterMap.set("fib", "fab");
 
-  EXPECT_FALSE(sendUpdate());
+  EXPECT_EQ(sendUpdate(), false);
 
   masterMap.reset({{"a", "b"}, {"c", "d"}, {"e", "f"}});
 
-  sendUpdate();
+  ASSERT_TRUE(sendUpdate());
 
   EXPECT_EQ(slaveMap.size(), 3u);
-  EXPECT_EQ(slaveMap.get("a"), "b");
-  EXPECT_EQ(slaveMap.get("c"), "d");
-  EXPECT_EQ(slaveMap.get("e"), "f");
+  {
+    auto value = slaveMap.get("a");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "b");
+  }
+  {
+    auto value = slaveMap.get("c");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "d");
+  }
+  {
+    auto value = slaveMap.get("e");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "f");
+  }
 }
 
 TEST(NetElements, NetElementMapInterpolated) {
@@ -943,78 +1198,126 @@ TEST(NetElements, NetElementMapInterpolated) {
 
   TestMap forwarderMap;
   std::uint64_t lastForwarderUpdateVersion = 0;
-  auto sendForwarderUpdate = [&]() {
+  auto sendForwarderUpdate = [&]() -> std::expected<bool, StarException> {
     auto p = masterMap.writeNetState(lastForwarderUpdateVersion);
-    lastForwarderUpdateVersion = p.second;
-    forwarderMap.readNetState(p.first);
-    return !p.first.empty();
+    if (!p)
+      return std::unexpected(std::move(p.error()));
+    lastForwarderUpdateVersion = p->second;
+    auto read = forwarderMap.readNetState(p->first);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    return !p->first.empty();
   };
 
   TestMap slaveMap;
   std::uint64_t lastSlaveUpdateVersion = 0;
-  auto sendSlaveUpdate = [&](float interpolationTime) {
+  auto sendSlaveUpdate = [&](float interpolationTime) -> std::expected<bool, StarException> {
     auto p = forwarderMap.writeNetState(lastSlaveUpdateVersion);
-    lastSlaveUpdateVersion = p.second;
-    slaveMap.readNetState(p.first, interpolationTime);
-    return !p.first.empty();
+    if (!p)
+      return std::unexpected(std::move(p.error()));
+    lastSlaveUpdateVersion = p->second;
+    auto read = slaveMap.readNetState(p->first, interpolationTime);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    return !p->first.empty();
   };
 
-  slaveMap.enableNetInterpolation();
+  ASSERT_TRUE(slaveMap.enableNetInterpolation());
 
-  masterMap.add("foo", "bar");
-  masterMap.add("baz", "bof");
+  ASSERT_TRUE(masterMap.add("foo", "bar"));
+  ASSERT_TRUE(masterMap.add("baz", "bof"));
 
   EXPECT_EQ(masterMap.size(), 2u);
 
-  sendForwarderUpdate();
-  sendSlaveUpdate(0.0f);
+  ASSERT_TRUE(sendForwarderUpdate());
+  ASSERT_TRUE(sendSlaveUpdate(0.0f));
 
   EXPECT_EQ(slaveMap.size(), 2u);
-  EXPECT_EQ(slaveMap.get("foo"), "bar");
-  EXPECT_EQ(slaveMap.get("baz"), "bof");
+  {
+    auto value = slaveMap.get("foo");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bar");
+  }
+  {
+    auto value = slaveMap.get("baz");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bof");
+  }
 
-  masterMap.add("bif", "fob");
-  masterMap.add("qux", "qux");
+  ASSERT_TRUE(masterMap.add("bif", "fob"));
+  ASSERT_TRUE(masterMap.add("qux", "qux"));
   masterMap.remove("foo");
 
-  sendForwarderUpdate();
-  sendSlaveUpdate(1.0f);
+  ASSERT_TRUE(sendForwarderUpdate());
+  ASSERT_TRUE(sendSlaveUpdate(1.0f));
 
   EXPECT_EQ(slaveMap.size(), 2u);
-  EXPECT_EQ(slaveMap.get("foo"), "bar");
-  EXPECT_EQ(slaveMap.get("baz"), "bof");
+  {
+    auto value = slaveMap.get("foo");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bar");
+  }
+  {
+    auto value = slaveMap.get("baz");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bof");
+  }
 
-  slaveMap.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slaveMap.tickNetInterpolation(1.0f));
 
   EXPECT_EQ(slaveMap.size(), 3u);
-  EXPECT_EQ(slaveMap.get("baz"), "bof");
-  EXPECT_EQ(slaveMap.get("bif"), "fob");
-  EXPECT_EQ(slaveMap.get("qux"), "qux");
+  {
+    auto value = slaveMap.get("baz");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "bof");
+  }
+  {
+    auto value = slaveMap.get("bif");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fob");
+  }
+  {
+    auto value = slaveMap.get("qux");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "qux");
+  }
 
   masterMap.clear();
   masterMap.set("fib", "fab");
 
-  sendForwarderUpdate();
-  sendSlaveUpdate(1.0f);
+  ASSERT_TRUE(sendForwarderUpdate());
+  ASSERT_TRUE(sendSlaveUpdate(1.0f));
 
   EXPECT_EQ(slaveMap.size(), 3u);
 
-  slaveMap.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slaveMap.tickNetInterpolation(1.0f));
 
   EXPECT_EQ(forwarderMap.size(), 1u);
   EXPECT_EQ(slaveMap.size(), 1u);
-  EXPECT_EQ(slaveMap.get("fib"), "fab");
+  {
+    auto value = slaveMap.get("fib");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fab");
+  }
 
   masterMap.set("fob", "fub");
 
-  sendForwarderUpdate();
-  sendSlaveUpdate(1.0f);
+  ASSERT_TRUE(sendForwarderUpdate());
+  ASSERT_TRUE(sendSlaveUpdate(1.0f));
 
   EXPECT_EQ(slaveMap.size(), 1u);
-  slaveMap.disableNetInterpolation();
+  ASSERT_TRUE(slaveMap.disableNetInterpolation());
   EXPECT_EQ(slaveMap.size(), 2u);
-  EXPECT_EQ(slaveMap.get("fib"), "fab");
-  EXPECT_EQ(slaveMap.get("fob"), "fub");
+  {
+    auto value = slaveMap.get("fib");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fab");
+  }
+  {
+    auto value = slaveMap.get("fob");
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, "fub");
+  }
 }
 
 TEST(NetElements, NetElementSignal) {
@@ -1022,19 +1325,20 @@ TEST(NetElements, NetElementSignal) {
   NetElementSignal<int> masterSignal2;
 
   NetElementTopGroup masterGroup;
-  masterGroup.addNetElement(&masterSignal1);
-  masterGroup.addNetElement(&masterSignal2);
+  ASSERT_TRUE(masterGroup.addNetElement(&masterSignal1));
+  ASSERT_TRUE(masterGroup.addNetElement(&masterSignal2));
 
   NetElementSignal<int> slaveSignal1;
   NetElementSignal<int> slaveSignal2;
 
   NetElementTopGroup slaveGroup;
-  slaveGroup.addNetElement(&slaveSignal1);
-  slaveGroup.addNetElement(&slaveSignal2);
+  ASSERT_TRUE(slaveGroup.addNetElement(&slaveSignal1));
+  ASSERT_TRUE(slaveGroup.addNetElement(&slaveSignal2));
 
   // No signals are supposed to be sent for the initial write
   auto masterUpdate1 = masterGroup.writeNetState();
-  slaveGroup.readNetState(masterUpdate1.first);
+  ASSERT_TRUE(masterUpdate1);
+  ASSERT_TRUE(slaveGroup.readNetState(masterUpdate1->first));
 
   masterSignal1.send(101);
   masterSignal2.send(201);
@@ -1045,8 +1349,9 @@ TEST(NetElements, NetElementSignal) {
   EXPECT_EQ(masterSignal1.receive(), List<int>({}));
   EXPECT_EQ(masterSignal2.receive(), List<int>({}));
 
-  auto masterUpdate2 = masterGroup.writeNetState(masterUpdate1.second);
-  slaveGroup.readNetState(masterUpdate2.first);
+  auto masterUpdate2 = masterGroup.writeNetState(masterUpdate1->second);
+  ASSERT_TRUE(masterUpdate2);
+  ASSERT_TRUE(slaveGroup.readNetState(masterUpdate2->first));
 
   EXPECT_EQ(slaveSignal1.receive(), List<int>({101}));
   EXPECT_EQ(slaveSignal2.receive(), List<int>({201}));
@@ -1057,15 +1362,16 @@ TEST(NetElements, NetElementSignal) {
   masterSignal1.send(102);
   masterSignal2.send(202);
 
-  slaveGroup.enableNetInterpolation();
+  ASSERT_TRUE(slaveGroup.enableNetInterpolation());
 
-  auto masterUpdate3 = masterGroup.writeNetState(masterUpdate2.second);
-  slaveGroup.readNetState(masterUpdate3.first, 1.0f);
+  auto masterUpdate3 = masterGroup.writeNetState(masterUpdate2->second);
+  ASSERT_TRUE(masterUpdate3);
+  ASSERT_TRUE(slaveGroup.readNetState(masterUpdate3->first, 1.0f));
 
   EXPECT_EQ(slaveSignal1.receive(), List<int>({}));
   EXPECT_EQ(slaveSignal2.receive(), List<int>({}));
 
-  slaveGroup.tickNetInterpolation(1.0f);
+  ASSERT_TRUE(slaveGroup.tickNetInterpolation(1.0f));
 
   EXPECT_EQ(slaveSignal1.receive(), List<int>({102}));
   EXPECT_EQ(slaveSignal2.receive(), List<int>({202}));

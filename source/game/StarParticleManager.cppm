@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.color;
@@ -60,7 +61,7 @@ public:
   void setUndergroundLevel(float undergroundLevel);
 
   // Updates current particles and spawns new weather particles
-  void update(float dt, RectF const& cullRegion, float wind);
+  [[nodiscard]] std::expected<void, StarException> update(float dt, RectF const& cullRegion, float wind);
 
   List<Particle> const& particles() const;
   List<std::pair<Vec2F, Vec3F>> lightSources() const;

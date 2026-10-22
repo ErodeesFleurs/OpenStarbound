@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 
 import star.color;
 import star.string;
@@ -50,7 +51,7 @@ inline constexpr EntityRenderLayer RenderLayerForegroundOverlay = 20 << RenderLa
 inline constexpr EntityRenderLayer RenderLayerFrontParticle = 21 << RenderLayerLowerBits;
 inline constexpr EntityRenderLayer RenderLayerOverlay = 22 << RenderLayerLowerBits;
 
-EntityRenderLayer parseRenderLayer(String renderLayer);
+[[nodiscard]] std::expected<EntityRenderLayer, StarException> parseRenderLayer(String renderLayer);
 
 struct PreviewTile {
   PreviewTile();
@@ -73,7 +74,7 @@ struct PreviewTile {
 
 struct OverheadBar {
   OverheadBar();
-  OverheadBar(Json const& json);
+  [[nodiscard]] static std::expected<OverheadBar, StarException> create(Json const& json);
   OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly);
 
   Vec2F entityPosition;
@@ -90,7 +91,7 @@ enum class EntityHighlightEffectType {
   Interesting,
   Inspected
 };
-extern EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames;
+extern std::expected<EnumMap<EntityHighlightEffectType>, StarException> const EntityHighlightEffectTypeNames;
 
 struct EntityHighlightEffect {
   EntityHighlightEffectType type = EntityHighlightEffectType::None;

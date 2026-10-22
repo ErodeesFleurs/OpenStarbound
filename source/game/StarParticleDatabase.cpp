@@ -32,10 +32,27 @@ import star.particle_database;
 
 namespace Star {
 
-ParticleConfig::ParticleConfig(Root& root, Json const& config) : m_root(root) {
-  m_kind = config.getString("kind");
-  m_particle = Particle(root, config.queryObject("definition"));
-  m_variance = Particle(root, config.queryObject("definition.variance", {}));
+std::expected<std::shared_ptr<ParticleConfig>, StarException> ParticleConfig::create(Root& root, Json const& config) {
+  auto result = std::shared_ptr<ParticleConfig>(new ParticleConfig(root));
+  auto kind = config.getString("kind");
+  if (!kind)
+    return std::unexpected(std::move(kind.error()));
+  result->m_kind = std::move(*kind);
+  auto definition = config.queryObject("definition");
+  if (!definition)
+    return std::unexpected(std::move(definition.error()));
+  auto particle = Particle::create(root, *definition);
+  if (!particle)
+    return std::unexpected(std::move(particle.error()));
+  result->m_particle = std::move(*particle);
+  auto varianceDefinition = config.queryObject("definition.variance", {});
+  if (!varianceDefinition)
+    return std::unexpected(std::move(varianceDefinition.error()));
+  auto variance = Particle::create(root, *varianceDefinition);
+  if (!variance)
+    return std::unexpected(std::move(variance.error()));
+  result->m_variance = std::move(*variance);
+  return result;
 }
 
 String const& ParticleConfig::kind() {
@@ -48,38 +65,70 @@ Particle ParticleConfig::instance() {
   return particle;
 }
 
-ParticleDatabase::ParticleDatabase(Root& root) : m_root(root) {
-  auto assets = m_root.assets();
-  auto& files = assets->scanExtension("particle");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    auto particleConfig = std::make_shared<ParticleConfig>(m_root, assets->json(file));
-    if (m_configs.contains(particleConfig->kind()))
-      throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
-    m_configs[particleConfig->kind()] = particleConfig;
+std::expected<std::shared_ptr<ParticleDatabase>, StarException> ParticleDatabase::create(Root& root) {
+  auto result = std::shared_ptr<ParticleDatabase>(new ParticleDatabase(root));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("particle");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = (*assets)->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& file : **files) {
+    auto json = (*assets)->json(file.string());
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto config = ParticleConfig::create(root, *json);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if (result->m_configs.contains((*config)->kind()))
+      return std::unexpected(StarException(strf("Duplicate particle asset kind Name {}. configfile {}", (*config)->kind(), file.string())));
+    result->m_configs[(*config)->kind()] = std::move(*config);
   }
+  return result;
 }
 
-std::shared_ptr<ParticleConfig> ParticleDatabase::config(String const& kind) const {
-  auto k = kind.toLower();
-  if (!m_configs.contains(k))
-    throw StarException(strf("Unknown particle definition with kind {}.", kind));
-  return m_configs.get(k);
+std::expected<std::shared_ptr<ParticleConfig>, StarException> ParticleDatabase::config(String const& kind) const {
+  auto key = kind.toLower();
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  if (auto config = m_configs.ptr(*key))
+    return *config;
+  return std::unexpected(StarException(strf("Unknown particle definition with kind {}.", kind)));
 }
 
-ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfig, String const& relativePath) const {
+std::expected<ParticleVariantCreator, StarException> ParticleDatabase::particleCreator(Json const& kindOrConfig, String const& relativePath) const {
   if (kindOrConfig.isType(Json::Type::String)) {
-    auto pconfig = config(kindOrConfig.toString());
-    return [pconfig]() { return pconfig->instance(); };
-  } else {
-    Particle particle(m_root, kindOrConfig.toObject(), relativePath);
-    Particle variance(m_root, kindOrConfig.getObject("variance", {}), relativePath);
-    return makeParticleVariantCreator(m_root, std::move(particle), std::move(variance));
+    auto name = kindOrConfig.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto particleConfig = config(*name);
+    if (!particleConfig)
+      return std::unexpected(std::move(particleConfig.error()));
+    return ParticleVariantCreator([config = std::move(*particleConfig)]() { return config->instance(); });
   }
+  auto definition = kindOrConfig.toObject();
+  if (!definition)
+    return std::unexpected(std::move(definition.error()));
+  auto particle = Particle::create(m_root, *definition, relativePath);
+  if (!particle)
+    return std::unexpected(std::move(particle.error()));
+  auto varianceDefinition = kindOrConfig.getObject("variance", {});
+  if (!varianceDefinition)
+    return std::unexpected(std::move(varianceDefinition.error()));
+  auto variance = Particle::create(m_root, *varianceDefinition, relativePath);
+  if (!variance)
+    return std::unexpected(std::move(variance.error()));
+  return makeParticleVariantCreator(m_root, std::move(*particle), std::move(*variance));
 }
 
-Particle ParticleDatabase::particle(Json const& kindOrConfig, String const& relativePath) const {
-  return particleCreator(kindOrConfig, relativePath)();
+std::expected<Particle, StarException> ParticleDatabase::particle(Json const& kindOrConfig, String const& relativePath) const {
+  auto creator = particleCreator(kindOrConfig, relativePath);
+  if (!creator)
+    return std::unexpected(std::move(creator.error()));
+  return (*creator)();
 }
 
 }

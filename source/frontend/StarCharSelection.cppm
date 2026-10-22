@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -52,21 +53,24 @@ public:
     return Star::typeName<CharSelectionPane>();
   }
 
-  typedef std::function<void()> CreateCharCallback;
-  typedef std::function<void(std::shared_ptr<Player> const&)> SelectCharacterCallback;
-  typedef std::function<void(Uuid)> DeleteCharacterCallback;
+  typedef std::function<std::expected<void, StarException>()> CreateCharCallback;
+  typedef std::function<std::expected<void, StarException>(std::shared_ptr<Player> const&)> SelectCharacterCallback;
+  typedef std::function<std::expected<void, StarException>(Uuid)> DeleteCharacterCallback;
 
-  CharSelectionPane(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
+  [[nodiscard]] static std::expected<std::shared_ptr<CharSelectionPane>, StarException> create(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
 
-  bool sendEvent(InputEvent const& event) override;
-  void show() override;
-  void updateCharacterPlates();
-  void setReadOnly(bool readOnly);
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> updateCharacterPlates();
+  [[nodiscard]] std::expected<void, StarException> setReadOnly(bool readOnly);
 
 private:
-  void shiftCharacters(int movement);
-  void selectCharacter(unsigned buttonIndex);
+  CharSelectionPane(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
+      SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
+  [[nodiscard]] std::expected<void, StarException> init();
+  [[nodiscard]] std::expected<void, StarException> shiftCharacters(int movement);
+  [[nodiscard]] std::expected<void, StarException> selectCharacter(unsigned buttonIndex);
 
   std::shared_ptr<PlayerStorage> m_playerStorage;
   unsigned m_downScroll;

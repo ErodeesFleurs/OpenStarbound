@@ -3,6 +3,7 @@ import std;
 import star.string;
 import star.map;
 import star.json;
+import star.format;
 
 import star.ordered_set;
 import star.data_stream;
@@ -23,17 +24,17 @@ class Root;
 
 class AiDatabase {
 public:
-  explicit AiDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<AiDatabase>, StarException> create(Root& root);
 
-  AiMission mission(String const& missionName) const;
+  [[nodiscard]] std::expected<AiMission, StarException> mission(String const& missionName) const;
 
-  AiSpeech shipStatus(unsigned shipLevel) const;
+  [[nodiscard]] std::expected<AiSpeech, StarException> shipStatus(unsigned shipLevel) const;
   AiSpeech noMissionsSpeech() const;
   AiSpeech noCrewSpeech() const;
 
-  String portraitImage(String const& species, String const& frame = "idle.0") const;
-  Animation animation(String const& species, String const& animationName) const;
-  Animation staticAnimation(String const& species) const;
+  [[nodiscard]] std::expected<String, StarException> portraitImage(String const& species, String const& frame = "idle.0") const;
+  [[nodiscard]] std::expected<Animation, StarException> animation(String const& species, String const& animationName) const;
+  [[nodiscard]] std::expected<Animation, StarException> staticAnimation(String const& species) const;
   Animation scanlineAnimation() const;
 
   float charactersPerSecond() const;
@@ -41,7 +42,8 @@ public:
 
 private:
   struct AiAnimationConfig {
-    explicit AiAnimationConfig(Root& root) : staticAnimation(root), scanlineAnimation(root) {}
+    AiAnimationConfig(Animation staticAnimation, Animation scanlineAnimation)
+      : staticAnimation(std::move(staticAnimation)), scanlineAnimation(std::move(scanlineAnimation)) {}
 
     StringMap<Animation> aiAnimations;
     String defaultAnimation;
@@ -60,11 +62,12 @@ private:
     String staticFrames;
   };
 
-  static AiSpeech parseSpeech(Json const& v);
-  static AiSpeciesParameters parseSpeciesParameters(Json const& vm);
+  AiDatabase(Animation staticAnimation, Animation scanlineAnimation);
+  [[nodiscard]] static std::expected<AiSpeech, StarException> parseSpeech(Json const& v);
+  [[nodiscard]] static std::expected<AiSpeciesParameters, StarException> parseSpeciesParameters(Json const& vm);
 
-  static AiSpeciesMissionText parseSpeciesMissionText(Json const& vm);
-  static AiMission parseMission(Json const& vm);
+  [[nodiscard]] static std::expected<AiSpeciesMissionText, StarException> parseSpeciesMissionText(Json const& vm);
+  [[nodiscard]] static std::expected<AiMission, StarException> parseMission(Json const& vm);
 
   StringMap<AiMission> m_missions;
   StringMap<AiSpeciesParameters> m_speciesParameters;

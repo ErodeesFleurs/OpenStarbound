@@ -53,71 +53,111 @@ class ImageMetadataDatabase;
 
 class MaterialDatabase {
 public:
-  MaterialDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<ParticleDatabase const> const& particles, ImageMetadataDatabase const& imageMetadata, Logger& logger, RandomService& random);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<MaterialDatabase>, StarException> create(std::shared_ptr<Assets const> const& assets, std::shared_ptr<ParticleDatabase const> const& particles, ImageMetadataDatabase const& imageMetadata, Logger& logger, RandomService& random);
 
   StringList materialNames() const;
   bool isMetaMaterialName(String const& name) const;
   bool isMaterialName(String const& name) const;
   bool isValidMaterialId(MaterialId material) const;
-  MaterialId materialId(String const& materialName) const;
-  String materialName(MaterialId materialId) const;
-  std::optional<String> materialPath(MaterialId materialId) const;
-  std::optional<Json> materialConfig(MaterialId materialId) const;
-  String materialDescription(MaterialId materialId, String const& species) const;
-  String materialDescription(MaterialId materialId) const;
-  String materialShortDescription(MaterialId materialId) const;
-  String materialCategory(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<MaterialId, StarException> materialId(String const& materialName) const;
+  [[nodiscard]]
+  std::expected<String, StarException> materialName(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> materialPath(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<std::optional<Json>, StarException> materialConfig(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> materialDescription(MaterialId materialId, String const& species) const;
+  [[nodiscard]]
+  std::expected<String, StarException> materialDescription(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> materialShortDescription(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> materialCategory(MaterialId materialId) const;
 
   StringList modNames() const;
   bool isModName(String const& name) const;
   bool isValidModId(ModId mod) const;
-  ModId modId(String const& modName) const;
-  String const& modName(ModId modId) const;
-  std::optional<String> modPath(ModId modId) const;
-  std::optional<Json> modConfig(ModId modId) const;
-  String modDescription(ModId modId, String const& species) const;
-  String modDescription(ModId modId) const;
-  String modShortDescription(ModId modId) const;
+  [[nodiscard]]
+  std::expected<ModId, StarException> modId(String const& modName) const;
+  [[nodiscard]]
+  std::expected<String const*, StarException> modName(ModId modId) const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> modPath(ModId modId) const;
+  [[nodiscard]]
+  std::expected<std::optional<Json>, StarException> modConfig(ModId modId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> modDescription(ModId modId, String const& species) const;
+  [[nodiscard]]
+  std::expected<String, StarException> modDescription(ModId modId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> modShortDescription(ModId modId) const;
 
   // Will return nullptr if no rendering profile is available
   std::shared_ptr<MaterialRenderProfile const> materialRenderProfile(MaterialId modId) const;
   std::shared_ptr<MaterialRenderProfile const> modRenderProfile(ModId modId) const;
 
-  TileDamageParameters materialDamageParameters(MaterialId materialId) const;
-  TileDamageParameters modDamageParameters(ModId modId) const;
+  [[nodiscard]]
+  std::expected<TileDamageParameters, StarException> materialDamageParameters(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<TileDamageParameters, StarException> modDamageParameters(ModId modId) const;
 
-  bool modBreaksWithTile(ModId modId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> modBreaksWithTile(ModId modId) const;
 
-  CollisionKind materialCollisionKind(MaterialId materialId) const;
-  bool canPlaceInLayer(MaterialId materialId, TileLayer layer) const;
+  [[nodiscard]]
+  std::expected<CollisionKind, StarException> materialCollisionKind(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceInLayer(MaterialId materialId, TileLayer layer) const;
 
   // Returned ItemDescriptor may be null
-  ItemDescriptor materialItemDrop(MaterialId materialId) const;
-  ItemDescriptor modItemDrop(ModId modId) const;
+  [[nodiscard]]
+  std::expected<ItemDescriptor, StarException> materialItemDrop(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<ItemDescriptor, StarException> modItemDrop(ModId modId) const;
 
-  MaterialColorVariant materialColorVariants(MaterialId materialId) const;
-  MaterialColorVariant modColorVariants(ModId modId) const;
-  bool isMultiColor(MaterialId materialId) const;
-  bool foregroundLightTransparent(MaterialId materialId) const;
-  bool backgroundLightTransparent(MaterialId materialId) const;
-  bool occludesBehind(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<MaterialColorVariant, StarException> materialColorVariants(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<MaterialColorVariant, StarException> modColorVariants(ModId modId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> isMultiColor(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> foregroundLightTransparent(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> backgroundLightTransparent(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> occludesBehind(MaterialId materialId) const;
 
-  std::shared_ptr<ParticleConfig> miningParticle(MaterialId materialId, ModId modId = NoModId) const;
-  String miningSound(MaterialId materialId, ModId modId = NoModId) const;
-  String footstepSound(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<ParticleConfig>, StarException> miningParticle(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> miningSound(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]]
+  std::expected<String, StarException> footstepSound(MaterialId materialId, ModId modId = NoModId) const;
   String defaultFootstepSound() const;
 
-  Color materialParticleColor(MaterialId materialId, MaterialHue hueShift) const;
+  [[nodiscard]]
+  std::expected<Color, StarException> materialParticleColor(MaterialId materialId, MaterialHue hueShift) const;
   Vec3F radiantLight(MaterialId materialId, ModId modId) const;
 
-  bool supportsMod(MaterialId materialId, ModId modId) const;
-  ModId tilledModFor(MaterialId materialId) const;
-  bool isTilledMod(ModId modId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> supportsMod(MaterialId materialId, ModId modId) const;
+  [[nodiscard]]
+  std::expected<ModId, StarException> tilledModFor(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> isTilledMod(ModId modId) const;
 
-  bool isSoil(MaterialId materialId) const;
-  bool isFallingMaterial(MaterialId materialId) const;
-  bool isCascadingFallingMaterial(MaterialId materialId) const;
-  bool blocksLiquidFlow(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> isSoil(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> isFallingMaterial(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> isCascadingFallingMaterial(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> blocksLiquidFlow(MaterialId materialId) const;
 
   // Returns the amount of liquid to consume, and optionally the material / mod
   // to transform to (may be NullMaterialId / NullModId)
@@ -125,6 +165,9 @@ public:
   std::optional<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
 
 private:
+  explicit MaterialDatabase(RandomService& random) : m_random(random) {}
+  [[nodiscard]]
+  std::expected<void, StarException> load(std::shared_ptr<Assets const> const& assets, std::shared_ptr<ParticleDatabase const> const& particles, ImageMetadataDatabase const& imageMetadata, Logger& logger);
   RandomService& m_random;
   struct MetaMaterialInfo {
     MetaMaterialInfo(String name, MaterialId id, CollisionKind collisionKind, bool blocksLiquidFlow);
@@ -196,9 +239,12 @@ private:
   bool containsMod(ModId modId) const;
   void setMod(ModId modId, ModInfo info);
 
-  std::shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
-  std::shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
-  std::shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
+  [[nodiscard]]
+  std::expected<MetaMaterialInfo const*, StarException> getMetaMaterialInfo(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<MaterialInfo const*, StarException> getMaterialInfo(MaterialId materialId) const;
+  [[nodiscard]]
+  std::expected<ModInfo const*, StarException> getModInfo(ModId modId) const;
 
   List<std::shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
   StringMap<MaterialId> m_metaMaterialIndex;
@@ -234,39 +280,33 @@ inline std::shared_ptr<MaterialRenderProfile const> MaterialDatabase::modRenderP
   return {};
 }
 
-inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {
+[[nodiscard]]
+inline std::expected<bool, StarException> MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
-    auto const& matInfo = getMaterialInfo(materialId);
-    if (matInfo->materialRenderProfile)
-      return matInfo->materialRenderProfile->foregroundLightTransparent;
+    auto info = getMaterialInfo(materialId);
+    if (!info) return std::unexpected(std::move(info.error()));
+    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->foregroundLightTransparent;
   }
-
-  if (materialId == StructureMaterialId)
-    return false;
-
-  return true;
+  return materialId != StructureMaterialId;
 }
 
-inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const {
+[[nodiscard]]
+inline std::expected<bool, StarException> MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
-    auto const& matInfo = getMaterialInfo(materialId);
-    if (matInfo->materialRenderProfile)
-      return matInfo->materialRenderProfile->backgroundLightTransparent;
+    auto info = getMaterialInfo(materialId);
+    if (!info) return std::unexpected(std::move(info.error()));
+    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->backgroundLightTransparent;
   }
-
-  if (materialId == StructureMaterialId)
-    return false;
-
-  return true;
+  return materialId != StructureMaterialId;
 }
 
-inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
+[[nodiscard]]
+inline std::expected<bool, StarException> MaterialDatabase::occludesBehind(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
-    auto const& matInfo = getMaterialInfo(materialId);
-    if (matInfo->materialRenderProfile)
-      return matInfo->materialRenderProfile->occludesBehind;
+    auto info = getMaterialInfo(materialId);
+    if (!info) return std::unexpected(std::move(info.error()));
+    if ((*info)->materialRenderProfile) return (*info)->materialRenderProfile->occludesBehind;
   }
-
   return false;
 }
 
@@ -285,12 +325,16 @@ inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) 
   return radiantLight;
 }
 
-inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
-  if (isRealMaterial(materialId))
-    return getMaterialInfo(materialId)->blocksLiquidFlow;
-  else
-    return getMetaMaterialInfo(materialId)->blocksLiquidFlow;
-
+[[nodiscard]]
+inline std::expected<bool, StarException> MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
+  if (isRealMaterial(materialId)) {
+    auto info = getMaterialInfo(materialId);
+    if (!info) return std::unexpected(std::move(info.error()));
+    return (*info)->blocksLiquidFlow;
+  }
+  auto info = getMetaMaterialInfo(materialId);
+  if (!info) return std::unexpected(std::move(info.error()));
+  return (*info)->blocksLiquidFlow;
 }
 
 inline std::optional<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(

@@ -47,6 +47,7 @@ import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.ai_types;
 import star.radio_message_database;
+import star.format;
 import star.game_timers;
 
 namespace Star {
@@ -64,23 +65,25 @@ public:
     return Star::typeName<RadioMessagePopup>();
   }
 
-  RadioMessagePopup(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<RadioMessagePopup>, StarException> create(GuiContext& guiContext);
 
-  void update(float dt) override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
   bool messageActive();
 
-  void setMessage(RadioMessage message);
+  [[nodiscard]] std::expected<void, StarException> setMessage(RadioMessage message);
   void setChatHeight(int chatHeight);
-  void interrupt();
+  [[nodiscard]] std::expected<void, StarException> interrupt();
 
 private:
+  RadioMessagePopup(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   enum PopupStage { AnimateIn, ScrollText, Persist, AnimateOut, Hidden };
 
   void updateAnchorOffset();
-  void nextPopupStage();
-  void enterStage(PopupStage newStage);
+  [[nodiscard]] std::expected<void, StarException> nextPopupStage();
+  [[nodiscard]] std::expected<void, StarException> enterStage(PopupStage newStage);
 
   PopupStage m_popupStage;
   GameTimer m_stageTimer;

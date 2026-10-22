@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 
@@ -24,8 +25,8 @@ namespace Star {
 class Root;
 
 struct WeatherType {
-  friend DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
-  friend DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
   struct ParticleConfig {
     Particle particle;
     float density;
@@ -43,9 +44,11 @@ struct WeatherType {
   };
 
   WeatherType();
-  WeatherType(Root& root, Json config, String path = String());
+  [[nodiscard]]
+  static std::expected<WeatherType, StarException> create(Root& root, Json config, String path = String());
 
-  Json toJson() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
 
   String name;
 
@@ -63,8 +66,10 @@ struct WeatherType {
 
 typedef WeightedPool<String> WeatherPool;
 
-DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
-DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, WeatherType& weatherType);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, WeatherType const& weatherType);
 }
 
 export module star.weather_types;

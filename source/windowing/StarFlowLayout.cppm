@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -60,7 +61,7 @@ public:
   }
 
   FlowLayout(GuiContext& context);
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
   void setSpacing(Vec2I const& spacing);
   void setWrapping(bool wrap);
 

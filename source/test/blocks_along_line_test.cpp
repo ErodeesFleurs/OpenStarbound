@@ -1,5 +1,6 @@
 import star.vector;
 import star.blocks_along_line;
+import star.format;
 import std;
 import star.list;
 
@@ -9,12 +10,13 @@ using namespace Star;
 
 void testLine(Vec2D a, Vec2D b, Vec2I offset, List<Vec2I> comp) {
   List<Vec2I> res;
-  forBlocksAlongLine(a + Vec2D(offset),
+  auto traversed = forBlocksAlongLine(a + Vec2D(offset),
       b - a,
-      [&res](int x, int y) {
+      [&res](int x, int y) -> std::expected<bool, StarException> {
         res.append({x, y});
         return true;
       });
+  ASSERT_EQ(traversed, true);
   for (auto& c : comp)
     c += offset;
   EXPECT_TRUE(comp == res);

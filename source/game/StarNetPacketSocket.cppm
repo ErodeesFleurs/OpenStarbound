@@ -1,5 +1,6 @@
 module;
 
+import star.format;
 import star.list;
 import star.io_device;
 import star.string;
@@ -75,9 +76,9 @@ public:
   virtual void close() = 0;
 
   // Takes all packets from the given list and queues them for sending.
-  virtual void sendPackets(List<std::shared_ptr<Packet>> packets) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> sendPackets(List<std::shared_ptr<Packet>> packets) = 0;
   // Receives any packets from the incoming queue, if available
-  virtual List<std::shared_ptr<Packet>> receivePackets() = 0;
+  [[nodiscard]] virtual std::expected<List<std::shared_ptr<Packet>>, StarException> receivePackets() = 0;
 
   // Returns true if any sent packets on the queue are still not completely
   // written.
@@ -85,15 +86,15 @@ public:
 
   // Write all data possible without blocking, returns true if any data was
   // actually written.
-  virtual bool writeData() = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> writeData() = 0;
   // Read all data available without blocking, returns true if any data was
   // actually received.
-  virtual bool readData() = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> readData() = 0;
 
   // Called after a nonblocking I/O attempt found no complete packet / pending
   // output. May return spuriously; callers retry I/O before checking the deadline.
   // Safe concurrently with close(), and never holds the caller's connection lock.
-  virtual void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> waitForData(bool writable, std::chrono::steady_clock::time_point deadline) = 0;
 
   // Should return incoming / outgoing packet stats, if they are tracked.
   // Default implementations return nothing.
@@ -119,8 +120,9 @@ public:
 private:
   bool m_useCompressionStream = false;
 protected:
-  CompressionStream m_compressionStream;
-  DecompressionStream m_decompressionStream;
+  [[nodiscard]] std::expected<void, StarException> initializeCompression();
+  std::unique_ptr<CompressionStream> m_compressionStream;
+  std::unique_ptr<DecompressionStream> m_decompressionStream;
 };
 
 // PacketSocket for local communication.
@@ -135,16 +137,16 @@ public:
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
-  List<std::shared_ptr<Packet>> receivePackets() override;
+  [[nodiscard]] std::expected<void, StarException> sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Packet>>, StarException> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
   // write / read for local sockets is actually a no-op, sendPackets places
   // packets directly in the incoming queue of the paired local socket.
-  bool writeData() override;
-  bool readData() override;
-  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
+  [[nodiscard]] std::expected<bool, StarException> writeData() override;
+  [[nodiscard]] std::expected<bool, StarException> readData() override;
+  [[nodiscard]] std::expected<void, StarException> waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
 private:
   struct Pipe {
@@ -167,19 +169,19 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<TcpPacketSocket, CompressedPacketSocket>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<TcpPacketSocket>(); }
 
-  static std::unique_ptr<TcpPacketSocket> open(Logger& logger, std::shared_ptr<TcpSocket> socket);
+  [[nodiscard]] static std::expected<std::unique_ptr<TcpPacketSocket>, StarException> open(Logger& logger, std::shared_ptr<TcpSocket> socket);
 
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
-  List<std::shared_ptr<Packet>> receivePackets() override;
+  [[nodiscard]] std::expected<void, StarException> sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Packet>>, StarException> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
-  bool writeData() override;
-  bool readData() override;
-  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
+  [[nodiscard]] std::expected<bool, StarException> writeData() override;
+  [[nodiscard]] std::expected<bool, StarException> readData() override;
+  [[nodiscard]] std::expected<void, StarException> waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
   std::optional<PacketStats> incomingStats() const override;
   std::optional<PacketStats> outgoingStats() const override;
@@ -202,19 +204,19 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<P2PPacketSocket, CompressedPacketSocket>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<P2PPacketSocket>(); }
 
-  static std::unique_ptr<P2PPacketSocket> open(Logger& logger, std::unique_ptr<P2PSocket> socket);
+  [[nodiscard]] static std::expected<std::unique_ptr<P2PPacketSocket>, StarException> open(Logger& logger, std::unique_ptr<P2PSocket> socket);
 
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
-  List<std::shared_ptr<Packet>> receivePackets() override;
+  [[nodiscard]] std::expected<void, StarException> sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Packet>>, StarException> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
-  bool writeData() override;
-  bool readData() override;
-  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
+  [[nodiscard]] std::expected<bool, StarException> writeData() override;
+  [[nodiscard]] std::expected<bool, StarException> readData() override;
+  [[nodiscard]] std::expected<void, StarException> waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
   std::optional<PacketStats> incomingStats() const override;
   std::optional<PacketStats> outgoingStats() const override;

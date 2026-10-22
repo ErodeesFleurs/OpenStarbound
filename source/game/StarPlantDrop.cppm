@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -61,44 +62,49 @@ public:
     return Star::typeName<PlantDrop>();
   }
 
-  PlantDrop(Root& rootContext, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+  [[nodiscard]] static std::expected<std::shared_ptr<PlantDrop>, StarException> create(Root& rootContext, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
       bool master, float random);
-  PlantDrop(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<PlantDrop>, StarException> create(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {});
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
-  String description() const override;
+  [[nodiscard]] std::expected<String, StarException> description() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint = 0.0f) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
 
-  bool shouldDestroy() const override;
-  void destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
 
   void setPosition();
   void setVelocity(Vec2F const& position);
 
   RectF collisionRect() const;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  void render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
   
   MovementController* movementController() override;
 
 private:
+  PlantDrop(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(ByteArray const& netStore, NetCompatibilityRules rules);
+  [[nodiscard]] std::expected<void, StarException> initialize(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random);
+
   struct PlantDropPiece {
     PlantDropPiece();
     AssetPath image;
@@ -108,12 +114,12 @@ private:
     bool flip;
   };
 
-  void particleForPlantPart(PlantDropPiece const& piece, String const& mode, Json const& mainConfig, RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> particleForPlantPart(PlantDropPiece const& piece, String const& mode, Json const& mainConfig, RenderCallback* renderCallback);
 
   NetElementTopGroup m_netGroup;
   String m_description;
   float m_time;
-  MovementController m_movementController;
+  std::shared_ptr<MovementController> m_movementController;
   RectF m_collisionRect;
   RectF m_boundingBox;
   float m_rotationRate;

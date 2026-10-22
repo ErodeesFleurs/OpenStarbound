@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.data_stream;
@@ -37,40 +38,63 @@ bool PhysicsCategoryFilter::operator==(PhysicsCategoryFilter const& rhs) const {
   return std::tie(type, categories) == std::tie(rhs.type, rhs.categories);
 }
 
-DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
-  ds >> pcf.type;
-  ds >> pcf.categories;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
+  return ds >> pcf.type >> pcf.categories;
 }
 
-DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) {
-  ds << pcf.type;
-  ds << pcf.categories;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) {
+  return ds << pcf.type << pcf.categories;
 }
 
-PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json) {
+std::expected<PhysicsCategoryFilter, StarException> jsonToPhysicsCategoryFilter(Json const& json) {
   auto whitelist = json.opt("categoryWhitelist");
+  if (!whitelist) return std::unexpected(std::move(whitelist.error()));
   auto blacklist = json.opt("categoryBlacklist");
-  if (whitelist && blacklist)
-    throw JsonException::format("Cannot specify both a physics category whitelist and blacklist");
-  if (whitelist)
-    return PhysicsCategoryFilter::whitelist(jsonToStringSet(*whitelist));
-  if (blacklist)
-    return PhysicsCategoryFilter::blacklist(jsonToStringSet(*blacklist));
+  if (!blacklist) return std::unexpected(std::move(blacklist.error()));
+  if (*whitelist && *blacklist)
+    return std::unexpected(JsonException::format("Cannot specify both a physics category whitelist and blacklist"));
+  if (*whitelist) {
+    auto categories = jsonToStringSet(**whitelist);
+    if (!categories) return std::unexpected(std::move(categories.error()));
+    return PhysicsCategoryFilter::whitelist(std::move(*categories));
+  }
+  if (*blacklist) {
+    auto categories = jsonToStringSet(**blacklist);
+    if (!categories) return std::unexpected(std::move(categories.error()));
+    return PhysicsCategoryFilter::blacklist(std::move(*categories));
+  }
   return PhysicsCategoryFilter();
 }
 
-DirectionalForceRegion DirectionalForceRegion::fromJson(Json const& json) {
+std::expected<DirectionalForceRegion, StarException> DirectionalForceRegion::fromJson(Json const& json) {
   DirectionalForceRegion dfr;
-  if (json.contains("polyRegion"))
-    dfr.region = jsonToPolyF(json.get("polyRegion"));
-  else
-    dfr.region = PolyF(jsonToRectF(json.get("rectRegion")));
-  dfr.xTargetVelocity = json.optFloat("xTargetVelocity");
-  dfr.yTargetVelocity = json.optFloat("yTargetVelocity");
-  dfr.controlForce = json.getFloat("controlForce");
-  dfr.categoryFilter = jsonToPhysicsCategoryFilter(json);
+  auto hasPoly = json.contains("polyRegion");
+  if (!hasPoly) return std::unexpected(std::move(hasPoly.error()));
+  if (*hasPoly) {
+    auto config = json.get("polyRegion");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto region = jsonToPolyF(*config);
+    if (!region) return std::unexpected(std::move(region.error()));
+    dfr.region = std::move(*region);
+  } else {
+    auto config = json.get("rectRegion");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto region = jsonToRectF(*config);
+    if (!region) return std::unexpected(std::move(region.error()));
+    dfr.region = PolyF(*region);
+  }
+  auto xTargetVelocity = json.optFloat("xTargetVelocity");
+  if (!xTargetVelocity) return std::unexpected(std::move(xTargetVelocity.error()));
+  dfr.xTargetVelocity = *xTargetVelocity;
+  auto yTargetVelocity = json.optFloat("yTargetVelocity");
+  if (!yTargetVelocity) return std::unexpected(std::move(yTargetVelocity.error()));
+  dfr.yTargetVelocity = *yTargetVelocity;
+  auto controlForce = json.getFloat("controlForce");
+  if (!controlForce) return std::unexpected(std::move(controlForce.error()));
+  dfr.controlForce = *controlForce;
+  auto filter = jsonToPhysicsCategoryFilter(json);
+  if (!filter) return std::unexpected(std::move(filter.error()));
+  dfr.categoryFilter = std::move(*filter);
   return dfr;
 }
 
@@ -87,32 +111,40 @@ bool DirectionalForceRegion::operator==(DirectionalForceRegion const& rhs) const
       == std::tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
-  ds >> dfr.region;
-  ds >> dfr.xTargetVelocity;
-  ds >> dfr.yTargetVelocity;
-  ds >> dfr.controlForce;
-  ds >> dfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
+  return ds >> dfr.region >> dfr.xTargetVelocity >> dfr.yTargetVelocity >> dfr.controlForce >> dfr.categoryFilter;
 }
 
-DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
-  ds << dfr.region;
-  ds << dfr.xTargetVelocity;
-  ds << dfr.yTargetVelocity;
-  ds << dfr.controlForce;
-  ds << dfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
+  return ds << dfr.region << dfr.xTargetVelocity << dfr.yTargetVelocity << dfr.controlForce << dfr.categoryFilter;
 }
 
-RadialForceRegion RadialForceRegion::fromJson(Json const& json) {
+std::expected<RadialForceRegion, StarException> RadialForceRegion::fromJson(Json const& json) {
   RadialForceRegion rfr;
-  rfr.center = json.opt("center").transform(jsonToVec2F).value_or(Vec2F{});
-  rfr.outerRadius = json.getFloat("outerRadius");
-  rfr.innerRadius = json.getFloat("innerRadius");
-  rfr.targetRadialVelocity = json.getFloat("targetRadialVelocity");
-  rfr.controlForce = json.getFloat("controlForce");
-  rfr.categoryFilter = jsonToPhysicsCategoryFilter(json);
+  auto centerConfig = json.opt("center");
+  if (!centerConfig) return std::unexpected(std::move(centerConfig.error()));
+  if (*centerConfig) {
+    auto center = jsonToVec2F(**centerConfig);
+    if (!center) return std::unexpected(std::move(center.error()));
+    rfr.center = *center;
+  } else {
+    rfr.center = Vec2F{};
+  }
+  auto outerRadius = json.getFloat("outerRadius");
+  if (!outerRadius) return std::unexpected(std::move(outerRadius.error()));
+  rfr.outerRadius = *outerRadius;
+  auto innerRadius = json.getFloat("innerRadius");
+  if (!innerRadius) return std::unexpected(std::move(innerRadius.error()));
+  rfr.innerRadius = *innerRadius;
+  auto targetRadialVelocity = json.getFloat("targetRadialVelocity");
+  if (!targetRadialVelocity) return std::unexpected(std::move(targetRadialVelocity.error()));
+  rfr.targetRadialVelocity = *targetRadialVelocity;
+  auto controlForce = json.getFloat("controlForce");
+  if (!controlForce) return std::unexpected(std::move(controlForce.error()));
+  rfr.controlForce = *controlForce;
+  auto filter = jsonToPhysicsCategoryFilter(json);
+  if (!filter) return std::unexpected(std::move(filter.error()));
+  rfr.categoryFilter = std::move(*filter);
   return rfr;
 }
 
@@ -129,36 +161,45 @@ bool RadialForceRegion::operator==(RadialForceRegion const& rhs) const {
       == std::tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr) {
-  ds >> rfr.center;
-  ds >> rfr.outerRadius;
-  ds >> rfr.innerRadius;
-  ds >> rfr.targetRadialVelocity;
-  ds >> rfr.controlForce;
-  ds >> rfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, RadialForceRegion& rfr) {
+  return ds >> rfr.center >> rfr.outerRadius >> rfr.innerRadius >> rfr.targetRadialVelocity >> rfr.controlForce >> rfr.categoryFilter;
 }
 
-DataStream& operator<<(DataStream& ds, RadialForceRegion const& gfr) {
-  ds << gfr.center;
-  ds << gfr.outerRadius;
-  ds << gfr.innerRadius;
-  ds << gfr.targetRadialVelocity;
-  ds << gfr.controlForce;
-  ds << gfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, RadialForceRegion const& rfr) {
+  return ds << rfr.center << rfr.outerRadius << rfr.innerRadius << rfr.targetRadialVelocity << rfr.controlForce << rfr.categoryFilter;
 }
 
-GradientForceRegion GradientForceRegion::fromJson(Json const& json) {
+std::expected<GradientForceRegion, StarException> GradientForceRegion::fromJson(Json const& json) {
   GradientForceRegion gfr;
-  if (json.contains("polyRegion"))
-    gfr.region = jsonToPolyF(json.get("polyRegion"));
-  else
-    gfr.region = PolyF(jsonToRectF(json.get("rectRegion")));
-  gfr.gradient = jsonToLine2F(json.get("gradient"));
-  gfr.baseTargetVelocity = json.getFloat("baseTargetVelocity");
-  gfr.baseControlForce = json.getFloat("baseControlForce");
-  gfr.categoryFilter = jsonToPhysicsCategoryFilter(json);
+  auto hasPoly = json.contains("polyRegion");
+  if (!hasPoly) return std::unexpected(std::move(hasPoly.error()));
+  if (*hasPoly) {
+    auto config = json.get("polyRegion");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto region = jsonToPolyF(*config);
+    if (!region) return std::unexpected(std::move(region.error()));
+    gfr.region = std::move(*region);
+  } else {
+    auto config = json.get("rectRegion");
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto region = jsonToRectF(*config);
+    if (!region) return std::unexpected(std::move(region.error()));
+    gfr.region = PolyF(*region);
+  }
+  auto gradientConfig = json.get("gradient");
+  if (!gradientConfig) return std::unexpected(std::move(gradientConfig.error()));
+  auto gradient = jsonToLine2F(*gradientConfig);
+  if (!gradient) return std::unexpected(std::move(gradient.error()));
+  gfr.gradient = *gradient;
+  auto baseTargetVelocity = json.getFloat("baseTargetVelocity");
+  if (!baseTargetVelocity) return std::unexpected(std::move(baseTargetVelocity.error()));
+  gfr.baseTargetVelocity = *baseTargetVelocity;
+  auto baseControlForce = json.getFloat("baseControlForce");
+  if (!baseControlForce) return std::unexpected(std::move(baseControlForce.error()));
+  gfr.baseControlForce = *baseControlForce;
+  auto filter = jsonToPhysicsCategoryFilter(json);
+  if (!filter) return std::unexpected(std::move(filter.error()));
+  gfr.categoryFilter = std::move(*filter);
   return gfr;
 }
 
@@ -176,34 +217,39 @@ bool GradientForceRegion::operator==(GradientForceRegion const& rhs) const {
       == std::tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, GradientForceRegion& gfr) {
-  ds >> gfr.region;
-  ds >> gfr.gradient;
-  ds >> gfr.baseTargetVelocity;
-  ds >> gfr.baseControlForce;
-  ds >> gfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, GradientForceRegion& gfr) {
+  return ds >> gfr.region >> gfr.gradient >> gfr.baseTargetVelocity >> gfr.baseControlForce >> gfr.categoryFilter;
 }
 
-DataStream& operator<<(DataStream& ds, GradientForceRegion const& gfr) {
-  ds << gfr.region;
-  ds << gfr.gradient;
-  ds << gfr.baseTargetVelocity;
-  ds << gfr.baseControlForce;
-  ds << gfr.categoryFilter;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, GradientForceRegion const& gfr) {
+  return ds << gfr.region << gfr.gradient << gfr.baseTargetVelocity << gfr.baseControlForce << gfr.categoryFilter;
 }
 
-PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json) {
-  String type = json.getString("type");
-  if (type.equalsIgnoreCase("DirectionalForceRegion"))
-    return DirectionalForceRegion::fromJson(json);
-  else if (type.equalsIgnoreCase("RadialForceRegion"))
-    return RadialForceRegion::fromJson(json);
-  else if (type.equalsIgnoreCase("GradientForceRegion"))
-    return GradientForceRegion::fromJson(json);
-  else
-    throw JsonException::format("No such physics force region type '{}'", type);
+std::expected<PhysicsForceRegion, StarException> jsonToPhysicsForceRegion(Json const& json) {
+  auto type = json.getString("type");
+  if (!type) return std::unexpected(std::move(type.error()));
+  auto directional = type->equalsIgnoreCase("DirectionalForceRegion");
+  if (!directional) return std::unexpected(std::move(directional.error()));
+  if (*directional) {
+    auto region = DirectionalForceRegion::fromJson(json);
+    if (!region) return std::unexpected(std::move(region.error()));
+    return PhysicsForceRegion(std::move(*region));
+  }
+  auto radial = type->equalsIgnoreCase("RadialForceRegion");
+  if (!radial) return std::unexpected(std::move(radial.error()));
+  if (*radial) {
+    auto region = RadialForceRegion::fromJson(json);
+    if (!region) return std::unexpected(std::move(region.error()));
+    return PhysicsForceRegion(std::move(*region));
+  }
+  auto gradient = type->equalsIgnoreCase("GradientForceRegion");
+  if (!gradient) return std::unexpected(std::move(gradient.error()));
+  if (*gradient) {
+    auto region = GradientForceRegion::fromJson(json);
+    if (!region) return std::unexpected(std::move(region.error()));
+    return PhysicsForceRegion(std::move(*region));
+  }
+  return std::unexpected(JsonException::format("No such physics force region type '{}'", *type));
 }
 
 }

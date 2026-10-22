@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -51,24 +52,26 @@ public:
     return Star::typeName<KeybindingsMenu>();
   }
 
-  KeybindingsMenu(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<KeybindingsMenu>, StarException> create(GuiContext& guiContext);
 
   // We need to handle our own Esc dismissal
-  KeyboardCaptureMode keyboardCaptureMode() const override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<KeyboardCaptureMode, StarException> keyboardCaptureMode() const override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  void show() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
-  void buildListsFromConfig();
-  bool activateBinding(Widget* widget);
-  void setKeybinding(KeyChord desc);
-  void clearActive();
-  void exitActiveMode();
-  void apply();
-  void revert();
-  void resetDefaults();
+  explicit KeybindingsMenu(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> init();
+  [[nodiscard]] std::expected<void, StarException> buildListsFromConfig();
+  [[nodiscard]] std::expected<void, StarException> activateBinding(Widget* widget);
+  [[nodiscard]] std::expected<void, StarException> setKeybinding(KeyChord desc);
+  [[nodiscard]] std::expected<void, StarException> clearActive();
+  [[nodiscard]] std::expected<void, StarException> exitActiveMode();
+  [[nodiscard]] std::expected<void, StarException> apply();
+  [[nodiscard]] std::expected<void, StarException> revert();
+  [[nodiscard]] std::expected<void, StarException> resetDefaults();
 
   Widget* m_activeKeybinding;
 

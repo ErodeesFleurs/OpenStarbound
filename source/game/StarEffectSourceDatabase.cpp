@@ -40,55 +40,92 @@ import star.particle_database;
 
 namespace Star {
 
-EffectSourceDatabase::EffectSourceDatabase(Root& root) {
+std::expected<std::shared_ptr<EffectSourceDatabase>, StarException> EffectSourceDatabase::create(Root& root) {
+  auto result = std::shared_ptr<EffectSourceDatabase>(new EffectSourceDatabase());
   auto assets = root.assets();
-
-  auto& files = assets->scanExtension("effectsource");
-  assets->queueJsons(files);
-  for (auto const& file : files) {
-    auto sourceConfig = std::make_shared<EffectSourceConfig>(root, assets->json(file));
-    if (m_sourceConfigs.contains(sourceConfig->kind()))
-      throw StarException(
-          strf("Duplicate effect source asset kind Name {}. configfile {}", sourceConfig->kind(), file));
-    auto k = sourceConfig->kind().toLower();
-    m_sourceConfigs[k] = sourceConfig;
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("effectsource");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = (*assets)->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& file : **files) {
+    auto json = (*assets)->json(file.string());
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto config = EffectSourceConfig::create(root, *json);
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    if (result->m_sourceConfigs.contains((*config)->kind()))
+      return std::unexpected(StarException(strf("Duplicate effect source asset kind Name {}. configfile {}", (*config)->kind(), file.string())));
+    auto key = (*config)->kind().toLower();
+    if (!key)
+      return std::unexpected(std::move(key.error()));
+    result->m_sourceConfigs[*key] = std::move(*config);
   }
+  return result;
 }
 
-std::shared_ptr<EffectSourceConfig> EffectSourceDatabase::effectSourceConfig(String const& kind) const {
-  auto k = kind.toLower();
-  if (!m_sourceConfigs.contains(k))
-    throw StarException(strf("Unknown effect source definition with kind '{}'.", kind));
-  return m_sourceConfigs.get(k);
+std::expected<std::shared_ptr<EffectSourceConfig>, StarException> EffectSourceDatabase::effectSourceConfig(String const& kind) const {
+  auto key = kind.toLower();
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  if (auto config = m_sourceConfigs.ptr(*key))
+    return *config;
+  return std::unexpected(StarException(strf("Unknown effect source definition with kind '{}'.", kind)));
 }
 
-EffectSourceConfig::EffectSourceConfig(Root& root, Json const& config) : m_root(root) {
-  m_kind = config.getString("kind");
-  m_config = config;
+std::expected<std::shared_ptr<EffectSourceConfig>, StarException> EffectSourceConfig::create(Root& root, Json const& config) {
+  auto result = std::shared_ptr<EffectSourceConfig>(new EffectSourceConfig(root));
+  auto kind = config.getString("kind");
+  if (!kind)
+    return std::unexpected(std::move(kind.error()));
+  result->m_kind = std::move(*kind);
+  result->m_config = config;
+  return result;
 }
 
 String const& EffectSourceConfig::kind() {
   return m_kind;
 }
 
-std::shared_ptr<EffectSource> EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
-  return std::make_shared<EffectSource>(m_root, kind(), suggestedSpawnLocation, m_config.getObject("definition"));
+std::expected<std::shared_ptr<EffectSource>, StarException> EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
+  auto definition = m_config.getObject("definition");
+  if (!definition)
+    return std::unexpected(std::move(definition.error()));
+  return EffectSource::create(m_root, kind(), suggestedSpawnLocation, *definition);
 }
 
-EffectSource::EffectSource(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition) : m_root(root) {
-  m_kind = kind;
-  m_config = definition;
-  m_expired = false;
-  m_loopDuration = m_config.getFloat("duration", 0);
-  m_durationVariance = m_config.getFloat("durationVariance", 0);
-  m_loops = m_config.getBool("loops", m_loopDuration != 0);
-  m_timer = m_root.random().randf() * (m_loopDuration + 0.5 * m_durationVariance);
-  m_stop = false;
-  m_initialTick = true;
-  m_loopTick = false;
-  m_finalTick = false;
-  m_effectSpawnLocation = m_config.getString("location", "normal");
-  m_suggestedSpawnLocation = suggestedSpawnLocation;
+std::expected<std::shared_ptr<EffectSource>, StarException> EffectSource::create(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition) {
+  auto result = std::shared_ptr<EffectSource>(new EffectSource(root));
+  result->m_kind = kind;
+  result->m_config = definition;
+  result->m_expired = false;
+  auto duration = definition.getFloat("duration", 0);
+  if (!duration)
+    return std::unexpected(std::move(duration.error()));
+  result->m_loopDuration = *duration;
+  auto variance = definition.getFloat("durationVariance", 0);
+  if (!variance)
+    return std::unexpected(std::move(variance.error()));
+  result->m_durationVariance = *variance;
+  auto loops = definition.getBool("loops", *duration != 0);
+  if (!loops)
+    return std::unexpected(std::move(loops.error()));
+  result->m_loops = *loops;
+  result->m_timer = root.random().randf() * (*duration + 0.5 * *variance);
+  result->m_stop = false;
+  result->m_initialTick = true;
+  result->m_loopTick = false;
+  result->m_finalTick = false;
+  auto location = definition.getString("location", "normal");
+  if (!location)
+    return std::unexpected(std::move(location.error()));
+  result->m_effectSpawnLocation = std::move(*location);
+  result->m_suggestedSpawnLocation = std::move(suggestedSpawnLocation);
+  return result;
 }
 
 String const& EffectSource::kind() const {
@@ -106,7 +143,7 @@ void EffectSource::stop() {
 void EffectSource::tick(float dt) {
   m_timer -= dt;
   if ((m_timer <= 0) && m_loops) {
-    m_timer = m_loopDuration + m_durationVariance * m_root.random().randf(-0.5f, 0.5f);
+    m_timer = m_loopDuration + m_durationVariance * (m_root.random().randf() - 0.5f);
     m_loopTick = true;
   }
   if (m_stop || (m_timer <= 0))
@@ -114,32 +151,86 @@ void EffectSource::tick(float dt) {
       m_finalTick = true;
 }
 
-List<String> EffectSource::particles() {
-  auto pickParticleSources = [this](Json const& config, List<String>& particles) {
-    particles.appendAll(jsonToStringList(m_root.random().randValueFrom(config.toArray(), JsonArray())));
+std::expected<List<String>, StarException> EffectSource::particles() {
+  auto pick = [this](Json const& config, List<String>& particles) -> std::expected<void, StarException> {
+    auto options = config.toArray();
+    if (!options)
+      return std::unexpected(std::move(options.error()));
+    auto selected = jsonToStringList(m_root.random().randValueFrom(*options, JsonArray()));
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+    particles.appendAll(*selected);
+    return {};
   };
   List<String> result;
-  if (m_initialTick)
-    pickParticleSources(m_config.get("start", JsonObject()).get("particles", JsonArray()), result);
-  if (m_loopTick)
-    pickParticleSources(m_config.get("particles", JsonArray()), result);
-  if (m_finalTick)
-    pickParticleSources(m_config.get("stop", JsonObject()).get("particles", JsonArray()), result);
+  if (m_initialTick) {
+    auto start = m_config.get("start", JsonObject());
+    if (!start)
+      return std::unexpected(std::move(start.error()));
+    auto config = start->get("particles", JsonArray());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto selected = pick(*config, result);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+  }
+  if (m_loopTick) {
+    auto config = m_config.get("particles", JsonArray());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto selected = pick(*config, result);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+  }
+  if (m_finalTick) {
+    auto stop = m_config.get("stop", JsonObject());
+    if (!stop)
+      return std::unexpected(std::move(stop.error()));
+    auto config = stop->get("particles", JsonArray());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto selected = pick(*config, result);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+  }
   return result;
 }
 
-List<std::shared_ptr<AudioInstance>> EffectSource::sounds(Vec2F offset) {
+std::expected<List<std::shared_ptr<AudioInstance>>, StarException> EffectSource::sounds(Vec2F offset) {
   List<std::shared_ptr<AudioInstance>> result;
   if (m_initialTick) {
-    result.appendAll(soundsFromDefinition(m_root, m_config.get("start", JsonObject()).get("sounds", Json()), offset));
-
-    m_mainSounds = soundsFromDefinition(m_root, m_config.get("sounds", Json()), offset);
+    auto start = m_config.get("start", JsonObject());
+    if (!start)
+      return std::unexpected(std::move(start.error()));
+    auto config = start->get("sounds", Json());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto initial = soundsFromDefinition(m_root, *config, offset);
+    if (!initial)
+      return std::unexpected(std::move(initial.error()));
+    result.appendAll(*initial);
+    auto mainConfig = m_config.get("sounds", Json());
+    if (!mainConfig)
+      return std::unexpected(std::move(mainConfig.error()));
+    auto main = soundsFromDefinition(m_root, *mainConfig, offset);
+    if (!main)
+      return std::unexpected(std::move(main.error()));
+    m_mainSounds = std::move(*main);
     result.appendAll(m_mainSounds);
   }
   if (m_finalTick) {
-    for (auto& s : m_mainSounds)
-      s->stop();
-    result.appendAll(soundsFromDefinition(m_root, m_config.get("stop", JsonObject()).get("sounds", Json()), offset));
+    for (auto& sound : m_mainSounds)
+      sound->stop();
+    auto stop = m_config.get("stop", JsonObject());
+    if (!stop)
+      return std::unexpected(std::move(stop.error()));
+    auto config = stop->get("sounds", Json());
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto final = soundsFromDefinition(m_root, *config, offset);
+    if (!final)
+      return std::unexpected(std::move(final.error()));
+    result.appendAll(*final);
   }
   return result;
 }
@@ -163,62 +254,114 @@ String EffectSource::suggestedSpawnLocation() const {
   return m_suggestedSpawnLocation;
 }
 
-List<Particle> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position) {
-  Json particles;
-  if (config.type() == Json::Type::Array)
-    particles = root.random().randValueFrom(config.toArray(), Json());
-  else
-    particles = config;
-  if (!particles.isNull()) {
-    if (particles.type() != Json::Type::Array)
-      particles = JsonArray{particles};
-    List<Particle> result;
-    for (auto entry : particles.iterateArray()) {
-      if (entry.type() != Json::Type::Object) {
-        result.append(root.particleDatabase()->particle(entry.toString()));
-      } else {
-        Particle particle(root, entry.toObject());
-        Particle variance(root, entry.getObject("variance", {}));
-        particle.applyVariance(root, variance);
-        particle.position += position;
-        result.append(particle);
-      }
-    }
-    return result;
+std::expected<List<Particle>, StarException> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position) {
+  Json particles = config;
+  if (config.type() == Json::Type::Array) {
+    auto options = config.toArray();
+    if (!options)
+      return std::unexpected(std::move(options.error()));
+    particles = root.random().randValueFrom(*options, Json());
   }
-  return {};
+  List<Particle> result;
+  if (particles.isNull())
+    return result;
+  if (particles.type() != Json::Type::Array)
+    particles = JsonArray{particles};
+  auto entries = particles.iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto const& entry : *entries) {
+    if (entry.type() != Json::Type::Object) {
+      auto name = entry.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      auto database = root.particleDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto particle = (*database)->particle(*name);
+      if (!particle)
+        return std::unexpected(std::move(particle.error()));
+      result.append(std::move(*particle));
+    } else {
+      auto definition = entry.toObject();
+      if (!definition)
+        return std::unexpected(std::move(definition.error()));
+      auto particle = Particle::create(root, *definition);
+      if (!particle)
+        return std::unexpected(std::move(particle.error()));
+      auto varianceConfig = entry.getObject("variance", {});
+      if (!varianceConfig)
+        return std::unexpected(std::move(varianceConfig.error()));
+      auto variance = Particle::create(root, *varianceConfig);
+      if (!variance)
+        return std::unexpected(std::move(variance.error()));
+      particle->applyVariance(root, *variance);
+      particle->position += position;
+      result.append(std::move(*particle));
+    }
+  }
+  return result;
 }
 
-List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position) {
-  Json sound;
-  if (config.type() == Json::Type::Array)
-    sound = root.random().randValueFrom(config.toArray(), Json());
-  else
-    sound = config;
-  if (!sound.isNull()) {
-    if (sound.type() != Json::Type::Array)
-      sound = JsonArray{sound};
-    List<std::shared_ptr<AudioInstance>> result;
-    auto assets = root.assets();
-    for (auto entry : sound.iterateArray()) {
-      if (entry.type() != Json::Type::Object) {
-        JsonObject t;
-        t["resource"] = entry.toString();
-        entry = t;
-      }
-
-      auto sample = std::make_shared<AudioInstance>(*assets->audio(entry.getString("resource")));
-      sample->setLoops(entry.getInt("loops", 0));
-      sample->setVolume(entry.getFloat("volume", 1.0f));
-      sample->setPitchMultiplier(entry.getFloat("pitch", 1.0f) + root.random().randf(-1, 1) * entry.getFloat("pitchVariability", 0.0f));
-      sample->setRangeMultiplier(entry.getFloat("audioRangeMultiplier", 1.0f));
-      sample->setPosition(position);
-
-      result.append(std::move(sample));
-    }
-    return result;
+std::expected<List<std::shared_ptr<AudioInstance>>, StarException> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position) {
+  Json sound = config;
+  if (config.type() == Json::Type::Array) {
+    auto options = config.toArray();
+    if (!options)
+      return std::unexpected(std::move(options.error()));
+    sound = root.random().randValueFrom(*options, Json());
   }
-  return {};
+  List<std::shared_ptr<AudioInstance>> result;
+  if (sound.isNull())
+    return result;
+  if (sound.type() != Json::Type::Array)
+    sound = JsonArray{sound};
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto entries = sound.iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto entry : *entries) {
+    if (entry.type() != Json::Type::Object) {
+      auto resource = entry.toString();
+      if (!resource)
+        return std::unexpected(std::move(resource.error()));
+      entry = JsonObject{{"resource", std::move(*resource)}};
+    }
+    auto resource = entry.getString("resource");
+    if (!resource)
+      return std::unexpected(std::move(resource.error()));
+    auto audio = (*assets)->audio(*resource);
+    if (!audio)
+      return std::unexpected(std::move(audio.error()));
+    auto sample = AudioInstance::create(**audio);
+    if (!sample)
+      return std::unexpected(std::move(sample.error()));
+    auto loops = entry.getInt("loops", 0);
+    if (!loops)
+      return std::unexpected(std::move(loops.error()));
+    (*sample)->setLoops(*loops);
+    auto volume = entry.getFloat("volume", 1.0f);
+    if (!volume)
+      return std::unexpected(std::move(volume.error()));
+    (*sample)->setVolume(*volume);
+    auto pitch = entry.getFloat("pitch", 1.0f);
+    if (!pitch)
+      return std::unexpected(std::move(pitch.error()));
+    auto randomPitch = root.random().randf() * 2.0f - 1.0f;
+    auto variability = entry.getFloat("pitchVariability", 0.0f);
+    if (!variability)
+      return std::unexpected(std::move(variability.error()));
+    (*sample)->setPitchMultiplier(*pitch + randomPitch * *variability);
+    auto range = entry.getFloat("audioRangeMultiplier", 1.0f);
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    (*sample)->setRangeMultiplier(*range);
+    (*sample)->setPosition(position);
+    result.append(std::move(*sample));
+  }
+  return result;
 }
 
 }

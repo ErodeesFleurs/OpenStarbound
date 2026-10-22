@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.vector;
@@ -62,15 +63,14 @@ import star.math_common;
 namespace Star {
 
 TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback)
-  : Widget(context), m_text(startingText), m_hint(hint), m_callback(callback) {
-  auto assets = this->context()->root().assets();
+  : Widget(context), m_text(startingText), m_hint(hint), m_callback(std::move(callback)) {
   m_textHidden = false;
   m_regex = "[\\s\\S]*";
   m_repeatKeyThreshold = 0;
   m_repeatCode = SpecialRepeatKeyCodes::None;
   m_isPressed = false;
   m_isHover = false;
-  m_cursorOffset = startingText.size();
+  m_cursorOffset = 0;
   m_hAnchor = HorizontalAnchor::LeftAnchor;
   m_vAnchor = VerticalAnchor::BottomAnchor;
   m_drawBorder = false;
@@ -78,140 +78,209 @@ TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, St
   m_cursorVert = Vec2I();
   m_overfillMode = true;
 
-  m_maxWidth = assets->json("/interface.config:textBoxDefaultWidth").toInt();
-  auto fontConfig = assets->json("/interface.config:textBoxTextStyle");
-  m_textStyle = fontConfig;
-
-  // Meh, padding is hard-coded here
-  setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
-  m_cursorHoriz = jsonToVec2I(assets->json("/interface.config:textboxCursorHorizontal"));
-  m_cursorVert = jsonToVec2I(assets->json("/interface.config:textboxCursorVertical"));
 }
 
-void TextBoxWidget::renderImpl() {
-  float blueRate = 0;
-  if (m_isHover && !m_isPressed)
-    blueRate = 0.2f;
-  else
-    blueRate = 0.0f;
-  
-  float cursorOffset = (float)getCursorDrawOffset() / context()->interfaceScale();
+std::expected<std::shared_ptr<TextBoxWidget>, StarException> TextBoxWidget::create(GuiContext& context, String const& text, String const& hint, WidgetCallbackFunc callback) {
+  auto widget = std::shared_ptr<TextBoxWidget>(new TextBoxWidget(context, text, hint, std::move(callback)));
+  auto initialized = widget->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return widget;
+}
+
+std::expected<void, StarException> TextBoxWidget::initialize() {
+  auto length = m_text.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  if (*length > std::numeric_limits<int>::max())
+    return std::unexpected(GuiException("Text box content is too long"));
+  m_cursorOffset = static_cast<int>(*length);
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto width = config->getInt("textBoxDefaultWidth");
+  if (!width)
+    return std::unexpected(std::move(width.error()));
+  m_maxWidth = *width;
+  auto styleJson = config->get("textBoxTextStyle");
+  if (!styleJson)
+    return std::unexpected(std::move(styleJson.error()));
+  auto style = TextStyle::create(*styleJson);
+  if (!style)
+    return std::unexpected(std::move(style.error()));
+  m_textStyle = std::move(*style);
+  setSize({m_maxWidth + 6, m_textStyle.fontSize + 2});
+  auto horizontalJson = config->get("textboxCursorHorizontal");
+  if (!horizontalJson)
+    return std::unexpected(std::move(horizontalJson.error()));
+  auto horizontal = jsonToVec2I(*horizontalJson);
+  if (!horizontal)
+    return std::unexpected(std::move(horizontal.error()));
+  auto verticalJson = config->get("textboxCursorVertical");
+  if (!verticalJson)
+    return std::unexpected(std::move(verticalJson.error()));
+  auto vertical = jsonToVec2I(*verticalJson);
+  if (!vertical)
+    return std::unexpected(std::move(vertical.error()));
+  m_cursorHoriz = *horizontal;
+  m_cursorVert = *vertical;
+  return {};
+}
+
+std::expected<String, StarException> TextBoxWidget::displayText() const {
+  if (m_textHidden) {
+    auto length = m_text.length();
+    if (!length)
+      return std::unexpected(std::move(length.error()));
+    return String::create('*', *length);
+  }
+  auto display = m_text.replace("\n", "↵");
+  if (!display)
+    return std::unexpected(std::move(display.error()));
+  return display->replace("\v", "↵");
+}
+
+std::expected<void, StarException> TextBoxWidget::renderImpl() {
+  float blueRate = m_isHover && !m_isPressed ? 0.2f : 0.0f;
+  auto drawOffset = getCursorDrawOffset();
+  if (!drawOffset)
+    return std::unexpected(std::move(drawOffset.error()));
+  float cursorOffset = static_cast<float>(*drawOffset) / context()->interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)
     pos[0] += size()[0] / 2.0f;
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
     pos[0] += size()[0];
-
-  context()->setTextStyle(m_textStyle);
-  if ((m_maxWidth != -1) && m_overfillMode) {
-    float shift = std::max(0.f, cursorOffset - m_maxWidth);
-    pos[0] -= shift;
-  }
-
-  if (m_text.empty()) {
-    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
-    context()->renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
-  } else {
-    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
-    if (m_textHidden) {
-      String hiddenText('*', m_text.length());
-      context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
-    } else {
-      String displayText = m_text.replace("\n", "↵").replace("\v", "↵");
-      context()->renderInterfaceText(displayText, { pos, m_hAnchor, m_vAnchor });
-    }
-  }
-  context()->clearTextStyle();
-
-  if (hasFocus()) {
-    // render cursor
-    float cc = 0.6f + 0.4f * std::sin((double)Time::monotonicMilliseconds() / 300.0);
-    Color cursorColor = Color::rgbf(cc, cc, cc);
-
+  auto styled = context()->setTextStyle(m_textStyle);
+  if (!styled)
+    return std::unexpected(std::move(styled.error()));
+  if (m_maxWidth != -1 && m_overfillMode)
+    pos[0] -= std::max(0.f, cursorOffset - m_maxWidth);
+  auto color = Color::rgba(m_textStyle.color);
+  if (m_text.empty())
+    color = color.mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f);
+  auto colored = context()->setFontColor(color.mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
+  if (!colored)
+    return std::unexpected(std::move(colored.error()));
+  auto text = m_text.empty() ? std::expected<String, StarException>(m_hint) : displayText();
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto rendered = context()->renderInterfaceText(*text, {pos, m_hAnchor, m_vAnchor});
+  auto cleared = context()->clearTextStyle();
+  if (!rendered)
+    return std::unexpected(std::move(rendered.error()));
+  if (!cleared)
+    return std::unexpected(std::move(cleared.error()));
+  auto focused = hasFocus();
+  if (!focused)
+    return std::unexpected(std::move(focused.error()));
+  if (*focused) {
+    float cc = 0.6f + 0.4f * std::sin(static_cast<double>(Time::monotonicMilliseconds()) / 300.0);
+    auto cursorColor = Color::rgbf(cc, cc, cc).toRgba();
     float fontSize = m_textStyle.fontSize;
-    context()->drawInterfaceLine(
+    auto vertical = context()->drawInterfaceLine(
         pos + Vec2F(cursorOffset, fontSize * m_cursorVert[0]),
-        pos + Vec2F(cursorOffset, fontSize * m_cursorVert[1]),
-        cursorColor.toRgba());
-    context()->drawInterfaceLine(
+        pos + Vec2F(cursorOffset, fontSize * m_cursorVert[1]), cursorColor);
+    if (!vertical)
+      return std::unexpected(std::move(vertical.error()));
+    auto horizontal = context()->drawInterfaceLine(
         pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
-        pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]),
-        cursorColor.toRgba());
+        pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]), cursorColor);
+    if (!horizontal)
+      return std::unexpected(std::move(horizontal.error()));
   }
-
   if (m_drawBorder)
-    context()->drawInterfacePolyLines(PolyF(screenBoundRect()), Color(Color::White).toRgba());
+    return context()->drawInterfacePolyLines(PolyF(screenBoundRect()), Color::White.toRgba());
+  return {};
 }
 
-int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
+std::expected<int, StarException> TextBoxWidget::getCursorDrawOffset() const {
+  auto styled = context()->setTextStyle(m_textStyle);
+  if (!styled)
+    return std::unexpected(std::move(styled.error()));
+  auto text = displayText();
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto tail = text->substr(m_cursorOffset);
+  if (!tail)
+    return std::unexpected(std::move(tail.error()));
+  auto width = context()->stringWidth(*text);
+  if (!width)
+    return std::unexpected(std::move(width.error()));
+  auto tailWidth = context()->stringWidth(*tail);
+  if (!tailWidth)
+    return std::unexpected(std::move(tailWidth.error()));
+  if (m_hAnchor == HorizontalAnchor::RightAnchor)
+    return -*width + *tailWidth;
   float scale;
-  context()->setTextStyle(m_textStyle);
-  String displayText = m_textHidden ? String('*', m_text.length()) : m_text.replace("\n", "↵").replace("\v", "↵");
-  if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
-    scale = 1.0;
-  } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
-    scale = 0.5;
-  } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
-    scale = -1.0;
-    return context()->stringWidth(displayText) * scale
-         + context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size()));
-  } else {
-    throw GuiException("Somehow, the value of m_hAnchor became bad");
-  }
-
-  return (int)std::ceil(context()->stringWidth(displayText) * scale
-                      - context()->stringWidth(displayText.substr(m_cursorOffset, displayText.size())));
+  if (m_hAnchor == HorizontalAnchor::LeftAnchor)
+    scale = 1.0f;
+  else if (m_hAnchor == HorizontalAnchor::HMidAnchor)
+    scale = 0.5f;
+  else
+    return std::unexpected(GuiException("Somehow, the value of m_hAnchor became bad"));
+  return static_cast<int>(std::ceil(*width * scale - *tailWidth));
 }
 
-void TextBoxWidget::update(float dt) {
-  Widget::update(dt);
-  if (m_repeatCode != SpecialRepeatKeyCodes::None) {
-    if (Time::monotonicMilliseconds() >= m_repeatKeyThreshold) {
-      m_repeatKeyThreshold += 50;
-      if (m_repeatCode == SpecialRepeatKeyCodes::Delete) {
-        if (std::cmp_less(m_cursorOffset, m_text.size()))
-          modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
-      } else if (m_repeatCode == SpecialRepeatKeyCodes::Backspace) {
-        if (m_cursorOffset > 0) {
-          if (modText(m_text.substr(0, m_cursorOffset - 1) + m_text.substr(m_cursorOffset)))
-            m_cursorOffset -= 1;
-        }
-      } else if (m_repeatCode == SpecialRepeatKeyCodes::Left) {
-        if (m_cursorOffset > 0) {
-          m_cursorOffset--;
-          if (m_cursorOffset < 0)
-            m_cursorOffset = 0;
-        }
-      } else if (m_repeatCode == SpecialRepeatKeyCodes::Right) {
-        if (std::cmp_less(m_cursorOffset, m_text.size())) {
-          m_cursorOffset++;
-          if (std::cmp_greater(m_cursorOffset, m_text.size()))
-            m_cursorOffset = (int)m_text.size();
-        }
-      }
+std::expected<void, StarException> TextBoxWidget::update(float dt) {
+  auto updated = Widget::update(dt);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  if (m_repeatCode != SpecialRepeatKeyCodes::None && Time::monotonicMilliseconds() >= m_repeatKeyThreshold) {
+    m_repeatKeyThreshold += 50;
+    auto length = m_text.size();
+    if (!length)
+      return std::unexpected(std::move(length.error()));
+    if (m_repeatCode == SpecialRepeatKeyCodes::Delete && std::cmp_less(m_cursorOffset, *length)) {
+      auto modified = editText(m_cursorOffset, 1, "");
+      if (!modified)
+        return std::unexpected(std::move(modified.error()));
+    } else if (m_repeatCode == SpecialRepeatKeyCodes::Backspace && m_cursorOffset > 0) {
+      auto modified = editText(m_cursorOffset - 1, 1, "");
+      if (!modified)
+        return std::unexpected(std::move(modified.error()));
+      if (*modified)
+        --m_cursorOffset;
+    } else if (m_repeatCode == SpecialRepeatKeyCodes::Left && m_cursorOffset > 0) {
+      --m_cursorOffset;
+    } else if (m_repeatCode == SpecialRepeatKeyCodes::Right && std::cmp_less(m_cursorOffset, *length)) {
+      ++m_cursorOffset;
     }
   }
+  return {};
 }
 
 String const& TextBoxWidget::getText() const {
   return m_text;
 }
 
-bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) {
+std::expected<bool, StarException> TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) {
   if (m_text == text)
     return true;
-
-  if (!newTextValid(text))
+  auto valid = newTextValid(text);
+  if (!valid)
+    return std::unexpected(std::move(valid.error()));
+  if (!*valid)
     return false;
-
+  auto length = text.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  if (*length > std::numeric_limits<int>::max())
+    return std::unexpected(GuiException("Text box content is too long"));
   m_text = text;
-  std::size_t size = m_text.size();
-  if (moveCursor || std::cmp_greater(m_cursorOffset, size))
-    m_cursorOffset = (int)size;
-
+  if (moveCursor || std::cmp_greater(m_cursorOffset, *length))
+    m_cursorOffset = static_cast<int>(*length);
   m_repeatCode = SpecialRepeatKeyCodes::None;
-  if (callback)
-    m_callback(this);
+  if (callback) {
+    if (!m_callback)
+      return std::unexpected(GuiException("Text box callback is not configured"));
+    auto called = m_callback(this);
+    if (!called)
+      return std::unexpected(std::move(called.error()));
+  }
   return true;
 }
 
@@ -227,8 +296,12 @@ int const& TextBoxWidget::getCursorPosition() const {
   return m_cursorOffset;
 }
 
-void TextBoxWidget::setCursorPosition(int cursorPosition) {
-  m_cursorOffset = clamp(cursorPosition, 0, (int)std::min<std::size_t>(m_text.size(), (std::size_t)std::numeric_limits<int>::max()));
+std::expected<void, StarException> TextBoxWidget::setCursorPosition(int cursorPosition) {
+  auto length = m_text.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  m_cursorOffset = clamp(cursorPosition, 0, static_cast<int>(std::min<std::size_t>(*length, std::numeric_limits<int>::max())));
+  return {};
 }
 
 bool TextBoxWidget::getHidden() const {
@@ -273,15 +346,15 @@ void TextBoxWidget::setOverfillMode(bool overtype) {
 }
 
 void TextBoxWidget::setOnBlurCallback(WidgetCallbackFunc onBlur) {
-  m_onBlur = onBlur;
+  m_onBlur = std::move(onBlur);
 }
 
 void TextBoxWidget::setOnEnterKeyCallback(WidgetCallbackFunc onEnterKey) {
-  m_onEnterKey = onEnterKey;
+  m_onEnterKey = std::move(onEnterKey);
 }
 
 void TextBoxWidget::setOnEscapeKeyCallback(WidgetCallbackFunc onEscapeKey) {
-  m_onEscapeKey = onEscapeKey;
+  m_onEscapeKey = std::move(onEscapeKey);
 }
 
 void TextBoxWidget::setNextFocus(std::optional<String> nextFocus) {
@@ -292,171 +365,215 @@ void TextBoxWidget::setPrevFocus(std::optional<String> prevFocus) {
   m_prevFocus = prevFocus;
 }
 
-void TextBoxWidget::mouseOver() {
-  Widget::mouseOver();
+std::expected<void, StarException> TextBoxWidget::mouseOver() {
+  auto over = Widget::mouseOver();
+  if (!over)
+    return std::unexpected(std::move(over.error()));
   m_isHover = true;
-}
-
-void TextBoxWidget::mouseOut() {
-  Widget::mouseOut();
-  m_isHover = false;
-  m_isPressed = false;
-}
-
-void TextBoxWidget::mouseReturnStillDown() {
-  Widget::mouseReturnStillDown();
-  m_isHover = true;
-  m_isPressed = true;
-}
-
-void TextBoxWidget::blur() {
-  Widget::blur();
-  if (m_onBlur)
-    m_onBlur(this);
-  m_repeatCode = SpecialRepeatKeyCodes::None;
-}
-
-KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
-  if (active() && hasFocus())
-    return KeyboardCaptureMode::TextInput;
-  return KeyboardCaptureMode::None;
-}
-
-std::optional<std::pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
-  if (active() && hasFocus()) {
-    return std::make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
-  }
   return {};
 }
 
-bool TextBoxWidget::sendEvent(InputEvent const& event) {
-  if (!hasFocus())
-    return false;
-
-  if (std::holds_alternative<KeyUpEvent>(event)) {
-    m_repeatCode = SpecialRepeatKeyCodes::None;
-    m_callback(this);
-    return false;
-  }
-
-  if (innerSendEvent(event)) {
-    m_callback(this);
-    return true;
-  }
-
-  return false;
+std::expected<void, StarException> TextBoxWidget::mouseOut() {
+  auto out = Widget::mouseOut();
+  if (!out)
+    return std::unexpected(std::move(out.error()));
+  m_isHover = false;
+  m_isPressed = false;
+  return {};
 }
 
-bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
+std::expected<void, StarException> TextBoxWidget::mouseReturnStillDown() {
+  auto returned = Widget::mouseReturnStillDown();
+  if (!returned)
+    return std::unexpected(std::move(returned.error()));
+  m_isHover = true;
+  m_isPressed = true;
+  return {};
+}
+
+std::expected<void, StarException> TextBoxWidget::blur() {
+  auto blurred = Widget::blur();
+  if (!blurred)
+    return std::unexpected(std::move(blurred.error()));
+  if (m_onBlur) {
+    auto called = m_onBlur(this);
+    if (!called)
+      return std::unexpected(std::move(called.error()));
+  }
+  m_repeatCode = SpecialRepeatKeyCodes::None;
+  return {};
+}
+
+std::expected<KeyboardCaptureMode, StarException> TextBoxWidget::keyboardCaptureMode() const {
+  if (active()) {
+    auto focused = hasFocus();
+    if (!focused)
+      return std::unexpected(std::move(focused.error()));
+    if (*focused)
+      return KeyboardCaptureMode::TextInput;
+  }
+  return KeyboardCaptureMode::None;
+}
+
+std::expected<std::optional<std::pair<RectI, int>>, StarException> TextBoxWidget::keyboardCaptureArea() const {
+  if (active()) {
+    auto focused = hasFocus();
+    if (!focused)
+      return std::unexpected(std::move(focused.error()));
+    if (*focused) {
+      auto offset = getCursorDrawOffset();
+      if (!offset)
+        return std::unexpected(std::move(offset.error()));
+      return std::make_pair(screenBoundRect().scaled(context()->interfaceScale()), *offset);
+    }
+  }
+  return std::nullopt;
+}
+
+std::expected<bool, StarException> TextBoxWidget::sendEvent(InputEvent const& event) {
+  auto focused = hasFocus();
+  if (!focused)
+    return std::unexpected(std::move(focused.error()));
+  if (!*focused)
+    return false;
+  if (std::holds_alternative<KeyUpEvent>(event)) {
+    m_repeatCode = SpecialRepeatKeyCodes::None;
+    if (!m_callback)
+      return std::unexpected(GuiException("Text box callback is not configured"));
+    auto called = m_callback(this);
+    if (!called)
+      return std::unexpected(std::move(called.error()));
+    return false;
+  }
+  auto handled = innerSendEvent(event);
+  if (!handled)
+    return std::unexpected(std::move(handled.error()));
+  if (*handled) {
+    if (!m_callback)
+      return std::unexpected(GuiException("Text box callback is not configured"));
+    auto called = m_callback(this);
+    if (!called)
+      return std::unexpected(std::move(called.error()));
+  }
+  return *handled;
+}
+
+std::expected<bool, StarException> TextBoxWidget::innerSendEvent(InputEvent const& event) {
   if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
     m_repeatKeyThreshold = Time::monotonicMilliseconds() + 300LL;
-
     if (keyDown->key == Key::Escape) {
       if (m_onEscapeKey) {
-        m_onEscapeKey(this);
+        auto called = m_onEscapeKey(this);
+        if (!called)
+          return std::unexpected(std::move(called.error()));
         return true;
       }
       return false;
     }
     if (keyDown->key == Key::Return || keyDown->key == Key::KeypadEnter) {
       if ((keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod) {
-        if (modText(m_text.substr(0, m_cursorOffset) + "\n" + m_text.substr(m_cursorOffset)))
-          m_cursorOffset += 1;
+        auto modified = editText(m_cursorOffset, 0, "\n");
+        if (!modified)
+          return std::unexpected(std::move(modified.error()));
+        if (*modified)
+          ++m_cursorOffset;
         return true;
       }
       if (m_onEnterKey) {
-        m_onEnterKey(this);
+        auto called = m_onEnterKey(this);
+        if (!called)
+          return std::unexpected(std::move(called.error()));
         return true;
       }
       return false;
     }
     if (keyDown->key == Key::Tab) {
-      if ((KeyMod::LShift & keyDown->mods) == KeyMod::LShift || (KeyMod::RShift & keyDown->mods) == KeyMod::RShift) {
-        if (m_prevFocus) {
-          if (auto prevWidget = parent()->fetchChild(*m_prevFocus)) {
-            prevWidget->focus();
-            return true;
-          }
-        }
-      } else {
-        if (m_nextFocus) {
-          if (auto nextWidget = parent()->fetchChild(*m_nextFocus)) {
-            nextWidget->focus();
-            return true;
-          }
+      bool reverse = (keyDown->mods & (KeyMod::LShift | KeyMod::RShift)) != KeyMod::NoMod;
+      auto const& target = reverse ? m_prevFocus : m_nextFocus;
+      if (target) {
+        auto widget = parent()->fetchChild(*target);
+        if (!widget)
+          return std::unexpected(std::move(widget.error()));
+        if (*widget) {
+          auto focused = (*widget)->focus();
+          if (!focused)
+            return std::unexpected(std::move(focused.error()));
+          return true;
         }
       }
       return false;
     }
     if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod) {
-      if (keyDown->key == Key::C) {
+      if (keyDown->key == Key::C || keyDown->key == Key::X) {
         context()->setClipboard(m_text);
-        return true;
-      }
-      if (keyDown->key == Key::X) {
-        context()->setClipboard(m_text);
-        if (modText(""))
-          m_cursorOffset = 0;
+        if (keyDown->key == Key::X) {
+          auto modified = modText("");
+          if (!modified)
+            return std::unexpected(std::move(modified.error()));
+          if (*modified)
+            m_cursorOffset = 0;
+        }
         return true;
       }
       if (keyDown->key == Key::V) {
-        String clipboard = context()->getClipboard();
-        if (modText(m_text.substr(0, m_cursorOffset) + clipboard + m_text.substr(m_cursorOffset)))
-          m_cursorOffset += clipboard.size();
+        auto clipboard = context()->getClipboard();
+        auto length = clipboard.size();
+        if (!length)
+          return std::unexpected(std::move(length.error()));
+        auto modified = editText(m_cursorOffset, 0, clipboard);
+        if (!modified)
+          return std::unexpected(std::move(modified.error()));
+        if (*modified)
+          m_cursorOffset += *length;
         return true;
       }
     }
-
-    auto calculateSteps = [&](bool dir) {
-      int steps = 1;
-      if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod || (keyDown->mods & (KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
-        if (dir) // right
-          steps = m_text.findNextBoundary(m_cursorOffset) - m_cursorOffset;
-        else // left
-          steps = m_cursorOffset - m_text.findNextBoundary(m_cursorOffset, true);
-
-        return steps < 1 ? 1 : steps;
+    auto calculateSteps = [&](bool right) -> std::expected<int, StarException> {
+      if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl | KeyMod::LAlt | KeyMod::RAlt)) != KeyMod::NoMod) {
+        auto boundary = m_text.findNextBoundary(m_cursorOffset, !right);
+        if (!boundary)
+          return std::unexpected(std::move(boundary.error()));
+        int steps = right ? static_cast<int>(*boundary) - m_cursorOffset : m_cursorOffset - static_cast<int>(*boundary);
+        return std::max(steps, 1);
       }
-      return steps;
+      return 1;
     };
-
-    if (keyDown->key == Key::Backspace) {
-      int steps = calculateSteps(false);
-      m_repeatCode = SpecialRepeatKeyCodes::Backspace;
-      for (int i = 0; i < steps; i++) {
-        if (m_cursorOffset > 0) {
-          if (modText(m_text.substr(0, m_cursorOffset - 1) + m_text.substr(m_cursorOffset)))
-            m_cursorOffset -= 1;
+    if (keyDown->key == Key::Backspace || keyDown->key == Key::Delete ||
+        keyDown->key == Key::Left || keyDown->key == Key::Right) {
+      bool right = keyDown->key == Key::Delete || keyDown->key == Key::Right;
+      auto steps = calculateSteps(right);
+      if (!steps)
+        return std::unexpected(std::move(steps.error()));
+      auto length = m_text.size();
+      if (!length)
+        return std::unexpected(std::move(length.error()));
+      if (keyDown->key == Key::Backspace) {
+        m_repeatCode = SpecialRepeatKeyCodes::Backspace;
+        for (int i = 0; i < *steps && m_cursorOffset > 0; ++i) {
+          auto modified = editText(m_cursorOffset - 1, 1, "");
+          if (!modified)
+            return std::unexpected(std::move(modified.error()));
+          if (*modified)
+            --m_cursorOffset;
         }
-      }
-      return true;
-    }
-    if (keyDown->key == Key::Delete) {
-      int steps = calculateSteps(true);
-      m_repeatCode = SpecialRepeatKeyCodes::Delete;
-      for (int i = 0; i < steps; i++) {
-        if (std::cmp_less(m_cursorOffset, m_text.size()))
-          modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
-      }
-      return true;
-    }
-    if (keyDown->key == Key::Left) {
-      int steps = calculateSteps(false);
-      m_repeatCode = SpecialRepeatKeyCodes::Left;
-      for (int i = 0; i < steps; i++) {
-        m_cursorOffset--;
-        if (m_cursorOffset < 0)
-          m_cursorOffset = 0;
-      }
-      return true;
-    }
-    if (keyDown->key == Key::Right) {
-      int steps = calculateSteps(true);
-      m_repeatCode = SpecialRepeatKeyCodes::Right;
-      for (int i = 0; i < steps; i++) {
-        m_cursorOffset++;
-        if (std::cmp_greater(m_cursorOffset, m_text.size()))
-          m_cursorOffset = (int)m_text.size();
+      } else if (keyDown->key == Key::Delete) {
+        m_repeatCode = SpecialRepeatKeyCodes::Delete;
+        for (int i = 0; i < *steps; ++i) {
+          auto currentLength = m_text.size();
+          if (!currentLength)
+            return std::unexpected(std::move(currentLength.error()));
+          if (std::cmp_less(m_cursorOffset, *currentLength)) {
+            auto modified = editText(m_cursorOffset, 1, "");
+            if (!modified)
+              return std::unexpected(std::move(modified.error()));
+          }
+        }
+      } else if (keyDown->key == Key::Left) {
+        m_repeatCode = SpecialRepeatKeyCodes::Left;
+        m_cursorOffset = std::max(0, m_cursorOffset - *steps);
+      } else {
+        m_repeatCode = SpecialRepeatKeyCodes::Right;
+        m_cursorOffset = static_cast<int>(std::min<std::size_t>(*length, static_cast<std::size_t>(m_cursorOffset) + *steps));
       }
       return true;
     }
@@ -465,17 +582,24 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       return true;
     }
     if (keyDown->key == Key::End) {
-      m_cursorOffset = m_text.size();
+      auto length = m_text.size();
+      if (!length)
+        return std::unexpected(std::move(length.error()));
+      m_cursorOffset = *length;
       return true;
     }
   }
-
   if (auto textInput = std::get_if<TextInputEvent>(&event)) {
-    if (modText(m_text.substr(0, m_cursorOffset) + textInput->text + m_text.substr(m_cursorOffset)))
-      m_cursorOffset += textInput->text.size();
+    auto length = textInput->text.size();
+    if (!length)
+      return std::unexpected(std::move(length.error()));
+    auto modified = editText(m_cursorOffset, 0, textInput->text);
+    if (!modified)
+      return std::unexpected(std::move(modified.error()));
+    if (*modified)
+      m_cursorOffset += *length;
     return true;
   }
-
   return false;
 }
 
@@ -487,21 +611,47 @@ void TextBoxWidget::setTextAlign(HorizontalAnchor hAnchor) {
   m_hAnchor = hAnchor;
 }
 
-bool TextBoxWidget::modText(String const& text) {
-  if (m_text != text && newTextValid(text)) {
-    m_text = text;
-    return true;
-  } else {
-    return false;
-  }
+std::expected<bool, StarException> TextBoxWidget::editText(std::size_t start, std::size_t count, String const& replacement) {
+  auto before = m_text.substr(0, start);
+  if (!before)
+    return std::unexpected(std::move(before.error()));
+  auto after = m_text.substr(start + count);
+  if (!after)
+    return std::unexpected(std::move(after.error()));
+  return modText(*before + replacement + *after);
 }
 
-bool TextBoxWidget::newTextValid(String const& text) const {
-  if (!text.regexMatch(m_regex))
+std::expected<bool, StarException> TextBoxWidget::modText(String const& text) {
+  if (m_text == text)
     return false;
-  if ((m_maxWidth != -1) && !m_overfillMode) {
-    context()->setTextStyle(m_textStyle);
-    return context()->stringInterfaceWidth(text) <= m_maxWidth;
+  auto valid = newTextValid(text);
+  if (!valid)
+    return std::unexpected(std::move(valid.error()));
+  if (!*valid)
+    return false;
+  auto length = text.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  if (*length > std::numeric_limits<int>::max())
+    return std::unexpected(GuiException("Text box content is too long"));
+  m_text = text;
+  return true;
+}
+
+std::expected<bool, StarException> TextBoxWidget::newTextValid(String const& text) const {
+  auto matched = text.regexMatch(m_regex);
+  if (!matched)
+    return std::unexpected(std::move(matched.error()));
+  if (!*matched)
+    return false;
+  if (m_maxWidth != -1 && !m_overfillMode) {
+    auto styled = context()->setTextStyle(m_textStyle);
+    if (!styled)
+      return std::unexpected(std::move(styled.error()));
+    auto width = context()->stringInterfaceWidth(text);
+    if (!width)
+      return std::unexpected(std::move(width.error()));
+    return *width <= m_maxWidth;
   }
   return true;
 }

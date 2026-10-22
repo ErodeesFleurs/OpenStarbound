@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.map;
@@ -44,6 +45,7 @@ namespace Star {
 class Root;
 class Assets;
 class RandomService;
+struct VersionedJson;
 
 
 class CelestialDatabase {
@@ -68,26 +70,26 @@ public:
   // The following methods are allowed to return no information even in the
   // case of valid coordinates, due to delayed loading.
 
-  virtual std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
-  virtual std::optional<String> name(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual std::expected<std::optional<CelestialParameters>, StarException> parameters(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> name(CelestialCoordinate const& coordinate) = 0;
 
-  virtual std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
-  virtual List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) = 0;
-  virtual List<int> childOrbits(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual std::expected<std::optional<bool>, StarException> hasChildren(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual std::expected<List<CelestialCoordinate>, StarException> children(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual std::expected<List<int>, StarException> childOrbits(CelestialCoordinate const& coordinate) = 0;
 
   // Return all valid system coordinates in the given x/y range.  All systems
   // are guaranteed to have unique x/y coordinates, and are meant to be viewed
   // from the top in 2d.  The z-coordinate is there simpy as a validation
   // parameter.
-  virtual List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) = 0;
-  virtual List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
+  [[nodiscard]] virtual std::expected<List<CelestialCoordinate>, StarException> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) = 0;
+  [[nodiscard]] virtual std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> scanConstellationLines(RectI const& region) = 0;
 
   // Returns false if part or all of the specified region is not loaded.  This
   // is only relevant for calls to scanSystems and scanConstellationLines, and
   // does not imply that each individual system in the given region is fully
   // loaded with all planets moons etc, only that scanSystem and
   // scanConstellationLines are not waiting on missing data.
-  virtual bool scanRegionFullyLoaded(RectI const& region) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> scanRegionFullyLoaded(RectI const& region) = 0;
 
 protected:
   Vec2I chunkIndexFor(CelestialCoordinate const& coordinate) const;
@@ -109,45 +111,45 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<CelestialMasterDatabase, CelestialDatabase>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<CelestialMasterDatabase>(); }
 
-  explicit CelestialMasterDatabase(Root& root, std::optional<String> databaseFile = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<CelestialMasterDatabase>, StarException> create(Root& root, std::optional<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
-  CelestialResponse respondToRequest(CelestialRequest const& requests);
+  [[nodiscard]] std::expected<CelestialResponse, StarException> respondToRequest(CelestialRequest const& requests);
 
   // Unload data that has not been used in the configured TTL time, and
   // periodically commit to the underlying database if it is in use.
-  void cleanupAndCommit();
+  [[nodiscard]] std::expected<void, StarException> cleanupAndCommit();
   // Commit remaining changes and close persistent storage at server shutdown.
-  void close();
+  [[nodiscard]] std::expected<void, StarException> close();
 
   // Does this coordinate point to a valid existing object?
-  bool coordinateValid(CelestialCoordinate const& coordinate);
+  [[nodiscard]] std::expected<bool, StarException> coordinateValid(CelestialCoordinate const& coordinate);
 
   // Find a planetary or satellite object randomly throughout the entire
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
-  std::optional<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-      std::function<bool(CelestialCoordinate)> filter = {}, std::optional<std::uint64_t> seed = {});
+  [[nodiscard]] std::expected<std::optional<CelestialCoordinate>, StarException> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
+      std::function<std::expected<bool, StarException>(CelestialCoordinate)> filter = {}, std::optional<std::uint64_t> seed = {});
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
 
-  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  std::optional<String> name(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<CelestialParameters>, StarException> parameters(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> name(CelestialCoordinate const& coordinate) override;
 
-  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<bool>, StarException> hasChildren(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<List<CelestialCoordinate>, StarException> children(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<List<int>, StarException> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
-  List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  [[nodiscard]] std::expected<List<CelestialCoordinate>, StarException> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
+  [[nodiscard]] std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> scanConstellationLines(RectI const& region) override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  [[nodiscard]] std::expected<bool, StarException> scanRegionFullyLoaded(RectI const& region) override;
 
   // overwrite the celestial parameters for the world at the given celestial coordinate
-  void updateParameters(CelestialCoordinate const& coordinate, CelestialParameters const& parameters);
-  
-  void markPersistent(CelestialCoordinate const& coordinate);
+  [[nodiscard]] std::expected<void, StarException> updateParameters(CelestialCoordinate const& coordinate, CelestialParameters const& parameters);
+
+  [[nodiscard]] std::expected<void, StarException> markPersistent(CelestialCoordinate const& coordinate);
 
 protected:
   struct SatelliteType {
@@ -203,13 +205,13 @@ protected:
   static std::optional<CelestialOrbitRegion> orbitRegion(
       List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
-  typedef std::function<void(std::function<void()>&&)>&& UnlockDuringFunction;
-  CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
+  typedef std::function<std::expected<void, StarException>(std::function<std::expected<void, StarException>()>&&)>&& UnlockDuringFunction;
+  [[nodiscard]] std::expected<CelestialChunk const*, StarException> getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
-  CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
-  std::optional<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
+  [[nodiscard]] std::expected<CelestialChunk, StarException> produceChunk(Vec2I const& chunkLocation) const;
+  [[nodiscard]] std::expected<std::optional<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>>, StarException> produceSystem(
       RandomSource& random, Vec3I const& location) const;
-  List<CelestialConstellation> produceConstellations(
+  [[nodiscard]] std::expected<List<CelestialConstellation>, StarException> produceConstellations(
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
 
   Root& m_root;
@@ -225,45 +227,52 @@ protected:
 
   float m_commitInterval;
   Timer m_commitTimer;
+private:
+  explicit CelestialMasterDatabase(Root& root);
+  [[nodiscard]] std::expected<void, StarException> init(std::optional<String> const& databaseFile);
+  [[nodiscard]] std::expected<void, StarException> storeVersionedChunk(Vec2I const& chunkIndex, VersionedJson const& chunk);
 };
+
 
 class CelestialSlaveDatabase : public CelestialDatabase {
 public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<CelestialSlaveDatabase, CelestialDatabase>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<CelestialSlaveDatabase>(); }
 
-  CelestialSlaveDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random, CelestialBaseInformation baseInformation);
+  [[nodiscard]] static std::expected<std::shared_ptr<CelestialSlaveDatabase>, StarException> create(
+      std::shared_ptr<Assets const> const& assets, RandomService& random, CelestialBaseInformation baseInformation);
 
   // Signal that the given region should be requested from the master database.
-  void signalRegion(RectI const& region);
+  [[nodiscard]] std::expected<void, StarException> signalRegion(RectI const& region);
 
   // Signal that the given system should be fully requested from the master
   // database.
-  void signalSystem(CelestialCoordinate const& system);
+  [[nodiscard]] std::expected<void, StarException> signalSystem(CelestialCoordinate const& system);
 
   // There is an internal activity time for chunk requests to live to prevent
   // repeatedly requesting the same set of chunks.
   List<CelestialRequest> pullRequests();
-  void pushResponses(List<CelestialResponse> responses);
+  [[nodiscard]] std::expected<void, StarException> pushResponses(List<CelestialResponse> responses);
 
   // Unload data that has not been used in the configured TTL time.
   void cleanup();
 
-  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  std::optional<String> name(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<CelestialParameters>, StarException> parameters(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> name(CelestialCoordinate const& coordinate) override;
 
-  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<std::optional<bool>, StarException> hasChildren(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<List<CelestialCoordinate>, StarException> children(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] std::expected<List<int>, StarException> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
-  List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  [[nodiscard]] std::expected<List<CelestialCoordinate>, StarException> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
+  [[nodiscard]] std::expected<List<std::pair<Vec2I, Vec2I>>, StarException> scanConstellationLines(RectI const& region) override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  [[nodiscard]] std::expected<bool, StarException> scanRegionFullyLoaded(RectI const& region) override;
 
   void invalidateCacheFor(CelestialCoordinate const& coordinate);
 
 private:
+  explicit CelestialSlaveDatabase(RandomService& random);
   float m_requestTimeout;
 
   mutable RecursiveMutex m_mutex;

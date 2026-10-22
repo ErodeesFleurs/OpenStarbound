@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.list;
 
 import star.poly;
@@ -76,38 +77,38 @@ public:
   // worldWidth / 2.  Bad things can happen.
 
   // Split the given Rect across world boundaries.
-  StaticList<RectF, 2> splitRect(RectF const& bbox) const;
+  [[nodiscard]] std::expected<StaticList<RectF, 2>, StarException> splitRect(RectF const& bbox) const;
   // Split the given Rect after translating it by position.
-  StaticList<RectF, 2> splitRect(RectF bbox, Vec2F const& position) const;
+  [[nodiscard]] std::expected<StaticList<RectF, 2>, StarException> splitRect(RectF bbox, Vec2F const& position) const;
 
-  StaticList<RectI, 2> splitRect(RectI bbox) const;
+  [[nodiscard]] std::expected<StaticList<RectI, 2>, StarException> splitRect(RectI bbox) const;
 
   // Same but for Line
-  StaticList<Line2F, 2> splitLine(Line2F line, bool preserveDirection = false) const;
-  StaticList<Line2F, 2> splitLine(Line2F line, Vec2F const& position, bool preserveDirection = false) const;
+  [[nodiscard]] std::expected<StaticList<Line2F, 2>, StarException> splitLine(Line2F line, bool preserveDirection = false) const;
+  [[nodiscard]] std::expected<StaticList<Line2F, 2>, StarException> splitLine(Line2F line, Vec2F const& position, bool preserveDirection = false) const;
 
   // Same but for Poly
-  StaticList<PolyF, 2> splitPoly(PolyF const& poly) const;
-  StaticList<PolyF, 2> splitPoly(PolyF poly, Vec2F const& position) const;
+  [[nodiscard]] std::expected<StaticList<PolyF, 2>, StarException> splitPoly(PolyF const& poly) const;
+  [[nodiscard]] std::expected<StaticList<PolyF, 2>, StarException> splitPoly(PolyF poly, Vec2F const& position) const;
 
   // Split a horizontal region of the world across the world wrap point.
-  StaticList<Vec2I, 2> splitXRegion(Vec2I const& xRegion) const;
-  StaticList<Vec2F, 2> splitXRegion(Vec2F const& xRegion) const;
+  [[nodiscard]] std::expected<StaticList<Vec2I, 2>, StarException> splitXRegion(Vec2I const& xRegion) const;
+  [[nodiscard]] std::expected<StaticList<Vec2F, 2>, StarException> splitXRegion(Vec2F const& xRegion) const;
 
-  bool rectContains(RectF const& rect1, Vec2F const& pos) const;
-  bool rectIntersectsRect(RectF const& rect1, RectF const& rect2) const;
+  [[nodiscard]] std::expected<bool, StarException> rectContains(RectF const& rect1, Vec2F const& pos) const;
+  [[nodiscard]] std::expected<bool, StarException> rectIntersectsRect(RectF const& rect1, RectF const& rect2) const;
   RectF rectOverlap(RectF const& rect1, RectF const& rect2) const;
-  bool polyContains(PolyF const& poly, Vec2F const& pos) const;
-  float polyOverlapArea(PolyF const& poly1, PolyF const& poly2) const;
+  [[nodiscard]] std::expected<bool, StarException> polyContains(PolyF const& poly, Vec2F const& pos) const;
+  [[nodiscard]] std::expected<float, StarException> polyOverlapArea(PolyF const& poly1, PolyF const& poly2) const;
 
-  bool lineIntersectsRect(Line2F const& line, RectF const& rect) const;
-  bool lineIntersectsPoly(Line2F const& line, PolyF const& poly) const;
-  bool polyIntersectsPoly(PolyF const& poly1, PolyF const& poly2) const;
+  [[nodiscard]] std::expected<bool, StarException> lineIntersectsRect(Line2F const& line, RectF const& rect) const;
+  [[nodiscard]] std::expected<bool, StarException> lineIntersectsPoly(Line2F const& line, PolyF const& poly) const;
+  [[nodiscard]] std::expected<bool, StarException> polyIntersectsPoly(PolyF const& poly1, PolyF const& poly2) const;
 
-  bool rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const;
-  bool lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const;
+  [[nodiscard]] std::expected<bool, StarException> rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const;
+  [[nodiscard]] std::expected<bool, StarException> lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const;
 
-  std::optional<Vec2F> lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const;
+  [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const;
 
   // Returns the distance from a point to any part of the given poly
   float polyDistance(PolyF const& poly, Vec2F const& point) const;

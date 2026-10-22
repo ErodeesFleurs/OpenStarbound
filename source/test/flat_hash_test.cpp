@@ -32,8 +32,11 @@ TEST(FlatHashMap, SinglePassInputPreservesEveryElement) {
   FlatHashMap<int, int> values;
   values.insert(std::istream_iterator<ParsedMapEntry>(input), {});
   EXPECT_EQ(values.size(), 4u);
-  for (int key = 1; key <= 4; ++key)
-    EXPECT_EQ(values.at(key), key * 2);
+  for (int key = 1; key <= 4; ++key) {
+    auto value = values.at(key);
+    ASSERT_TRUE(value);
+    EXPECT_EQ(**value, key * 2);
+  }
   std::istringstream setInput("1 2 3 4");
   FlatHashSet<int> keys(std::istream_iterator<int>(setInput), {});
   EXPECT_EQ(keys.size(), 4u);
@@ -64,7 +67,9 @@ TEST(FlatHashMap, TryEmplaceKeepsOwnershipOnDuplicate) {
   EXPECT_EQ(*result.first->second, 42);
   values.insert_or_assign(1, std::move(candidate));
   EXPECT_FALSE(candidate);
-  EXPECT_EQ(*values.get(1), 99);
+  auto stored = values.get(1);
+  ASSERT_TRUE(stored);
+  EXPECT_EQ(***stored, 99);
 
   StringMap<int> keyed;
   keyed.try_emplace("present", 1);
@@ -82,14 +87,29 @@ TEST(FlatHashMap, BorrowedLookupPreservesBytesAndCaseRules) {
   StringMap<int> values{{key, 7}};
   StableStringMap<int> stable{{key, 8}};
   EXPECT_EQ(hash<String>{}(key), hash<String>{}(query));
-  EXPECT_EQ(values.get(query), 7);
-  EXPECT_EQ(stable.get(query), 8);
+  auto value = values.get(query);
+  ASSERT_TRUE(value);
+  EXPECT_EQ(**value, 7);
+  auto stableValue = stable.get(query);
+  ASSERT_TRUE(stableValue);
+  EXPECT_EQ(**stableValue, 8);
   *values.ptr(query) = 9;
   EXPECT_EQ(values.value(query), 9);
-  EXPECT_EQ(values.maybe(query).value(), 9);
-  CaseInsensitiveStringMap<int> insensitive{{"MiXeD中", 10}};
-  EXPECT_EQ(insensitive.get(StringView("mixed中")), 10);
-  EXPECT_EQ(Color(StringView("RED")), Color::Red);
+  auto maybeValue = values.maybe(query);
+  ASSERT_TRUE(maybeValue);
+  EXPECT_EQ(*maybeValue, 9);
+  auto insensitiveKey = CaseInsensitiveString::create(String("MiXeD中"));
+  ASSERT_TRUE(insensitiveKey);
+  auto insensitiveQuery = CaseInsensitiveStringView::create(std::string_view("mixed中"));
+  ASSERT_TRUE(insensitiveQuery);
+  EXPECT_EQ(CaseInsensitiveStringHash()(*insensitiveKey), CaseInsensitiveStringHash()(*insensitiveQuery));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*insensitiveKey, *insensitiveQuery));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*insensitiveQuery, *insensitiveKey));
+  CaseInsensitiveStringMap<int> insensitive{{*insensitiveKey, 10}};
+  auto insensitiveValue = insensitive.get(*insensitiveQuery);
+  ASSERT_TRUE(insensitiveValue);
+  EXPECT_EQ(**insensitiveValue, 10);
+  EXPECT_EQ(Color::create(StringView("RED")), Color::Red);
 }
 
 TEST(FlatHashSet, Preset) {
@@ -141,7 +161,9 @@ TEST(FlatHashSet, Preset) {
 }
 
 TEST(FlatHashSet, Random) {
-  RandomService random;
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto& random = **randomResult;
   List<Vec2I> keys;
   for (unsigned i = 0; i < 100000; ++i)
     keys.append(Vec2I(i * 743202097, i * 205495087));
@@ -242,7 +264,9 @@ TEST(FlatHashMap, Preset) {
 }
 
 TEST(FlatHashMap, Random) {
-  RandomService random;
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto& random = **randomResult;
   List<std::pair<Vec2I, int>> values;
   for (unsigned i = 0; i < 100000; ++i)
     values.append({Vec2I(i * 743202097, i * 205495087), i});
@@ -275,7 +299,9 @@ TEST(FlatHashMap, Random) {
   random.shuffle(values);
   for (auto v : values) {
     ASSERT_TRUE(testMap.insert(v).first->second == v.second);
-    ASSERT_TRUE(testMap.at(v.first) == v.second);
+    auto value = testMap.at(v.first);
+    ASSERT_TRUE(value);
+    ASSERT_EQ(**value, v.second);
   }
 
   random.shuffle(values);

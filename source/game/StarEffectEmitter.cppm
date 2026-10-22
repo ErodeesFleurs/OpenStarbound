@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -19,22 +20,23 @@ class Root;
 
 class EffectEmitter : public NetElementGroup {
 public:
-  EffectEmitter(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<EffectEmitter>, StarException> create(Root& root);
 
   void addEffectSources(String const& position, StringSet effectSources);
   void setSourcePosition(String name, Vec2F const& position);
   void setDirection(Direction direction);
   void setBaseVelocity(Vec2F const& velocity);
 
-  void tick(float dt, EntityMode mode);
+  [[nodiscard]] std::expected<void, StarException> tick(float dt, EntityMode mode);
   void reset();
 
-  void render(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback);
 
-  Json toJson() const;
-  void fromJson(Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
+  [[nodiscard]] std::expected<void, StarException> fromJson(Json const& diskStore);
 
 private:
+  explicit EffectEmitter(Root& root) : m_root(root), m_direction(Direction::Right), m_renders(false) {}
   Root& m_root;
   Set<std::pair<String, String>> m_newSources;
   List<std::shared_ptr<EffectSource>> m_sources;

@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.vector;
@@ -58,28 +59,30 @@ public:
     return Star::typeName<BaseScriptPane>();
   }
 
-  BaseScriptPane(GuiContext& guiContext, Json config, bool construct = true);
+  [[nodiscard]] static std::expected<std::shared_ptr<BaseScriptPane>, StarException> create(GuiContext& guiContext, Json config, bool construct = true);
 
-  virtual void show() override;
-  void displayed() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
-  void tick(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
   
   Json const& config() const;
   Json const& rawConfig() const;
 
   bool interactive() const override;
 
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
-  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
-  std::optional<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> cursorOverride(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<std::optional<std::shared_ptr<Item>>, StarException> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
 
 protected:
-  virtual std::shared_ptr<GuiReader> reader() override;
-  void construct(Json config);
+  explicit BaseScriptPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> init(Json config, bool construct = true);
+  std::shared_ptr<GuiReader> reader() override;
+  [[nodiscard]] std::expected<void, StarException> construct(Json config);
 
   Json m_config;
   Json m_rawConfig;

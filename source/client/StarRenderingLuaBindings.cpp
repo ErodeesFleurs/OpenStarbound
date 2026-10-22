@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.json_extra;
@@ -17,40 +18,46 @@ module star.rendering_lua_bindings;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
   LuaCallbacks callbacks;
-  
-  // if the last argument is defined and true, this change will also be saved to starbound.config and read on next game start, use for things such as an interface that does this
-  callbacks.registerCallbackWithSignature<unsigned>("framesSkipped", std::bind(std::mem_fn(&ClientApplication::framesSkipped), app));
-  callbacks.registerCallbackWithSignature<void, String, bool, std::optional<bool>>("setPostProcessGroupEnabled", std::bind(std::mem_fn(&ClientApplication::setPostProcessGroupEnabled), app, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  callbacks.registerCallbackWithSignature<bool, String>("postProcessGroupEnabled", std::bind(std::mem_fn(&ClientApplication::postProcessGroupEnabled), app, std::placeholders::_1));
-  
-  
-  // not entirely necessary (root.assetJson can achieve the same purpose) but may as well
-  callbacks.registerCallbackWithSignature<Json>("postProcessGroups", std::bind(std::mem_fn(&ClientApplication::postProcessGroups), app));
-  
-  // specifically checks if the effect parameter is an int since Lua prefers converting the values to floats
-  callbacks.registerCallback("setEffectParameter", [app](String const& effectName, String const& effectParameter, RenderEffectParameter const& value) {
-    auto renderer = app->renderer();
-    auto mtype = renderer->getEffectScriptableParameterType(effectName, effectParameter);
-    if (mtype) {
-      auto type = *mtype;
-      if (type == std::uint8_t{1} && std::holds_alternative<float>(value)) {
-        renderer->setEffectScriptableParameter(effectName, effectParameter, (int)std::get<float>(value));
-      } else {
-        renderer->setEffectScriptableParameter(effectName, effectParameter, value);
-      }
-    }
+  auto frames = callbacks.registerCallbackWithSignature<unsigned>("framesSkipped", [app] { return app->framesSkipped(); });
+  if (!frames)
+    return std::unexpected(std::move(frames.error()));
+  auto setGroup = callbacks.registerCallback("setPostProcessGroupEnabled", [app](String const& group, bool enabled, std::optional<bool> save) {
+    return app->setPostProcessGroupEnabled(group, enabled, save);
   });
-  
-  callbacks.registerCallback("getEffectParameter", [app](String const& effectName, String const& effectParameter) {
-    auto renderer = app->renderer();
-    return renderer->getEffectScriptableParameter(effectName, effectParameter);
+  if (!setGroup)
+    return std::unexpected(std::move(setGroup.error()));
+  auto getGroup = callbacks.registerCallback("postProcessGroupEnabled", [app](String const& group) {
+    return app->postProcessGroupEnabled(group);
   });
-  
-  // not saved; should be loaded by Lua again
-  callbacks.registerCallbackWithSignature<void, String, unsigned>("setPostProcessLayerPasses", std::bind(std::mem_fn(&ClientApplication::setPostProcessLayerPasses), app, std::placeholders::_1, std::placeholders::_2));
+  if (!getGroup)
+    return std::unexpected(std::move(getGroup.error()));
+  auto groups = callbacks.registerCallback("postProcessGroups", [app] { return app->postProcessGroups(); });
+  if (!groups)
+    return std::unexpected(std::move(groups.error()));
 
+  auto setParameter = callbacks.registerCallback("setEffectParameter", [app](String const& effectName, String const& effectParameter, RenderEffectParameter const& value) -> std::expected<void, StarException> {
+    auto renderer = app->renderer();
+    auto type = renderer->getEffectScriptableParameterType(effectName, effectParameter);
+    if (!type)
+      return {};
+    if (*type == std::uint8_t{1} && std::holds_alternative<float>(value))
+      return renderer->setEffectScriptableParameter(effectName, effectParameter, (int)std::get<float>(value));
+    return renderer->setEffectScriptableParameter(effectName, effectParameter, value);
+  });
+  if (!setParameter)
+    return std::unexpected(std::move(setParameter.error()));
+  auto getParameter = callbacks.registerCallback("getEffectParameter", [app](String const& effectName, String const& effectParameter) {
+    return app->renderer()->getEffectScriptableParameter(effectName, effectParameter);
+  });
+  if (!getParameter)
+    return std::unexpected(std::move(getParameter.error()));
+  auto setPasses = callbacks.registerCallback("setPostProcessLayerPasses", [app](String const& layer, unsigned passes) {
+    return app->setPostProcessLayerPasses(layer, passes);
+  });
+  if (!setPasses)
+    return std::unexpected(std::move(setPasses.error()));
   return callbacks;
 }
 

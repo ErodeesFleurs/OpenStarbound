@@ -1,6 +1,7 @@
 import std;
 import star.json;
 import star.string;
+import star.unicode;
 import star.file;
 import star.lexical_cast;
 import star.json_path;
@@ -22,18 +23,30 @@ TEST(JsonTest, ImplicitSharing) {
   map1 = map2;
   map2 = map3;
 
-  EXPECT_EQ(map1.get("foo"), 1);
-  EXPECT_EQ(map2.get("bar"), 50);
+  auto result1 = map1.get("foo");
+  ASSERT_TRUE(result1);
+  EXPECT_EQ((*result1), 1);
+  auto result2 = map2.get("bar");
+  ASSERT_TRUE(result2);
+  EXPECT_EQ((*result2), 50);
 }
 
 TEST(JsonTest, Defaults) {
   Json obj = JsonObject{{"null", Json()}};
   Json arr = JsonArray{"array", JsonArray{Json(), Json()}};
 
-  EXPECT_EQ(obj.getInt("null", 5), 5);
-  EXPECT_EQ(arr.getInt(2, 5), 5);
-  EXPECT_EQ(arr.getInt(3, 5), 5);
-  EXPECT_THROW(arr.getInt(2), JsonException);
+  auto result3 = obj.getInt("null", 5);
+  ASSERT_TRUE(result3);
+  EXPECT_EQ((*result3), 5);
+  auto result4 = arr.getInt(2, 5);
+  ASSERT_TRUE(result4);
+  EXPECT_EQ((*result4), 5);
+  auto result5 = arr.getInt(3, 5);
+  ASSERT_TRUE(result5);
+  EXPECT_EQ((*result5), 5);
+  auto error6 = arr.getInt(2);
+  ASSERT_FALSE(error6);
+  EXPECT_TRUE(error6.error().is<JsonException>());
 }
 
 TEST(JsonTest, Merging) {
@@ -44,74 +57,129 @@ TEST(JsonTest, Merging) {
 
   Json merged = jsonMerge(a, b, c, d);
 
-  EXPECT_EQ(merged.get("I"), "feel");
-  EXPECT_EQ(merged.get("hello"), "you");
-  EXPECT_EQ(merged.get("friendly"), "leg");
-  EXPECT_EQ(merged.get("leg"), "fiend");
+  auto result7 = merged.get("I");
+  ASSERT_TRUE(result7);
+  EXPECT_EQ((*result7), "feel");
+  auto result8 = merged.get("hello");
+  ASSERT_TRUE(result8);
+  EXPECT_EQ((*result8), "you");
+  auto result9 = merged.get("friendly");
+  ASSERT_TRUE(result9);
+  EXPECT_EQ((*result9), "leg");
+  auto result10 = merged.get("leg");
+  ASSERT_TRUE(result10);
+  EXPECT_EQ((*result10), "fiend");
 
   Json e = JsonObject();
-  e = e.set("1", 2);
-  e = e.setAll({{"a", "b"}, {"c", "d"}});
+  auto result11 = e.set("1", 2);
+  ASSERT_TRUE(result11);
+  e = (*result11);
+  auto result12 = e.setAll({{"a", "b"}, {"c", "d"}});
+  ASSERT_TRUE(result12);
+  e = (*result12);
   Json f = JsonObject{{"1", 2}, {"a", "b"}, {"c", "d"}};
 
   EXPECT_EQ(e, f);
 
   Json g = JsonObject{{"a", "a"}, {"sub", JsonObject()}};
-  g = g.setPath("sub.field", 1);
-  g = g.setPath("sub.field2", 2);
-  g = g.erasePath("sub.field2");
+  auto result13 = g.setPath("sub.field", 1);
+  ASSERT_TRUE(result13);
+  g = (*result13);
+  auto result14 = g.setPath("sub.field2", 2);
+  ASSERT_TRUE(result14);
+  g = (*result14);
+  auto result15 = g.erasePath("sub.field2");
+  ASSERT_TRUE(result15);
+  g = (*result15);
   Json h = JsonObject{{"a", "a"}, {"sub", JsonObject{{"field", 1}}}};
   EXPECT_EQ(g, h);
 }
 
 TEST(JsonTest, Unicode) {
-  Json v = Json::parse("{ \"first\" : \"日本語\", \"second\" : \"foobar\\u0019\" }");
-  EXPECT_EQ(v.getString("first"), String("日本語"));
-  EXPECT_EQ(v.get("second").repr(), String("\"foobar\\u0019\""));
+  auto result16 = Json::parse("{ \"first\" : \"日本語\", \"second\" : \"foobar\\u0019\" }");
+  ASSERT_TRUE(result16);
+  Json v = (*result16);
+  auto result17 = v.getString("first");
+  ASSERT_TRUE(result17);
+  EXPECT_EQ((*result17), String("日本語"));
+  auto result18 = v.get("second");
+  ASSERT_TRUE(result18);
+  auto result19 = (*result18).repr();
+  ASSERT_TRUE(result19);
+  EXPECT_EQ((*result19), String("\"foobar\\u0019\""));
 
-  String json = v.printJson();
-  Json v2 = Json::parseJson(json);
-  EXPECT_EQ(v2.getString("first"), String("日本語"));
+  auto result20 = v.printJson();
+  ASSERT_TRUE(result20);
+  String json = (*result20);
+  auto result21 = Json::parseJson(json);
+  ASSERT_TRUE(result21);
+  Json v2 = (*result21);
+  auto result22 = v2.getString("first");
+  ASSERT_TRUE(result22);
+  EXPECT_EQ((*result22), String("日本語"));
 
   EXPECT_EQ(v, v2);
 
-  EXPECT_EQ(Json("😀"), Json::parse("\"\\ud83d\\ude00\""));
-  EXPECT_EQ(Json::parse("\"\\ud83d\\ude00\"").toString().size(), 1u);
+  auto result23 = Json::parse("\"\\ud83d\\ude00\"");
+  ASSERT_TRUE(result23);
+  EXPECT_EQ(Json("😀"), (*result23));
+  auto result24 = Json::parse("\"\\ud83d\\ude00\"");
+  ASSERT_TRUE(result24);
+  auto result25 = (*result24).toString();
+  ASSERT_TRUE(result25);
+  auto result26 = (*result25).size();
+  ASSERT_TRUE(result26);
+  EXPECT_EQ((*result26), 1u);
 }
 
 TEST(JsonTest, UnicodeFile) {
-  Json v = Json::parse("{ \"first\" : \"日本語\", \"second\" : \"foobar\\u0019\" }");
-  EXPECT_EQ(v.getString("first"), String("日本語"));
-  EXPECT_EQ(v.get("second").repr(), String("\"foobar\\u0019\""));
+  auto result27 = Json::parse("{ \"first\" : \"日本語\", \"second\" : \"foobar\\u0019\" }");
+  ASSERT_TRUE(result27);
+  Json v = (*result27);
+  auto result28 = v.getString("first");
+  ASSERT_TRUE(result28);
+  EXPECT_EQ((*result28), String("日本語"));
+  auto result29 = v.get("second");
+  ASSERT_TRUE(result29);
+  auto result30 = (*result29).repr();
+  ASSERT_TRUE(result30);
+  EXPECT_EQ((*result30), String("\"foobar\\u0019\""));
 
-  RandomService random;
-  String file = File::temporaryFileName(random);
-  auto finallyGuard = finally([&file]() { File::remove(file); });
+  RandomService random(0);
+  auto result31 = File::temporaryFileName(random);
+  ASSERT_TRUE(result31);
+  String file = (*result31);
+  auto finallyGuard = finally([&file]() { EXPECT_TRUE(File::remove(file)); });
 
-  File::writeFile(v.printJson(), file);
-  Json v2 = Json::parseJson(File::readFileString(file));
-  EXPECT_EQ(v2.getString("first"), "日本語");
+  auto result32 = v.printJson();
+  ASSERT_TRUE(result32);
+  auto result33 = File::writeFile((*result32), file);
+  ASSERT_TRUE(result33);
+  auto result34 = File::readFileString(file);
+  ASSERT_TRUE(result34);
+  auto result35 = Json::parseJson((*result34));
+  ASSERT_TRUE(result35);
+  Json v2 = (*result35);
+  auto result36 = v2.getString("first");
+  ASSERT_TRUE(result36);
+  EXPECT_EQ((*result36), "日本語");
 
   EXPECT_EQ(v, v2);
 }
 
 TEST(JsonTest, JsonParsingEdge) {
   auto isValidFragment = [](String const& json) -> bool {
-    try {
-      Json::parse(json);
-      return true;
-    } catch (JsonParsingException const&) {
-      return false;
-    }
+    auto result = Json::parse(json);
+    if (!result)
+      EXPECT_TRUE(result.error().is<JsonParsingException>());
+    return result.has_value();
   };
 
   auto isValidJson = [](String const& json) -> bool {
-    try {
-      Json::parseJson(json);
-      return true;
-    } catch (JsonParsingException const&) {
-      return false;
-    }
+    auto result = Json::parseJson(json);
+    if (!result)
+      EXPECT_TRUE(result.error().is<JsonParsingException>());
+    return result.has_value();
   };
 
   EXPECT_TRUE(isValidFragment(" \t 0.0 "));
@@ -123,6 +191,22 @@ TEST(JsonTest, JsonParsingEdge) {
   EXPECT_FALSE(isValidJson("true"));
   EXPECT_TRUE(isValidJson("\t[]"));
   EXPECT_TRUE(isValidJson(" {} "));
+}
+
+TEST(JsonTest, LazyUtf8PreservesFirstError) {
+  auto syntaxError = Json::parse(String("! \xff", 3));
+  ASSERT_FALSE(syntaxError);
+  EXPECT_TRUE(syntaxError.error().is<JsonParsingException>());
+  EXPECT_FALSE(syntaxError.error().is<UnicodeException>());
+
+  auto decodeError = Json::parse(String("1 \xff", 3));
+  ASSERT_FALSE(decodeError);
+  EXPECT_TRUE(decodeError.error().is<UnicodeException>());
+  EXPECT_FALSE(decodeError.error().is<JsonParsingException>());
+
+  auto valid = Json::parse(R"({"valid":true})");
+  ASSERT_TRUE(valid);
+  EXPECT_EQ(*valid, (Json{JsonObject{{"valid", true}}}));
 }
 
 TEST(JsonTest, Types) {
@@ -143,7 +227,7 @@ TEST(JsonTest, Types) {
 }
 
 TEST(JsonTest, Query) {
-  Json v = Json::parse(R"JSON(
+  auto result37 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "baz" : {
@@ -154,29 +238,67 @@ TEST(JsonTest, Query) {
         "baf" : null
       }
     )JSON");
+  ASSERT_TRUE(result37);
+  Json v = (*result37);
 
-  EXPECT_EQ(v.query("foo"), Json("bar"));
-  EXPECT_EQ(v.query("baz.baf[1]"), Json(2));
-  EXPECT_EQ(v.query("baz.bal"), Json(2));
-  EXPECT_EQ(v.query("blargh", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("blargh", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz.baf[3]", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz.bal[0]", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz[1]", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz.bal.a", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz[0]", Json("default")), Json("default"));
-  EXPECT_EQ(v.query("baz.baf.a", Json("default")), Json("default"));
-  EXPECT_THROW(v.query("blargh"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.funk"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.baf[3]"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.baf[whee]", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baz.baf[[]", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baz..baf", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baf.nothing"), JsonException);
+  auto result38 = v.query("foo");
+  ASSERT_TRUE(result38);
+  EXPECT_EQ((*result38), Json("bar"));
+  auto result39 = v.query("baz.baf[1]");
+  ASSERT_TRUE(result39);
+  EXPECT_EQ((*result39), Json(2));
+  auto result40 = v.query("baz.bal");
+  ASSERT_TRUE(result40);
+  EXPECT_EQ((*result40), Json(2));
+  auto result41 = v.query("blargh", Json("default"));
+  ASSERT_TRUE(result41);
+  EXPECT_EQ((*result41), Json("default"));
+  auto result42 = v.query("blargh", Json("default"));
+  ASSERT_TRUE(result42);
+  EXPECT_EQ((*result42), Json("default"));
+  auto result43 = v.query("baz.baf[3]", Json("default"));
+  ASSERT_TRUE(result43);
+  EXPECT_EQ((*result43), Json("default"));
+  auto result44 = v.query("baz.bal[0]", Json("default"));
+  ASSERT_TRUE(result44);
+  EXPECT_EQ((*result44), Json("default"));
+  auto result45 = v.query("baz[1]", Json("default"));
+  ASSERT_TRUE(result45);
+  EXPECT_EQ((*result45), Json("default"));
+  auto result46 = v.query("baz.bal.a", Json("default"));
+  ASSERT_TRUE(result46);
+  EXPECT_EQ((*result46), Json("default"));
+  auto result47 = v.query("baz[0]", Json("default"));
+  ASSERT_TRUE(result47);
+  EXPECT_EQ((*result47), Json("default"));
+  auto result48 = v.query("baz.baf.a", Json("default"));
+  ASSERT_TRUE(result48);
+  EXPECT_EQ((*result48), Json("default"));
+  auto error49 = v.query("blargh");
+  ASSERT_FALSE(error49);
+  EXPECT_TRUE(error49.error().is<JsonPath::TraversalException>());
+  auto error50 = v.query("baz.funk");
+  ASSERT_FALSE(error50);
+  EXPECT_TRUE(error50.error().is<JsonPath::TraversalException>());
+  auto error51 = v.query("baz.baf[3]");
+  ASSERT_FALSE(error51);
+  EXPECT_TRUE(error51.error().is<JsonPath::TraversalException>());
+  auto error52 = v.query("baz.baf[whee]", Json());
+  ASSERT_FALSE(error52);
+  EXPECT_TRUE(error52.error().is<JsonPath::ParsingException>());
+  auto error53 = v.query("baz.baf[[]", Json());
+  ASSERT_FALSE(error53);
+  EXPECT_TRUE(error53.error().is<JsonPath::ParsingException>());
+  auto error54 = v.query("baz..baf", Json());
+  ASSERT_FALSE(error54);
+  EXPECT_TRUE(error54.error().is<JsonPath::ParsingException>());
+  auto error55 = v.query("baf.nothing");
+  ASSERT_FALSE(error55);
+  EXPECT_TRUE(error55.error().is<JsonException>());
 }
 
 TEST(JsonTest, PatchingAdd) {
-  Json before = Json::parse(R"JSON(
+  auto result56 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "baz" : {
@@ -186,8 +308,10 @@ TEST(JsonTest, PatchingAdd) {
         "rab" : [0, 1, 2, "foo", false]
       }
     )JSON");
+  ASSERT_TRUE(result56);
+  Json before = (*result56);
 
-  Json after = Json::parse(R"JSON(
+  auto result57 = Json::parse(R"JSON(
       {
         "foo" : "xyzzy",
         "bar" : "foo",
@@ -202,8 +326,10 @@ TEST(JsonTest, PatchingAdd) {
         "rab" : [0, 0, 1, 2, "foo", false, true, { "baz" : "bar"} ]
       }
     )JSON");
+  ASSERT_TRUE(result57);
+  Json after = (*result57);
 
-  Json patch = Json::parse(R"JSON(
+  auto result58 = Json::parse(R"JSON(
       [
         {"op" : "add", "path" : "/foo", "value" : "xyzzy"},
         {"op" : "add", "path" : "/bar", "value" : "foo"},
@@ -215,36 +341,60 @@ TEST(JsonTest, PatchingAdd) {
         {"op" : "add", "path" : "/rab/-", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result58);
+  Json patch = (*result58);
 
   // Past end of list
-  Json badPatch1 = Json::parse(R"JSON(
+  auto result59 = Json::parse(R"JSON(
       [
         {"op" : "add", "path" : "/rab/6", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result59);
+  Json badPatch1 = (*result59);
 
   // Parent does not exist, map
-  Json badPatch2 = Json::parse(R"JSON(
+  auto result60 = Json::parse(R"JSON(
       [
         {"op" : "add", "path" : "/bar/baz", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result60);
+  Json badPatch2 = (*result60);
 
   // Parent does not exist, list
-  Json badPatch3 = Json::parse(R"JSON(
+  auto result61 = Json::parse(R"JSON(
       [
         {"op" : "add", "path" : "/bar/0", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result61);
+  Json badPatch3 = (*result61);
 
-  EXPECT_EQ(jsonPatch(before, patch.toArray()), after);
-  ASSERT_THROW(jsonPatch(before, badPatch1.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch2.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch3.toArray()), JsonPatchException);
+  auto result62 = patch.toArray();
+  ASSERT_TRUE(result62);
+  auto result63 = jsonPatch(before, (*result62));
+  ASSERT_TRUE(result63);
+  EXPECT_EQ((*result63), after);
+  auto result64 = badPatch1.toArray();
+  ASSERT_TRUE(result64);
+  auto error65 = jsonPatch(before, (*result64));
+  ASSERT_FALSE(error65);
+  EXPECT_TRUE(error65.error().is<JsonPatchException>());
+  auto result66 = badPatch2.toArray();
+  ASSERT_TRUE(result66);
+  auto error67 = jsonPatch(before, (*result66));
+  ASSERT_FALSE(error67);
+  EXPECT_TRUE(error67.error().is<JsonPatchException>());
+  auto result68 = badPatch3.toArray();
+  ASSERT_TRUE(result68);
+  auto error69 = jsonPatch(before, (*result68));
+  ASSERT_FALSE(error69);
+  EXPECT_TRUE(error69.error().is<JsonPatchException>());
 }
 
 TEST(JsonTest, PatchingRemove) {
-  Json before = Json::parse(R"JSON(
+  auto result70 = Json::parse(R"JSON(
       {
         "foo" : "xyzzy",
         "bar" : "foo",
@@ -256,8 +406,10 @@ TEST(JsonTest, PatchingRemove) {
         "rab" : [0, 0, 1, 2, "foo", false, {"baz" : "bar"} ]
       }
     )JSON");
+  ASSERT_TRUE(result70);
+  Json before = (*result70);
 
-  Json after = Json::parse(R"JSON(
+  auto result71 = Json::parse(R"JSON(
       {
         "bar" : "foo",
         "baz" : {
@@ -267,8 +419,10 @@ TEST(JsonTest, PatchingRemove) {
         "rab" : [0, 1, 2, "foo", false]
       }
     )JSON");
+  ASSERT_TRUE(result71);
+  Json after = (*result71);
 
-  Json patch = Json::parse(R"JSON(
+  auto result72 = Json::parse(R"JSON(
       [
         {"op" : "remove", "path" : "/foo"},
         {"op" : "remove", "path" : "/baz/rebar"},
@@ -276,36 +430,60 @@ TEST(JsonTest, PatchingRemove) {
         {"op" : "remove", "path" : "/rab/5"}
       ]
   )JSON");
+  ASSERT_TRUE(result72);
+  Json patch = (*result72);
 
   // Removing end of list
-  Json badPatch1 = Json::parse(R"JSON(
+  auto result73 = Json::parse(R"JSON(
       [
         {"op" : "remove", "path" : "/rab/-"}
       ]
   )JSON");
+  ASSERT_TRUE(result73);
+  Json badPatch1 = (*result73);
 
   // Removing past end of list
-  Json badPatch2 = Json::parse(R"JSON(
+  auto result74 = Json::parse(R"JSON(
       [
         {"op" : "add", "path" : "/rab/7"}
       ]
   )JSON");
+  ASSERT_TRUE(result74);
+  Json badPatch2 = (*result74);
 
   // Path wrong type
-  Json badPatch3 = Json::parse(R"JSON(
+  auto result75 = Json::parse(R"JSON(
       [
         {"op" : "remove", "path" : "/bar/baz"}
       ]
   )JSON");
+  ASSERT_TRUE(result75);
+  Json badPatch3 = (*result75);
 
-  EXPECT_EQ(jsonPatch(before, patch.toArray()), after);
-  ASSERT_THROW(jsonPatch(before, badPatch1.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch2.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch3.toArray()), JsonPatchException);
+  auto result76 = patch.toArray();
+  ASSERT_TRUE(result76);
+  auto result77 = jsonPatch(before, (*result76));
+  ASSERT_TRUE(result77);
+  EXPECT_EQ((*result77), after);
+  auto result78 = badPatch1.toArray();
+  ASSERT_TRUE(result78);
+  auto error79 = jsonPatch(before, (*result78));
+  ASSERT_FALSE(error79);
+  EXPECT_TRUE(error79.error().is<JsonPatchException>());
+  auto result80 = badPatch2.toArray();
+  ASSERT_TRUE(result80);
+  auto error81 = jsonPatch(before, (*result80));
+  ASSERT_FALSE(error81);
+  EXPECT_TRUE(error81.error().is<JsonPatchException>());
+  auto result82 = badPatch3.toArray();
+  ASSERT_TRUE(result82);
+  auto error83 = jsonPatch(before, (*result82));
+  ASSERT_FALSE(error83);
+  EXPECT_TRUE(error83.error().is<JsonPatchException>());
 }
 
 TEST(JsonTest, PatchingReplace) {
-  Json before = Json::parse(R"JSON(
+  auto result84 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "bar" : {
@@ -320,8 +498,10 @@ TEST(JsonTest, PatchingReplace) {
         "rabby" : [0, 1, 2, "foo", false]
       }
     )JSON");
+  ASSERT_TRUE(result84);
+  Json before = (*result84);
 
-  Json after = Json::parse(R"JSON(
+  auto result85 = Json::parse(R"JSON(
       {
         "foo" : "xyzzy",
         "bar" : [3, 2, 1, "contact"],
@@ -333,8 +513,10 @@ TEST(JsonTest, PatchingReplace) {
         "rabby" : false
       }
     )JSON");
+  ASSERT_TRUE(result85);
+  Json after = (*result85);
 
-  Json patch = Json::parse(R"JSON(
+  auto result86 = Json::parse(R"JSON(
       [
         {"op" : "replace", "path" : "/foo", "value" : "xyzzy"},
         {"op" : "replace", "path" : "/bar", "value" : [3, 2, 1, "contact"]},
@@ -345,36 +527,60 @@ TEST(JsonTest, PatchingReplace) {
         {"op" : "replace", "path" : "/rabby", "value" : false}
       ]
   )JSON");
+  ASSERT_TRUE(result86);
+  Json patch = (*result86);
 
   // End of list
-  Json badPatch1 = Json::parse(R"JSON(
+  auto result87 = Json::parse(R"JSON(
       [
         {"op" : "replace", "path" : "/rab/-", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result87);
+  Json badPatch1 = (*result87);
 
   // Past end of list
-  Json badPatch2 = Json::parse(R"JSON(
+  auto result88 = Json::parse(R"JSON(
       [
         {"op" : "replace", "path" : "/rab/5", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result88);
+  Json badPatch2 = (*result88);
 
   // Key does not exist
-  Json badPatch3 = Json::parse(R"JSON(
+  auto result89 = Json::parse(R"JSON(
       [
         {"op" : "replace", "path" : "/bar/baz", "value" : {"baz" : "bar"} }
       ]
   )JSON");
+  ASSERT_TRUE(result89);
+  Json badPatch3 = (*result89);
 
-  EXPECT_EQ(jsonPatch(before, patch.toArray()), after);
-  ASSERT_THROW(jsonPatch(before, badPatch1.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch2.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch3.toArray()), JsonPatchException);
+  auto result90 = patch.toArray();
+  ASSERT_TRUE(result90);
+  auto result91 = jsonPatch(before, (*result90));
+  ASSERT_TRUE(result91);
+  EXPECT_EQ((*result91), after);
+  auto result92 = badPatch1.toArray();
+  ASSERT_TRUE(result92);
+  auto error93 = jsonPatch(before, (*result92));
+  ASSERT_FALSE(error93);
+  EXPECT_TRUE(error93.error().is<JsonPatchException>());
+  auto result94 = badPatch2.toArray();
+  ASSERT_TRUE(result94);
+  auto error95 = jsonPatch(before, (*result94));
+  ASSERT_FALSE(error95);
+  EXPECT_TRUE(error95.error().is<JsonPatchException>());
+  auto result96 = badPatch3.toArray();
+  ASSERT_TRUE(result96);
+  auto error97 = jsonPatch(before, (*result96));
+  ASSERT_FALSE(error97);
+  EXPECT_TRUE(error97.error().is<JsonPatchException>());
 }
 
 TEST(JsonTest, PatchingMove) {
-  Json before = Json::parse(R"JSON(
+  auto result98 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "bar" : [1, 2, 3, "contact"],
@@ -386,8 +592,10 @@ TEST(JsonTest, PatchingMove) {
         "rabby" : [0, 1, 2, "foo", true]
       }
     )JSON");
+  ASSERT_TRUE(result98);
+  Json before = (*result98);
 
-  Json after = Json::parse(R"JSON(
+  auto result99 = Json::parse(R"JSON(
       {
         "foot" : "bar",
         "baz" : {
@@ -398,8 +606,10 @@ TEST(JsonTest, PatchingMove) {
         "rab" : [0, 1, 2, true, "foo"]
       }
     )JSON");
+  ASSERT_TRUE(result99);
+  Json after = (*result99);
 
-  Json patch = Json::parse(R"JSON(
+  auto result100 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/foo", "path" : "/foot"},
         {"op" : "move", "from" : "/bar", "path" : "/baz/bal"},
@@ -411,52 +621,88 @@ TEST(JsonTest, PatchingMove) {
         {"op" : "move", "from" : "/rab/3", "path" : "/rab/-"}
       ]
   )JSON");
+  ASSERT_TRUE(result100);
+  Json patch = (*result100);
 
   // From end of list
-  Json badPatch1 = Json::parse(R"JSON(
+  auto result101 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/rab/-", "path" : "/doesnotmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result101);
+  Json badPatch1 = (*result101);
 
   // From past end of list
-  Json badPatch2 = Json::parse(R"JSON(
+  auto result102 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/rab/5", "path" : "/doesnotmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result102);
+  Json badPatch2 = (*result102);
 
   // To past end of list
-  Json badPatch3 = Json::parse(R"JSON(
+  auto result103 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/rab/0", "path" : "/rab/5"}
       ]
   )JSON");
+  ASSERT_TRUE(result103);
+  Json badPatch3 = (*result103);
 
   // Source path does not exist
-  Json badPatch4 = Json::parse(R"JSON(
+  auto result104 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/omgomg", "path" : "/doesntmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result104);
+  Json badPatch4 = (*result104);
 
   // Dest path wrong type
-  Json badPatch5 = Json::parse(R"JSON(
+  auto result105 = Json::parse(R"JSON(
       [
         {"op" : "move", "from" : "/baz/bar", "path" : "/rabby/bar"}
       ]
   )JSON");
+  ASSERT_TRUE(result105);
+  Json badPatch5 = (*result105);
 
-  EXPECT_EQ(jsonPatch(before, patch.toArray()), after);
-  ASSERT_THROW(jsonPatch(before, badPatch1.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch2.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch3.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch4.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch5.toArray()), JsonPatchException);
+  auto result106 = patch.toArray();
+  ASSERT_TRUE(result106);
+  auto result107 = jsonPatch(before, (*result106));
+  ASSERT_TRUE(result107);
+  EXPECT_EQ((*result107), after);
+  auto result108 = badPatch1.toArray();
+  ASSERT_TRUE(result108);
+  auto error109 = jsonPatch(before, (*result108));
+  ASSERT_FALSE(error109);
+  EXPECT_TRUE(error109.error().is<JsonPatchException>());
+  auto result110 = badPatch2.toArray();
+  ASSERT_TRUE(result110);
+  auto error111 = jsonPatch(before, (*result110));
+  ASSERT_FALSE(error111);
+  EXPECT_TRUE(error111.error().is<JsonPatchException>());
+  auto result112 = badPatch3.toArray();
+  ASSERT_TRUE(result112);
+  auto error113 = jsonPatch(before, (*result112));
+  ASSERT_FALSE(error113);
+  EXPECT_TRUE(error113.error().is<JsonPatchException>());
+  auto result114 = badPatch4.toArray();
+  ASSERT_TRUE(result114);
+  auto error115 = jsonPatch(before, (*result114));
+  ASSERT_FALSE(error115);
+  EXPECT_TRUE(error115.error().is<JsonPatchException>());
+  auto result116 = badPatch5.toArray();
+  ASSERT_TRUE(result116);
+  auto error117 = jsonPatch(before, (*result116));
+  ASSERT_FALSE(error117);
+  EXPECT_TRUE(error117.error().is<JsonPatchException>());
 }
 
 TEST(JsonTest, PatchingCopy) {
-  Json before = Json::parse(R"JSON(
+  auto result118 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "foot" : "bar",
@@ -469,8 +715,10 @@ TEST(JsonTest, PatchingCopy) {
         "rabby" : [0, 1, 2, "foo", true]
       }
     )JSON");
+  ASSERT_TRUE(result118);
+  Json before = (*result118);
 
-  Json after = Json::parse(R"JSON(
+  auto result119 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "foot" : "bar",
@@ -484,8 +732,10 @@ TEST(JsonTest, PatchingCopy) {
         "rabby" : [0, 1, 2, "foo", true]
       }
     )JSON");
+  ASSERT_TRUE(result119);
+  Json after = (*result119);
 
-  Json patch = Json::parse(R"JSON(
+  auto result120 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/foo", "path" : "/foot"},
         {"op" : "copy", "from" : "/bar", "path" : "/baz/bal"},
@@ -497,52 +747,88 @@ TEST(JsonTest, PatchingCopy) {
         {"op" : "copy", "from" : "/rab/3", "path" : "/rab/-"}
       ]
   )JSON");
+  ASSERT_TRUE(result120);
+  Json patch = (*result120);
 
   // From end of list
-  Json badPatch1 = Json::parse(R"JSON(
+  auto result121 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/rab/-", "path" : "/doesnotmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result121);
+  Json badPatch1 = (*result121);
 
   // From past end of list
-  Json badPatch2 = Json::parse(R"JSON(
+  auto result122 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/rab/5", "path" : "/doesnotmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result122);
+  Json badPatch2 = (*result122);
 
   // To past end of list
-  Json badPatch3 = Json::parse(R"JSON(
+  auto result123 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/rab/0", "path" : "/rab/6"}
       ]
   )JSON");
+  ASSERT_TRUE(result123);
+  Json badPatch3 = (*result123);
 
   // Source path does not exist
-  Json badPatch4 = Json::parse(R"JSON(
+  auto result124 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/omgomg", "path" : "/doesntmatter"}
       ]
   )JSON");
+  ASSERT_TRUE(result124);
+  Json badPatch4 = (*result124);
 
   // Dest path wrong type
-  Json badPatch5 = Json::parse(R"JSON(
+  auto result125 = Json::parse(R"JSON(
       [
         {"op" : "copy", "from" : "/baz/bar", "path" : "/rabby/bar"}
       ]
   )JSON");
+  ASSERT_TRUE(result125);
+  Json badPatch5 = (*result125);
 
-  EXPECT_EQ(jsonPatch(before, patch.toArray()), after);
-  ASSERT_THROW(jsonPatch(before, badPatch1.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch2.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch3.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch4.toArray()), JsonPatchException);
-  ASSERT_THROW(jsonPatch(before, badPatch5.toArray()), JsonPatchException);
+  auto result126 = patch.toArray();
+  ASSERT_TRUE(result126);
+  auto result127 = jsonPatch(before, (*result126));
+  ASSERT_TRUE(result127);
+  EXPECT_EQ((*result127), after);
+  auto result128 = badPatch1.toArray();
+  ASSERT_TRUE(result128);
+  auto error129 = jsonPatch(before, (*result128));
+  ASSERT_FALSE(error129);
+  EXPECT_TRUE(error129.error().is<JsonPatchException>());
+  auto result130 = badPatch2.toArray();
+  ASSERT_TRUE(result130);
+  auto error131 = jsonPatch(before, (*result130));
+  ASSERT_FALSE(error131);
+  EXPECT_TRUE(error131.error().is<JsonPatchException>());
+  auto result132 = badPatch3.toArray();
+  ASSERT_TRUE(result132);
+  auto error133 = jsonPatch(before, (*result132));
+  ASSERT_FALSE(error133);
+  EXPECT_TRUE(error133.error().is<JsonPatchException>());
+  auto result134 = badPatch4.toArray();
+  ASSERT_TRUE(result134);
+  auto error135 = jsonPatch(before, (*result134));
+  ASSERT_FALSE(error135);
+  EXPECT_TRUE(error135.error().is<JsonPatchException>());
+  auto result136 = badPatch5.toArray();
+  ASSERT_TRUE(result136);
+  auto error137 = jsonPatch(before, (*result136));
+  ASSERT_FALSE(error137);
+  EXPECT_TRUE(error137.error().is<JsonPatchException>());
 }
 
 TEST(JsonTest, PatchingTest) {
-  Json base = Json::parse(R"JSON(
+  auto result138 = Json::parse(R"JSON(
       {
         "foo" : "bar",
         "foot" : "bart",
@@ -554,8 +840,10 @@ TEST(JsonTest, PatchingTest) {
         }
       }
     )JSON");
+  ASSERT_TRUE(result138);
+  Json base = (*result138);
 
-  Json goodTest = Json::parse(R"JSON(
+  auto result139 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/foo", "value" : "bar"},
         {"op" : "test", "path" : "/foo", "value" : "bark", "inverse" : true},
@@ -573,62 +861,109 @@ TEST(JsonTest, PatchingTest) {
         {"op" : "test", "path" : "/foo" }
       ]
   )JSON");
+  ASSERT_TRUE(result139);
+  Json goodTest = (*result139);
 
-  Json failTest1 = Json::parse(R"JSON(
+  auto result140 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/bar", "value" : [1, 3, 2, "contact"]}
       ]
   )JSON");
+  ASSERT_TRUE(result140);
+  Json failTest1 = (*result140);
 
-  Json failTest2 = Json::parse(R"JSON(
+  auto result141 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/bar/-", "value" : "contact"}
       ]
   )JSON");
+  ASSERT_TRUE(result141);
+  Json failTest2 = (*result141);
 
-  Json failTest3 = Json::parse(R"JSON(
+  auto result142 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/xyzzy", "value" : null}
       ]
   )JSON");
+  ASSERT_TRUE(result142);
+  Json failTest3 = (*result142);
 
-  Json failTest4 = Json::parse(R"JSON(
+  auto result143 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/xyzzy/zop", "value" : null}
       ]
   )JSON");
+  ASSERT_TRUE(result143);
+  Json failTest4 = (*result143);
 
-  Json failTest5 = Json::parse(R"JSON(
+  auto result144 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/nothere" }
       ]
   )JSON");
+  ASSERT_TRUE(result144);
+  Json failTest5 = (*result144);
 
-  Json failTest6 = Json::parse(R"JSON(
+  auto result145 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/bar", "inverse" : true }
       ]
   )JSON");
+  ASSERT_TRUE(result145);
+  Json failTest6 = (*result145);
 
-  Json failTest7 = Json::parse(R"JSON(
+  auto result146 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/foo", "value" : "bar", "inverse" : true }
       ]
   )JSON");
+  ASSERT_TRUE(result146);
+  Json failTest7 = (*result146);
 
-  jsonPatch(base, goodTest.toArray());
+  auto result147 = goodTest.toArray();
+  ASSERT_TRUE(result147);
+  auto result148 = jsonPatch(base, (*result147));
+  ASSERT_TRUE(result148);
 
-  ASSERT_THROW(jsonPatch(base, failTest1.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest2.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest3.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest4.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest5.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest6.toArray()), JsonPatchTestFail);
-  ASSERT_THROW(jsonPatch(base, failTest7.toArray()), JsonPatchTestFail);
+  auto result149 = failTest1.toArray();
+  ASSERT_TRUE(result149);
+  auto error150 = jsonPatch(base, (*result149));
+  ASSERT_FALSE(error150);
+  EXPECT_TRUE(error150.error().is<JsonPatchTestFail>());
+  auto result151 = failTest2.toArray();
+  ASSERT_TRUE(result151);
+  auto error152 = jsonPatch(base, (*result151));
+  ASSERT_FALSE(error152);
+  EXPECT_TRUE(error152.error().is<JsonPatchTestFail>());
+  auto result153 = failTest3.toArray();
+  ASSERT_TRUE(result153);
+  auto error154 = jsonPatch(base, (*result153));
+  ASSERT_FALSE(error154);
+  EXPECT_TRUE(error154.error().is<JsonPatchTestFail>());
+  auto result155 = failTest4.toArray();
+  ASSERT_TRUE(result155);
+  auto error156 = jsonPatch(base, (*result155));
+  ASSERT_FALSE(error156);
+  EXPECT_TRUE(error156.error().is<JsonPatchTestFail>());
+  auto result157 = failTest5.toArray();
+  ASSERT_TRUE(result157);
+  auto error158 = jsonPatch(base, (*result157));
+  ASSERT_FALSE(error158);
+  EXPECT_TRUE(error158.error().is<JsonPatchTestFail>());
+  auto result159 = failTest6.toArray();
+  ASSERT_TRUE(result159);
+  auto error160 = jsonPatch(base, (*result159));
+  ASSERT_FALSE(error160);
+  EXPECT_TRUE(error160.error().is<JsonPatchTestFail>());
+  auto result161 = failTest7.toArray();
+  ASSERT_TRUE(result161);
+  auto error162 = jsonPatch(base, (*result161));
+  ASSERT_FALSE(error162);
+  EXPECT_TRUE(error162.error().is<JsonPatchTestFail>());
 }
 
 TEST(JsonTest, PatchingEscaping) {
-  Json base1 = Json::parse(R"JSON(
+  auto result163 = Json::parse(R"JSON(
       {
         "~" : true,
         "/" : false,
@@ -637,8 +972,10 @@ TEST(JsonTest, PatchingEscaping) {
         "~~0~1/~0~" : "ugh"
       }
   )JSON");
+  ASSERT_TRUE(result163);
+  Json base1 = (*result163);
 
-  Json test1 = Json::parse(R"JSON(
+  auto result164 = Json::parse(R"JSON(
       [
         {"op" : "test", "path" : "/~0", "value" : true},
         {"op" : "test", "path" : "/~1", "value" : false},
@@ -647,12 +984,17 @@ TEST(JsonTest, PatchingEscaping) {
         {"op" : "test", "path" : "/~0~00~01~1~00~0", "value" : "ugh"}
       ]
   )JSON");
+  ASSERT_TRUE(result164);
+  Json test1 = (*result164);
 
-  jsonPatch(base1, test1.toArray());
+  auto result165 = test1.toArray();
+  ASSERT_TRUE(result165);
+  auto result166 = jsonPatch(base1, (*result165));
+  ASSERT_TRUE(result166);
 }
 
 TEST(JsonTest, MergeQuery) {
-  Json json1 = Json::parse(R"JSON(
+  auto result167 = Json::parse(R"JSON(
       {
         "foo" : "foo1",
         "bar" : "bar1",
@@ -663,7 +1005,9 @@ TEST(JsonTest, MergeQuery) {
         "fizz" : 4
       }
     )JSON");
-  Json json2 = Json::parse(R"JSON(
+  ASSERT_TRUE(result167);
+  Json json1 = (*result167);
+  auto result168 = Json::parse(R"JSON(
       {
         "foo" : "foo2",
         "bar" : "bar2",
@@ -674,7 +1018,9 @@ TEST(JsonTest, MergeQuery) {
         "fob" : 2
       }
     )JSON");
-  Json json3 = Json::parse(R"JSON(
+  ASSERT_TRUE(result168);
+  Json json2 = (*result168);
+  auto result169 = Json::parse(R"JSON(
       {
         "baz" : {
           "3" : "3"
@@ -686,9 +1032,15 @@ TEST(JsonTest, MergeQuery) {
         }
       }
     )JSON");
+  ASSERT_TRUE(result169);
+  Json json3 = (*result169);
 
   auto testIdentical = [&](String const& key) {
-    EXPECT_EQ(jsonMergeQuery(key, json1, json2, json3), jsonMerge(json1, json2, json3).query(key, {}));
+    auto result170 = jsonMergeQuery(key, json1, json2, json3);
+    ASSERT_TRUE(result170);
+    auto result171 = jsonMerge(json1, json2, json3).query(key, {});
+    ASSERT_TRUE(result171);
+    EXPECT_EQ((*result170), (*result171));
   };
 
   testIdentical("foo");

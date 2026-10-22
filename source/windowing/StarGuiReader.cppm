@@ -57,9 +57,9 @@ public:
   GuiReader(GuiContext& context);
 
 protected:
-  WidgetConstructResult titleHandler(String const& _unused, Json const& config);
-  WidgetConstructResult paneFeatureHandler(String const& _unused, Json const& config);
-  WidgetConstructResult backgroundHandler(String const& _unused, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> titleHandler(String const& _unused, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> paneFeatureHandler(String const& _unused, Json const& config);
+  [[nodiscard]] std::expected<WidgetConstructResult, StarException> backgroundHandler(String const& _unused, Json const& config);
 };
 
 }

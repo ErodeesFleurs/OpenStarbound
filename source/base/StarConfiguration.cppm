@@ -20,16 +20,16 @@ public:
 
   Json defaultConfiguration() const;
   Json currentConfiguration() const;
-  String printConfiguration() const;
+  [[nodiscard]] std::expected<String, StarException> printConfiguration() const;
 
-  Json get(String const& key, Json def = {}) const;
-  Json getPath(String const& path, Json def = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> get(String const& key, Json def = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> getPath(String const& path, Json def = {}) const;
 
-  Json getDefault(String const& key) const;
-  Json getDefaultPath(String const& path) const;
+  [[nodiscard]] std::expected<Json, StarException> getDefault(String const& key) const;
+  [[nodiscard]] std::expected<Json, StarException> getDefaultPath(String const& path) const;
 
-  void set(String const& key, Json const& value);
-  void setPath(String const& path, Json const& value);
+  [[nodiscard]] std::expected<void, StarException> set(String const& key, Json const& value);
+  [[nodiscard]] std::expected<void, StarException> setPath(String const& path, Json const& value);
 
 private:
   mutable Mutex m_mutex;

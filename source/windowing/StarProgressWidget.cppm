@@ -45,6 +45,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 class ProgressWidget : public Widget {
@@ -56,7 +57,7 @@ public:
     return Star::typeName<ProgressWidget>();
   }
 
-  ProgressWidget(GuiContext& context, String const& background,
+  [[nodiscard]] static std::expected<std::shared_ptr<ProgressWidget>, StarException> create(GuiContext& context, String const& background,
       String const& overlay,
       ImageStretchSet const& progressSet,
       GuiDirection direction);
@@ -69,8 +70,7 @@ public:
   void setOverlay(String const& overlay);
 
 protected:
-  virtual void renderImpl();
-  RectI shift(float begin, float end, RectI templ);
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
   float m_progressLevel;
   float m_maxLevel;
@@ -83,6 +83,7 @@ protected:
   GuiDirection m_direction;
 
 private:
+  ProgressWidget(GuiContext& context, String const& background, String const& overlay, ImageStretchSet const& progressSet, GuiDirection direction);
 };
 
 }

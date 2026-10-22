@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -66,44 +67,77 @@ import star.image_widget;
 
 namespace Star {
 
-JoinRequestDialog::JoinRequestDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(false) {}
+JoinRequestDialog::JoinRequestDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(true) {}
 
-void JoinRequestDialog::displayRequest(String const& userName, std::function<void(P2PJoinRequestReply)> callback) {
+std::expected<std::shared_ptr<JoinRequestDialog>, StarException> JoinRequestDialog::create(GuiContext& guiContext) {
+  auto pane = std::shared_ptr<JoinRequestDialog>(new JoinRequestDialog(guiContext));
+  auto initialized = pane->initializePane();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> JoinRequestDialog::displayRequest(String const& userName, std::function<std::expected<void, StarException>(P2PJoinRequestReply)> callback) {
+  if (!callback)
+    return std::unexpected(StarException("Join request has no reply callback"));
   auto assets = context()->root().assets();
-
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   removeAllChildren();
-
   GuiReader reader(*context());
-
   m_callback = std::move(callback);
-
-  reader.registerCallback("yes", [this](Widget*){ reply(P2PJoinRequestReply::Yes); });
-  reader.registerCallback("no", [this](Widget*){ reply(P2PJoinRequestReply::No); });
-  reader.registerCallback("ignore", [this](Widget*){ reply(P2PJoinRequestReply::Ignore); });
-
+  reader.registerCallback("yes", [this](Widget*) { return reply(P2PJoinRequestReply::Yes); });
+  reader.registerCallback("no", [this](Widget*) { return reply(P2PJoinRequestReply::No); });
+  reader.registerCallback("ignore", [this](Widget*) { return reply(P2PJoinRequestReply::Ignore); });
   m_confirmed = false;
-
-  Json config = assets->json("/interface/windowconfig/joinrequest.config");
-
-  reader.construct(config.get("paneLayout"), this);
-
-  String message = config.getString("joinMessage").replaceTags(StringMap<String>{{"username", userName}});
-  fetchChild<LabelWidget>("message")->setText(message);
-
-  show();
+  auto config = (*assets)->json("/interface/windowconfig/joinrequest.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto layout = config->get("paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed)
+    return std::unexpected(std::move(constructed.error()));
+  auto message = config->getString("joinMessage");
+  if (!message)
+    return std::unexpected(std::move(message.error()));
+  auto label = fetchChild<LabelWidget>("message");
+  if (!label)
+    return std::unexpected(std::move(label.error()));
+  if (!*label)
+    return std::unexpected(GUIBuilderException("Missing join request message label"));
+  auto text = (*label)->setText(message->replaceTags(StringMap<String>{{"username", userName}}));
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  return show();
 }
 
-void JoinRequestDialog::reply(P2PJoinRequestReply reply) {
+std::expected<void, StarException> JoinRequestDialog::reply(P2PJoinRequestReply reply) {
+  if (!m_callback)
+    return std::unexpected(StarException("Join request has no reply callback"));
+  auto replied = m_callback(reply);
+  if (!replied)
+    return std::unexpected(std::move(replied.error()));
   m_confirmed = true;
-  m_callback(reply);
   dismiss();
+  return {};
 }
 
-void JoinRequestDialog::dismissed() {
-  if (!m_confirmed)
-    m_callback(P2PJoinRequestReply::No);
-
-  Pane::dismissed();
+std::expected<void, StarException> JoinRequestDialog::dismissed() {
+  std::expected<void, StarException> replied;
+  if (!m_confirmed) {
+    if (!m_callback)
+      replied = std::unexpected(StarException("Join request has no reply callback"));
+    else
+      replied = m_callback(P2PJoinRequestReply::No);
+    if (replied)
+      m_confirmed = true;
+  }
+  auto dismissed = Pane::dismissed();
+  if (!replied)
+    return std::unexpected(std::move(replied.error()));
+  return dismissed;
 }
 
 }

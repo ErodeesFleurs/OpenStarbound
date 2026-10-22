@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -71,32 +72,34 @@ public:
     return Star::typeName<OptionsMenu>();
   }
 
-  OptionsMenu(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<OptionsMenu>, StarException> create(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
 
-  virtual void show() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
 
-  void toggleFullscreen();
+  [[nodiscard]] std::expected<void, StarException> toggleFullscreen();
 
 private:
+  OptionsMenu(GuiContext& guiContext, PaneManager* manager);
+  [[nodiscard]] std::expected<void, StarException> init(std::shared_ptr<UniverseClient> client);
   static StringList const ConfigKeys;
 
-  void initConfig();
+  [[nodiscard]] std::expected<void, StarException> initConfig();
 
-  void updateInstrumentVol();
-  void updateSFXVol();
-  void updateMusicVol();
-  void updateTutorialMessages();
-  void updateClientIPJoinable();
-  void updateClientP2PJoinable();
-  void updateAllowAssetsMismatch();
-  void updateHeadRotation();
+  [[nodiscard]] std::expected<void, StarException> updateInstrumentVol();
+  [[nodiscard]] std::expected<void, StarException> updateSFXVol();
+  [[nodiscard]] std::expected<void, StarException> updateMusicVol();
+  [[nodiscard]] std::expected<void, StarException> updateTutorialMessages();
+  [[nodiscard]] std::expected<void, StarException> updateClientIPJoinable();
+  [[nodiscard]] std::expected<void, StarException> updateClientP2PJoinable();
+  [[nodiscard]] std::expected<void, StarException> updateAllowAssetsMismatch();
+  [[nodiscard]] std::expected<void, StarException> updateHeadRotation();
 
-  void syncGuiToConf();
+  [[nodiscard]] std::expected<void, StarException> syncGuiToConf();
 
-  void displayControls();
-  void displayVoiceSettings();
-  void displayModBindings();
-  void displayGraphics();
+  [[nodiscard]] std::expected<void, StarException> displayControls();
+  [[nodiscard]] std::expected<void, StarException> displayVoiceSettings();
+  [[nodiscard]] std::expected<void, StarException> displayModBindings();
+  [[nodiscard]] std::expected<void, StarException> displayGraphics();
 
   std::shared_ptr<SliderBarWidget> m_instrumentSlider;
   std::shared_ptr<SliderBarWidget> m_sfxSlider;

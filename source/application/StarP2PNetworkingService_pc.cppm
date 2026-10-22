@@ -7,6 +7,7 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
+import star.format;
 import star.byte_array;
 
 import star.string;
@@ -28,7 +29,6 @@ import star.steam_dispatch;
 import star.platform_services_pc;
 import star.algorithm;
 import star.strong_typedef;
-import star.either;
 import star.rpc_promise;
 
 namespace Star {
@@ -38,20 +38,20 @@ public:
   PcP2PNetworkingService(std::shared_ptr<PcPlatformServicesState> state);
   ~PcP2PNetworkingService();
 
-  void setJoinUnavailable() override;
-  void setJoinLocal(std::uint32_t capacity) override;
-  void setJoinRemote(HostAddressWithPort location) override;
-  void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
+  [[nodiscard]] std::expected<void, StarException> setJoinUnavailable() override;
+  [[nodiscard]] std::expected<void, StarException> setJoinLocal(std::uint32_t capacity) override;
+  [[nodiscard]] std::expected<void, StarException> setJoinRemote(HostAddressWithPort location) override;
+  [[nodiscard]] std::expected<void, StarException> setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
 
   std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
   std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
   List<std::unique_ptr<P2PSocket>> acceptP2PConnections() override;
-  void update() override;
-  Either<String, std::unique_ptr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) override;
+  [[nodiscard]] std::expected<void, StarException> update() override;
+  [[nodiscard]] std::expected<std::unique_ptr<P2PSocket>, StarException> connectToPeer(P2PNetworkingPeerId peerId) override;
 
-  void addPendingJoin(String connectionString);
+  [[nodiscard]] std::expected<void, StarException> addPendingJoin(String connectionString);
 
 private:
   template <typename BaseType>
@@ -137,10 +137,11 @@ private:
     ~SteamP2PSocket();
 
     bool isOpen() override;
-    bool sendMessage(ByteArray const& message) override;
-    std::optional<ByteArray> receiveMessage() override;
+    [[nodiscard]] std::expected<bool, StarException> sendMessage(ByteArray const& message) override;
+    [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> receiveMessage() override;
 
     Mutex mutex;
+    std::optional<StarException> error;
     PcP2PNetworkingService* parent = nullptr;
     CSteamID steamId = CSteamID();
     Deque<ByteArray> incoming;
@@ -149,12 +150,12 @@ private:
 
   std::unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
-  void steamOnConnectionFailure(P2PSessionConnectFail_t* callback);
-  void steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback);
-  void steamOnSessionRequest(P2PSessionRequest_t* callback);
+  std::expected<void, StarException> steamOnConnectionFailure(P2PSessionConnectFail_t* callback);
+  std::expected<void, StarException> steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback);
+  std::expected<void, StarException> steamOnSessionRequest(P2PSessionRequest_t* callback);
 
   void steamCloseSocket(SteamP2PSocket* socket);
-  void steamReceiveAll();
+  std::expected<void, StarException> steamReceiveAll();
 
 #endif
 
@@ -178,10 +179,11 @@ private:
     ~DiscordP2PSocket();
 
     bool isOpen() override;
-    bool sendMessage(ByteArray const& message) override;
-    std::optional<ByteArray> receiveMessage() override;
+    [[nodiscard]] std::expected<bool, StarException> sendMessage(ByteArray const& message) override;
+    [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> receiveMessage() override;
 
     Mutex mutex;
+    std::optional<StarException> error;
     std::shared_ptr<PcPlatformServicesState> state;
     std::shared_ptr<DiscordCallbackLifetime> lifetime;
     std::uint64_t connectionGeneration = 0;
@@ -191,7 +193,7 @@ private:
     Deque<ByteArray> incoming;
   };
 
-  std::unique_ptr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
+  std::expected<std::unique_ptr<P2PSocket>, StarException> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
   void discordDisconnectCallbacks();
 
@@ -202,7 +204,7 @@ private:
 
 #endif
   
-  void setJoinLocation(JoinLocation joinLocation);
+  std::expected<void, StarException> setJoinLocation(JoinLocation joinLocation);
 
   std::shared_ptr<PcPlatformServicesState> m_state;
 #ifdef STAR_ENABLE_STEAM_INTEGRATION

@@ -1,9 +1,11 @@
 module;
 import star.net_compatibility;
+import star.format;
 
 import std;
 import star.list;
 import star.data_stream;
+import star.data_stream_extra;
 import star.string;
 import star.byte_array;
 
@@ -38,19 +40,19 @@ public:
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
 protected:
-  virtual void readData(DataStream& ds, T& t) const = 0;
-  virtual void writeData(DataStream& ds, T const& t) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> readData(DataStream& ds, T& t) const = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> writeData(DataStream& ds, T const& t) const = 0;
 
   virtual void updated();
 
@@ -65,8 +67,8 @@ private:
 template <typename T>
 class NetElementIntegral : public NetElementBasicField<T> {
 protected:
-  void readData(DataStream& ds, T& v) const override;
-  void writeData(DataStream& ds, T const& v) const override;
+  [[nodiscard]] std::expected<void, StarException> readData(DataStream& ds, T& v) const override;
+  [[nodiscard]] std::expected<void, StarException> writeData(DataStream& ds, T const& v) const override;
 };
 
 typedef NetElementIntegral<std::int64_t> NetElementInt;
@@ -76,21 +78,21 @@ typedef NetElementIntegral<std::uint64_t> NetElementUInt;
 // size_t values are NOT clamped when setting.
 class NetElementSize : public NetElementBasicField<std::size_t> {
 protected:
-  void readData(DataStream& ds, std::size_t& v) const override;
-  void writeData(DataStream& ds, std::size_t const& v) const override;
+  [[nodiscard]] std::expected<void, StarException> readData(DataStream& ds, std::size_t& v) const override;
+  [[nodiscard]] std::expected<void, StarException> writeData(DataStream& ds, std::size_t const& v) const override;
 };
 
 class NetElementBool : public NetElementBasicField<bool> {
 protected:
-  void readData(DataStream& ds, bool& v) const override;
-  void writeData(DataStream& ds, bool const& v) const override;
+  [[nodiscard]] std::expected<void, StarException> readData(DataStream& ds, bool& v) const override;
+  [[nodiscard]] std::expected<void, StarException> writeData(DataStream& ds, bool const& v) const override;
 };
 
 template <typename Enum>
 class NetElementEnum : public NetElementBasicField<Enum> {
 protected:
-  void readData(DataStream& ds, Enum& v) const override;
-  void writeData(DataStream& ds, Enum const& v) const override;
+  [[nodiscard]] std::expected<void, StarException> readData(DataStream& ds, Enum& v) const override;
+  [[nodiscard]] std::expected<void, StarException> writeData(DataStream& ds, Enum const& v) const override;
 };
 
 // Wraps a uint64_t to give a simple event stream.  Every trigger is an
@@ -111,7 +113,7 @@ public:
   void ignoreOccurrences();
   void setIgnoreOccurrencesOnNetLoad(bool ignoreOccurrencesOnNetLoad);
 
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
 protected:
   void updated() override;
@@ -131,15 +133,15 @@ template <typename T>
 class NetElementData : public NetElementBasicField<T> {
 public:
   NetElementData();
-  NetElementData(std::function<void(DataStream&, T&)> reader, std::function<void(DataStream&, T const&)> writer);
+  NetElementData(std::function<std::expected<void, StarException>(DataStream&, T&)> reader, std::function<std::expected<void, StarException>(DataStream&, T const&)> writer);
 
 protected:
-  void readData(DataStream& ds, T& v) const override;
-  void writeData(DataStream& ds, T const& v) const override;
+  [[nodiscard]] std::expected<void, StarException> readData(DataStream& ds, T& v) const override;
+  [[nodiscard]] std::expected<void, StarException> writeData(DataStream& ds, T const& v) const override;
 
 private:
-  std::function<void(DataStream&, T&)> m_reader;
-  std::function<void(DataStream&, T const&)> m_writer;
+  std::function<std::expected<void, StarException>(DataStream&, T&)> m_reader;
+  std::function<std::expected<void, StarException>(DataStream&, T const&)> m_writer;
 };
 
 typedef NetElementData<String> NetElementString;
@@ -188,77 +190,81 @@ void NetElementBasicField<T>::initNetVersion(NetElementVersion const* version) {
 }
 
 template <typename T>
-void NetElementBasicField<T>::enableNetInterpolation(float) {
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::enableNetInterpolation(float) {
   if (!m_pendingInterpolatedValues)
     m_pendingInterpolatedValues.emplace();
+  return {};
 }
 
 template <typename T>
-void NetElementBasicField<T>::disableNetInterpolation() {
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::disableNetInterpolation() {
   if (m_pendingInterpolatedValues) {
     if (!m_pendingInterpolatedValues->empty())
-      m_value = m_pendingInterpolatedValues->takeLast().second;
+      m_value = std::move(m_pendingInterpolatedValues->back().second);
     m_pendingInterpolatedValues.reset();
   }
+  return {};
 }
 
 template <typename T>
-void NetElementBasicField<T>::tickNetInterpolation(float dt) {
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::tickNetInterpolation(float dt) {
   if (m_pendingInterpolatedValues) {
     for (auto& p : *m_pendingInterpolatedValues)
       p.first -= dt;
-    while (!m_pendingInterpolatedValues->empty() && m_pendingInterpolatedValues->first().first <= 0.0f) {
-      m_value = m_pendingInterpolatedValues->takeFirst().second;
+    while (!m_pendingInterpolatedValues->empty() && m_pendingInterpolatedValues->front().first <= 0.0f) {
+      m_value = std::move(m_pendingInterpolatedValues->front().second);
+      m_pendingInterpolatedValues->pop_front();
       updated();
     }
   }
+  return {};
 }
 
 template <typename T>
-void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return {};
   if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
-    writeData(ds, m_pendingInterpolatedValues->last().second);
+    return writeData(ds, m_pendingInterpolatedValues->back().second);
   else
-    writeData(ds, m_value);
+    return writeData(ds, m_value);
 }
 
 template <typename T>
-void NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  readData(ds, m_value);
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
+  { auto result = readData(ds, m_value); if (!result) return std::unexpected(std::move(result.error())); }
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   updated();
   if (m_pendingInterpolatedValues)
     m_pendingInterpolatedValues->clear();
+  return {};
 }
 
 template <typename T>
-bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+[[nodiscard]] std::expected<bool, StarException> NetElementBasicField<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
-  if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
-    writeData(ds, m_pendingInterpolatedValues->last().second);
-  else
-    writeData(ds, m_value);
+  auto result = (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
+      ? writeData(ds, m_pendingInterpolatedValues->back().second) : writeData(ds, m_value);
+  if (!result) return std::unexpected(std::move(result.error()));
 
   return true;
 }
 
 template <typename T>
-void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+[[nodiscard]] std::expected<void, StarException> NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
   T t;
-  readData(ds, t);
+  { auto result = readData(ds, t); if (!result) return std::unexpected(std::move(result.error())); }
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_pendingInterpolatedValues) {
     // Only append an incoming delta to our pending value list if the incoming
     // step is forward in time of every other pending value.  In any other
     // case, this is an error or the step tracking is wildly off, so just clear
     // any other incoming values.
-    if (interpolationTime > 0.0f && (m_pendingInterpolatedValues->empty() || interpolationTime >= m_pendingInterpolatedValues->last().first)) {
+    if (interpolationTime > 0.0f && (m_pendingInterpolatedValues->empty() || interpolationTime >= m_pendingInterpolatedValues->back().first)) {
       m_pendingInterpolatedValues->append({interpolationTime, std::move(t)});
     } else {
       m_value = std::move(t);
@@ -269,6 +275,7 @@ void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTi
     m_value = std::move(t);
     updated();
   }
+  return {};
 }
 
 template <typename T>
@@ -277,61 +284,64 @@ void NetElementBasicField<T>::updated() {
 }
 
 template <typename T>
-void NetElementIntegral<T>::readData(DataStream& ds, T& v) const {
-  if (sizeof(T) == 1) {
-    ds.read(v);
+[[nodiscard]] std::expected<void, StarException> NetElementIntegral<T>::readData(DataStream& ds, T& v) const {
+  if constexpr (sizeof(T) == 1) {
+    return ds.read(v);
+  } else if constexpr (std::is_unsigned_v<T>) {
+    auto result = ds.readVlqU();
+    if (!result) return std::unexpected(std::move(result.error()));
+    v = *result;
   } else {
-    if (std::is_unsigned<T>::value)
-      v = ds.readVlqU();
-    else
-      v = ds.readVlqI();
+    auto result = ds.readVlqI();
+    if (!result) return std::unexpected(std::move(result.error()));
+    v = *result;
   }
+  return {};
 }
 
 template <typename T>
-void NetElementIntegral<T>::writeData(DataStream& ds, T const& v) const {
-  if (sizeof(T) == 1) {
-    ds.write(v);
-  } else {
-    if (std::is_unsigned<T>::value)
-      ds.writeVlqU(v);
-    else
-      ds.writeVlqI(v);
+[[nodiscard]] std::expected<void, StarException> NetElementIntegral<T>::writeData(DataStream& ds, T const& v) const {
+  if constexpr (sizeof(T) == 1) return ds.write(v);
+  else if constexpr (std::is_unsigned_v<T>) return ds.vuwrite(v);
+  else return ds.viwrite(v);
+}
+
+template <typename Enum>
+[[nodiscard]] std::expected<void, StarException> NetElementEnum<Enum>::readData(DataStream& ds, Enum& v) const {
+  if constexpr (sizeof(Enum) == 1) return ds.read(v);
+  else {
+    auto result = ds.readVlqI();
+    if (!result) return std::unexpected(std::move(result.error()));
+    v = static_cast<Enum>(*result);
+    return {};
   }
 }
 
 template <typename Enum>
-void NetElementEnum<Enum>::readData(DataStream& ds, Enum& v) const {
-  if (sizeof(Enum) == 1)
-    ds.read(v);
-  else
-    v = (Enum)ds.readVlqI();
-}
-
-template <typename Enum>
-void NetElementEnum<Enum>::writeData(DataStream& ds, Enum const& v) const {
-  if (sizeof(Enum) == 1)
-    ds.write(v);
-  else
-    ds.writeVlqI((std::int64_t)v);
+[[nodiscard]] std::expected<void, StarException> NetElementEnum<Enum>::writeData(DataStream& ds, Enum const& v) const {
+  if constexpr (sizeof(Enum) == 1) return ds.write(v);
+  else return ds.viwrite((std::int64_t)v);
 }
 
 template <typename T>
 NetElementData<T>::NetElementData()
-  : NetElementData([](DataStream& ds, T & t) { ds >> t; }, [](DataStream& ds, T const& t) { ds << t; }) {}
+  : NetElementData([](DataStream& ds, T& t) -> std::expected<void, StarException> { return ds.read(t); },
+      [](DataStream& ds, T const& t) -> std::expected<void, StarException> { return ds.write(t); }) {}
 
 template <typename T>
-NetElementData<T>::NetElementData(std::function<void(DataStream&, T&)> reader, std::function<void(DataStream&, T const&)> writer)
+NetElementData<T>::NetElementData(std::function<std::expected<void, StarException>(DataStream&, T&)> reader, std::function<std::expected<void, StarException>(DataStream&, T const&)> writer)
   : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
 
 template <typename T>
-void NetElementData<T>::readData(DataStream& ds, T& v) const {
-  m_reader(ds, v);
+[[nodiscard]] std::expected<void, StarException> NetElementData<T>::readData(DataStream& ds, T& v) const {
+  if (!m_reader) return std::unexpected(StarException("Missing NetElementData reader"));
+  return m_reader(ds, v);
 }
 
 template <typename T>
-void NetElementData<T>::writeData(DataStream& ds, T const& v) const {
-  m_writer(ds, v);
+[[nodiscard]] std::expected<void, StarException> NetElementData<T>::writeData(DataStream& ds, T const& v) const {
+  if (!m_writer) return std::unexpected(StarException("Missing NetElementData writer"));
+  return m_writer(ds, v);
 }
 
 }

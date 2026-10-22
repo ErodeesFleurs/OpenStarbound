@@ -48,10 +48,10 @@ public:
   };
 
   WorldStructure();
-  WorldStructure(Root& root, String const& configPath);
-  WorldStructure(Json const& store);
+  [[nodiscard]] static std::expected<WorldStructure, StarException> create(Root& root, String const& configPath);
+  [[nodiscard]] static std::expected<WorldStructure, StarException> create(Json const& store);
 
-  Json configValue(String const& name) const;
+  [[nodiscard]] std::expected<Json, StarException> configValue(String const& name) const;
 
   List<Overlay> const& backgroundOverlays() const;
   List<Overlay> const& foregroundOverlays() const;
@@ -69,7 +69,7 @@ public:
   void setAnchorPosition(Vec2I const& anchorPosition);
   void translate(Vec2I const& distance);
 
-  Json store() const;
+  [[nodiscard]] std::expected<Json, StarException> store() const;
 
 private:
   struct BlockKey {

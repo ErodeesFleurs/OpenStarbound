@@ -1,5 +1,6 @@
 import std;
 import star.listener;
+import star.format;
 
 namespace Star {
 
@@ -30,24 +31,19 @@ struct ListenerRegistration {
     idle.wait(lock, [&] { return running == 0; });
   }
 
-  void invoke(std::weak_ptr<Listener> const& weakListener) {
+  [[nodiscard]] std::expected<void, StarException> invoke(std::weak_ptr<Listener> const& weakListener) {
     std::shared_ptr<Listener> listener;
     {
       std::lock_guard lock(mutex);
       if (!active || !(listener = weakListener.lock()))
-        return;
+        return {};
       ++running;
       invokingThread = std::this_thread::get_id();
     }
-    try {
-      listener->trigger();
-    } catch (...) {
-      listener.reset();
-      complete();
-      throw;
-    }
+    auto result = listener->trigger();
     listener.reset();
     complete();
+    return result;
   }
 
   void complete() {
@@ -59,12 +55,13 @@ struct ListenerRegistration {
 
 Listener::~Listener() {}
 
-CallbackListener::CallbackListener(std::function<void()> callback)
+CallbackListener::CallbackListener(std::function<std::expected<void, StarException>()> callback)
   : callback(std::move(callback)) {}
 
-void CallbackListener::trigger() {
+[[nodiscard]] std::expected<void, StarException> CallbackListener::trigger() {
   if (callback)
-    callback();
+    return callback();
+  return std::unexpected(StarException("Cannot invoke an empty listener callback"));
 }
 
 TrackerListener::TrackerListener() : triggered(false) {}
@@ -124,7 +121,7 @@ void ListenerGroup::clearAllListeners() {
     entry.second->disconnect();
 }
 
-void ListenerGroup::trigger() {
+[[nodiscard]] std::expected<void, StarException> ListenerGroup::trigger() {
   std::lock_guard dispatchLock(m_dispatchMutex);
   std::vector<std::pair<std::weak_ptr<Listener>, std::shared_ptr<ListenerRegistration>>> listeners;
   {
@@ -132,8 +129,12 @@ void ListenerGroup::trigger() {
     std::erase_if(m_listeners, [](auto const& entry) { return entry.first.expired(); });
     listeners.assign(m_listeners.begin(), m_listeners.end());
   }
-  for (auto const& entry : listeners)
-    entry.second->invoke(entry.first);
+  for (auto const& entry : listeners) {
+    auto result = entry.second->invoke(entry.first);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 }

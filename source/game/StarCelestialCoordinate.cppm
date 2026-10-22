@@ -30,7 +30,8 @@ public:
   // Creates the null CelestialCoordinate
   CelestialCoordinate();
   CelestialCoordinate(Vec3I location, int planetaryOrbitNumber = 0, int satelliteOrbitNumber = 0);
-  explicit CelestialCoordinate(Json const& json);
+  // Parses JSON/string coordinates, preserving parsing context in returned errors.
+  [[nodiscard]] static std::expected<CelestialCoordinate, StarException> create(Json const& json);
 
   // Is this coordanate the null coordinate?
   bool isNull() const;
@@ -46,23 +47,19 @@ public:
   Vec3I location() const;
 
   // Returns just the system coordinate portion of this celestial coordinate.
-  CelestialCoordinate system() const;
+  [[nodiscard]] std::expected<CelestialCoordinate, StarException> system() const;
 
-  // Returns just the planet portion of this celestial coordinate, throws
-  // exception if this is a system coordinate.
-  CelestialCoordinate planet() const;
+  // Returns just the planet portion, or an error for null/system coordinates.
+  [[nodiscard]] std::expected<CelestialCoordinate, StarException> planet() const;
 
   // Returns the orbit number for this body.  Returns 0 for system coordinates.
-  int orbitNumber() const;
+  [[nodiscard]] std::expected<int, StarException> orbitNumber() const;
 
-  // Returns the system for a planet or the planet for a satellite.  If this is
-  // a system coordinate, throws an exception.
-  CelestialCoordinate parent() const;
+  // Returns the parent, or an error for null/system coordinates.
+  [[nodiscard]] std::expected<CelestialCoordinate, StarException> parent() const;
 
-  // Returns a coordinate to a child object at the given orbit number.  If the
-  // orbit number is 0, returns *this, otherwise if this is a satellite throws
-  // an exception.
-  CelestialCoordinate child(int orbitNumber) const;
+  // Returns a child, or an error for null/satellite coordinates.
+  [[nodiscard]] std::expected<CelestialCoordinate, StarException> child(int orbitNumber) const;
 
   // Stores coordinate in json form that can be used to reconstruct it.
   Json toJson() const;
@@ -87,14 +84,17 @@ public:
   // Prints in the same format accepted by parser.  Each coordinate is unique.
   friend std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord);
 
-  friend DataStream& operator>>(DataStream& ds, CelestialCoordinate& coordinate);
-  friend DataStream& operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
 
 private:
   Vec3I m_location;
   int m_planetaryOrbitNumber;
   int m_satelliteOrbitNumber;
 };
+
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialCoordinate& coordinate);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
 
 }
 

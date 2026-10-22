@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.lua;
 import star.json;
@@ -93,23 +94,41 @@ import star.status_controller_lua_bindings;
 import star.algorithm;
 namespace Star {
 
-Companion::Companion(Root& root, Json const& json) : m_json(json) {
-  m_portrait = json.getArray("portrait", JsonArray{}).transformed([&root](Json const& drawable) { return Drawable(*root.imageMetadataDatabase(), drawable); });
+std::expected<std::shared_ptr<Companion>, StarException> Companion::create(Root& root, Json const& json) {
+  auto companion = std::shared_ptr<Companion>(new Companion(json));
+  auto portrait = json.getArray("portrait", JsonArray{});
+  if (!portrait)
+    return std::unexpected(std::move(portrait.error()));
+  if (portrait->empty())
+    return companion;
+  auto metadata = root.imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  for (auto const& entry : *portrait) {
+    auto drawable = Drawable::create(**metadata, entry);
+    if (!drawable)
+      return std::unexpected(std::move(drawable.error()));
+    companion->m_portrait.append(std::move(*drawable));
+  }
+  return companion;
 }
 
 Json Companion::toJson() const {
   return m_json;
 }
 
-Uuid Companion::podUuid() const {
-  return Uuid(m_json.getString("podUuid"));
+std::expected<Uuid, StarException> Companion::podUuid() const {
+  auto text = m_json.getString("podUuid");
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  return Uuid::create(*text);
 }
 
-std::optional<String> Companion::name() const {
+std::expected<std::optional<String>, StarException> Companion::name() const {
   return m_json.optString("name");
 }
 
-std::optional<String> Companion::description() const {
+std::expected<std::optional<String>, StarException> Companion::description() const {
   return m_json.optString("description");
 }
 
@@ -117,104 +136,182 @@ List<Drawable> Companion::portrait() const {
   return m_portrait;
 }
 
-std::optional<float> Companion::resource(String const& resourceName) const {
-  if (auto status = m_json.opt("status"))
-    if (auto resources = status->opt("resources"))
-      return resources->optFloat(resourceName);
-  return {};
+std::expected<std::optional<float>, StarException> Companion::statusValue(String const& group, String const& name) const {
+  auto status = m_json.opt("status");
+  if (!status)
+    return std::unexpected(std::move(status.error()));
+  if (!*status)
+    return std::optional<float>();
+  auto values = (*status)->opt(group);
+  if (!values)
+    return std::unexpected(std::move(values.error()));
+  if (!*values)
+    return std::optional<float>();
+  return (*values)->optFloat(name);
 }
 
-std::optional<float> Companion::resourceMax(String const& resourceName) const {
-  if (auto status = m_json.opt("status"))
-    if (auto resources = status->opt("resourceMax"))
-      return resources->optFloat(resourceName);
-  return {};
+std::expected<std::optional<float>, StarException> Companion::resource(String const& name) const {
+  return statusValue("resources", name);
 }
 
-std::optional<float> Companion::stat(String const& statName) const {
-  if (auto status = m_json.opt("status"))
-    if (auto stats = status->opt("stats"))
-      return stats->optFloat(statName);
-  return {};
+std::expected<std::optional<float>, StarException> Companion::resourceMax(String const& name) const {
+  return statusValue("resourceMax", name);
+}
+
+std::expected<std::optional<float>, StarException> Companion::stat(String const& name) const {
+  return statusValue("stats", name);
 }
 
 PlayerCompanions::PlayerCompanions(Root& root, Json const& config) : m_root(root), m_config(config), m_scriptComponent(root) {}
 
-void PlayerCompanions::diskLoad(Json const& diskStore) {
-  m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
-  m_companions = jsonToMapV<StringMap<List<std::shared_ptr<Companion>>>>(diskStore.getObject("companions", JsonObject{}),
-      [this](Json const& companions) {
-        return companions.toArray().transformed([this](Json const& json) { return std::make_shared<Companion>(m_root, json); });
-      });
-}
-
-Json PlayerCompanions::diskStore() const {
-  JsonObject result;
-  result["scriptStorage"] = m_scriptComponent.getScriptStorage();
-  result["companions"] = jsonFromMapV(m_companions,
-      [](List<std::shared_ptr<Companion>> const& companions) { return companions.transformed(std::mem_fn(&Companion::toJson)); });
-  return result;
-}
-
-List<std::shared_ptr<Companion>> PlayerCompanions::getCompanions(String const& category) const {
-  if (m_companions.contains(category))
-    return m_companions.get(category);
+std::expected<void, StarException> PlayerCompanions::diskLoad(Json const& diskStore) {
+  auto storage = diskStore.getObject("scriptStorage", JsonObject{});
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  auto stored = m_scriptComponent.setScriptStorage(std::move(*storage));
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  auto categories = diskStore.getObject("companions", JsonObject{});
+  if (!categories)
+    return std::unexpected(std::move(categories.error()));
+  StringMap<List<std::shared_ptr<Companion>>> loaded;
+  for (auto const& category : *categories) {
+    auto entries = category.second.iterateArray();
+    if (!entries)
+      return std::unexpected(std::move(entries.error()));
+    for (auto const& entry : *entries) {
+      auto companion = Companion::create(m_root, entry);
+      if (!companion)
+        return std::unexpected(std::move(companion.error()));
+      loaded[category.first].append(std::move(*companion));
+    }
+    // Retain empty categories in the saved state.
+    loaded[category.first];
+  }
+  m_companions = std::move(loaded);
   return {};
 }
 
-void PlayerCompanions::init(Entity* player, World* world) {
+std::expected<Json, StarException> PlayerCompanions::diskStore() const {
+  auto storage = m_scriptComponent.getScriptStorage();
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  JsonObject companions;
+  for (auto const& category : m_companions) {
+    JsonArray entries;
+    for (auto const& companion : category.second)
+      entries.append(companion->toJson());
+    companions[category.first] = std::move(entries);
+  }
+  return JsonObject{{"scriptStorage", std::move(*storage)}, {"companions", std::move(companions)}};
+}
+
+List<std::shared_ptr<Companion>> PlayerCompanions::getCompanions(String const& category) const {
+  if (auto companions = m_companions.ptr(category))
+    return *companions;
+  return {};
+}
+
+std::expected<void, StarException> PlayerCompanions::init(Entity* player, World* world) {
   m_world = world;
-
-  m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
-  m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
-
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player)));
-  m_scriptComponent.addCallbacks(
-      "status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
-  m_scriptComponent.addCallbacks("playerCompanions", makeCompanionsCallbacks());
-
-  m_scriptComponent.addCallbacks("config",
-      LuaBindings::makeConfigCallbacks([this](
-          String const& name, Json const& def) { return m_config.query(name, def); }));
-
-  m_scriptComponent.init(world);
+  auto setup = [&]() -> std::expected<void, StarException> {
+    auto scriptsJson = m_config.get("scripts", JsonArray());
+    if (!scriptsJson)
+      return std::unexpected(std::move(scriptsJson.error()));
+    auto scripts = jsonToStringList(*scriptsJson);
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    auto installed = m_scriptComponent.setScripts(std::move(*scripts));
+    if (!installed)
+      return std::unexpected(std::move(installed.error()));
+    auto delta = m_config.getInt("scriptDelta", 10);
+    if (!delta)
+      return std::unexpected(std::move(delta.error()));
+    m_scriptComponent.setUpdateDelta(*delta);
+    auto add = [&](String name, std::expected<LuaCallbacks, StarException> callbacks) -> std::expected<void, StarException> {
+      if (!callbacks)
+        return std::unexpected(std::move(callbacks.error()));
+      return m_scriptComponent.addCallbacks(std::move(name), std::move(*callbacks));
+    };
+    if (auto result = add("entity", LuaBindings::makeEntityCallbacks(player)); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player))); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController())); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("playerCompanions", makeCompanionsCallbacks()); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("config", LuaBindings::makeConfigCallbacks(
+        [this](String const& name, Json const& def) { return m_config.query(name, def); })); !result)
+      return std::unexpected(std::move(result.error()));
+    return m_scriptComponent.init(world);
+  }();
+  if (!setup) {
+    auto cleanup = uninit();
+    if (!cleanup)
+      return std::unexpected(setup.error().withContext(strf("Companion initialization rollback failed: {}", cleanup.error().what())));
+  }
+  return setup;
 }
 
-void PlayerCompanions::uninit() {
-  m_scriptComponent.uninit();
-  m_scriptComponent.removeCallbacks("entity");
-  m_scriptComponent.removeCallbacks("player");
-  m_scriptComponent.removeCallbacks("status");
-  m_scriptComponent.removeCallbacks("playerCompanions");
-  m_scriptComponent.removeCallbacks("config");
+std::expected<void, StarException> PlayerCompanions::uninit() {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result) {
+      if (error)
+        *error = error->withContext(result.error().what());
+      else
+        error = std::move(result.error());
+    }
+  };
+  remember(m_scriptComponent.uninit());
+  for (auto const& name : {"entity", "player", "status", "playerCompanions", "config"})
+    remember(m_scriptComponent.removeCallbacks(name));
   m_world = nullptr;
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void PlayerCompanions::dismissCompanion(String const& category, Uuid const& podUuid) {
-  m_scriptComponent.invoke("dismissCompanion", category, podUuid.hex());
+std::expected<void, StarException> PlayerCompanions::dismissCompanion(String const& category, Uuid const& podUuid) {
+  auto result = m_scriptComponent.invoke("dismissCompanion", category, podUuid.hex());
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return {};
 }
 
-std::optional<ChainableJsonMessageResponse> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
-void PlayerCompanions::update(float dt) {
-  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+std::expected<void, StarException> PlayerCompanions::update(float dt) {
+  auto updated = m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  return {};
 }
 
-LuaCallbacks PlayerCompanions::makeCompanionsCallbacks() {
+std::expected<LuaCallbacks, StarException> PlayerCompanions::makeCompanionsCallbacks() {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("getCompanions",
-      [this](String const& category) {
-        return m_companions[category].transformed([](std::shared_ptr<Companion> const& companion) { return companion->toJson(); });
-      });
-  callbacks.registerCallback("setCompanions",
-      [this](String const& category, JsonArray const& companions) {
-        m_companions[category] = companions.transformed([this](Json const& json) { return std::make_shared<Companion>(m_root, json); });
-      });
-
+  auto get = callbacks.registerCallback("getCompanions", [this](String const& category) {
+    return m_companions[category].transformed([](std::shared_ptr<Companion> const& companion) { return companion->toJson(); });
+  });
+  if (!get)
+    return std::unexpected(std::move(get.error()));
+  auto set = callbacks.registerCallback("setCompanions",
+      [this](String const& category, JsonArray const& companions) -> std::expected<void, StarException> {
+    List<std::shared_ptr<Companion>> loaded;
+    for (auto const& json : companions) {
+      auto companion = Companion::create(m_root, json);
+      if (!companion)
+        return std::unexpected(std::move(companion.error()));
+      loaded.append(std::move(*companion));
+    }
+    m_companions[category] = std::move(loaded);
+    return {};
+  });
+  if (!set)
+    return std::unexpected(std::move(set.error()));
   return callbacks;
 }
 

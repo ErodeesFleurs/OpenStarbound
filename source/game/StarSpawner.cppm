@@ -4,6 +4,7 @@ import star.random;
 import star.periodic;
 import star.id_map;
 import std;
+import star.format;
 import star.map;
 import star.set;
 import star.ordered_map;
@@ -34,23 +35,32 @@ public:
   virtual WorldGeometry geometry() const = 0;
   virtual List<RectF> clientWindows() const = 0;
   // Should return false if the given region is not ready yet for spawning
-  virtual bool signalRegion(RectF const& region) const = 0;
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> signalRegion(RectF const& region) const = 0;
 
-  virtual bool isFreeSpace(RectF const& area) const = 0;
-  virtual CollisionKind collision(Vec2I const& position) const = 0;
-  virtual bool isBackgroundEmpty(Vec2I const& position) const = 0;
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> isFreeSpace(RectF const& area) const = 0;
+  [[nodiscard]]
+  virtual std::expected<CollisionKind, StarException> collision(Vec2I const& position) const = 0;
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> isBackgroundEmpty(Vec2I const& position) const = 0;
   virtual LiquidLevel liquidLevel(Vec2I const& pos) const = 0;
-  virtual bool spawningProhibited(RectF const& area) const = 0;
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> spawningProhibited(RectF const& area) const = 0;
 
   virtual std::uint64_t spawnSeed() const = 0;
-  virtual SpawnProfile spawnProfile(Vec2F const& position) const = 0;
+  [[nodiscard]]
+  virtual std::expected<SpawnProfile, StarException> spawnProfile(Vec2F const& position) const = 0;
   virtual float dayLevel() const = 0;
-  virtual float threatLevel() const = 0;
+  [[nodiscard]]
+  virtual std::expected<float, StarException> threatLevel() const = 0;
 
   // May return NullEntityId if spawning fails for some reason.
-  virtual EntityId spawnEntity(std::shared_ptr<Entity> entity) const = 0;
+  [[nodiscard]]
+  virtual std::expected<EntityId, StarException> spawnEntity(std::shared_ptr<Entity> entity) const = 0;
   virtual std::shared_ptr<Entity> getEntity(EntityId entityId) const = 0;
-  virtual void despawnEntity(EntityId entityId) = 0;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> despawnEntity(EntityId entityId) = 0;
 };
 
 class Root;
@@ -58,11 +68,13 @@ class Spawner {
   Root& m_root;
   Root& root() const { return m_root; }
 public:
-  Spawner(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<Spawner>, StarException> create(Root& root);
 
   void init(std::shared_ptr<SpawnerFacade> facade);
   // Despawns all spawned entities before shutting down
-  void uninit();
+  [[nodiscard]]
+  std::expected<void, StarException> uninit();
 
   // An inactive spawner will not spawn new entities into newly visited
   // regions.
@@ -70,14 +82,18 @@ public:
   void setActive(bool active);
 
   // Activates the given spawn cells, spawning monsters in them if necessary.
-  void activateRegion(RectF region);
+  [[nodiscard]]
+  std::expected<void, StarException> activateRegion(RectF region);
   // Activates the given spawn cells *without* spawning monsters in them, does
   // nothing if they are already active.
-  void activateEmptyRegion(RectF region);
+  [[nodiscard]]
+  std::expected<void, StarException> activateEmptyRegion(RectF region);
 
-  void update(float dt);
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt);
 
 private:
+  explicit Spawner(Root& root) : m_root(root) {}
   struct SpawnCellDebugInfo {
     SpawnParameters spawnParameters;
     int spawns;
@@ -85,20 +101,25 @@ private:
   };
 
   Vec2I cellIndexForPosition(Vec2F const& position) const;
-  List<Vec2I> cellIndexesForRange(RectF const& range) const;
+  [[nodiscard]]
+  std::expected<List<Vec2I>, StarException> cellIndexesForRange(RectF const& range) const;
   RectF cellRegion(Vec2I const& cellIndex) const;
 
   // Is the cell spawnable, and if so, what are the valid spawn parameters for it?
-  std::optional<SpawnParameters> spawnParametersForCell(Vec2I const& cellIndex) const;
+  [[nodiscard]]
+  std::expected<std::optional<SpawnParameters>, StarException> spawnParametersForCell(Vec2I const& cellIndex) const;
 
   // Finds a position for the given bounding box inside the given spawn cell
   // which matches the given spawn parameters.
-  std::optional<Vec2F> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
+  [[nodiscard]]
+  std::expected<std::optional<Vec2F>, StarException> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
 
   // Spawns monsters in a newly active cell
-  void spawnInCell(Vec2I const& cell);
+  [[nodiscard]]
+  std::expected<void, StarException> spawnInCell(Vec2I const& cell);
 
-  void debugShowSpawnCells();
+  [[nodiscard]]
+  std::expected<void, StarException> debugShowSpawnCells();
 
   unsigned m_spawnCellSize;
   unsigned m_spawnCellMinimumEmptyTiles;

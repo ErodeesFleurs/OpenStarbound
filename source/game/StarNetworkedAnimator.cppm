@@ -95,36 +95,36 @@ public:
     HashMap<std::shared_ptr<AudioInstance>, Vec2F> currentAudioBasePositions;
   };
 
-  NetworkedAnimator(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<NetworkedAnimator>, StarException> create(Root& root);
   // If passed a string as config, NetworkedAnimator will interpret this as a
   // config path, otherwise it is interpreted as the literal config.
-  NetworkedAnimator(Root& root, Json config, String relativePath = String());
+  [[nodiscard]] static std::expected<std::shared_ptr<NetworkedAnimator>, StarException> create(Root& root, Json config, String relativePath = String());
 
-  NetworkedAnimator(NetworkedAnimator&& animator);
-  NetworkedAnimator(NetworkedAnimator const& animator);
-
-  NetworkedAnimator& operator=(NetworkedAnimator&& animator);
-  NetworkedAnimator& operator=(NetworkedAnimator const& animator);
+  [[nodiscard]] static std::expected<std::shared_ptr<NetworkedAnimator>, StarException> create(NetworkedAnimator const& animator);
+  NetworkedAnimator(NetworkedAnimator&&) = delete;
+  NetworkedAnimator(NetworkedAnimator const&) = delete;
+  NetworkedAnimator& operator=(NetworkedAnimator&&) = delete;
+  NetworkedAnimator& operator=(NetworkedAnimator const&) = delete;
 
   StringList stateTypes() const;
-  StringList states(String const& stateType) const;
+  [[nodiscard]] std::expected<StringList, StarException> states(String const& stateType) const;
 
   // Returns whether a state change occurred.  If startNew is true, always
   // forces a state change and starts the state off at the beginning even if
   // this state is already the current state.
-  bool setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  String state(String const& stateType) const;
-  int stateFrame(String const& stateType) const;
-  int stateNextFrame(String const& stateType) const;
-  float stateFrameProgress(String const& stateType) const;
-  float stateTimer(String const& stateType) const;
-  bool stateReverse(String const& stateType) const;
+  [[nodiscard]] std::expected<bool, StarException> setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
+  [[nodiscard]] std::expected<bool, StarException> setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
+  [[nodiscard]] std::expected<String, StarException> state(String const& stateType) const;
+  [[nodiscard]] std::expected<int, StarException> stateFrame(String const& stateType) const;
+  [[nodiscard]] std::expected<int, StarException> stateNextFrame(String const& stateType) const;
+  [[nodiscard]] std::expected<float, StarException> stateFrameProgress(String const& stateType) const;
+  [[nodiscard]] std::expected<float, StarException> stateTimer(String const& stateType) const;
+  [[nodiscard]] std::expected<bool, StarException> stateReverse(String const& stateType) const;
 
-  float stateCycle(String const& stateType, std::optional<String> state) const;
-  int stateFrames(String const& stateType, std::optional<String> state) const;
+  [[nodiscard]] std::expected<float, StarException> stateCycle(String const& stateType, std::optional<String> state) const;
+  [[nodiscard]] std::expected<int, StarException> stateFrames(String const& stateType, std::optional<String> state) const;
 
-  bool hasState(String const& stateType, std::optional<String> const& state = {}) const;
+  [[nodiscard]] std::expected<bool, StarException> hasState(String const& stateType, std::optional<String> const& state = {}) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;
   StringMap<AnimatedPartSet::Part>& parts();
@@ -133,29 +133,29 @@ public:
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName, std::optional<String> state = {}, std::optional<int> frame = {}) const;
-  Json stateNextProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName, std::optional<String> stateType = {}, std::optional<String> state = {}, std::optional<int> frame = {}) const;
-  Json partNextProperty(String const & partName, String const & propertyName) const;
+  [[nodiscard]] std::expected<Json, StarException> stateProperty(String const& stateType, String const& propertyName, std::optional<String> state = {}, std::optional<int> frame = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> stateNextProperty(String const& stateType, String const& propertyName) const;
+  [[nodiscard]] std::expected<Json, StarException> partProperty(String const& partName, String const& propertyName, std::optional<String> stateType = {}, std::optional<String> state = {}, std::optional<int> frame = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> partNextProperty(String const & partName, String const & propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.
   Mat3F globalTransformation() const;
   // The transformation applied from the given set of transformation groups
-  Mat3F groupTransformation(StringList const& transformationGroups) const;
+  [[nodiscard]] std::expected<Mat3F, StarException> groupTransformation(StringList const& transformationGroups) const;
   // The transformation that is applied to the given part NOT including the
   // global transformation
-  Mat3F partTransformation(String const& partName) const;
+  [[nodiscard]] std::expected<Mat3F, StarException> partTransformation(String const& partName) const;
   // Returns the total transformation for the given part, which includes the
   // globalTransformation, as well as the part rotation, scaling, and
   // translation.
-  Mat3F finalPartTransformation(String const& partName) const;
+  [[nodiscard]] std::expected<Mat3F, StarException> finalPartTransformation(String const& partName) const;
 
   // partPoint / partPoly takes a propertyName and looks up the associated part
   // property and interprets is a Vec2F or a PolyF, then applies the final part
   // transformation and returns it.
-  std::optional<Vec2F> partPoint(String const& partName, String const& propertyName) const;
-  std::optional<PolyF> partPoly(String const& partName, String const& propertyName) const;
+  [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> partPoint(String const& partName, String const& propertyName) const;
+  [[nodiscard]] std::expected<std::optional<PolyF>, StarException> partPoly(String const& partName, String const& propertyName) const;
 
   // Every part image can have one or more <tag> directives in it, which if set
   // here will be replaced by the tag value when constructing Drawables.  All
@@ -170,7 +170,7 @@ public:
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);
 
-  String applyPartTags(String const& partName, String apply) const;
+  [[nodiscard]] std::expected<String, StarException> applyPartTags(String const& partName, String apply) const;
 
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
@@ -187,86 +187,88 @@ public:
   // Given angle is an absolute angle.  Will rotate over time at the configured
   // angular velocity unless the immediate flag is set.
   bool hasRotationGroup(String const& rotationGroup) const;
-  void rotateGroup(String const& rotationGroup, float targetAngle, bool immediate = false);
-  float currentRotationAngle(String const& rotationGroup) const;
+  [[nodiscard]] std::expected<void, StarException> rotateGroup(String const& rotationGroup, float targetAngle, bool immediate = false);
+  [[nodiscard]] std::expected<float, StarException> currentRotationAngle(String const& rotationGroup) const;
 
   // Transformation groups can be used for arbitrary part transforamtions.
   // They apply immediately, and are optionally interpolated on slaves.
   bool hasTransformationGroup(String const& transformationGroup) const;
-  void translateTransformationGroup(String const& transformationGroup, Vec2F const& translation);
-  void rotateTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
-  void scaleTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
-  void scaleTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
-  void transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
-  void resetTransformationGroup(String const& transformationGroup);
-  void setTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] std::expected<void, StarException> translateTransformationGroup(String const& transformationGroup, Vec2F const& translation);
+  [[nodiscard]] std::expected<void, StarException> rotateTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> scaleTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> scaleTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
+  [[nodiscard]] std::expected<void, StarException> resetTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] std::expected<void, StarException> setTransformationGroup(String const& transformationGroup, Mat3F transform);
+  [[nodiscard]] std::expected<Mat3F, StarException> getTransformationGroup(String const& transformationGroup);
 
-  void translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
-  void rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
-  void scaleLocalTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
-  void scaleLocalTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
-  void transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
-  void resetLocalTransformationGroup(String const& transformationGroup);
-  void setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getLocalTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] std::expected<void, StarException> translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
+  [[nodiscard]] std::expected<void, StarException> rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> scaleLocalTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> scaleLocalTransformationGroup(String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
+  [[nodiscard]] std::expected<void, StarException> resetLocalTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] std::expected<void, StarException> setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
+  [[nodiscard]] std::expected<Mat3F, StarException> getLocalTransformationGroup(String const& transformationGroup);
 
   bool hasParticleEmitter(String const& emitterName) const;
   // Active particle emitters emit over time based on emission rate/variance.
-  void setParticleEmitterActive(String const& emitterName, bool active);
+  [[nodiscard]] std::expected<void, StarException> setParticleEmitterActive(String const& emitterName, bool active);
   // Set the emission rate in particles / sec for a given emitter
-  void setParticleEmitterEmissionRate(String const& emitterName, float emissionRate);
+  [[nodiscard]] std::expected<void, StarException> setParticleEmitterEmissionRate(String const& emitterName, float emissionRate);
   // Set the optional particle emitter offset region, which particles will be
   // spread around randomly before being spawned
-  void setParticleEmitterOffsetRegion(String const& emitterName, RectF const& offsetRegion);
+  [[nodiscard]] std::expected<void, StarException> setParticleEmitterOffsetRegion(String const& emitterName, RectF const& offsetRegion);
 
   // Number of times to cycle when emitting a burst of particles.
-  void setParticleEmitterBurstCount(String const& emitterName, unsigned burstCount);
+  [[nodiscard]] std::expected<void, StarException> setParticleEmitterBurstCount(String const& emitterName, unsigned burstCount);
 
   // Cause one time burst of all types of particles in an emitter looping around
   // burstCount times
-  void burstParticleEmitter(String const& emitterName);
+  [[nodiscard]] std::expected<void, StarException> burstParticleEmitter(String const& emitterName);
 
   bool hasLight(String const& lightName) const;
-  void setLightActive(String const& lightName, bool active);
-  void setLightPosition(String const& lightName, Vec2F position);
-  void setLightColor(String const& lightName, Color color);
-  void setLightPointAngle(String const& lightName, float angle);
+  [[nodiscard]] std::expected<void, StarException> setLightActive(String const& lightName, bool active);
+  [[nodiscard]] std::expected<void, StarException> setLightPosition(String const& lightName, Vec2F position);
+  [[nodiscard]] std::expected<void, StarException> setLightColor(String const& lightName, Color color);
+  [[nodiscard]] std::expected<void, StarException> setLightPointAngle(String const& lightName, float angle);
 
   bool hasSound(String const& soundName) const;
-  void setSoundPool(String const& soundName, StringList soundPool);
+  [[nodiscard]] std::expected<void, StarException> setSoundPool(String const& soundName, StringList soundPool);
   // Plays a sound from the given independent sound pool.  Multiple sounds may
   // be played as part of this group, and playing a new one will not interrupt
   // an older one.
-  void playSound(String const& soundName, int loops = 0);
+  [[nodiscard]] std::expected<void, StarException> playSound(String const& soundName, int loops = 0);
 
   // Setting the sound position, volume, and speed will affect future sounds in
   // this group, as well as any still active sounds from this group.
-  void setSoundPosition(String const& soundName, Vec2F const& position);
+  [[nodiscard]] std::expected<void, StarException> setSoundPosition(String const& soundName, Vec2F const& position);
 
-  void setSoundVolume(String const& soundName, float volume, float rampTime = 0.0f);
-  void setSoundPitchMultiplier(String const& soundName, float pitchMultiplier, float rampTime = 0.0f);
+  [[nodiscard]] std::expected<void, StarException> setSoundVolume(String const& soundName, float volume, float rampTime = 0.0f);
+  [[nodiscard]] std::expected<void, StarException> setSoundPitchMultiplier(String const& soundName, float pitchMultiplier, float rampTime = 0.0f);
 
   // Stop all sounds played from this sound group
-  void stopAllSounds(String const& soundName, float rampTime = 0.0f);
+  [[nodiscard]] std::expected<void, StarException> stopAllSounds(String const& soundName, float rampTime = 0.0f);
 
-  void setEffectEnabled(String const& effect, bool enabled);
+  [[nodiscard]] std::expected<void, StarException> setEffectEnabled(String const& effect, bool enabled);
 
-  List<Drawable> drawables(Vec2F const& translate = Vec2F()) const;
-  List<std::pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> drawables(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] std::expected<List<std::pair<Drawable, float>>, StarException> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
 
-  List<LightSource> lightSources(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources(Vec2F const& translate = Vec2F()) const;
 
   // Dynamic target is optional, if not given, generated particles and sounds
   // will be discarded
-  void update(float dt, DynamicTarget* dynamicTarget);
+  [[nodiscard]] std::expected<void, StarException> update(float dt, DynamicTarget* dynamicTarget);
 
   // Run through the current animations until the final frame, including any
   // transition animations.
-  void finishAnimations();
+  [[nodiscard]] std::expected<void, StarException> finishAnimations();
   std::uint8_t version() const;
 
 private:
+  explicit NetworkedAnimator(Root& root);
+
   struct RotationGroup {
     float angularVelocity;
     Vec2F rotationCenter;
@@ -385,12 +387,13 @@ private:
     NetElementBool reverse;
   };
 
-  void setupNetStates();
+  [[nodiscard]] std::expected<void, StarException> setupNetStates();
+  [[nodiscard]] std::expected<void, StarException> loadConfig(Json config, String relativePath);
 
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
-  Json mergeIncludes(Root& root, Json config, Json includes, String relativePath);
+  [[nodiscard]] std::expected<Json, StarException> mergeIncludes(Root& root, Json config, Json includes, String relativePath);
 
   Root* m_root;
   String m_relativePath;

@@ -46,9 +46,9 @@ using AssetException = StarError<AssetExceptionTag, StarException>;
 struct FramesSpecification {
   // Get the target sub-rect of a given frame name (which can be an alias).
   // Returns nothing if the frame name is not found.
-  std::optional<RectU> getRect(String const& frame) const;
+  [[nodiscard]] std::expected<std::optional<RectU>, StarException> getRect(String const& frame) const;
   // Converts to Json.
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
   // The full path to the .frames file from which this was loaded.
   String framesFile;
   // Named sub-frames
@@ -227,7 +227,7 @@ public:
     List<std::pair<String, std::shared_ptr<AssetSource>>> patchSources;
   };
 
-  Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings settings, StringList assetSources);
+  [[nodiscard]] static std::expected<std::shared_ptr<Assets>, StarException> create(Logger& logger, RandomService& random, LogMap& logMap, Settings settings, StringList assetSources);
   ~Assets();
 
   void hotReload() const;
@@ -236,7 +236,7 @@ public:
   StringList assetSources() const;
 
   // Return metadata for the given loaded asset source path
-  JsonObject assetSourceMetadata(String const& sourcePath) const;
+  [[nodiscard]] std::expected<JsonObject, StarException> assetSourceMetadata(String const& sourcePath) const;
 
   // An imperfect sha256 digest of the contents of all combined asset sources.
   // Useful for detecting if there are mismatched assets between a client and
@@ -245,38 +245,38 @@ public:
 
   // Is there an asset associated with the given path?  Path must not contain
   // sub-paths or directives.
-  bool assetExists(String const& path) const;
+  [[nodiscard]] std::expected<bool, StarException> assetExists(String const& path) const;
 
-  std::optional<AssetFileDescriptor> assetDescriptor(String const& path) const;
+  [[nodiscard]] std::expected<std::optional<AssetFileDescriptor>, StarException> assetDescriptor(String const& path) const;
 
   // The name of the asset source within which the path exists.
-  String assetSource(String const& path) const;
+  [[nodiscard]] std::expected<String, StarException> assetSource(String const& path) const;
 
   std::optional<String> assetSourcePath(std::shared_ptr<AssetSource> const& source) const;
 
   // Scans for all assets with the given suffix in any directory.
-  StringList scan(String const& suffix) const;
+  [[nodiscard]] std::expected<StringList, StarException> scan(String const& suffix) const;
   // Scans for all assets matching both prefix and suffix (prefix may be, for
   // example, a directory)
-  StringList scan(String const& prefix, String const& suffix) const;
+  [[nodiscard]] std::expected<StringList, StarException> scan(String const& prefix, String const& suffix) const;
   // Scans all assets for files with the given extension, which is specially
   // indexed and much faster than a normal scan.  Extension may contain leading
   // '.' character or it may be omitted.
-  CaseInsensitiveStringSet const& scanExtension(String const& extension) const;
+  [[nodiscard]] std::expected<CaseInsensitiveStringSet const*, StarException> scanExtension(String const& extension) const;
 
   // Get json asset with an optional sub-path.  The sub-path portion of the
   // path refers to a key in the top-level object, and may use dot notation
   // for deeper field access and [] notation for array access.  Example:
   // "/path/to/json:key1.key2.key3[4]".
-  Json json(String const& path) const;
+  [[nodiscard]] std::expected<Json, StarException> json(String const& path) const;
 
   // Either returns the json v, or, if v is a string type, returns the json
   // pointed to by interpreting v as a string path.
-  Json fetchJson(Json const& v, String const& dir = "/") const;
+  [[nodiscard]] std::expected<Json, StarException> fetchJson(Json const& v, String const& dir = "/") const;
 
   // Load all the given jsons using background processing.
-  void queueJsons(StringList const& paths) const;
-  void queueJsons(CaseInsensitiveStringSet const& paths) const;
+  [[nodiscard]] std::expected<void, StarException> queueJsons(StringList const& paths) const;
+  [[nodiscard]] std::expected<void, StarException> queueJsons(CaseInsensitiveStringSet const& paths) const;
 
   // Returns *either* an image asset or a sub-frame.  Frame files are JSON
   // descriptor files that reference a particular image and label separate
@@ -285,37 +285,33 @@ public:
   // <full-path-minus-extension>.frames or default.frames, going up to assets
   // root.  May return the same ImageConstPtr for different paths if the paths
   // are equivalent or they are aliases of other image paths.
-  std::shared_ptr<Image const> image(AssetPath const& path) const;
-  // Load images using background processing
-  void queueImages(StringList const& paths) const;
-  void queueImages(CaseInsensitiveStringSet const& paths) const;
-  // Return the given image *if* it is already loaded, otherwise queue it for
-  // loading.
-  std::shared_ptr<Image const> tryImage(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Image const>, StarException> image(AssetPath const& path) const;
+  // Load images using background processing.
+  [[nodiscard]] std::expected<void, StarException> queueImages(StringList const& paths) const;
+  [[nodiscard]] std::expected<void, StarException> queueImages(CaseInsensitiveStringSet const& paths) const;
+  // A successful null result means the image was queued for loading.
+  [[nodiscard]] std::expected<std::shared_ptr<Image const>, StarException> tryImage(AssetPath const& path) const;
 
   // Returns the best associated FramesSpecification for a given image path, if
   // it exists.  The given path must not contain sub-paths or directives, and
   // this function may return nullptr if no frames file is associated with the
   // given image path.
-  std::shared_ptr<FramesSpecification const> imageFrames(String const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<FramesSpecification const>, StarException> imageFrames(String const& path) const;
 
-  // Returns a pointer to a shared audio asset;
-  std::shared_ptr<Audio const> audio(String const& path) const;
-  // Load audios using background processing
-  void queueAudios(StringList const& paths) const;
-  void queueAudios(CaseInsensitiveStringSet const& paths) const;
-  // Return the given audio *if* it is already loaded, otherwise queue it for
-  // loading.
-  std::shared_ptr<Audio const> tryAudio(String const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Audio const>, StarException> audio(String const& path) const;
+  [[nodiscard]] std::expected<void, StarException> queueAudios(StringList const& paths) const;
+  [[nodiscard]] std::expected<void, StarException> queueAudios(CaseInsensitiveStringSet const& paths) const;
+  // A successful null result means the audio was queued for loading.
+  [[nodiscard]] std::expected<std::shared_ptr<Audio const>, StarException> tryAudio(String const& path) const;
 
   // Returns pointer to shared font asset
-  std::shared_ptr<Font const> font(String const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Font const>, StarException> font(String const& path) const;
 
   // Returns a bytes asset (Reads asset as an opaque binary blob)
-  std::shared_ptr<ByteArray const> bytes(String const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<ByteArray const>, StarException> bytes(String const& path) const;
 
   // Bypass asset caching and open an asset file directly.
-  std::shared_ptr<IODevice> openFile(String const& basePath) const;
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> openFile(String const& basePath) const;
 
   // Clear all cached assets that are not queued, persistent, or broken.
   void clearCache();
@@ -324,71 +320,61 @@ public:
   void cleanup();
 
 private:
-  EnumMap<AssetType> const AssetTypeNames{
-      {AssetType::Json, "json"},
-      {AssetType::Image, "image"},
-      {AssetType::Audio, "audio"},
-      {AssetType::Font, "font"},
-      {AssetType::Bytes, "bytes"}
-  };
+  explicit Assets(Logger& logger);
+  [[nodiscard]] std::expected<void, StarException> initialize(RandomService& random, LogMap& logMap, Settings settings, StringList assetSources);
 
-  static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
+  [[nodiscard]] static std::expected<FramesSpecification, StarException> parseFramesSpecification(Json const& frameConfig, String path);
 
   void queueAssets(List<AssetId> const& assetIds) const;
   //Lock before calling!
   void queueAsset(AssetId const& assetId) const;
-  std::shared_ptr<AssetData> tryAsset(AssetId const& id) const;
-  std::shared_ptr<AssetData> getAsset(AssetId const& id) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> tryAsset(AssetId const& id) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> getAsset(AssetId const& id) const;
 
-  void workerMain();
-  std::exception_ptr stopWorkers();
+  [[nodiscard]] std::expected<void, StarException> workerMain();
+  [[nodiscard]] std::expected<void, StarException> stopWorkers();
 
   // All methods below assume that the asset mutex is locked when calling.
 
   // Do some processing that might take a long time and should not hold the
-  // assets mutex during it.  Unlocks the assets mutex while the function is in
-  // progress and re-locks it on return or before exception is thrown.
+  // assets mutex during it. Unlocks for the callback and re-locks before return.
   template <typename Function>
-  decltype(auto) unlockDuring(Function f) const;
+  [[nodiscard]] decltype(auto) unlockDuring(Function f) const;
 
   // Returns the best frames specification for the given image path, if it exists.
-  std::shared_ptr<FramesSpecification const> bestFramesSpecification(String const& basePath) const;
+  [[nodiscard]] std::expected<std::shared_ptr<FramesSpecification const>, StarException> bestFramesSpecification(String const& basePath) const;
 
-  std::shared_ptr<IODevice> open(String const& basePath) const;
-  ByteArray read(String const& basePath) const;
-  std::shared_ptr<Image const> readImage(String const& path) const;
-  std::shared_ptr<Image const> applyImagePatches(std::shared_ptr<Image const> image, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> open(String const& basePath) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> read(String const& basePath) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Image const>, StarException> readImage(String const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Image const>, StarException> applyImagePatches(std::shared_ptr<Image const> image, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
 
-  Json readJson(String const& basePath) const;
-  Json applyJsonPatches(Json const& input, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
-  Json checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const;
+  [[nodiscard]] std::expected<Json, StarException> readJson(String const& basePath) const;
+  [[nodiscard]] std::expected<Json, StarException> applyJsonPatches(Json const& input, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
+  [[nodiscard]] std::expected<Json, StarException> checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const;
 
-  // Load / post process an asset and log any exception.  Returns true if the
+  // Load / post process an asset and log any failure. Returns true if the
   // work was performed (whether successful or not), false if the work is
   // blocking on something.
-  bool doLoad(AssetId const& id) const;
-  bool doPost(AssetId const& id) const;
+  [[nodiscard]] std::expected<bool, StarException> doLoad(AssetId const& id) const;
+  [[nodiscard]] std::expected<bool, StarException> doPost(AssetId const& id) const;
 
-  // Assets can recursively depend on other assets, so the main entry point for
-  // loading assets is in this separate method, and is safe for other loading
-  // methods to call recursively.  If there is an error loading the asset, this
-  // method will throw.  If, and only if, the asset is blocking on another busy
-  // asset, this method will return null.
-  std::shared_ptr<AssetData> loadAsset(AssetId const& id) const;
+  // A successful null result means loading is blocked by another busy asset.
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadAsset(AssetId const& id) const;
 
-  std::shared_ptr<AssetData> loadJson(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadImage(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadFont(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadJson(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadImage(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadAudio(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadFont(AssetPath const& path) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> loadBytes(AssetPath const& path) const;
 
-  std::shared_ptr<AssetData> postProcessAudio(std::shared_ptr<AssetData> const& original) const;
+  [[nodiscard]] std::expected<std::shared_ptr<AssetData>, StarException> postProcessAudio(std::shared_ptr<AssetData> const& original) const;
 
   // Updates time on the given asset (with smearing).
   void freshen(std::shared_ptr<AssetData> const& asset) const;
 
   Logger& m_logger;
-  FontLibrary m_fontLibrary;
+  std::optional<FontLibrary> m_fontLibrary;
 
   Settings m_settings;
 
@@ -399,6 +385,7 @@ private:
 
   mutable ConditionVariable m_assetsDone;
   mutable HashMap<AssetId, std::shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
+  mutable HashMap<AssetId, StarException, AssetIdHash> m_assetErrors;
 
   mutable StringMap<String> m_bestFramesFiles;
   mutable StringMap<std::shared_ptr<FramesSpecification const>> m_framesSpecifications;
@@ -423,6 +410,7 @@ private:
 
   // Protected by m_assetsMutex; outlives the joining thread handles.
   bool m_stopThreads = false;
+  mutable std::optional<StarException> m_workerError;
   List<ThreadFunction<void>> m_workerThreads;
 };
 

@@ -4,6 +4,7 @@ import star.memory;
 import std;
 import star.hash;
 import star.optional;
+import star.format;
 
 namespace Star {
 
@@ -45,6 +46,9 @@ public:
 
   template <std::size_t i>
   const_reference get() const;
+
+  [[nodiscard]] std::expected<Element*, StarException> at(std::size_t i);
+  [[nodiscard]] std::expected<Element const*, StarException> at(std::size_t i) const;
 
   template <typename T2>
   Array& operator=(Array<T2, SizeN> const& array);
@@ -143,6 +147,20 @@ template <std::size_t i>
 auto Array<Element, Size>::get() const -> const_reference {
   static_assert(i < Size, "Incorrect size in Array::at");
   return Base::operator[](i);
+}
+
+template <typename Element, std::size_t Size>
+std::expected<Element*, StarException> Array<Element, Size>::at(std::size_t i) {
+  if (i >= Size)
+    return std::unexpected(OutOfRangeException::format("out of range in Array::at({})", i));
+  return std::addressof(Base::operator[](i));
+}
+
+template <typename Element, std::size_t Size>
+std::expected<Element const*, StarException> Array<Element, Size>::at(std::size_t i) const {
+  if (i >= Size)
+    return std::unexpected(OutOfRangeException::format("out of range in Array::at({})", i));
+  return std::addressof(Base::operator[](i));
 }
 
 template <typename Element, std::size_t Size>

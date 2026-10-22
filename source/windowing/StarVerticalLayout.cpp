@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.vector;
 import star.casting;
@@ -67,7 +68,12 @@ VerticalLayout::VerticalLayout(GuiContext& context, VerticalAnchor verticalAncho
   disableScissoring();
 }
 
-void VerticalLayout::update(float) {
+std::expected<void, StarException> VerticalLayout::update(float) {
+  updateLayout();
+  return {};
+}
+
+void VerticalLayout::updateLayout() {
   m_size = Vec2I(0, 0);
 
   if (m_members.empty())
@@ -122,22 +128,22 @@ RectI VerticalLayout::relativeBoundRect() const {
 
 void VerticalLayout::setHorizontalAnchor(HorizontalAnchor horizontalAnchor) {
   m_horizontalAnchor = horizontalAnchor;
-  update(0);
+  updateLayout();
 }
 
 void VerticalLayout::setVerticalAnchor(VerticalAnchor verticalAnchor) {
   m_verticalAnchor = verticalAnchor;
-  update(0);
+  updateLayout();
 }
 
 void VerticalLayout::setVerticalSpacing(int verticalSpacing) {
   m_verticalSpacing = verticalSpacing;
-  update(0);
+  updateLayout();
 }
 
 void VerticalLayout::setFillDown(bool fillDown) {
   m_fillDown = fillDown;
-  update(0);
+  updateLayout();
 }
 
 RectI VerticalLayout::contentBoundRect() const {

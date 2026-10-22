@@ -21,7 +21,7 @@ enum class TechType {
   Body,
   Legs
 };
-extern EnumMap<TechType> const TechTypeNames;
+extern std::expected<EnumMap<TechType>, StarException> const TechTypeNames;
 
 struct TechConfig {
   String name;
@@ -41,13 +41,14 @@ struct TechConfig {
 
 class TechDatabase {
 public:
-  explicit TechDatabase(std::shared_ptr<Assets const> assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<TechDatabase>, StarException> create(std::shared_ptr<Assets const> assets);
 
   bool contains(String const& techName) const;
-  TechConfig tech(String const& techName) const;
+  [[nodiscard]] std::expected<TechConfig, StarException> tech(String const& techName) const;
 
 private:
-  TechConfig parseTech(Json const& config, String const& path) const;
+  TechDatabase() = default;
+  [[nodiscard]] std::expected<TechConfig, StarException> parseTech(Json const& config, String const& path) const;
 
   StringMap<TechConfig> m_tech;
 };

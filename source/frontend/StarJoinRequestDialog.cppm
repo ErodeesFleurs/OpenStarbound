@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.casting;
@@ -51,18 +52,19 @@ public:
     return Star::typeName<JoinRequestDialog>();
   }
 
-  JoinRequestDialog(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<JoinRequestDialog>, StarException> create(GuiContext& guiContext);
 
   virtual ~JoinRequestDialog() {}
 
-  void displayRequest(String const& userName, std::function<void(P2PJoinRequestReply)> callback);
+  [[nodiscard]] std::expected<void, StarException> displayRequest(String const& userName, std::function<std::expected<void, StarException>(P2PJoinRequestReply)> callback);
 
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
-  void reply(P2PJoinRequestReply reply);
+  explicit JoinRequestDialog(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> reply(P2PJoinRequestReply reply);
 
-  std::function<void(P2PJoinRequestReply)> m_callback;
+  std::function<std::expected<void, StarException>(P2PJoinRequestReply)> m_callback;
   bool m_confirmed;
 };
 

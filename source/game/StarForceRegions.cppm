@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.data_stream;
@@ -12,8 +13,8 @@ import star.rect;
 namespace Star {
 
 struct PhysicsCategoryFilter {
-  friend DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& region);
-  friend DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& region);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsCategoryFilter& region);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsCategoryFilter const& region);
   enum Type { Whitelist, Blacklist };
 
   static PhysicsCategoryFilter whitelist(StringSet categories);
@@ -30,15 +31,15 @@ struct PhysicsCategoryFilter {
   StringSet categories;
 };
 
-DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& rfr);
-DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, PhysicsCategoryFilter& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr);
 
-PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json);
+[[nodiscard]] std::expected<PhysicsCategoryFilter, StarException> jsonToPhysicsCategoryFilter(Json const& json);
 
 struct DirectionalForceRegion {
-  friend DataStream& operator>>(DataStream& ds, DirectionalForceRegion& region);
-  friend DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& region);
-  static DirectionalForceRegion fromJson(Json const& json);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectionalForceRegion& region);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectionalForceRegion const& region);
+  [[nodiscard]] static std::expected<DirectionalForceRegion, StarException> fromJson(Json const& json);
 
   RectF boundBox() const;
 
@@ -53,13 +54,13 @@ struct DirectionalForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, DirectionalForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, DirectionalForceRegion& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, DirectionalForceRegion const& rfr);
 
 struct RadialForceRegion {
-  friend DataStream& operator>>(DataStream& ds, RadialForceRegion& region);
-  friend DataStream& operator<<(DataStream& ds, RadialForceRegion const& region);
-  static RadialForceRegion fromJson(Json const& json);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RadialForceRegion& region);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RadialForceRegion const& region);
+  [[nodiscard]] static std::expected<RadialForceRegion, StarException> fromJson(Json const& json);
 
   RectF boundBox() const;
 
@@ -75,13 +76,13 @@ struct RadialForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, RadialForceRegion const& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, RadialForceRegion& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, RadialForceRegion const& rfr);
 
 struct GradientForceRegion {
-  friend DataStream& operator>>(DataStream& ds, GradientForceRegion& region);
-  friend DataStream& operator<<(DataStream& ds, GradientForceRegion const& region);
-  static GradientForceRegion fromJson(Json const& json);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, GradientForceRegion& region);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, GradientForceRegion const& region);
+  [[nodiscard]] static std::expected<GradientForceRegion, StarException> fromJson(Json const& json);
 
   RectF boundBox() const;
 
@@ -96,12 +97,12 @@ struct GradientForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, GradientForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, GradientForceRegion const& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, GradientForceRegion& rfr);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, GradientForceRegion const& rfr);
 
 typedef std::variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> PhysicsForceRegion;
 
-PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
+[[nodiscard]] std::expected<PhysicsForceRegion, StarException> jsonToPhysicsForceRegion(Json const& json);
 
 }
 

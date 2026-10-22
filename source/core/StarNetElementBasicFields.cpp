@@ -8,27 +8,26 @@ import star.net_element_basic_fields;
 import star.net_compatibility;
 namespace Star {
 
-void NetElementSize::readData(DataStream& ds, std::size_t& v) const {
-  std::uint64_t s = ds.readVlqU();
-  if (s == 0)
-    v = NPos;
-  else
-    v = s - 1;
+std::expected<void, StarException> NetElementSize::readData(DataStream& ds, std::size_t& v) const {
+  auto result = ds.readVlqU();
+  if (!result) return std::unexpected(std::move(result.error()));
+  v = *result == 0 ? NPos : *result - 1;
+  return {};
 }
 
-void NetElementSize::writeData(DataStream& ds, std::size_t const& v) const {
+std::expected<void, StarException> NetElementSize::writeData(DataStream& ds, std::size_t const& v) const {
   if (v == NPos)
-    ds.writeVlqU(0);
+    return ds.vuwrite(std::uint64_t{0});
   else
-    ds.writeVlqU(v + 1);
+    return ds.vuwrite(v + 1);
 }
 
-void NetElementBool::readData(DataStream& ds, bool& v) const {
-  ds.read(v);
+std::expected<void, StarException> NetElementBool::readData(DataStream& ds, bool& v) const {
+  return ds.read(v);
 }
 
-void NetElementBool::writeData(DataStream& ds, bool const& v) const {
-  ds.write(v);
+std::expected<void, StarException> NetElementBool::writeData(DataStream& ds, bool const& v) const {
+  return ds.write(v);
 }
 
 void NetElementEvent::trigger() {
@@ -57,10 +56,11 @@ void NetElementEvent::setIgnoreOccurrencesOnNetLoad(bool ignoreOccurrencesOnNetL
   m_ignoreOccurrencesOnNetLoad = ignoreOccurrencesOnNetLoad;
 }
 
-void NetElementEvent::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  NetElementUInt::netLoad(ds, rules);
+std::expected<void, StarException> NetElementEvent::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  { auto result = NetElementUInt::netLoad(ds, rules); if (!result) return std::unexpected(std::move(result.error())); }
   if (m_ignoreOccurrencesOnNetLoad)
     ignoreOccurrences();
+  return {};
 }
 
 void NetElementEvent::updated() {

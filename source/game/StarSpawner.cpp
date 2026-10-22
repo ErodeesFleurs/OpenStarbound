@@ -113,43 +113,121 @@ import star.static_random;
 import star.algorithm;
 namespace Star {
 
-Spawner::Spawner(Root& root) : m_root(root) {
-  auto assets = this->root().assets();
-  auto config = assets->json("/spawning.config");
-
-  m_spawnCellSize = config.getUInt("spawnCellSize");
-  m_spawnCellMinimumEmptyTiles = config.getUInt("spawnCellMinimumEmptyTiles");
-  m_spawnCellMinimumLiquidTiles = config.getUInt("spawnCellMinimumLiquidTiles");
-  m_spawnCellMinimumNearSurfaceTiles = config.getUInt("spawnCellMinimumNearSurfaceTiles");
-  m_spawnCellMinimumNearCeilingTiles = config.getUInt("spawnCellMinimumNearCeilingTiles");
-  m_spawnCellMinimumAirTiles = config.getUInt("spawnCellMinimumAirTiles");
-  m_spawnCellMinimumExposedTiles = config.getUInt("spawnCellMinimumExposedTiles");
-  m_spawnCellNearSurfaceDistance = config.getUInt("spawnCellNearSurfaceDistance");
-  m_spawnCellNearCeilingDistance = config.getUInt("spawnCellNearCeilingDistance");
-
-  m_minimumDayLevel = config.getFloat("minimumDayLevel");
-  m_minimumLiquidLevel = config.getFloat("minimumLiquidLevel");
-  m_spawnCheckResolution = config.getFloat("spawnCheckResolution");
-  m_spawnSurfaceCheckDistance = config.getInt("spawnSurfaceCheckDistance");
-  m_spawnCeilingCheckDistance = config.getInt("spawnCeilingCheckDistance");
-  m_spawnProhibitedCheckPadding = config.getFloat("spawnProhibitedCheckPadding");
-
-  m_spawnCellLifetime = config.getFloat("spawnCellLifetime");
-  m_windowActivationBorder = config.getUInt("windowActivationBorder");
-
-  m_active = config.getBool("defaultActive", true);
-
-  m_debug = config.getBool("debug", false);
+std::expected<std::shared_ptr<Spawner>, StarException> Spawner::create(Root& root) {
+  auto result = std::shared_ptr<Spawner>(new Spawner(root));
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/spawning.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  {
+    auto value = config->getUInt("spawnCellSize");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellSize = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumEmptyTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumEmptyTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumLiquidTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumLiquidTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumNearSurfaceTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumNearSurfaceTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumNearCeilingTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumNearCeilingTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumAirTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumAirTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellMinimumExposedTiles");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellMinimumExposedTiles = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellNearSurfaceDistance");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellNearSurfaceDistance = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("spawnCellNearCeilingDistance");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellNearCeilingDistance = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("minimumDayLevel");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_minimumDayLevel = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("minimumLiquidLevel");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_minimumLiquidLevel = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("spawnCheckResolution");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCheckResolution = std::move(*value);
+  }
+  {
+    auto value = config->getInt("spawnSurfaceCheckDistance");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnSurfaceCheckDistance = std::move(*value);
+  }
+  {
+    auto value = config->getInt("spawnCeilingCheckDistance");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCeilingCheckDistance = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("spawnProhibitedCheckPadding");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnProhibitedCheckPadding = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("spawnCellLifetime");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_spawnCellLifetime = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("windowActivationBorder");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_windowActivationBorder = std::move(*value);
+  }
+  {
+    auto value = config->getBool("defaultActive", true);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_active = std::move(*value);
+  }
+  {
+    auto value = config->getBool("debug", false);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_debug = std::move(*value);
+  }
+  return result;
 }
 
 void Spawner::init(std::shared_ptr<SpawnerFacade> facade) {
   m_facade = std::move(facade);
 }
 
-void Spawner::uninit() {
-  for (auto entityId : m_spawnedEntities)
-    m_facade->despawnEntity(entityId);
+std::expected<void, StarException> Spawner::uninit() {
+  for (auto entityId : m_spawnedEntities) {
+    auto despawned = m_facade->despawnEntity(entityId);
+    if (!despawned) return std::unexpected(std::move(despawned.error()));
+  }
   m_facade.reset();
+  return {};
 }
 
 bool Spawner::active() const {
@@ -160,58 +238,63 @@ void Spawner::setActive(bool active) {
   m_active = active;
 }
 
-void Spawner::activateRegion(RectF region) {
-  for (auto const& cell : cellIndexesForRange(region)) {
-    if (m_facade && m_facade->signalRegion(cellRegion(cell))) {
-      if (m_active && !m_activeSpawnCells.contains(cell))
-        spawnInCell(cell);
-      m_activeSpawnCells[cell] = m_spawnCellLifetime;
+std::expected<void, StarException> Spawner::activateRegion(RectF region) {
+  auto cells = cellIndexesForRange(region);
+  if (!cells) return std::unexpected(std::move(cells.error()));
+  for (auto const& cell : *cells) {
+    if (m_facade) {
+      auto ready = m_facade->signalRegion(cellRegion(cell));
+      if (!ready) return std::unexpected(std::move(ready.error()));
+      if (*ready) {
+        if (m_active && !m_activeSpawnCells.contains(cell)) {
+          auto spawned = spawnInCell(cell);
+          if (!spawned) return std::unexpected(std::move(spawned.error()));
+        }
+        m_activeSpawnCells[cell] = m_spawnCellLifetime;
+      }
     }
   }
+  return {};
 }
 
-void Spawner::activateEmptyRegion(RectF region) {
-  for (auto const& cell : cellIndexesForRange(region))
-    m_activeSpawnCells[cell] = m_spawnCellLifetime;
+std::expected<void, StarException> Spawner::activateEmptyRegion(RectF region) {
+  auto cells = cellIndexesForRange(region);
+  if (!cells) return std::unexpected(std::move(cells.error()));
+  for (auto const& cell : *cells) m_activeSpawnCells[cell] = m_spawnCellLifetime;
+  return {};
 }
 
-void Spawner::update(float dt) {
-  if (!m_facade)
-    return;
-
+std::expected<void, StarException> Spawner::update(float dt) {
+  if (!m_facade) return {};
   for (auto const& window : m_facade->clientWindows()) {
-    if (window != RectF())
-      activateRegion(window.padded(m_windowActivationBorder));
+    if (window != RectF()) {
+      auto activated = activateRegion(window.padded(m_windowActivationBorder));
+      if (!activated) return std::unexpected(std::move(activated.error()));
+    }
   }
-
-  eraseWhere(m_activeSpawnCells, [dt](auto& p) {
-    return (p.second -= dt) < 0.0f;
-  });
-
-  eraseWhere(m_spawnedEntities, [this](EntityId entityId) {
-      auto entity = m_facade->getEntity(entityId);
-      if (!entity)
-        return true;
-
-      if (!m_activeSpawnCells.contains(cellIndexForPosition(entity->position()))) {
-        m_facade->despawnEntity(entity->entityId());
-        return true;
-      }
-
-      return false;
-    });
-
-  if (m_active && m_debug)
-    debugShowSpawnCells();
+  eraseWhere(m_activeSpawnCells, [dt](auto& p) { return (p.second -= dt) < 0.0f; });
+  for (auto it = m_spawnedEntities.begin(); it != m_spawnedEntities.end();) {
+    auto entity = m_facade->getEntity(*it);
+    if (!entity) it = m_spawnedEntities.erase(it);
+    else if (!m_activeSpawnCells.contains(cellIndexForPosition(entity->position()))) {
+      auto despawned = m_facade->despawnEntity(entity->entityId());
+      if (!despawned) return std::unexpected(std::move(despawned.error()));
+      it = m_spawnedEntities.erase(it);
+    } else ++it;
+  }
+  if (m_active && m_debug) return debugShowSpawnCells();
+  return {};
 }
 
 Vec2I Spawner::cellIndexForPosition(Vec2F const& position) const {
   return Vec2I::floor(position / m_spawnCellSize);
 }
 
-List<Vec2I> Spawner::cellIndexesForRange(RectF const& range) const {
+std::expected<List<Vec2I>, StarException> Spawner::cellIndexesForRange(RectF const& range) const {
   List<Vec2I> cellIndexes;
-  for (auto srange : m_facade->geometry().splitRect(range)) {
+  auto ranges = m_facade->geometry().splitRect(range);
+  if (!ranges) return std::unexpected(std::move(ranges.error()));
+  for (auto const& srange : *ranges) {
     auto indexes = RectI::integral(RectF(srange).scaled(1.0f / m_spawnCellSize));
     for (int x = indexes.xMin(); x < indexes.xMax(); ++x) {
       for (int y = indexes.yMin(); y < indexes.yMax(); ++y)
@@ -226,7 +309,7 @@ RectF Spawner::cellRegion(Vec2I const& cellIndex) const {
   return RectF::withSize(Vec2F(cellIndex) * m_spawnCellSize, Vec2F::filled(m_spawnCellSize));
 }
 
-std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cellIndex) const {
+std::expected<std::optional<SpawnParameters>, StarException> Spawner::spawnParametersForCell(Vec2I const& cellIndex) const {
   unsigned emptyCount = 0;
   unsigned nearSurfaceCount = 0;
   unsigned nearCeilingCount = 0;
@@ -238,14 +321,17 @@ std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cell
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
       // Only empty blocks count towards spawn totals
-      if (m_facade->collision({x, y}) == CollisionKind::None) {
+      auto collision = m_facade->collision({x, y});
+      if (!collision) return std::unexpected(std::move(collision.error()));
+      if (*collision == CollisionKind::None) {
         ++emptyCount;
 
         if (m_facade->liquidLevel({x, y}).level > m_minimumLiquidLevel)
           ++liquidCount;
 
-        if (m_facade->isBackgroundEmpty({x, y}))
-          ++exposedCount;
+        auto backgroundEmpty = m_facade->isBackgroundEmpty({x, y});
+        if (!backgroundEmpty) return std::unexpected(std::move(backgroundEmpty.error()));
+        if (*backgroundEmpty) ++exposedCount;
 
         // The empty block will will either count as an air block, a
         // "near-surface" block, or a "near-ceiling" block.  It will count as a
@@ -256,7 +342,8 @@ std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cell
         bool nearSurface = false;
         for (unsigned sd = 1; sd <= m_spawnCellNearSurfaceDistance; ++sd) {
           auto collision = m_facade->collision({x, y - sd});
-          if (BlockCollisionSet.contains(collision) || collision == CollisionKind::Platform) {
+          if (!collision) return std::unexpected(std::move(collision.error()));
+          if (BlockCollisionSet.contains(*collision) || *collision == CollisionKind::Platform) {
             nearSurface = true;
             break;
           }
@@ -266,7 +353,8 @@ std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cell
         if (!nearSurface) {
           for (unsigned cd = 1; cd <= m_spawnCellNearCeilingDistance; ++cd) {
             auto collision = m_facade->collision({x, y + cd});
-            if (BlockCollisionSet.contains(collision)) {
+            if (!collision) return std::unexpected(std::move(collision.error()));
+            if (BlockCollisionSet.contains(*collision)) {
               nearCeiling = true;
               break;
             }
@@ -296,7 +384,7 @@ std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cell
     spawnAreas.add(SpawnParameters::Area::Solid);
 
   if (spawnAreas.empty())
-    return {};
+    return std::optional<SpawnParameters>();
 
   SpawnParameters::Region spawnRegion = SpawnParameters::Region::Enclosed;
   if (exposedCount >= m_spawnCellMinimumExposedTiles)
@@ -309,18 +397,20 @@ std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cell
   return SpawnParameters(spawnAreas, spawnRegion, spawnTime);
 }
 
-std::optional<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const {
-  auto checkPosition = [&](Vec2F const& position) -> bool {
+std::expected<std::optional<Vec2F>, StarException> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const {
+  auto checkPosition = [&](Vec2F const& position) -> std::expected<bool, StarException> {
     RectF region = RectF(boundBox).translated(position);
 
-    if (!m_facade->isFreeSpace(region))
-      return spawnParameters.areas.contains(SpawnParameters::Area::Solid);
+    auto free = m_facade->isFreeSpace(region);
+    if (!free) return std::unexpected(std::move(free.error()));
+    if (!*free) return spawnParameters.areas.contains(SpawnParameters::Area::Solid);
 
     if (m_facade->liquidLevel(Vec2I::floor(region.center())).level >= m_minimumLiquidLevel)
       return spawnParameters.areas.contains(SpawnParameters::Area::Liquid);
 
-    if (m_facade->spawningProhibited(region.padded(m_spawnProhibitedCheckPadding)))
-      return false;
+    auto prohibited = m_facade->spawningProhibited(region.padded(m_spawnProhibitedCheckPadding));
+    if (!prohibited) return std::unexpected(std::move(prohibited.error()));
+    if (*prohibited) return false;
 
     if (spawnParameters.areas.contains(SpawnParameters::Area::Air))
       return true;
@@ -329,7 +419,8 @@ std::optional<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF 
       Vec2F startCheck = {region.center()[0], region.yMin()};
       for (int sd = 0; sd <= m_spawnSurfaceCheckDistance; ++sd) {
         auto collision = m_facade->collision(Vec2I::floor(startCheck - Vec2F(0, sd)));
-        if (BlockCollisionSet.contains(collision) || collision == CollisionKind::Platform)
+        if (!collision) return std::unexpected(std::move(collision.error()));
+        if (BlockCollisionSet.contains(*collision) || *collision == CollisionKind::Platform)
           return true;
       }
 
@@ -337,7 +428,8 @@ std::optional<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF 
       Vec2F startCheck = {region.center()[0], region.yMax()};
       for (int cd = 0; cd <= m_spawnCeilingCheckDistance; ++cd) {
         auto collision = m_facade->collision(Vec2I::floor(startCheck + Vec2F(0, cd)));
-        if (BlockCollisionSet.contains(collision))
+        if (!collision) return std::unexpected(std::move(collision.error()));
+        if (BlockCollisionSet.contains(*collision))
           return true;
       }
     }
@@ -353,100 +445,115 @@ std::optional<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF 
 
   this->root().random().shuffle(tryPositions);
   for (auto const& p : tryPositions) {
-    if (checkPosition(p))
-      return p;
+    auto valid = checkPosition(p);
+    if (!valid) return std::unexpected(std::move(valid.error()));
+    if (*valid) return p;
   }
 
-  return {};
+  return std::optional<Vec2F>();
 }
 
-void Spawner::spawnInCell(Vec2I const& cell) {
-  auto cellSpawnParameters = spawnParametersForCell(cell);
-  if (!cellSpawnParameters)
-    return;
-
-  if (m_debug)
-    m_debugSpawnInfo[cell] = SpawnCellDebugInfo{*cellSpawnParameters, 0, 0};
-
-  auto monsterDatabase = this->root().monsterDatabase();
-  auto spawnTypeDatabase = this->root().spawnTypeDatabase();
-
-  RectF spawnRegion = cellRegion(cell);
-  auto spawnProfile = m_facade->spawnProfile(spawnRegion.center());
-
-  for (auto const& spawnTypeName : spawnProfile.spawnTypes) {
-    auto spawnType = spawnTypeDatabase->spawnType(spawnTypeName);
-    if (!spawnType.spawnParameters.compatible(*cellSpawnParameters))
-      continue;
-
-    if (this->root().random().randf() < spawnType.spawnChance) {
-      std::uint64_t spawnSeed = staticRandomU64(spawnType.seedMix, m_facade->spawnSeed());
-      int targetGroupSize = this->root().random().randInt(spawnType.groupSize[0], spawnType.groupSize[1]);
-      for (int i = 0; i < targetGroupSize; ++i) {
+std::expected<void, StarException> Spawner::spawnInCell(Vec2I const& cell) {
+  auto cellParameters = spawnParametersForCell(cell);
+  if (!cellParameters) return std::unexpected(std::move(cellParameters.error()));
+  if (!*cellParameters) return {};
+  if (m_debug) m_debugSpawnInfo[cell] = SpawnCellDebugInfo{**cellParameters, 0, 0};
+  auto monsters = root().monsterDatabase();
+  if (!monsters) return std::unexpected(std::move(monsters.error()));
+  auto types = root().spawnTypeDatabase();
+  if (!types) return std::unexpected(std::move(types.error()));
+  RectF region = cellRegion(cell);
+  auto profile = m_facade->spawnProfile(region.center());
+  if (!profile) return std::unexpected(std::move(profile.error()));
+  for (auto const& name : profile->spawnTypes) {
+    auto type = (*types)->spawnType(name);
+    if (!type) return std::unexpected(std::move(type.error()));
+    if (!type->spawnParameters.compatible(**cellParameters)) continue;
+    if (root().random().randf() < type->spawnChance) {
+      std::uint64_t seed = staticRandomU64(type->seedMix, m_facade->spawnSeed());
+      auto groupSize = root().random().randInt(type->groupSize[0], type->groupSize[1]);
+      if (!groupSize) return std::unexpected(std::move(groupSize.error()));
+      for (int i = 0; i < *groupSize; ++i) {
         String monsterType;
-        if (auto monsterPool = std::get_if<WeightedPool<String>>(&spawnType.monsterType))
-          monsterType = monsterPool->select(this->root().random());
-        else
-          monsterType = std::get<String>(spawnType.monsterType);
-
-        auto monsterVariant = monsterDatabase->monsterVariant(monsterType, spawnSeed, spawnType.monsterParameters);
-        auto monsterBoundBox = monsterVariant.movementSettings.standingPoly->boundBox();
-
-        if (m_debug)
-          m_debugSpawnInfo[cell].spawnAttempts++;
-
-        if (auto position = adjustSpawnRegion(spawnRegion, monsterBoundBox, spawnType.spawnParameters)) {
-          float level = m_facade->threatLevel();
-          if (m_facade->dayLevel() >= m_minimumDayLevel)
-            level += this->root().random().randf(spawnType.dayLevelAdjustment[0], spawnType.dayLevelAdjustment[1]);
-          else
-            level += this->root().random().randf(spawnType.nightLevelAdjustment[0], spawnType.nightLevelAdjustment[1]);
-
-          auto spawnProfile = m_facade->spawnProfile(*position);
-
-          auto entity = monsterDatabase->createMonster(monsterVariant, level, spawnProfile.monsterParameters);
-          entity->setPosition(*position);
-          entity->setKeepAlive(true);
-          auto entityId = m_facade->spawnEntity(entity);
-          if (entityId != NullEntityId)
-            m_spawnedEntities.add(entityId);
-
-          if (m_debug)
-            m_debugSpawnInfo[cell].spawns++;
+        if (auto pool = std::get_if<WeightedPool<String>>(&type->monsterType)) monsterType = pool->select(root().random());
+        else monsterType = std::get<String>(type->monsterType);
+        auto variant = (*monsters)->monsterVariant(monsterType, seed, type->monsterParameters);
+        if (!variant) return std::unexpected(std::move(variant.error()));
+        if (!variant->movementSettings.standingPoly)
+          return std::unexpected(MonsterException("Monster has no standing polygon"));
+        auto box = variant->movementSettings.standingPoly->boundBox();
+        if (m_debug) m_debugSpawnInfo[cell].spawnAttempts++;
+        auto position = adjustSpawnRegion(region, box, type->spawnParameters);
+        if (!position) return std::unexpected(std::move(position.error()));
+        if (*position) {
+          auto threat = m_facade->threatLevel();
+          if (!threat) return std::unexpected(std::move(threat.error()));
+          float level = *threat;
+          if (m_facade->dayLevel() >= m_minimumDayLevel) {
+            auto adjustment = root().random().randf(type->dayLevelAdjustment[0], type->dayLevelAdjustment[1]);
+            if (!adjustment) return std::unexpected(std::move(adjustment.error()));
+            level += *adjustment;
+          } else {
+            auto adjustment = root().random().randf(type->nightLevelAdjustment[0], type->nightLevelAdjustment[1]);
+            if (!adjustment) return std::unexpected(std::move(adjustment.error()));
+            level += *adjustment;
+          }
+          auto profile = m_facade->spawnProfile(**position);
+          if (!profile) return std::unexpected(std::move(profile.error()));
+          auto entity = (*monsters)->createMonster(*variant, level, profile->monsterParameters);
+          if (!entity) return std::unexpected(std::move(entity.error()));
+          (*entity)->setPosition(**position);
+          (*entity)->setKeepAlive(true);
+          auto id = m_facade->spawnEntity(*entity);
+          if (!id) return std::unexpected(std::move(id.error()));
+          if (*id != NullEntityId) m_spawnedEntities.add(*id);
+          if (m_debug) m_debugSpawnInfo[cell].spawns++;
         }
       }
     }
   }
+  return {};
 }
 
-void Spawner::debugShowSpawnCells() {
-  eraseWhere(m_debugSpawnInfo, [this](auto& p) {
-      return !m_activeSpawnCells.contains(p.first);
-    });
-
-  auto regionVisibleToClient = [this](RectF const& region) {
+std::expected<void, StarException> Spawner::debugShowSpawnCells() {
+  eraseWhere(m_debugSpawnInfo, [this](auto& p) { return !m_activeSpawnCells.contains(p.first); });
+  auto visible = [this](RectF const& region) -> std::expected<bool, StarException> {
     for (auto const& window : m_facade->clientWindows()) {
-      if (m_facade->geometry().rectIntersectsRect(window, region))
-        return true;
+      auto intersects = m_facade->geometry().rectIntersectsRect(window, region);
+      if (!intersects) return std::unexpected(std::move(intersects.error()));
+      if (*intersects) return true;
     }
     return false;
   };
-
-  for (auto const& debugInfo : m_debugSpawnInfo) {
-    RectF spawnRegion = Spawner::cellRegion(debugInfo.first);
-    if (regionVisibleToClient(spawnRegion)) {
-      this->root().spatialLogger().logPoly("world", PolyF(spawnRegion), {128, 0, 0, 255});
-      StringList areaList;
-      for (auto area : debugInfo.second.spawnParameters.areas)
-        areaList.append(SpawnParameters::AreaNames.getRight(area).slice(0, 3));
-      this->root().spatialLogger().logText("world", strf("Areas: {}", areaList.join(", ")), spawnRegion.min() + Vec2F(0.5, 2.5), {255, 255, 255, 255});
-      this->root().spatialLogger().logText("world", strf("Region: {}", SpawnParameters::RegionNames.getRight(debugInfo.second.spawnParameters.region)), spawnRegion.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
-      this->root().spatialLogger().logText("world", strf("Time: {}", SpawnParameters::TimeNames.getRight(debugInfo.second.spawnParameters.time)), spawnRegion.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
-
-      if (debugInfo.second.spawnAttempts > 0)
-        this->root().spatialLogger().logText("world", strf("Spawns: {} / {}", debugInfo.second.spawns, debugInfo.second.spawnAttempts), spawnRegion.min() + Vec2F(0.5, 3.5), (debugInfo.second.spawnAttempts > debugInfo.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
+  for (auto const& info : m_debugSpawnInfo) {
+    RectF region = cellRegion(info.first);
+    auto isVisible = visible(region);
+    if (!isVisible) return std::unexpected(std::move(isVisible.error()));
+    if (*isVisible) {
+      root().spatialLogger().logPoly("world", PolyF(region), {128, 0, 0, 255});
+      StringList areas;
+      if (!SpawnParameters::AreaNames) return std::unexpected(SpawnParameters::AreaNames.error());
+      for (auto area : info.second.spawnParameters.areas) {
+        auto name = SpawnParameters::AreaNames->getRight(area);
+        if (!name) return std::unexpected(std::move(name.error()));
+        auto shortName = (*name)->slice(0, 3);
+        if (!shortName) return std::unexpected(std::move(shortName.error()));
+        areas.append(std::move(*shortName));
+      }
+      root().spatialLogger().logText("world", strf("Areas: {}", areas.join(", ")), region.min() + Vec2F(0.5, 2.5), {255, 255, 255, 255});
+      if (!SpawnParameters::RegionNames) return std::unexpected(SpawnParameters::RegionNames.error());
+      auto regionName = SpawnParameters::RegionNames->getRight(info.second.spawnParameters.region);
+      if (!regionName) return std::unexpected(std::move(regionName.error()));
+      root().spatialLogger().logText("world", strf("Region: {}", **regionName), region.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
+      if (!SpawnParameters::TimeNames) return std::unexpected(SpawnParameters::TimeNames.error());
+      auto timeName = SpawnParameters::TimeNames->getRight(info.second.spawnParameters.time);
+      if (!timeName) return std::unexpected(std::move(timeName.error()));
+      root().spatialLogger().logText("world", strf("Time: {}", **timeName), region.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
+      if (info.second.spawnAttempts > 0)
+        root().spatialLogger().logText("world", strf("Spawns: {} / {}", info.second.spawns, info.second.spawnAttempts), region.min() + Vec2F(0.5, 3.5), (info.second.spawnAttempts > info.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
     }
   }
+  return {};
 }
 
 }

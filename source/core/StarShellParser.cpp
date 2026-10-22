@@ -14,21 +14,29 @@ namespace Star {
 ShellParser::ShellParser()
   : m_current(), m_end(), m_quotedType('\0') {}
 
-auto ShellParser::tokenize(String const& command) -> List<Token> {
+auto ShellParser::tokenize(String const& command) -> std::expected<List<Token>, StarException> {
   List<Token> res;
 
-  init(command);
+  auto initialized = init(command);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
 
   while (notDone()) {
-    res.append(Token{TokenType::Word, word()});
+    auto token = word();
+    if (!token)
+      return std::unexpected(std::move(token.error()));
+    res.append(Token{TokenType::Word, std::move(*token)});
   }
 
   return res;
 }
 
-StringList ShellParser::tokenizeToStringList(String const& command) {
+std::expected<StringList, StarException> ShellParser::tokenizeToStringList(String const& command) {
   StringList res;
-  for (auto token : tokenize(command)) {
+  auto tokens = tokenize(command);
+  if (!tokens)
+    return std::unexpected(std::move(tokens.error()));
+  for (auto& token : *tokens) {
     if (token.type == TokenType::Word) {
       res.append(std::move(token.token));
     }
@@ -37,14 +45,18 @@ StringList ShellParser::tokenizeToStringList(String const& command) {
   return res;
 }
 
-void ShellParser::init(String const& string) {
-  m_begin = string.begin();
+std::expected<void, StarException> ShellParser::init(String const& string) {
+  auto begin = string.begin();
+  if (!begin)
+    return std::unexpected(std::move(begin.error()));
+  m_begin = *begin;
   m_current = m_begin;
   m_end = string.end();
   m_quotedType = '\0';
+  return {};
 }
 
-String ShellParser::word() {
+std::expected<String, StarException> ShellParser::word() {
   String res;
 
   while (notDone()) {
@@ -53,13 +65,16 @@ String ShellParser::word() {
 
     if (letter == '\\') {
       escapedLetter = true;
-      letter = parseBackslash();
+      auto parsedLetter = parseBackslash();
+      if (!parsedLetter)
+        return std::unexpected(std::move(parsedLetter.error()));
+      letter = *parsedLetter;
     }
 
     if (!escapedLetter) {
       if (isSpace(letter) && !inQuotedString()) {
         next();
-        if (res.size()) {
+        if (!res.empty()) {
           return res;
         }
         continue;
@@ -80,7 +95,9 @@ String ShellParser::word() {
       }
     }
 
-    res.append(letter);
+    auto appended = res.append(letter);
+    if (!appended)
+      return std::unexpected(std::move(appended.error()));
     next();
   }
 
@@ -123,7 +140,7 @@ auto ShellParser::previous() -> std::optional<Char> {
   return current();
 }
 
-auto ShellParser::parseBackslash() -> Char {
+auto ShellParser::parseBackslash() -> std::expected<Char, StarException> {
   auto letter = next();
 
   if (!letter) {
@@ -156,7 +173,10 @@ auto ShellParser::parseBackslash() -> Char {
     case '0':
       return '\0';
     case 'u': {
-      auto letter = parseUnicodeEscapeSequence();
+      auto parsedLetter = parseUnicodeEscapeSequence();
+      if (!parsedLetter)
+        return std::unexpected(std::move(parsedLetter.error()));
+      auto letter = *parsedLetter;
       if (isUtf16LeadSurrogate(letter)) {
         auto shouldBeSlash = next();
         if (shouldBeSlash && shouldBeSlash == '\\') {
@@ -178,12 +198,12 @@ auto ShellParser::parseBackslash() -> Char {
   }
 }
 
-auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint) -> Char {
+auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint) -> std::expected<Char, StarException> {
   String codepoint;
 
   auto letter = current();
 
-  while (!isSpace(*letter) && codepoint.size() < 4) {
+  while (!isSpace(*letter) && codepoint.utf8Size() < 4) {
     auto letter = next();
     if (!letter) {
       break;
@@ -193,21 +213,22 @@ auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoi
       return STAR_UTF32_REPLACEMENT_CHAR;
     }
 
-    codepoint.append(*letter);
+    auto appended = codepoint.append(*letter);
+    if (!appended)
+      return std::unexpected(std::move(appended.error()));
   }
 
-  if (!codepoint.size()) {
+  if (codepoint.empty()) {
     return 'u';
   }
 
-  if (codepoint.size() != 4) // exactly 4 digits are required by \u
+  if (codepoint.utf8Size() != 4) // exactly 4 digits are required by \u
     return STAR_UTF32_REPLACEMENT_CHAR;
 
-  try {
-    return hexStringToUtf32(codepoint.utf8(), previousCodepoint);
-  } catch (UnicodeException const&) {
+  auto converted = hexStringToUtf32(codepoint.utf8(), previousCodepoint);
+  if (!converted)
     return STAR_UTF32_REPLACEMENT_CHAR;
-  }
+  return *converted;
 }
 
 bool ShellParser::notDone() const {

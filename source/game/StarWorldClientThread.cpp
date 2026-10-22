@@ -18,6 +18,7 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.either;
+import star.output_proxy;
 import star.random;
 import star.weighted_pool;
 import star.casting;
@@ -148,35 +149,56 @@ import star.tick_rate_monitor;
 import star.algorithm;
 namespace Star {
 
-WorldClientThread::WorldClientThread(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe)
-  : Thread("WorldClientThread: " + String(subWorldId)),
+std::expected<std::shared_ptr<WorldClientThread>, StarException> WorldClientThread::create(
+    Root& root, ClientSubWorldId subWorldId, UniverseClient* universe) {
+  auto world = WorldClient::create(root, subWorldId, universe);
+  if (!world)
+    return std::unexpected(std::move(world.error()));
+  return std::shared_ptr<WorldClientThread>(new WorldClientThread(subWorldId, std::move(*world)));
+}
+
+WorldClientThread::WorldClientThread(ClientSubWorldId subWorldId, std::shared_ptr<WorldClient> worldClient)
+  : Thread(strf("WorldClientThread: {}", subWorldId)),
+    m_worldClient(std::move(worldClient)),
     m_subWorldId(subWorldId),
     m_stop(false),
     m_errorOccurred(false),
-    m_shouldExpire(false) {
-    m_worldClient = std::make_shared<WorldClient>(root, subWorldId,universe);
-}
+    m_shouldExpire(false) {}
 
 WorldClientThread::~WorldClientThread() {
-  m_stop = true;
-  join();
-
-  RecursiveMutexLocker locker(m_mutex);
+  if (auto stopped = stop(); !stopped)
+    EmergencyLog::error("Error stopping client world thread during destruction: {}", stopped.error().what());
+  if (!isJoined())
+    fatalError("Cannot destroy WorldClientThread while its native thread still borrows world state", false);
+  if (auto closed = m_worldClient->close(); !closed)
+    EmergencyLog::error("Error closing client world during destruction: {}", closed.error().what());
 }
 
 ClientSubWorldId WorldClientThread::subWorldId() const {
   return m_subWorldId;
 }
 
-void WorldClientThread::start() {
+std::expected<void, StarException> WorldClientThread::start() {
   m_stop = false;
   m_errorOccurred = false;
-  Thread::start();
+  auto started = Thread::start();
+  if (!started)
+    return std::unexpected(std::move(started.error()));
+  return {};
 }
 
-void WorldClientThread::stop() {
+std::expected<void, StarException> WorldClientThread::stop() {
   m_stop = true;
-  Thread::join();
+  auto joined = Thread::join();
+  auto cleared = clearMessages();
+  if (!joined) {
+    if (!cleared)
+      return std::unexpected(joined.error().withContext(strf("Client world message drain also failed: {}", cleared.error().what())));
+    return std::unexpected(std::move(joined.error()));
+  }
+  if (!cleared)
+    return std::unexpected(std::move(cleared.error()));
+  return {};
 }
 
 void WorldClientThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
@@ -201,9 +223,11 @@ List<std::shared_ptr<Packet>> WorldClientThread::pullOutgoingPackets() {
   return take(m_outgoingPacketQueue);
 }
 
-void WorldClientThread::executeAction(WorldClientAction action) {
+std::expected<void, StarException> WorldClientThread::executeAction(WorldClientAction action) {
   RecursiveMutexLocker locker(m_mutex);
-  action(this, m_worldClient.get());
+  if (!action)
+    return std::unexpected(StarException("Cannot execute an empty client world action"));
+  return action(this, m_worldClient.get());
 }
 
 void WorldClientThread::setUpdateAction(WorldClientAction updateAction) {
@@ -216,96 +240,146 @@ void WorldClientThread::passMessage(Message&& message) {
   m_messages.append(std::move(message));
 }
 
-void WorldClientThread::clearMessages() {
+std::expected<void, StarException> WorldClientThread::clearMessages() {
   List<Message> messages;
   {
     RecursiveMutexLocker locker(m_messageMutex);
     messages = std::move(m_messages);
   }
+  std::optional<StarException> error;
   for (auto& message : messages) {
-    message.promise.fail("Messages discarded");
+    auto failed = message.promise.fail("Messages discarded");
+    if (!failed && !error)
+      error = std::move(failed.error());
   }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void WorldClientThread::run() {
-  try {
-    auto& root = m_worldClient->root();
-    double updateMeasureWindow = root.assets()->json("/client.config:subWorldUpdateMeasureWindow").toDouble();
-
-    TickRateApproacher tickApproacher(1.0f / m_worldClient->root().timing().timestep, updateMeasureWindow);
-
-    while (!m_stop && !m_errorOccurred) {
-      m_worldClient->root().logMap().set(strf("client_{}_update", m_subWorldId), strf("{:4.2f}Hz", tickApproacher.rate()));
-
-      update();
-      tickApproacher.setTargetTickRate(1.0f / m_worldClient->root().timing().timestep);
-      tickApproacher.tick();
-
-      double spareTime = tickApproacher.spareTime();
-
-      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
-      if (spareMilliseconds > 0)
-        Thread::sleepPrecise(spareMilliseconds);
-    }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldClient->root().logger().error("WorldClientThread exception caught: {}", outputException(e, true));
+std::expected<void, StarException> WorldClientThread::run() {
+  auto result = runLoop();
+  if (!result) {
+    auto logged = m_worldClient->root().logger().error("WorldClientThread error: {}",
+        outputException(ExceptionDiagnostic(result.error()), true));
+    if (!logged)
+      result = std::unexpected(result.error().withContext(strf("World error logging also failed: {}", logged.error().what())));
     m_errorOccurred = true;
   }
+  auto cleared = clearMessages();
+  if (!cleared) {
+    auto logged = m_worldClient->root().logger().error("WorldClientThread message drain failed: {}",
+        outputException(ExceptionDiagnostic(cleared.error()), true));
+    if (!logged)
+      cleared = std::unexpected(cleared.error().withContext(strf("World message drain logging also failed: {}", logged.error().what())));
+    m_errorOccurred = true;
+    if (result)
+      return std::unexpected(std::move(cleared.error()));
+  }
+  return result;
 }
 
-void WorldClientThread::update() {
+std::expected<void, StarException> WorldClientThread::runLoop() {
+  auto& root = m_worldClient->root();
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto measureConfig = (*assets)->json("/client.config:subWorldUpdateMeasureWindow");
+  if (!measureConfig)
+    return std::unexpected(std::move(measureConfig.error()));
+  auto updateMeasureWindow = measureConfig->toDouble();
+  if (!updateMeasureWindow)
+    return std::unexpected(std::move(updateMeasureWindow.error()));
+
+  TickRateApproacher tickApproacher(1.0f / root.timing().timestep, *updateMeasureWindow);
+  while (!m_stop && !m_errorOccurred) {
+    root.logMap().set(strf("client_{}_update", m_subWorldId), strf("{:4.2f}Hz", tickApproacher.rate()));
+    auto updated = update();
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+    tickApproacher.setTargetTickRate(1.0f / root.timing().timestep);
+    tickApproacher.tick();
+    std::int64_t spareMilliseconds = std::floor(tickApproacher.spareTime() * 1000);
+    if (spareMilliseconds > 0)
+      Thread::sleepPrecise(spareMilliseconds);
+  }
+  return {};
+}
+
+std::expected<void, StarException> WorldClientThread::update() {
   RecursiveMutexLocker locker(m_mutex);
   RecursiveMutexLocker queueLocker(m_queueMutex);
   auto incomingPackets = take(m_incomingPacketQueue);
   queueLocker.unlock();
-  try {
-    m_worldClient->handleIncomingPackets(std::move(incomingPackets));
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldClient->root().logger().error("WorldClientThread exception caught handling incoming packets: {}", outputException(e, true));
+  auto incoming = m_worldClient->handleIncomingPackets(std::move(incomingPackets));
+  if (!incoming) {
+    auto logged = m_worldClient->root().logger().error("WorldClientThread error handling incoming packets: {}",
+        outputException(ExceptionDiagnostic(incoming.error()), true));
     queueLocker.lock();
-    m_outgoingPacketQueue.append({std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId())});
+    m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
     queueLocker.unlock();
     m_errorOccurred = true;
+    if (!logged)
+      return std::unexpected(incoming.error().withContext(strf("World packet error logging also failed: {}", logged.error().what())));
   }
 
   float dt = m_worldClient->root().timing().timestep * m_worldClient->root().timing().timescale;
-  if (dt > 0.0f && (!m_pause || *m_pause == false))
-    m_worldClient->update(dt);
+  if (dt > 0.0f && (!m_pause || *m_pause == false)) {
+    auto updated = m_worldClient->update(dt);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+  }
 
-  // don't handle messages until in world
   if (m_worldClient->inWorld()) {
     List<Message> messages;
     {
-      RecursiveMutexLocker locker(m_messageMutex);
+      RecursiveMutexLocker messageLocker(m_messageMutex);
       messages = std::move(m_messages);
     }
+    std::optional<StarException> error;
     for (auto& message : messages) {
-      if (auto resp = m_worldClient->receiveMessage(ServerConnectionId, message.message, message.args))
-        if (std::holds_alternative<RpcPromise<Json>>(*resp))
-          message.promise.chain(std::get<RpcPromise<Json>>(*resp));
-        else
-          message.promise.fulfill(std::get<Json>(*resp));
-      else
-        message.promise.fail("Message not handled by world");
+      if (error) {
+        auto failed = message.promise.fail("World message handling stopped");
+        if (!failed)
+          *error = error->withContext(strf("World message drain also failed: {}", failed.error().what()));
+        continue;
+      }
+      auto response = m_worldClient->receiveMessage(ServerConnectionId, message.message, message.args);
+      std::expected<void, StarException> completion;
+      if (!response) {
+        if (!error)
+          error = std::move(response.error());
+        completion = message.promise.fail("World message handling failed");
+      } else if (!*response) {
+        completion = message.promise.fail("Message not handled by world");
+      } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
+        completion = message.promise.chain(*promise);
+      } else {
+        completion = message.promise.fulfill(std::get<Json>(**response));
+      }
+      if (!completion && !error)
+        error = std::move(completion.error());
     }
+    if (error)
+      return std::unexpected(std::move(*error));
   }
 
   auto outgoingPackets = m_worldClient->getOutgoingPackets();
   auto shouldDestroy = m_worldClient->pullRequestedDestroy();
   queueLocker.lock();
-  m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldPackets>(m_subWorldId,std::move(outgoingPackets)));
+  m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldPackets>(m_subWorldId, std::move(outgoingPackets)));
   if (shouldDestroy) {
-    m_worldClient->root().logger().info("WorldClientThread requesting destroy");
+    auto logged = m_worldClient->root().logger().info("WorldClientThread requesting destroy");
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
     m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
   }
   queueLocker.unlock();
 
   m_shouldExpire = m_worldClient->shouldExpire();
-
   if (m_updateAction)
-    m_updateAction(this, m_worldClient.get());
+    return m_updateAction(this, m_worldClient.get());
+  return {};
 }
 
 }

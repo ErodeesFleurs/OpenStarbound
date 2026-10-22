@@ -54,9 +54,9 @@ public:
 
   bool contains(key_type const& k) const;
 
-  // Throws MapException if key not found
-  mapped_type& get(key_type const& k);
-  mapped_type const& get(key_type const& k) const;
+  // Returns MapException if the key is not found.
+  [[nodiscard]] std::expected<mapped_type*, StarException> get(key_type const& k);
+  [[nodiscard]] std::expected<mapped_type const*, StarException> get(key_type const& k) const;
 
   // Return def if key not found
   mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
@@ -72,9 +72,8 @@ public:
 
   bool operator==(OrderedMapWrapper const& m) const;
 
-  // Finds first value matching the given value and returns its key, throws
-  // MapException if no such value is found.
-  key_type keyOf(mapped_type const& v) const;
+  // Finds the first matching value's key, or returns MapException.
+  [[nodiscard]] std::expected<key_type, StarException> keyOf(mapped_type const& v) const;
 
   // Finds all of the values matching the given value and returns their keys.
   List<key_type> keysOf(mapped_type const& v) const;
@@ -85,8 +84,8 @@ public:
   std::pair<iterator, bool> insertFront(value_type const& v);
   std::pair<iterator, bool> insertFront(key_type k, mapped_type v);
 
-  // Add a key / value pair, throw if the key already exists
-  mapped_type& add(key_type k, mapped_type v);
+  // Add a key / value pair, returning an error for an existing key.
+  [[nodiscard]] std::expected<mapped_type*, StarException> add(key_type k, mapped_type v);
 
   // Set a key to a value, always override if it already exists
   mapped_type& set(key_type k, mapped_type v);
@@ -99,9 +98,8 @@ public:
   // Removes the item with key k and returns true if found, false otherwise.
   bool remove(key_type const& k);
 
-  // Remove and return the value with the key k, throws MapException if not
-  // found.
-  mapped_type take(key_type const& k);
+  // Remove and return the value, or MapException if the key is not found.
+  [[nodiscard]] std::expected<mapped_type, StarException> take(key_type const& k);
 
   std::optional<value_type> maybeTake(key_type const& k);
 
@@ -127,18 +125,18 @@ public:
 
   std::optional<std::size_t> indexOf(key_type const& k) const;
 
-  key_type const& keyAt(std::size_t i) const;
-  mapped_type const& valueAt(std::size_t i) const;
-  mapped_type& valueAt(std::size_t i);
+  [[nodiscard]] std::expected<key_type const*, StarException> keyAt(std::size_t i) const;
+  [[nodiscard]] std::expected<mapped_type const*, StarException> valueAt(std::size_t i) const;
+  [[nodiscard]] std::expected<mapped_type*, StarException> valueAt(std::size_t i);
 
-  value_type takeFirst();
-  void removeFirst();
+  [[nodiscard]] std::expected<value_type, StarException> takeFirst();
+  [[nodiscard]] std::expected<void, StarException> removeFirst();
 
-  value_type const& first() const;
+  [[nodiscard]] std::expected<value_type const*, StarException> first() const;
 
-  key_type const& firstKey() const;
-  mapped_type& firstValue();
-  mapped_type const& firstValue() const;
+  [[nodiscard]] std::expected<key_type const*, StarException> firstKey() const;
+  [[nodiscard]] std::expected<mapped_type*, StarException> firstValue();
+  [[nodiscard]] std::expected<mapped_type const*, StarException> firstValue() const;
 
   iterator insert(iterator pos, value_type v);
 
@@ -147,10 +145,10 @@ public:
   bool empty() const;
 
   iterator toBack(iterator i);
-  void toBack(key_type const& k);
+  [[nodiscard]] std::expected<void, StarException> toBack(key_type const& k);
 
   iterator toFront(iterator i);
-  void toFront(key_type const& k);
+  [[nodiscard]] std::expected<void, StarException> toFront(key_type const& k);
 
   template <typename Compare>
   void sort(Compare comp);
@@ -160,20 +158,22 @@ public:
 
 private:
   template <typename Self>
-  static decltype(auto) getImpl(Self& self, key_type const& key) {
+  static auto getImpl(Self& self, key_type const& key)
+      -> std::expected<decltype(&self.m_order.begin()->second), StarException> {
     auto position = self.m_map.find(key);
     if (position == self.m_map.end())
-      throw MapException(strf("Key '{}' not found in OrderedMap::get()", outputAny(key)));
-    return std::forward_like<Self&>(position->second->second);
+      return std::unexpected(mapDiagnosticError("Key '{}' not found in OrderedMap::get()", "OrderedMap::get: key not found while rendering its diagnostic", key));
+    return &position->second->second;
   }
 
   template <typename Self>
-  static decltype(auto) valueAtImpl(Self& self, std::size_t index) {
+  static auto valueAtImpl(Self& self, std::size_t index)
+      -> std::expected<decltype(&self.m_order.begin()->second), StarException> {
     if (index >= self.size())
-      throw MapException(strf("index {} out of range in OrderedMap::valueAt()", index));
+      return std::unexpected(MapException(strf("index {} out of range in OrderedMap::valueAt()", index)));
     auto position = self.m_order.begin();
     std::advance(position, index);
-    return std::forward_like<Self&>(position->second);
+    return &position->second;
   }
 
   MapType m_map;
@@ -249,12 +249,12 @@ bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::contains(key_typ
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) -> mapped_type& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) -> std::expected<mapped_type*, StarException> {
   return getImpl(*this, k);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) const -> mapped_type const& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) const -> std::expected<mapped_type const*, StarException> {
   return getImpl(*this, k);
 }
 
@@ -323,12 +323,12 @@ bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::operator==(Order
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyOf(mapped_type const& v) const -> key_type {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyOf(mapped_type const& v) const -> std::expected<key_type, StarException> {
   for (const_iterator i = begin(); i != end(); ++i) {
     if (i->second == v)
       return i->first;
   }
-  throw MapException(strf("Value '{}' not found in OrderedMap::keyOf()", outputAny(v)));
+  return std::unexpected(mapDiagnosticError("Value '{}' not found in OrderedMap::keyOf()", "OrderedMap::keyOf: value not found while rendering its diagnostic", v));
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -376,12 +376,11 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(key_
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::add(key_type k, mapped_type v) -> mapped_type& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::add(key_type k, mapped_type v) -> std::expected<mapped_type*, StarException> {
   auto pair = insert(value_type(std::move(k), std::move(v)));
   if (!pair.second)
-    throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
-  else
-    return pair.first->second;
+    return std::unexpected(mapDiagnosticError("Entry with key '{}' already present.", "OrderedMap::add: key already present while rendering its diagnostic", pair.first->first));
+  return &pair.first->second;
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -415,7 +414,7 @@ bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::remove(key_type 
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type const& k) -> mapped_type {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type const& k) -> std::expected<mapped_type, StarException> {
   auto i = m_map.find(k);
   if (i != m_map.end()) {
     auto orderIt = i->second;
@@ -425,7 +424,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type co
     m_order.erase(i->second);
     return v;
   } else {
-    throw MapException(strf("Key '{}' not found in OrderedMap::take()", outputAny(k)));
+    return std::unexpected(mapDiagnosticError("Key '{}' not found in OrderedMap::take()", "OrderedMap::take: key not found while rendering its diagnostic", k));
   }
 }
 
@@ -527,29 +526,29 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(std::size_t i) const -> key_type const& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(std::size_t i) const -> std::expected<key_type const*, StarException> {
   if (i >= size())
-    throw MapException(strf("index {} out of range in OrderedMap::at()", i));
+    return std::unexpected(MapException(strf("index {} out of range in OrderedMap::at()", i)));
 
   auto it = begin();
   std::advance(it, i);
-  return it->first;
+  return &it->first;
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) const -> mapped_type const& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) const -> std::expected<mapped_type const*, StarException> {
   return valueAtImpl(*this, i);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) -> mapped_type& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) -> std::expected<mapped_type*, StarException> {
   return valueAtImpl(*this, i);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::takeFirst() -> value_type {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::takeFirst() -> std::expected<value_type, StarException> {
   if (empty())
-    throw MapException("OrderedMap::takeFirst() called on empty OrderedMap");
+    return std::unexpected(MapException("OrderedMap::takeFirst() called on empty OrderedMap"));
 
   iterator i = m_order.begin();
   m_map.remove(i->first);
@@ -559,31 +558,33 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::takeFirst() -> v
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::removeFirst() {
-  erase(begin());
-}
-
-template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::first() const -> value_type const& {
+std::expected<void, StarException> OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::removeFirst() {
   if (empty())
-    throw MapException("OrderedMap::takeFirst() called on empty OrderedMap");
-
-  return *m_order.begin();
+    return std::unexpected(MapException("OrderedMap::removeFirst() called on empty OrderedMap"));
+  erase(begin());
+  return {};
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstValue() -> mapped_type& {
-  return begin()->second;
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::first() const -> std::expected<value_type const*, StarException> {
+  if (empty())
+    return std::unexpected(MapException("OrderedMap::first() called on empty OrderedMap"));
+  return &*m_order.begin();
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstValue() const -> mapped_type const& {
-  return begin()->second;
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstValue() -> std::expected<mapped_type*, StarException> {
+  return valueAt(0);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstKey() const -> key_type const& {
-  return begin()->first;
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstValue() const -> std::expected<mapped_type const*, StarException> {
+  return valueAt(0);
+}
+
+template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::firstKey() const -> std::expected<key_type const*, StarException> {
+  return keyAt(0);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -624,21 +625,21 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toFront(iterator
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toBack(key_type const& k) {
+std::expected<void, StarException> OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toBack(key_type const& k) {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    throw MapException(strf("Key not found in OrderedMap::toBack('{}')", outputAny(k)));
-
+    return std::unexpected(mapDiagnosticError("Key not found in OrderedMap::toBack('{}')", "OrderedMap::toBack: key not found while rendering its diagnostic", k));
   toBack(i->second);
+  return {};
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toFront(key_type const& k) {
+std::expected<void, StarException> OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toFront(key_type const& k) {
   auto i = m_map.find(k);
   if (i == m_map.end())
-    throw MapException(strf("Key not found in OrderedMap::toFront('{}')", outputAny(k)));
-
+    return std::unexpected(mapDiagnosticError("Key not found in OrderedMap::toFront('{}')", "OrderedMap::toFront: key not found while rendering its diagnostic", k));
   toFront(i->second);
+  return {};
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

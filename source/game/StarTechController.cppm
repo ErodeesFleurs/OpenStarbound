@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.lua;
 import star.json;
@@ -68,23 +69,23 @@ public:
     Swim,
     SwimIdle
   };
-  static EnumMap<ParentState> const ParentStateNames;
+  static std::expected<EnumMap<ParentState>, StarException> const ParentStateNames;
 
-  TechController(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<TechController>, StarException> create(Root& root);
 
-  Json diskStore();
-  void diskLoad(Json const& store);
+  [[nodiscard]] std::expected<Json, StarException> diskStore();
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& store);
 
-  void init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
-  void setLoadedTech(StringList const& techModules, bool forceLoad = false);
+  [[nodiscard]] std::expected<void, StarException> setLoadedTech(StringList const& techModules, bool forceLoad = false);
   StringList loadedTech() const;
-  void reloadTech();
+  [[nodiscard]] std::expected<void, StarException> reloadTech();
 
   bool techOverridden() const;
-  void setOverrideTech(StringList const& techModules);
-  void clearOverrideTech();
+  [[nodiscard]] std::expected<void, StarException> setOverrideTech(StringList const& techModules);
+  [[nodiscard]] std::expected<void, StarException> clearOverrideTech();
 
   void setShouldRun(bool shouldRun);
 
@@ -102,8 +103,8 @@ public:
 
   void setAimPosition(Vec2F const& aimPosition);
 
-  void tickMaster(float dt);
-  void tickSlave(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickMaster(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickSlave(float dt);
 
   std::optional<ParentState> parentState() const;
   DirectivesGroup const& parentDirectives() const;
@@ -112,34 +113,35 @@ public:
 
   bool parentHidden() const;
 
-  List<Drawable> backDrawables();
-  List<Drawable> frontDrawables();
+  [[nodiscard]] std::expected<List<Drawable>, StarException> backDrawables();
+  [[nodiscard]] std::expected<List<Drawable>, StarException> frontDrawables();
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const;
 
   List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
+  explicit TechController(Root& root);
   Root& m_root;
   struct TechAnimator : public NetElement {
     TechAnimator(Root& root);
-    TechAnimator(Root& root, std::optional<String> animationConfig);
+    [[nodiscard]] static std::expected<std::shared_ptr<TechAnimator>, StarException> create(Root& root, std::optional<String> animationConfig = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-    void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-    void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+    [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-    void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-    void disableNetInterpolation() override;
-    void tickNetInterpolation(float dt) override;
+    [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+    [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+    [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-    void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-    void blankNetDelta(float interpolationTime) override;
+    [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+    [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
     // If setting invisible, stops all playing audio
     void setVisible(bool visible);
@@ -147,7 +149,7 @@ private:
 
     Root& m_root;
     std::optional<String> animationConfig;
-    NetworkedAnimator animator;
+    std::shared_ptr<NetworkedAnimator> animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
     NetElementBool visible;
     NetElementGroup netGroup;
@@ -169,16 +171,16 @@ private:
   };
 
   // Name of module, any existing module script data.
-  void setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits);
+  [[nodiscard]] std::expected<void, StarException> setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits);
 
-  void unloadModule(TechModule& techModule);
+  [[nodiscard]] std::expected<void, StarException> unloadModule(TechModule& techModule);
 
-  void initializeModules();
+  [[nodiscard]] std::expected<void, StarException> initializeModules();
 
   void resetMoves();
-  void updateAnimators(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateAnimators(float dt);
 
-  LuaCallbacks makeTechCallbacks(TechModule& techModule);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeTechCallbacks(TechModule& techModule);
 
   std::optional<StringList> m_overriddenTech;
   LinkedList<TechModule> m_techModules;

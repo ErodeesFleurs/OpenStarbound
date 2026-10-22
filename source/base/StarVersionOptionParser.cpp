@@ -19,15 +19,26 @@ void VersionOptionParser::setVersionName(String const& name) {
   m_versionName = name;
 }
 
-VersionOptionParser::VersionOptionParser() {
-  addSwitch("help", "Show help text");
-  addSwitch("version", "Print version info");
+std::expected<VersionOptionParser, StarException> VersionOptionParser::create() {
+  VersionOptionParser parser;
+  auto initialized = parser.initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return parser;
 }
 
-VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& cmdLineArguments) const {
-  Options options;
-  StringList errors;
-  std::tie(options, errors) = OptionParser::parseOptions(cmdLineArguments);
+std::expected<void, StarException> VersionOptionParser::initialize() {
+  auto help = addSwitch("help", "Show help text");
+  if (!help)
+    return std::unexpected(std::move(help.error()));
+  return addSwitch("version", "Print version info");
+}
+
+std::expected<VersionOptionParser::Options, StarException> VersionOptionParser::parseOrDie(StringList const& cmdLineArguments) const {
+  auto parsed = OptionParser::parseOptions(cmdLineArguments);
+  if (!parsed)
+    return std::unexpected(std::move(parsed.error()));
+  auto& [options, errors] = *parsed;
 
   if (options.switches.contains("version"))
     coutf("{}\n", getVersionString());
@@ -46,10 +57,10 @@ VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& c
     std::exit(1);
   }
 
-  return options;
+  return std::move(options);
 }
 
-VersionOptionParser::Options VersionOptionParser::commandParseOrDie(int argc, char** argv) {
+std::expected<VersionOptionParser::Options, StarException> VersionOptionParser::commandParseOrDie(int argc, char** argv) {
   setCommandName(File::baseName(argv[0]));
   return parseOrDie(StringList(argc - 1, argv + 1));
 }

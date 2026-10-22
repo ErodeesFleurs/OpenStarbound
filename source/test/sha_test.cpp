@@ -3,6 +3,7 @@ import star.string;
 import star.list;
 import star.byte_array;
 import star.encode;
+import star.format;
 
 #include "gtest/gtest.h"
 
@@ -13,7 +14,7 @@ using namespace Star;
 TEST(ShaTest, All) {
   Sha256Hasher hasher;
   List<ByteArray> computed;
-  List<ByteArray> expected;
+  List<std::expected<ByteArray, StarException>> expected;
 
   computed.append(sha256("/animations/muzzleflash/bulletmuzzle1/bulletmuzzle1.png"));
   expected.append(hexDecode("7e4a2cbe3826945d5f6593b347b49285b00ba8471cb4f6edc9b045c2cb3b6ea6"));

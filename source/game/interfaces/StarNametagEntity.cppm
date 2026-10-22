@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -31,11 +32,11 @@ public:
     return Star::typeName<NametagEntity>();
   }
 
-  virtual String nametag() const = 0;
+  [[nodiscard]] virtual std::expected<String, StarException> nametag() const = 0;
   virtual std::optional<String> statusText() const = 0;
   virtual bool displayNametag() const = 0;
-  virtual Vec3B nametagColor() const = 0;
-  virtual Vec2F nametagOrigin() const = 0;
+  [[nodiscard]] virtual std::expected<Vec3B, StarException> nametagColor() const = 0;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> nametagOrigin() const = 0;
 };
 
 }

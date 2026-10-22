@@ -38,26 +38,25 @@ using EntityFactoryException = StarError<EntityFactoryExceptionTag, StarExceptio
 
 class EntityFactory {
 public:
-  explicit EntityFactory(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<EntityFactory>, StarException> create(Root& root);
 
-  ByteArray netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules = {}) const;
-  std::shared_ptr<Entity> netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  Json diskStoreEntity(std::shared_ptr<Entity> const& entity) const;
-  std::shared_ptr<Entity> diskLoadEntity(EntityType type, Json const& diskStore) const;
+  [[nodiscard]] std::expected<Json, StarException> diskStoreEntity(std::shared_ptr<Entity> const& entity) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> diskLoadEntity(EntityType type, Json const& diskStore) const;
 
-  Json loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const;
-  VersionedJson storeVersionedJson(EntityType type, Json const& store) const;
+  [[nodiscard]] std::expected<Json, StarException> loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const;
+  [[nodiscard]] std::expected<VersionedJson, StarException> storeVersionedJson(EntityType type, Json const& store) const;
 
-  // Wraps the normal Json based Entity store / load in a VersionedJson, and
-  // uses sripts in the VersionedingDatabase to bring the version of the store
-  // forward to match the current version.
-  std::shared_ptr<Entity> loadVersionedEntity(VersionedJson const& versionedJson) const;
-  VersionedJson storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const;
+  // Versioned loads retain the database's migration and recovery policy.
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> loadVersionedEntity(VersionedJson const& versionedJson) const;
+  [[nodiscard]] std::expected<VersionedJson, StarException> storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const;
 
 private:
+  explicit EntityFactory(Root& root);
   Root& m_root;
-  static EnumMap<EntityType> const EntityStorageIdentifiers;
+  static std::expected<EnumMap<EntityType>, StarException> const EntityStorageIdentifiers;
 
   mutable RecursiveMutex m_mutex;
 

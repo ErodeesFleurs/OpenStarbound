@@ -42,77 +42,101 @@ static Json weatherConfig() {
 }// namespace
 
 const GameTestRegistration weatherNoParallax("WeatherTest", "NoParallax", [](GameTest& fixture) {
-  WeatherType weather(fixture.root(), weatherConfig());
+  auto weather = WeatherType::create(fixture.root(), weatherConfig());
+  ASSERT_TRUE(weather);
 
-  EXPECT_FALSE(weather.parallax);
-  EXPECT_TRUE(weather.toJson().get("parallax").isNull());
-  EXPECT_FALSE(WeatherType(fixture.root(), weather.toJson()).parallax);
+  EXPECT_FALSE(weather->parallax);
+  auto stored = weather->toJson();
+  ASSERT_TRUE(stored);
+  auto parallax = stored->get("parallax");
+  ASSERT_TRUE(parallax);
+  EXPECT_TRUE(parallax->isNull());
+  auto roundTrip = WeatherType::create(fixture.root(), *stored);
+  ASSERT_TRUE(roundTrip);
+  EXPECT_FALSE(roundTrip->parallax);
 });
 
 const GameTestRegistration weatherEmptyParallax("WeatherTest", "EmptyParallax", [](GameTest& fixture) {
-  WeatherType weather(fixture.root(), weatherConfig().set("parallax", ""));
+  auto config = weatherConfig().set("parallax", "");
+  ASSERT_TRUE(config);
+  auto weather = WeatherType::create(fixture.root(), *config);
+  ASSERT_TRUE(weather);
 
-  EXPECT_FALSE(weather.parallax);
+  EXPECT_FALSE(weather->parallax);
 });
 
 const GameTestRegistration weatherShorthandParallax("WeatherTest", "ShorthandParallax", [](GameTest& fixture) {
-  WeatherType weather(fixture.root(), weatherConfig().set("parallax", "rain"));
+  auto config = weatherConfig().set("parallax", "rain");
+  ASSERT_TRUE(config);
+  auto weather = WeatherType::create(fixture.root(), *config);
+  ASSERT_TRUE(weather);
 
-  ASSERT_TRUE(weather.parallax);
-  EXPECT_EQ(*weather.parallax, "/parallax/weather/rain.parallax");
+  ASSERT_TRUE(weather->parallax);
+  EXPECT_EQ(*weather->parallax, "/parallax/weather/rain.parallax");
 
-  WeatherType roundTrip(fixture.root(), weather.toJson());
-  ASSERT_TRUE(roundTrip.parallax);
-  EXPECT_EQ(*roundTrip.parallax, "/parallax/weather/rain.parallax");
+  auto stored = weather->toJson();
+  ASSERT_TRUE(stored);
+  auto roundTrip = WeatherType::create(fixture.root(), *stored);
+  ASSERT_TRUE(roundTrip);
+  ASSERT_TRUE(roundTrip->parallax);
+  EXPECT_EQ(*roundTrip->parallax, "/parallax/weather/rain.parallax");
 });
 
 const GameTestRegistration weatherAbsoluteParallax("WeatherTest", "AbsoluteParallax", [](GameTest& fixture) {
-  WeatherType weather(fixture.root(), weatherConfig().set("parallax", "/custom/weather/storm.parallax"));
+  auto config = weatherConfig().set("parallax", "/custom/weather/storm.parallax");
+  ASSERT_TRUE(config);
+  auto weather = WeatherType::create(fixture.root(), *config);
+  ASSERT_TRUE(weather);
 
-  ASSERT_TRUE(weather.parallax);
-  EXPECT_EQ(*weather.parallax, "/custom/weather/storm.parallax");
+  ASSERT_TRUE(weather->parallax);
+  EXPECT_EQ(*weather->parallax, "/custom/weather/storm.parallax");
 });
 
 const GameTestRegistration weatherCompleteStateRestoresAfterLocalClear("WeatherTest", "CompleteStateRestoresAfterLocalClear", [](GameTest& fixture) {
   WeatherPool pool(WeatherPool::ItemsList{{1.0, "rain"}});
   WorldGeometry geometry(Vec2U(1000, 1000));
 
-  ServerWeather server(fixture.root());
-  server.setup(pool, 0, geometry, {});
-  server.setWeather("rain", true);
-  auto update = server.writeUpdate(0).first;
+  auto server = ServerWeather::create(fixture.root());
+  ASSERT_TRUE(server);
+  (*server)->setup(pool, 0, geometry, {});
+  ASSERT_TRUE((*server)->setWeather("rain", true));
+  auto update = (*server)->writeUpdate(0);
+  ASSERT_TRUE(update);
 
-  ClientWeather client(fixture.root());
-  client.setup(geometry, {});
-  client.setVisibleRegion({0, 100, 100, 200});
-  client.readUpdate(update, {});
-  client.update(0);
-  EXPECT_FALSE(client.statusEffects().empty());
+  auto client = ClientWeather::create(fixture.root());
+  ASSERT_TRUE(client);
+  (*client)->setup(geometry, {});
+  (*client)->setVisibleRegion({0, 100, 100, 200});
+  ASSERT_TRUE((*client)->readUpdate(update->first, {}));
+  ASSERT_TRUE((*client)->update(0));
+  EXPECT_FALSE((*client)->statusEffects().empty());
 
-  client.clear();
-  EXPECT_TRUE(client.statusEffects().empty());
+  ASSERT_TRUE((*client)->clear());
+  EXPECT_TRUE((*client)->statusEffects().empty());
 
-  client.readUpdate(update, {});
-  client.setVisibleRegion({0, 100, 100, 200});
-  client.update(0);
-  EXPECT_FALSE(client.statusEffects().empty());
+  ASSERT_TRUE((*client)->readUpdate(update->first, {}));
+  (*client)->setVisibleRegion({0, 100, 100, 200});
+  ASSERT_TRUE((*client)->update(0));
+  EXPECT_FALSE((*client)->statusEffects().empty());
 });
 
 const GameTestRegistration parallaxWindSettingsDefaultOff("ParallaxTest", "WindSettingsDefaultOff", [](GameTest&) {
   ParallaxLayer layer;
-  ParallaxLayer restored(layer.store());
+  auto restored = ParallaxLayer::create(layer.store());
+  ASSERT_TRUE(restored);
 
-  EXPECT_FALSE(restored.followsWind);
-  EXPECT_FALSE(restored.windSpeedMultiplier);
+  EXPECT_FALSE(restored->followsWind);
+  EXPECT_FALSE(restored->windSpeedMultiplier);
 });
 
 const GameTestRegistration parallaxWindSettingsRoundTrip("ParallaxTest", "WindSettingsRoundTrip", [](GameTest&) {
   ParallaxLayer layer;
   layer.followsWind = true;
   layer.windSpeedMultiplier = 0.25f;
-  ParallaxLayer restored(layer.store());
+  auto restored = ParallaxLayer::create(layer.store());
+  ASSERT_TRUE(restored);
 
-  EXPECT_TRUE(restored.followsWind);
-  ASSERT_TRUE(restored.windSpeedMultiplier);
-  EXPECT_FLOAT_EQ(*restored.windSpeedMultiplier, 0.25f);
+  EXPECT_TRUE(restored->followsWind);
+  ASSERT_TRUE(restored->windSpeedMultiplier);
+  EXPECT_FLOAT_EQ(*restored->windSpeedMultiplier, 0.25f);
 });

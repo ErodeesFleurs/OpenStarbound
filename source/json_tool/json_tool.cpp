@@ -4,6 +4,7 @@ import std;
 import star.string;
 import star.list;
 import star.format;
+import star.output_proxy;
 import star.json;
 import star.file;
 import star.logging;
@@ -20,87 +21,120 @@ import star.native_runtime;
 import star.algorithm;
 using namespace Star;
 
-FormattedJson GenericInputFormat::toJson(String const& input) const {
+std::expected<FormattedJson, StarException> GenericInputFormat::toJson(String const& input) const {
   return FormattedJson::parse(input);
 }
 
-String GenericInputFormat::fromJson(FormattedJson const& json) const {
+std::expected<String, StarException> GenericInputFormat::fromJson(FormattedJson const& json) const {
   return json.repr();
 }
 
-FormattedJson GenericInputFormat::getDefault() const {
+std::expected<FormattedJson, StarException> GenericInputFormat::getDefault() const {
   return FormattedJson::ofType(Json::Type::Null);
 }
 
-FormattedJson CommaSeparatedStrings::toJson(String const& input) const {
-  if (input.trim() == "")
+std::expected<FormattedJson, StarException> CommaSeparatedStrings::toJson(String const& input) const {
+  auto trimmed = input.trim();
+  if (!trimmed)
+    return std::unexpected(std::move(trimmed.error()));
+  if (trimmed->empty())
     return FormattedJson::ofType(Json::Type::Array);
-  StringList strings = input.split(',');
-  JsonArray array = strings.transformed(std::bind(&String::trim, std::placeholders::_1, "")).transformed(construct<Json>());
-  return Json(array);
+  auto fields = input.split(',');
+  if (!fields)
+    return std::unexpected(std::move(fields.error()));
+  JsonArray array;
+  for (auto const& text : *fields) {
+    auto field = text.trim();
+    if (!field)
+      return std::unexpected(std::move(field.error()));
+    array.append(Json(std::move(*field)));
+  }
+  return FormattedJson::create(Json(std::move(array)));
 }
 
-String CommaSeparatedStrings::fromJson(FormattedJson const& json) const {
-  StringList strings = json.toJson().toArray().transformed(std::bind(&Json::toString, std::placeholders::_1));
+std::expected<String, StarException> CommaSeparatedStrings::fromJson(FormattedJson const& json) const {
+  auto array = json.toJson().toArray();
+  if (!array)
+    return std::unexpected(std::move(array.error()));
+  StringList strings;
+  for (auto const& entry : *array) {
+    auto text = entry.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    strings.append(std::move(*text));
+  }
   return strings.join(", ");
 }
 
-FormattedJson CommaSeparatedStrings::getDefault() const {
+std::expected<FormattedJson, StarException> CommaSeparatedStrings::getDefault() const {
   return FormattedJson::ofType(Json::Type::Array);
 }
 
-FormattedJson StringInputFormat::toJson(String const& input) const {
-  return FormattedJson(Json(input));
+std::expected<FormattedJson, StarException> StringInputFormat::toJson(String const& input) const {
+  return FormattedJson::create(Json(input));
 }
 
-String StringInputFormat::fromJson(FormattedJson const& json) const {
+std::expected<String, StarException> StringInputFormat::fromJson(FormattedJson const& json) const {
   return json.toJson().toString();
 }
 
-FormattedJson StringInputFormat::getDefault() const {
-  return FormattedJson(Json(""));
+std::expected<FormattedJson, StarException> StringInputFormat::getDefault() const {
+  return FormattedJson::create(Json(""));
 }
 
-String Star::reprWithLineEnding(FormattedJson const& json) {
-  // Append a newline, preserving the newline style of the file, e.g windows or
-  // unix.
-  String repr = json.repr();
-  if (repr.contains("\r"))
-    return strf("{}\r\n", repr);
-  return strf("{}\n", repr);
+std::expected<String, StarException> Star::reprWithLineEnding(FormattedJson const& json) {
+  auto repr = json.repr();
+  if (!repr)
+    return std::unexpected(std::move(repr.error()));
+  return repr->utf8().find('\r') != std::string::npos ? strf("{}\r\n", *repr) : strf("{}\n", *repr);
 }
 
-void OutputOnSeparateLines::out(FormattedJson const& json) {
-  coutf("{}", reprWithLineEnding(json));
+std::expected<void, StarException> OutputOnSeparateLines::out(FormattedJson const& json) {
+  auto repr = reprWithLineEnding(json);
+  if (!repr)
+    return std::unexpected(std::move(repr.error()));
+  coutf("{}", *repr);
+  return {};
 }
 
-void OutputOnSeparateLines::flush() {}
+std::expected<void, StarException> OutputOnSeparateLines::flush() {
+  return {};
+}
 
-void ArrayOutput::out(FormattedJson const& json) {
+std::expected<void, StarException> ArrayOutput::out(FormattedJson const& json) {
   if (!m_unique || !m_results.contains(json))
     m_results.append(json);
+  return {};
 }
 
-void ArrayOutput::flush() {
+std::expected<void, StarException> ArrayOutput::flush() {
   FormattedJson array = FormattedJson::ofType(Json::Type::Array);
   for (FormattedJson const& result : m_results) {
-    array = array.append(result);
+    auto appended = array.append(result);
+    if (!appended)
+      return std::unexpected(std::move(appended.error()));
+    array = std::move(*appended);
   }
-  coutf("{}", reprWithLineEnding(array));
+  auto repr = reprWithLineEnding(array);
+  if (!repr)
+    return std::unexpected(std::move(repr.error()));
+  coutf("{}", *repr);
+  return {};
 }
 
-FormattedJson Star::addOrSet(bool add,
+std::expected<FormattedJson, StarException> Star::addOrSet(bool add,
     std::shared_ptr<::Star::JsonPath::Path> path,
     FormattedJson const& input,
     InsertLocation insertLocation,
     FormattedJson const& value) {
-  JsonPath::EmptyPathOp<FormattedJson> emptyPathOp = [&value, add](FormattedJson const& document) {
+  JsonPath::EmptyPathOp<FormattedJson> emptyPathOp = [&value, add](FormattedJson const& document)
+      -> std::expected<FormattedJson, StarException> {
     if (!add || document.type() == Json::Type::Null)
       return value;
-    throw JsonException("Cannot add a value to the entire document, it is not empty.");
+    return std::unexpected(JsonException("Cannot add a value to the entire document, it is not empty."));
   };
   JsonPath::ObjectOp<FormattedJson> objectOp = [&value, &insertLocation](
-      FormattedJson const& object, String const& key) {
+      FormattedJson const& object, String const& key) -> std::expected<FormattedJson, StarException> {
     if (std::holds_alternative<AtBeginning>(insertLocation))
       return object.prepend(key, value);
     if (std::holds_alternative<AtEnd>(insertLocation))
@@ -111,8 +145,9 @@ FormattedJson Star::addOrSet(bool add,
       return object.insertAfter(key, value, std::get<AfterKey>(insertLocation).key);
     return object.set(key, value);
   };
-  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, std::optional<std::size_t> i) {
-    if (i.has_value()) {
+  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, std::optional<std::size_t> i)
+      -> std::expected<FormattedJson, StarException> {
+    if (i) {
       if (add)
         return array.insert(*i, value);
       return array.set(*i, value);
@@ -122,196 +157,229 @@ FormattedJson Star::addOrSet(bool add,
   return path->apply(input, emptyPathOp, objectOp, arrayOp);
 }
 
-void forEachFileRecursive(Logger& logger, String const& directory, std::function<void(String)> func) {
-  for (std::pair<String, bool> entry : File::dirList(directory)) {
+[[nodiscard]]
+std::expected<void, StarException> forEachFileRecursive(Logger& logger, String const& directory,
+    std::function<std::expected<void, StarException>(String const&)> const& func) {
+  auto entries = File::dirList(directory);
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto const& entry : *entries) {
     String filename = File::relativeTo(directory, entry.first);
-    // Never follow a symlinked directory: it can point outside of the tree, or
-    // at one of its own parents (which would recurse until the OS errors out).
-    if (entry.second && File::isSymlink(filename)) {
-      logger.warn("json_tool: Not descending into '{}' because it is a symlink", filename);
-      continue;
+    if (entry.second) {
+      auto symlink = File::isSymlink(filename);
+      if (!symlink)
+        return std::unexpected(std::move(symlink.error()));
+      if (*symlink) {
+        auto logged = logger.warn("json_tool: Not descending into '{}' because it is a symlink", filename);
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+        continue;
+      }
     }
-
-    if (entry.second)
-      forEachFileRecursive(logger, filename, func);
-    else
-      func(filename);
+    if (entry.second) {
+      auto visited = forEachFileRecursive(logger, filename, func);
+      if (!visited)
+        return std::unexpected(std::move(visited.error()));
+    } else {
+      auto visited = func(filename);
+      if (!visited)
+        return std::unexpected(std::move(visited.error()));
+    }
   }
+  return {};
 }
 
-StringList Star::findFiles(Logger& logger, FindInput const& findArgs) {
+std::expected<StringList, StarException> Star::findFiles(Logger& logger, FindInput const& findArgs) {
   StringList matches;
-  forEachFileRecursive(logger, findArgs.directory,
-      [&findArgs, &matches](String const& filename) {
-        if (filename.endsWith(findArgs.filenameSuffix))
+  auto visited = forEachFileRecursive(logger, findArgs.directory,
+      [&findArgs, &matches](String const& filename) -> std::expected<void, StarException> {
+        auto matchesSuffix = filename.endsWith(findArgs.filenameSuffix);
+        if (!matchesSuffix)
+          return std::unexpected(std::move(matchesSuffix.error()));
+        if (*matchesSuffix)
           matches.append(filename);
+        return {};
       });
+  if (!visited)
+    return std::unexpected(std::move(visited.error()));
   return matches;
 }
 
-void forEachChild(FormattedJson const& parent, std::function<void(FormattedJson const&)> func) {
+using JsonOutput = std::function<std::expected<void, StarException>(FormattedJson const&)>;
+
+[[nodiscard]]
+std::expected<void, StarException> forEachChild(FormattedJson const& parent, JsonOutput const& output) {
   if (parent.isType(Json::Type::Object)) {
-    for (String const& key : parent.toJson().toObject().keys()) {
-      func(parent.get(key));
+    auto object = parent.toJson().toObject();
+    if (!object)
+      return std::unexpected(std::move(object.error()));
+    for (auto const& key : object->keys()) {
+      auto child = parent.get(key);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      auto emitted = output(*child);
+      if (!emitted)
+        return std::unexpected(std::move(emitted.error()));
     }
   } else if (parent.isType(Json::Type::Array)) {
-    for (std::size_t i = 0; i < parent.size(); ++i) {
-      func(parent.get(i));
+    auto size = parent.size();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    for (std::size_t i = 0; i < *size; ++i) {
+      auto child = parent.get(i);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      auto emitted = output(*child);
+      if (!emitted)
+        return std::unexpected(std::move(emitted.error()));
     }
   } else {
-    throw JsonPath::TraversalException::format(
-        "Cannot get the children of Json type {}, must be either Array or Object", parent.typeName());
+    return std::unexpected(JsonPath::TraversalException::format(
+        "Cannot get the children of Json type {}, must be either Array or Object", parent.typeName()));
   }
+  return {};
 }
 
-bool process(std::function<void(FormattedJson const&)> output,
-    Command const& command,
-    Options const& options,
-    FormattedJson const& input) {
-  if (std::holds_alternative<GetCommand>(command)) {
-    GetCommand const& getCmd = std::get<GetCommand>(command);
-    try {
-      FormattedJson value = getCmd.path->get(input);
-      if (getCmd.children) {
-        forEachChild(value, output);
-      } else {
-        output(value);
-      }
-    } catch (JsonPath::TraversalException const& e) {
-      if (!getCmd.opt)
-        throw e;
+[[nodiscard]]
+std::expected<void, StarException> process(JsonOutput const& output,
+    Command const& command, Options const& options, FormattedJson const& input) {
+  if (auto get = std::get_if<GetCommand>(&command)) {
+    auto value = get->path->get(input);
+    if (!value) {
+      if (get->opt && value.error().is<JsonPath::TraversalException>())
+        return {};
+      return std::unexpected(std::move(value.error()));
     }
-
-  } else if (std::holds_alternative<SetCommand>(command)) {
-    SetCommand const& setCmd = std::get<SetCommand>(command);
-    output(addOrSet(false, setCmd.path, input, options.insertLocation, setCmd.value));
-
-  } else if (std::holds_alternative<AddCommand>(command)) {
-    AddCommand const& addCmd = std::get<AddCommand>(command);
-    output(addOrSet(true, addCmd.path, input, options.insertLocation, addCmd.value));
-
-  } else if (std::holds_alternative<RemoveCommand>(command)) {
-    output(std::get<RemoveCommand>(command).path->remove(input));
-
-  } else {
-    if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((std::holds_alternative<std::monostate>(command)));
-    }
-    output(input);
+    auto emitted = get->children ? forEachChild(*value, output) : output(*value);
+    if (!emitted && get->opt && emitted.error().is<JsonPath::TraversalException>())
+      return {};
+    return emitted;
   }
-  return true;
+  if (auto set = std::get_if<SetCommand>(&command)) {
+    auto value = addOrSet(false, set->path, input, options.insertLocation, set->value);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return output(*value);
+  }
+  if (auto add = std::get_if<AddCommand>(&command)) {
+    auto value = addOrSet(true, add->path, input, options.insertLocation, add->value);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return output(*value);
+  }
+  if (auto remove = std::get_if<RemoveCommand>(&command)) {
+    auto value = remove->path->remove(input);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return output(*value);
+  }
+  return output(input);
 }
 
-bool process(
-    std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, String const& input) {
-  FormattedJson inJson = FormattedJson::parse(input);
-  return process(output, command, options, inJson);
+[[nodiscard]]
+std::expected<void, StarException> process(
+    JsonOutput const& output, Command const& command, Options const& options, String const& input) {
+  auto json = FormattedJson::parse(input);
+  if (!json)
+    return std::unexpected(std::move(json.error()));
+  return process(output, command, options, *json);
 }
 
-bool process(Logger& logger,
-    std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, Input const& input) {
-  if (std::holds_alternative<JsonLiteralInput>(input)) {
-    return process(output, command, options, std::get<JsonLiteralInput>(input).json);
-  }
-
-  bool success = true;
+[[nodiscard]]
+std::expected<void, StarException> process(Logger& logger,
+    JsonOutput output, Command const& command, Options const& options, Input const& input) {
+  if (auto literal = std::get_if<JsonLiteralInput>(&input))
+    return process(output, command, options, literal->json);
   StringList files;
-
-  if (std::holds_alternative<FileInput>(input)) {
-    files = StringList{std::get<FileInput>(input).filename};
+  if (auto file = std::get_if<FileInput>(&input)) {
+    files.append(file->filename);
   } else {
-    files = findFiles(logger, std::get<FindInput>(input));
+    auto found = findFiles(logger, std::get<FindInput>(input));
+    if (!found)
+      return std::unexpected(std::move(found.error()));
+    files = std::move(*found);
   }
-
   for (String const& file : files) {
     if (options.inPlace) {
-      output = [&file](FormattedJson const& json) { File::writeFile(reprWithLineEnding(json), file); };
+      output = [&file](FormattedJson const& json) -> std::expected<void, StarException> {
+        auto repr = reprWithLineEnding(json);
+        if (!repr)
+          return std::unexpected(std::move(repr.error()));
+        return File::overwriteFileWithRename(*repr, file);
+      };
     }
-    success &= process(output, command, options, File::readFileString(file));
+    auto contents = File::readFileString(file);
+    if (!contents)
+      return std::unexpected(std::move(contents.error()));
+    auto processed = process(output, command, options, *contents);
+    if (!processed)
+      return std::unexpected(std::move(processed.error()));
   }
-  return success;
+  return {};
 }
 
 std::shared_ptr<::Star::JsonPath::Path> parsePath(String const& path) {
-  if (path.beginsWith("/"))
+  if (path.utf8().starts_with("/"))
     return std::make_shared<JsonPath::Pointer>(path);
   return std::make_shared<JsonPath::QueryPath>(path);
 }
 
-std::pair<std::shared_ptr<::Star::JsonPath::Path>, bool> parseGetPath(String path) {
-  // --get and --opt have a special syntax for getting the child values of
-  // the value at the given path. These end with *, e.g.:
-  //    /foo/bar/*
-  //    foo.bar.*
-  //    foo.bar[*]
-
+std::pair<std::shared_ptr<::Star::JsonPath::Path>, bool> parseGetPath(String const& path) {
+  auto text = path.utf8();
   bool children = false;
-  if (path.endsWith("/*") || path.endsWith(".*")) {
-    path = path.substr(0, path.size() - 2);
+  if (text.ends_with("/*") || text.ends_with(".*")) {
+    text.resize(text.size() - 2);
     children = true;
-  } else if (path.endsWith("[*]")) {
-    path = path.substr(0, path.size() - 3);
+  } else if (text.ends_with("[*]")) {
+    text.resize(text.size() - 3);
     children = true;
   }
-  return std::make_pair(parsePath(path), children);
+  return {parsePath(String(std::move(text))), children};
 }
 
-std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
-  // Skip the program name
-  Deque<String> args = Deque<String>(argv + 1, argv + argc);
-
+[[nodiscard]]
+std::expected<std::optional<ParsedArgs>, StarException> parseArgs(int argc, char** argv) {
   ParsedArgs parsed;
+  int next = 1;
+  auto available = [&] { return argc - next; };
+  auto take = [&] { return String(argv[next++]); };
+  auto noCommand = [&] { return std::holds_alternative<std::monostate>(parsed.command); };
+  auto noLocation = [&] { return std::holds_alternative<std::monostate>(parsed.options.insertLocation); };
 
-  // Parse option arguments
-  while (!args.empty()) {
-    String const& arg = args.takeFirst();
+  while (available() > 0) {
+    String arg = take();
     if (arg == "--get" || arg == "--opt") {
-      // Retrieve values at a given path in the Json document
-      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
+      if (!noCommand() || available() < 1)
         return {};
-      std::shared_ptr<::Star::JsonPath::Path> path;
-      bool children = false;
-      std::tie(path, children) = parseGetPath(args.takeFirst());
-      parsed.command = GetCommand{path, arg == "--opt", children};
-
-    } else if (arg == "--set") {
-      // Set the value at the given path in the Json document
-      if (!std::holds_alternative<std::monostate>(parsed.command) || args.size() < 2)
+      auto [path, children] = parseGetPath(take());
+      parsed.command = GetCommand{std::move(path), arg == "--opt", children};
+    } else if (arg == "--set" || arg == "--add") {
+      if (!noCommand() || available() < 2)
         return {};
-      std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
-      FormattedJson value = FormattedJson::parse(args.takeFirst());
-      parsed.command = SetCommand{path, value};
-
-    } else if (arg == "--add") {
-      // Add (insert) a path to a Json document
-      if (!std::holds_alternative<std::monostate>(parsed.command) || args.size() < 2)
+      auto path = parsePath(take());
+      auto value = FormattedJson::parse(take());
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      if (arg == "--set")
+        parsed.command = SetCommand{std::move(path), std::move(*value)};
+      else
+        parsed.command = AddCommand{std::move(path), std::move(*value)};
+    } else if (arg == "--remove" || arg == "--edit") {
+      if (!noCommand() || available() < 1)
         return {};
-      std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
-      FormattedJson value = FormattedJson::parse(args.takeFirst());
-      parsed.command = AddCommand{path, value};
-
-    } else if (arg == "--remove") {
-      // Remove a path from a Json document
-      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
-        return {};
-      parsed.command = RemoveCommand{parsePath(args.takeFirst())};
-
-    } else if (arg == "--edit") {
-      // Interactive bullk Json editor
-      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
-        return {};
-      parsed.command = EditCommand{parsePath(args.takeFirst())};
-
+      auto path = parsePath(take());
+      if (arg == "--remove")
+        parsed.command = RemoveCommand{std::move(path)};
+      else
+        parsed.command = EditCommand{std::move(path)};
     } else if (arg == "--editor-image") {
-      if (args.empty())
+      if (available() < 1)
         return {};
-      parsed.options.editorImages.append(parsePath(args.takeFirst()));
-
+      parsed.options.editorImages.append(parsePath(take()));
     } else if (arg == "--input") {
-      // Configure the input syntax for --edit
-      if (args.empty())
+      if (available() < 1)
         return {};
-      String format = args.takeFirst();
+      String format = take();
       if (format == "json" || format == "generic")
         parsed.options.editFormat = std::make_shared<GenericInputFormat>();
       else if (format == "css" || format == "csv")
@@ -320,125 +388,108 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
         parsed.options.editFormat = std::make_shared<StringInputFormat>();
       else
         return {};
-
-    } else if (arg == "--array") {
-      // Output multiple results as a single array
-      parsed.options.output = std::make_shared<ArrayOutput>(false);
-
-    } else if (arg == "--array-unique") {
-      // Output multiple results as a single array, with duplicate results
-      // removed
-      parsed.options.output = std::make_shared<ArrayOutput>(true);
-
+    } else if (arg == "--array" || arg == "--array-unique") {
+      parsed.options.output = std::make_shared<ArrayOutput>(arg == "--array-unique");
     } else if (arg == "--help") {
       return {};
-
     } else if (arg == "-j") {
-      // Use command line argument as input
-      parsed.inputs.append(JsonLiteralInput{args.takeFirst()});
-
+      if (available() < 1)
+        return {};
+      parsed.inputs.append(JsonLiteralInput{take()});
     } else if (arg == "--find") {
-      // Search for files recursively in the given directory with a given
-      // suffix.
-      if (args.size() < 2)
+      if (available() < 2)
         return {};
-      String directory = args.takeFirst();
-      String suffix = args.takeFirst();
-      parsed.inputs.append(FindInput{directory, suffix});
-
+      String directory = take();
+      String suffix = take();
+      parsed.inputs.append(FindInput{std::move(directory), std::move(suffix)});
     } else if (arg == "-i") {
-      // Update files in place rather than print to stdout
       parsed.options.inPlace = true;
-
     } else if (arg == "--at") {
-      // Insert new object keys at the beginning or end of the document
-      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
+      if (!noLocation() || available() < 1)
         return {};
-      String pos = args.takeFirst();
-      if (pos == "beginning" || pos == "start")
+      String position = take();
+      if (position == "beginning" || position == "start")
         parsed.options.insertLocation = AtBeginning{};
-      else if (pos == "end")
+      else if (position == "end")
         parsed.options.insertLocation = AtEnd{};
       else
         return {};
-
-    } else if (arg == "--before") {
-      // Insert new object keys before the given key
-      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
+    } else if (arg == "--before" || arg == "--after") {
+      if (!noLocation() || available() < 1)
         return {};
-      parsed.options.insertLocation = BeforeKey{args.takeFirst()};
-
-    } else if (arg == "--after") {
-      // Insert new object keys after the given key
-      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
-        return {};
-      parsed.options.insertLocation = AfterKey{args.takeFirst()};
-
+      String key = take();
+      if (arg == "--before")
+        parsed.options.insertLocation = BeforeKey{std::move(key)};
+      else
+        parsed.options.insertLocation = AfterKey{std::move(key)};
     } else {
-      if (!File::exists(arg)) {
+      auto exists = File::exists(arg);
+      if (!exists)
+        return std::unexpected(std::move(exists.error()));
+      if (!*exists) {
         cerrf("File {} doesn't exist\n", arg);
         return {};
       }
-      parsed.inputs.append(FileInput{arg});
+      parsed.inputs.append(FileInput{std::move(arg)});
     }
   }
 
   if (!parsed.options.output)
     parsed.options.output = std::make_shared<OutputOnSeparateLines>();
-
-  bool anyFileInputs = false, anyNonFileInputs = false;
-  for (Input const& input : parsed.inputs) {
-    if (std::holds_alternative<FindInput>(input) || std::holds_alternative<FileInput>(input)) {
+  bool anyFileInputs = false;
+  bool anyNonFileInputs = false;
+  for (auto const& input : parsed.inputs) {
+    if (std::holds_alternative<FindInput>(input) || std::holds_alternative<FileInput>(input))
       anyFileInputs = true;
-    } else {
+    else
       anyNonFileInputs = true;
-    }
   }
-  if (std::holds_alternative<EditCommand>(parsed.command) && !anyFileInputs) {
+  bool editing = std::holds_alternative<EditCommand>(parsed.command);
+  if (editing && !anyFileInputs) {
     cerrf("Files to edit must be supplied when using --edit.\n");
     return {};
   }
-
   if (parsed.options.inPlace && !anyFileInputs) {
     cerrf("In-place writing (-i) can only be used with files specified on the command line.\n");
     return {};
   }
-  if (parsed.options.inPlace && std::holds_alternative<EditCommand>(parsed.command)) {
+  if (parsed.options.inPlace && editing) {
     cerrf("Interactive edit (--edit) is always in-place. Explicitly specifying -i is not needed.\n");
     return {};
   }
-  if (std::holds_alternative<EditCommand>(parsed.command) && anyNonFileInputs) {
-    cerrf("Interactie edit (--edit) can only be used with file input sources.\n");
+  if (editing && anyNonFileInputs) {
+    cerrf("Interactive edit (--edit) can only be used with file input sources.\n");
     return {};
   }
-
-  if (parsed.options.editFormat && !std::holds_alternative<EditCommand>(parsed.command)) {
+  if (parsed.options.editFormat && !editing) {
     cerrf("--input can only be used with --edit.\n");
     return {};
-  } else if (!parsed.options.editFormat && std::holds_alternative<EditCommand>(parsed.command)) {
-    parsed.options.editFormat = std::make_shared<GenericInputFormat>();
   }
-
-  return parsed;
+  if (!parsed.options.editFormat && editing)
+    parsed.options.editFormat = std::make_shared<GenericInputFormat>();
+  return std::optional<ParsedArgs>(std::move(parsed));
 }
 
-String readStdin() {
+[[nodiscard]]
+std::expected<String, StarException> readStdin() {
   String result;
   char buffer[1024];
   while (!std::feof(stdin)) {
-    std::size_t readBytes = std::fread(buffer, 1, 1024, stdin);
+    std::size_t readBytes = std::fread(buffer, 1, sizeof(buffer), stdin);
     result.append(buffer, readBytes);
+    if (std::ferror(stdin))
+      return std::unexpected(IOException("Failed reading JSON from standard input"));
   }
   return result;
 }
 
-int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
+[[nodiscard]]
+std::expected<int, StarException> run(int argc, char** argv) {
     Logger logger;
-    std::optional<ParsedArgs> parsedArgs = parseArgs(argc, argv);
-
-    if (!parsedArgs) {
+    auto parsed = parseArgs(argc, argv);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    if (!*parsed) {
       cerrf("Usage: {} [--get <json-path>] (-j <json> | <json-file>*)\n", argv[0]);
       cerrf(
           "Usage: {} --set <json-path> <json> [-i] [(--at (beginning|end) | --before <key> | --after <key>)] (-j "
@@ -459,38 +510,43 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    std::shared_ptr<::Star::Output> output = parsedArgs->options.output;
-    bool success = true;
-
-    if (std::holds_alternative<EditCommand>(parsedArgs->command)) {
-      return edit(logger, argc, argv, std::get<EditCommand>(parsedArgs->command).path, parsedArgs->options, parsedArgs->inputs);
-
-    } else if (parsedArgs->inputs.size() == 0) {
-      // No files were provided. Reading from stdin
-      success &= process(output->toFunction(), parsedArgs->command, parsedArgs->options, readStdin());
+    ParsedArgs const& parsedArgs = **parsed;
+    auto const& output = parsedArgs.options.output;
+    if (std::holds_alternative<EditCommand>(parsedArgs.command)) {
+      return edit(logger, argc, argv, std::get<EditCommand>(parsedArgs.command).path, parsedArgs.options, parsedArgs.inputs);
+    }
+    if (parsedArgs.inputs.empty()) {
+      auto input = readStdin();
+      if (!input)
+        return std::unexpected(std::move(input.error()));
+      auto processed = process(output->toFunction(), parsedArgs.command, parsedArgs.options, *input);
+      if (!processed)
+        return std::unexpected(std::move(processed.error()));
     } else {
-      for (Input const& input : parsedArgs->inputs) {
-        success &= process(logger, output->toFunction(), parsedArgs->command, parsedArgs->options, input);
+      for (Input const& input : parsedArgs.inputs) {
+        auto processed = process(logger, output->toFunction(), parsedArgs.command, parsedArgs.options, input);
+        if (!processed)
+          return std::unexpected(std::move(processed.error()));
       }
     }
-
-    output->flush();
-
-    if (!success)
-      return 1;
+    auto flushed = output->flush();
+    if (!flushed)
+      return std::unexpected(std::move(flushed.error()));
     return 0;
+}
 
-  } catch (JsonParsingException const& e) {
-    cerrf("{}\n", e.what());
-    return 1;
-
-  } catch (JsonException const& e) {
-    cerrf("{}\n", e.what());
-    return 1;
-
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("Exception caught: {}\n", outputException(e, true));
+int main(int argc, char** argv) {
+  auto nativeRuntime = NativeRuntime::create();
+  if (!nativeRuntime) {
+    cerrf("Error initializing native runtime: {}\n", outputException(ExceptionDiagnostic(nativeRuntime.error()), true));
     return 1;
   }
+  auto result = run(argc, argv);
+  if (result)
+    return *result;
+  if (result.error().is<JsonParsingException>() || result.error().is<JsonException>())
+    cerrf("{}\n", result.error().what());
+  else
+    cerrf("Error: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
+  return 1;
 }

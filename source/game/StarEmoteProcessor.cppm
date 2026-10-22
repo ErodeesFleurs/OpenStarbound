@@ -3,6 +3,7 @@ module;
 import std;
 import star.list;
 import star.string;
+import star.format;
 
 namespace Star {
 class Assets;
@@ -13,11 +14,12 @@ enum class HumanoidEmote;
 
 class EmoteProcessor {
 public:
-  explicit EmoteProcessor(std::shared_ptr<Assets const> const& assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<EmoteProcessor>, StarException> create(std::shared_ptr<Assets const> const& assets);
 
-  HumanoidEmote detectEmotes(String const& chatter) const;
+  [[nodiscard]] std::expected<HumanoidEmote, StarException> detectEmotes(String const& chatter) const;
 
 private:
+  EmoteProcessor() = default;
   struct EmoteBinding {
     EmoteBinding() : emote() {}
     String text;

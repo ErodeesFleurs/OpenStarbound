@@ -2,6 +2,7 @@ module;
 
 import std;
 import star.memory;
+import star.format;
 import star.string;
 import star.unicode;
 
@@ -43,55 +44,53 @@ public:
   char const* utf8Ptr() const;
   std::size_t utf8Size() const;
 
-  const_iterator begin() const;
+  [[nodiscard]] std::expected<const_iterator, StarException> begin() const;
   const_iterator end() const;
 
-  std::size_t size() const;
-  std::size_t length() const;
+  [[nodiscard]] std::expected<std::size_t, StarException> size() const;
+  [[nodiscard]] std::expected<std::size_t, StarException> length() const;
 
   bool empty() const;
 
-  Char operator[](std::size_t index) const;
-  // Throws StringException if i out of range.
-  Char at(std::size_t i) const;
+  [[nodiscard]] std::expected<Char, StarException> operator[](std::size_t index) const;
+  [[nodiscard]] std::expected<Char, StarException> at(std::size_t i) const;
 
-  bool endsWith(StringView end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool endsWith(Char end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> endsWith(StringView end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> endsWith(Char end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
 
-  typedef std::function<void(StringView, std::size_t, std::size_t)> SplitCallback;
-  void forEachSplitAnyView(StringView pattern, SplitCallback) const;
-  void forEachSplitView(StringView pattern, SplitCallback) const;
+  typedef std::function<std::expected<void, StarException>(StringView, std::size_t, std::size_t)> SplitCallback;
+  [[nodiscard]] std::expected<void, StarException> forEachSplitAnyView(StringView pattern, SplitCallback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachSplitView(StringView pattern, SplitCallback) const;
 
-  bool hasChar(Char c) const;
+  [[nodiscard]] std::expected<bool, StarException> hasChar(Char c) const;
   // Identical to hasChar, except, if string is empty, tests if c is
   // whitespace.
-  bool hasCharOrWhitespace(Char c) const;
+  [[nodiscard]] std::expected<bool, StarException> hasCharOrWhitespace(Char c) const;
 
-  std::size_t find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  std::size_t find(StringView s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  std::size_t findLast(Char c, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  std::size_t findLast(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> find(StringView s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findLast(Char c, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findLast(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
 
   // If pattern is empty, finds first whitespace
-  std::size_t findFirstOf(StringView chars = "", std::size_t beg = 0) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findFirstOf(StringView chars = "", std::size_t beg = 0) const;
 
   // If pattern is empty, finds first non-whitespace
-  std::size_t findFirstNotOf(StringView chars = "", std::size_t beg = 0) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findFirstNotOf(StringView chars = "", std::size_t beg = 0) const;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  std::size_t findNextBoundary(std::size_t index, bool backwards = false) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findNextBoundary(std::size_t index, bool backwards = false) const;
 
-  bool contains(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> contains(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
 
-  int compare(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool equals(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  // Synonym for equals(s, String::CaseInsensitive)
-  bool equalsIgnoreCase(StringView s) const;
+  [[nodiscard]] std::expected<int, StarException> compare(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> equals(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] std::expected<bool, StarException> equalsIgnoreCase(StringView s) const;
 
-  StringView substr(std::size_t position, std::size_t n = NPos) const;
+  [[nodiscard]] std::expected<StringView, StarException> substr(std::size_t position, std::size_t n = NPos) const;
 
   StringView& operator=(StringView s);
 
@@ -105,7 +104,8 @@ public:
   friend std::ostream& operator<<(std::ostream& os, StringView const& s);
 
 private:
-  int compare(std::size_t selfOffset,
+  friend class String;
+  [[nodiscard]] std::expected<int, StarException> compare(std::size_t selfOffset,
       std::size_t selfLen,
       StringView other,
       std::size_t otherOffset,

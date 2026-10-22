@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 
 namespace Star {
 class LuaCallbacks;
@@ -9,15 +10,15 @@ class String;
 class LuaHttpSession;
 
 namespace LuaBindings {
-  using HttpTrustRequestCallback = std::function<void(String const& domain)>;
-  LuaCallbacks makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled);
+  using HttpTrustRequestCallback = std::function<std::expected<void, StarException>(String const& domain)>;
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled);
 }
 
 // One script/client session owns its trust policy and blocking HTTP executor.
 // The Root must outlive the session. Stop before destroying its GUI callback.
 class LuaHttpSession {
 public:
-  explicit LuaHttpSession(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<LuaHttpSession>, StarException> create(Root& root);
   ~LuaHttpSession();
 
   LuaHttpSession(LuaHttpSession const&) = delete;
@@ -27,17 +28,18 @@ public:
 
   void setHttpTrustRequestCallback(LuaBindings::HttpTrustRequestCallback callback);
   void clearHttpTrustRequestCallback();
-  void handleHttpTrustReply(String const& domain, bool allowed);
+  [[nodiscard]] std::expected<void, StarException> handleHttpTrustReply(String const& domain, bool allowed);
 
   // Fail outstanding Lua promises, cancel queued work, and join active requests.
   // Late trust replies and userdata polling stay bound to this stopped session.
-  void stop();
-  void poll();
+  [[nodiscard]] std::expected<void, StarException> stop();
+  [[nodiscard]] std::expected<void, StarException> poll();
 
 private:
-  friend LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled);
-
   struct Impl;
+  explicit LuaHttpSession(std::unique_ptr<Impl> impl);
+  friend std::expected<LuaCallbacks, StarException> LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> const& session, bool enabled);
+
   std::unique_ptr<Impl> m_impl;
 };
 

@@ -1,3 +1,5 @@
+import star.net_element;
+import star.format;
 import star.json_extra;
 import star.json;
 import star.xx_hash;
@@ -81,24 +83,48 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades) {
-  ds.read(upgrades.shipLevel);
-  ds.read(upgrades.maxFuel);
-  ds.read(upgrades.crewSize);
-  ds.read(upgrades.fuelEfficiency);
-  ds.read(upgrades.shipSpeed);
-  ds.read(upgrades.capabilities);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, ShipUpgrades& upgrades) {
+  auto level = ds.read(upgrades.shipLevel);
+  if (!level)
+    return std::unexpected(std::move(level.error()));
+  auto fuel = ds.read(upgrades.maxFuel);
+  if (!fuel)
+    return std::unexpected(std::move(fuel.error()));
+  auto crew = ds.read(upgrades.crewSize);
+  if (!crew)
+    return std::unexpected(std::move(crew.error()));
+  auto efficiency = ds.read(upgrades.fuelEfficiency);
+  if (!efficiency)
+    return std::unexpected(std::move(efficiency.error()));
+  auto speed = ds.read(upgrades.shipSpeed);
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  auto capabilities = ds.read(upgrades.capabilities);
+  if (!capabilities)
+    return std::unexpected(std::move(capabilities.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
-  ds.write(upgrades.shipLevel);
-  ds.write(upgrades.maxFuel);
-  ds.write(upgrades.crewSize);
-  ds.write(upgrades.fuelEfficiency);
-  ds.write(upgrades.shipSpeed);
-  ds.write(upgrades.capabilities);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
+  auto level = ds.write(upgrades.shipLevel);
+  if (!level)
+    return std::unexpected(std::move(level.error()));
+  auto fuel = ds.write(upgrades.maxFuel);
+  if (!fuel)
+    return std::unexpected(std::move(fuel.error()));
+  auto crew = ds.write(upgrades.crewSize);
+  if (!crew)
+    return std::unexpected(std::move(crew.error()));
+  auto efficiency = ds.write(upgrades.fuelEfficiency);
+  if (!efficiency)
+    return std::unexpected(std::move(efficiency.error()));
+  auto speed = ds.write(upgrades.shipSpeed);
+  if (!speed)
+    return std::unexpected(std::move(speed.error()));
+  auto capabilities = ds.write(upgrades.capabilities);
+  if (!capabilities)
+    return std::unexpected(std::move(capabilities.error()));
+  return &ds;
 }
 
 ClientContext::ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid)
@@ -107,12 +133,25 @@ ClientContext::ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid)
   m_playerUuid = std::move(playerUuid);
   m_rpc = std::make_shared<JsonRpc>(m_root.logger());
 
-  m_netGroup.addNetElement(&m_orbitWarpActionNetState);
-  m_netGroup.addNetElement(&m_playerWorldIdNetState);
-  m_netGroup.addNetElement(&m_isAdminNetState);
-  m_netGroup.addNetElement(&m_teamNetState);
-  m_netGroup.addNetElement(&m_shipUpgrades);
-  m_netGroup.addNetElement(&m_shipCoordinate);
+}
+
+std::expected<std::shared_ptr<ClientContext>, StarException> ClientContext::create(Root& root, Uuid serverUuid, Uuid playerUuid) {
+  auto context = std::shared_ptr<ClientContext>(new ClientContext(root, std::move(serverUuid), std::move(playerUuid)));
+  auto initialized = context->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return context;
+}
+
+std::expected<void, StarException> ClientContext::initialize() {
+  for (auto* element : std::initializer_list<NetElement*>{
+      &m_orbitWarpActionNetState, &m_playerWorldIdNetState, &m_isAdminNetState,
+      &m_teamNetState, &m_shipUpgrades, &m_shipCoordinate}) {
+    auto added = m_netGroup.addNetElement(element);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+  }
+  return {};
 }
 
 Uuid ClientContext::serverUuid() const {
@@ -159,30 +198,44 @@ ShipUpgrades ClientContext::shipUpgrades() const {
   return m_shipUpgrades.get();
 }
 
-void ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
+std::expected<void, StarException> ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   if (data.empty())
-    return;
-
+    return {};
   DataStreamBuffer ds(std::move(data));
   ds.setStreamCompatibilityVersion(rules);
-
-  m_rpc->receive(ds.read<ByteArray>());
-
+  auto rpcData = ds.read<ByteArray>();
+  if (!rpcData)
+    return std::unexpected(std::move(rpcData.error()));
+  auto received = m_rpc->receive(*rpcData);
+  if (!received)
+    return std::unexpected(std::move(received.error()));
   auto shipUpdates = ds.read<ByteArray>();
-  if (!shipUpdates.empty())
-    m_newShipUpdates.merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(shipUpdates)), true);
-
+  if (!shipUpdates)
+    return std::unexpected(std::move(shipUpdates.error()));
+  if (!shipUpdates->empty()) {
+    auto decoded = DataStreamBuffer::deserialize<WorldChunks>(std::move(*shipUpdates));
+    if (!decoded)
+      return std::unexpected(std::move(decoded.error()));
+    m_newShipUpdates.merge(*decoded, true);
+  }
   if (rules.version() >= 15) {
     auto customWorldUpdates = ds.read<StringMap<ByteArray>>();
-    for (auto& p : customWorldUpdates) {
-      m_newCustomWorldUpdates[p.first].merge(DataStreamBuffer::deserialize<WorldChunks>(std::move(p.second)), true);
+    if (!customWorldUpdates)
+      return std::unexpected(std::move(customWorldUpdates.error()));
+    for (auto& p : *customWorldUpdates) {
+      auto decoded = DataStreamBuffer::deserialize<WorldChunks>(std::move(p.second));
+      if (!decoded)
+        return std::unexpected(std::move(decoded.error()));
+      m_newCustomWorldUpdates[p.first].merge(*decoded, true);
     }
   }
-  
-  m_netGroup.readNetState(ds.read<ByteArray>(), 0.0f, rules);
+  auto netData = ds.read<ByteArray>();
+  if (!netData)
+    return std::unexpected(std::move(netData.error()));
+  return m_netGroup.readNetState(std::move(*netData), 0.0f, rules);
 }
 
-ByteArray ClientContext::writeUpdate(NetCompatibilityRules) {
+std::expected<ByteArray, StarException> ClientContext::writeUpdate(NetCompatibilityRules) {
   return m_rpc->send();
 }
 

@@ -51,15 +51,15 @@ public:
   EntityMap(Vec2U const& worldSize, EntityId beginIdSpace, EntityId endIdSpace);
 
   // Get the next free id in the entity id space.
-  EntityId reserveEntityId();
+  [[nodiscard]] std::expected<EntityId, StarException> reserveEntityId();
   // Or a specific one, can fail.
-  std::optional<EntityId> maybeReserveEntityId(EntityId entityId);
+  [[nodiscard]] std::expected<std::optional<EntityId>, StarException> maybeReserveEntityId(EntityId entityId);
   // If it doesn't matter that we don't get the one want
-  EntityId reserveEntityId(EntityId entityId);
+  [[nodiscard]] std::expected<EntityId, StarException> reserveEntityId(EntityId entityId);
 
   // Add an entity to this EntityMap.  The entity must already be initialized
   // and have a unique EntityId returned by reserveEntityId.
-  void addEntity(std::shared_ptr<Entity> entity);
+  [[nodiscard]] std::expected<void, StarException> addEntity(std::shared_ptr<Entity> entity);
   std::shared_ptr<Entity> removeEntity(EntityId entityId);
 
   std::size_t size() const;
@@ -67,7 +67,7 @@ public:
 
   // Iterates through the entity map optionally in the given order, updating
   // the spatial information for each entity along the way.
-  void updateAllEntities(EntityCallback const& callback = {}, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {});
+  [[nodiscard]] std::expected<void, StarException> updateAllEntities(EntityCallback const& callback = {}, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {});
 
   // If the given unique entity is in this map, then return its entity id
   EntityId uniqueEntityId(String const& uniqueId) const;
@@ -76,43 +76,43 @@ public:
   std::shared_ptr<Entity> uniqueEntity(String const& uniqueId) const;
 
   // Queries entities based on metaBoundBox
-  List<std::shared_ptr<Entity>> entityQuery(RectF const& boundBox, EntityFilter const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Entity>>, StarException> entityQuery(RectF const& boundBox, EntityFilter const& filter = {}) const;
 
   // A fuzzy query of the entities at this position, sorted by closeness.
-  List<std::shared_ptr<Entity>> entitiesAt(Vec2F const& pos, EntityFilter const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Entity>>, StarException> entitiesAt(Vec2F const& pos, EntityFilter const& filter = {}) const;
 
-  List<std::shared_ptr<TileEntity>> entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<TileEntity>>, StarException> entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter = {}) const;
 
   // Sort of a fuzzy line intersection test.  Tests if a given line intersects
   // the bounding box of any entities, and returns them.
-  List<std::shared_ptr<Entity>> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Entity>>, StarException> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter = {}) const;
 
   // Callback versions of query functions.
-  void forEachEntity(RectF const& boundBox, EntityCallback const& callback) const;
-  void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback const& callback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachEntity(RectF const& boundBox, EntityCallback const& callback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback const& callback) const;
   // Returns tile-based entities that occupy the given tile position.
-  void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> const& callback) const;
+  [[nodiscard]] std::expected<void, StarException> forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> const& callback) const;
 
   // Iterate through all the entities, optionally in the given sort order.
-  void forAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {}) const;
+  [[nodiscard]] std::expected<void, StarException> forAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {}) const;
 
   // Stops searching when filter returns true, and returns the entity which
   // caused it.
-  std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter const& filter) const;
-  std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const;
-  std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntity(RectF const& boundBox, EntityFilter const& filter) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const;
 
   // Closest entity that satisfies the given selector, if given.
-  std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter const& filter = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Entity>, StarException> closestEntity(Vec2F const& center, float radius, EntityFilter const& filter = {}) const;
 
   // Returns interactive entity that is near the given world position
-  std::shared_ptr<InteractiveEntity> interactiveEntityNear(Vec2F const& pos, float maxRadius = 1.5f) const;
+  [[nodiscard]] std::expected<std::shared_ptr<InteractiveEntity>, StarException> interactiveEntityNear(Vec2F const& pos, float maxRadius = 1.5f) const;
 
   // Whether or not any tile entity occupies this tile
-  bool tileIsOccupied(Vec2I const& pos, bool includeEphemeral = false) const;
+  [[nodiscard]] std::expected<bool, StarException> tileIsOccupied(Vec2I const& pos, bool includeEphemeral = false) const;
 
   // Intersects any entity's collision area
-  bool spaceIsOccupied(RectF const& rect, bool includeEphemeral = false) const;
+  [[nodiscard]] std::expected<bool, StarException> spaceIsOccupied(RectF const& rect, bool includeEphemeral = false) const;
 
   // Convenience template methods that filter based on dynamic cast and deal
   // with pointers to a derived entity type.
@@ -124,19 +124,19 @@ public:
   std::shared_ptr<EntityT> getUnique(String const& uniqueId) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> all(EntityFilterOf<EntityT> const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> all(EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter = {}) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  std::shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<std::shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> atTile(Vec2I const& pos) const;
 
 private:
   typedef SpatialHash2D<EntityId, float, std::shared_ptr<Entity>> SpatialMap;
@@ -164,49 +164,59 @@ std::shared_ptr<EntityT> EntityMap::getUnique(String const& uniqueId) const {
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> EntityMap::query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> EntityMap::query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter) const {
+  auto result = entityQuery(boundBox, entityTypeFilter(filter));
+  if (!result) return std::unexpected(std::move(result.error()));
   List<std::shared_ptr<EntityT>> entities;
-  for (auto const& entity : entityQuery(boundBox, entityTypeFilter(filter)))
+  for (auto const& entity : *result)
     entities.append(as<EntityT>(entity));
-
   return entities;
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
   List<std::shared_ptr<EntityT>> entities;
-  forAllEntities([&](std::shared_ptr<Entity> const& entity) {
+  auto result = forAllEntities([&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
     if (auto e = as<EntityT>(entity)) {
-      if (!filter || filter(e))
-        entities.append(e);
+      if (filter) {
+        auto accepted = filter(e);
+        if (!accepted) return std::unexpected(std::move(accepted.error()));
+        if (!*accepted) return {};
+      }
+      entities.append(e);
     }
+    return {};
   });
-
+  if (!result) return std::unexpected(std::move(result.error()));
   return entities;
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> EntityMap::lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> EntityMap::lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter) const {
+  auto result = entityLineQuery(begin, end, entityTypeFilter(filter));
+  if (!result) return std::unexpected(std::move(result.error()));
   List<std::shared_ptr<EntityT>> entities;
-  for (auto const& entity : entityLineQuery(begin, end, entityTypeFilter(filter)))
+  for (auto const& entity : *result)
     entities.append(as<EntityT>(entity));
-
   return entities;
 }
 
 template <typename EntityT>
-std::shared_ptr<EntityT> EntityMap::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter) const {
-  return as<EntityT>(closestEntity(center, radius, entityTypeFilter(filter)));
+[[nodiscard]] std::expected<std::shared_ptr<EntityT>, StarException> EntityMap::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter) const {
+  auto result = closestEntity(center, radius, entityTypeFilter(filter));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return as<EntityT>(*result);
 }
 
 template <typename EntityT>
-List<std::shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
+[[nodiscard]] std::expected<List<std::shared_ptr<EntityT>>, StarException> EntityMap::atTile(Vec2I const& pos) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) {
-      if (auto e = as<EntityT>(entity))
-        list.append(std::move(e));
-      return false;
-    });
+  auto result = forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) -> std::expected<void, StarException> {
+    if (auto e = as<EntityT>(entity))
+      list.append(std::move(e));
+    return {};
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
   return list;
 }
 

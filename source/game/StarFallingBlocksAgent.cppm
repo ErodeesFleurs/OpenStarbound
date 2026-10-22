@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.vector;
@@ -58,20 +59,21 @@ class FallingBlocksFacade {
 public:
   virtual ~FallingBlocksFacade() = default;
 
-  virtual FallingBlockType blockType(Vec2I const& pos) = 0;
-  virtual void moveBlock(Vec2I const& from, Vec2I const& to) = 0;
+  [[nodiscard]] virtual std::expected<FallingBlockType, StarException> blockType(Vec2I const& pos) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> moveBlock(Vec2I const& from, Vec2I const& to) = 0;
 };
 
 class FallingBlocksAgent {
 public:
-  FallingBlocksAgent(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade);
+  [[nodiscard]] static std::expected<std::shared_ptr<FallingBlocksAgent>, StarException> create(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade);
 
-  void update();
+  [[nodiscard]] std::expected<void, StarException> update();
 
   void visitLocation(Vec2I const& location);
   void visitRegion(RectI const& region);
 
 private:
+  FallingBlocksAgent(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade);
   std::shared_ptr<FallingBlocksFacade> m_facade;
   float m_immediateUpwardPropagateProbability;
   HashSet<Vec2I> m_pending;

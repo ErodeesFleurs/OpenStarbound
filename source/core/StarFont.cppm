@@ -21,21 +21,24 @@ struct FTContext;
 // when the originating asset catalog has been replaced.
 class FontLibrary {
 public:
-  FontLibrary();
+  [[nodiscard]] static std::expected<FontLibrary, StarException> create();
+  FontLibrary(FontLibrary&&) noexcept = default;
+  FontLibrary& operator=(FontLibrary&&) noexcept = default;
   ~FontLibrary();
 
   FontLibrary(FontLibrary const&) = delete;
   FontLibrary& operator=(FontLibrary const&) = delete;
 
 private:
+  FontLibrary() = default;
   friend class Font;
   std::shared_ptr<FTContext> m_context;
 };
 
 class Font {
 public:
-  static std::shared_ptr<Font> loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize = 12);
-  static std::shared_ptr<Font> loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize = 12);
+  [[nodiscard]] static std::expected<std::shared_ptr<Font>, StarException> loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize = 12);
+  [[nodiscard]] static std::expected<std::shared_ptr<Font>, StarException> loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize = 12);
 
   explicit Font(FontLibrary const& library);
   ~Font();
@@ -44,19 +47,17 @@ public:
   Font const& operator=(Font const&) = delete;
 
   // Create a new font from the same data
-  std::shared_ptr<Font> clone() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Font>, StarException> clone() const;
 
-  void setPixelSize(unsigned pixelSize);
+  [[nodiscard]] std::expected<void, StarException> setPixelSize(unsigned pixelSize);
   void setAlphaThreshold(std::uint8_t alphaThreshold = 0);
 
   unsigned height() const;
-  unsigned width(String::Char c);
+  [[nodiscard]] std::expected<unsigned, StarException> width(String::Char c);
 
-  // May return empty image on unrenderable character (Normally, this will
-  // render a box, but if there is an internal freetype error this may return
-  // an empty image).
-  std::tuple<Image, Vec2I, bool> render(String::Char c);
-  bool exists(String::Char c);
+  // Empty glyph bitmaps are valid; FreeType failures are diagnostic values.
+  [[nodiscard]] std::expected<std::tuple<Image, Vec2I, bool>, StarException> render(String::Char c);
+  [[nodiscard]] std::expected<bool, StarException> exists(String::Char c);
 
 private:
   explicit Font(std::shared_ptr<FTContext> context);
@@ -67,7 +68,7 @@ private:
   unsigned m_pixelSize;
   std::uint8_t m_alphaThreshold;
 
-  void loadFontImpl();
+  [[nodiscard]] std::expected<void, StarException> loadFontImpl();
   HashMap<std::pair<String::Char, unsigned>, unsigned> m_widthCache;
 };
 

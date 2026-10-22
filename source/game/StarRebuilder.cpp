@@ -14,9 +14,11 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.string;
 import star.version;
 import star.lua;
+import star.output_proxy;
 
 import star.asset_source;
 import star.assets;
@@ -31,38 +33,69 @@ import star.rebuilder;
 
 namespace Star {
 
-Rebuilder::Rebuilder(Root& root, String const& id, ItemDatabase const* itemCatalog) {
-  m_luaRoot = std::make_shared<LuaRoot>(root);
+std::expected<std::shared_ptr<Rebuilder>, StarException> Rebuilder::create(Root& root, String const& id, ItemDatabase const* itemCatalog) {
+  auto rebuilder = std::shared_ptr<Rebuilder>(new Rebuilder());
+  auto luaRoot = LuaRoot::create(root);
+  if (!luaRoot)
+    return std::unexpected(std::move(luaRoot.error()));
+  rebuilder->m_luaRoot = std::move(*luaRoot);
   auto assets = root.assets();
-  m_contexts = std::make_shared<List<LuaContext>>();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  rebuilder->m_contexts = std::make_shared<List<LuaContext>>();
 
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
-    if (auto scripts = metadata.maybe("errorHandlers")) {
-      if (auto scriptPaths = scripts.value().optArray(id)) {
-        for (auto& scriptPath : *scriptPaths) {
-          auto context = m_luaRoot->createContext(scriptPath.toString());
-          context.setCallbacks("root", LuaBindings::makeRootCallbacks(root, itemCatalog));
-          context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap()));
-          m_contexts->push_back(context);
-        }
-      }
+  for (auto const& path : (*assets)->assetSources()) {
+    auto metadata = (*assets)->assetSourceMetadata(path);
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    auto scripts = metadata->maybe("errorHandlers");
+    if (!scripts)
+      continue;
+    auto scriptPaths = scripts->optArray(id);
+    if (!scriptPaths)
+      return std::unexpected(std::move(scriptPaths.error()));
+    if (!*scriptPaths)
+      continue;
+    for (auto const& scriptPath : **scriptPaths) {
+      auto pathString = scriptPath.toString();
+      if (!pathString)
+        return std::unexpected(std::move(pathString.error()));
+      auto context = rebuilder->m_luaRoot->createContext(*pathString);
+      if (!context)
+        return std::unexpected(std::move(context.error()));
+      auto rootCallbacks = LuaBindings::makeRootCallbacks(root, itemCatalog);
+      if (!rootCallbacks)
+        return std::unexpected(std::move(rootCallbacks.error()));
+      auto setRoot = context->setCallbacks("root", *rootCallbacks);
+      if (!setRoot)
+        return std::unexpected(std::move(setRoot.error()));
+      auto utilityCallbacks = LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap());
+      if (!utilityCallbacks)
+        return std::unexpected(std::move(utilityCallbacks.error()));
+      auto setUtility = context->setCallbacks("sb", *utilityCallbacks);
+      if (!setUtility)
+        return std::unexpected(std::move(setUtility.error()));
+      rebuilder->m_contexts->push_back(std::move(*context));
     }
   }
+  return rebuilder;
 }
 
-bool Rebuilder::rebuild(Json store, String last_error, AttemptCallback attempt) const {
+std::expected<bool, StarException> Rebuilder::rebuild(Json store, StarException lastError, AttemptCallback attempt) const {
+  if (!attempt)
+    return std::unexpected(StarException("Cannot rebuild with an empty attempt callback"));
   RecursiveMutexLocker locker(m_luaMutex);
   for (auto& context : *m_contexts) {
-    Json newStore = context.invokePath<Json>("error", store, last_error);
-    if (!newStore || newStore == store)
+    auto next = context.invokePath<Json>("error", store, strf("{}", outputException(lastError, false)));
+    if (!next)
+      return std::unexpected(std::move(next.error()));
+    if (!*next || *next == store)
       break;
-
-    auto error = attempt(store = newStore);
-    if (!error.empty())
-      last_error = error;
-    else
+    store = std::move(*next);
+    auto result = attempt(store);
+    if (result)
       return true;
+    lastError = std::move(result.error());
   }
   return false;
 }

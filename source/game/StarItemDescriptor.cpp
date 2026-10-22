@@ -34,12 +34,12 @@ namespace Star {
 
 ItemDescriptor::ItemDescriptor() : m_count(0), m_parameters(JsonObject()) {}
 
-ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters)
-  : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {
-  if (m_parameters.isNull())
-    m_parameters = JsonObject();
-  if (!m_parameters.isType(Json::Type::Object))
-    throw StarException("Item parameters not map in ItemDescriptor constructor");
+std::expected<ItemDescriptor, StarException> ItemDescriptor::create(String name, std::uint64_t count, Json parameters) {
+  if (parameters.isNull())
+    parameters = JsonObject();
+  if (!parameters.isType(Json::Type::Object))
+    return std::unexpected(StarException("Item parameters not map in ItemDescriptor constructor"));
+  return ItemDescriptor(std::move(name), count, std::move(parameters), {});
 }
 
 ItemDescriptor::ItemDescriptor(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_constructible_v<String> && std::is_nothrow_move_constructible_v<Json>)
@@ -59,34 +59,65 @@ ItemDescriptor& ItemDescriptor::operator=(ItemDescriptor&& rhs) noexcept(std::is
   return *this;
 }
 
-ItemDescriptor::ItemDescriptor(Json const& spec) {
+std::expected<ItemDescriptor, StarException> ItemDescriptor::create(Json const& spec) {
+  ItemDescriptor descriptor;
   if (spec.type() == Json::Type::Array) {
-    m_name = spec.getString(0);
-    m_count = spec.getInt(1, 1);
-    m_parameters = spec.getObject(2, {});
+    auto name = spec.getString(0);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto count = spec.getInt(1, 1);
+    if (!count)
+      return std::unexpected(std::move(count.error()));
+    auto parameters = spec.getObject(2, {});
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    descriptor.m_name = std::move(*name);
+    descriptor.m_count = *count;
+    descriptor.m_parameters = std::move(*parameters);
   } else if (spec.type() == Json::Type::Object) {
-    if (spec.contains("name"))
-      m_name = spec.getString("name");
-    else if (spec.contains("item"))
-      m_name = spec.getString("item");
-    else
-      throw StarException("Item name missing.");
-    m_count = spec.getInt("count", 1);
-    m_parameters = spec.getObject("parameters", spec.getObject("data", JsonObject{}));
+    auto hasName = spec.contains("name");
+    if (!hasName)
+      return std::unexpected(std::move(hasName.error()));
+    auto hasItem = spec.contains("item");
+    if (!hasItem)
+      return std::unexpected(std::move(hasItem.error()));
+    if (!*hasName && !*hasItem)
+      return std::unexpected(StarException("Item name missing."));
+    auto name = spec.getString(*hasName ? "name" : "item");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto count = spec.getInt("count", 1);
+    if (!count)
+      return std::unexpected(std::move(count.error()));
+    auto data = spec.getObject("data", JsonObject{});
+    if (!data)
+      return std::unexpected(std::move(data.error()));
+    auto parameters = spec.getObject("parameters", std::move(*data));
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    descriptor.m_name = std::move(*name);
+    descriptor.m_count = *count;
+    descriptor.m_parameters = std::move(*parameters);
   } else if (spec.type() == Json::Type::String) {
-    m_name = spec.toString();
-    m_count = 1;
-    m_parameters = JsonObject();
-  } else if (spec.isNull()) {
-    m_parameters = JsonObject();
-    m_count = 0;
-  } else {
-    throw ItemException("ItemDescriptor spec variant not list, map, string, or null");
+    auto name = spec.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    descriptor.m_name = std::move(*name);
+    descriptor.m_count = 1;
+  } else if (!spec.isNull()) {
+    return std::unexpected(ItemException("ItemDescriptor spec variant not list, map, string, or null"));
   }
+  return descriptor;
 }
 
-ItemDescriptor ItemDescriptor::loadStore(VersioningDatabase const& versioningDatabase, Json const& spec) {
-  return ItemDescriptor{versioningDatabase.loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
+std::expected<ItemDescriptor, StarException> ItemDescriptor::loadStore(VersioningDatabase const& versioningDatabase, Json const& spec) {
+  auto versioned = VersionedJson::fromJson(spec);
+  if (!versioned)
+    return std::unexpected(std::move(versioned.error()));
+  auto content = versioningDatabase.loadVersionedJson(*versioned, "Item");
+  if (!content)
+    return std::unexpected(std::move(content.error()));
+  return create(*content);
 }
 
 String const& ItemDescriptor::name() const {
@@ -113,8 +144,11 @@ ItemDescriptor ItemDescriptor::multiply(std::uint64_t count) const {
   return ItemDescriptor(name(), this->count() * count, parameters(), m_parametersHash);
 }
 
-ItemDescriptor ItemDescriptor::applyParameters(JsonObject const& parameters) const {
-  return ItemDescriptor(name(), this->count(), this->parameters().setAll(parameters));
+std::expected<ItemDescriptor, StarException> ItemDescriptor::applyParameters(JsonObject const& parameters) const {
+  auto merged = this->parameters().setAll(parameters);
+  if (!merged)
+    return std::unexpected(std::move(merged.error()));
+  return create(name(), count(), std::move(*merged));
 }
 
 bool ItemDescriptor::isNull() const {
@@ -145,12 +179,14 @@ bool ItemDescriptor::matches(std::shared_ptr<Item const> const& other, bool exac
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-Json ItemDescriptor::diskStore(VersioningDatabase const& versioningDatabase) const {
+std::expected<Json, StarException> ItemDescriptor::diskStore(VersioningDatabase const& versioningDatabase) const {
   auto res = JsonObject{
       {"name", m_name}, {"count", m_count}, {"parameters", m_parameters},
   };
-
-  return versioningDatabase.makeCurrentVersionedJson("Item", res).toJson();
+  auto versioned = versioningDatabase.makeCurrentVersionedJson("Item", res);
+  if (!versioned)
+    return std::unexpected(std::move(versioned.error()));
+  return versioned->toJson();
 }
 
 Json ItemDescriptor::toJson() const {
@@ -172,27 +208,39 @@ std::size_t ItemDescriptor::parametersHash() const {
   return *m_parametersHash;
 }
 
-DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
-  ds.read(itemDescriptor.m_name);
-  ds.readVlqU(itemDescriptor.m_count);
-  ds.read(itemDescriptor.m_parameters);
-
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
+  auto name = ds.read(itemDescriptor.m_name);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto count = ds.readVlqU(itemDescriptor.m_count);
+  if (!count)
+    return std::unexpected(std::move(count.error()));
+  auto parameters = ds.read(itemDescriptor.m_parameters);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
   itemDescriptor.m_parametersHash.reset();
-
-  return ds;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
-  ds.write(itemDescriptor.m_name);
-  ds.writeVlqU(itemDescriptor.m_count);
-  ds.write(itemDescriptor.m_parameters);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
+  auto name = ds.write(itemDescriptor.m_name);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto count = ds.writeVlqU(itemDescriptor.m_count);
+  if (!count)
+    return std::unexpected(std::move(count.error()));
+  auto parameters = ds.write(itemDescriptor.m_parameters);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  return &ds;
 }
 
-std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
-  format(os, "[{}, {}, {}]", descriptor.m_name, descriptor.m_count, descriptor.m_parameters);
-  return os;
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
+  auto parameters = descriptor.m_parameters.repr();
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  format(os, "[{}, {}, {}]", descriptor.m_name, descriptor.m_count, *parameters);
+  return &os;
 }
 
 std::size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {

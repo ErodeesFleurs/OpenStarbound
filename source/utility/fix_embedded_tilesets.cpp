@@ -1,140 +1,191 @@
+import std;
 import star.json;
 import star.native_runtime;
 import star.file;
 import star.logging;
 import star.string;
-import star.ordered_map;
-import star.ordered_set;
-import std;
-import star.format;
-import star.version;
-import star.bi_map;
-import star.thread;
-import star.io_device;
 import star.list;
-import star.image_processing;
-import star.hash;
-import star.data_stream;
-import star.string_view;
-import star.directives;
-import star.asset_path;
-import star.ref_ptr;
-import star.listener;
-
+import star.format;
+import star.output_proxy;
 import star.option_parser;
-import star.version_option_parser;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
 import star.root_loader;
-
-import star.tileset_database;
 
 using namespace Star;
 
 void removeCommonPrefix(StringList& a, StringList& b) {
-  // Remove elements from a and b until there is one that differs.
-  while (a.size() > 0 && b.size() > 0 && a[0] == b[0]) {
+  while (!a.empty() && !b.empty() && a[0] == b[0]) {
     a.eraseAt(0);
     b.eraseAt(0);
   }
 }
 
-String createRelativePath(String fromFile, String toFile) {
-  if (!File::isDirectory(fromFile))
+[[nodiscard]]
+std::expected<String, StarException> createRelativePath(String fromFile, String toFile) {
+  auto fromDirectory = File::isDirectory(fromFile);
+  if (!fromDirectory)
+    return std::unexpected(std::move(fromDirectory.error()));
+  if (!*fromDirectory)
     fromFile = File::dirName(fromFile);
-  fromFile = File::fullPath(fromFile);
-  toFile = File::fullPath(toFile);
-
-  StringList fromParts = fromFile.splitAny("/\\");
-  StringList toParts = toFile.splitAny("/\\");
-  removeCommonPrefix(fromParts, toParts);
-
+  auto fromPath = File::fullPath(fromFile);
+  if (!fromPath)
+    return std::unexpected(std::move(fromPath.error()));
+  auto toPath = File::fullPath(toFile);
+  if (!toPath)
+    return std::unexpected(std::move(toPath.error()));
+  auto fromParts = fromPath->splitAny("/\\");
+  if (!fromParts)
+    return std::unexpected(std::move(fromParts.error()));
+  auto toParts = toPath->splitAny("/\\");
+  if (!toParts)
+    return std::unexpected(std::move(toParts.error()));
+  removeCommonPrefix(*fromParts, *toParts);
   StringList relativeParts;
-  for (String part : fromParts)
+  for (std::size_t i = 0; i < fromParts->size(); ++i)
     relativeParts.append("..");
-  relativeParts.appendAll(toParts);
-
+  relativeParts.appendAll(*toParts);
   return relativeParts.join("/");
 }
 
-std::optional<Json> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
-  if (tileset.contains("source"))
-    return {};
-  std::size_t firstGid = tileset.getUInt("firstgid");
-  String tilesetName = tileset.getString("name");
-  String tilesetFileName = File::relativeTo(tilesetPath, tilesetName + ".json");
-  if (!File::exists(tilesetFileName))
-    throw StarException::format("Tileset {} does not exist. Can't repair {}", tilesetFileName, mapPath);
-  return {JsonObject{{"firstgid", firstGid}, {"source", createRelativePath(mapPath, tilesetFileName)}}};
+[[nodiscard]]
+std::expected<std::optional<Json>, StarException> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
+  auto external = tileset.contains("source");
+  if (!external)
+    return std::unexpected(std::move(external.error()));
+  if (*external)
+    return std::optional<Json>{};
+  auto firstGid = tileset.getUInt("firstgid");
+  if (!firstGid)
+    return std::unexpected(std::move(firstGid.error()));
+  auto tilesetName = tileset.getString("name");
+  if (!tilesetName)
+    return std::unexpected(std::move(tilesetName.error()));
+  String filename = File::relativeTo(tilesetPath, *tilesetName + ".json");
+  auto exists = File::exists(filename);
+  if (!exists)
+    return std::unexpected(std::move(exists.error()));
+  if (!*exists)
+    return std::unexpected(StarException::format("Tileset {} does not exist. Can't repair {}", filename, mapPath));
+  auto relativePath = createRelativePath(mapPath, filename);
+  if (!relativePath)
+    return std::unexpected(std::move(relativePath.error()));
+  return std::optional<Json>{JsonObject{{"firstgid", *firstGid}, {"source", std::move(*relativePath)}}};
 }
 
-std::optional<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
-  JsonArray tilesets = mapJson.getArray("tilesets");
+[[nodiscard]]
+std::expected<std::optional<Json>, StarException> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
+  auto tilesets = mapJson.getArray("tilesets");
+  if (!tilesets)
+    return std::unexpected(std::move(tilesets.error()));
   bool changed = false;
-  for (std::size_t i = 0; i < tilesets.size(); ++i) {
-    if (std::optional<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
-      tilesets[i] = *tileset;
+  for (auto& tileset : *tilesets) {
+    auto fixed = repairTileset(tileset, mapPath, tilesetPath);
+    if (!fixed)
+      return std::unexpected(std::move(fixed.error()));
+    if (*fixed) {
+      tileset = std::move(**fixed);
       changed = true;
     }
   }
   if (!changed)
-    return {};
-  return mapJson.set("tilesets", tilesets);
+    return std::optional<Json>{};
+  auto fixed = mapJson.set("tilesets", std::move(*tilesets));
+  if (!fixed)
+    return std::unexpected(std::move(fixed.error()));
+  return std::optional<Json>{std::move(*fixed)};
 }
 
-void forEachRecursiveFileMatch(Logger& logger, String const& dirName, String const& filenameSuffix, std::function<void(String)> func) {
-  for (std::pair<String, bool> entry : File::dirList(dirName)) {
+[[nodiscard]]
+std::expected<void, StarException> forEachRecursiveFileMatch(Logger& logger, String const& dirName, String const& filenameSuffix, std::function<std::expected<void, StarException>(String const&)> const& func) {
+  auto entries = File::dirList(dirName);
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto const& entry : *entries) {
     String entryPath = File::relativeTo(dirName, entry.first);
-    // Never follow a symlinked directory: it can point outside of the tree (and
-    // this walk writes to the files it finds), or at one of its own parents.
-    if (entry.second && File::isSymlink(entryPath)) {
-      logger.warn("fix_embedded_tilesets: Not descending into '{}' because it is a symlink", entryPath);
-      continue;
+    // Do not descend outside the tree or revisit a parent through a symlink.
+    if (entry.second) {
+      auto symlink = File::isSymlink(entryPath);
+      if (!symlink)
+        return std::unexpected(std::move(symlink.error()));
+      if (*symlink) {
+        auto logged = logger.warn("fix_embedded_tilesets: Not descending into '{}' because it is a symlink", entryPath);
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+        continue;
+      }
     }
-
-    if (entry.second)
-      forEachRecursiveFileMatch(logger, entryPath, filenameSuffix, func);
-    else if (entry.first.endsWith(filenameSuffix))
-      func(entryPath);
+    if (entry.second) {
+      auto visited = forEachRecursiveFileMatch(logger, entryPath, filenameSuffix, func);
+      if (!visited)
+        return std::unexpected(std::move(visited.error()));
+    } else {
+      auto matches = entry.first.endsWith(filenameSuffix);
+      if (!matches)
+        return std::unexpected(std::move(matches.error()));
+      if (*matches) {
+        auto visited = func(entryPath);
+        if (!visited)
+          return std::unexpected(std::move(visited.error()));
+      }
+    }
   }
+  return {};
 }
 
-void fixEmbeddedTilesets(Logger& logger, String const& searchRoot, String const& tilesetPath) {
-  forEachRecursiveFileMatch(logger, searchRoot, ".json", [&logger, tilesetPath](String const& path) {
-      Json json = Json::parseJson(File::readFileString(path));
-      if (json.contains("tilesets")) {
-        if (std::optional<Json> fixed = repair(json, path, tilesetPath)) {
-          File::writeFile(fixed->repr(2, true), path);
-          logger.info("Repaired {}", path);
-        }
-      }
-    });
+[[nodiscard]]
+std::expected<void, StarException> fixEmbeddedTilesets(Logger& logger, String const& searchRoot, String const& tilesetPath) {
+  return forEachRecursiveFileMatch(logger, searchRoot, ".json", [&](String const& path) -> std::expected<void, StarException> {
+    auto contents = File::readFileString(path);
+    if (!contents)
+      return std::unexpected(std::move(contents.error()));
+    auto json = Json::parseJson(*contents);
+    if (!json)
+      return std::unexpected(std::move(json.error()));
+    auto hasTilesets = json->contains("tilesets");
+    if (!hasTilesets)
+      return std::unexpected(std::move(hasTilesets.error()));
+    if (!*hasTilesets)
+      return {};
+    auto fixed = repair(std::move(*json), path, tilesetPath);
+    if (!fixed)
+      return std::unexpected(std::move(fixed.error()));
+    if (!*fixed)
+      return {};
+    auto text = (**fixed).repr(2, true);
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    // Finish validation and serialization before replacing the original file.
+    auto written = File::overwriteFileWithRename(*text, path);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+    return logger.info("Repaired {}", path);
+  });
 }
 
 int main(int argc, char* argv[]) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Info, false, {}});
-    rootLoader.setSummary("Replaces embedded tilesets in Tiled JSON files with references to external tilesets. Assumes tilesets are available in the packed assets.");
-    rootLoader.addArgument("searchRoot", OptionParser::Required);
-    rootLoader.addArgument("tilesetsPath", OptionParser::Required);
-
-    std::unique_ptr<::Star::Root> root;
-    OptionParser::Options options;
-    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
-
-    String searchRoot = options.arguments[0];
-    String tilesetPath = options.arguments[1];
-
-    fixEmbeddedTilesets(root->logger(), searchRoot, tilesetPath);
-
+  auto run = [&]() -> std::expected<int, StarException> {
+    auto nativeRuntime = NativeRuntime::create();
+    if (!nativeRuntime)
+      return std::unexpected(std::move(nativeRuntime.error()));
+    auto rootLoader = RootLoader::create({{}, {}, {}, LogLevel::Info, false, {}});
+    if (!rootLoader)
+      return std::unexpected(std::move(rootLoader.error()));
+    rootLoader->setSummary("Replaces embedded tilesets in Tiled JSON files with references to external tilesets. Assumes tilesets are available in the packed assets.");
+    rootLoader->addArgument("searchRoot", OptionParser::Required);
+    rootLoader->addArgument("tilesetsPath", OptionParser::Required);
+    auto initialized = rootLoader->commandInitOrDie(argc, argv);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    auto const& options = initialized->second;
+    auto fixed = fixEmbeddedTilesets(initialized->first->logger(), options.arguments[0], options.arguments[1]);
+    if (!fixed)
+      return std::unexpected(std::move(fixed.error()));
     return 0;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("exception caught: {}\n", outputException(e, true));
+  };
+  auto result = run();
+  if (!result) {
+    cerrf("exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
     return 1;
   }
+  return *result;
 }

@@ -7,6 +7,7 @@ import star.math_common;
 import star.random;
 import star.byte_array;
 import star.time;
+import star.secure_random;
 
 namespace Star {
 
@@ -93,27 +94,27 @@ std::uint64_t RandomSource::randUInt(std::uint64_t max) {
   return randu64() / denom;
 }
 
-std::int64_t RandomSource::randInt(std::int64_t min, std::int64_t max) {
+std::expected<std::int64_t, StarException> RandomSource::randInt(std::int64_t min, std::int64_t max) {
   if (max < min)
-    throw StarException("Maximum bound in randInt must be >= minimum bound!");
+    return std::unexpected(StarException("Maximum bound in randInt must be >= minimum bound!"));
   return randInt(max - min) + min;
 }
 
-std::uint64_t RandomSource::randUInt(std::uint64_t min, std::uint64_t max) {
+std::expected<std::uint64_t, StarException> RandomSource::randUInt(std::uint64_t min, std::uint64_t max) {
   if (max < min)
-    throw StarException("Maximum bound in randUInt must be >= minimum bound!");
+    return std::unexpected(StarException("Maximum bound in randUInt must be >= minimum bound!"));
   return randUInt(max - min) + min;
 }
 
-float RandomSource::randf(float min, float max) {
+std::expected<float, StarException> RandomSource::randf(float min, float max) {
   if (max < min)
-    throw StarException("Maximum bound in randf must be >= minimum bound!");
+    return std::unexpected(StarException("Maximum bound in randf must be >= minimum bound!"));
   return randf() * (max - min) + min;
 }
 
-double RandomSource::randd(double min, double max) {
+std::expected<double, StarException> RandomSource::randd(double min, double max) {
   if (max < min)
-    throw StarException("Maximum bound in randd must be >= minimum bound!");
+    return std::unexpected(StarException("Maximum bound in randd must be >= minimum bound!"));
   return randd() * (max - min) + min;
 }
 
@@ -190,19 +191,30 @@ std::uint32_t RandomSource::gen32() {
 }
 
 namespace {
-std::uint64_t produceRandomSeed() {
-  // Entropy is acquired without a process-global C random stream.
-  std::random_device entropy;
-  auto seed = static_cast<std::uint64_t>(Time::monotonicTicks()) * 1099511628211ULL;
-  return seed ^ (static_cast<std::uint64_t>(entropy()) << 32) ^ entropy();
+std::expected<std::uint64_t, StarException> produceRandomSeed() {
+  auto entropy = secureRandomBytes(sizeof(std::uint64_t));
+  if (!entropy)
+    return std::unexpected(std::move(entropy.error()));
+  std::uint64_t random;
+  std::memcpy(&random, entropy->ptr(), sizeof(random));
+  return static_cast<std::uint64_t>(Time::monotonicTicks()) * 1099511628211ULL ^ random;
 }
 }
 
-RandomService::RandomService() : m_source(produceRandomSeed()) {}
+std::expected<std::unique_ptr<RandomService>, StarException> RandomService::create() {
+  auto seed = produceRandomSeed();
+  if (!seed)
+    return std::unexpected(std::move(seed.error()));
+  return std::make_unique<RandomService>(*seed);
+}
 RandomService::RandomService(std::uint64_t seed) : m_source(seed) {}
 
-void RandomService::init() {
-  init(produceRandomSeed());
+std::expected<void, StarException> RandomService::init() {
+  auto seed = produceRandomSeed();
+  if (!seed)
+    return std::unexpected(std::move(seed.error()));
+  init(*seed);
+  return {};
 }
 
 void RandomService::init(std::uint64_t seed) {
@@ -210,8 +222,12 @@ void RandomService::init(std::uint64_t seed) {
   m_source.init(seed);
 }
 
-void RandomService::addEntropy() {
-  addEntropy(produceRandomSeed());
+std::expected<void, StarException> RandomService::addEntropy() {
+  auto seed = produceRandomSeed();
+  if (!seed)
+    return std::unexpected(std::move(seed.error()));
+  addEntropy(*seed);
+  return {};
 }
 
 void RandomService::addEntropy(std::uint64_t seed) {
@@ -234,10 +250,25 @@ STAR_RANDOM_METHOD(double, randd, (), ())
 STAR_RANDOM_METHOD(bool, randb, (), ())
 STAR_RANDOM_METHOD(long long, randInt, (long long max), (max))
 STAR_RANDOM_METHOD(unsigned long long, randUInt, (unsigned long long max), (max))
-STAR_RANDOM_METHOD(long long, randInt, (long long min, long long max), (min, max))
-STAR_RANDOM_METHOD(unsigned long long, randUInt, (unsigned long long min, unsigned long long max), (min, max))
-STAR_RANDOM_METHOD(float, randf, (float min, float max), (min, max))
-STAR_RANDOM_METHOD(double, randd, (double min, double max), (min, max))
+std::expected<long long, StarException> RandomService::randInt(long long min, long long max) {
+  MutexLocker locker(m_mutex);
+  return m_source.randInt(min, max);
+}
+
+std::expected<unsigned long long, StarException> RandomService::randUInt(unsigned long long min, unsigned long long max) {
+  MutexLocker locker(m_mutex);
+  return m_source.randUInt(min, max);
+}
+
+std::expected<float, StarException> RandomService::randf(float min, float max) {
+  MutexLocker locker(m_mutex);
+  return m_source.randf(min, max);
+}
+
+std::expected<double, StarException> RandomService::randd(double min, double max) {
+  MutexLocker locker(m_mutex);
+  return m_source.randd(min, max);
+}
 STAR_RANDOM_METHOD(float, nrandf, (float stddev, float mean), (stddev, mean))
 STAR_RANDOM_METHOD(double, nrandd, (double stddev, double mean), (stddev, mean))
 STAR_RANDOM_METHOD(std::int64_t, stochasticRound, (double val), (val))

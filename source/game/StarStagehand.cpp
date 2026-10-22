@@ -23,6 +23,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.string;
 import star.version;
 import star.data_stream_extra;
@@ -55,55 +56,113 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-Stagehand::Stagehand(Root& rootContext, Json const& config)
-  : Stagehand(rootContext) {
-  setUniqueId(config.optString("uniqueId"));
-  readConfig(config);
+std::expected<std::shared_ptr<Stagehand>, StarException> Stagehand::create(Root& rootContext, Json const& config) {
+  struct MakeShared final : Stagehand {
+    explicit MakeShared(Root& root) : Entity(root), Stagehand(root) {}
+  };
+  auto stagehand = std::make_shared<MakeShared>(rootContext);
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
+  auto uniqueId = config.optString("uniqueId");
+  if (!uniqueId)
+    return std::unexpected(std::move(uniqueId.error()));
+  stagehand->setUniqueId(std::move(*uniqueId));
+  if (auto result = stagehand->readConfig(config); !result)
+    return std::unexpected(std::move(result.error()));
+  return stagehand;
 }
 
-Stagehand::Stagehand(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules) : Stagehand(rootContext) {
-  readConfig(DataStreamBuffer::deserialize<Json>(netStore));
+std::expected<std::shared_ptr<Stagehand>, StarException> Stagehand::create(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules) {
+  auto config = DataStreamBuffer::deserialize<Json>(netStore);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  struct MakeShared final : Stagehand {
+    explicit MakeShared(Root& root) : Entity(root), Stagehand(root) {}
+  };
+  auto stagehand = std::make_shared<MakeShared>(rootContext);
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_xPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_yPosition); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->m_netGroup.addNetElement(&stagehand->m_uniqueIdNetState); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = stagehand->readConfig(std::move(*config)); !result)
+    return std::unexpected(std::move(result.error()));
+  return stagehand;
 }
 
-Json Stagehand::diskStore() const {
+std::expected<Json, StarException> Stagehand::diskStore() const {
   auto saveData = m_config.setAll({
       {"position", jsonFromVec2F({m_xPosition.get(), m_yPosition.get()})},
       {"uniqueId", jsonFromOptional(uniqueId())}
     });
-
+  if (!saveData)
+    return std::unexpected(std::move(saveData.error()));
   if (!m_scripted)
     return saveData;
-  else
-    return saveData.set("scriptStorage", m_scriptComponent.getScriptStorage());
+  auto storage = m_scriptComponent.getScriptStorage();
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  return saveData->set("scriptStorage", std::move(*storage));
 }
 
-ByteArray Stagehand::netStore(NetCompatibilityRules) {
+std::expected<ByteArray, StarException> Stagehand::netStore(NetCompatibilityRules) {
   return DataStreamBuffer::serialize(m_config);
 }
 
-void Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
-  Entity::init(world, entityId, mode);
-
-  if (isMaster() && m_scripted) {
-    m_scriptComponent.addCallbacks("stagehand", makeStagehandCallbacks());
-    m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-        return m_config.query(name, def);
-      }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(this->root(), &m_behaviors));
-    m_scriptComponent.init(world);
+std::expected<void, StarException> Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
+  if (auto result = Entity::init(world, entityId, mode); !result)
+    return result;
+  auto initialize = [&]() -> std::expected<void, StarException> {
+    if (isMaster() && m_scripted) {
+      auto stagehandCallbacks = makeStagehandCallbacks();
+      if (!stagehandCallbacks)
+        return std::unexpected(std::move(stagehandCallbacks.error()));
+      if (auto result = m_scriptComponent.addCallbacks("stagehand", std::move(*stagehandCallbacks)); !result)
+        return result;
+      auto configCallbacks = LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
+          return m_config.query(name, def);
+        });
+      if (!configCallbacks)
+        return std::unexpected(std::move(configCallbacks.error()));
+      if (auto result = m_scriptComponent.addCallbacks("config", std::move(*configCallbacks)); !result)
+        return result;
+      auto entityCallbacks = LuaBindings::makeEntityCallbacks(this);
+      if (!entityCallbacks)
+        return std::unexpected(std::move(entityCallbacks.error()));
+      if (auto result = m_scriptComponent.addCallbacks("entity", std::move(*entityCallbacks)); !result)
+        return result;
+      auto behaviorCallbacks = LuaBindings::makeBehaviorCallbacks(this->root(), &m_behaviors);
+      if (!behaviorCallbacks)
+        return std::unexpected(std::move(behaviorCallbacks.error()));
+      if (auto result = m_scriptComponent.addCallbacks("behavior", std::move(*behaviorCallbacks)); !result)
+        return result;
+      return m_scriptComponent.init(world);
+    }
+    return {};
+  }();
+  if (!initialize) {
+    auto cleanup = uninit();
+    if (!cleanup)
+      return std::unexpected(initialize.error().withContext(std::string("Stagehand initialization rollback also failed: ") + cleanup.error().what()));
   }
+  return initialize;
 }
 
-void Stagehand::uninit() {
-  Entity::uninit();
-
+std::expected<void, StarException> Stagehand::uninit() {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result && !error)
+      error = std::move(result.error());
+  };
+  remember(Entity::uninit());
   if (m_scripted) {
-    m_scriptComponent.uninit();
-    m_scriptComponent.removeCallbacks("stagehand");
-    m_scriptComponent.removeCallbacks("config");
-    m_scriptComponent.removeCallbacks("entity");
+    remember(m_scriptComponent.uninit());
+    remember(m_scriptComponent.removeCallbacks("stagehand"));
+    remember(m_scriptComponent.removeCallbacks("config"));
+    remember(m_scriptComponent.removeCallbacks("entity"));
   }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
 EntityType Stagehand::entityType() const {
@@ -123,120 +182,150 @@ RectF Stagehand::metaBoundBox() const {
   return m_boundBox;
 }
 
-std::pair<ByteArray, std::uint64_t> Stagehand::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
+std::expected<std::pair<ByteArray, std::uint64_t>, StarException> Stagehand::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
-void Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
-  m_netGroup.readNetState(data, interpolationTime, rules);
+std::expected<void, StarException> Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules) {
+  return m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-String Stagehand::name() const {
+std::expected<String, StarException> Stagehand::name() const {
   return typeName();
 }
 
-void Stagehand::update(float dt, std::uint64_t) {
+std::expected<void, StarException> Stagehand::update(float dt, std::uint64_t) {
   if (!inWorld())
-    return;
+    return {};
 
-  if (isMaster() && m_scripted)
-    m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+  if (isMaster() && m_scripted) {
+    auto result = m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
 
-  if (world()->isClient()) {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
+  if ((*currentWorld)->isClient()) {
     auto boundBox = metaBoundBox().translated(position());
     this->root().spatialLogger().logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
     this->root().spatialLogger().logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
     this->root().spatialLogger().logLine("world", { boundBox.xMin(), boundBox.yMax() }, { boundBox.xMax(), boundBox.yMin() }, {0, 255, 255, 255});
   }
+  return {};
 }
 
-bool Stagehand::shouldDestroy() const {
+std::expected<bool, StarException> Stagehand::shouldDestroy() const {
   return m_dead;
 }
 
-std::optional<LuaValue> Stagehand::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::expected<std::optional<LuaValue>, StarException> Stagehand::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-std::optional<LuaValue> Stagehand::evalScript(String const& code) {
+std::expected<std::optional<LuaValue>, StarException> Stagehand::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-Json Stagehand::configValue(String const& name, Json const& def) const {
+std::expected<Json, StarException> Stagehand::configValue(String const& name, Json const& def) const {
   return m_config.query(name, def);
 }
 
 Stagehand::Stagehand(Root& rootContext) : Entity(rootContext), m_scriptComponent(rootContext) {
   setPersistent(true);
 
-  m_netGroup.addNetElement(&m_xPosition);
-  m_netGroup.addNetElement(&m_yPosition);
-  m_netGroup.addNetElement(&m_uniqueIdNetState);
 
-  m_netGroup.setNeedsLoadCallback([this](bool) {
+  m_netGroup.setNeedsLoadCallback([this](bool) -> std::expected<void, StarException> {
       setUniqueId(m_uniqueIdNetState.get());
+      return {};
     });
 
-  m_netGroup.setNeedsStoreCallback([this]() {
+  m_netGroup.setNeedsStoreCallback([this]() -> std::expected<void, StarException> {
       m_uniqueIdNetState.set(uniqueId());
+      return {};
     });
 }
 
-void Stagehand::readConfig(Json config) {
-  m_config = config;
-  m_scripted = m_config.contains("scripts");
-  
-  m_clientEntityMode = ClientEntityModeNames.getLeft(config.getString("clientEntityMode", "ClientSlaveOnly"));
-
-  if (m_config.contains("position")) {
-    auto pos = jsonToVec2F(m_config.get("position"));
-    m_xPosition.set(pos[0]);
-    m_yPosition.set(pos[1]);
+std::expected<void, StarException> Stagehand::readConfig(Json config) {
+  m_config = std::move(config);
+  auto scripted = m_config.contains("scripts");
+  if (!scripted)
+    return std::unexpected(std::move(scripted.error()));
+  m_scripted = *scripted;
+  auto clientModeName = m_config.getString("clientEntityMode", "ClientSlaveOnly");
+  if (!clientModeName)
+    return std::unexpected(std::move(clientModeName.error()));
+  if (!ClientEntityModeNames)
+    return std::unexpected(ClientEntityModeNames.error());
+  auto clientMode = ClientEntityModeNames->getLeft(*clientModeName);
+  if (!clientMode)
+    return std::unexpected(std::move(clientMode.error()));
+  m_clientEntityMode = **clientMode;
+  auto position = m_config.opt("position");
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  if (*position) {
+    auto pos = jsonToVec2F(**position);
+    if (!pos)
+      return std::unexpected(std::move(pos.error()));
+    m_xPosition.set((*pos)[0]);
+    m_yPosition.set((*pos)[1]);
   }
-  
-  std::optional<RectF> broadcastArea = jsonToOptional<RectF>(config.opt("broadcastArea").value_or(Json()), jsonToRectF);
-  if (broadcastArea && (broadcastArea->size()[0] < 0.0 || broadcastArea->size()[1] < 0.0))
-    broadcastArea.reset();
-  m_boundBox = broadcastArea.value_or(RectF(-5.0, -5.0, 5.0, 5.0));
-
+  auto areaJson = m_config.opt("broadcastArea");
+  if (!areaJson)
+    return std::unexpected(std::move(areaJson.error()));
+  auto broadcastArea = jsonToOptional<RectF>(areaJson->value_or(Json()), jsonToRectF);
+  if (!broadcastArea)
+    return std::unexpected(std::move(broadcastArea.error()));
+  if (*broadcastArea && ((**broadcastArea).size()[0] < 0.0 || (**broadcastArea).size()[1] < 0.0))
+    broadcastArea->reset();
+  m_boundBox = broadcastArea->value_or(RectF(-5.0, -5.0, 5.0, 5.0));
   if (m_scripted) {
-    m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
-    m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 5));
-
-    if (m_config.contains("scriptStorage"))
-      m_scriptComponent.setScriptStorage(m_config.getObject("scriptStorage"));
+    auto scriptsJson = m_config.getArray("scripts", JsonArray());
+    if (!scriptsJson)
+      return std::unexpected(std::move(scriptsJson.error()));
+    auto scripts = jsonToStringList(*scriptsJson);
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    if (auto result = m_scriptComponent.setScripts(std::move(*scripts)); !result)
+      return result;
+    auto delta = m_config.getInt("scriptDelta", 5);
+    if (!delta)
+      return std::unexpected(std::move(delta.error()));
+    m_scriptComponent.setUpdateDelta(*delta);
+    auto storage = m_config.opt("scriptStorage");
+    if (!storage)
+      return std::unexpected(std::move(storage.error()));
+    if (*storage) {
+      auto object = (**storage).toObject();
+      if (!object)
+        return std::unexpected(std::move(object.error()));
+      if (auto result = m_scriptComponent.setScriptStorage(std::move(*object)); !result)
+        return result;
+    }
   }
-
-  setKeepAlive(config.getBool("keepAlive", false));
+  auto keepAlive = m_config.getBool("keepAlive", false);
+  if (!keepAlive)
+    return std::unexpected(std::move(keepAlive.error()));
+  setKeepAlive(*keepAlive);
+  return {};
 }
 
-LuaCallbacks Stagehand::makeStagehandCallbacks() {
+std::expected<LuaCallbacks, StarException> Stagehand::makeStagehandCallbacks() {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("id", [this]() {
-      return entityId();
-    });
-
-  callbacks.registerCallback("position", [this]() {
-      return position();
-    });
-
-  callbacks.registerCallback("setPosition", [this](Vec2F const& position) {
-      setPosition(position);
-    });
-
-  callbacks.registerCallback("die", [this]() {
-      m_dead = true;
-    });
-
-  callbacks.registerCallback("typeName", [this]() {
-      return typeName();
-    });
-
-  callbacks.registerCallback("setUniqueId", [this](std::optional<String> const& uniqueId) {
-      setUniqueId(uniqueId);
-    });
-
+  if (auto result = callbacks.registerCallback("id", [this]() { return entityId(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("position", [this]() { return position(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setPosition", [this](Vec2F const& position) { setPosition(position); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("die", [this]() { m_dead = true; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("typeName", [this]() { return typeName(); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setUniqueId", [this](std::optional<String> const& uniqueId) { setUniqueId(uniqueId); }); !result)
+    return std::unexpected(std::move(result.error()));
   return callbacks;
 }
 
@@ -244,12 +333,15 @@ ClientEntityMode Stagehand::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-String Stagehand::typeName() const {
+std::expected<String, StarException> Stagehand::typeName() const {
   return m_config.getString("type");
 }
 
-std::optional<ChainableJsonMessageResponse> Stagehand::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Stagehand::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
+  return m_scriptComponent.handleMessage(message, sendingConnection == (*currentWorld)->connection(), args);
 }
 
 }

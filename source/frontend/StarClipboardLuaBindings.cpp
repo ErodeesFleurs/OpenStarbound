@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 import star.lua;
 import star.lua_converters;
 import star.input_event;
@@ -19,9 +20,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
-
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;
@@ -36,67 +34,65 @@ import star.root_base;
 import star.logging;
 
 module star.clipboard_lua_bindings;
-
 import star.byte_array;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, Logger& logger, std::shared_ptr<ApplicationController> appController, bool alwaysAllow) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, Logger& logger, std::shared_ptr<ApplicationController> appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
-
   auto available = [appController, alwaysAllow, &input]() {
     return alwaysAllow || (appController->isFocused() && input.clipboardAllowed());
   };
-
-  callbacks.registerCallback("available", [=]() -> bool {
-    return available();
-  });
-
-  callbacks.registerCallback("hasText", [=]() -> bool {
-    return available() && appController->hasClipboard();
-  });
-
-  callbacks.registerCallback("getText", [=]() -> std::optional<String> {
-    if (!available())
+  if (auto r = callbacks.registerCallback("available", [=]() { return available(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("hasText", [=]() { return available() && appController->hasClipboard(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("getText", [=]() -> std::optional<String> {
+    if (!available()) return {};
+    return appController->getClipboard();
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setText", [=](String const& text) {
+    return appController->isFocused() && appController->setClipboard(text);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setData", [=](LuaTable const& data) -> std::expected<bool, StarException> {
+    if (!appController->isFocused()) return false;
+    StringMap<ByteArray> clipboardData;
+    auto iteration = data.iterate([&](LuaValue const& key, LuaValue const& value) -> std::expected<void, StarException> {
+      auto stringKey = std::get_if<LuaString>(&key);
+      auto stringValue = std::get_if<LuaString>(&value);
+      if (!stringKey || !stringValue)
+        return std::unexpected(LuaException("Clipboard data keys and values must be strings"));
+      clipboardData[stringKey->toString()] = ByteArray(stringValue->ptr(), stringValue->length());
       return {};
-    else
-      return appController->getClipboard();
-  });
-
-  callbacks.registerCallback("setText", [=](String const& text) -> bool {
-    if (appController->isFocused()) {
-      return appController->setClipboard(text);
+    });
+    if (!iteration) return std::unexpected(std::move(iteration.error()));
+    return appController->setClipboardData(std::move(clipboardData));
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setImage", [appController, &root, &logger](LuaValue const& imgOrPath) -> std::expected<bool, StarException> {
+    if (!appController->isFocused()) return false;
+    auto buffer = std::make_shared<Buffer>();
+    Image const* image;
+    std::shared_ptr<Image const> ownedImage;
+    if (auto userdata = std::get_if<LuaUserData>(&imgOrPath)) {
+      auto isImage = userdata->is<Image>();
+      if (!isImage) return std::unexpected(std::move(isImage.error()));
+      if (!*isImage) return std::unexpected(LuaException("Expected an Image or image asset path"));
+      auto value = userdata->get<Image>();
+      if (!value) return std::unexpected(std::move(value.error()));
+      image = *value;
+    } else {
+      auto path = std::get_if<LuaString>(&imgOrPath);
+      if (!path) return std::unexpected(LuaException("Expected an Image or image asset path"));
+      auto assets = root.assets();
+      if (!assets) return std::unexpected(std::move(assets.error()));
+      auto loaded = (*assets)->image(path->toString());
+      if (!loaded) return std::unexpected(std::move(loaded.error()));
+      ownedImage = std::move(*loaded);
+      image = ownedImage.get();
     }
-    return false;
-  });
-
-  callbacks.registerCallback("setData", [=](LuaTable const& data) -> bool {
-    if (appController->isFocused()) {
-      StringMap<ByteArray> clipboardData;
-      data.iterate([&](LuaValue const& key, LuaValue const& value) {
-        ByteArray bytes(std::get<LuaString>(value).ptr(), std::get<LuaString>(value).length());
-        clipboardData[std::get<LuaString>(key).toString()] = std::move(bytes);
-      });
-      return appController->setClipboardData(std::move(clipboardData));
-    }
-    return false;
-  });
-
-  callbacks.registerCallback("setImage", [appController, &root, &logger](LuaValue const& imgOrPath) -> bool {
-    if (appController->isFocused()) {
-      auto buffer = std::make_shared<Buffer>();
-      if (std::holds_alternative<LuaUserData>(imgOrPath) && std::get<LuaUserData>(imgOrPath).is<Image>()) {
-        auto& image = std::get<LuaUserData>(imgOrPath).get<Image>();
-        image.writePng(logger, buffer);
-        return appController->setClipboardImage(image, &buffer->data());
-      } else {
-        auto image = root.assets()->image(std::get<LuaString>(imgOrPath).toString());
-        image->writePng(logger, buffer);
-        return appController->setClipboardImage(*image, &buffer->data());
-      }
-    }
-    return false;
-  });
-
+    if (auto written = image->writePng(logger, buffer); !written)
+      return std::unexpected(std::move(written.error()));
+    return appController->setClipboardImage(*image, &buffer->data());
+  }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }
 

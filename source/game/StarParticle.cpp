@@ -1,3 +1,4 @@
+import star.format;
 import star.memory;
 import std;
 import star.optional;
@@ -32,20 +33,14 @@ import star.vector;
 import star.math_common;
 namespace Star {
 
-EnumMap<Particle::Type> const Particle::TypeNames{{Particle::Type::Variance, "variance"},
-    {Particle::Type::Ember, "ember"},
-    {Particle::Type::Textured, "textured"},
-    {Particle::Type::Animated, "animated"},
-    {Particle::Type::Streak, "streak"},
-    {Particle::Type::Text, "text"}};
+std::expected<EnumMap<Particle::Type>, StarException> const Particle::TypeNames = EnumMap<Type>::create({{Type::Variance, "variance"},
+    {Type::Ember, "ember"}, {Type::Textured, "textured"}, {Type::Animated, "animated"}, {Type::Streak, "streak"}, {Type::Text, "text"}});
 
-EnumMap<Particle::DestructionAction> const Particle::DestructionActionNames{{Particle::DestructionAction::None, "none"},
-    {Particle::DestructionAction::Image, "image"},
-    {Particle::DestructionAction::Fade, "fade"},
-    {Particle::DestructionAction::Shrink, "shrink"}};
+std::expected<EnumMap<Particle::DestructionAction>, StarException> const Particle::DestructionActionNames = EnumMap<DestructionAction>::create({
+    {DestructionAction::None, "none"}, {DestructionAction::Image, "image"}, {DestructionAction::Fade, "fade"}, {DestructionAction::Shrink, "shrink"}});
 
-EnumMap<Particle::Layer> const Particle::LayerNames{
-    {Particle::Layer::Back, "back"}, {Particle::Layer::Middle, "middle"}, {Particle::Layer::Front, "front"}};
+std::expected<EnumMap<Particle::Layer>, StarException> const Particle::LayerNames = EnumMap<Layer>::create({
+    {Layer::Back, "back"}, {Layer::Middle, "middle"}, {Layer::Front, "front"}});
 
 Particle::Particle() {
   type = Type::Variance;
@@ -73,81 +68,186 @@ Particle::Particle() {
   flip = false;
 }
 
-Particle::Particle(Root& root, Json const& config, String const& path) {
-  type = TypeNames.getLeft(config.getString("type", "variance"));
-  if (type == Type::Variance) {
-    size = 0.0f;
-    color = Color::Clear;
-  } else {
-    size = 1.0f;
-    color = Color::White;
+std::expected<Particle, StarException> Particle::create(Root& root, Json const& config, String const& path) {
+  Particle particle;
+  if (!TypeNames)
+    return std::unexpected(TypeNames.error());
+  auto typeName = config.getString("type", "variance");
+  if (!typeName)
+    return std::unexpected(std::move(typeName.error()));
+  auto type = TypeNames->getLeft(*typeName);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  particle.type = **type;
+  particle.color = particle.type == Type::Variance ? Color::Clear : Color::White;
+  auto size = config.getFloat("size", particle.type == Type::Variance ? 0.0f : 1.0f);
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  particle.size = particle.baseSize = *size;
+  auto string = config.getString("string", "");
+  if (!string)
+    return std::unexpected(std::move(string.error()));
+  auto animation = config.getString("animation", *string);
+  if (!animation)
+    return std::unexpected(std::move(animation.error()));
+  auto text = config.getString("text", *animation);
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto image = config.getString("image", *text);
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  particle.string = std::move(*image);
+  if (particle.type == Type::Textured || particle.type == Type::Animated)
+    particle.string = AssetPath::relativeTo(path, particle.string);
+  particle.image = particle.string;
+  if (particle.type == Type::Animated) {
+    auto pathEnd = particle.string.find('?');
+    if (!pathEnd)
+      return std::unexpected(std::move(pathEnd.error()));
+    if (*pathEnd == NPos) {
+      particle.directives.clear();
+    } else {
+      auto directives = particle.string.substr(*pathEnd);
+      if (!directives)
+        return std::unexpected(std::move(directives.error()));
+      particle.directives = std::move(*directives);
+    }
+    auto initialized = particle.initializeAnimation(root);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
   }
-
-  size = config.getFloat("size", size);
-  baseSize = size;
-
-  string = config.getString(
-      "image", config.getString("text", config.getString("animation", config.getString("string", ""))));
-  if (type == Type::Textured || type == Type::Animated)
-    string = AssetPath::relativeTo(path, string);
-
-  image = string;
-
-  if (type == Type::Animated) {
-    auto pathEnd = string.find('?');
-    if (pathEnd == NPos)
-      directives.clear();
-    else
-      directives = string.substr(pathEnd);
-    initializeAnimation(root);
+  auto hasColor = config.contains("color");
+  if (!hasColor)
+    return std::unexpected(std::move(hasColor.error()));
+  if (*hasColor) {
+    auto value = config.get("color");
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto color = jsonToColor(*value);
+    if (!color)
+      return std::unexpected(std::move(color.error()));
+    particle.color = *color;
   }
-
-  if (config.contains("color"))
-    color = jsonToColor(config.get("color"));
-
-  light = jsonToColor(config.get("light", JsonArray{0, 0, 0, 0}));
-
-  fade = config.getFloat("fade", 0.0f);
-  fullbright = config.getBool("fullbright", false);
-
-  position = jsonToVec2F(config.get("position", JsonArray{0.0f, 0.0f}));
-  velocity = jsonToVec2F(config.get("initialVelocity", config.get("velocity", JsonArray{0.0f, 0.0f})));
-
-  if (type == Type::Variance)
-    finalVelocity = {0.0f, 0.0f};
-  else
-    finalVelocity = velocity;
-  finalVelocity = jsonToVec2F(config.get("finalVelocity", JsonArray::from(finalVelocity)));
-
-  approach = jsonToVec2F(config.get("approach", JsonArray{0.0f, 0.0f}));
-
-  flip = config.getBool("flip", false);
-  flippable = config.getBool("flippable", true);
-
-  rotation = config.getFloat("rotation", 0.0f) * std::numbers::pi / 180.0f;
-  angularVelocity = config.getFloat("angularVelocity", 0.0f) * std::numbers::pi / 180.0f;
-  length = config.getFloat("length", 10.0f);
-
-  destructionAction = DestructionActionNames.getLeft(config.getString("destructionAction", "None"));
-  String destructionImagePath = config.getString("destructionImage", "");
-  if (destructionAction == DestructionAction::Image)
-    destructionImagePath = AssetPath::relativeTo(path, destructionImagePath);
-  destructionImage = destructionImagePath;
-
-  destructionTime = config.getFloat("destructionTime", 0.0f);
-
-  timeToLive = config.getFloat("timeToLive", 0.0f);
-  layer = LayerNames.getLeft(config.getString("layer", "middle"));
-
-  underwaterOnly = config.getBool("underwaterOnly", false);
-
-  collidesForeground = config.getBool("collidesForeground", layer != Layer::Front || underwaterOnly);
-  // only valid for collidesForeground particles
-  collidesLiquid = config.getBool("collidesLiquid", type == Type::Ember);
-
-  ignoreWind = config.getBool("ignoreWind", true);
-
-  trail = config.getBool("trail", false);
+  auto lightConfig = config.get("light", JsonArray{0, 0, 0, 0});
+  if (!lightConfig)
+    return std::unexpected(std::move(lightConfig.error()));
+  auto light = jsonToColor(*lightConfig);
+  if (!light)
+    return std::unexpected(std::move(light.error()));
+  particle.light = *light;
+  auto fade = config.getFloat("fade", 0.0f);
+  if (!fade)
+    return std::unexpected(std::move(fade.error()));
+  particle.fade = *fade;
+  auto fullbright = config.getBool("fullbright", false);
+  if (!fullbright)
+    return std::unexpected(std::move(fullbright.error()));
+  particle.fullbright = *fullbright;
+  auto positionConfig = config.get("position", JsonArray{0.0f, 0.0f});
+  if (!positionConfig)
+    return std::unexpected(std::move(positionConfig.error()));
+  auto position = jsonToVec2F(*positionConfig);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  particle.position = *position;
+  auto velocityDefault = config.get("velocity", JsonArray{0.0f, 0.0f});
+  if (!velocityDefault)
+    return std::unexpected(std::move(velocityDefault.error()));
+  auto velocityConfig = config.get("initialVelocity", *velocityDefault);
+  if (!velocityConfig)
+    return std::unexpected(std::move(velocityConfig.error()));
+  auto velocity = jsonToVec2F(*velocityConfig);
+  if (!velocity)
+    return std::unexpected(std::move(velocity.error()));
+  particle.velocity = *velocity;
+  particle.finalVelocity = particle.type == Type::Variance ? Vec2F() : particle.velocity;
+  auto finalVelocityConfig = config.get("finalVelocity", JsonArray::from(particle.finalVelocity));
+  if (!finalVelocityConfig)
+    return std::unexpected(std::move(finalVelocityConfig.error()));
+  auto finalVelocity = jsonToVec2F(*finalVelocityConfig);
+  if (!finalVelocity)
+    return std::unexpected(std::move(finalVelocity.error()));
+  particle.finalVelocity = *finalVelocity;
+  auto approachConfig = config.get("approach", JsonArray{0.0f, 0.0f});
+  if (!approachConfig)
+    return std::unexpected(std::move(approachConfig.error()));
+  auto approach = jsonToVec2F(*approachConfig);
+  if (!approach)
+    return std::unexpected(std::move(approach.error()));
+  particle.approach = *approach;
+  auto flip = config.getBool("flip", false);
+  if (!flip)
+    return std::unexpected(std::move(flip.error()));
+  particle.flip = *flip;
+  auto flippable = config.getBool("flippable", true);
+  if (!flippable)
+    return std::unexpected(std::move(flippable.error()));
+  particle.flippable = *flippable;
+  auto rotation = config.getFloat("rotation", 0.0f);
+  if (!rotation)
+    return std::unexpected(std::move(rotation.error()));
+  particle.rotation = *rotation * std::numbers::pi / 180.0f;
+  auto angularVelocity = config.getFloat("angularVelocity", 0.0f);
+  if (!angularVelocity)
+    return std::unexpected(std::move(angularVelocity.error()));
+  particle.angularVelocity = *angularVelocity * std::numbers::pi / 180.0f;
+  auto length = config.getFloat("length", 10.0f);
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  particle.length = *length;
+  if (!DestructionActionNames)
+    return std::unexpected(DestructionActionNames.error());
+  auto actionName = config.getString("destructionAction", "None");
+  if (!actionName)
+    return std::unexpected(std::move(actionName.error()));
+  auto action = DestructionActionNames->getLeft(*actionName);
+  if (!action)
+    return std::unexpected(std::move(action.error()));
+  particle.destructionAction = **action;
+  auto destructionImage = config.getString("destructionImage", "");
+  if (!destructionImage)
+    return std::unexpected(std::move(destructionImage.error()));
+  if (particle.destructionAction == DestructionAction::Image)
+    *destructionImage = AssetPath::relativeTo(path, *destructionImage);
+  particle.destructionImage = std::move(*destructionImage);
+  auto destructionTime = config.getFloat("destructionTime", 0.0f);
+  if (!destructionTime)
+    return std::unexpected(std::move(destructionTime.error()));
+  particle.destructionTime = *destructionTime;
+  auto timeToLive = config.getFloat("timeToLive", 0.0f);
+  if (!timeToLive)
+    return std::unexpected(std::move(timeToLive.error()));
+  particle.timeToLive = *timeToLive;
+  if (!LayerNames)
+    return std::unexpected(LayerNames.error());
+  auto layerName = config.getString("layer", "middle");
+  if (!layerName)
+    return std::unexpected(std::move(layerName.error()));
+  auto layer = LayerNames->getLeft(*layerName);
+  if (!layer)
+    return std::unexpected(std::move(layer.error()));
+  particle.layer = **layer;
+  auto underwaterOnly = config.getBool("underwaterOnly", false);
+  if (!underwaterOnly)
+    return std::unexpected(std::move(underwaterOnly.error()));
+  particle.underwaterOnly = *underwaterOnly;
+  auto collidesForeground = config.getBool("collidesForeground", particle.layer != Layer::Front || particle.underwaterOnly);
+  if (!collidesForeground)
+    return std::unexpected(std::move(collidesForeground.error()));
+  particle.collidesForeground = *collidesForeground;
+  auto collidesLiquid = config.getBool("collidesLiquid", particle.type == Type::Ember);
+  if (!collidesLiquid)
+    return std::unexpected(std::move(collidesLiquid.error()));
+  particle.collidesLiquid = *collidesLiquid;
+  auto ignoreWind = config.getBool("ignoreWind", true);
+  if (!ignoreWind)
+    return std::unexpected(std::move(ignoreWind.error()));
+  particle.ignoreWind = *ignoreWind;
+  auto trail = config.getBool("trail", false);
+  if (!trail)
+    return std::unexpected(std::move(trail.error()));
+  particle.trail = *trail;
+  return particle;
 }
 
 Particle::Particle(Particle&& other)
@@ -217,16 +317,29 @@ Particle& Particle::operator=(Particle&& other) {
     underwaterOnly = other.underwaterOnly;
     ignoreWind = other.ignoreWind;
     trail = other.trail;
-    if (other.animation)
-      animation.emplace(takeOptional(other.animation));
-    else
-      animation.reset();
+    animation = std::move(other.animation);
+    other.animation.reset();
   }
   return *this;
 }
 
-Json Particle::toJson() const {
-  return JsonObject{{"type", TypeNames.getRight(type)},
+std::expected<Json, StarException> Particle::toJson() const {
+  if (!TypeNames)
+    return std::unexpected(TypeNames.error());
+  auto typeName = TypeNames->getRight(type);
+  if (!typeName)
+    return std::unexpected(std::move(typeName.error()));
+  if (!DestructionActionNames)
+    return std::unexpected(DestructionActionNames.error());
+  auto actionName = DestructionActionNames->getRight(destructionAction);
+  if (!actionName)
+    return std::unexpected(std::move(actionName.error()));
+  if (!LayerNames)
+    return std::unexpected(LayerNames.error());
+  auto layerName = LayerNames->getRight(layer);
+  if (!layerName)
+    return std::unexpected(std::move(layerName.error()));
+  return JsonObject{{"type", **typeName},
       {"size", size},
       {"string", string},
       {"color", jsonFromColor(color)},
@@ -242,11 +355,11 @@ Json Particle::toJson() const {
       {"rotation", rotation * 180.0f / std::numbers::pi},
       {"angularVelocity", angularVelocity * 180.0f / std::numbers::pi},
       {"length", length},
-      {"destructionAction", DestructionActionNames.getRight(destructionAction)},
+      {"destructionAction", **actionName},
       {"destructionImage", AssetPath::join(destructionImage)},
       {"destructionTime", destructionTime},
       {"timeToLive", timeToLive},
-      {"layer", LayerNames.getRight(layer)},
+      {"layer", **layerName},
       {"collidesForeground", collidesForeground},
       {"collidesLiquid", collidesLiquid},
       {"underwaterOnly", underwaterOnly},
@@ -258,7 +371,7 @@ void Particle::translate(Vec2F const& pos) {
   position += pos;
 }
 
-void Particle::update(Root& root, float dt, Vec2F const& wind) {
+std::expected<void, StarException> Particle::update(Root& root, float dt, Vec2F const& wind) {
   auto prevVelocity = velocity;
   if (ignoreWind) {
     velocity[0] = Star::approach<float>(finalVelocity[0], velocity[0], approach[0] * dt);
@@ -280,9 +393,12 @@ void Particle::update(Root& root, float dt, Vec2F const& wind) {
     destructionUpdate();
 
   if (type == Type::Animated) {
-    initializeAnimation(root);
+    auto initialized = initializeAnimation(root);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
     animation->update(dt);
   }
+  return {};
 }
 
 bool Particle::dead() const {
@@ -290,15 +406,15 @@ bool Particle::dead() const {
 }
 
 void Particle::applyVariance(Root& root, Particle const& variance) {
-  size += variance.size * root.random().randf(-1.0f, 1.0f);
-  position += {variance.position[0] * root.random().randf(-1.0f, 1.0f), variance.position[1] * root.random().randf(-1.0f, 1.0f)};
-  velocity += {variance.velocity[0] * root.random().randf(-1.0f, 1.0f), variance.velocity[1] * root.random().randf(-1.0f, 1.0f)};
+  size += variance.size * (root.random().randf() * 2.0f - 1.0f);
+  position += {variance.position[0] * (root.random().randf() * 2.0f - 1.0f), variance.position[1] * (root.random().randf() * 2.0f - 1.0f)};
+  velocity += {variance.velocity[0] * (root.random().randf() * 2.0f - 1.0f), variance.velocity[1] * (root.random().randf() * 2.0f - 1.0f)};
   finalVelocity +=
-      {variance.finalVelocity[0] * root.random().randf(-1.0f, 1.0f), variance.finalVelocity[1] * root.random().randf(-1.0f, 1.0f)};
-  rotation += variance.rotation * root.random().randf(-1.0f, 1.0f);
-  angularVelocity += variance.angularVelocity * root.random().randf(-1.0f, 1.0f);
-  length += variance.length * root.random().randf(-1.0f, 1.0f);
-  timeToLive += variance.timeToLive * root.random().randf(-1.0f, 1.0f);
+      {variance.finalVelocity[0] * (root.random().randf() * 2.0f - 1.0f), variance.finalVelocity[1] * (root.random().randf() * 2.0f - 1.0f)};
+  rotation += variance.rotation * (root.random().randf() * 2.0f - 1.0f);
+  angularVelocity += variance.angularVelocity * (root.random().randf() * 2.0f - 1.0f);
+  length += variance.length * (root.random().randf() * 2.0f - 1.0f);
+  timeToLive += variance.timeToLive * (root.random().randf() * 2.0f - 1.0f);
 }
 
 void Particle::collide(Vec2F const& collisionPosition) {
@@ -341,69 +457,47 @@ void Particle::destructionUpdate() {
   }
 }
 
-void Particle::initializeAnimation(Root& root) {
+std::expected<void, StarException> Particle::initializeAnimation(Root& root) {
   if (!animation) {
-    animation = Animation(root, AssetPath::removeDirectives(string));
+    auto created = Animation::create(root, AssetPath::removeDirectives(string));
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+    animation = std::move(*created);
     animation->setProcessing(directives);
   }
+  return {};
 }
 
-DataStream& operator<<(DataStream& ds, Particle const& particle) {
-  ds.viwrite(particle.type);
-  ds.write(particle.size);
-  ds.write(particle.string);
-  ds.write(particle.color);
-  ds.write(particle.light);
-  ds.write(particle.fade);
-  ds.write(particle.position);
-  ds.write(particle.velocity);
-  ds.write(particle.finalVelocity);
-  ds.write(particle.approach);
-  ds.write(particle.rotation);
-  ds.write(particle.flippable);
-  ds.write(particle.flip);
-  ds.write(particle.angularVelocity);
-  ds.write(particle.length);
-  ds.viwrite(particle.destructionAction);
-  ds.write(particle.destructionImage);
-  ds.write(particle.destructionTime);
-  ds.write(particle.timeToLive);
-  ds.write(particle.layer);
-  ds.write(particle.collidesForeground);
-  ds.write(particle.collidesLiquid);
-  ds.write(particle.underwaterOnly);
-  ds.write(particle.ignoreWind);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, Particle const& particle) {
+  auto type = ds.viwrite(particle.type);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  auto fields = ds << particle.size << particle.string << particle.color << particle.light << particle.fade
+      << particle.position << particle.velocity << particle.finalVelocity << particle.approach << particle.rotation
+      << particle.flippable << particle.flip << particle.angularVelocity << particle.length;
+  if (!fields)
+    return std::unexpected(std::move(fields.error()));
+  auto action = ds.viwrite(particle.destructionAction);
+  if (!action)
+    return std::unexpected(std::move(action.error()));
+  return ds << particle.destructionImage << particle.destructionTime << particle.timeToLive << particle.layer
+      << particle.collidesForeground << particle.collidesLiquid << particle.underwaterOnly << particle.ignoreWind;
 }
 
-DataStream& operator>>(DataStream& ds, Particle& particle) {
-  ds.viread(particle.type);
-  ds.read(particle.size);
-  ds.read(particle.string);
-  ds.read(particle.color);
-  ds.read(particle.light);
-  ds.read(particle.fade);
-  ds.read(particle.position);
-  ds.read(particle.velocity);
-  ds.read(particle.finalVelocity);
-  ds.read(particle.approach);
-  ds.read(particle.rotation);
-  ds.read(particle.flippable);
-  ds.read(particle.flip);
-  ds.read(particle.angularVelocity);
-  ds.read(particle.length);
-  ds.viread(particle.destructionAction);
-  ds.read(particle.destructionImage);
-  ds.read(particle.destructionTime);
-  ds.read(particle.timeToLive);
-  ds.read(particle.layer);
-  ds.read(particle.collidesForeground);
-  ds.read(particle.collidesLiquid);
-  ds.read(particle.underwaterOnly);
-  ds.read(particle.ignoreWind);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Particle& particle) {
+  auto type = ds.viread(particle.type);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  auto fields = ds >> particle.size >> particle.string >> particle.color >> particle.light >> particle.fade
+      >> particle.position >> particle.velocity >> particle.finalVelocity >> particle.approach >> particle.rotation
+      >> particle.flippable >> particle.flip >> particle.angularVelocity >> particle.length;
+  if (!fields)
+    return std::unexpected(std::move(fields.error()));
+  auto action = ds.viread(particle.destructionAction);
+  if (!action)
+    return std::unexpected(std::move(action.error()));
+  return ds >> particle.destructionImage >> particle.destructionTime >> particle.timeToLive >> particle.layer
+      >> particle.collidesForeground >> particle.collidesLiquid >> particle.underwaterOnly >> particle.ignoreWind;
 }
 
 ParticleVariantCreator makeParticleVariantCreator(Root& root, Particle particle, Particle variance) {

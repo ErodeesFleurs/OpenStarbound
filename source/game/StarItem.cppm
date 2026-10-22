@@ -48,15 +48,11 @@ public:
     return Star::typeName<Item>();
   }
 
-  // Config here is the configuration loaded directly from assets, directory is
-  // the asset path this config was found in, that other assets should be
-  // loaded relative to.
-  Item(Root& root, Json config, String directory, Json parameters = JsonObject());
-
 
   virtual ~Item();
 
-  virtual std::shared_ptr<Item> clone() const = 0;
+  [[nodiscard]]
+  virtual std::expected<std::shared_ptr<Item>, StarException> clone() const = 0;
 
   // Unique identifying item name
   String name() const;
@@ -99,7 +95,8 @@ public:
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  std::shared_ptr<Item> take(std::uint64_t max = NPos);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> take(std::uint64_t max = NPos);
 
   // count() is 0
   bool empty() const;
@@ -113,17 +110,21 @@ public:
   Rarity rarity() const;
   std::uint64_t price() const;
 
-  virtual List<Drawable> iconDrawables() const;
-  virtual std::optional<List<Drawable>> secondaryDrawables() const;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> iconDrawables() const;
+  [[nodiscard]]
+  virtual std::expected<std::optional<List<Drawable>>, StarException> secondaryDrawables() const;
   virtual bool hasSecondaryDrawables() const;
 
-  virtual List<Drawable> dropDrawables(TileDrawer* tileDrawer) const;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer* tileDrawer) const;
   String largeImage() const;
 
   String tooltipKind() const;
   virtual String category() const;
 
-  virtual String pickupSound() const;
+  [[nodiscard]]
+  virtual std::expected<String, StarException> pickupSound() const;
 
   bool twoHanded() const;
   float timeToLive() const;
@@ -131,17 +132,23 @@ public:
   List<ItemDescriptor> learnBlueprintsOnPickup() const;
   StringMap<String> collectablesOnPickup() const;
 
-  List<QuestArcDescriptor> pickupQuestTemplates() const;
-  StringSet itemTags() const;
-  bool hasItemTag(String const& itemTag) const;
+  [[nodiscard]]
+  std::expected<List<QuestArcDescriptor>, StarException> pickupQuestTemplates() const;
+  [[nodiscard]]
+  std::expected<StringSet, StarException> itemTags() const;
+  [[nodiscard]]
+  std::expected<bool, StarException> hasItemTag(String const& itemTag) const;
 
   // Return either a parameter given to the item or a config value, if no such
   // parameter exists.
-  Json instanceValue(String const& name, Json const& def = Json()) const;
-  Json instanceValueOfType(String const& name, Json::Type type, Json const& def = Json()) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> instanceValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> instanceValueOfType(String const& name, Json::Type type, Json const& def = Json()) const;
 
   // Returns the full set of configuration values merged with parameters
-  Json instanceValues() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> instanceValues() const;
 
   // Returns just the base config
   Json config() const;
@@ -152,6 +159,9 @@ public:
   static bool itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b);
 
 protected:
+  explicit Item(Root& root);
+  [[nodiscard]]
+  std::expected<void, StarException> initialize(Json config, String directory, Json parameters = JsonObject());
   Root& root() const;
 
   void setMaxStack(std::uint64_t maxStack);
@@ -161,12 +171,15 @@ protected:
   void setRarity(Rarity rarity);
   void setPrice(std::uint64_t price);
   // icon drawables are pixels, not tile, based
-  void setIconDrawables(List<Drawable> drawables);
-  void setSecondaryIconDrawables(std::optional<List<Drawable>> drawables);
+  [[nodiscard]]
+  std::expected<void, StarException> setIconDrawables(List<Drawable> drawables);
+  [[nodiscard]]
+  std::expected<void, StarException> setSecondaryIconDrawables(std::optional<List<Drawable>> drawables);
   void setTwoHanded(bool twoHanded);
   void setTimeToLive(float timeToLive);
 
-  void setInstanceValue(String const& name, Json const& val);
+  [[nodiscard]]
+  std::expected<void, StarException> setInstanceValue(String const& name, Json const& val);
 
   String const& directory() const;
 
@@ -207,8 +220,12 @@ public:
     return Star::typeName<GenericItem>();
   }
 
-  GenericItem(Root& root, Json const& config, String const& directory, Json const& parameters);
-  virtual std::shared_ptr<Item> clone() const;
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<GenericItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
+private:
+  explicit GenericItem(Root& root) : Item(root) {}
 };
 
 inline std::uint64_t itemSafeCount(std::shared_ptr<Item> const& item) {

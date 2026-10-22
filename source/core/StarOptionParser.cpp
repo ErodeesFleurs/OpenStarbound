@@ -20,21 +20,23 @@ void OptionParser::setAdditionalHelp(String help) {
   m_additionalHelp = std::move(help);
 }
 
-void OptionParser::addSwitch(String const& flag, String description) {
+std::expected<void, StarException> OptionParser::addSwitch(String const& flag, String description) {
   if (!m_options.insert(flag, Switch{flag, std::move(description)}).second)
-    throw OptionParserException::format("Duplicate switch '-{}' added", flag);
+    return std::unexpected(OptionParserException::format("Duplicate switch '-{}' added", flag));
+  return {};
 }
 
-void OptionParser::addParameter(String const& flag, String argument, RequirementMode requirementMode, String description) {
+std::expected<void, StarException> OptionParser::addParameter(String const& flag, String argument, RequirementMode requirementMode, String description) {
   if (!m_options.insert(flag, Parameter{flag, std::move(argument), requirementMode, std::move(description)}).second)
-    throw OptionParserException::format("Duplicate flag '-{}' added", flag);
+    return std::unexpected(OptionParserException::format("Duplicate flag '-{}' added", flag));
+  return {};
 }
 
 void OptionParser::addArgument(String argument, RequirementMode requirementMode, String description) {
   m_arguments.append(Argument{std::move(argument), requirementMode, std::move(description)});
 }
 
-std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList const& arguments) const {
+std::expected<std::pair<OptionParser::Options, StringList>, StarException> OptionParser::parseOptions(StringList const& arguments) const {
   Options result;
   StringList errors;
   bool endOfFlags = false;
@@ -47,8 +49,11 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
       continue;
     }
 
-    if (!endOfFlags && arg.beginsWith("-")) {
-      String flag = arg.substr(1);
+    if (!endOfFlags && !arg.empty() && arg.utf8().front() == '-') {
+      auto parsedFlag = arg.substr(1);
+      if (!parsedFlag)
+        return std::unexpected(std::move(parsedFlag.error()));
+      String flag = std::move(*parsedFlag);
       auto option = m_options.maybe(flag);
       if (!option) {
         errors.append(strf("No such option '-{}'", flag));
@@ -101,7 +106,7 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
     errors.append(strf(
         "Too many positional arguments given, expected at most {} got {}", maximumArguments, result.arguments.size()));
 
-  return {std::move(result), std::move(errors)};
+  return std::pair{std::move(result), std::move(errors)};
 }
 
 void OptionParser::printHelp(std::ostream& os) const {

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 import std;
+import star.format;
 import star.game_test;
 import star.root;
 import star.configuration;
@@ -11,8 +12,9 @@ namespace {
 class ErrorLogSink : public LogSink {
 public:
   ErrorLogSink() { setLevel(LogLevel::Error); }
-  void log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
     ADD_FAILURE() << "Error was logged: " << message;
+    return {};
   }
 };
 
@@ -27,14 +29,22 @@ GameTestEnvironment::GameTestEnvironment(Root::Settings settings)
   : m_settings(std::move(settings)) {}
 
 void GameTestEnvironment::SetUp() {
-  m_root = std::make_unique<Root>(m_settings);
+  auto root = Root::create(m_settings);
+  ASSERT_TRUE(root) << root.error().what();
+  m_root = std::move(*root);
   m_root->logger().addSink(std::make_shared<ErrorLogSink>());
-  m_root->configuration()->set("clearUniverseFiles", true);
-  m_root->configuration()->set("clearPlayerFiles", true);
+  auto configuration = m_root->configuration();
+  ASSERT_TRUE(configuration) << configuration.error().what();
+  auto clearUniverse = (*configuration)->set("clearUniverseFiles", true);
+  ASSERT_TRUE(clearUniverse) << clearUniverse.error().what();
+  auto clearPlayer = (*configuration)->set("clearPlayerFiles", true);
+  ASSERT_TRUE(clearPlayer) << clearPlayer.error().what();
+  m_ready = true;
 }
 
 void GameTestEnvironment::TearDown() {
   m_root.reset();
+  m_ready = false;
 }
 
 GameTest::GameTest(GameTestEnvironment& environment, Body body)
@@ -49,6 +59,8 @@ Root::Settings const& GameTest::rootSettings() const {
 }
 
 void GameTest::TestBody() {
+  if (!m_environment.m_ready)
+    GTEST_SKIP() << "Game test environment setup failed";
   m_body(*this);
 }
 

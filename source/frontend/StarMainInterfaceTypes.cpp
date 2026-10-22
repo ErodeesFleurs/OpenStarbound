@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.list;
@@ -65,7 +66,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
+extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInterfacePanesNames = EnumMap<MainInterfacePanes>::create({
   {MainInterfacePanes::EscapeDialog, "EscapeDialog"},
   {MainInterfacePanes::Inventory, "Inventory"},
   {MainInterfacePanes::Codex, "Codex"},
@@ -91,121 +92,621 @@ extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::MmUpgrade, "MmUpgrade"},
   {MainInterfacePanes::Collections, "Collections"},
   {MainInterfacePanes::CharacterSwap, "CharacterSwap"}
-};
-
-std::shared_ptr<MainInterfaceConfig> MainInterfaceConfig::loadFromAssets(GuiContext& context) {
+});
+std::expected<std::shared_ptr<MainInterfaceConfig>, StarException> MainInterfaceConfig::loadFromAssets(GuiContext& context) {
   auto& root = context.root();
   auto assets = root.assets();
-  auto imageMetadata = root.imageMetadataDatabase();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+
 
   auto config = std::make_shared<MainInterfaceConfig>();
 
-  config->textStyle = assets->json("/interface.config:textStyle");
-  config->inventoryImage = assets->json("/interface.config:mainBar.inventory.base").toString();
-  config->inventoryImageHover = assets->json("/interface.config:mainBar.inventory.hover").toString();
-  config->inventoryImageGlow = assets->json("/interface.config:mainBar.inventory.glow").toString();
-  config->inventoryImageGlowHover = assets->json("/interface.config:mainBar.inventory.glowHover").toString();
-  config->inventoryImageOpen = assets->json("/interface.config:mainBar.inventory.open").toString();
-  config->inventoryImageOpenHover = assets->json("/interface.config:mainBar.inventory.openHover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:textStyle");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = TextStyle::create(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->textStyle = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.glow");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImageGlow = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.glowHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImageGlowHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryImageOpenHover = std::move(*value);
+  }
 
-  config->beamDownImage = assets->json("/interface.config:mainBar.beam.base").toString();
-  config->beamDownImageHover = assets->json("/interface.config:mainBar.beam.hover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beam.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->beamDownImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beam.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->beamDownImageHover = std::move(*value);
+  }
 
-  config->deployImage = assets->json("/interface.config:mainBar.deploy.base").toString();
-  config->deployImageHover = assets->json("/interface.config:mainBar.deploy.hover").toString();
-  config->deployImageDisabled = assets->json("/interface.config:mainBar.deploy.disabled").toString();
-  config->beamUpImage = assets->json("/interface.config:mainBar.beamUp.base").toString();
-  config->beamUpImageHover = assets->json("/interface.config:mainBar.beamUp.hover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.deploy.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->deployImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.deploy.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->deployImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.deploy.disabled");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->deployImageDisabled = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beamUp.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->beamUpImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beamUp.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->beamUpImageHover = std::move(*value);
+  }
 
-  config->craftImage = assets->json("/interface.config:mainBar.craft.base").toString();
-  config->craftImageHover = assets->json("/interface.config:mainBar.craft.hover").toString();
-  config->craftImageOpen = assets->json("/interface.config:mainBar.craft.open").toString();
-  config->craftImageOpenHover = assets->json("/interface.config:mainBar.craft.openHover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->craftImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->craftImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->craftImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->craftImageOpenHover = std::move(*value);
+  }
 
-  config->codexImage = assets->json("/interface.config:mainBar.codex.base").toString();
-  config->codexImageHover = assets->json("/interface.config:mainBar.codex.hover").toString();
-  config->codexImageOpen = assets->json("/interface.config:mainBar.codex.open").toString();
-  config->codexImageHoverOpen = assets->json("/interface.config:mainBar.codex.openHover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->codexImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->codexImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->codexImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->codexImageHoverOpen = std::move(*value);
+  }
 
-  config->questLogImage = assets->json("/interface.config:mainBar.questLog.base").toString();
-  config->questLogImageHover = assets->json("/interface.config:mainBar.questLog.hover").toString();
-  config->questLogImageOpen = assets->json("/interface.config:mainBar.questLog.open").toString();
-  config->questLogImageHoverOpen = assets->json("/interface.config:mainBar.questLog.openHover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->questLogImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->questLogImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->questLogImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->questLogImageHoverOpen = std::move(*value);
+  }
 
-  config->mmUpgradeImage = assets->json("/interface.config:mainBar.mmUpgrade.base").toString();
-  config->mmUpgradeImageHover = assets->json("/interface.config:mainBar.mmUpgrade.hover").toString();
-  config->mmUpgradeImageOpen = assets->json("/interface.config:mainBar.mmUpgrade.open").toString();
-  config->mmUpgradeImageHoverOpen = assets->json("/interface.config:mainBar.mmUpgrade.openHover").toString();
-  config->mmUpgradeImageDisabled = assets->json("/interface.config:mainBar.mmUpgrade.disabled").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mmUpgradeImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mmUpgradeImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mmUpgradeImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mmUpgradeImageHoverOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.disabled");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mmUpgradeImageDisabled = std::move(*value);
+  }
 
-  config->collectionsImage = assets->json("/interface.config:mainBar.collections.base").toString();
-  config->collectionsImageHover = assets->json("/interface.config:mainBar.collections.hover").toString();
-  config->collectionsImageOpen = assets->json("/interface.config:mainBar.collections.open").toString();
-  config->collectionsImageHoverOpen = assets->json("/interface.config:mainBar.collections.openHover").toString();
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.base");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->collectionsImage = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.hover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->collectionsImageHover = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.open");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->collectionsImageOpen = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.openHover");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->collectionsImageHoverOpen = std::move(*value);
+  }
 
-  config->mainBarInventoryButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.inventory.pos"));
-  config->mainBarCraftButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.craft.pos"));
-  config->mainBarBeamButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.beam.pos"));
-  config->mainBarDeployButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.deploy.pos"));
-  config->mainBarCodexButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.codex.pos"));
-  config->mainBarQuestLogButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.questLog.pos"));
-  config->mainBarMmUpgradeButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.mmUpgrade.pos"));
-  config->mainBarCollectionsButtonOffset = jsonToVec2I(assets->json("/interface.config:mainBar.collections.pos"));
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarInventoryButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCraftButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beam.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarBeamButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.deploy.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarDeployButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCodexButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarQuestLogButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarMmUpgradeButtonOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.pos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCollectionsButtonOffset = std::move(*value);
+  }
 
-  config->mainBarInventoryButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.inventory.poly"));
-  config->mainBarCraftButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.craft.poly"));
-  config->mainBarBeamButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.beam.poly"));
-  config->mainBarDeployButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.deploy.poly"));
-  config->mainBarCodexButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.codex.poly"));
-  config->mainBarQuestLogButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.questLog.poly"));
-  config->mainBarMmUpgradeButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.mmUpgrade.poly"));
-  config->mainBarCollectionsButtonPoly = jsonToPolyI(assets->json("/interface.config:mainBar.collections.poly"));
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.inventory.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarInventoryButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.craft.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCraftButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.beam.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarBeamButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.deploy.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarDeployButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.codex.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCodexButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.questLog.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarQuestLogButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.mmUpgrade.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarMmUpgradeButtonPoly = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.collections.poly");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToPolyI(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarCollectionsButtonPoly = std::move(*value);
+  }
 
-  config->mainBarSize = jsonToVec2I(assets->json("/interface.config:mainBar.size"));
+  {
+    auto json = (*assets)->json("/interface.config:mainBar.size");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->mainBarSize = std::move(*value);
+  }
 
-  config->itemCountRightAnchor = jsonToVec2I(assets->json("/interface.config:itemCountRightAnchor"));
-  config->inventoryItemMouseOffset = jsonToVec2I(assets->json("/interface.config:inventoryItemMouseOffset"));
+  {
+    auto json = (*assets)->json("/interface.config:itemCountRightAnchor");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->itemCountRightAnchor = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:inventoryItemMouseOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->inventoryItemMouseOffset = std::move(*value);
+  }
 
-  config->maxMessageCount = assets->json("/interface.config:maxMessageCount").toUInt();
-  config->overflowMessageText = assets->json("/interface.config:overflowMessageText").toString();
+  {
+    auto json = (*assets)->json("/interface.config:maxMessageCount");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toUInt();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->maxMessageCount = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:overflowMessageText");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->overflowMessageText = std::move(*value);
+  }
 
-  config->messageBarPos = jsonToVec2I(assets->json("/interface.config:message.barPos"));
-  config->messageItemOffset = jsonToVec2I(assets->json("/interface.config:message.itemOffset"));
+  {
+    auto json = (*assets)->json("/interface.config:message.barPos");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageBarPos = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.itemOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageItemOffset = std::move(*value);
+  }
 
-  config->messageTextContainer = assets->json("/interface.config:message.textContainer").toString();
-  config->messageTextContainerOffset = jsonToVec2I(assets->json("/interface.config:message.textContainerOffset"));
-  config->messageTextOffset = jsonToVec2I(assets->json("/interface.config:message.textOffset"));
+  {
+    auto json = (*assets)->json("/interface.config:message.textContainer");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageTextContainer = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.textContainerOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageTextContainerOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.textOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageTextOffset = std::move(*value);
+  }
 
-  config->messageTime = assets->json("/interface.config:message.showTime").toFloat();
-  config->messageHideTime = assets->json("/interface.config:message.hideTime").toFloat();
-  config->messageActiveOffset = jsonToVec2I(assets->json("/interface.config:message.offset"));
-  config->messageHiddenOffset = jsonToVec2I(assets->json("/interface.config:message.offsetHidden"));
-  config->messageHiddenOffsetBar = jsonToVec2I(assets->json("/interface.config:message.offsetHiddenBar"));
-  config->messageWindowSpring = assets->json("/interface.config:message.windowSpring").toFloat();
+  {
+    auto json = (*assets)->json("/interface.config:message.showTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.hideTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageHideTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.offset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageActiveOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.offsetHidden");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageHiddenOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.offsetHiddenBar");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageHiddenOffsetBar = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:message.windowSpring");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->messageWindowSpring = std::move(*value);
+  }
 
-  config->monsterHealthBarTime = assets->json("/interface.config:monsterHealth.showTime").toFloat();
+  {
+    auto json = (*assets)->json("/interface.config:monsterHealth.showTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->monsterHealthBarTime = std::move(*value);
+  }
 
-  config->hungerIcon = assets->json("/interface.config:hungerIcon").toString();
+  {
+    auto json = (*assets)->json("/interface.config:hungerIcon");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->hungerIcon = std::move(*value);
+  }
 
-  config->planetNameTime = assets->json("/interface.config:planetNameTime").toFloat();
-  config->planetNameFadeTime = assets->json("/interface.config:planetNameFadeTime").toFloat();
-  config->planetNameFormatString = assets->json("/interface.config:planetNameFormatString").toString();
-  config->planetNameTextStyle = assets->json("/interface.config:planetTextStyle");
-  config->planetNameOffset = jsonToVec2I(assets->json("/interface.config:planetTextOffset"));
+  {
+    auto json = (*assets)->json("/interface.config:planetNameTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->planetNameTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:planetNameFadeTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->planetNameFadeTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:planetNameFormatString");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toString();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->planetNameFormatString = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:planetTextStyle");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = TextStyle::create(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->planetNameTextStyle = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:planetTextOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->planetNameOffset = std::move(*value);
+  }
 
-  config->renderVirtualCursor = assets->json("/interface.config:renderVirtualCursor").toBool();
-  config->cursorItemSlot = assets->json("/interface.config:cursorItemSlot");
+  {
+    auto json = (*assets)->json("/interface.config:renderVirtualCursor");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toBool();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->renderVirtualCursor = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:cursorItemSlot");
+    if (!json) return std::unexpected(std::move(json.error()));
+    config->cursorItemSlot = std::move(*json);
+  }
 
-  config->debugOffset = jsonToVec2I(assets->json("/interface.config:debugOffset"));
-  config->debugTextStyle = assets->json("/interface.config:debugTextStyle");
-  config->debugSpatialClearTime = assets->json("/interface.config:debugSpatialClearTime").toFloat();
-  config->debugMapClearTime = assets->json("/interface.config:debugMapClearTime").toFloat();
-  config->debugBackgroundColor = jsonToColor(assets->json("/interface.config:debugBackgroundColor"));
-  config->debugBackgroundPad = assets->json("/interface.config:debugBackgroundPad").toUInt();
+  {
+    auto json = (*assets)->json("/interface.config:debugOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugOffset = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:debugTextStyle");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = TextStyle::create(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugTextStyle = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:debugSpatialClearTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugSpatialClearTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:debugMapClearTime");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toFloat();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugMapClearTime = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:debugBackgroundColor");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToColor(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugBackgroundColor = std::move(*value);
+  }
+  {
+    auto json = (*assets)->json("/interface.config:debugBackgroundPad");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = json->toUInt();
+    if (!value) return std::unexpected(std::move(value.error()));
+    config->debugBackgroundPad = std::move(*value);
+  }
 
-  for (auto const& path : assets->scanExtension("macros")) {
-    for (auto const& pair : assets->json(path).iterateObject())
-      config->macroCommands.add(pair.first, jsonToStringList(pair.second));
+  auto macros = (*assets)->scanExtension("macros");
+  if (!macros) return std::unexpected(std::move(macros.error()));
+  for (auto const& path : **macros) {
+    auto json = (*assets)->json(path.string());
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto entries = json->iterateObject();
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    for (auto const& pair : *entries) {
+      auto commands = jsonToStringList(pair.second);
+      if (!commands) return std::unexpected(std::move(commands.error()));
+      auto added = config->macroCommands.add(pair.first, std::move(*commands));
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
   }
 
   return config;

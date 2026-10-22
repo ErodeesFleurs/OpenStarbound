@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -57,7 +58,7 @@ public:
   }
 
   Layout(GuiContext& context);
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 };
 
 }

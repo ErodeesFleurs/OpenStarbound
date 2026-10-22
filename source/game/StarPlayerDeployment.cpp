@@ -1,3 +1,5 @@
+import star.format;
+import star.lua;
 import std;
 import star.json;
 import star.json_extra;
@@ -99,41 +101,67 @@ PlayerDeployment::PlayerDeployment(Root& root, Json const& config) : m_root(root
   m_deployed = false;
 }
 
-void PlayerDeployment::diskLoad(Json const& diskStore) {
-  m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
+std::expected<void, StarException> PlayerDeployment::diskLoad(Json const& diskStore) {
+  auto storage = diskStore.getObject("scriptStorage", JsonObject{});
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  return m_scriptComponent.setScriptStorage(std::move(*storage));
 }
 
-Json PlayerDeployment::diskStore() const {
-  JsonObject result;
-  result["scriptStorage"] = m_scriptComponent.getScriptStorage();
-  return result;
+std::expected<Json, StarException> PlayerDeployment::diskStore() const {
+  auto storage = m_scriptComponent.getScriptStorage();
+  if (!storage)
+    return std::unexpected(std::move(storage.error()));
+  return JsonObject{{"scriptStorage", std::move(*storage)}};
 }
 
-void PlayerDeployment::init(Entity* player, World* world) {
+std::expected<void, StarException> PlayerDeployment::init(Entity* player, World* world) {
   m_world = world;
-
-  if (m_deploying) {
-    m_deployed = true;
-    m_deploying = false;
-  } else {
-    m_deployed = false;
+  m_deployed = m_deploying;
+  m_deploying = false;
+  auto setup = [&]() -> std::expected<void, StarException> {
+    auto scriptsJson = m_config.get("scripts", JsonArray());
+    if (!scriptsJson)
+      return std::unexpected(std::move(scriptsJson.error()));
+    auto scripts = jsonToStringList(*scriptsJson);
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    auto installed = m_scriptComponent.setScripts(std::move(*scripts));
+    if (!installed)
+      return std::unexpected(std::move(installed.error()));
+    auto delta = m_config.getInt("scriptDelta", 10);
+    if (!delta)
+      return std::unexpected(std::move(delta.error()));
+    m_scriptComponent.setUpdateDelta(*delta);
+    auto add = [&](String name, std::expected<LuaCallbacks, StarException> callbacks) -> std::expected<void, StarException> {
+      if (!callbacks)
+        return std::unexpected(std::move(callbacks.error()));
+      return m_scriptComponent.addCallbacks(std::move(name), std::move(*callbacks));
+    };
+    if (auto result = add("entity", LuaBindings::makeEntityCallbacks(player)); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player))); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController())); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = add("config", LuaBindings::makeConfigCallbacks(
+        [this](String const& name, Json const& def) { return m_config.query(name, def); })); !result)
+      return std::unexpected(std::move(result.error()));
+    return m_scriptComponent.init(world);
+  }();
+  if (!setup) {
+    auto cleanup = uninit();
+    if (!cleanup)
+      return std::unexpected(setup.error().withContext(strf("Deployment initialization rollback failed: {}", cleanup.error().what())));
   }
-
-  m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
-  m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
-
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player)));
-  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
-  m_scriptComponent.addCallbacks("config",
-      LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_config.query(name, def); }));
-
-  m_scriptComponent.init(world);
+  return setup;
 }
 
-bool PlayerDeployment::canDeploy() {
-  std::optional<bool> res = m_scriptComponent.invoke<bool>("canDeploy");
-  return res && *res;
+std::expected<bool, StarException> PlayerDeployment::canDeploy() {
+  auto result = m_scriptComponent.invoke<bool>("canDeploy");
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return result->value_or(false);
 }
 
 void PlayerDeployment::setDeploying(bool deploying) {
@@ -148,41 +176,64 @@ bool PlayerDeployment::isDeployed() const {
   return m_deployed;
 }
 
-void PlayerDeployment::uninit() {
-  m_scriptComponent.uninit();
-  m_scriptComponent.removeCallbacks("entity");
-  m_scriptComponent.removeCallbacks("player");
-  m_scriptComponent.removeCallbacks("status");
-  m_scriptComponent.removeCallbacks("config");
+std::expected<void, StarException> PlayerDeployment::uninit() {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result) {
+      if (error)
+        *error = error->withContext(result.error().what());
+      else
+        error = std::move(result.error());
+    }
+  };
+  remember(m_scriptComponent.uninit());
+  for (auto const& name : {"entity", "player", "status", "config"})
+    remember(m_scriptComponent.removeCallbacks(name));
   m_world = nullptr;
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void PlayerDeployment::teleportOut() {
-  m_scriptComponent.invoke("teleportOut");
+std::expected<void, StarException> PlayerDeployment::teleportOut() {
+  auto result = m_scriptComponent.invoke("teleportOut");
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return {};
 }
 
-std::optional<ChainableJsonMessageResponse> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
-void PlayerDeployment::update(float dt) {
-  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+std::expected<void, StarException> PlayerDeployment::update(float dt) {
+  auto updated = m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  return {};
 }
 
-void PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {
+std::expected<void, StarException> PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {
   for (auto drawablePair : m_scriptComponent.drawables()) {
     drawablePair.first.translate(position);
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(RenderLayerPlayer));
+    auto added = renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(RenderLayerPlayer));
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
-  renderCallback->addParticles(m_scriptComponent.pullNewParticles());
+  auto particles = renderCallback->addParticles(m_scriptComponent.pullNewParticles());
+  if (!particles)
+    return std::unexpected(std::move(particles.error()));
   for (auto audio : m_scriptComponent.pullNewAudios()) {
     audio->setPosition(position);
-    renderCallback->addAudio(audio);
+    auto added = renderCallback->addAudio(audio);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
+  return {};
 }
 
-void PlayerDeployment::renderLightSources(RenderCallback* renderCallback) {
-  renderCallback->addLightSources(m_scriptComponent.lightSources());
+std::expected<void, StarException> PlayerDeployment::renderLightSources(RenderCallback* renderCallback) {
+  return renderCallback->addLightSources(m_scriptComponent.lightSources());
 }
 
 }

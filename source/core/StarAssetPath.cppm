@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.stream_formatter;
 import star.hash;
@@ -22,8 +23,8 @@ namespace Star {
 // portion of the path starts with a '?', and '?' separates each subsquent
 // directive.
 struct AssetPath {
-  friend DataStream& operator>>(DataStream& ds, AssetPath& path);
-  friend DataStream& operator<<(DataStream& ds, AssetPath const& path);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path);
   friend std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
   friend struct hash<AssetPath>;
   static AssetPath split(String const& path);
@@ -75,8 +76,8 @@ struct AssetPath {
   bool operator==(AssetPath const& rhs) const;
 };
 
-DataStream& operator>>(DataStream& ds, AssetPath& path);
-DataStream& operator<<(DataStream& ds, AssetPath const& path);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, AssetPath& path);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, AssetPath const& path);
 
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
 

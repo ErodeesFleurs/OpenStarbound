@@ -40,8 +40,8 @@
   "debugSpatialClearTime" : 0.0,
   "debugOffset" : [80, 130],
 
-  // Change planet name to support the new internal string formatting.
-  "planetNameFormatString" : "- {} -",
+  // Dynamic text uses named tags, not runtime standard format strings.
+  "planetNameFormatString" : "- <worldName> -",
   "planetTextOffset" : [0, 120],
   "planetTextStyle" : {
     "backDirectives" : "border=5;fff;fff?border=1;fff;fff7?multiply=000",

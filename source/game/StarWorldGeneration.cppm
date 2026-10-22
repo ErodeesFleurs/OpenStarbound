@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.vector;
@@ -93,16 +94,17 @@ namespace Star {
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
-  LiquidWorld(WorldServer* world);
+  [[nodiscard]] static std::expected<std::shared_ptr<LiquidWorld>, StarException> create(WorldServer* world);
 
   Vec2I uniqueLocation(Vec2I const& location) const override;
-  CellularLiquidCell<LiquidId> cell(Vec2I const& location) const override;
-  float drainLevel(Vec2I const& location) const override;
-  void setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId> const& flow) override;
-  void liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) override;
-  void liquidCollision(Vec2I const& pos, LiquidId liquid, Vec2I const& blockPos) override;
+  [[nodiscard]] std::expected<CellularLiquidCell<LiquidId>, StarException> cell(Vec2I const& location) const override;
+  [[nodiscard]] std::expected<float, StarException> drainLevel(Vec2I const& location) const override;
+  [[nodiscard]] std::expected<void, StarException> setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId> const& flow) override;
+  [[nodiscard]] std::expected<void, StarException> liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) override;
+  [[nodiscard]] std::expected<void, StarException> liquidCollision(Vec2I const& pos, LiquidId liquid, Vec2I const& blockPos) override;
 
 private:
+  explicit LiquidWorld(WorldServer* world) : m_worldServer(world) {}
   WorldServer* m_worldServer;
   std::shared_ptr<LiquidsDatabase const> m_liquidsDatabase;
   std::shared_ptr<MaterialDatabase const> m_materialDatabase;
@@ -110,12 +112,13 @@ private:
 
 class FallingBlocksWorld : public FallingBlocksFacade {
 public:
-  FallingBlocksWorld(WorldServer* world);
+  [[nodiscard]] static std::expected<std::shared_ptr<FallingBlocksWorld>, StarException> create(WorldServer* world);
 
-  FallingBlockType blockType(Vec2I const& pos) override;
-  void moveBlock(Vec2I const& from, Vec2I const& to) override;
+  [[nodiscard]] std::expected<FallingBlockType, StarException> blockType(Vec2I const& pos) override;
+  [[nodiscard]] std::expected<void, StarException> moveBlock(Vec2I const& from, Vec2I const& to) override;
 
 private:
+  explicit FallingBlocksWorld(WorldServer* world) : m_worldServer(world) {}
   WorldServer* m_worldServer;
   std::shared_ptr<MaterialDatabase const> m_materialDatabase;
 };
@@ -124,38 +127,38 @@ class DungeonGeneratorWorld : public DungeonGeneratorWorldFacade {
 public:
   DungeonGeneratorWorld(WorldServer* worldServer, bool markForActivation);
 
-  void markRegion(RectI const& region) override;
-  void markTerrain(PolyF const& region) override;
-  void markSpace(PolyF const& region) override;
+  [[nodiscard]] std::expected<void, StarException> markRegion(RectI const& region) override;
+  [[nodiscard]] std::expected<void, StarException> markTerrain(PolyF const& region) override;
+  [[nodiscard]] std::expected<void, StarException> markSpace(PolyF const& region) override;
 
-  void setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) override;
-  void setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) override;
-  void setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) override;
-  void setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) override;
-  void placeObject(
+  [[nodiscard]] std::expected<void, StarException> setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) override;
+  [[nodiscard]] std::expected<void, StarException> setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) override;
+  [[nodiscard]] std::expected<void, StarException> setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) override;
+  [[nodiscard]] std::expected<void, StarException> setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) override;
+  [[nodiscard]] std::expected<void, StarException> placeObject(
       Vec2I const& pos, String const& objectName, Star::Direction direction, Json const& parameters) override;
-  void placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) override;
-  void placeSurfaceBiomeItems(Vec2I const& pos) override;
-  void placeBiomeTree(Vec2I const& pos) override;
-  void addDrop(Vec2F const& position, ItemDescriptor const& item) override;
-  void spawnNpc(Vec2F const& position, Json const& parameters) override;
-  void spawnStagehand(Vec2F const& position, Json const& definition) override;
-  void setLiquid(Vec2I const& pos, LiquidStore const& liquid) override;
-  void setPlayerStart(Vec2F const& startPosition) override;
-  void connectWireGroup(List<Vec2I> const& wireGroup) override;
-  void setTileProtection(DungeonId dungeonId, bool isProtected) override;
-  bool checkSolid(Vec2I const& position, TileLayer layer) override;
-  bool checkOpen(Vec2I const& position, TileLayer open) override;
-  bool checkOceanLiquid(Vec2I const& position) override;
-  DungeonId getDungeonIdAt(Vec2I const& position) override;
-  void setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) override;
-  void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) override;
+  [[nodiscard]] std::expected<void, StarException> placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) override;
+  [[nodiscard]] std::expected<void, StarException> placeSurfaceBiomeItems(Vec2I const& pos) override;
+  [[nodiscard]] std::expected<void, StarException> placeBiomeTree(Vec2I const& pos) override;
+  [[nodiscard]] std::expected<void, StarException> addDrop(Vec2F const& position, ItemDescriptor const& item) override;
+  [[nodiscard]] std::expected<void, StarException> spawnNpc(Vec2F const& position, Json const& parameters) override;
+  [[nodiscard]] std::expected<void, StarException> spawnStagehand(Vec2F const& position, Json const& definition) override;
+  [[nodiscard]] std::expected<void, StarException> setLiquid(Vec2I const& pos, LiquidStore const& liquid) override;
+  [[nodiscard]] std::expected<void, StarException> setPlayerStart(Vec2F const& startPosition) override;
+  [[nodiscard]] std::expected<void, StarException> connectWireGroup(List<Vec2I> const& wireGroup) override;
+  [[nodiscard]] std::expected<void, StarException> setTileProtection(DungeonId dungeonId, bool isProtected) override;
+  [[nodiscard]] std::expected<bool, StarException> checkSolid(Vec2I const& position, TileLayer layer) override;
+  [[nodiscard]] std::expected<bool, StarException> checkOpen(Vec2I const& position, TileLayer open) override;
+  [[nodiscard]] std::expected<bool, StarException> checkOceanLiquid(Vec2I const& position) override;
+  [[nodiscard]] std::expected<DungeonId, StarException> getDungeonIdAt(Vec2I const& position) override;
+  [[nodiscard]] std::expected<void, StarException> setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) override;
+  [[nodiscard]] std::expected<void, StarException> clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) override;
 
   WorldGeometry getWorldGeometry() const override;
 
 private:
-  void placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position);
-  void placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
+  [[nodiscard]] std::expected<void, StarException> placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position);
+  [[nodiscard]] std::expected<void, StarException> placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
 
   WorldServer* m_worldServer;
   bool m_markForActivation;
@@ -167,18 +170,18 @@ public:
 
   WorldGeometry geometry() const override;
   List<RectF> clientWindows() const override;
-  bool signalRegion(RectF const& region) const override;
-  CollisionKind collision(Vec2I const& position) const override;
-  bool isFreeSpace(RectF const& area) const override;
-  bool isBackgroundEmpty(Vec2I const& position) const override;
+  [[nodiscard]] std::expected<bool, StarException> signalRegion(RectF const& region) const override;
+  [[nodiscard]] std::expected<CollisionKind, StarException> collision(Vec2I const& position) const override;
+  [[nodiscard]] std::expected<bool, StarException> isFreeSpace(RectF const& area) const override;
+  [[nodiscard]] std::expected<bool, StarException> isBackgroundEmpty(Vec2I const& position) const override;
   LiquidLevel liquidLevel(Vec2I const& position) const override;
-  bool spawningProhibited(RectF const& area) const override;
+  [[nodiscard]] std::expected<bool, StarException> spawningProhibited(RectF const& area) const override;
   std::uint64_t spawnSeed() const override;
-  SpawnProfile spawnProfile(Vec2F const& position) const override;
+  [[nodiscard]] std::expected<SpawnProfile, StarException> spawnProfile(Vec2F const& position) const override;
   float dayLevel() const override;
-  float threatLevel() const override;
-  EntityId spawnEntity(std::shared_ptr<Entity> entity) const override;
-  void despawnEntity(EntityId entityId) override;
+  [[nodiscard]] std::expected<float, StarException> threatLevel() const override;
+  [[nodiscard]] std::expected<EntityId, StarException> spawnEntity(std::shared_ptr<Entity> entity) const override;
+  [[nodiscard]] std::expected<void, StarException> despawnEntity(EntityId entityId) override;
   std::shared_ptr<Entity> getEntity(EntityId entityId) const override;
 
 private:
@@ -189,16 +192,16 @@ class WorldGenerator : public WorldGeneratorFacade {
 public:
   WorldGenerator(WorldServer* server);
 
-  void generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
-  void sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
-  void terraformSector(WorldStorage* worldStorage, Sector const& sector) override;
-  void initEntity(WorldStorage* worldStorage, EntityId entityId, std::shared_ptr<Entity> const& entity) override;
-  void destructEntity(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) override;
-  bool entityKeepAlive(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
-  bool entityPersistent(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) override;
+  [[nodiscard]] std::expected<void, StarException> generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
+  [[nodiscard]] std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
+  [[nodiscard]] std::expected<void, StarException> terraformSector(WorldStorage* worldStorage, Sector const& sector) override;
+  [[nodiscard]] std::expected<void, StarException> initEntity(WorldStorage* worldStorage, EntityId entityId, std::shared_ptr<Entity> const& entity) override;
+  [[nodiscard]] std::expected<void, StarException> destructEntity(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) override;
+  [[nodiscard]] std::expected<bool, StarException> entityKeepAlive(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
+  [[nodiscard]] std::expected<bool, StarException> entityPersistent(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
+  [[nodiscard]] std::expected<RpcPromise<Vec2I>, StarException> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) override;
 
-  void replaceBiomeBlocks(ServerTile* tile);
+  [[nodiscard]] std::expected<void, StarException> replaceBiomeBlocks(ServerTile* tile);
 
 private:
   struct QueuedPlacement {
@@ -208,23 +211,23 @@ private:
     bool fulfilled;
   };
 
-  void prepareTiles(WorldStorage* worldStorage, Sector const& sector);
-  void generateMicroDungeons(WorldStorage* worldStorage, Sector const& sector);
-  void generateCaveLiquid(WorldStorage* worldStorage, Sector const& sector);
-  void prepareSector(WorldStorage* worldStorage, Sector const& sector);
-  void prepareSectorBiomeBlocks(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareTiles(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> generateMicroDungeons(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> generateCaveLiquid(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareSector(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> prepareSectorBiomeBlocks(WorldStorage* worldStorage, Sector const& sector);
 
-  void placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position);
+  [[nodiscard]] std::expected<void, StarException> placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position);
 
-  void reapplyBiome(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> reapplyBiome(WorldStorage* worldStorage, Sector const& sector);
 
-  Set<Vec2I> caveLiquidSeeds(WorldStorage* worldStorage, Sector const& sector);
+  [[nodiscard]] std::expected<Set<Vec2I>, StarException> caveLiquidSeeds(WorldStorage* worldStorage, Sector const& sector);
   Map<Vec2I, float> determineLiquidLevel(Set<Vec2I> const& spots, Set<Vec2I> const& filled);
   void levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled, Map<Vec2I, float>& results);
 
   // Special plant placement routine that does slight terrain adjustments to
   // fit plants.
-  bool placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position);
+  [[nodiscard]] std::expected<bool, StarException> placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position);
 
   WorldServer* m_worldServer;
   std::shared_ptr<MicroDungeonFactory> m_microDungeonFactory;

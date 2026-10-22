@@ -194,295 +194,390 @@ import star.client_context;
 import star.algorithm;
 namespace Star {
 
-extern EnumMap<QuestState> const QuestStateNames {
-  {QuestState::New, "New"},
-  {QuestState::Offer, "Offer"},
-  {QuestState::Active, "Active"},
-  {QuestState::Complete, "Complete"},
-  {QuestState::Failed, "Failed"}
-};
+extern std::expected<EnumMap<QuestState>, StarException> const QuestStateNames = EnumMap<QuestState>::create({
+  {QuestState::New, "New"}, {QuestState::Offer, "Offer"}, {QuestState::Active, "Active"},
+  {QuestState::Complete, "Complete"}, {QuestState::Failed, "Failed"}
+});
 
-Quest::Quest(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player) : m_root(root), m_scriptComponent(root) {
-  m_trackedIndicator = m_root.assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = m_root.assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
+Quest::Quest(Root& root)
+  : m_root(root), m_player(nullptr), m_world(nullptr), m_client(nullptr),
+    m_state(QuestState::New), m_inited(false), m_showDialog(false), m_arcPos(0),
+    m_displayParameters{}, m_money(0), m_lastUpdatedOn(0),
+    m_unread(true), m_canTurnIn(false), m_scriptComponent(root) {}
 
-  m_money = 0;
-  m_unread = true;
-  m_canTurnIn = false;
-  m_lastUpdatedOn = Time::monotonicMilliseconds();
-
-  m_arc = questArc;
-  m_arcPos = arcPos;
-
-  auto itemDatabase = m_root.itemDatabase();
-  auto templateDatabase = m_root.questTemplateDatabase();
-  auto questTemplate = templateDatabase->questTemplate(templateId());
-
-  m_parameters = questDescriptor().parameters;
-  m_displayParameters = DisplayParameters {
-     questTemplate->ephemeral,
-     questTemplate->showInLog,
-     questTemplate->showAcceptDialog,
-     questTemplate->showCompleteDialog,
-     questTemplate->showFailDialog,
-     questTemplate->mainQuest,
-     questTemplate->hideCrossServer
-  };
-  setEntityParameter("player", player);
-
-  m_money = m_root.random().randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
-  m_rewards = m_root.random().randValueFrom(questTemplate->rewards, {}).transformed(
-      [&itemDatabase](ItemDescriptor const& item) -> std::shared_ptr<Item const> { return itemDatabase->item(item); });
-
-  for (String const& rewardParamName : questTemplate->rewardParameters) {
-    if (!m_parameters.contains(rewardParamName))
-      continue;
-    QuestParam const& rewardParam = m_parameters[rewardParamName];
-    if (std::holds_alternative<QuestItem>(rewardParam.detail)) {
-      addReward(std::get<QuestItem>(rewardParam.detail).descriptor());
-    } else {
-      if (!std::holds_alternative<QuestItemList>(rewardParam.detail))
-        throw StarException::format("Quest parameter {} cannot be used as a reward parameter", rewardParamName);
-      for (auto item : std::get<QuestItemList>(rewardParam.detail))
-        addReward(item);
-    }
+std::expected<std::shared_ptr<Quest>, StarException> Quest::create(Root& root, QuestArcDescriptor const& arc, std::size_t arcPos, Player* player) {
+  auto quest = std::shared_ptr<Quest>(new Quest(root));
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto tracked = (*assets)->json("/quests/quests.config:trackedCustomIndicator");
+  if (!tracked) return std::unexpected(std::move(tracked.error()));
+  auto trackedString = tracked->toString();
+  if (!trackedString) return std::unexpected(std::move(trackedString.error()));
+  quest->m_trackedIndicator = std::move(*trackedString);
+  auto untracked = (*assets)->json("/quests/quests.config:untrackedCustomIndicator");
+  if (!untracked) return std::unexpected(std::move(untracked.error()));
+  auto untrackedString = untracked->toString();
+  if (!untrackedString) return std::unexpected(std::move(untrackedString.error()));
+  quest->m_untrackedIndicator = std::move(*untrackedString);
+  quest->m_lastUpdatedOn = Time::monotonicMilliseconds();
+  if (arcPos >= arc.quests.size())
+    return std::unexpected(StarException::format("Quest arc position {} out of range", arcPos));
+  quest->m_arc = arc;
+  quest->m_arcPos = arcPos;
+  auto items = root.itemDatabase();
+  if (!items) return std::unexpected(std::move(items.error()));
+  auto config = quest->getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto const& qt = **config;
+  quest->m_parameters = quest->questDescriptor().parameters;
+  quest->m_displayParameters = DisplayParameters{qt.ephemeral, qt.showInLog, qt.showAcceptDialog,
+      qt.showCompleteDialog, qt.showFailDialog, qt.mainQuest, qt.hideCrossServer};
+  auto parameter = quest->setEntityParameter("player", player);
+  if (!parameter) return std::unexpected(std::move(parameter.error()));
+  auto money = root.random().randUInt(qt.moneyRange[0], qt.moneyRange[1]);
+  if (!money) return std::unexpected(std::move(money.error()));
+  quest->m_money = *money;
+  for (auto const& descriptor : root.random().randValueFrom(qt.rewards, {})) {
+    auto item = (*items)->item(descriptor);
+    if (!item) return std::unexpected(std::move(item.error()));
+    quest->m_rewards.append(*item);
   }
-
-  m_title = questTemplate->title;
-  m_text = questTemplate->text;
-  m_completionText = questTemplate->completionText;
-  m_failureText = questTemplate->failureText;
-
-  m_state = QuestState::New;
-  m_showDialog = false;
-
-  m_player = nullptr;
-  m_world = nullptr;
-  m_inited = false;
+  for (auto const& name : qt.rewardParameters) {
+    auto parameter = quest->m_parameters.maybe(name);
+    if (!parameter) continue;
+    if (auto item = std::get_if<QuestItem>(&parameter->detail)) {
+      auto descriptor = item->descriptor();
+      if (!descriptor) return std::unexpected(std::move(descriptor.error()));
+      auto added = quest->addReward(*descriptor);
+      if (!added) return std::unexpected(std::move(added.error()));
+    } else if (auto items = std::get_if<QuestItemList>(&parameter->detail)) {
+      for (auto const& item : *items) {
+        auto added = quest->addReward(item);
+        if (!added) return std::unexpected(std::move(added.error()));
+      }
+    } else return std::unexpected(StarException::format("Quest parameter {} cannot be used as a reward parameter", name));
+  }
+  quest->m_title = qt.title;
+  quest->m_text = qt.text;
+  quest->m_completionText = qt.completionText;
+  quest->m_failureText = qt.failureText;
+  return quest;
 }
 
-Quest::Quest(Root& root, Json const& spec) : m_root(root), m_scriptComponent(root) {
-  m_trackedIndicator = m_root.assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = m_root.assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
-
-  auto versioningDatabase = m_root.versioningDatabase();
-  Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Quest");
-
-  m_state = QuestStateNames.getLeft(diskStore.getString("state"));
-
-  m_arc = QuestArcDescriptor::diskLoad(m_root, diskStore.get("arc"));
-  m_arcPos = diskStore.getUInt("arcPos");
-  m_parameters = questParamsDiskLoad(m_root, diskStore.get("parameters"));
-  m_worldId = diskStore.optString("worldId").transform(parseWorldId);
-  m_location = diskStore.opt("location").transform([](Json const& json) {
-    return std::make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
+std::expected<std::shared_ptr<Quest>, StarException> Quest::create(Root& root, Json const& spec) {
+  auto quest = std::shared_ptr<Quest>(new Quest(root));
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto tracked = (*assets)->json("/quests/quests.config:trackedCustomIndicator");
+  if (!tracked) return std::unexpected(std::move(tracked.error()));
+  auto trackedString = tracked->toString();
+  if (!trackedString) return std::unexpected(std::move(trackedString.error()));
+  quest->m_trackedIndicator = std::move(*trackedString);
+  auto untracked = (*assets)->json("/quests/quests.config:untrackedCustomIndicator");
+  if (!untracked) return std::unexpected(std::move(untracked.error()));
+  auto untrackedString = untracked->toString();
+  if (!untrackedString) return std::unexpected(std::move(untrackedString.error()));
+  quest->m_untrackedIndicator = std::move(*untrackedString);
+  auto versions = root.versioningDatabase();
+  if (!versions) return std::unexpected(std::move(versions.error()));
+  auto versioned = VersionedJson::fromJson(spec);
+  if (!versioned) return std::unexpected(std::move(versioned.error()));
+  auto store = (*versions)->loadVersionedJson(*versioned, "Quest");
+  if (!store) return std::unexpected(std::move(store.error()));
+  auto stateName = store->getString("state");
+  if (!stateName) return std::unexpected(std::move(stateName.error()));
+  if (!QuestStateNames) return std::unexpected(QuestStateNames.error());
+  auto state = QuestStateNames->getLeft(*stateName);
+  if (!state) return std::unexpected(std::move(state.error()));
+  quest->m_state = **state;
+  auto arcJson = store->get("arc");
+  if (!arcJson) return std::unexpected(std::move(arcJson.error()));
+  auto arc = QuestArcDescriptor::diskLoad(root, *arcJson);
+  if (!arc) return std::unexpected(std::move(arc.error()));
+  quest->m_arc = std::move(*arc);
+  auto position = store->getUInt("arcPos");
+  if (!position) return std::unexpected(std::move(position.error()));
+  if (*position >= quest->m_arc.quests.size())
+    return std::unexpected(StarException::format("Quest arc position {} out of range", *position));
+  quest->m_arcPos = *position;
+  auto parametersJson = store->get("parameters");
+  if (!parametersJson) return std::unexpected(std::move(parametersJson.error()));
+  auto parameters = questParamsDiskLoad(root, *parametersJson);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  quest->m_parameters = std::move(*parameters);
+  auto worldName = store->optString("worldId");
+  if (!worldName) return std::unexpected(std::move(worldName.error()));
+  if (*worldName) {
+    auto world = parseWorldId(**worldName);
+    if (!world) return std::unexpected(std::move(world.error()));
+    quest->m_worldId = std::move(*world);
+  }
+  auto locationJson = store->opt("location");
+  if (!locationJson) return std::unexpected(std::move(locationJson.error()));
+  if (*locationJson) {
+    auto systemJson = (**locationJson).get("system");
+    if (!systemJson) return std::unexpected(std::move(systemJson.error()));
+    auto system = jsonToVec3I(*systemJson);
+    if (!system) return std::unexpected(std::move(system.error()));
+    auto value = (**locationJson).get("location");
+    if (!value) return std::unexpected(std::move(value.error()));
+    auto location = jsonToSystemLocation(*value);
+    if (!location) return std::unexpected(std::move(location.error()));
+    quest->m_location = std::make_pair(*system, std::move(*location));
+  }
+  auto uuidString = store->optString("serverUuid");
+  if (!uuidString) return std::unexpected(std::move(uuidString.error()));
+  if (*uuidString) {
+    auto uuid = Uuid::create(**uuidString);
+    if (!uuid) return std::unexpected(std::move(uuid.error()));
+    quest->m_serverUuid = std::move(*uuid);
+  }
+  auto money = store->getUInt("money");
+  if (!money) return std::unexpected(std::move(money.error()));
+  quest->m_money = *money;
+  auto items = root.itemDatabase();
+  if (!items) return std::unexpected(std::move(items.error()));
+  auto rewards = store->getArray("rewards");
+  if (!rewards) return std::unexpected(std::move(rewards.error()));
+  for (auto const& entry : *rewards) {
+    auto item = (*items)->diskLoad(entry);
+    if (!item) return std::unexpected(std::move(item.error()));
+    quest->m_rewards.append(*item);
+  }
+  auto updated = store->getInt("lastUpdatedOn");
+  if (!updated) return std::unexpected(std::move(updated.error()));
+  quest->m_lastUpdatedOn = *updated;
+  auto unread = store->getBool("unread", true);
+  if (!unread) return std::unexpected(std::move(unread.error()));
+  quest->m_unread = *unread;
+  auto turnIn = store->getBool("canTurnIn", false);
+  if (!turnIn) return std::unexpected(std::move(turnIn.error()));
+  quest->m_canTurnIn = *turnIn;
+  auto indicatorsJson = store->get("indicators", JsonArray{});
+  if (!indicatorsJson) return std::unexpected(std::move(indicatorsJson.error()));
+  auto indicators = jsonToStringSet(*indicatorsJson);
+  if (!indicators) return std::unexpected(std::move(indicators.error()));
+  quest->m_indicators = std::move(*indicators);
+  auto storage = store->getObject("scriptStorage", {});
+  if (!storage) return std::unexpected(std::move(storage.error()));
+  auto setStorage = quest->m_scriptComponent.setScriptStorage(std::move(*storage));
+  if (!setStorage) return std::unexpected(std::move(setStorage.error()));
+  auto config = quest->getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto const& qt = **config;
+  quest->m_displayParameters = DisplayParameters{qt.ephemeral, qt.showInLog, qt.showAcceptDialog,
+      qt.showCompleteDialog, qt.showFailDialog, qt.mainQuest, qt.hideCrossServer};
+  auto title = store->getString("title", qt.title);
+  if (!title) return std::unexpected(std::move(title.error()));
+  quest->m_title = std::move(*title);
+  auto text = store->getString("text", qt.text);
+  if (!text) return std::unexpected(std::move(text.error()));
+  quest->m_text = std::move(*text);
+  auto completion = store->getString("completionText", qt.completionText);
+  if (!completion) return std::unexpected(std::move(completion.error()));
+  quest->m_completionText = std::move(*completion);
+  auto failure = store->getString("failureText", qt.failureText);
+  if (!failure) return std::unexpected(std::move(failure.error()));
+  quest->m_failureText = std::move(*failure);
+  auto portraitsJson = store->get("portraits", JsonObject{});
+  if (!portraitsJson) return std::unexpected(std::move(portraitsJson.error()));
+  auto portraits = jsonToMapV<StringMap<List<Drawable>>>(*portraitsJson, [&root](Json const& portrait) -> std::expected<List<Drawable>, StarException> {
+    auto metadata = root.imageMetadataDatabase();
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    auto array = portrait.toArray();
+    if (!array) return std::unexpected(std::move(array.error()));
+    List<Drawable> result;
+    for (auto const& value : *array) {
+      auto drawable = Drawable::create(**metadata, value);
+      if (!drawable) return std::unexpected(std::move(drawable.error()));
+      result.append(std::move(*drawable));
+    }
+    return result;
   });
-  m_serverUuid = diskStore.optString("serverUuid").transform(construct<Uuid>());
-  m_money = diskStore.getUInt("money");
-
-  auto itemDatabase = m_root.itemDatabase();
-  m_rewards = diskStore.getArray("rewards").transformed(
-      [&itemDatabase](Json const& json) -> std::shared_ptr<Item const> { return itemDatabase->diskLoad(json); });
-
-  m_lastUpdatedOn = diskStore.getInt("lastUpdatedOn");
-  m_unread = diskStore.getBool("unread", true);
-  m_canTurnIn = diskStore.getBool("canTurnIn", false);
-  m_indicators = jsonToStringSet(diskStore.get("indicators", JsonArray{}));
-  m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
-
-  auto templateDatabase = m_root.questTemplateDatabase();
-  auto questTemplate = templateDatabase->questTemplate(templateId());
-  m_displayParameters = DisplayParameters{
-    questTemplate->ephemeral,
-    questTemplate->showInLog,
-    questTemplate->showAcceptDialog,
-    questTemplate->showCompleteDialog,
-    questTemplate->showFailDialog,
-    questTemplate->mainQuest,
-    questTemplate->hideCrossServer
-  };
-
-  m_title = diskStore.getString("title", questTemplate->title);
-  m_text = diskStore.getString("text", questTemplate->text);
-  m_completionText = diskStore.getString("completionText", questTemplate->completionText);
-  m_failureText = diskStore.getString("failureText", questTemplate->failureText);
-
-  m_portraits = jsonToMapV<StringMap<List<Drawable>>>(diskStore.get("portraits", JsonObject{}), [this](Json const& portrait) {
-      return portrait.toArray().transformed([this](Json const& drawable) { return Drawable(*m_root.imageMetadataDatabase(), drawable); });
-    });
-  m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), std::mem_fn(&Json::toString));
-  m_showDialog = diskStore.getBool("showDialog", false);
-
-  m_player = nullptr;
-  m_world = nullptr;
-  m_inited = false;
+  if (!portraits) return std::unexpected(std::move(portraits.error()));
+  quest->m_portraits = std::move(*portraits);
+  auto titlesJson = store->get("portraitTitles", JsonObject{});
+  if (!titlesJson) return std::unexpected(std::move(titlesJson.error()));
+  auto titles = jsonToMapV<StringMap<String>>(*titlesJson, [](Json const& json) { return json.toString(); });
+  if (!titles) return std::unexpected(std::move(titles.error()));
+  quest->m_portraitTitles = std::move(*titles);
+  auto show = store->getBool("showDialog", false);
+  if (!show) return std::unexpected(std::move(show.error()));
+  quest->m_showDialog = *show;
+  return quest;
 }
 
-Json Quest::diskStore() const {
-  auto versioningDatabase = m_root.versioningDatabase();
-
-  JsonObject result;
-  result["state"] = QuestStateNames.getRight(m_state);
-  result["arc"] = m_arc.diskStore(m_root);
-  result["arcPos"] = m_arcPos;
-  result["parameters"] = questParamsDiskStore(m_root, m_parameters);
-  result["money"] = m_money;
-
-  result["worldId"] = jsonFromOptional(m_worldId.transform(printWorldId));
-  result["location"] = jsonFromOptional(m_location.transform([](std::pair<Vec3I, SystemLocation> const& location) {
-      return JsonObject{{"system", jsonFromVec3I(location.first)}, {"location", jsonFromSystemLocation(location.second)}};
-    }));
+std::expected<Json, StarException> Quest::diskStore() const {
+  auto versions = m_root.versioningDatabase();
+  if (!versions) return std::unexpected(std::move(versions.error()));
+  if (!QuestStateNames) return std::unexpected(QuestStateNames.error());
+  auto state = QuestStateNames->getRight(m_state);
+  if (!state) return std::unexpected(std::move(state.error()));
+  auto arc = m_arc.diskStore(m_root);
+  if (!arc) return std::unexpected(std::move(arc.error()));
+  auto parameters = questParamsDiskStore(m_root, m_parameters);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  JsonObject result{{"state", **state}, {"arc", *arc}, {"arcPos", m_arcPos},
+      {"parameters", *parameters}, {"money", m_money}};
+  auto world = jsonFromOptional(m_worldId, printWorldId);
+  if (!world) return std::unexpected(std::move(world.error()));
+  result["worldId"] = std::move(*world);
+  auto location = jsonFromOptional(m_location, [](std::pair<Vec3I, SystemLocation> const& location) -> Json {
+    return JsonObject{{"system", jsonFromVec3I(location.first)}, {"location", jsonFromSystemLocation(location.second)}};
+  });
+  if (!location) return std::unexpected(std::move(location.error()));
+  result["location"] = std::move(*location);
   result["serverUuid"] = jsonFromOptional(m_serverUuid.transform(std::mem_fn(&Uuid::hex)));
-
-  auto itemDatabase = m_root.itemDatabase();
-  result["rewards"] =
-      m_rewards.transformed([&itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->diskStore(item); });
-
+  auto items = m_root.itemDatabase();
+  if (!items) return std::unexpected(std::move(items.error()));
+  auto rewards = jsonFromList(m_rewards, [&items](auto const& item) { return (*items)->diskStore(item); });
+  if (!rewards) return std::unexpected(std::move(rewards.error()));
+  result["rewards"] = std::move(*rewards);
   result["lastUpdatedOn"] = m_lastUpdatedOn;
   result["unread"] = m_unread;
   result["canTurnIn"] = m_canTurnIn;
   result["indicators"] = jsonFromStringSet(m_indicators);
-  result["scriptStorage"] = m_scriptComponent.getScriptStorage();
-
+  auto storage = m_scriptComponent.getScriptStorage();
+  if (!storage) return std::unexpected(std::move(storage.error()));
+  result["scriptStorage"] = std::move(*storage);
   result["title"] = m_title;
   result["text"] = m_text;
   result["completionText"] = m_completionText;
   result["failureText"] = m_failureText;
-
-  result["portraits"] = jsonFromMapV(m_portraits, [](List<Drawable> const& portrait) {
-      return portrait.transformed(std::mem_fn(&Drawable::toJson));
-    });
-  result["portraitTitles"] = jsonFromMap(m_portraitTitles);
+  auto portraits = jsonFromMapV(m_portraits, [](List<Drawable> const& portrait) {
+    return jsonFromList(portrait, [](Drawable const& drawable) { return drawable.toJson(); });
+  });
+  if (!portraits) return std::unexpected(std::move(portraits.error()));
+  result["portraits"] = std::move(*portraits);
+  auto titles = jsonFromMap(m_portraitTitles);
+  if (!titles) return std::unexpected(std::move(titles.error()));
+  result["portraitTitles"] = std::move(*titles);
   result["showDialog"] = m_showDialog;
-
-  return versioningDatabase->makeCurrentVersionedJson("Quest", result).toJson();
+  auto versioned = (*versions)->makeCurrentVersionedJson("Quest", result);
+  if (!versioned) return std::unexpected(std::move(versioned.error()));
+  return versioned->toJson();
 }
 
-std::shared_ptr<QuestTemplate> Quest::getTemplate() const {
-  return m_root.questTemplateDatabase()->questTemplate(templateId());
+std::expected<std::shared_ptr<QuestTemplate>, StarException> Quest::getTemplate() const {
+  auto database = m_root.questTemplateDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto result = (*database)->questTemplate(templateId());
+  if (!result) return std::unexpected(std::move(result.error()));
+  if (!*result) return std::unexpected(StarException::format("No quest template found for id '{}'", templateId()));
+  return *result;
 }
 
-void Quest::init(Player* player, World* world, UniverseClient* client) {
+std::expected<void, StarException> Quest::init(Player* player, World* world, UniverseClient* client) {
   m_player = player;
   m_world = world;
   m_client = client;
-
-  if (m_state == QuestState::Offer || m_state == QuestState::Active)
-    initScript();
+  if (m_state == QuestState::Offer || m_state == QuestState::Active) return initScript();
+  return {};
 }
-
-void Quest::uninit() {
-  if (m_inited)
-    uninitScript();
-
+std::expected<void, StarException> Quest::uninit() {
+  if (m_inited) {
+    auto result = uninitScript();
+    if (!result) return std::unexpected(std::move(result.error()));
+  }
   m_player = nullptr;
   m_world = nullptr;
+  return {};
 }
-
-std::optional<ChainableJsonMessageResponse> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  if (!m_inited)
-    return {};
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  if (!m_inited) return std::optional<ChainableJsonMessageResponse>();
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
-
-
-std::optional<LuaValue> Quest::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
-  if (!m_inited)
-    return {};
+std::expected<std::optional<LuaValue>, StarException> Quest::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+  if (!m_inited) return std::optional<LuaValue>();
   return m_scriptComponent.invoke(func, args);
 }
-
-void Quest::update(float dt) {
-  if (!m_inited)
-    return;
-  m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+std::expected<void, StarException> Quest::update(float dt) {
+  if (!m_inited) return {};
+  auto result = m_scriptComponent.update(m_scriptComponent.updateDt(dt));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
-void Quest::offer() {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((m_player && m_world));
-  }
-
-  if (!showAcceptDialog()) {
-    start();
-  } else {
-    setState(QuestState::Offer);
-    initScript();
-    m_scriptComponent.invoke("questOffer");
-  }
+std::expected<void, StarException> Quest::offer() {
+  if (!showAcceptDialog()) return start();
+  setState(QuestState::Offer);
+  auto initialized = initScript();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  auto result = m_scriptComponent.invoke("questOffer");
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
-void Quest::declineOffer() {
+std::expected<void, StarException> Quest::declineOffer() {
   setState(QuestState::New);
-  m_scriptComponent.invoke("questDecline");
-  uninitScript();
+  auto result = m_scriptComponent.invoke("questDecline");
+  if (!result) return std::unexpected(std::move(result.error()));
+  return uninitScript();
 }
-
-void Quest::cancelOffer() {
+std::expected<void, StarException> Quest::cancelOffer() {
   setState(QuestState::New);
-  m_scriptComponent.invoke("questCancel");
-  uninitScript();
+  auto result = m_scriptComponent.invoke("questCancel");
+  if (!result) return std::unexpected(std::move(result.error()));
+  return uninitScript();
 }
-
-void Quest::start() {
+std::expected<void, StarException> Quest::start() {
   setState(QuestState::Active);
-  initScript();
-
+  auto initialized = initScript();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
   auto current = m_player->questManager()->trackedQuest();
-  if (mainQuest() || !current)
-    m_player->questManager()->setAsTracked(questId());
-
-  m_scriptComponent.invoke("questStart");
+  if (mainQuest() || !current) m_player->questManager()->setAsTracked(questId());
+  auto result = m_scriptComponent.invoke("questStart");
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
-
-void Quest::complete(std::optional<std::size_t> followupIndex) {
+std::expected<void, StarException> Quest::complete(std::optional<std::size_t> followupIndex) {
   setState(QuestState::Complete);
   m_showDialog = showCompleteDialog();
-  m_scriptComponent.invoke("questComplete");
-  uninitScript();
-
-  // Grant reward items and money
-  for (auto const& item : rewards())
-    m_player->giveItem(item->clone());
-  m_player->inventory()->addCurrency("money", money());
-
-  // Offer follow-up quests
-  bool trackNewQuest = m_player->questManager()->isTracked(questId());
-  std::size_t nextArcPos = followupIndex.value_or(questArcPosition() + 1);
-  if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = std::make_shared<Quest>(m_root, m_arc, nextArcPos, m_player);
-    followUp->setWorldId(worldId());
-    followUp->setLocation(location());
-    followUp->setServerUuid(serverUuid());
-    m_player->questManager()->offer(followUp);
-    if (trackNewQuest)
-      m_player->questManager()->setAsTracked(followUp->questId());
-  } else if (trackNewQuest) {
-    // no followup, track another main quest or clear quest tracker
-    if (auto main = m_player->questManager()->getFirstMainQuest())
-      m_player->questManager()->setAsTracked(main.value()->questId());
-    else
-      m_player->questManager()->setAsTracked({});
+  auto result = m_scriptComponent.invoke("questComplete");
+  if (!result) return std::unexpected(std::move(result.error()));
+  auto uninitialized = uninitScript();
+  if (!uninitialized) return std::unexpected(std::move(uninitialized.error()));
+  for (auto const& item : rewards()) {
+    auto clone = item->clone();
+    if (!clone) return std::unexpected(std::move(clone.error()));
+    auto given = m_player->giveItem(*clone);
+    if (!given) return std::unexpected(std::move(given.error()));
   }
+  auto currency = m_player->inventory()->addCurrency("money", money());
+  if (!currency) return std::unexpected(std::move(currency.error()));
+  bool track = m_player->questManager()->isTracked(questId());
+  std::size_t next = followupIndex.value_or(questArcPosition() + 1);
+  if (next < m_arc.quests.size()) {
+    auto followup = Quest::create(m_root, m_arc, next, m_player);
+    if (!followup) return std::unexpected(std::move(followup.error()));
+    (*followup)->setWorldId(worldId());
+    (*followup)->setLocation(location());
+    (*followup)->setServerUuid(serverUuid());
+    auto offered = m_player->questManager()->offer(*followup);
+    if (!offered) return std::unexpected(std::move(offered.error()));
+    if (track) m_player->questManager()->setAsTracked((*followup)->questId());
+  } else if (track) {
+    if (auto main = m_player->questManager()->getFirstMainQuest()) m_player->questManager()->setAsTracked((*main)->questId());
+    else m_player->questManager()->setAsTracked({});
+  }
+  return {};
 }
-
-void Quest::fail() {
+std::expected<void, StarException> Quest::fail() {
   setState(QuestState::Failed);
   m_showDialog = showFailDialog();
-  m_scriptComponent.invoke("questFail", false);
-  uninitScript();
+  auto result = m_scriptComponent.invoke("questFail", false);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return uninitScript();
 }
-
-void Quest::abandon() {
+std::expected<void, StarException> Quest::abandon() {
   setState(QuestState::Failed);
   m_showDialog = false;
-  m_scriptComponent.invoke("questFail", true);
-  uninitScript();
+  auto result = m_scriptComponent.invoke("questFail", true);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return uninitScript();
 }
-
-bool Quest::interactWithEntity(EntityId entity) {
-  std::optional<bool> result = m_scriptComponent.invoke<bool>("questInteract", entity);
-  return result && result.value();
+std::expected<bool, StarException> Quest::interactWithEntity(EntityId entity) {
+  auto result = m_scriptComponent.invoke<bool>("questInteract", entity);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return result->value_or(false);
 }
 
 String Quest::questId() const {
@@ -509,8 +604,8 @@ void Quest::setDialogShown() {
   m_showDialog = false;
 }
 
-void Quest::setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity) {
-  setEntityParameter(paramName, entity.get());
+std::expected<void, StarException> Quest::setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity) {
+  return setEntityParameter(paramName, entity.get());
 }
 
 void Quest::setParameter(String const& paramName, QuestParam const& paramValue) {
@@ -601,75 +696,67 @@ bool Quest::canTurnIn() const {
   return m_canTurnIn;
 }
 
-String Quest::questGiverIndicator() const {
-  return getTemplate()->questGiverIndicator;
+std::expected<String, StarException> Quest::questGiverIndicator() const {
+  auto config = getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  return (*config)->questGiverIndicator;
 }
-
-String Quest::questReceiverIndicator() const {
-  return getTemplate()->questReceiverIndicator;
+std::expected<String, StarException> Quest::questReceiverIndicator() const {
+  auto config = getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  return (*config)->questReceiverIndicator;
 }
-
-bool hasItemIndicator(Root& root, std::shared_ptr<Entity> const& entity, List<ItemDescriptor> indicatedItems) {
-  if (auto itemDrop = as<ItemDrop>(entity)) {
-    for (auto const& itemDesc : indicatedItems) {
-      if (itemDrop->item()->matches(itemDesc, true)) {
-        return true;
-      }
-    }
+[[nodiscard]] std::expected<bool, StarException> hasItemIndicator(Root& root, std::shared_ptr<Entity> const& entity, List<ItemDescriptor> const& items) {
+  if (auto drop = as<ItemDrop>(entity)) {
+    for (auto const& item : items) if (drop->item()->matches(item, true)) return true;
   } else if (auto object = as<Object>(entity)) {
-    std::shared_ptr<ObjectConfig> objectConfig = root.objectDatabase()->getConfig(object->name());
-    if (!objectConfig->hasObjectItem)
-      return false;
-    for (auto const& itemDesc : indicatedItems) {
-      if (object->name() == itemDesc.name())
-        return true;
-    }
+    auto database = root.objectDatabase();
+    if (!database) return std::unexpected(std::move(database.error()));
+    auto name = object->name();
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto config = (*database)->getConfig(*name);
+    if (!config) return std::unexpected(std::move(config.error()));
+    if (!(*config)->hasObjectItem) return false;
+    for (auto const& item : items) if (*name == item.name()) return true;
   }
   return false;
 }
-
-std::optional<String> Quest::customIndicator(std::shared_ptr<Entity> const& entity) const {
-  if (!m_inited)
-    return {};
-
-  for (String const& indicator : m_indicators) {
-    auto param = parameters().get(indicator);
-    if (std::holds_alternative<QuestEntity>(param.detail)) {
-      QuestEntity questEntity = std::get<QuestEntity>(param.detail);
-      if (questEntity.uniqueId && entity->uniqueId() == questEntity.uniqueId) {
-        return param.indicator.value_or(defaultCustomIndicator());
+std::expected<std::optional<String>, StarException> Quest::customIndicator(std::shared_ptr<Entity> const& entity) const {
+  if (!m_inited) return std::optional<String>();
+  for (auto const& indicator : m_indicators) {
+    auto parameter = parameters().get(indicator);
+    if (!parameter) return std::unexpected(std::move(parameter.error()));
+    auto const& param = **parameter;
+    bool matches = false;
+    if (auto questEntity = std::get_if<QuestEntity>(&param.detail)) {
+      matches = questEntity->uniqueId && entity->uniqueId() == questEntity->uniqueId;
+    } else if (auto item = std::get_if<QuestItem>(&param.detail)) {
+      auto descriptor = item->descriptor();
+      if (!descriptor) return std::unexpected(std::move(descriptor.error()));
+      auto result = hasItemIndicator(m_root, entity, {*descriptor});
+      if (!result) return std::unexpected(std::move(result.error()));
+      matches = *result;
+    } else if (auto tag = std::get_if<QuestItemTag>(&param.detail)) {
+      if (auto drop = as<ItemDrop>(entity)) {
+        auto tags = drop->item()->itemTags();
+        if (!tags) return std::unexpected(std::move(tags.error()));
+        matches = tags->contains(*tag);
       }
-
-    } else if (std::holds_alternative<QuestItem>(param.detail)) {
-      QuestItem questItem = std::get<QuestItem>(param.detail);
-      if (hasItemIndicator(m_root, entity, {questItem.descriptor()}))
-        return param.indicator.value_or(defaultCustomIndicator());
-
-    } else if (std::holds_alternative<QuestItemTag>(param.detail)) {
-      String questItemTag = std::get<QuestItemTag>(param.detail);
-      if (auto itemDrop = as<ItemDrop>(entity)) {
-        if (itemDrop->item()->itemTags().contains(questItemTag))
-          return param.indicator.value_or(defaultCustomIndicator());
-      }
-
-    } else if (std::holds_alternative<QuestItemList>(param.detail)) {
-      QuestItemList questItemList = std::get<QuestItemList>(param.detail);
-      if (hasItemIndicator(m_root, entity, questItemList))
-        return param.indicator.value_or(defaultCustomIndicator());
-
-    } else if (std::holds_alternative<QuestMonsterType>(param.detail)) {
-      QuestMonsterType questMonsterType = std::get<QuestMonsterType>(param.detail);
+    } else if (auto items = std::get_if<QuestItemList>(&param.detail)) {
+      auto result = hasItemIndicator(m_root, entity, *items);
+      if (!result) return std::unexpected(std::move(result.error()));
+      matches = *result;
+    } else if (auto monsterType = std::get_if<QuestMonsterType>(&param.detail)) {
       if (auto monster = as<Monster>(entity)) {
-        if (monster->typeName() == questMonsterType.typeName) {
-          TeamType team = monster->getTeam().type;
-          if (team == TeamType::Enemy || team == TeamType::Passive)
-            return param.indicator.value_or(defaultCustomIndicator());
+        if (monster->typeName() == monsterType->typeName) {
+          auto team = monster->getTeam().type;
+          matches = team == TeamType::Enemy || team == TeamType::Passive;
         }
       }
-
     }
+    if (matches) return std::optional<String>(param.indicator.value_or(defaultCustomIndicator()));
   }
-  return {};
+  return std::optional<String>();
 }
 
 std::optional<JsonArray> Quest::objectiveList() const {
@@ -696,12 +783,15 @@ void Quest::setCompassDirection(std::optional<float> const& compassDirection) {
   m_compassDirection = compassDirection;
 }
 
-std::optional<String> Quest::completionCinema() const {
-  return getTemplate()->completionCinema;
+std::expected<std::optional<String>, StarException> Quest::completionCinema() const {
+  auto config = getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  return (*config)->completionCinema;
 }
-
-bool Quest::canBeAbandoned() const {
-  return getTemplate()->canBeAbandoned;
+std::expected<bool, StarException> Quest::canBeAbandoned() const {
+  auto config = getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  return (*config)->canBeAbandoned;
 }
 
 bool Quest::ephemeral() const {
@@ -737,161 +827,200 @@ void Quest::setState(QuestState state) {
   m_lastUpdatedOn = Time::monotonicMilliseconds();
 }
 
-void Quest::initScript() {
-  if (!m_player || !m_world || m_inited)
-    return;
-
-  auto questTemplate = getTemplate();
-  if (questTemplate->script.has_value())
-    m_scriptComponent.setScript(*questTemplate->script);
-  else
-    m_scriptComponent.setScripts(StringList{});
-  m_scriptComponent.setUpdateDelta(questTemplate->updateDelta);
-
-  m_scriptComponent.addCallbacks("quest", makeQuestCallbacks(m_player));
-  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_root, m_client));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, m_player));
-  m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-      return Json(getTemplate()->scriptConfig).query(name, def);
-    }));
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_player));
-  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
-  m_scriptComponent.addActorMovementCallbacks(m_player->movementController());
+std::expected<void, StarException> Quest::initScript() {
+  if (!m_player || !m_world || m_inited) return {};
+  auto config = getTemplate();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto scripts = (*config)->script ? m_scriptComponent.setScript(*(*config)->script)
+      : m_scriptComponent.setScripts(StringList{});
+  if (!scripts) return std::unexpected(std::move(scripts.error()));
+  m_scriptComponent.setUpdateDelta((*config)->updateDelta);
+  auto quest = makeQuestCallbacks(m_player);
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  auto addedQuest = m_scriptComponent.addCallbacks("quest", std::move(*quest));
+  if (!addedQuest) return std::unexpected(std::move(addedQuest.error()));
+  auto celestial = LuaBindings::makeCelestialCallbacks(m_root, m_client);
+  if (!celestial) return std::unexpected(std::move(celestial.error()));
+  auto addedCelestial = m_scriptComponent.addCallbacks("celestial", std::move(*celestial));
+  if (!addedCelestial) return std::unexpected(std::move(addedCelestial.error()));
+  auto player = LuaBindings::makePlayerCallbacks(m_root, m_player);
+  if (!player) return std::unexpected(std::move(player.error()));
+  auto addedPlayer = m_scriptComponent.addCallbacks("player", std::move(*player));
+  if (!addedPlayer) return std::unexpected(std::move(addedPlayer.error()));
+  auto configuration = LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) -> std::expected<Json, StarException> {
+    auto config = getTemplate();
+    if (!config) return std::unexpected(std::move(config.error()));
+    return Json((*config)->scriptConfig).query(name, def);
+  });
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto addedConfig = m_scriptComponent.addCallbacks("config", std::move(*configuration));
+  if (!addedConfig) return std::unexpected(std::move(addedConfig.error()));
+  auto entity = LuaBindings::makeEntityCallbacks(m_player);
+  if (!entity) return std::unexpected(std::move(entity.error()));
+  auto addedEntity = m_scriptComponent.addCallbacks("entity", std::move(*entity));
+  if (!addedEntity) return std::unexpected(std::move(addedEntity.error()));
+  auto status = LuaBindings::makeStatusControllerCallbacks(m_player->statusController());
+  if (!status) return std::unexpected(std::move(status.error()));
+  auto addedStatus = m_scriptComponent.addCallbacks("status", std::move(*status));
+  if (!addedStatus) return std::unexpected(std::move(addedStatus.error()));
+  auto movement = m_scriptComponent.addActorMovementCallbacks(m_player->movementController());
+  if (!movement) return std::unexpected(std::move(movement.error()));
   m_inited = true;
-
-  m_scriptComponent.init(m_world);
+  return m_scriptComponent.init(m_world);
 }
-
-void Quest::uninitScript() {
-  m_scriptComponent.uninit();
-  m_scriptComponent.removeCallbacks("quest");
-  m_scriptComponent.removeCallbacks("celestial");
-  m_scriptComponent.removeCallbacks("player");
-  m_scriptComponent.removeCallbacks("config");
-  m_scriptComponent.removeCallbacks("entity");
-  m_scriptComponent.removeCallbacks("status");
-  m_scriptComponent.removeActorMovementCallbacks();
+std::expected<void, StarException> Quest::uninitScript() {
+  auto uninitialized = m_scriptComponent.uninit();
+  if (!uninitialized) return std::unexpected(std::move(uninitialized.error()));
+  for (auto const* group : {"quest", "celestial", "player", "config", "entity", "status"}) {
+    auto removed = m_scriptComponent.removeCallbacks(group);
+    if (!removed) return std::unexpected(std::move(removed.error()));
+  }
+  auto movement = m_scriptComponent.removeActorMovementCallbacks();
+  if (!movement) return std::unexpected(std::move(movement.error()));
   m_inited = false;
+  return {};
 }
 
-LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
+std::expected<LuaCallbacks, StarException> Quest::makeQuestCallbacks(Player* player) {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("context", [this]() { m_scriptComponent.context(); });
-
-  callbacks.registerCallback("state", [this]() { return QuestStateNames.getRight(state()); });
-
-  callbacks.registerCallback("complete", [this](std::optional<std::size_t> followup) { complete(followup); });
-
-  callbacks.registerCallback("fail", [this]() { fail(); });
-
-  callbacks.registerCallback("abandon", [this]() { abandon(); });
-
-  callbacks.registerCallback("decline", [this]() { declineOffer(); });
-
-  callbacks.registerCallback("cancel", [this]() { cancelOffer(); });
-
-  callbacks.registerCallback("setCanTurnIn", [this](bool value) { this->m_canTurnIn = value; });
-
-  callbacks.registerCallback("questId", [this]() { return questId(); });
-
-  callbacks.registerCallback("templateId", [this]() { return templateId(); });
-
-  callbacks.registerCallback("seed", [this]() { return questDescriptor().seed; });
-
-  callbacks.registerCallback("questDescriptor", [this]() { return questDescriptor().toJson(); });
-
-  callbacks.registerCallback("questArcDescriptor", [this]() { return questArcDescriptor().toJson(); });
-
-  callbacks.registerCallback("questArcPosition", [this]() { return m_arcPos; });
-
-  callbacks.registerCallback("worldId", [this]() { return worldId().transform(printWorldId); });
-
-  callbacks.registerCallback("setWorldId", [this](std::optional<String> const& worldId) { setWorldId(worldId.transform(parseWorldId)); });
-
-  callbacks.registerCallback("serverUuid", [this]() { return serverUuid().transform(std::mem_fn(&Uuid::hex)); });
-
-  callbacks.registerCallback("setServerUuid", [this](String const& serverUuid) { setServerUuid(Uuid(serverUuid)); });
-
-  callbacks.registerCallback("isCurrent", [this, player]() -> bool { return player->questManager()->isCurrent(questId()); });
-
-  callbacks.registerCallback("location", [this]() -> Json {
-      if (auto loc = location()) {
-        return JsonObject{
-          {"system", jsonFromVec3I(loc.value().first)},
-          {"location", jsonFromSystemLocation(loc.value().second)}
-        };
-      }
-      return {};
-    });
-
-  callbacks.registerCallback("setLocation", [this](Json const& json) {
-      if (json.isNull()) {
-        setLocation({});
-      } else {
-        Vec3I system = jsonToVec3I(json.get("system"));
-        SystemLocation location = jsonToSystemLocation(json.opt("location").value_or(Json{}));
-        setLocation(std::make_pair(system, location));
-      }
-    });
-
-  callbacks.registerCallback("parameters", [this]() { return questParamsToJson(parameters()); });
-
-  callbacks.registerCallback("setParameter",
-      [this](String const& name, Json paramJson) { m_parameters[name] = QuestParam::fromJson(paramJson); });
-
-  callbacks.registerCallback(
-      "setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); });
-
-  callbacks.registerCallbackWithSignature<void, std::optional<JsonArray>>("setObjectiveList", std::bind(&Quest::setObjectiveList, this, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, std::optional<float>>("setProgress", std::bind(&Quest::setProgress, this, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, std::optional<float>>("setCompassDirection", std::bind(&Quest::setCompassDirection, this, std::placeholders::_1));
-
-  callbacks.registerCallbackWithSignature<void, String>("setTitle", [this](String const& title) {
-      m_title = title;
-    });
-  callbacks.registerCallbackWithSignature<void, String>("setText", [this](String const& text) {
-      m_text = text;
-    });
-  callbacks.registerCallbackWithSignature<void, String>("setCompletionText", [this](String const& completionText) {
-      m_completionText = completionText;
-    });
-  callbacks.registerCallbackWithSignature<void, String>("setFailureText", [this](String const& failureText) {
-      m_failureText = failureText;
-    });
-
-  callbacks.registerCallbackWithSignature<void, String, std::optional<JsonArray>>("setPortrait", [this](String const& portraitName, std::optional<JsonArray> const& portrait) {
-      if (portrait) {
-        m_portraits[portraitName] = portrait->transformed([this](Json const& drawable) { return Drawable(*m_root.imageMetadataDatabase(), drawable); });
-      } else {
-        m_portraits.remove(portraitName);
-      }
-    });
-  callbacks.registerCallbackWithSignature<void, String, std::optional<String>>("setPortraitTitle", [this](String const& portraitName, std::optional<String> const& portrait) {
-      if (portrait) {
-        m_portraitTitles[portraitName] = *portrait;
-      } else {
-        m_portraitTitles.remove(portraitName);
-      }
-    });
-  callbacks.registerCallbackWithSignature<void, Json>("addReward", [this](Json const& reward) {
-      addReward(ItemDescriptor(reward));
-    });
-
+  if (auto r = callbacks.registerCallback("context", [this]() { m_scriptComponent.context(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("state", [this]() -> std::expected<String, StarException> {
+    if (!QuestStateNames) return std::unexpected(QuestStateNames.error());
+    auto name = QuestStateNames->getRight(state());
+    if (!name) return std::unexpected(std::move(name.error()));
+    return **name;
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("complete", [this](std::optional<std::size_t> followup) { return complete(followup); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("fail", [this]() { return fail(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("abandon", [this]() { return abandon(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("decline", [this]() { return declineOffer(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("cancel", [this]() { return cancelOffer(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setCanTurnIn", [this](bool value) { m_canTurnIn = value; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("questId", [this]() { return questId(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("templateId", [this]() { return templateId(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("seed", [this]() { return questDescriptor().seed; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("questDescriptor", [this]() { return questDescriptor().toJson(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("questArcDescriptor", [this]() { return questArcDescriptor().toJson(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("questArcPosition", [this]() { return m_arcPos; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("worldId", [this]() -> std::expected<std::optional<String>, StarException> {
+    if (!m_worldId) return std::optional<String>();
+    auto name = printWorldId(*m_worldId);
+    if (!name) return std::unexpected(std::move(name.error()));
+    return std::optional<String>(*name);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setWorldId", [this](std::optional<String> const& name) -> std::expected<void, StarException> {
+    if (!name) { setWorldId({}); return {}; }
+    auto world = parseWorldId(*name);
+    if (!world) return std::unexpected(std::move(world.error()));
+    setWorldId(std::move(*world));
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("serverUuid", [this]() { return serverUuid().transform(std::mem_fn(&Uuid::hex)); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setServerUuid", [this](String const& value) -> std::expected<void, StarException> {
+    auto uuid = Uuid::create(value);
+    if (!uuid) return std::unexpected(std::move(uuid.error()));
+    setServerUuid(std::move(*uuid));
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("isCurrent", [this, player]() { return player->questManager()->isCurrent(questId()); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("location", [this]() -> std::expected<Json, StarException> {
+    if (auto loc = location()) {
+      return JsonObject{{"system", jsonFromVec3I(loc->first)}, {"location", jsonFromSystemLocation(loc->second)}};
+    }
+    return Json();
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setLocation", [this](Json const& json) -> std::expected<void, StarException> {
+    if (json.isNull()) { setLocation({}); return {}; }
+    auto systemJson = json.get("system");
+    if (!systemJson) return std::unexpected(std::move(systemJson.error()));
+    auto system = jsonToVec3I(*systemJson);
+    if (!system) return std::unexpected(std::move(system.error()));
+    auto locationJson = json.opt("location");
+    if (!locationJson) return std::unexpected(std::move(locationJson.error()));
+    auto location = jsonToSystemLocation(locationJson->value_or(Json()));
+    if (!location) return std::unexpected(std::move(location.error()));
+    setLocation(std::make_pair(*system, std::move(*location)));
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("parameters", [this]() { return questParamsToJson(parameters()); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setParameter", [this](String const& name, Json const& json) -> std::expected<void, StarException> {
+    auto parameter = QuestParam::fromJson(json);
+    if (!parameter) return std::unexpected(std::move(parameter.error()));
+    m_parameters[name] = std::move(*parameter);
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setObjectiveList", [this](std::optional<JsonArray> const& value) { setObjectiveList(value); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setProgress", [this](std::optional<float> const& value) { setProgress(value); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setCompassDirection", [this](std::optional<float> const& value) { setCompassDirection(value); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setTitle", [this](String const& value) { m_title = value; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setText", [this](String const& value) { m_text = value; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setCompletionText", [this](String const& value) { m_completionText = value; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setFailureText", [this](String const& value) { m_failureText = value; }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setPortrait", [this](String const& name, std::optional<JsonArray> const& portrait) -> std::expected<void, StarException> {
+    if (!portrait) { m_portraits.remove(name); return {}; }
+    auto metadata = m_root.imageMetadataDatabase();
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    List<Drawable> result;
+    for (auto const& json : *portrait) {
+      auto drawable = Drawable::create(**metadata, json);
+      if (!drawable) return std::unexpected(std::move(drawable.error()));
+      result.append(std::move(*drawable));
+    }
+    m_portraits[name] = std::move(result);
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setPortraitTitle", [this](String const& name, std::optional<String> const& title) {
+    if (title) m_portraitTitles[name] = *title;
+    else m_portraitTitles.remove(name);
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("addReward", [this](Json const& reward) -> std::expected<void, StarException> {
+    auto descriptor = ItemDescriptor::create(reward);
+    if (!descriptor) return std::unexpected(std::move(descriptor.error()));
+    return addReward(*descriptor);
+  }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }
 
-void Quest::setEntityParameter(String const& paramName, Entity const* entity) {
-  std::optional<Json> portrait = {};
-  std::optional<String> name = {};
-  std::optional<String> species = {};
-  std::optional<Gender> gender = {};
-
+std::expected<void, StarException> Quest::setEntityParameter(String const& paramName, Entity const* entity) {
+  std::optional<Json> portrait;
+  std::optional<String> name;
+  std::optional<String> species;
+  std::optional<Gender> gender;
   if (auto portraitEntity = as<PortraitEntity>(entity)) {
-    portrait = Json{portraitEntity->portrait(PortraitMode::Full).transformed(std::mem_fn(&Drawable::toJson))};
-    name = portraitEntity->name();
+    auto drawables = portraitEntity->portrait(PortraitMode::Full);
+    if (!drawables) return std::unexpected(std::move(drawables.error()));
+    auto json = jsonFromList(*drawables, [](Drawable const& drawable) { return drawable.toJson(); });
+    if (!json) return std::unexpected(std::move(json.error()));
+    portrait = std::move(*json);
+    auto entityName = portraitEntity->name();
+    if (!entityName) return std::unexpected(std::move(entityName.error()));
+    name = std::move(*entityName);
   }
-
   if (auto npc = as<Npc>(entity)) {
     species = npc->species();
     gender = npc->gender();
@@ -899,58 +1028,66 @@ void Quest::setEntityParameter(String const& paramName, Entity const* entity) {
     species = player->species();
     gender = player->gender();
   }
-
   m_parameters[paramName] = QuestParam{QuestEntity{entity->uniqueId(), species, gender}, name, portrait, {}};
+  return {};
 }
-
-void Quest::addReward(ItemDescriptor const& reward) {
-  if (reward.name() == "money") {
-    m_money += reward.count();
-    return;
-  }
-  auto itemDatabase = m_root.itemDatabase();
-  m_rewards.append(itemDatabase->item(reward));
+std::expected<void, StarException> Quest::addReward(ItemDescriptor const& reward) {
+  if (reward.name() == "money") { m_money += reward.count(); return {}; }
+  auto database = m_root.itemDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto item = (*database)->item(reward);
+  if (!item) return std::unexpected(std::move(item.error()));
+  m_rewards.append(*item);
+  return {};
 }
 
 String const& Quest::defaultCustomIndicator() const {
   return m_player->questManager()->isCurrent(questId()) ? m_trackedIndicator : m_untrackedIndicator;
 }
 
-std::shared_ptr<Quest> createPreviewQuest(
+std::expected<std::shared_ptr<Quest>, StarException> createPreviewQuest(
     Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
-  auto questTemplates = root.questTemplateDatabase();
-  auto questTemplate = questTemplates->questTemplate(templateId);
-  if (!questTemplate)
-    return {};
-
-  Json portrait = player->portrait(PortraitMode::Full).transformed(std::mem_fn(&Drawable::toJson));
-
-  JsonObject paramJson = questTemplate->parameterExamples;
-  for (auto const& paramName : paramJson.keys()) {
-    paramJson[paramName] = paramJson[paramName].set("type", questTemplate->parameterTypes[paramName]);
-    paramJson[paramName] = paramJson[paramName].set("portrait", portrait);
+  auto templates = root.questTemplateDatabase();
+  if (!templates) return std::unexpected(std::move(templates.error()));
+  auto config = (*templates)->questTemplate(templateId);
+  if (!config) return std::unexpected(std::move(config.error()));
+  if (!*config) return std::shared_ptr<Quest>();
+  auto drawables = player->portrait(PortraitMode::Full);
+  if (!drawables) return std::unexpected(std::move(drawables.error()));
+  auto portrait = jsonFromList(*drawables, [](Drawable const& drawable) { return drawable.toJson(); });
+  if (!portrait) return std::unexpected(std::move(portrait.error()));
+  JsonObject paramJson = (*config)->parameterExamples;
+  for (auto const& name : paramJson.keys()) {
+    auto typed = paramJson[name].set("type", (*config)->parameterTypes[name]);
+    if (!typed) return std::unexpected(std::move(typed.error()));
+    auto pictured = typed->set("portrait", *portrait);
+    if (!pictured) return std::unexpected(std::move(pictured.error()));
+    paramJson[name] = std::move(*pictured);
   }
-  StringMap<QuestParam> parameters = questParamsFromJson(paramJson);
-  QuestDescriptor questDesc = QuestDescriptor{"preview", templateId, parameters, root.random().randu64()};
-
+  auto parameters = questParamsFromJson(paramJson);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  QuestDescriptor descriptor{"preview", templateId, std::move(*parameters), root.random().randu64()};
+  auto next = position.equalsIgnoreCase("next");
+  if (!next) return std::unexpected(std::move(next.error()));
+  bool isLast = false, isFirst = false;
+  if (!*next) {
+    auto last = position.equalsIgnoreCase("last");
+    if (!last) return std::unexpected(std::move(last.error()));
+    isLast = *last;
+    if (!isLast) {
+      auto first = position.equalsIgnoreCase("first");
+      if (!first) return std::unexpected(std::move(first.error()));
+      isFirst = *first;
+    }
+  }
   List<QuestDescriptor> quests;
-  if (!position.equalsIgnoreCase("next") && !position.equalsIgnoreCase("last") && !position.equalsIgnoreCase("first")) {
-    quests = {questDesc};
-  } else {
-    quests = {questDesc, questDesc, questDesc};
-  }
-  QuestArcDescriptor arc = QuestArcDescriptor{quests, {}};
-
-  std::size_t arcPos = 0;
-  if (position.equalsIgnoreCase("next")) {
-    arcPos = 1;
-  } else if (position.equalsIgnoreCase("last")) {
-    arcPos = 2;
-  }
-
-  auto quest = std::make_shared<Quest>(root, arc, arcPos, player);
-  quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
-  return quest;
+  if (*next || isLast || isFirst) quests = {descriptor, descriptor, descriptor};
+  else quests = {descriptor};
+  QuestArcDescriptor arc{std::move(quests), {}};
+  auto quest = Quest::create(root, arc, *next ? 1 : isLast ? 2 : 0, player);
+  if (!quest) return std::unexpected(std::move(quest.error()));
+  (*quest)->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, *portrait, {}});
+  return *quest;
 }
 
 }

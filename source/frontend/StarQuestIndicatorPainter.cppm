@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 import star.map;
 import star.set;
@@ -28,12 +29,12 @@ class QuestIndicatorPainter {
 public:
   QuestIndicatorPainter(GuiContext& context, std::shared_ptr<UniverseClient> const& client);
 
-  void update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera);
-  void render();
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera);
+  [[nodiscard]] std::expected<void, StarException> render();
 
 private:
   struct Indicator {
-    Drawable render(float pixelRatio) const;
+    [[nodiscard]] std::expected<Drawable, StarException> render(float pixelRatio) const;
 
     EntityId entityId;
     Vec2F screenPos;

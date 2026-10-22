@@ -8,6 +8,7 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
+import star.format;
 import star.thread;
 import star.json;
 import star.string;
@@ -28,27 +29,28 @@ namespace Star {
 
 class SteamStatisticsService : public StatisticsService {
 public:
-  SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state);
+  [[nodiscard]] static std::expected<std::shared_ptr<SteamStatisticsService>, StarException> create(std::shared_ptr<PcPlatformServicesState> state);
 
   bool initialized() const override;
-  std::optional<String> error() const override;
+  std::optional<StarException> error() const override;
 
-  bool setStat(String const& name, String const& type, Json const& value) override;
+  [[nodiscard]] std::expected<bool, StarException> setStat(String const& name, String const& type, Json const& value) override;
   Json getStat(String const& name, String const& type, Json def = {}) const override;
 
   bool reportEvent(String const& name, Json const& fields) override;
 
-  bool unlockAchievement(String const& name) override;
+  [[nodiscard]] std::expected<bool, StarException> unlockAchievement(String const& name) override;
   StringSet achievementsUnlocked() const override;
 
-  void refresh() override;
-  void flush() override;
+  [[nodiscard]] std::expected<void, StarException> refresh() override;
+  [[nodiscard]] std::expected<void, StarException> flush() override;
   bool reset() override;
 
 private:
-  void onUserStatsReceived(UserStatsReceived_t* callback);
-  void onUserStatsStored(UserStatsStored_t* callback);
-  void onAchievementStored(UserAchievementStored_t* callback);
+  SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state);
+  std::expected<void, StarException> onUserStatsReceived(UserStatsReceived_t* callback);
+  std::expected<void, StarException> onUserStatsStored(UserStatsStored_t* callback);
+  std::expected<void, StarException> onAchievementStored(UserAchievementStored_t* callback);
 
   std::shared_ptr<PcPlatformServicesState> m_state;
   SteamCallback<SteamStatisticsService, UserStatsReceived_t> m_callbackUserStatsReceived;
@@ -57,7 +59,7 @@ private:
 
   std::uint64_t m_appId;
   bool m_initialized = false;
-  std::optional<String> m_error;
+  std::optional<StarException> m_error;
 };
 
 }

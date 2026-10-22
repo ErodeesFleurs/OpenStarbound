@@ -2,6 +2,7 @@ module;
 import std;
 import star.type_identity;
 import star.json;
+import star.format;
 
 import star.vector;
 import star.casting;
@@ -57,33 +58,33 @@ public:
     return Star::typeName<ImageWidget>();
   }
 
-  ImageWidget(GuiContext& context);
-  ImageWidget(GuiContext& context, String const& image);
+  [[nodiscard]] static std::expected<std::shared_ptr<ImageWidget>, StarException> create(GuiContext& context, String const& image = {});
 
   bool interactive() const override;
-  void setImage(String const& image);
-  void setScale(float scale);
-  void setRotation(float rotation);
-  String image() const;
+  [[nodiscard]] std::expected<void, StarException> setImage(String const& image);
+  [[nodiscard]] std::expected<void, StarException> setScale(float scale);
+  [[nodiscard]] std::expected<void, StarException> setRotation(float rotation);
+  [[nodiscard]] std::expected<String, StarException> image() const;
 
-  void setDrawables(List<Drawable> drawables);
+  [[nodiscard]] std::expected<void, StarException> setDrawables(List<Drawable> drawables);
   Vec2I offset();
   void setOffset(Vec2I const& offset);
   bool centered();
-  void setCentered(bool centered);
+  [[nodiscard]] std::expected<void, StarException> setCentered(bool centered);
   bool trim();
-  void setTrim(bool trim);
+  [[nodiscard]] std::expected<void, StarException> setTrim(bool trim);
 
-  void setMaxSize(Vec2I const& size);
-  void setMinSize(Vec2I const& size);
+  [[nodiscard]] std::expected<void, StarException> setMaxSize(Vec2I const& size);
+  [[nodiscard]] std::expected<void, StarException> setMinSize(Vec2I const& size);
 
   RectI screenBoundRect() const override;
 
 protected:
-  void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
-  void transformDrawables();
+  explicit ImageWidget(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> transformDrawables();
 
   List<Drawable> m_baseDrawables;
   List<Drawable> m_drawables;

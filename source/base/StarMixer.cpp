@@ -27,15 +27,22 @@ namespace {
       return 1.0f / rampTime;
   }
 }
-extern EnumMap<MixerGroup> const MixerGroupNames = {
+extern std::expected<EnumMap<MixerGroup>, StarException> const MixerGroupNames = EnumMap<MixerGroup>::create({
   {MixerGroup::Effects, "Effects"},
   {MixerGroup::Music, "Music"},
   {MixerGroup::Cinematic, "Cinematic"},
   {MixerGroup::Instruments, "Instruments"}
-};
+});
 
-AudioInstance::AudioInstance(Audio const& audio)
-  : m_audio(audio) {
+std::expected<std::shared_ptr<AudioInstance>, StarException> AudioInstance::create(Audio const& audio) {
+  auto copy = audio.clone();
+  if (!copy)
+    return std::unexpected(std::move(copy.error()));
+  return std::shared_ptr<AudioInstance>(new AudioInstance(std::move(*copy)));
+}
+
+AudioInstance::AudioInstance(Audio audio)
+  : m_audio(std::move(audio)) {
   m_mixerGroup = MixerGroup::Effects;
 
   m_volume = {1.0f, 1.0f, 0};
@@ -129,19 +136,19 @@ void AudioInstance::setLoops(int loops) {
   m_loops = loops;
 }
 
-double AudioInstance::currentTime() const {
+std::expected<double, StarException> AudioInstance::currentTime() const {
   MutexLocker locker(m_mutex);
   return m_audio.currentTime();
 }
 
-double AudioInstance::totalTime() const {
+std::expected<double, StarException> AudioInstance::totalTime() const {
   MutexLocker locker(m_mutex);
   return m_audio.totalTime();
 }
 
-void AudioInstance::seekTime(double time) {
+std::expected<void, StarException> AudioInstance::seekTime(double time) {
   MutexLocker locker(m_mutex);
-  m_audio.seekTime(time);
+  return m_audio.seekTime(time);
 }
 
 MixerGroup AudioInstance::mixerGroup() const {
@@ -209,9 +216,12 @@ unsigned Mixer::channels() const {
   return m_channels;
 }
 
-void Mixer::addEffect(String const& effectName, EffectFunction effectFunction, float rampTime) {
+std::expected<void, StarException> Mixer::addEffect(String const& effectName, EffectFunction effectFunction, float rampTime) {
+  if (!effectFunction)
+    return std::unexpected(AudioException("Cannot add an empty audio effect"));
   MutexLocker locker(m_effectsMutex);
-  m_effects[effectName] = std::make_shared<EffectInfo>(EffectInfo{effectFunction, 0.0f, rateOfChangeFromRampTime(rampTime), false});
+  m_effects[effectName] = std::make_shared<EffectInfo>(EffectInfo{std::move(effectFunction), 0.0f, rateOfChangeFromRampTime(rampTime), false});
+  return {};
 }
 
 void Mixer::removeEffect(String const& effectName, float rampTime) {
@@ -240,9 +250,12 @@ void Mixer::setVolume(float volume, float rampTime) {
   m_volume.velocity = rateOfChangeFromRampTime(rampTime);
 }
 
-void Mixer::play(std::shared_ptr<AudioInstance> sample) {
+std::expected<void, StarException> Mixer::play(std::shared_ptr<AudioInstance> sample) {
   MutexLocker locker(m_queueMutex);
-  m_audios.add(std::move(sample), AudioState{List<float>(m_channels, 1.0f)});
+  auto added = m_audios.add(std::move(sample), AudioState{List<float>(m_channels, 1.0f)});
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return {};
 }
 
 void Mixer::stopAll(float rampTime) {
@@ -252,7 +265,7 @@ void Mixer::stopAll(float rampTime) {
     p.first->stop(vel);
 }
 
-void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFunction extraMixFunction) {
+std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFunction extraMixFunction) {
   // Make this method as least locky as possible by copying all the needed
   // member data before the expensive audio / effect stuff.
   float speed;
@@ -334,15 +347,23 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
           m_mixBuffer[i] = 0;
         ramt += silentSamples * channels;
       }
-      try {
-        ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+      auto mixed = [&]() -> std::expected<void, StarException> {
+        auto resampled = audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+        if (!resampled)
+          return std::unexpected(std::move(resampled.error()));
+        ramt += *resampled;
         while (ramt != bufferSize && !finished) {
           // Only seek back to the beginning and read more data if loops is < 0
           // (loop forever), or we have more loops to go, otherwise, the sample is
           // finished.
           if (audioInstance->m_loops != 0) {
-            audioInstance->m_audio.seekSample(0);
-            ramt += audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+            auto sought = audioInstance->m_audio.seekSample(0);
+            if (!sought)
+              return std::unexpected(std::move(sought.error()));
+            auto loopSamples = audioInstance->m_audio.resample(channels, sampleRate, m_mixBuffer.ptr() + ramt, bufferSize - ramt, pitchMultiplier);
+            if (!loopSamples)
+              return std::unexpected(std::move(loopSamples.error()));
+            ramt += *loopSamples;
             if (audioInstance->m_loops > 0)
               --audioInstance->m_loops;
           } else {
@@ -379,9 +400,18 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
             outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
           }
         }
-      } catch (Star::AudioException const& e) {
-        m_logger.error("Error reading audio '{}': {}", audioInstance->m_audio.name(), e.what());
+        return {};
+      }();
+      if (!mixed) {
+        if (!mixed.error().is<AudioException>())
+          return std::unexpected(std::move(mixed.error()));
+        auto logged = m_logger.error("Error reading audio '{}': {}", audioInstance->m_audio.name(), mixed.error().what());
         finished = true;
+        if (!logged) {
+          audioInstance->m_volume.value = audioStopVolEnd;
+          audioInstance->m_finished = true;
+          return std::unexpected(std::move(logged.error()));
+        }
       }
 
       audioInstance->m_volume.value = audioStopVolEnd;
@@ -389,8 +419,11 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
     }
   }
 
-  if (extraMixFunction)
-    extraMixFunction(outBuffer, frameCount, channels);
+  if (extraMixFunction) {
+    auto mixed = extraMixFunction(outBuffer, frameCount, channels);
+    if (!mixed)
+      return std::unexpected(std::move(mixed.error()));
+  }
 
   {
     MutexLocker locker(m_effectsMutex);
@@ -408,7 +441,9 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
         effectEnd = approach(1.0f, effectBegin, effectInfo->velocity * time);
 
       std::copy(outBuffer, outBuffer + bufferSize, m_mixBuffer.begin());
-      effectInfo->effectFunction(m_mixBuffer.ptr(), frameCount, channels);
+      auto effected = effectInfo->effectFunction(m_mixBuffer.ptr(), frameCount, channels);
+      if (!effected)
+        return std::unexpected(std::move(effected.error()));
 
       for (std::size_t s = 0; s < frameCount; ++s) {
         float amt = lerp((float)s / frameCount, effectBegin, effectEnd);
@@ -431,6 +466,7 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
     for (auto p : groupEndVolumes)
       m_groupVolumes[p.first].value = p.second;
   }
+  return {};
 }
 
 Mixer::EffectFunction Mixer::lowpass(std::size_t avgSize) const {
@@ -440,17 +476,21 @@ Mixer::EffectFunction Mixer::lowpass(std::size_t avgSize) const {
     std::size_t avgSize;
     List<Deque<float>> filter;
 
-    void operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
+    [[nodiscard]] std::expected<void, StarException> operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
       filter.resize(channels);
       for (std::size_t f = 0; f < frames; ++f) {
         for (std::size_t c = 0; c < channels; ++c) {
           auto& filterChannel = filter[c];
           filterChannel.append(buffer[f * channels + c] / 32767.0f);
-          while (filterChannel.size() > avgSize)
-            filterChannel.takeFirst();
+          while (filterChannel.size() > avgSize) {
+            auto removed = filterChannel.takeFirst();
+            if (!removed)
+              return std::unexpected(std::move(removed.error()));
+          }
           buffer[f * channels + c] = std::ranges::fold_left_first(filterChannel, std::plus<float>()).value_or(0.0f) / (float)avgSize * 32767.0f;
         }
       }
+      return {};
     }
   };
 
@@ -464,9 +504,9 @@ Mixer::EffectFunction Mixer::echo(float time, float dry, float wet) const {
     float wet;
     List<Deque<float>> filter;
 
-    void operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
+    [[nodiscard]] std::expected<void, StarException> operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
       if (echoLength == 0)
-        return;
+        return {};
 
       filter.resize(channels);
       for (std::size_t c = 0; c < channels; ++c) {
@@ -480,10 +520,14 @@ Mixer::EffectFunction Mixer::echo(float time, float dry, float wet) const {
           auto& filterChannel = filter[c];
           buffer[f * channels + c] = buffer[f * channels + c] * dry + filter[c][0] * wet;
           filterChannel.append(buffer[f * channels + c]);
-          while (filterChannel.size() > echoLength)
-            filterChannel.takeFirst();
+          while (filterChannel.size() > echoLength) {
+            auto removed = filterChannel.takeFirst();
+            if (!removed)
+              return std::unexpected(std::move(removed.error()));
+          }
         }
       }
+      return {};
     }
   };
 
@@ -502,22 +546,25 @@ void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) 
   }
 }
 
-void Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
+std::expected<void, StarException> Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   {
     MutexLocker locker(m_queueMutex);
-    eraseWhere(m_audios, [&](auto& p) {
-        if (p.first->m_finished)
-          return true;
-
-        if (positionalAttenuationFunction && p.first->m_position) {
-          for (unsigned c = 0; c < m_channels; ++c)
-            p.second.positionalChannelVolumes[c] = 1.0f - positionalAttenuationFunction(c, *p.first->m_position, p.first->m_rangeMultiplier);
-        } else {
-          for (unsigned c = 0; c < m_channels; ++c)
-            p.second.positionalChannelVolumes[c] = 1.0f;
+    eraseWhere(m_audios, [](auto const& p) {
+      return p.first->m_finished;
+    });
+    for (auto& p : m_audios) {
+      if (positionalAttenuationFunction && p.first->m_position) {
+        for (unsigned c = 0; c < m_channels; ++c) {
+          auto attenuation = positionalAttenuationFunction(c, *p.first->m_position, p.first->m_rangeMultiplier);
+          if (!attenuation)
+            return std::unexpected(std::move(attenuation.error()));
+          p.second.positionalChannelVolumes[c] = 1.0f - *attenuation;
         }
-        return false;
-      });
+      } else {
+        for (unsigned c = 0; c < m_channels; ++c)
+          p.second.positionalChannelVolumes[c] = 1.0f;
+      }
+    }
   }
 
   {
@@ -526,6 +573,7 @@ void Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFun
         return p.second->finished;
       });
   }
+  return {};
 }
 
 }

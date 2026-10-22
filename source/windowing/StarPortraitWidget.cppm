@@ -46,6 +46,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 class PortraitEntity;
@@ -61,24 +62,24 @@ public:
     return Star::typeName<PortraitWidget>();
   }
 
-  PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode = PortraitMode::Full);
-  PortraitWidget(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<PortraitWidget>, StarException> create(GuiContext& context, std::shared_ptr<PortraitEntity> entity = {}, PortraitMode mode = PortraitMode::Full);
   virtual ~PortraitWidget() {}
 
-  void setEntity(std::shared_ptr<PortraitEntity> entity);
-  void setMode(PortraitMode mode);
-  void setScale(float scale);
-  void setIconMode();
+  [[nodiscard]] std::expected<void, StarException> setEntity(std::shared_ptr<PortraitEntity> entity);
+  [[nodiscard]] std::expected<void, StarException> setMode(PortraitMode mode);
+  [[nodiscard]] std::expected<void, StarException> setScale(float scale);
+  [[nodiscard]] std::expected<void, StarException> setIconMode();
   void setRenderHumanoid(bool);
-  bool sendEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
 protected:
   virtual RectI getScissorRect() const;
-  virtual void renderImpl();
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
-  void init();
-  void updateSize();
+  PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode);
+  [[nodiscard]] std::expected<void, StarException> init();
+  [[nodiscard]] std::expected<void, StarException> updateSize();
 
   std::shared_ptr<PortraitEntity> m_entity;
   PortraitMode m_portraitMode;

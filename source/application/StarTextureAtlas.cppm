@@ -60,15 +60,15 @@ public:
   void reset();
 
   // Adds texture to some TextureAtlas.  Texture must fit in a single atlas
-  // texture, otherwise an exception is thrown.  Returns a pointer to the new
-  // texture.  If borderPixels is true, then fills a 1px border around the
+  // texture, otherwise an error is returned. Returns a pointer to the new
+  // texture. If borderPixels is true, then fills a 1px border around the
   // given image in the atlas with the nearest color value, to prevent
   // bleeding.
-  TextureHandle addTexture(Image const& image, bool borderPixels = true);
+  [[nodiscard]] std::expected<TextureHandle, StarException> addTexture(Image const& image, bool borderPixels = true);
 
   // Removes the given texture from the TextureAtlasSet and invalidates the
   // pointer.
-  void freeTexture(TextureHandle const& texture);
+  [[nodiscard]] std::expected<void, StarException> freeTexture(TextureHandle const& texture);
 
   unsigned totalAtlases() const;
   unsigned totalTextures() const;
@@ -80,7 +80,7 @@ public:
   // re-adds it to the AtlasSet.  It does this up to textureCount textures,
   // until it finds a texture where re-adding it to the texture atlas simply
   // moves the texture into the same atlas, at which point it stops.
-  void compressionPass(std::size_t textureCount = NPos);
+  [[nodiscard]] std::expected<void, StarException> compressionPass(std::size_t textureCount = NPos);
 
   // The number of atlases that the AtlasSet will attempt to fit a texture in
   // before giving up and creating a new atlas.  Tries in order of least full
@@ -89,9 +89,9 @@ public:
   void setTextureFitTries(unsigned textureFitTries);
 
 protected:
-  virtual AtlasTextureHandle createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) = 0;
+  [[nodiscard]] virtual std::expected<AtlasTextureHandle, StarException> createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) = 0;
   virtual void destroyAtlasTexture(AtlasTextureHandle const& atlasTexture) = 0;
-  virtual void copyAtlasPixels(AtlasTextureHandle const& atlasTexture, Vec2U const& bottomLeft, Image const& image) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> copyAtlasPixels(AtlasTextureHandle const& atlasTexture, Vec2U const& bottomLeft, Image const& image) = 0;
 
 private:
   struct TextureAtlas {
@@ -136,7 +136,7 @@ private:
 
   void setAtlasRegionUsed(TextureAtlas* extureAtlas, RectU const& region, bool used) const;
 
-  std::optional<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
+  [[nodiscard]] std::expected<std::optional<AtlasPlacement>, StarException> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
   void sortAtlases();
 
   unsigned m_atlasCellSize;
@@ -169,9 +169,9 @@ void TextureAtlasSet<AtlasTextureHandle>::reset() {
 }
 
 template <typename AtlasTextureHandle>
-auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool borderPixels) -> TextureHandle {
+[[nodiscard]] auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool borderPixels) -> std::expected<TextureHandle, StarException> {
   if (image.empty())
-    throw TextureAtlasException("Empty image given in TextureAtlasSet::addTexture");
+    return std::unexpected(TextureAtlasException("Empty image given in TextureAtlasSet::addTexture"));
 
   Image finalImage;
   if (borderPixels) {
@@ -184,21 +184,26 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
       for (unsigned x = 0; x < finalImageSize[0]; ++x) {
         unsigned xind = clamp<unsigned>(x, 1, imageSize[0]) - 1;
         unsigned yind = clamp<unsigned>(y, 1, imageSize[1]) - 1;
-        finalImage.set32(x, y, image.getrgb(xind, yind));
+        auto pixel = image.getrgb(xind, yind);
+        if (!pixel)
+          return std::unexpected(std::move(pixel.error()));
+        finalImage.set32(x, y, *pixel);
       }
     }
   } else {
     finalImage = image;
   }
 
-  auto tryAtlas = [&](TextureAtlas* atlas) -> TextureHandle {
+  auto tryAtlas = [&](TextureAtlas* atlas) -> std::expected<TextureHandle, StarException> {
     auto placement = addTextureToAtlas(atlas, finalImage, borderPixels);
     if (!placement)
-      return nullptr;
+      return std::unexpected(std::move(placement.error()));
+    if (!*placement)
+      return TextureHandle{};
 
     auto textureEntry = std::make_shared<TextureEntry>();
     textureEntry->textureImage = std::move(finalImage);
-    textureEntry->atlasPlacement = *placement;
+    textureEntry->atlasPlacement = **placement;
 
     m_textures.add(textureEntry);
     sortAtlases();
@@ -210,35 +215,47 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
   // full atlas to maximize compression.
   std::size_t startAtlas = m_atlases.size() - std::min<std::size_t>(m_atlases.size(), m_textureFitTries);
   for (std::size_t i = startAtlas; i < m_atlases.size(); ++i) {
-    if (auto texturePtr = tryAtlas(m_atlases[i].get()))
-      return texturePtr;
+    auto texture = tryAtlas(m_atlases[i].get());
+    if (!texture)
+      return std::unexpected(std::move(texture.error()));
+    if (*texture)
+      return std::move(*texture);
   }
 
   // If we have not found an existing atlas to put the texture, need to create
   // a new atlas
+  auto atlasTexture = createAtlasTexture(atlasTextureSize(), PixelFormat::RGBA32);
+  if (!atlasTexture)
+    return std::unexpected(std::move(atlasTexture.error()));
   m_atlases.append(std::make_shared<TextureAtlas>(TextureAtlas{
-      createAtlasTexture(Vec2U::filled(m_atlasCellSize * m_atlasNumCells), PixelFormat::RGBA32),
+      std::move(*atlasTexture),
       std::unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0
     }));
 
-  if (auto texturePtr = tryAtlas(m_atlases.last().get()))
-    return texturePtr;
+  auto texture = tryAtlas(m_atlases[m_atlases.size() - 1].get());
+  if (texture && *texture)
+    return std::move(*texture);
 
-  // If it can't fit in a brand new empty atlas, it will not fit in any atlas
-  destroyAtlasTexture(m_atlases.last()->atlasTexture);
-  m_atlases.removeLast();
-  throw TextureAtlasException("Could not add texture to new atlas in TextureAtlasSet::addTexture, too large");
+  // Failed placement never commits occupancy; remove the newly allocated atlas.
+  destroyAtlasTexture(m_atlases[m_atlases.size() - 1]->atlasTexture);
+  m_atlases.pop_back();
+  if (!texture)
+    return std::unexpected(std::move(texture.error()));
+  return std::unexpected(TextureAtlasException("Could not add texture to new atlas in TextureAtlasSet::addTexture, too large"));
 }
 
 template <typename AtlasTextureHandle>
-void TextureAtlasSet<AtlasTextureHandle>::freeTexture(TextureHandle const& texture) {
-  auto textureEntry = convert<TextureEntry>(texture);
+[[nodiscard]] std::expected<void, StarException> TextureAtlasSet<AtlasTextureHandle>::freeTexture(TextureHandle const& texture) {
+  auto textureEntry = as<TextureEntry>(texture);
+  if (!textureEntry || !m_textures.contains(textureEntry))
+    return std::unexpected(TextureAtlasException("Texture does not belong to this atlas set or has already expired"));
 
   setAtlasRegionUsed(textureEntry->atlasPlacement.atlas, textureEntry->atlasPlacement.occupiedCells, false);
   sortAtlases();
 
   textureEntry->textureExpired = true;
   m_textures.remove(textureEntry);
+  return {};
 }
 
 template <typename AtlasTextureHandle>
@@ -263,14 +280,14 @@ float TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const {
 }
 
 template <typename AtlasTextureHandle>
-void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCount) {
+[[nodiscard]] std::expected<void, StarException> TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCount) {
   while (m_atlases.size() > 1 && textureCount > 0) {
     // Find the least full atlas, If it is empty, remove it and start at the
     // next atlas.
-    auto const& smallestAtlas = m_atlases.last();
+    auto const& smallestAtlas = m_atlases[m_atlases.size() - 1];
     if (smallestAtlas->usedCellCount == 0) {
       destroyAtlasTexture(smallestAtlas->atlasTexture);
-      m_atlases.removeLast();
+      m_atlases.pop_back();
       continue;
     }
 
@@ -278,7 +295,7 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCou
     // the smallest atlas that is not locked.
     TextureEntry* smallestTexture = nullptr;
     for (auto const& texture : m_textures) {
-      if (texture->atlasPlacement.atlas == m_atlases.last().get()) {
+      if (texture->atlasPlacement.atlas == m_atlases[m_atlases.size() - 1].get()) {
         if (!texture->placementLocked) {
           if (!smallestTexture || texture->atlasPlacement.occupiedCells.volume() < smallestTexture->atlasPlacement.occupiedCells.volume())
             smallestTexture = texture.get();
@@ -296,9 +313,12 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCou
     // Try to add the texture to any atlas that isn't the last (most empty) one
     std::size_t startAtlas = m_atlases.size() - 1 - std::min<std::size_t>(m_atlases.size() - 1, m_textureFitTries);
     for (std::size_t i = startAtlas; i < m_atlases.size() - 1; ++i) {
-      if (auto placement = addTextureToAtlas(m_atlases[i].get(), smallestTexture->textureImage, smallestTexture->atlasPlacement.borderPixels)) {
+      auto placement = addTextureToAtlas(m_atlases[i].get(), smallestTexture->textureImage, smallestTexture->atlasPlacement.borderPixels);
+      if (!placement)
+        return std::unexpected(std::move(placement.error()));
+      if (*placement) {
         setAtlasRegionUsed(smallestTexture->atlasPlacement.atlas, smallestTexture->atlasPlacement.occupiedCells, false);
-        smallestTexture->atlasPlacement = *placement;
+        smallestTexture->atlasPlacement = **placement;
         smallestTexture = nullptr;
         sortAtlases();
         break;
@@ -312,6 +332,7 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCou
 
     --textureCount;
   }
+  return {};
 }
 
 template <typename AtlasTextureHandle>
@@ -382,7 +403,7 @@ void TextureAtlasSet<AtlasTextureHandle>::sortAtlases() {
 }
 
 template <typename AtlasTextureHandle>
-auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> std::optional<AtlasPlacement> {
+[[nodiscard]] auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> std::expected<std::optional<AtlasPlacement>, StarException> {
   bool found = false;
   // Minimum cell indexes where this texture fits in this atlas.
   unsigned fitCellX = 0;
@@ -395,7 +416,7 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   std::size_t numCellsY = (imageSize[1] + m_atlasCellSize - 1) / m_atlasCellSize;
 
   if (numCellsX > m_atlasNumCells || numCellsY > m_atlasNumCells)
-    return {};
+    return std::nullopt;
 
   for (std::size_t cellY = 0; cellY <= m_atlasNumCells - numCellsY; ++cellY) {
     for (std::size_t cellX = 0; cellX <= m_atlasNumCells - numCellsX; ++cellX) {
@@ -428,11 +449,12 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   }
 
   if (!found)
-    return {};
+    return std::nullopt;
 
+  auto copied = copyAtlasPixels(atlas->atlasTexture, Vec2U(fitCellX * m_atlasCellSize, fitCellY * m_atlasCellSize), image);
+  if (!copied)
+    return std::unexpected(std::move(copied.error()));
   setAtlasRegionUsed(atlas, RectU::withSize({fitCellX, fitCellY}, {(unsigned)numCellsX, (unsigned)numCellsY}), true);
-
-  copyAtlasPixels(atlas->atlasTexture, Vec2U(fitCellX * m_atlasCellSize, fitCellY * m_atlasCellSize), image);
 
   AtlasPlacement atlasPlacement;
   atlasPlacement.atlas = atlas;

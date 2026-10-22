@@ -1,6 +1,7 @@
 module;
 import star.xx_hash;
 import star.json;
+import star.format;
 import star.id_map;
 import star.game_types;
 import star.image;
@@ -116,20 +117,22 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef std::function<void(WorldClientThread*, WorldClient*)> WorldClientAction;
+  typedef std::function<std::expected<void, StarException>(WorldClientThread*, WorldClient*)> WorldClientAction;
 
-  WorldClientThread(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<WorldClientThread>, StarException> create(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClientThread();
 
   ClientSubWorldId subWorldId() const;
 
-  void start();
-  // Signals the WorldClientThread to stop and then joins it
-  void stop();
+  [[nodiscard]]
+  std::expected<void, StarException> start();
+  // Signals the WorldClientThread to stop and then joins it.
+  [[nodiscard]]
+  std::expected<void, StarException> stop();
   void setPause(std::shared_ptr<const std::atomic<bool>> pause);
 
-  // An exception occurred from the actual WorldThreadedClient itself and the
-  // WorldClientThread has stopped running.
+  // A world failure has been logged and stopped the client thread.
   bool errorOccurred();
   bool shouldExpire();
 
@@ -141,10 +144,9 @@ public:
   void pushIncomingPackets(List<std::shared_ptr<Packet>> packets);
   List<std::shared_ptr<Packet>> pullOutgoingPackets();
 
-  // Executes the given action on the world in a thread safe context.  This
-  // does *not* catch exceptions thrown by the action or set the error
-  // flag.
-  void executeAction(WorldClientAction action);
+  // Executes an action under the world lock; returns its failure to the caller.
+  [[nodiscard]]
+  std::expected<void, StarException> executeAction(WorldClientAction action);
 
   // If a callback is set here, then this is called after every world update,
   // also in a thread safe context.
@@ -152,14 +154,19 @@ public:
 
   // 
   void passMessage(Message&& message);
-  void clearMessages();
+  [[nodiscard]]
+  std::expected<void, StarException> clearMessages();
 
 protected:
-  virtual void run();
+  [[nodiscard]]
+  std::expected<void, StarException> run() override;
 
 private:
-  void update();
-  void sync();
+  WorldClientThread(ClientSubWorldId subWorldId, std::shared_ptr<WorldClient> worldClient);
+  [[nodiscard]]
+  std::expected<void, StarException> update();
+  [[nodiscard]]
+  std::expected<void, StarException> runLoop();
 
   mutable RecursiveMutex m_mutex;
 

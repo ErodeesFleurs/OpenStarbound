@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.set;
 import star.json;
@@ -39,10 +40,10 @@ namespace Star {
 class World;
 
 enum class LoungeOrientation { None, Sit, Lay, Stand };
-extern EnumMap<LoungeOrientation> const LoungeOrientationNames;
+extern std::expected<EnumMap<LoungeOrientation>, StarException> const LoungeOrientationNames;
 
 enum class LoungeControl { Left, Right, Down, Up, Jump, PrimaryFire, AltFire, Special1, Special2, Special3, Walk };
-extern EnumMap<LoungeControl> const LoungeControlNames;
+extern std::expected<EnumMap<LoungeControl>, StarException> const LoungeControlNames;
 
 struct LoungeAnchor : EntityAnchor {
   void const* queryType(TypeKey key) const noexcept override {
@@ -79,19 +80,19 @@ public:
   }
 
   virtual std::size_t anchorCount() const override = 0;
-  std::shared_ptr<EntityAnchor const> anchor(std::size_t anchorPositionIndex) const override;
-  virtual std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] std::expected<std::shared_ptr<EntityAnchor const>, StarException> anchor(std::size_t anchorPositionIndex) const override;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<LoungeAnchor const>, StarException> loungeAnchor(std::size_t anchorPositionIndex) const = 0;
 
   // Default does nothing.
-  virtual void loungeControl(std::size_t anchorPositionIndex, LoungeControl loungeControl);
-  virtual void loungeAim(std::size_t anchorPositionIndex, Vec2F const& aimPosition);
+  [[nodiscard]] virtual std::expected<void, StarException> loungeControl(std::size_t anchorPositionIndex, LoungeControl loungeControl);
+  [[nodiscard]] virtual std::expected<void, StarException> loungeAim(std::size_t anchorPositionIndex, Vec2F const& aimPosition);
 
   // Queries around this entity's metaBoundBox for any LoungingEntities
   // reporting that they are lounging in this entity, and returns ones that are
   // lounging in the given position.
-  Set<EntityId> entitiesLoungingIn(std::size_t anchorPositionIndex) const;
+  [[nodiscard]] std::expected<Set<EntityId>, StarException> entitiesLoungingIn(std::size_t anchorPositionIndex) const;
   // Returns pairs of entity ids, and the position they are lounging in.
-  Set<std::pair<EntityId, std::size_t>> entitiesLounging() const;
+  [[nodiscard]] std::expected<Set<std::pair<EntityId, std::size_t>>, StarException> entitiesLounging() const;
 };
 
 // Any lounging entity should report the entity it is lounging in on both
@@ -109,7 +110,7 @@ public:
   virtual std::optional<EntityAnchorState> loungingIn() const = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.
-  bool inConflictingLoungeAnchor() const;
+  [[nodiscard]] std::expected<bool, StarException> inConflictingLoungeAnchor() const;
 };
 
 }

@@ -1,13 +1,17 @@
 module;
 import std;
 import star.stream_formatter;
+import star.format;
 
 namespace Star {
 
-// Extract only after a successful move; a throwing move leaves the optional engaged.
+// Failed extraction leaves the optional unchanged.
 template <typename T>
-T takeOptional(std::optional<T>& value) {
-  T result(std::move(value.value()));
+[[nodiscard]]
+std::expected<T, StarException> takeOptional(std::optional<T>& value) {
+  if (!value)
+    return std::unexpected(OutOfRangeException("takeOptional called on empty optional"));
+  T result(std::move(*value));
   value.reset();
   return result;
 }
@@ -35,15 +39,39 @@ OptionalOutput<T> outputOptional(std::optional<T> const& value) {
 }
 
 template <typename T>
-std::ostream& operator<<(std::ostream& output, OptionalOutput<T> value) {
+decltype(auto) optionalDiagnosticValue(T const& value) {
+  if constexpr (requires { outputOptional(value); })
+    return outputOptional(value);
+  else
+    return (value);
+}
+
+template <typename T>
+using OptionalDiagnosticResult = decltype(std::declval<std::ostream&>() << optionalDiagnosticValue(std::declval<T const&>()));
+
+template <typename T>
+std::ostream& operator<<(std::ostream& output, OptionalOutput<T> value)
+    requires std::same_as<OptionalDiagnosticResult<T>, std::ostream&> {
   if (!value.value)
     return output << "Nothing";
-  output << "Just (";
-  if constexpr (requires { typename T::value_type; } && requires { outputOptional(*value.value); })
-    output << outputOptional(*value.value);
-  else
-    output << *value.value;
+  output << "Just (" << optionalDiagnosticValue(*value.value);
   return output << ")";
+}
+
+template <typename T>
+[[nodiscard]]
+std::expected<std::ostream*, StarException> operator<<(std::ostream& output, OptionalOutput<T> value)
+    requires std::same_as<OptionalDiagnosticResult<T>, std::expected<std::ostream*, StarException>> {
+  if (!value.value) {
+    output << "Nothing";
+    return &output;
+  }
+  output << "Just (";
+  auto written = output << optionalDiagnosticValue(*value.value);
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  output << ")";
+  return &output;
 }
 
 }
@@ -51,6 +79,7 @@ std::ostream& operator<<(std::ostream& output, OptionalOutput<T> value) {
 export module star.optional;
 
 export template <typename T>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::OptionalOutput<T>>()), std::ostream&>
 struct std::formatter<Star::OptionalOutput<T>> : Star::StreamFormatter {};
 
 export namespace Star {

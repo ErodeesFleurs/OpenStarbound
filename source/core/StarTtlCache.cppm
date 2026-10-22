@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.memory;
 import star.list;
 import star.hash;
@@ -45,10 +46,10 @@ public:
 
   // If the value is in the cache, returns it and updates the access time,
   // otherwise returns nullptr.
-  Value* ptr(Key const& key);
+  [[nodiscard]] std::expected<Value*, StarException> ptr(Key const& key);
 
   // Put the given value into the cache.
-  void set(Key const& key, Value value);
+  [[nodiscard]] std::expected<void, StarException> set(Key const& key, Value value);
   // Removes the given value from the cache.  If found and removed, returns
   // true.
   bool remove(Key const& key);
@@ -63,7 +64,7 @@ public:
   // the Value.
   template <typename Producer>
     requires std::invocable<Producer&, Key const&>
-  Value& get(Key const& key, Producer&& producer);
+  [[nodiscard]] std::expected<Value*, StarException> get(Key const& key, Producer&& producer);
 
   void clear();
 
@@ -175,18 +176,26 @@ void TtlCacheBase<LruCacheType>::setTtlUpdateEnabled(bool enabled) {
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> std::expected<Value*, StarException> {
   if (auto p = m_cache.ptr(key)) {
-    if (m_ttlUpdateEnabled)
-      p->first = Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear);
+    if (m_ttlUpdateEnabled) {
+      auto smear = m_random.get().randInt(-m_timeSmear, m_timeSmear);
+      if (!smear)
+        return std::unexpected(std::move(smear.error()));
+      p->first = Time::monotonicMilliseconds() + *smear;
+    }
     return &p->second;
   }
   return nullptr;
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
-  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear), value));
+[[nodiscard]] std::expected<void, StarException> TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
+  auto smear = m_random.get().randInt(-m_timeSmear, m_timeSmear);
+  if (!smear)
+    return std::unexpected(std::move(smear.error()));
+  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + *smear, std::move(value)));
+  return {};
 }
 
 template <typename LruCacheType>
@@ -204,13 +213,31 @@ void TtlCacheBase<LruCacheType>::removeWhere(Filter&& filter) {
 template <typename LruCacheType>
 template <typename Producer>
   requires std::invocable<Producer&, typename LruCacheType::Key const&>
-auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> Value & {
-  auto& value = m_cache.get(key, [&producer](Key const& key) {
-      return std::pair<std::int64_t, Value>(0, std::invoke(producer, key));
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> std::expected<Value*, StarException> {
+  auto result = m_cache.get(key, [&producer](Key const& key) -> std::expected<std::pair<std::int64_t, Value>, StarException> {
+      if constexpr (requires { producer == nullptr; }) {
+        if (producer == nullptr)
+          return std::unexpected(StarException("Cannot invoke an empty cache producer"));
+      }
+      if constexpr (std::same_as<std::invoke_result_t<Producer&, Key const&>, std::expected<Value, StarException>>) {
+        auto produced = std::invoke(producer, key);
+        if (!produced)
+          return std::unexpected(std::move(produced.error()));
+        return std::pair<std::int64_t, Value>(0, std::move(*produced));
+      } else {
+        return std::pair<std::int64_t, Value>(0, std::invoke(producer, key));
+      }
     });
-  if (value.first == 0 || m_ttlUpdateEnabled)
-    value.first = Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear);
-  return value.second;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  auto& value = **result;
+  if (value.first == 0 || m_ttlUpdateEnabled) {
+    auto smear = m_random.get().randInt(-m_timeSmear, m_timeSmear);
+    if (!smear)
+      return std::unexpected(std::move(smear.error()));
+    value.first = Time::monotonicMilliseconds() + *smear;
+  }
+  return &value.second;
 }
 
 template <typename LruCacheType>

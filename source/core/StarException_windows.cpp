@@ -33,28 +33,44 @@ static constinit DbgHelpLock g_dbgHelpLock;
 // Protected by g_dbgHelpLock; overlapping explicit owners share one session.
 static constinit std::size_t g_diagnosticsOwners = 0;
 
-NativeRuntime::NativeRuntime() {
+std::expected<std::unique_ptr<NativeRuntime>, StarException> NativeRuntime::create() {
+  auto runtime = std::unique_ptr<NativeRuntime>(new NativeRuntime());
   WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-    fatalError("WSAStartup failed", false);
+  auto status = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (status != 0)
+    return std::unexpected(StarException(strf("WSAStartup failed: {}", status), false));
+  runtime->m_winsockInitialized = true;
 
-  std::lock_guard lock(g_dbgHelpLock);
-  if (g_diagnosticsOwners == 0) {
-    DWORD options = SymGetOptions();
-    SymSetOptions(options | SYMOPT_LOAD_LINES);
-    if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
-      fatalError("SymInitialize failed", false);
+  DWORD symbolError = ERROR_SUCCESS;
+  bool initialized = true;
+  {
+    std::lock_guard lock(g_dbgHelpLock);
+    if (g_diagnosticsOwners == 0) {
+      DWORD options = SymGetOptions();
+      SymSetOptions(options | SYMOPT_LOAD_LINES);
+      if (!SymInitialize(GetCurrentProcess(), NULL, TRUE)) {
+        initialized = false;
+        symbolError = GetLastError();
+      }
+    }
+    if (initialized) {
+      ++g_diagnosticsOwners;
+      runtime->m_diagnosticsInitialized = true;
+    }
   }
-  ++g_diagnosticsOwners;
+  if (!initialized)
+    return std::unexpected(StarException(strf("SymInitialize failed: {}", symbolError), false));
+  return runtime;
 }
 
 NativeRuntime::~NativeRuntime() {
   {
     std::lock_guard lock(g_dbgHelpLock);
-    if (--g_diagnosticsOwners == 0)
+    if (m_diagnosticsInitialized && --g_diagnosticsOwners == 0)
       SymCleanup(GetCurrentProcess());
   }
-  WSACleanup();
+  if (m_winsockInitialized)
+    WSACleanup();
 }
 
 static std::size_t const StackLimit = 256;
@@ -175,7 +191,7 @@ StarException::StarException(ExceptionDiagnostic cause) noexcept
 StarException::StarException(std::string message, ExceptionDiagnostic cause) noexcept
     : StarException("StarException", std::move(message), std::move(cause)) {}
 
-const char* StarException::what() const throw() {
+const char* StarException::what() const noexcept {
   if (m_whatBuffer.empty()) {
     std::ostringstream os;
     m_printException(os, false);
@@ -186,7 +202,7 @@ const char* StarException::what() const throw() {
 
 StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
   auto printException = [](
-      std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) {
+      std::ostream& os, bool fullStacktrace, char const* type, std::string const& message, std::optional<StackCapture> const& stack) {
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
@@ -204,8 +220,8 @@ StarException::StarException(char const* type, std::string message, ExceptionDia
     : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
-      std::function<void(std::ostream&, bool)> self,
-      std::function<void(std::ostream&, bool)> cause) {
+      std::function<void(std::ostream&, bool)> const& self,
+      std::function<void(std::ostream&, bool)> const& cause) {
     self(os, fullStacktrace);
     os << std::endl << "Caused by: ";
     cause(os, fullStacktrace);
@@ -217,21 +233,6 @@ StarException::StarException(char const* type, std::string message, ExceptionDia
 ExceptionDiagnostic::ExceptionDiagnostic(StarException const& exception)
   : m_printException(exception.m_printException) {}
 
-ExceptionDiagnostic::ExceptionDiagnostic(std::exception_ptr exception) {
-  if (!exception)
-    throw std::invalid_argument("ExceptionDiagnostic requires an exception");
-  try {
-    std::rethrow_exception(exception);
-  } catch (StarException const& e) {
-    m_printException = e.m_printException;
-  } catch (std::exception const& e) {
-    m_printException = [what = std::string(e.what())](std::ostream& os, bool) {
-      os << "std::exception: " << what;
-    };
-  } catch (...) {
-    m_printException = [](std::ostream& os, bool) { os << "Unknown exception"; };
-  }
-}
 
 std::string printException(ExceptionDiagnostic const& e, bool fullStacktrace) {
   std::ostringstream os;
@@ -259,22 +260,12 @@ void fatalError(char const* message, bool showStackTrace) {
     ss << outputStack(captureStack());
 
   EmergencyLog::log(LogLevel::Error, ss.str().c_str());
-  MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+  auto text = stringToUtf16(ss.str());
+  MessageBoxW(NULL, text ? text->get() : L"Fatal error; diagnostic text could not be converted. See the log.",
+      L"Error", MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
 }
 
-void fatalException(ExceptionDiagnostic const& e, bool showStackTrace) {
-  std::ostringstream ss;
-  ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
-     << "Fatal Exception: " << outputException(e, showStackTrace) << std::endl;
-  if (showStackTrace)
-    ss << "Caught at:" << std::endl << outputStack(captureStack());
-
-  EmergencyLog::log(LogLevel::Error, ss.str().c_str());
-  MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
-
-  std::abort();
-}
 
 }

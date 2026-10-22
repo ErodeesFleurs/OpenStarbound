@@ -12,8 +12,10 @@ using namespace Star;
 template <typename T>
 void testMap(T const& map) {
   auto byteArray = DataStreamBuffer::serializeMapContainer(map);
-  auto mapOut = DataStreamBuffer::deserializeMapContainer<T>(byteArray);
-  EXPECT_EQ(map, mapOut);
+  ASSERT_TRUE(byteArray);
+  auto mapOut = DataStreamBuffer::deserializeMapContainer<T>(std::move(*byteArray));
+  ASSERT_TRUE(mapOut);
+  EXPECT_EQ(map, *mapOut);
 }
 
 TEST(DataStreamTest, All) {
@@ -34,7 +36,11 @@ TEST(DataStreamTest, All) {
 
 TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {
   ExternalBuffer buffer{std::span<char const>{}};
-  EXPECT_EQ(buffer.read(nullptr, 0), 0u);
-  buffer.close();
-  EXPECT_THROW(buffer.read(nullptr, 0), IOException);
+  auto read = buffer.read(nullptr, 0);
+  ASSERT_TRUE(read);
+  EXPECT_EQ(*read, 0u);
+  ASSERT_TRUE(buffer.close());
+  auto closedRead = buffer.read(nullptr, 0);
+  ASSERT_FALSE(closedRead);
+  EXPECT_TRUE(closedRead.error().is<IOException>());
 }

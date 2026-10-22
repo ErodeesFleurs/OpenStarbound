@@ -23,6 +23,7 @@ import star.text_painter;
 import star.drawable;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 // Very simple Widget that allows easy drawing to its surface, to easily tie a
@@ -52,7 +53,7 @@ public:
 
   unsigned MaximumEventBuffer = 16;
 
-  CanvasWidget(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<CanvasWidget>, StarException> create(GuiContext& context);
 
   void setCaptureMouseEvents(bool captureMouse);
   void setCaptureKeyboardEvents(bool captureKeyboard);
@@ -70,8 +71,8 @@ public:
   // key events.
   List<KeyEvent> pullKeyEvents();
 
-  bool sendEvent(InputEvent const& event) override;
-  KeyboardCaptureMode keyboardCaptureMode() const override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<KeyboardCaptureMode, StarException> keyboardCaptureMode() const override;
 
   // Call before drawing to clear old draw data.
   void clear();
@@ -96,19 +97,20 @@ public:
   void drawText(String s, TextPositioning position, TextStyle style);
 
 protected:
-  void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
-  void renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered);
-  void renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color);
-  void renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos);
-  void renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color);
-  void renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth);
-  void renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color);
-  void renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth);
-  void renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
-  void renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style);
+  [[nodiscard]] std::expected<void, StarException> renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered);
+  [[nodiscard]] std::expected<void, StarException> renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos);
+  [[nodiscard]] std::expected<void, StarException> renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth);
+  [[nodiscard]] std::expected<void, StarException> renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth);
+  [[nodiscard]] std::expected<void, StarException> renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style);
 
 private:
+  explicit CanvasWidget(GuiContext& context);
   bool m_ignoreInterfaceScale;
   bool m_captureKeyboard;
   bool m_captureMouse;

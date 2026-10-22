@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.json;
 import star.json_extra;
@@ -34,12 +35,15 @@ StringList const& SkyRenderData::starTypes() const {
     return starList;
 }
 
-List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
+std::expected<List<SkyOrbiter>, StarException> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
   if (!settings)
-    return {};
-
-  float planetScale = settings.queryFloat("satellite.planetScale");
-  float moonScale = settings.queryFloat("satellite.moonScale");
+    return List<SkyOrbiter>{};
+  auto planetScaleResult = settings.queryFloat("satellite.planetScale");
+  if (!planetScaleResult) return std::unexpected(std::move(planetScaleResult.error()));
+  float planetScale = *planetScaleResult;
+  auto moonScaleResult = settings.queryFloat("satellite.moonScale");
+  if (!moonScaleResult) return std::unexpected(std::move(moonScaleResult.error()));
+  float moonScale = *moonScaleResult;
 
   List<std::tuple<List<std::pair<String, float>>, Vec2F, float>> orbitingCelestialObjects;
 
@@ -52,7 +56,11 @@ List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
   for (auto moon : skyParameters.nearbyMoons)
     orbitingCelestialObjects.append(tuple_cat(moon, std::tie(moonScale)));
 
-  Vec2F satelliteArea = jsonToVec2F(settings.query("satellite.area"));
+  auto area = settings.query("satellite.area");
+  if (!area) return std::unexpected(std::move(area.error()));
+  auto satelliteAreaResult = jsonToVec2F(*area);
+  if (!satelliteAreaResult) return std::unexpected(std::move(satelliteAreaResult.error()));
+  Vec2F satelliteArea = *satelliteAreaResult;
   auto planetCenter = Vec2F(viewSize[0] / 2, 0) - worldOffset;
   auto rotMatrix = Mat3F::rotation(worldRotation, planetCenter);
 
@@ -71,15 +79,17 @@ List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
   return orbiters;
 }
 
-SkyWorldHorizon SkyRenderData::worldHorizon(Vec2F const& viewSize) const {
+std::expected<SkyWorldHorizon, StarException> SkyRenderData::worldHorizon(Vec2F const& viewSize) const {
   if (!settings)
-    return {};
+    return SkyWorldHorizon{};
 
   SkyWorldHorizon worldHorizon;
 
   if (type == SkyType::Orbital) {
     worldHorizon.center = Vec2F(viewSize[0] / 2, 0) - worldOffset;
-    worldHorizon.scale = settings.queryFloat("planetHorizon.scale");
+    auto scale = settings.queryFloat("planetHorizon.scale");
+    if (!scale) return std::unexpected(std::move(scale.error()));
+    worldHorizon.scale = *scale;
     worldHorizon.rotation = worldRotation;
     worldHorizon.layers = skyParameters.horizonImages;
   }
@@ -87,9 +97,9 @@ SkyWorldHorizon SkyRenderData::worldHorizon(Vec2F const& viewSize) const {
   return worldHorizon;
 }
 
-List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
+std::expected<List<SkyOrbiter>, StarException> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
   if (!settings)
-    return {};
+    return List<SkyOrbiter>{};
 
   struct HorizonCloud {
     float startAngle;
@@ -100,37 +110,66 @@ List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
   List<HorizonCloud> horizonClouds;
 
   if (skyParameters.horizonClouds) {
-    Vec2I cloudCountRange = jsonToVec2I(settings.query("planetHorizon.cloudCount"));
-    Vec2F cloudRadiusRange = jsonToVec2F(settings.query("planetHorizon.cloudRadius"));
-    Vec2F cloudSpeedRange = jsonToVec2F(settings.query("planetHorizon.cloudSpeed"));
-    StringList cloudList = jsonToStringList(settings.query("planetHorizon.clouds"));
+    auto count = settings.query("planetHorizon.cloudCount");
+    if (!count) return std::unexpected(std::move(count.error()));
+    auto countRange = jsonToVec2I(*count);
+    if (!countRange) return std::unexpected(std::move(countRange.error()));
+    Vec2I cloudCountRange = *countRange;
+    auto radius = settings.query("planetHorizon.cloudRadius");
+    if (!radius) return std::unexpected(std::move(radius.error()));
+    auto radiusRange = jsonToVec2F(*radius);
+    if (!radiusRange) return std::unexpected(std::move(radiusRange.error()));
+    Vec2F cloudRadiusRange = *radiusRange;
+    auto speed = settings.query("planetHorizon.cloudSpeed");
+    if (!speed) return std::unexpected(std::move(speed.error()));
+    auto speedRange = jsonToVec2F(*speed);
+    if (!speedRange) return std::unexpected(std::move(speedRange.error()));
+    Vec2F cloudSpeedRange = *speedRange;
+    auto clouds = settings.query("planetHorizon.clouds");
+    if (!clouds) return std::unexpected(std::move(clouds.error()));
+    auto list = jsonToStringList(*clouds);
+    if (!list) return std::unexpected(std::move(list.error()));
+    StringList cloudList = std::move(*list);
 
     int numClouds = staticRandomI32Range(cloudCountRange[0], cloudCountRange[1], "HorizonCloudCount");
     for (int i = 0; i < numClouds; ++i) {
-      horizonClouds.append({staticRandomFloatRange(0, 2 * std::numbers::pi, i, "CloudStartAngle"),
-          staticRandomFrom(cloudList, i, "Cloud"),
-          staticRandomFloatRange(cloudSpeedRange[0], cloudSpeedRange[1], i, "CloudSpeed"),
-          staticRandomFloatRange(cloudRadiusRange[0], cloudRadiusRange[1], i, "CloudRadius")});
+      auto image = staticRandomFrom(cloudList, i, "Cloud");
+      if (!image) return std::unexpected(std::move(image.error()));
+      auto angle = staticRandomFloatRange(0, 2 * std::numbers::pi, i, "CloudStartAngle");
+      auto speed = staticRandomFloatRange(cloudSpeedRange[0], cloudSpeedRange[1], i, "CloudSpeed");
+      auto radius = staticRandomFloatRange(cloudRadiusRange[0], cloudRadiusRange[1], i, "CloudRadius");
+      horizonClouds.append({angle, **image, speed, radius});
     }
   }
 
   List<SkyOrbiter> orbiters;
   if (type == SkyType::Atmospheric || type == SkyType::Atmosphereless) {
     String image;
-    if (settings.queryBool("sun.dynamicImage.enabled", false) && !skyParameters.sunType.empty())
-      image = settings.queryString("sun.dynamicImage.images." + skyParameters.sunType, settings.queryString("sun.image"));
-    else
-      image = settings.queryString("sun.image");
-    orbiters.append({SkyOrbiterType::Sun,
-        settings.queryFloat("sun.scale", 1.0f),
-        0.0f,
-        image,
-        Vec2F::withAngle(orbitAngle, settings.queryFloat("sun.radius")) + viewSize / 2});
+    auto dynamicImage = settings.queryBool("sun.dynamicImage.enabled", false);
+    if (!dynamicImage) return std::unexpected(std::move(dynamicImage.error()));
+    auto defaultImage = settings.queryString("sun.image");
+    if (!defaultImage) return std::unexpected(std::move(defaultImage.error()));
+    if (*dynamicImage && !skyParameters.sunType.empty()) {
+      auto dynamic = settings.queryString("sun.dynamicImage.images." + skyParameters.sunType, *defaultImage);
+      if (!dynamic) return std::unexpected(std::move(dynamic.error()));
+      image = std::move(*dynamic);
+    } else {
+      image = std::move(*defaultImage);
+    }
+    auto scale = settings.queryFloat("sun.scale", 1.0f);
+    if (!scale) return std::unexpected(std::move(scale.error()));
+    auto radius = settings.queryFloat("sun.radius");
+    if (!radius) return std::unexpected(std::move(radius.error()));
+    orbiters.append({SkyOrbiterType::Sun, *scale, 0.0f, image,
+        Vec2F::withAngle(orbitAngle, *radius) + viewSize / 2});
   } else if (type == SkyType::Orbital) {
+    auto yCenter = settings.queryFloat("planetHorizon.yCenter");
+    if (!yCenter) return std::unexpected(std::move(yCenter.error()));
     auto planetCenter = Vec2F(viewSize[0] / 2, 0)
-        - Vec2F::withAngle(worldRotation - std::numbers::pi / 2, settings.queryFloat("planetHorizon.yCenter")) - worldOffset;
-
-    float scale = settings.queryFloat("planetHorizon.scale");
+        - Vec2F::withAngle(worldRotation - std::numbers::pi / 2, *yCenter) - worldOffset;
+    auto scaleResult = settings.queryFloat("planetHorizon.scale");
+    if (!scaleResult) return std::unexpected(std::move(scaleResult.error()));
+    float scale = *scaleResult;
 
     auto rotMatrix = Mat3F::rotation(worldRotation, planetCenter);
 
@@ -146,56 +185,33 @@ List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
   return orbiters;
 }
 
-DataStream& operator>>(DataStream& ds, SkyRenderData& skyRenderData) {
-  ds.read(skyRenderData.settings);
-  ds.read(skyRenderData.skyParameters);
-  ds.read(skyRenderData.type);
-  ds.read(skyRenderData.dayLevel);
-  ds.read(skyRenderData.skyAlpha);
-  ds.read(skyRenderData.dayLength);
-  ds.read(skyRenderData.timeOfDay);
-  ds.read(skyRenderData.epochTime);
-  ds.read(skyRenderData.starOffset);
-  ds.read(skyRenderData.starRotation);
-  ds.read(skyRenderData.worldOffset);
-  ds.read(skyRenderData.worldRotation);
-  ds.read(skyRenderData.orbitAngle);
-  ds.readVlqS(skyRenderData.starFrames);
-  ds.read(skyRenderData.starList);
-  ds.read(skyRenderData.hyperStarList);
-  ds.read(skyRenderData.environmentLight);
-  ds.read(skyRenderData.mainSkyColor);
-  ds.read(skyRenderData.topRectColor);
-  ds.read(skyRenderData.bottomRectColor);
-  ds.read(skyRenderData.flashColor);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyRenderData& skyRenderData) {
+  SkyRenderData value;
+  auto first = ds >> value.settings >> value.skyParameters >> value.type >> value.dayLevel >> value.skyAlpha
+      >> value.dayLength >> value.timeOfDay >> value.epochTime >> value.starOffset >> value.starRotation
+      >> value.worldOffset >> value.worldRotation >> value.orbitAngle;
+  if (!first) return std::unexpected(std::move(first.error()));
+  auto frames = ds.readVlqS(value.starFrames);
+  if (!frames) return std::unexpected(std::move(frames.error()));
+  auto last = ds >> value.starList >> value.hyperStarList >> value.environmentLight >> value.mainSkyColor
+      >> value.topRectColor >> value.bottomRectColor >> value.flashColor;
+  if (!last) return std::unexpected(std::move(last.error()));
+  skyRenderData = std::move(value);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, SkyRenderData const& skyRenderData) {
-  ds.write(skyRenderData.settings);
-  ds.write(skyRenderData.skyParameters);
-  ds.write(skyRenderData.type);
-  ds.write(skyRenderData.dayLevel);
-  ds.write(skyRenderData.skyAlpha);
-  ds.write(skyRenderData.dayLength);
-  ds.write(skyRenderData.timeOfDay);
-  ds.write(skyRenderData.epochTime);
-  ds.write(skyRenderData.starOffset);
-  ds.write(skyRenderData.starRotation);
-  ds.write(skyRenderData.worldOffset);
-  ds.write(skyRenderData.worldRotation);
-  ds.write(skyRenderData.orbitAngle);
-  ds.writeVlqS(skyRenderData.starFrames);
-  ds.write(skyRenderData.starList);
-  ds.write(skyRenderData.hyperStarList);
-  ds.write(skyRenderData.environmentLight);
-  ds.write(skyRenderData.mainSkyColor);
-  ds.write(skyRenderData.topRectColor);
-  ds.write(skyRenderData.bottomRectColor);
-  ds.write(skyRenderData.flashColor);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyRenderData const& skyRenderData) {
+  auto first = ds << skyRenderData.settings << skyRenderData.skyParameters << skyRenderData.type
+      << skyRenderData.dayLevel << skyRenderData.skyAlpha << skyRenderData.dayLength << skyRenderData.timeOfDay
+      << skyRenderData.epochTime << skyRenderData.starOffset << skyRenderData.starRotation
+      << skyRenderData.worldOffset << skyRenderData.worldRotation << skyRenderData.orbitAngle;
+  if (!first) return std::unexpected(std::move(first.error()));
+  auto frames = ds.writeVlqS(skyRenderData.starFrames);
+  if (!frames) return std::unexpected(std::move(frames.error()));
+  auto last = ds << skyRenderData.starList << skyRenderData.hyperStarList << skyRenderData.environmentLight
+      << skyRenderData.mainSkyColor << skyRenderData.topRectColor << skyRenderData.bottomRectColor << skyRenderData.flashColor;
+  if (!last) return std::unexpected(std::move(last.error()));
+  return &ds;
 }
 
 }

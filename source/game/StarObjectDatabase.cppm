@@ -138,9 +138,9 @@ struct ObjectOrientation {
   std::optional<PolyF> statusEffectArea;
   Json touchDamageConfig;
 
-  static ParticleEmissionEntry parseParticleEmitter(Root& root, String const& path, Json const& config);
-  bool placementValid(World const* world, Vec2I const& position) const;
-  bool anchorsValid(World const* world, Vec2I const& position) const;
+  [[nodiscard]] static std::expected<ParticleEmissionEntry, StarException> parseParticleEmitter(Root& root, String const& path, Json const& config);
+  [[nodiscard]] std::expected<bool, StarException> placementValid(World const* world, Vec2I const& position) const;
+  [[nodiscard]] std::expected<bool, StarException> anchorsValid(World const* world, Vec2I const& position) const;
 };
 
 // TODO: This is used very strangely and inconsistently. We go to all the trouble of populating
@@ -151,7 +151,7 @@ struct ObjectOrientation {
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
   // valid, returns NPos
-  std::size_t findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::optional<Direction>()) const;
+  [[nodiscard]] std::expected<std::size_t, StarException> findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::optional<Direction>()) const;
 
   String path;
   // The JSON values that were used to configure this Object
@@ -224,35 +224,36 @@ struct ObjectConfig {
 class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(std::shared_ptr<Image const> const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(Root& root, String const& path, Json const& touchDamage);
-  static List<std::shared_ptr<ObjectOrientation>> parseOrientations(Root& root, String const& path, Json const& configList, Json const& baseConfig);
+  [[nodiscard]] static std::expected<Json, StarException> parseTouchDamage(Root& root, String const& path, Json const& touchDamage);
+  [[nodiscard]] static std::expected<List<std::shared_ptr<ObjectOrientation>>, StarException> parseOrientations(Root& root, String const& path, Json const& configList, Json const& baseConfig);
 
-  explicit ObjectDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<ObjectDatabase>, StarException> create(Root& root);
 
   void cleanup();
 
   StringList allObjects() const;
   bool isObject(String const& name) const;
 
-  std::shared_ptr<ObjectConfig> getConfig(String const& objectName) const;
-  List<std::shared_ptr<ObjectOrientation>> const& getOrientations(String const& objectName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<ObjectConfig>, StarException> getConfig(String const& objectName) const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<ObjectOrientation>> const*, StarException> getOrientations(String const& objectName) const;
 
-  std::shared_ptr<Object> createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
-  std::shared_ptr<Object> diskLoadObject(Json const& diskStore) const;
-  std::shared_ptr<Object> netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> diskLoadObject(Json const& diskStore) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  bool canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
+  [[nodiscard]] std::expected<bool, StarException> canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
   // If the object is placeable in the given position, creates the given object
   // and sets its position and direction and returns it, otherwise returns
   // null.
-  std::shared_ptr<Object> createForPlacement(World const* world, String const& objectName, Vec2I const& position,
+  [[nodiscard]] std::expected<std::shared_ptr<Object>, StarException> createForPlacement(World const* world, String const& objectName, Vec2I const& position,
       Direction direction, Json const& parameters = JsonObject()) const;
 
-  List<Drawable> cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
+  [[nodiscard]] std::expected<List<Drawable>, StarException> cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
       Direction direction, Json parameters = {}) const;
 
 private:
-  std::shared_ptr<ObjectConfig> readConfig(String const& path) const;
+  explicit ObjectDatabase(Root& root);
+  [[nodiscard]] std::expected<std::shared_ptr<ObjectConfig>, StarException> readConfig(String const& path) const;
 
   Root& m_root;
 

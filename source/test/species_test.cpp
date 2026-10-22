@@ -33,18 +33,34 @@ using namespace Star;
 
 const GameTestRegistration speciesGenderCoverage("SpeciesTest", "NameGenAndOuchNoisesMustCoverEveryGender", [](GameTest& fixture) {
   auto assets = fixture.root().assets();
-  auto speciesFiles = assets->scanExtension("species");
-  ASSERT_FALSE(speciesFiles.empty());
+  ASSERT_TRUE(assets);
+  auto speciesFiles = (*assets)->scanExtension("species");
+  ASSERT_TRUE(speciesFiles);
+  ASSERT_FALSE((*speciesFiles)->empty());
 
-  Json config = assets->json(*speciesFiles.begin());
-  EXPECT_NO_THROW((void)SpeciesDefinition(fixture.root(), config));
+  auto config = (*assets)->json((*speciesFiles)->begin()->string());
+  ASSERT_TRUE(config);
+  auto valid = SpeciesDefinition::create(fixture.root(), *config);
+  ASSERT_TRUE(valid);
 
   // Both lists are indexed by Gender, so a species has to provide an entry for
   // every gender.  A shorter list used to be read with operator[], which is out
   // of bounds (upstream #599: an empty ouchNoises array was an access
   // violation).
   for (auto key : {String("nameGen"), String("ouchNoises")}) {
-    EXPECT_THROW((void)SpeciesDefinition(fixture.root(), config.set(key, JsonArray())), StarException);
-    EXPECT_THROW((void)SpeciesDefinition(fixture.root(), config.set(key, JsonArray{config.get(key).get(0)})), StarException);
+    auto emptyConfig = config->set(key, JsonArray());
+    ASSERT_TRUE(emptyConfig);
+    auto empty = SpeciesDefinition::create(fixture.root(), *emptyConfig);
+    ASSERT_FALSE(empty);
+    EXPECT_TRUE(empty.error().is<StarException>());
+    auto entries = config->get(key);
+    ASSERT_TRUE(entries);
+    auto first = entries->get(0);
+    ASSERT_TRUE(first);
+    auto shortConfig = config->set(key, JsonArray{*first});
+    ASSERT_TRUE(shortConfig);
+    auto shortened = SpeciesDefinition::create(fixture.root(), *shortConfig);
+    ASSERT_FALSE(shortened);
+    EXPECT_TRUE(shortened.error().is<StarException>());
   }
 });

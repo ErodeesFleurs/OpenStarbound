@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.game_timers;
 import star.lua;
 import star.json;
@@ -62,10 +63,10 @@ class ActorMovementController;
 
 class StatusController : public NetElement {
 public:
-  StatusController(Root& root, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<StatusController>, StarException> create(Root& root, Json const& config);
 
-  Json diskStore() const;
-  void diskLoad(Json const& store);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& store);
 
   Json statusProperty(String const& name, Json const& def = Json()) const;
   void setStatusProperty(String const& name, Json value);
@@ -81,38 +82,38 @@ public:
   // Returns true if the resource is strictly greater than zero
   bool resourcePositive(String const& resourceName) const;
 
-  void setResource(String const& resourceName, float value);
-  void modifyResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<void, StarException> setResource(String const& resourceName, float value);
+  [[nodiscard]] std::expected<void, StarException> modifyResource(String const& resourceName, float amount);
 
   float giveResource(String const& resourceName, float amount);
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<bool, StarException> consumeResource(String const& resourceName, float amount);
+  [[nodiscard]] std::expected<bool, StarException> overConsumeResource(String const& resourceName, float amount);
 
-  bool resourceLocked(String const& resourceName) const;
-  void setResourceLocked(String const& resourceName, bool locked);
+  [[nodiscard]] std::expected<bool, StarException> resourceLocked(String const& resourceName) const;
+  [[nodiscard]] std::expected<void, StarException> setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
-  void resetResource(String const& resourceName);
-  void resetAllResources();
+  [[nodiscard]] std::expected<void, StarException> resetResource(String const& resourceName);
+  [[nodiscard]] std::expected<void, StarException> resetAllResources();
 
-  std::optional<float> resourceMax(String const& resourceName) const;
-  std::optional<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourceMax(String const& resourceName) const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] std::expected<float, StarException> setResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] std::expected<float, StarException> modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
   List<PersistentStatusEffect> getPersistentEffects(String const& statEffectCategory) const;
-  void addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect);
-  void addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
-  void setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
-  void clearPersistentEffects(String const& statEffectCategory);
-  void clearAllPersistentEffects();
+  [[nodiscard]] std::expected<void, StarException> addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect);
+  [[nodiscard]] std::expected<void, StarException> addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
+  [[nodiscard]] std::expected<void, StarException> setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
+  [[nodiscard]] std::expected<void, StarException> clearPersistentEffects(String const& statEffectCategory);
+  [[nodiscard]] std::expected<void, StarException> clearAllPersistentEffects();
 
-  void addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId = {});
-  void addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId = {});
+  [[nodiscard]] std::expected<void, StarException> addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId = {});
+  [[nodiscard]] std::expected<void, StarException> addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId = {});
   // Will have no effect if the unique effect is not applied ephemerally
-  bool removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
-  void clearEphemeralEffects();
+  [[nodiscard]] std::expected<bool, StarException> removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
+  [[nodiscard]] std::expected<void, StarException> clearEphemeralEffects();
 
   bool appliesEnvironmentStatusEffects() const;
   void setAppliesEnvironmentStatusEffects(bool appliesEnvironmentStatusEffects);
@@ -127,11 +128,11 @@ public:
   void setPrimaryDirectives(Directives const& directives);
 
   // damage request and notification methods should only be called on the master controller.
-  List<DamageNotification> applyDamageRequest(DamageRequest const& damageRequest);
+  [[nodiscard]] std::expected<List<DamageNotification>, StarException> applyDamageRequest(DamageRequest const& damageRequest);
   void hitOther(EntityId targetEntityId, DamageRequest damageRequest);
   void damagedOther(DamageNotification damageNotification);
   List<DamageNotification> pullSelfDamageNotifications();
-  void applySelfDamageRequest(DamageRequest dr);
+  [[nodiscard]] std::expected<void, StarException> applySelfDamageRequest(DamageRequest dr);
 
   // Pulls recent incoming and outgoing damage notifications.  In order for
   // multiple viewers keep track of notifications and avoid duplicates, the
@@ -144,71 +145,73 @@ public:
   std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t> inflictedHitsSince(std::uint64_t since = 0) const;
   std::pair<List<DamageNotification>, std::uint64_t> inflictedDamageSince(std::uint64_t since = 0) const;
 
-  void init(Entity* parentEntity, ActorMovementController* movementController);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(Entity* parentEntity, ActorMovementController* movementController);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  void blankNetDelta(float interpolationTime) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
-  void tickMaster(float dt);
-  void tickSlave(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickMaster(float dt);
+  [[nodiscard]] std::expected<void, StarException> tickSlave(float dt);
 
   const DirectivesGroup& parentDirectives() const;
-  List<Drawable> drawables() const;
-  List<LightSource> lightSources() const;
-  List<OverheadBar> overheadBars();
+  [[nodiscard]] std::expected<List<Drawable>, StarException> drawables() const;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const;
+  [[nodiscard]] std::expected<List<OverheadBar>, StarException> overheadBars();
   bool toolUsageSuppressed() const;
 
   // new audios and particles will only be generated on the client
   List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
+  explicit StatusController(Root& root);
+  [[nodiscard]] std::expected<void, StarException> configure(Json const& config);
   Root& m_root;
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
 
   struct EffectAnimator : public NetElement {
-    EffectAnimator(Root& root);
-    EffectAnimator(Root& root, std::optional<String> animationConfig);
+    explicit EffectAnimator(Root& root);
+    [[nodiscard]] static std::expected<std::shared_ptr<EffectAnimator>, StarException> create(Root& root, std::optional<String> animationConfig = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-    void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-    void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+    [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-    void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-    void disableNetInterpolation() override;
-    void tickNetInterpolation(float dt) override;
+    [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+    [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+    [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-    void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-    void blankNetDelta(float interpolationTime) override;
+    [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+    [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
     Root& m_root;
     std::optional<String> animationConfig;
-    NetworkedAnimator animator;
+    std::shared_ptr<NetworkedAnimator> animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
   };
   typedef NetElementDynamicGroup<EffectAnimator> EffectAnimatorGroup;
 
   struct UniqueEffectMetadata : public NetElementSyncGroup {
     UniqueEffectMetadata();
-    UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
+    [[nodiscard]] static std::expected<std::shared_ptr<UniqueEffectMetadata>, StarException> create(UniqueStatusEffect effect = {}, std::optional<float> duration = {}, std::optional<EntityId> sourceEntityId = {});
 
-    void netElementsNeedLoad(bool full) override;
-    void netElementsNeedStore() override;
+    [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+    [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
     UniqueStatusEffect effect;
     std::optional<float> duration;
@@ -239,23 +242,23 @@ private:
     bool toolUsageSuppressed;
   };
 
-  void updateAnimators(float dt);
-  void updatePersistentUniqueEffects();
+  [[nodiscard]] std::expected<void, StarException> updateAnimators(float dt);
+  [[nodiscard]] std::expected<void, StarException> updatePersistentUniqueEffects();
 
-  float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
-  bool addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
-  void removeUniqueEffect(UniqueStatusEffect const& name);
+  [[nodiscard]] std::expected<float, StarException> defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
+  [[nodiscard]] std::expected<bool, StarException> addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
+  [[nodiscard]] std::expected<void, StarException> removeUniqueEffect(UniqueStatusEffect const& name);
 
-  void initPrimaryScript();
-  void uninitPrimaryScript();
+  [[nodiscard]] std::expected<void, StarException> initPrimaryScript();
+  [[nodiscard]] std::expected<void, StarException> uninitPrimaryScript();
 
-  void initUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
-  void uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
+  [[nodiscard]] std::expected<void, StarException> initUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
+  [[nodiscard]] std::expected<void, StarException> uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
 
-  LuaCallbacks makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect);
 
   NetElementGroup m_netGroup;
-  StatCollection m_statCollection;
+  std::shared_ptr<StatCollection> m_statCollection;
   NetElementOverride<NetElementHashMap<String, Json>> m_statusProperties;
   NetElementData<DirectivesGroup> m_parentDirectives;
   NetElementBool m_toolUsageSuppressed;

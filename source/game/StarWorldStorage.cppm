@@ -113,32 +113,32 @@ struct WorldGeneratorFacade {
   virtual ~WorldGeneratorFacade() {}
 
   // Should bring a given sector from generationLevel - 1 to generationLevel.
-  virtual void generateSectorLevel(WorldStorage* storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> generateSectorLevel(WorldStorage* storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
 
-  virtual void sectorLoadLevelChanged(WorldStorage* storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> sectorLoadLevelChanged(WorldStorage* storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
 
   // Perform terraforming operations (biome reapplication) on the given sector
-  virtual void terraformSector(WorldStorage* storage, Sector const& sector) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> terraformSector(WorldStorage* storage, Sector const& sector) = 0;
 
   // Called after an entity is loaded, but before the entity is added to the
   // EntityMap.
-  virtual void initEntity(WorldStorage* storage, EntityId newEntityId, std::shared_ptr<Entity> const& entity) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> initEntity(WorldStorage* storage, EntityId newEntityId, std::shared_ptr<Entity> const& entity) = 0;
 
   // Called after the entity is removed from the entity map but before it is
   // stored.
-  virtual void destructEntity(WorldStorage* storage, std::shared_ptr<Entity> const& entity) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> destructEntity(WorldStorage* storage, std::shared_ptr<Entity> const& entity) = 0;
 
   // Should return true if this entity should maintain the sector, false
   // otherwise.
-  virtual bool entityKeepAlive(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> entityKeepAlive(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
-  virtual bool entityPersistent(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> entityPersistent(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<Vec2I>, StarException> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id) = 0;
 };
 
 // Handles paging entity and tile data in / out of disk backed storage for
@@ -161,27 +161,27 @@ public:
   typedef ServerTileSectorArray::Array TileArray;
 
   static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
-  static void applyWorldChunksUpdateToFile(Logger& logger, String const& file, WorldChunks const& update);
-  static WorldChunks getWorldChunksFromFile(Logger& logger, String const& file);
+  [[nodiscard]] static std::expected<void, StarException> applyWorldChunksUpdateToFile(Logger& logger, String const& file, WorldChunks const& update);
+  [[nodiscard]] static std::expected<WorldChunks, StarException> getWorldChunksFromFile(Logger& logger, String const& file);
 
   // Create a new world of the given size.
-  WorldStorage(Root& root, Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldStorage>, StarException> create(Root& root, Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an existing world.
-  WorldStorage(Root& root, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldStorage>, StarException> create(Root& root, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an in-memory world.
-  WorldStorage(Root& root, WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldStorage>, StarException> create(Root& root, WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   ~WorldStorage();
   // Unload and save all sectors, reporting persistence errors to the caller.
-  void close();
+  [[nodiscard]] std::expected<void, StarException> close();
 
-  VersionedJson worldMetadata();
-  void setWorldMetadata(VersionedJson const& metadata);
+  [[nodiscard]] std::expected<VersionedJson, StarException> worldMetadata();
+  [[nodiscard]] std::expected<void, StarException> setWorldMetadata(VersionedJson const& metadata);
 
   std::shared_ptr<ServerTileSectorArray> const& tileArray() const;
   std::shared_ptr<EntityMap> const& entityMap() const;
 
   std::optional<Sector> sectorForPosition(Vec2I const& position) const;
-  List<Sector> sectorsForRegion(RectI const& region) const;
+  [[nodiscard]] std::expected<List<Sector>, StarException> sectorsForRegion(RectI const& region) const;
   std::optional<RectI> regionForSector(Sector sector) const;
 
   SectorLoadLevel sectorLoadLevel(Sector sector) const;
@@ -193,21 +193,21 @@ public:
 
   // Fully load the given sector and reset its TTL without triggering any
   // generation.
-  void loadSector(Sector sector);
+  [[nodiscard]] std::expected<void, StarException> loadSector(Sector sector);
   // Fully load, reset the TTL, and if necessary, fully generate the given
   // sector.
-  void activateSector(Sector sector);
+  [[nodiscard]] std::expected<void, StarException> activateSector(Sector sector);
   // Queue the given sector for activation, if it is not already active.  If
   // the sector is loaded at all, also resets the TTL.
-  void queueSectorActivation(Sector sector);
+  [[nodiscard]] std::expected<void, StarException> queueSectorActivation(Sector sector);
 
   // Immediately (synchronously) fully generates the sector, then flags it as requiring
   // terraforming (biome reapplication) which will be handled by the normal generation process
-  void triggerTerraformSector(Sector sector);
+  [[nodiscard]] std::expected<void, StarException> triggerTerraformSector(Sector sector);
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id);
+  [[nodiscard]] std::expected<RpcPromise<Vec2I>, StarException> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id);
 
   // Return the remaining time to live for a sector, if loaded.  A sector's
   // time to live is reset when loaded or generated, and when the time to live
@@ -219,33 +219,33 @@ public:
 
   // Returns the position for a given unique entity if it exists in this world,
   // loaded or not.
-  std::optional<Vec2F> findUniqueEntity(String const& uniqueId);
+  [[nodiscard]] std::expected<std::optional<Vec2F>, StarException> findUniqueEntity(String const& uniqueId);
 
   // If the given unique entity is not loaded, loads its sector and then if the
   // unique entity is found, returns the entity id, otherwise NullEntityId.
-  EntityId loadUniqueEntity(String const& uniqueId);
+  [[nodiscard]] std::expected<EntityId, StarException> loadUniqueEntity(String const& uniqueId);
 
   // Does any queued generation work, potentially limiting the total number of
   // increases of SectorGenerationLevel by the sectorGenerationLevelLimit, if
   // given.  If sectorOrdering is given, then it will be used to prioritize the
   // queued sectors.
-  void generateQueue(std::optional<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering = {});
+  [[nodiscard]] std::expected<void, StarException> generateQueue(std::optional<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering = {});
   // Ticks down the TTL on sectors and generation queue entries, stores old
   // sectors, expires old generation queue entries, and unloads any zombie
   // entities.
-  void tick(float dt, String const* worldId = nullptr);
+  [[nodiscard]] std::expected<void, StarException> tick(float dt, String const* worldId = nullptr);
 
   // Unload all sectors that can be unloaded (if force is specified, ALWAYS
   // unloads all sectors)
-  void unloadAll(bool force = false);
+  [[nodiscard]] std::expected<void, StarException> unloadAll(bool force = false);
 
   // Sync all active sectors without unloading them, and commits the underlying
   // database.
-  void sync();
+  [[nodiscard]] std::expected<void, StarException> sync();
 
   // Syncs all active sectors to disk and stores the full content of the world
   // into memory.
-  WorldChunks readChunks();
+  [[nodiscard]] std::expected<WorldChunks, StarException> readChunks();
 
   // if this is set, all terrain generation is assumed to be handled by dungeon placement
   // and steps such as microdungeons, biome objects and grass mods will be skipped
@@ -293,34 +293,36 @@ private:
     float timeToLive;
   };
 
-  static ByteArray metadataKey();
-  static WorldMetadataStore readWorldMetadata(ByteArray const& data);
-  static ByteArray writeWorldMetadata(WorldMetadataStore const& metadata);
+  [[nodiscard]] static std::expected<ByteArray, StarException> metadataKey();
+  [[nodiscard]] static std::expected<WorldMetadataStore, StarException> readWorldMetadata(ByteArray const& data);
+  [[nodiscard]] static std::expected<ByteArray, StarException> writeWorldMetadata(WorldMetadataStore const& metadata);
 
-  static ByteArray entitySectorKey(Sector const& sector);
-  static EntitySectorStore readEntitySector(ByteArray const& data);
-  static ByteArray writeEntitySector(EntitySectorStore const& store);
+  [[nodiscard]] static std::expected<ByteArray, StarException> entitySectorKey(Sector const& sector);
+  [[nodiscard]] static std::expected<EntitySectorStore, StarException> readEntitySector(ByteArray const& data);
+  [[nodiscard]] static std::expected<ByteArray, StarException> writeEntitySector(EntitySectorStore const& store);
 
-  static ByteArray tileSectorKey(Sector const& sector);
-  TileSectorStore readTileSector(ByteArray const& data);
-  static ByteArray writeTileSector(TileSectorStore const& store);
+  [[nodiscard]] static std::expected<ByteArray, StarException> tileSectorKey(Sector const& sector);
+  [[nodiscard]] std::expected<TileSectorStore, StarException> readTileSector(ByteArray const& data);
+  [[nodiscard]] static std::expected<ByteArray, StarException> writeTileSector(TileSectorStore const& store);
 
-  static ByteArray uniqueIndexKey(String const& uniqueId);
-  static UniqueIndexStore readUniqueIndexStore(ByteArray const& data);
-  static ByteArray writeUniqueIndexStore(UniqueIndexStore const& store);
+  [[nodiscard]] static std::expected<ByteArray, StarException> uniqueIndexKey(String const& uniqueId);
+  [[nodiscard]] static std::expected<UniqueIndexStore, StarException> readUniqueIndexStore(ByteArray const& data);
+  [[nodiscard]] static std::expected<ByteArray, StarException> writeUniqueIndexStore(UniqueIndexStore const& store);
 
-  static ByteArray sectorUniqueKey(Sector const& sector);
-  static SectorUniqueStore readSectorUniqueStore(ByteArray const& data);
-  static ByteArray writeSectorUniqueStore(SectorUniqueStore const& store);
+  [[nodiscard]] static std::expected<ByteArray, StarException> sectorUniqueKey(Sector const& sector);
+  [[nodiscard]] static std::expected<SectorUniqueStore, StarException> readSectorUniqueStore(ByteArray const& data);
+  [[nodiscard]] static std::expected<ByteArray, StarException> writeSectorUniqueStore(SectorUniqueStore const& store);
 
-  static void openDatabase(BTreeDatabase& db, std::shared_ptr<IODevice> device);
+  [[nodiscard]] static std::expected<void, StarException> openDatabase(BTreeDatabase& db, std::shared_ptr<IODevice> device);
 
   WorldStorage(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  StarException invalidate(StarException error, std::string context);
 
   bool belongsInSector(Sector const& sector, Vec2F const& position) const;
 
   // Generate a random TTL value in the configured range
-  float randomizedSectorTTL() const;
+  [[nodiscard]] std::expected<float, StarException> randomizedSectorTTL() const;
 
   // Generate the given sector to the given generation level.  If
   // sectorGenerationLevelLimit is given, stops work as soon as the given
@@ -328,37 +330,37 @@ private:
   // given sector was fully generated, and the total number of generation
   // levels increased.  If any sector's generation level is brought up at all,
   // it will also reset the TTL for that sector.
-  std::pair<bool, std::size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, std::size_t sectorGenerationLevelLimit = NPos);
+  [[nodiscard]] std::expected<std::pair<bool, std::size_t>, StarException> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, std::size_t sectorGenerationLevelLimit = NPos);
 
   // Bring the sector up to the given load level, and all surrounding sectors
   // as appropriate.  If the load level is brought up, also resets the TTL.
-  void loadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel);
+  [[nodiscard]] std::expected<void, StarException> loadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel);
 
   // Store and unload the given sector to the given level, given the state of
   // the surrounding sectors.  If force is true, will always unload to the
   // given level.
-  bool unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
+  [[nodiscard]] std::expected<bool, StarException> unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
 
   // Sync this sector to disk without unloading it.
-  void syncSector(Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> syncSector(Sector const& sector);
 
   // Returns the sectors within WorldSectorSize of the given sector.  This is
   // *not exactly the same* as the surrounding 9 sectors in a square pattern,
   // because first this does not return invalid sectors, and second, If a world
   // is not evenly divided by the sector size, this may return extra sectors on
   // one side because they are within range.
-  List<Sector> adjacentSectors(Sector const& sector) const;
+  [[nodiscard]] std::expected<List<Sector>, StarException> adjacentSectors(Sector const& sector) const;
 
   // Replace the sector uniques for this sector with the given set
-  void updateSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
+  [[nodiscard]] std::expected<void, StarException> updateSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
   // Merge the stored sector uniques for this sector with the given set
-  void mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
+  [[nodiscard]] std::expected<void, StarException> mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
 
-  std::optional<SectorAndPosition> getUniqueIndexEntry(String const& uniqueId);
-  void setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition);
+  [[nodiscard]] std::expected<std::optional<SectorAndPosition>, StarException> getUniqueIndexEntry(String const& uniqueId);
+  [[nodiscard]] std::expected<void, StarException> setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition);
   // Remove the index entry for this unique id, if the index entry found points
   // to the given sector
-  void removeUniqueIndexEntry(String const& uniqueId, Sector const& sector);
+  [[nodiscard]] std::expected<void, StarException> removeUniqueIndexEntry(String const& uniqueId, Sector const& sector);
 
   Vec2F m_sectorTimeToLive;
   float m_generationQueueTimeToLive;

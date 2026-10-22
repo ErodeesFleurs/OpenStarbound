@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -76,7 +77,7 @@ enum class ArmorType : std::uint8_t {
   Legs,
   Back
 };
-extern EnumMap<ArmorType> const ArmorTypeNames;
+extern std::expected<EnumMap<ArmorType>, StarException> const ArmorTypeNames;
 
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
@@ -88,21 +89,26 @@ public:
     return Star::typeName<ArmorItem>();
   }
 
-  ArmorItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ArmorItem() {}
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]]
+  std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const override;
   bool statusEffectsInCosmeticSlot() const;
   List<PersistentStatusEffect> cosmeticStatusEffects() const;
 
-  virtual StringSet effectSources() const override;
+  [[nodiscard]]
+  std::expected<StringSet, StarException> effectSources() const override;
 
-  virtual List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  virtual float getAngle(float aimAngle) override;
+  [[nodiscard]]
+  std::expected<float, StarException> getAngle(float aimAngle) override;
 
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  virtual void fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
 
   virtual ArmorType armorType() const = 0;
 
@@ -118,9 +124,16 @@ public:
 
   std::optional<String> const& techModule() const;
 
+protected:
+  explicit ArmorItem(Root& root) : Item(root) {}
+  [[nodiscard]]
+  std::expected<void, StarException> initializeArmor(Json const& config, String const& directory, Json const& data);
+
 private:
-  void refreshIconDrawables();
-  void refreshStatusEffects();
+  [[nodiscard]]
+  std::expected<void, StarException> refreshIconDrawables();
+  [[nodiscard]]
+  std::expected<void, StarException> refreshStatusEffects();
 
   List<String> m_colorOptions;
   List<PersistentStatusEffect> m_statusEffects;
@@ -146,19 +159,23 @@ public:
     return Star::typeName<HeadArmor>();
   }
 
-  HeadArmor(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<HeadArmor>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~HeadArmor() {}
 
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   String const& frameset(Gender gender) const;
   Directives const& maskDirectives() const;
 
-  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
+  explicit HeadArmor(Root& root) : ArmorItem(root) {}
   String m_maleImage;
   String m_femaleImage;
   Directives m_maskDirectives;
@@ -173,10 +190,12 @@ public:
     return Star::typeName<ChestArmor>();
   }
 
-  ChestArmor(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ChestArmor>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ChestArmor() {}
 
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   virtual ArmorType armorType() const override;
 
@@ -188,9 +207,11 @@ public:
   // Same as FSleeve
   String const& backSleeveFrameset(Gender gender) const;
 
-  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
+  explicit ChestArmor(Root& root) : ArmorItem(root) {}
   String m_maleBodyImage;
   String m_maleFrontSleeveImage;
   String m_maleBackSleeveImage;
@@ -209,19 +230,23 @@ public:
     return Star::typeName<LegsArmor>();
   }
 
-  LegsArmor(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<LegsArmor>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~LegsArmor() {}
 
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
+  explicit LegsArmor(Root& root) : ArmorItem(root) {}
   String m_maleImage;
   String m_femaleImage;
 };
@@ -235,19 +260,23 @@ public:
     return Star::typeName<BackArmor>();
   }
 
-  BackArmor(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<BackArmor>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~BackArmor() {}
 
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
+  explicit BackArmor(Root& root) : ArmorItem(root) {}
   String m_maleImage;
   String m_femaleImage;
 };

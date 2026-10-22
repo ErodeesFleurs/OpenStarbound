@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.casting;
@@ -49,19 +50,20 @@ public:
     return Star::typeName<ConfirmationDialog>();
   }
 
-  ConfirmationDialog(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<ConfirmationDialog>, StarException> create(GuiContext& guiContext);
 
   virtual ~ConfirmationDialog() {}
 
-  void displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
-  void displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);
+  [[nodiscard]] std::expected<void, StarException> displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
+  [[nodiscard]] std::expected<void, StarException> displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);
   
   std::optional<EntityId> sourceEntityId();
 
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
-  void ok();
+  explicit ConfirmationDialog(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> ok();
 
   WidgetCallbackFunc m_okCallback;
   WidgetCallbackFunc m_cancelCallback;

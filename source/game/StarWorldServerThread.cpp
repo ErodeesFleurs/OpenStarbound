@@ -49,6 +49,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.listener;
 import star.logging;
+import star.output_proxy;
 
 import star.lua_root;
 import star.tile_sector_array;
@@ -153,54 +154,98 @@ import star.tick_rate_monitor;
 import star.algorithm;
 namespace Star {
 
-WorldServerThread::WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId)
-  : Thread("WorldServerThread: " + printWorldId(worldId)),
+std::expected<std::shared_ptr<WorldServerThread>, StarException> WorldServerThread::create(
+    std::shared_ptr<WorldServer> server, WorldId worldId) {
+  if (!server)
+    return std::unexpected(StarException("Cannot create a world thread without a server"));
+  auto worldName = printWorldId(worldId);
+  if (!worldName)
+    return std::unexpected(std::move(worldName.error()));
+  return std::shared_ptr<WorldServerThread>(new WorldServerThread(std::move(server), std::move(worldId), std::move(*worldName)));
+}
+
+WorldServerThread::WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId, String worldName)
+  : Thread("WorldServerThread: " + worldName),
     m_worldServer(std::move(server)),
     m_worldId(std::move(worldId)),
+    m_worldName(std::move(worldName)),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
-  if (m_worldServer)
-    m_worldServer->setWorldId(printWorldId(m_worldId));
+  m_worldServer->setWorldId(m_worldName);
 }
 
 WorldServerThread::~WorldServerThread() {
-  try {
-    close();
-  } catch (std::exception const& e) {
-    std::fprintf(stderr, "Error stopping world thread during destruction: %s\n", e.what());
-  } catch (...) {
-    std::fprintf(stderr, "Unknown error stopping world thread during destruction\n");
-  }
+  if (auto closed = close(); !closed)
+    EmergencyLog::error("Error stopping world thread during destruction: {}", closed.error().what());
+  if (!isJoined())
+    fatalError("Cannot destroy WorldServerThread while its native thread still borrows world state", false);
+}
+
+std::expected<void, StarException> WorldServerThread::recordError(StarException const& error) const {
+  m_errorOccurred = true;
+  auto logged = m_worldServer->root().logger().error("WorldServerThread error: {}",
+      outputException(ExceptionDiagnostic(error), true));
+  if (!logged)
+    return std::unexpected(error.withContext(strf("World error logging also failed: {}", logged.error().what())));
+  return {};
 }
 
 WorldId WorldServerThread::worldId() const {
   return m_worldId;
 }
 
-void WorldServerThread::start() {
+std::expected<void, StarException> WorldServerThread::start() {
   m_stop = false;
   m_errorOccurred = false;
-  Thread::start();
+  auto started = Thread::start();
+  if (!started)
+    return std::unexpected(std::move(started.error()));
+  return {};
 }
 
-void WorldServerThread::stop() {
+std::expected<void, StarException> WorldServerThread::stop() {
   m_stop = true;
-  Thread::join();
+  auto joined = Thread::join();
+  if (!joined)
+    return std::unexpected(std::move(joined.error()));
+  return {};
 }
 
-void WorldServerThread::close() {
-  stop();
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    for (auto clientId : m_worldServer->clientIds())
-      removeClient(clientId);
-    m_worldServer->close();
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_errorOccurred = true;
-    m_worldServer->root().logger().error("WorldServerThread final save failed: {}", outputException(e, true));
+std::expected<void, StarException> WorldServerThread::close() {
+  auto stopped = stop();
+  if (!isJoined()) {
+    auto error = stopped
+        ? StarException("WorldServerThread native thread remains unjoined after stop")
+        : std::move(stopped.error());
+    auto drained = drainMessages();
+    if (!drained)
+      return std::unexpected(error.withContext(strf("World message drain also failed: {}", drained.error().what())));
+    return std::unexpected(std::move(error));
   }
+  RecursiveMutexLocker locker(m_mutex);
+  std::optional<StarException> error;
+  if (!stopped)
+    error = std::move(stopped.error());
+  for (auto clientId : m_worldServer->clientIds()) {
+    auto removed = removeClient(clientId);
+    if (!removed && !error)
+      error = std::move(removed.error());
+  }
+  auto drained = drainMessages();
+  if (!drained && !error)
+    error = std::move(drained.error());
+  auto closed = m_worldServer->close();
+  if (!closed) {
+    auto logged = recordError(closed.error());
+    if (!error)
+      error = logged ? std::move(closed.error()) : std::move(logged.error());
+    else if (!logged)
+      *error = error->withContext(logged.error().what());
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
 void WorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
@@ -215,60 +260,73 @@ bool WorldServerThread::shouldExpire() {
   return m_shouldExpire;
 }
 
-bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    return m_worldServer->spawnTargetValid(spawnTarget);
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-    return false;
-  }
-}
-
-bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules, ClientSubWorldId subWorldId) {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules, subWorldId)) {
-      m_clients.add(clientId);
-      return true;
-    }
-
-    return false;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-    return false;
-  }
-}
-
-List<std::shared_ptr<Packet>> WorldServerThread::removeClient(ConnectionId clientId) {
+std::expected<bool, StarException> WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
   RecursiveMutexLocker locker(m_mutex);
-  if (!m_clients.contains(clientId))
-    return {};
-
-  RecursiveMutexLocker queueLocker(m_queueMutex);
-
-  List<std::shared_ptr<Packet>> outgoingPackets;
-  try {
-    auto incomingPackets = take(m_incomingPacketQueue[clientId]);
-    if (m_worldServer->hasClient(clientId))
-      m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
-
-    outgoingPackets = take(m_outgoingPacketQueue[clientId]);
-    if (m_worldServer->hasClient(clientId))
-      outgoingPackets.appendAll(m_worldServer->removeClient(clientId));
-
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
+  auto valid = m_worldServer->spawnTargetValid(spawnTarget);
+  if (!valid) {
+    auto logged = recordError(valid.error());
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
   }
+  return valid;
+}
 
-  m_clients.remove(clientId);
+std::expected<bool, StarException> WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget,
+    bool isLocal, bool isAdmin, NetCompatibilityRules netRules, ClientSubWorldId subWorldId) {
+  RecursiveMutexLocker locker(m_mutex);
+  auto added = m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules, subWorldId);
+  if (!added) {
+    auto logged = recordError(added.error());
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+    return std::unexpected(std::move(added.error()));
+  }
+  if (*added)
+    m_clients.add(clientId);
+  return *added;
+}
+
+std::expected<List<std::shared_ptr<Packet>>, StarException> WorldServerThread::removeClient(ConnectionId clientId) {
+  RecursiveMutexLocker locker(m_mutex);
+  RecursiveMutexLocker queueLocker(m_queueMutex);
+  List<std::shared_ptr<Packet>> incomingPackets;
+  if (auto queued = m_incomingPacketQueue.ptr(clientId))
+    incomingPackets = take(*queued);
+  std::optional<StarException> error;
+  if (m_worldServer->hasClient(clientId)) {
+    m_clients.add(clientId);
+    if (m_removingClients.add(clientId)) {
+      auto handled = m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
+      if (!handled) {
+        auto logged = recordError(handled.error());
+        error = logged ? std::move(handled.error()) : std::move(logged.error());
+      }
+    }
+  }
+  List<std::shared_ptr<Packet>> outgoingPackets;
+  if (auto queued = m_outgoingPacketQueue.ptr(clientId))
+    outgoingPackets = take(*queued);
+  if (m_worldServer->hasClient(clientId)) {
+    auto removed = m_worldServer->removeClient(clientId);
+    if (!removed) {
+      auto logged = recordError(removed.error());
+      if (!error)
+        error = logged ? std::move(removed.error()) : std::move(logged.error());
+      else if (!logged)
+        *error = error->withContext(logged.error().what());
+    } else {
+      outgoingPackets.appendAll(std::move(*removed));
+    }
+  }
+  if (!m_worldServer->hasClient(clientId)) {
+    m_clients.remove(clientId);
+    m_removingClients.remove(clientId);
+  }
   m_incomingPacketQueue.remove(clientId);
+  if (error) {
+    m_outgoingPacketQueue[clientId] = std::move(outgoingPackets);
+    return std::unexpected(std::move(*error));
+  }
   m_outgoingPacketQueue.remove(clientId);
   return outgoingPackets;
 }
@@ -309,35 +367,31 @@ List<std::shared_ptr<Packet>> WorldServerThread::pullOutgoingPackets(ConnectionI
   return take(m_outgoingPacketQueue[clientId]);
 }
 
-std::optional<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    if (auto player = m_worldServer->clientPlayer(clientId))
-      return player->position() + player->feetOffset();
-    return {};
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-    return {};
-  }
-}
-
-std::optional<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    return m_worldServer->pullNewPlanetType();
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-    return {};
-  }
-}
-
-void WorldServerThread::executeAction(WorldServerAction action) {
+std::expected<std::optional<Vec2F>, StarException> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
   RecursiveMutexLocker locker(m_mutex);
-  action(this, m_worldServer.get());
+  if (auto player = m_worldServer->clientPlayer(clientId)) {
+    auto feetOffset = player->feetOffset();
+    if (!feetOffset) {
+      auto logged = recordError(feetOffset.error());
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      return std::unexpected(std::move(feetOffset.error()));
+    }
+    return std::optional<Vec2F>(player->position() + *feetOffset);
+  }
+  return std::optional<Vec2F>{};
+}
+
+std::expected<std::optional<std::pair<String, String>>, StarException> WorldServerThread::pullNewPlanetType() {
+  RecursiveMutexLocker locker(m_mutex);
+  return m_worldServer->pullNewPlanetType();
+}
+
+std::expected<void, StarException> WorldServerThread::executeAction(WorldServerAction action) {
+  RecursiveMutexLocker locker(m_mutex);
+  if (!action)
+    return std::unexpected(StarException("Cannot execute an empty server world action"));
+  return action(this, m_worldServer.get());
 }
 
 void WorldServerThread::setUpdateAction(WorldServerAction updateAction) {
@@ -350,143 +404,230 @@ void WorldServerThread::passMessages(List<Message>&& messages) {
   m_messages.appendAll(std::move(messages));
 }
 
-void WorldServerThread::unloadAll(bool force) {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    m_worldServer->unloadAll(force);
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-  }
-}
-
-WorldChunks WorldServerThread::readChunks() {
-  try {
-    RecursiveMutexLocker locker(m_mutex);
-    return m_worldServer->readChunks();
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-    return {};
-  }
-}
-
-void WorldServerThread::run() {
-  try {
-    auto& root = m_worldServer->root();
-    double updateMeasureWindow = root.assets()->json("/universe_server.config:updateMeasureWindow").toDouble();
-    double fidelityDecrementScore = root.assets()->json("/universe_server.config:fidelityDecrementScore").toDouble();
-    double fidelityIncrementScore = root.assets()->json("/universe_server.config:fidelityIncrementScore").toDouble();
-
-    String serverFidelityMode = root.configuration()->get("serverFidelity").toString();
-    std::optional<WorldServerFidelity> lockedFidelity;
-    if (!serverFidelityMode.equalsIgnoreCase("automatic"))
-      lockedFidelity = WorldServerFidelityNames.getLeft(serverFidelityMode);
-
-    double storageInterval = root.assets()->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
-    Timer storageTimer = Timer::withTime(storageInterval);
-
-    TickRateApproacher tickApproacher(1.0f / m_worldServer->root().timing().serverTimestep, updateMeasureWindow);
-    double fidelityScore = 0.0;
-    WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
-
-    while (!m_stop && !m_errorOccurred) {
-      auto fidelity = lockedFidelity.value_or(automaticFidelity);
-      m_worldServer->root().logMap().set(strf("server_{}_fidelity", printWorldId(m_worldId)), WorldServerFidelityNames.getRight(fidelity));
-      m_worldServer->root().logMap().set(strf("server_{}_update", printWorldId(m_worldId)), strf("{:4.2f}Hz", tickApproacher.rate()));
-
-      update(fidelity);
-      tickApproacher.setTargetTickRate(1.0f / m_worldServer->root().timing().serverTimestep);
-      tickApproacher.tick();
-
-      if (storageTimer.timeUp()) {
-        sync();
-        storageTimer.restart(storageInterval);
-      }
-
-      double spareTime = tickApproacher.spareTime();
-      fidelityScore += spareTime;
-
-      if (fidelityScore <= fidelityDecrementScore) {
-        if (automaticFidelity > WorldServerFidelity::Minimum)
-          automaticFidelity = (WorldServerFidelity)((int)automaticFidelity - 1);
-        fidelityScore = 0.0;
-      }
-
-      if (fidelityScore >= fidelityIncrementScore) {
-        if (automaticFidelity < WorldServerFidelity::High)
-          automaticFidelity = (WorldServerFidelity)((int)automaticFidelity + 1);
-        fidelityScore = 0.0;
-      }
-
-      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
-      if (spareMilliseconds > 0)
-        Thread::sleepPrecise(spareMilliseconds);
-    }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
-    m_errorOccurred = true;
-  }
-}
-
-void WorldServerThread::update(WorldServerFidelity fidelity) {
+std::expected<void, StarException> WorldServerThread::unloadAll(bool force) {
   RecursiveMutexLocker locker(m_mutex);
-  auto unerroredClientIds = m_worldServer->clientIds();
-  for (auto clientId : unerroredClientIds) {
-    RecursiveMutexLocker queueLocker(m_queueMutex);
-    auto incomingPackets = take(m_incomingPacketQueue[clientId]);
-    queueLocker.unlock();
-    try {
-      m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      m_worldServer->root().logger().error("WorldServerThread exception caught handling incoming packets for client {}: {}",
-          clientId, outputException(e, true));
-      RecursiveMutexLocker queueLocker(m_queueMutex);
-      m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
-      unerroredClientIds.remove(clientId);
-    }
+  auto unloaded = m_worldServer->unloadAll(force);
+  if (!unloaded) {
+    auto logged = recordError(unloaded.error());
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
   }
+  return unloaded;
+}
 
-  float dt = m_worldServer->root().timing().serverTimestep * m_worldServer->root().timing().timescale;
-  m_worldServer->setFidelity(fidelity);
-  if (dt > 0.0f && (!m_pause || *m_pause == false))
-    m_worldServer->update(dt);
+std::expected<WorldChunks, StarException> WorldServerThread::readChunks() {
+  RecursiveMutexLocker locker(m_mutex);
+  auto chunks = m_worldServer->readChunks();
+  if (!chunks) {
+    auto logged = recordError(chunks.error());
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+  }
+  return chunks;
+}
 
+std::expected<void, StarException> WorldServerThread::drainMessages() {
   List<Message> messages;
   {
     RecursiveMutexLocker locker(m_messageMutex);
     messages = std::move(m_messages);
   }
+  std::optional<StarException> error;
   for (auto& message : messages) {
-    if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
-      if (std::holds_alternative<RpcPromise<Json>>(*resp))
-        message.promise.chain(std::get<RpcPromise<Json>>(*resp));
-      else
-        message.promise.fulfill(std::get<Json>(*resp));
-    else
-      message.promise.fail("Message not handled by world");
+    auto failed = message.promise.fail("World server stopped");
+    if (!failed && !error)
+      error = std::move(failed.error());
   }
-
-  for (auto& clientId : unerroredClientIds) {
-    auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);
-    RecursiveMutexLocker queueLocker(m_queueMutex);
-    m_outgoingPacketQueue[clientId].appendAll(std::move(outgoingPackets));
-  }
-
-  m_shouldExpire = m_worldServer->shouldExpire();
-
-  if (m_updateAction)
-    m_updateAction(this, m_worldServer.get());
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void WorldServerThread::sync() {
+std::expected<void, StarException> WorldServerThread::run() {
+  auto result = runLoop();
+  if (!result) {
+    auto logged = recordError(result.error());
+    if (!logged)
+      result = std::unexpected(std::move(logged.error()));
+  }
+  auto drained = drainMessages();
+  if (!drained) {
+    auto logged = recordError(drained.error());
+    if (result) {
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      return std::unexpected(std::move(drained.error()));
+    }
+    if (!logged)
+      result = std::unexpected(result.error().withContext(logged.error().what()));
+  }
+  return result;
+}
+
+std::expected<void, StarException> WorldServerThread::runLoop() {
+  auto& root = m_worldServer->root();
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/universe_server.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto updateMeasureWindow = config->getDouble("updateMeasureWindow");
+  if (!updateMeasureWindow)
+    return std::unexpected(std::move(updateMeasureWindow.error()));
+  auto fidelityDecrementScore = config->getDouble("fidelityDecrementScore");
+  if (!fidelityDecrementScore)
+    return std::unexpected(std::move(fidelityDecrementScore.error()));
+  auto fidelityIncrementScore = config->getDouble("fidelityIncrementScore");
+  if (!fidelityIncrementScore)
+    return std::unexpected(std::move(fidelityIncrementScore.error()));
+  auto configuration = root.configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  auto fidelityConfig = (*configuration)->get("serverFidelity");
+  if (!fidelityConfig)
+    return std::unexpected(std::move(fidelityConfig.error()));
+  auto serverFidelityMode = fidelityConfig->toString();
+  if (!serverFidelityMode)
+    return std::unexpected(std::move(serverFidelityMode.error()));
+  auto automatic = serverFidelityMode->equalsIgnoreCase("automatic");
+  if (!automatic)
+    return std::unexpected(std::move(automatic.error()));
+  if (!WorldServerFidelityNames)
+    return std::unexpected(WorldServerFidelityNames.error());
+  std::optional<WorldServerFidelity> lockedFidelity;
+  if (!*automatic) {
+    auto fidelity = WorldServerFidelityNames->getLeft(*serverFidelityMode);
+    if (!fidelity)
+      return std::unexpected(std::move(fidelity.error()));
+    lockedFidelity = **fidelity;
+  }
+  auto storageIntervalConfig = config->getDouble("worldStorageInterval");
+  if (!storageIntervalConfig)
+    return std::unexpected(std::move(storageIntervalConfig.error()));
+  double storageInterval = *storageIntervalConfig / 1000.0;
+  Timer storageTimer = Timer::withTime(storageInterval);
+  TickRateApproacher tickApproacher(1.0f / root.timing().serverTimestep, *updateMeasureWindow);
+  double fidelityScore = 0.0;
+  WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
+  while (!m_stop && !m_errorOccurred) {
+    auto fidelity = lockedFidelity.value_or(automaticFidelity);
+    auto fidelityName = WorldServerFidelityNames->getRight(fidelity);
+    if (!fidelityName)
+      return std::unexpected(std::move(fidelityName.error()));
+    root.logMap().set(strf("server_{}_fidelity", m_worldName), **fidelityName);
+    root.logMap().set(strf("server_{}_update", m_worldName), strf("{:4.2f}Hz", tickApproacher.rate()));
+    auto updated = update(fidelity);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+    tickApproacher.setTargetTickRate(1.0f / root.timing().serverTimestep);
+    tickApproacher.tick();
+    if (storageTimer.timeUp()) {
+      auto synced = sync();
+      if (!synced)
+        return std::unexpected(std::move(synced.error()));
+      storageTimer.restart(storageInterval);
+    }
+    double spareTime = tickApproacher.spareTime();
+    fidelityScore += spareTime;
+    if (fidelityScore <= *fidelityDecrementScore) {
+      if (automaticFidelity > WorldServerFidelity::Minimum)
+        automaticFidelity = (WorldServerFidelity)((int)automaticFidelity - 1);
+      fidelityScore = 0.0;
+    }
+    if (fidelityScore >= *fidelityIncrementScore) {
+      if (automaticFidelity < WorldServerFidelity::High)
+        automaticFidelity = (WorldServerFidelity)((int)automaticFidelity + 1);
+      fidelityScore = 0.0;
+    }
+    std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
+    if (spareMilliseconds > 0)
+      Thread::sleepPrecise(spareMilliseconds);
+  }
+  return {};
+}
+
+std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity fidelity) {
   RecursiveMutexLocker locker(m_mutex);
-  m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", printWorldId(m_worldId));
-  m_worldServer->sync();
+  auto unerroredClientIds = m_worldServer->clientIds();
+  for (auto clientId : m_worldServer->clientIds()) {
+    RecursiveMutexLocker queueLocker(m_queueMutex);
+    auto incomingPackets = take(m_incomingPacketQueue[clientId]);
+    queueLocker.unlock();
+    auto handled = m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
+    if (!handled) {
+      auto logged = m_worldServer->root().logger().error("WorldServerThread error handling incoming packets for client {}: {}",
+          clientId, outputException(ExceptionDiagnostic(handled.error()), true));
+      auto removed = m_worldServer->removeClient(clientId);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+      RecursiveMutexLocker outgoingLocker(m_queueMutex);
+      m_outgoingPacketQueue[clientId].appendAll(std::move(*removed));
+      unerroredClientIds.remove(clientId);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+    }
+  }
+
+  float dt = m_worldServer->root().timing().serverTimestep * m_worldServer->root().timing().timescale;
+  if (auto set = m_worldServer->setFidelity(fidelity); !set)
+    return std::unexpected(std::move(set.error()));
+  if (dt > 0.0f && (!m_pause || *m_pause == false)) {
+    auto updated = m_worldServer->update(dt);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+  }
+
+  List<Message> messages;
+  {
+    RecursiveMutexLocker messageLocker(m_messageMutex);
+    messages = std::move(m_messages);
+  }
+  std::optional<StarException> error;
+  for (auto& message : messages) {
+    if (error) {
+      auto failed = message.promise.fail("World message handling stopped");
+      if (!failed)
+        *error = error->withContext(strf("World message drain also failed: {}", failed.error().what()));
+      continue;
+    }
+    auto response = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args);
+    std::expected<void, StarException> completion;
+    if (!response) {
+      if (!error)
+        error = std::move(response.error());
+      completion = message.promise.fail("World message handling failed");
+    } else if (!*response) {
+      completion = message.promise.fail("Message not handled by world");
+    } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
+      completion = message.promise.chain(*promise);
+    } else {
+      completion = message.promise.fulfill(std::get<Json>(**response));
+    }
+    if (!completion && !error)
+      error = std::move(completion.error());
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  for (auto clientId : unerroredClientIds) {
+    auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);
+    if (!outgoingPackets)
+      return std::unexpected(std::move(outgoingPackets.error()));
+    RecursiveMutexLocker queueLocker(m_queueMutex);
+    m_outgoingPacketQueue[clientId].appendAll(std::move(*outgoingPackets));
+  }
+  m_shouldExpire = m_worldServer->shouldExpire();
+  if (m_updateAction)
+    return m_updateAction(this, m_worldServer.get());
+  return {};
+}
+
+std::expected<void, StarException> WorldServerThread::sync() {
+  RecursiveMutexLocker locker(m_mutex);
+  auto logged = m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", m_worldName);
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  return m_worldServer->sync();
 }
 
 }

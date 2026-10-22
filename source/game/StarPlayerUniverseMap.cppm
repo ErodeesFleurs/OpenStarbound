@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.map;
 import star.set;
@@ -38,10 +39,10 @@ import star.system_world;
 namespace Star {
 
 template <typename T>
-Json jsonFromBookmarkTarget(T const& target);
+[[nodiscard]] std::expected<Json, StarException> jsonFromBookmarkTarget(T const& target);
 
 template <typename T>
-T jsonToBookmarkTarget(Json const& json);
+[[nodiscard]] std::expected<T, StarException> jsonToBookmarkTarget(Json const& json);
 
 // Bookmark<T> requires T to implement jsonToBookmarkTarget<T> and jsonFromBookmarkTarget<T>
 // also operator== and operator!=
@@ -52,8 +53,8 @@ struct Bookmark {
   String bookmarkName;
   String icon;
 
-  static Bookmark fromJson(Json const& json);
-  Json toJson() const;
+  [[nodiscard]] static std::expected<Bookmark, StarException> fromJson(Json const& json);
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   bool operator==(Bookmark<T> const& rhs) const;
   bool operator!=(Bookmark<T> const& rhs) const;
@@ -76,31 +77,32 @@ public:
   };
 
   PlayerUniverseMap();
-  PlayerUniverseMap(Json const& json);
+  // Decodes every saved universe before publishing the reconstructed map.
+  [[nodiscard]] static std::expected<PlayerUniverseMap, StarException> create(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   // pair of system location and bookmark, not all orbit bookmarks include the system
-  List<std::pair<Vec3I, OrbitBookmark>> orbitBookmarks() const;
-  bool addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
-  bool removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
+  [[nodiscard]] std::expected<List<std::pair<Vec3I, OrbitBookmark>>, StarException> orbitBookmarks() const;
+  [[nodiscard]] std::expected<bool, StarException> addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
+  [[nodiscard]] std::expected<bool, StarException> removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
 
-  List<TeleportBookmark> teleportBookmarks() const;
-  bool addTeleportBookmark(TeleportBookmark bookmark);
-  bool removeTeleportBookmark(TeleportBookmark const& bookmark);
-  void invalidateWarpAction(WarpAction const& bookmark);
+  [[nodiscard]] std::expected<List<TeleportBookmark>, StarException> teleportBookmarks() const;
+  [[nodiscard]] std::expected<bool, StarException> addTeleportBookmark(TeleportBookmark bookmark);
+  [[nodiscard]] std::expected<bool, StarException> removeTeleportBookmark(TeleportBookmark const& bookmark);
+  [[nodiscard]] std::expected<void, StarException> invalidateWarpAction(WarpAction const& bookmark);
 
-  std::optional<OrbitBookmark> worldBookmark(CelestialCoordinate const& world) const;
-  List<OrbitBookmark> systemBookmarks(CelestialCoordinate const& system) const;
-  List<OrbitBookmark> planetBookmarks(CelestialCoordinate const& planet) const;
+  [[nodiscard]] std::expected<std::optional<OrbitBookmark>, StarException> worldBookmark(CelestialCoordinate const& world) const;
+  [[nodiscard]] std::expected<List<OrbitBookmark>, StarException> systemBookmarks(CelestialCoordinate const& system) const;
+  [[nodiscard]] std::expected<List<OrbitBookmark>, StarException> planetBookmarks(CelestialCoordinate const& planet) const;
 
-  bool isMapped(CelestialCoordinate const& coordinate);
-  HashMap<Uuid, MappedObject> mappedObjects(CelestialCoordinate const& system);
+  [[nodiscard]] std::expected<bool, StarException> isMapped(CelestialCoordinate const& coordinate);
+  [[nodiscard]] std::expected<HashMap<Uuid, MappedObject>, StarException> mappedObjects(CelestialCoordinate const& system);
 
-  void addMappedCoordinate(CelestialCoordinate const& coordinate);
-  void addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit = {}, JsonObject parameters = {});
-  void removeMappedObject(CelestialCoordinate const& system, Uuid const& uuid);
-  void filterMappedObjects(CelestialCoordinate const& system, List<Uuid> const& allowed);
+  [[nodiscard]] std::expected<void, StarException> addMappedCoordinate(CelestialCoordinate const& coordinate);
+  [[nodiscard]] std::expected<void, StarException> addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit = {}, JsonObject parameters = {});
+  [[nodiscard]] std::expected<void, StarException> removeMappedObject(CelestialCoordinate const& system, Uuid const& uuid);
+  [[nodiscard]] std::expected<void, StarException> filterMappedObjects(CelestialCoordinate const& system, List<Uuid> const& allowed);
 
   void setServerUuid(std::optional<Uuid> serverUuid);
 
@@ -110,19 +112,19 @@ private:
     HashMap<Uuid, MappedObject> mappedObjects;
     Set<OrbitBookmark> bookmarks;
 
-    static SystemMap fromJson(Json const& json);
-    Json toJson() const;
+    [[nodiscard]] static std::expected<SystemMap, StarException> fromJson(Json const& json);
+    [[nodiscard]] std::expected<Json, StarException> toJson() const;
   };
   struct UniverseMap {
     HashMap<Vec3I, SystemMap> systems;
     Set<TeleportBookmark> teleportBookmarks;
 
-    static UniverseMap fromJson(Json const& json);
-    Json toJson() const;
+    [[nodiscard]] static std::expected<UniverseMap, StarException> fromJson(Json const& json);
+    [[nodiscard]] std::expected<Json, StarException> toJson() const;
   };
 
-  UniverseMap const& universeMap() const;
-  UniverseMap& universeMap();
+  [[nodiscard]] std::expected<UniverseMap const*, StarException> universeMap() const;
+  [[nodiscard]] std::expected<UniverseMap*, StarException> universeMap();
 
   std::optional<Uuid> m_serverUuid;
   HashMap<Uuid, UniverseMap> m_universeMaps;

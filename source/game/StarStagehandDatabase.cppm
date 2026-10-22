@@ -18,11 +18,12 @@ class Stagehand;
 
 class StagehandDatabase {
 public:
-  explicit StagehandDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<StagehandDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<Stagehand> createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Stagehand>, StarException> createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
 
 private:
+  explicit StagehandDatabase(Root& root) : m_root(root) {}
   Root& m_root;
   StringMap<Json> m_stagehandTypes;
 };

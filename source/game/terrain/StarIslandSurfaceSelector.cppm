@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 
@@ -25,11 +26,15 @@ struct IslandColumn {
 struct IslandSurfaceSelector : TerrainSelector {
   static char const* const Name;
 
-  IslandSurfaceSelector(Json const& config, TerrainSelectorParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<IslandSurfaceSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  IslandSurfaceSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters) : TerrainSelector(Name, config, parameters) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
-  IslandColumn generateColumn(int x) const;
+  [[nodiscard]] std::expected<IslandColumn, StarException> generateColumn(int x) const;
 
   mutable HashLruCache<int, IslandColumn> columnCache;
 
@@ -50,30 +55,59 @@ namespace Star {
 
 char const* const IslandSurfaceSelector::Name = "islandSurface";
 
-IslandSurfaceSelector::IslandSurfaceSelector(Json const& config, TerrainSelectorParameters const& parameters)
-  : TerrainSelector(Name, config, parameters) {
-  layerBaseHeight = parameters.baseHeight;
-  worldWidth = parameters.worldWidth;
-
-  islandElevation = config.getFloat("islandElevation");
-  islandTaperPoint = config.getFloat("islandTaperPoint");
-
-  islandHeight = PerlinF(config.getObject("islandHeight"), staticRandomU64(parameters.seed, parameters.baseHeight, "islandHeight"));
-  islandDepth = PerlinF(config.getObject("islandDepth"), staticRandomU64(parameters.seed, parameters.baseHeight, "islandDepth"));
-  islandDecision = PerlinF(config.getObject("islandDecision"), staticRandomU64(parameters.seed, parameters.baseHeight, "islandDecision"));
+std::expected<std::shared_ptr<IslandSurfaceSelector>, StarException> IslandSurfaceSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
+  auto result = std::make_shared<IslandSurfaceSelector>(ConstructionKey{}, config, parameters);
+  result->layerBaseHeight = parameters.baseHeight;
+  result->worldWidth = parameters.worldWidth;
+  auto elevation = config.getFloat("islandElevation");
+  if (!elevation)
+    return std::unexpected(std::move(elevation.error()));
+  result->islandElevation = *elevation;
+  auto taper = config.getFloat("islandTaperPoint");
+  if (!taper)
+    return std::unexpected(std::move(taper.error()));
+  result->islandTaperPoint = *taper;
+  auto readFunction = [&](char const* name) -> std::expected<PerlinF, StarException> {
+    auto functionConfig = config.getObject(name);
+    if (!functionConfig)
+      return std::unexpected(std::move(functionConfig.error()));
+    return PerlinF::create(*functionConfig, staticRandomU64(parameters.seed, parameters.baseHeight, name));
+  };
+  auto height = readFunction("islandHeight");
+  if (!height)
+    return std::unexpected(std::move(height.error()));
+  result->islandHeight = std::move(*height);
+  auto depth = readFunction("islandDepth");
+  if (!depth)
+    return std::unexpected(std::move(depth.error()));
+  result->islandDepth = std::move(*depth);
+  auto decision = readFunction("islandDecision");
+  if (!decision)
+    return std::unexpected(std::move(decision.error()));
+  result->islandDecision = std::move(*decision);
+  return result;
 }
 
-IslandColumn IslandSurfaceSelector::generateColumn(int x) const {
+std::expected<IslandColumn, StarException> IslandSurfaceSelector::generateColumn(int x) const {
   float noiseAngle = 2 * std::numbers::pi * x / worldWidth;
   float noiseX = (std::cos(noiseAngle) * worldWidth) / (2 * std::numbers::pi);
   float noiseY = (std::sin(noiseAngle) * worldWidth) / (2 * std::numbers::pi);
 
   IslandColumn newCol;
-  float thisIslandDecision = islandDecision.get(noiseX, noiseY);
+  auto decision = islandDecision.get(noiseX, noiseY);
+  if (!decision)
+    return std::unexpected(std::move(decision.error()));
+  float thisIslandDecision = *decision;
   if (thisIslandDecision > 0) {
     float taperFactor = thisIslandDecision < islandTaperPoint ? std::sin((0.5 * std::numbers::pi * thisIslandDecision) / islandTaperPoint) : 1.0f;
-    newCol.topLevel = islandElevation + layerBaseHeight + taperFactor * islandHeight.get(noiseX, noiseY);
-    newCol.bottomLevel = islandElevation + layerBaseHeight - taperFactor * islandDepth.get(noiseX, noiseY);
+    auto height = islandHeight.get(noiseX, noiseY);
+    if (!height)
+      return std::unexpected(std::move(height.error()));
+    newCol.topLevel = islandElevation + layerBaseHeight + taperFactor * *height;
+    auto depth = islandDepth.get(noiseX, noiseY);
+    if (!depth)
+      return std::unexpected(std::move(depth.error()));
+    newCol.bottomLevel = islandElevation + layerBaseHeight - taperFactor * *depth;
   } else {
     newCol.topLevel = layerBaseHeight;
     newCol.bottomLevel = layerBaseHeight;
@@ -82,12 +116,13 @@ IslandColumn IslandSurfaceSelector::generateColumn(int x) const {
   return newCol;
 }
 
-float IslandSurfaceSelector::get(int x, int y) const {
+std::expected<float, StarException> IslandSurfaceSelector::get(int x, int y) const {
   auto col = columnCache.get(x, [this](int x) {
-      return IslandSurfaceSelector::generateColumn(x);
-    });
-
-  return (col.topLevel - col.bottomLevel) / 2 - std::abs((col.topLevel + col.bottomLevel) / 2 - y);
+    return IslandSurfaceSelector::generateColumn(x);
+  });
+  if (!col)
+    return std::unexpected(std::move(col.error()));
+  return ((*col)->topLevel - (*col)->bottomLevel) / 2 - std::abs(((*col)->topLevel + (*col)->bottomLevel) / 2 - y);
 }
 
 }

@@ -37,18 +37,18 @@ TEST(StringTest, find) {
 }
 
 TEST(StringTest, split_join) {
-  EXPECT_EQ(String("語語日語語日語語").split("日").join("_"), "語語_語語_語語");
-  EXPECT_EQ(String("日語語日語語日語語日").split("日").join("_"), "_語語_語語_語語_");
-  EXPECT_EQ(String("aabaabaa").split('b').join("_"), "aa_aa_aa");
-  EXPECT_EQ(String("baabaabaab").split('b').join("_"), "_aa_aa_aa_");
+  EXPECT_EQ(String("語語日語語日語語").split("日").transform([](auto const& parts) { return parts.join("_"); }), "語語_語語_語語");
+  EXPECT_EQ(String("日語語日語語日語語日").split("日").transform([](auto const& parts) { return parts.join("_"); }), "_語語_語語_語語_");
+  EXPECT_EQ(String("aabaabaa").split('b').transform([](auto const& parts) { return parts.join("_"); }), "aa_aa_aa");
+  EXPECT_EQ(String("baabaabaab").split('b').transform([](auto const& parts) { return parts.join("_"); }), "_aa_aa_aa_");
   EXPECT_EQ(String("a").split("bcd"), StringList{"a"});
   EXPECT_EQ(String("").split("bcd"), StringList{""});
   EXPECT_EQ(String("\n\raa\n\raa\r\n\r\naa\r\n\r\n\r\n").splitAny("\r\n"), StringList(3, "aa"));
   EXPECT_EQ(String("\n\r\n\r\r\n\r\n\r\n\r\n\r\n").splitAny("\r\n"), StringList());
   EXPECT_EQ(String("").splitAny("\r\n"), StringList());
-  EXPECT_EQ(String("xyxFoo").splitAny("x", 1).join("_"), "y_Foo");
-  EXPECT_EQ(String("xyxFoo").rsplitAny("x", 1).join("_"), "xy_Foo");
-  EXPECT_EQ(String("xyxFooxFoox").rsplitAny("x", 1).join("_"), "xyxFoo_Foo");
+  EXPECT_EQ(String("xyxFoo").splitAny("x", 1).transform([](auto const& parts) { return parts.join("_"); }), "y_Foo");
+  EXPECT_EQ(String("xyxFoo").rsplitAny("x", 1).transform([](auto const& parts) { return parts.join("_"); }), "xy_Foo");
+  EXPECT_EQ(String("xyxFooxFoox").rsplitAny("x", 1).transform([](auto const& parts) { return parts.join("_"); }), "xyxFoo_Foo");
   EXPECT_EQ(String("x").rsplitAny("x"), StringList());
   EXPECT_EQ(String("x").splitAny("x", 1), StringList());
   EXPECT_EQ(String("").splitAny("x", 1), StringList());
@@ -133,13 +133,42 @@ TEST(StringTest, format) {
   EXPECT_EQ(strf("{} ({}, {}, {})", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
 }
 
-TEST(StringTest, RuntimeFormattingPreservesByteLengthsAndErrors) {
-  std::string pattern = "{1}:{0:04x}";
-  EXPECT_EQ(strf(pattern, 42, String("日")), "日:002a");
-  String withNull("x\0{}", 4);
+TEST(StringTest, CompileTimeFormattingPreservesByteLengths) {
+  EXPECT_EQ(strf("{1}:{0:04x}", 42, String("日")), "日:002a");
+  constexpr std::string_view withNull("x\0{}", 4);
   EXPECT_EQ(strf(withNull, "y"), std::string("x\0y", 3));
-  EXPECT_THROW(strf(std::string("{} {}"), 1), FormatException);
-  EXPECT_THROW(strf(std::string("{:invalid}"), 1), FormatException);
+}
+
+TEST(StringTest, TagTemplatesPreserveByteLengthsAndRejectInvalidTags) {
+  std::array<std::pair<std::string_view, std::string_view>, 3> bindings{{
+      {"name", "日"}, {"value", "002a"}, {"name", "ignored"}}};
+  auto formatted = formatTags("<name>:<value>", bindings);
+  ASSERT_TRUE(formatted);
+  EXPECT_EQ(*formatted, "日:002a");
+  std::string_view withNull("x\0<name>", 8);
+  auto binary = formatTags(withNull, bindings);
+  ASSERT_TRUE(binary);
+  EXPECT_EQ(*binary, std::string("x\0日", 5));
+  std::array<std::pair<std::string_view, std::string_view>, 1> binaryBindings{{
+      {"bytes", std::string_view("\xff\0z", 3)}}};
+  auto binaryReplacement = formatTags("a<bytes>b", binaryBindings);
+  ASSERT_TRUE(binaryReplacement);
+  EXPECT_EQ(*binaryReplacement, std::string("a\xff\0zb", 5));
+  auto escaped = formatTags("<<name> <name> {not:std-format}", bindings);
+  ASSERT_TRUE(escaped);
+  EXPECT_EQ(*escaped, "<name> 日 {not:std-format}");
+  auto plain = formatTags("unchanged", bindings);
+  ASSERT_TRUE(plain);
+  EXPECT_EQ(*plain, "unchanged");
+  for (std::string_view invalid : {"<missing>", "<>", "<name"}) {
+    auto result = formatTags(invalid, bindings);
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().is<FormatException>());
+  }
+  // Invalid dynamic text must not poison subsequent valid substitutions.
+  auto recovered = formatTags("<value>", bindings);
+  ASSERT_TRUE(recovered);
+  EXPECT_EQ(*recovered, "002a");
 }
 
 TEST(StringTest, StandardFormattersPreserveProjectRepresentations) {
@@ -154,8 +183,10 @@ TEST(StringTest, StreamFormattingPreservesLongEscapedJson) {
   String text(std::string(700, 'x') + "\n\"");
   auto json = Json(text);
   std::string expected = "\"" + std::string(700, 'x') + "\\n\\\"\"";
-  EXPECT_EQ(std::format("{}", json), expected);
-  EXPECT_EQ(std::format("{:.5}", json), "\"xxxx");
+  auto serialized = json.repr();
+  ASSERT_TRUE(serialized);
+  EXPECT_EQ(std::format("{}", *serialized), expected);
+  EXPECT_EQ(std::format("{:.5}", *serialized), "\"xxxx");
 }
 
 TEST(StringTest, append) {
@@ -168,7 +199,7 @@ TEST(StringTest, append) {
   EXPECT_EQ(s, "foobar");
 
   s = "foo";
-  s.append('b');
+  ASSERT_TRUE(s.append('b'));
   EXPECT_EQ(s, "foob");
 }
 
@@ -182,7 +213,7 @@ TEST(StringTest, prepend) {
   EXPECT_EQ(s, "barfoo");
 
   s = "foo";
-  s.prepend('b');
+  ASSERT_TRUE(s.prepend('b'));
   EXPECT_EQ(s, "bfoo");
 }
 
@@ -200,17 +231,25 @@ TEST(StringTest, utf8) {
   EXPECT_EQ(String(s1.utf8Ptr()), String(utf8String));
 
   EXPECT_EQ(String("abcdefghijkl").slice(1, 6, 2), String("bdf"));
-  EXPECT_EQ(String("aa").compare("aaaa") < 0, true);
-  EXPECT_EQ(String("bb").compare("aaaa") > 0, true);
-  EXPECT_EQ(String("[日本語]").compare("[日本語]") == 0, true);
-  EXPECT_EQ(String("Aa").compare("aAaA", String::CaseInsensitive) < 0, true);
-  EXPECT_EQ(String("bB").compare("AaAa", String::CaseInsensitive) > 0, true);
-  EXPECT_EQ(String("[日本語]").compare("[日本語]", String::CaseInsensitive) == 0, true);
+  auto shorter = String("aa").compare("aaaa");
+  ASSERT_TRUE(shorter);
+  EXPECT_LT(*shorter, 0);
+  auto greater = String("bb").compare("aaaa");
+  ASSERT_TRUE(greater);
+  EXPECT_GT(*greater, 0);
+  EXPECT_EQ(String("[日本語]").compare("[日本語]"), 0);
+  auto shorterInsensitive = String("Aa").compare("aAaA", String::CaseInsensitive);
+  ASSERT_TRUE(shorterInsensitive);
+  EXPECT_LT(*shorterInsensitive, 0);
+  auto greaterInsensitive = String("bB").compare("AaAa", String::CaseInsensitive);
+  ASSERT_TRUE(greaterInsensitive);
+  EXPECT_GT(*greaterInsensitive, 0);
+  EXPECT_EQ(String("[日本語]").compare("[日本語]", String::CaseInsensitive), 0);
   EXPECT_EQ(String("[日本語]").find(']', 1), 4u);
 
   EXPECT_EQ(String("日本語日本語日本語日本語").substr(6, 3), String("日本語"));
   String s2 = "日本語日本語日本語日本語";
-  s2.erase(6, 3);
+  ASSERT_TRUE(s2.erase(6, 3));
   EXPECT_EQ(s2, String("日本語日本語日本語"));
   EXPECT_EQ(String("日本語日本語日本語").reverse(), String("語本日語本日語本日"));
 
@@ -244,50 +283,98 @@ TEST(StringTest, TagViewsPreserveOwningAndBorrowedReplacementBytes) {
   auto borrowed = source.maybeLookupTagsView([&](StringView) { return StringView(replacement); });
   ASSERT_TRUE(owning);
   ASSERT_TRUE(borrowed);
-  EXPECT_EQ(owning.value(), expected);
-  EXPECT_EQ(borrowed.value(), expected);
+  EXPECT_EQ(*owning, expected);
+  EXPECT_EQ(*borrowed, expected);
   EXPECT_FALSE(String("plain").maybeLookupTagsView([](StringView) { return String("unused"); }));
   auto unmatched = String("a<x").maybeLookupTagsView([](StringView) { return String("unused"); });
   ASSERT_TRUE(unmatched);
-  EXPECT_EQ(unmatched.value(), "a<x");
+  EXPECT_EQ(*unmatched, "a<x");
 }
 
 TEST(StringTest, CaseInsensitive) {
-  EXPECT_TRUE(CaseInsensitiveStringCompare()("foo", "FOO"));
-  EXPECT_FALSE(CaseInsensitiveStringCompare()("FOO", "foo "));
-  EXPECT_FALSE(CaseInsensitiveStringCompare()("foo ", "FOO"));
-  EXPECT_TRUE(CaseInsensitiveStringCompare()("FOO ", "foo "));
+  auto foo = CaseInsensitiveString::create("foo");
+  auto upperFoo = CaseInsensitiveString::create("FOO");
+  auto paddedFoo = CaseInsensitiveString::create("foo ");
+  auto paddedUpperFoo = CaseInsensitiveString::create("FOO ");
+  ASSERT_TRUE(foo);
+  ASSERT_TRUE(upperFoo);
+  ASSERT_TRUE(paddedFoo);
+  ASSERT_TRUE(paddedUpperFoo);
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*foo, *upperFoo));
+  EXPECT_FALSE(CaseInsensitiveStringCompare()(*upperFoo, *paddedFoo));
+  EXPECT_FALSE(CaseInsensitiveStringCompare()(*paddedFoo, *upperFoo));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*paddedUpperFoo, *paddedFoo));
 
-  EXPECT_EQ(CaseInsensitiveStringHash()("foo"), CaseInsensitiveStringHash()("FOO"));
-  EXPECT_NE(CaseInsensitiveStringHash()("FOO"), CaseInsensitiveStringHash()("foo "));
-  EXPECT_NE(CaseInsensitiveStringHash()("foo "), CaseInsensitiveStringHash()("FOO"));
-  EXPECT_EQ(CaseInsensitiveStringHash()("FOO "), CaseInsensitiveStringHash()("foo "));
+  EXPECT_EQ(CaseInsensitiveStringHash()(*foo), CaseInsensitiveStringHash()(*upperFoo));
+  EXPECT_NE(CaseInsensitiveStringHash()(*upperFoo), CaseInsensitiveStringHash()(*paddedFoo));
+  EXPECT_NE(CaseInsensitiveStringHash()(*paddedFoo), CaseInsensitiveStringHash()(*upperFoo));
+  EXPECT_EQ(CaseInsensitiveStringHash()(*paddedUpperFoo), CaseInsensitiveStringHash()(*paddedFoo));
+  auto upperView = CaseInsensitiveStringView::create(upperFoo->string());
+  ASSERT_TRUE(upperView);
+  EXPECT_EQ(upperView->utf8().data(), upperFoo->string().utf8().data());
+  EXPECT_EQ(CaseInsensitiveStringHash()(*foo), CaseInsensitiveStringHash()(*upperView));
+  EXPECT_EQ(CaseInsensitiveStringHash()(*foo), CaseInsensitiveStringHash()(foo->view()));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*foo, *upperView));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(*upperView, *foo));
+  EXPECT_TRUE(CaseInsensitiveStringCompare()(foo->view(), *upperView));
 
-  // Should only be 2 string allocations, dunno how to test it
-  StringMap<int, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> map;
-  map["One"] = 1;
-  map["Three"] = 3;
-  map["OnE"] = 2;
+  auto one = CaseInsensitiveString::create("One");
+  auto three = CaseInsensitiveString::create("Three");
+  auto mixedOne = CaseInsensitiveString::create("OnE");
+  auto lowerOne = CaseInsensitiveStringView::create(std::string_view("one"));
+  auto lowerThree = CaseInsensitiveStringView::create(std::string_view("three"));
+  auto two = CaseInsensitiveStringView::create(std::string_view("two"));
+  ASSERT_TRUE(one);
+  ASSERT_TRUE(three);
+  ASSERT_TRUE(mixedOne);
+  ASSERT_TRUE(lowerOne);
+  ASSERT_TRUE(lowerThree);
+  ASSERT_TRUE(two);
+  CaseInsensitiveStringMap<int> map;
+  map[*one] = 1;
+  map[*three] = 3;
+  map[*mixedOne] = 2;
 
-  EXPECT_TRUE(map.contains("one"));
-  EXPECT_TRUE(map.contains("three"));
-  EXPECT_FALSE(map.contains("two"));
+  EXPECT_TRUE(map.contains(*lowerOne));
+  EXPECT_TRUE(map.contains(*lowerThree));
+  EXPECT_FALSE(map.contains(*two));
+  auto found = map.get(*lowerOne);
+  ASSERT_TRUE(found);
+  EXPECT_EQ(**found, 2);
 
   StringSet keys;
   for (auto const& p : map)
-    keys.add(p.first);
+    keys.add(p.first.string());
 
   StringSet keyCmp = {"One", "Three"};
   EXPECT_EQ(keys, keyCmp);
 }
 
 TEST(StringTest, RegexSearch) {
-  EXPECT_TRUE(String("foo").regexMatch("foo", true, true));
-  EXPECT_FALSE(String("foo bar").regexMatch("foo", true, true));
-  EXPECT_TRUE(String("foo bar").regexMatch("foo", false, true));
-  EXPECT_TRUE(String("foo bar").regexMatch("FOO", false, false));
-  EXPECT_FALSE(String("foo bar").regexMatch("FOO", false, true));
-  EXPECT_TRUE(String("foo bar").regexMatch("^fo*", false, true));
-  EXPECT_FALSE(String("foo bar").regexMatch("^fo*", true, true));
-  EXPECT_TRUE(String("0123456").regexMatch("\\d{0,9}", true, true));
+  EXPECT_EQ(String("foo").regexMatch("foo", true, true), true);
+  EXPECT_EQ(String("foo bar").regexMatch("foo", true, true), false);
+  EXPECT_EQ(String("foo bar").regexMatch("foo", false, true), true);
+  EXPECT_EQ(String("foo bar").regexMatch("FOO", false, false), true);
+  EXPECT_EQ(String("foo bar").regexMatch("FOO", false, true), false);
+  EXPECT_EQ(String("foo bar").regexMatch("^fo*", false, true), true);
+  EXPECT_EQ(String("foo bar").regexMatch("^fo*", true, true), false);
+  EXPECT_EQ(String("0123456").regexMatch("\\d{0,9}", true, true), true);
+}
+
+TEST(StringTest, InvalidUnicodeIsRecoverableAndDoesNotModifyTheSource) {
+  String malformed("\xff", 1);
+  auto length = malformed.size();
+  ASSERT_FALSE(length);
+  EXPECT_TRUE(length.error().is<UnicodeException>());
+  auto substring = malformed.substr(0, 1);
+  ASSERT_FALSE(substring);
+  EXPECT_TRUE(substring.error().is<UnicodeException>());
+  auto invalidKey = CaseInsensitiveString::create(malformed);
+  ASSERT_FALSE(invalidKey);
+  EXPECT_TRUE(invalidKey.error().is<UnicodeException>());
+  auto invalidView = CaseInsensitiveStringView::create(malformed);
+  ASSERT_FALSE(invalidView);
+  EXPECT_TRUE(invalidView.error().is<UnicodeException>());
+  EXPECT_EQ(malformed.utf8(), std::string("\xff", 1));
+  EXPECT_EQ(String("日本語").size(), 3u);
 }

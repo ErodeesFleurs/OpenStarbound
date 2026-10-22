@@ -2,6 +2,7 @@ module;
 import std;
 import star.type_identity;
 import star.list;
+import star.format;
 
 
 struct PreviewTile;
@@ -20,7 +21,8 @@ public:
   }
 
   virtual ~PreviewTileTool() {}
-  virtual List<PreviewTile> previewTiles(bool shifting) const = 0;
+  [[nodiscard]]
+  virtual std::expected<List<PreviewTile>, StarException> previewTiles(bool shifting) const = 0;
 };
 
 }

@@ -3,6 +3,7 @@ import std;
 import star.byte_array;
 import star.io_device;
 import star.string;
+import star.format;
 
 namespace Star {
 
@@ -16,24 +17,24 @@ public:
   Buffer(Buffer const& buffer);
   Buffer(Buffer&& buffer);
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
-  void resize(StreamOffset size) override;
-  bool atEnd() override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> pos() override;
+  [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
+  [[nodiscard]] std::expected<void, StarException> resize(StreamOffset size) override;
+  [[nodiscard]] std::expected<bool, StarException> atEnd() override;
 
-  std::size_t read(char* data, std::size_t len) override;
-  std::size_t write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
 
-  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
-  void open(IOMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> open(IOMode mode) override;
 
-  String deviceName() const override;
+  [[nodiscard]] std::expected<String, StarException> deviceName() const override;
 
-  StreamOffset size() override;
-  
-  std::shared_ptr<IODevice> clone() override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> size() override;
+
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> clone() override;
 
   ByteArray& data();
   ByteArray const& data() const;
@@ -63,8 +64,8 @@ public:
   Buffer& operator=(Buffer&& buffer);
 
 private:
-  std::size_t doRead(std::size_t pos, char* data, std::size_t len);
-  std::size_t doWrite(std::size_t pos, char const* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, char* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> doWrite(std::size_t pos, char const* data, std::size_t len);
 
   std::size_t m_pos;
   ByteArray m_bytes;
@@ -82,21 +83,21 @@ public:
   ExternalBuffer(ExternalBuffer const& buffer) = default;
   ExternalBuffer& operator=(ExternalBuffer const& buffer) = default;
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
-  bool atEnd() override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> pos() override;
+  [[nodiscard]] std::expected<void, StarException> seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
+  [[nodiscard]] std::expected<bool, StarException> atEnd() override;
 
-  std::size_t read(char* data, std::size_t len) override;
-  std::size_t write(char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> read(char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> write(char const* data, std::size_t len) override;
 
-  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
-  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  [[nodiscard]] std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
-  String deviceName() const override;
+  [[nodiscard]] std::expected<String, StarException> deviceName() const override;
 
-  StreamOffset size() override;
-  
-  std::shared_ptr<IODevice> clone() override;
+  [[nodiscard]] std::expected<StreamOffset, StarException> size() override;
+
+  [[nodiscard]] std::expected<std::shared_ptr<IODevice>, StarException> clone() override;
 
   // Returns a pointer to the beginning of the Buffer.
   char const* ptr() const;
@@ -113,7 +114,7 @@ public:
   void reset(std::span<char const> externalData);
 
 private:
-  std::size_t doRead(std::size_t pos, char* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> doRead(std::size_t pos, char* data, std::size_t len);
 
   std::size_t m_pos;
   std::span<char const> m_bytes;

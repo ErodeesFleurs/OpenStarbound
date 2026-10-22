@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.id_map;
@@ -61,23 +62,38 @@ SwingableItem::SwingableItem() {
   m_swingFinish = 0;
 }
 
-SwingableItem::SwingableItem(Json const& params) : FireableItem(params) {
-  setParams(params);
+std::expected<void, StarException> SwingableItem::initializeSwingable(Json const& params) {
+  auto initialized = initializeFireable(params);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return setParams(params);
 }
 
-void SwingableItem::setParams(Json const& params) {
-  m_swingStart = params.getFloat("swingStart", 60) * std::numbers::pi / 180;
-  m_swingFinish = params.getFloat("swingFinish", -40) * std::numbers::pi / 180;
-  m_swingAimFactor = params.getFloat("swingAimFactor", 1);
-  m_coolingDownAngle = params.optFloat("coolingDownAngle").transform([](float angle) { return angle * std::numbers::pi / 180; });
-  FireableItem::setParams(params);
+std::expected<void, StarException> SwingableItem::setParams(Json const& params) {
+  auto start = params.getFloat("swingStart", 60);
+  if (!start)
+    return std::unexpected(std::move(start.error()));
+  m_swingStart = *start * std::numbers::pi / 180;
+  auto finish = params.getFloat("swingFinish", -40);
+  if (!finish)
+    return std::unexpected(std::move(finish.error()));
+  m_swingFinish = *finish * std::numbers::pi / 180;
+  auto factor = params.getFloat("swingAimFactor", 1);
+  if (!factor)
+    return std::unexpected(std::move(factor.error()));
+  m_swingAimFactor = *factor;
+  auto coolingDown = params.optFloat("coolingDownAngle");
+  if (!coolingDown)
+    return std::unexpected(std::move(coolingDown.error()));
+  m_coolingDownAngle = coolingDown->transform([](float angle) { return angle * std::numbers::pi / 180; });
+  return FireableItem::setParams(params);
 }
 
-float SwingableItem::getAngleDir(float angle, Direction) {
+std::expected<float, StarException> SwingableItem::getAngleDir(float angle, Direction) {
   return getAngle(angle);
 }
 
-float SwingableItem::getAngle(float aimAngle) {
+std::expected<float, StarException> SwingableItem::getAngle(float aimAngle) {
   if (!ready()) {
     if (coolingDown()) {
       if (m_coolingDownAngle)
@@ -95,7 +111,7 @@ float SwingableItem::getAngle(float aimAngle) {
   return -std::numbers::pi / 2;
 }
 
-float SwingableItem::getItemAngle(float aimAngle) {
+std::expected<float, StarException> SwingableItem::getItemAngle(float aimAngle) {
   return getAngle(aimAngle);
 }
 

@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.string;
@@ -15,11 +16,11 @@ enum class ChatSendMode : std::uint8_t {
   Party
 };
 
-extern EnumMap<ChatSendMode> const ChatSendModeNames;
+extern std::expected<EnumMap<ChatSendMode>, StarException> const ChatSendModeNames;
 
 struct MessageContext {
-  friend DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
-  friend DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MessageContext& messageContext);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MessageContext const& messageContext);
   enum Mode : std::uint8_t {
     Local,
     Party,
@@ -40,20 +41,20 @@ struct MessageContext {
   String channelName;
 };
 
-extern EnumMap<MessageContext::Mode> const MessageContextModeNames;
+extern std::expected<EnumMap<MessageContext::Mode>, StarException> const MessageContextModeNames;
 
-DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
-DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MessageContext& messageContext);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MessageContext const& messageContext);
 
 struct ChatReceivedMessage {
-  friend DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
-  friend DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
   ChatReceivedMessage();
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text);
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait);
-  ChatReceivedMessage(Json const& json);
+  [[nodiscard]] static std::expected<ChatReceivedMessage, StarException> create(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   MessageContext context;
 
@@ -66,8 +67,8 @@ struct ChatReceivedMessage {
   JsonObject data;
 };
 
-DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
-DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
 
 };
 

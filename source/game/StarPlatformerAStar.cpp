@@ -81,74 +81,57 @@ namespace PlatformerAStar {
       CollisionKind::Slippery,
       CollisionKind::Block};
 
-  PathFinder::PathFinder(World* world,
-      Vec2F searchFrom,
-      Vec2F searchTo,
-      ActorMovementParameters movementParameters,
-      Parameters searchParameters)
-    : m_world(world),
-      m_searchFrom(searchFrom),
-      m_searchTo(searchTo),
-      m_movementParams(std::move(movementParameters)),
-      m_searchParams(std::move(searchParameters)) {
-    initAStar();
+  PathFinder::PathFinder(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters)
+    : m_world(world), m_searchFrom(searchFrom), m_searchTo(searchTo), m_movementParams(std::move(movementParameters)), m_searchParams(std::move(searchParameters)) {}
+
+  std::expected<std::shared_ptr<PathFinder>, StarException> PathFinder::create(World* world, Vec2F searchFrom, Vec2F searchTo, ActorMovementParameters movementParameters, Parameters searchParameters) {
+    if (!world) return std::unexpected(MovementControllerException("PathFinder requires a world"));
+    auto finder = std::shared_ptr<PathFinder>(new PathFinder(world, searchFrom, searchTo, std::move(movementParameters), std::move(searchParameters)));
+    auto initialized = finder->initAStar();
+    if (!initialized) return std::unexpected(std::move(initialized.error()));
+    return finder;
   }
 
-  PathFinder::PathFinder(PathFinder const& rhs) {
-    operator=(rhs);
-  }
-
-  PathFinder& PathFinder::operator=(PathFinder const& rhs) {
-    m_world = rhs.m_world;
-    m_searchFrom = rhs.m_searchFrom;
-    m_searchTo = rhs.m_searchTo;
-    m_movementParams = rhs.m_movementParams;
-    m_searchParams = rhs.m_searchParams;
-    initAStar();
-    return *this;
-  }
-
-  std::optional<bool> PathFinder::explore(std::optional<unsigned> maxExploreNodes) {
-    return m_astar.value().explore(maxExploreNodes);
+  std::expected<std::optional<bool>, StarException> PathFinder::explore(std::optional<unsigned> maxExploreNodes) {
+    return (*m_astar).explore(maxExploreNodes);
   }
 
   std::optional<Path> const& PathFinder::result() const {
-    return m_astar.value().result();
+    return (*m_astar).result();
   }
 
-  void PathFinder::initAStar() {
-    auto heuristicCostFn = [this](Node const& fromNode, Node const& toNode) -> float {
+  std::expected<void, StarException> PathFinder::initAStar() {
+    auto heuristicCostFn = [this](Node const& fromNode, Node const& toNode) -> std::expected<double, StarException> {
       return heuristicCost(fromNode.position, toNode.position);
     };
-    auto goalReachedFn = [this](Node const& node) -> bool {
-      if (m_searchParams.mustEndOnGround && (!onGround(node.position) || node.velocity.has_value()))
-        return false;
+    auto goalReachedFn = [this](Node const& node) -> std::expected<bool, StarException> {
+      if (m_searchParams.mustEndOnGround) {
+        auto grounded = onGround(node.position);
+        if (!grounded) return std::unexpected(std::move(grounded.error()));
+        if (!*grounded || node.velocity.has_value()) return false;
+      }
       return distance(node.position, m_searchTo) < NodeGranularity;
     };
-    auto neighborsFn = [this](Node const& node, List<Edge>& result) {
-      auto neighborFilter = [this](Edge const& edge) -> bool {
+    auto neighborsFn = [this](Node const& node, List<Edge>& result) -> std::expected<void, StarException> {
+      auto generated = neighbors(node, result);
+      if (!generated) return std::unexpected(std::move(generated.error()));
+      result.filter([this](Edge const& edge) {
         return distance(edge.source.position, m_searchFrom) <= m_searchParams.maxDistance.value_or(DefaultMaxDistance);
-      };
-      neighbors(node, result);
-      result.filter(neighborFilter);
+      });
+      return {};
     };
-    auto validateEndFn = [this](Edge const& edge) -> bool {
-      if (!m_searchParams.mustEndOnGround)
-        return true;
-      return onGround(edge.target.position) && edge.action != Action::Jump;
+    auto validateEndFn = [this](Edge const& edge) -> std::expected<bool, StarException> {
+      if (!m_searchParams.mustEndOnGround) return true;
+      auto grounded = onGround(edge.target.position);
+      if (!grounded) return std::unexpected(std::move(grounded.error()));
+      return *grounded && edge.action != Action::Jump;
     };
-
-    Vec2F roundedFrom = roundToNode(m_searchFrom);
-    Vec2F roundedTo = roundToNode(m_searchTo);
-
-    m_astar.emplace(AStar::Search<Edge, Node>(heuristicCostFn,
-        neighborsFn,
-        goalReachedFn,
-        m_searchParams.returnBest,
-        {validateEndFn},
-        m_searchParams.maxFScore,
-        m_searchParams.maxNodesToSearch));
-    m_astar.value().start(Node{roundedFrom, {}}, Node{roundedTo, {}});
+    auto roundedFrom = roundToNode(m_searchFrom);
+    if (!roundedFrom) return std::unexpected(std::move(roundedFrom.error()));
+    auto roundedTo = roundToNode(m_searchTo);
+    if (!roundedTo) return std::unexpected(std::move(roundedTo.error()));
+    m_astar.emplace(heuristicCostFn, neighborsFn, goalReachedFn, m_searchParams.returnBest, std::optional<AStar::Search<Edge, Node>::ValidateEndFunction>{validateEndFn}, m_searchParams.maxFScore, m_searchParams.maxNodesToSearch);
+    return m_astar->start(Node{*roundedFrom, {}}, Node{*roundedTo, {}});
   }
 
   float PathFinder::heuristicCost(Vec2F const& fromPosition, Vec2F const& toPosition) const {
@@ -167,50 +150,45 @@ namespace PlatformerAStar {
     return Edge{distance(source.position, target.position), action, Vec2F(0, 0), source, target};
   }
 
-  void PathFinder::neighbors(Node const& node, List<Edge>& neighbors) const {
-    if (node.velocity.has_value()) {
-      // Follow the current trajectory. Most of the time, this will only produce
-      // one neighbor to avoid massive search space explosion, however one
-      // change of X velocity is allowed at the peak of a jump.
-      getArcNeighbors(node, neighbors);
-
-    } else if (inLiquid(node.position)) {
-      getSwimmingNeighbors(node, neighbors);
-
-    } else if (acceleration(node.position)[1] == 0.0f) {
-      getFlyingNeighbors(node, neighbors);
-
-    } else if (onGround(node.position)) {
-      getWalkingNeighbors(node, neighbors);
-
-      if (!onSolidGround(node.position)) {
-        // Add a node for dropping through a platform.
-        // When that node is explored, if it's not onGround, its neighbors will
-        // be falling to the ground.
-        getDropNeighbors(node, neighbors);
-      }
-
-      getJumpingNeighbors(node, neighbors);
-    } else {
-      // We're in the air, and can only fall now
-      getFallingNeighbors(node, neighbors);
+  std::expected<void, StarException> PathFinder::neighbors(Node const& node, List<Edge>& neighbors) const {
+    if (node.velocity) return getArcNeighbors(node, neighbors);
+    auto liquid = inLiquid(node.position);
+    if (!liquid) return std::unexpected(std::move(liquid.error()));
+    if (*liquid) return getSwimmingNeighbors(node, neighbors);
+    auto acc = acceleration(node.position);
+    if (!acc) return std::unexpected(std::move(acc.error()));
+    if ((*acc)[1] == 0.0f) return getFlyingNeighbors(node, neighbors);
+    auto grounded = onGround(node.position);
+    if (!grounded) return std::unexpected(std::move(grounded.error()));
+    if (!*grounded) return getFallingNeighbors(node, neighbors);
+    auto walking = getWalkingNeighbors(node, neighbors);
+    if (!walking) return std::unexpected(std::move(walking.error()));
+    auto solidGround = onSolidGround(node.position);
+    if (!solidGround) return std::unexpected(std::move(solidGround.error()));
+    if (!*solidGround) {
+      auto drop = getDropNeighbors(node, neighbors);
+      if (!drop) return std::unexpected(std::move(drop.error()));
     }
+    return getJumpingNeighbors(node, neighbors);
   }
 
-  void PathFinder::getDropNeighbors(Node const& node, List<Edge>& neighbors) const {
+  std::expected<void, StarException> PathFinder::getDropNeighbors(Node const& node, List<Edge>& neighbors) const {
     auto dropPosition = node.position + Vec2F(0, -1);
-    // The physics of platforms don't allow us to drop through platforms resting
-    // directly on solid surfaces. So if there is solid ground below the
-    // platform, don't allow dropping through the platform:
-    if (!onSolidGround(dropPosition)) {
+    // Platforms resting directly on solid surfaces cannot be dropped through.
+    auto grounded = onSolidGround(dropPosition);
+    if (!grounded) return std::unexpected(std::move(grounded.error()));
+    if (!*grounded) {
       float dropCost = m_searchParams.dropCost.value_or(DefaultDropCost);
-      float acc = acceleration(node.position)[1];
+      auto accelerationValue = acceleration(node.position);
+      if (!accelerationValue) return std::unexpected(std::move(accelerationValue.error()));
+      float acc = (*accelerationValue)[1];
       float dropSpeed = acc * std::sqrt(2.0 / std::abs(acc));
       neighbors.append(Edge{dropCost, Action::Drop, Vec2F(0, 0), node, Node{dropPosition, Vec2F(0, dropSpeed)}});
     }
+    return {};
   }
 
-  void PathFinder::getWalkingNeighborsInDirection(Node const& node, List<Edge>& neighbors, float direction) const {
+  std::expected<void, StarException> PathFinder::getWalkingNeighborsInDirection(Node const& node, List<Edge>& neighbors, float direction) const {
     auto addNode = [this, &node, &neighbors](Node const& target) {
       neighbors.append(defaultCostEdge(Action::Walk, node, target));
     };
@@ -219,14 +197,18 @@ namespace PlatformerAStar {
     Vec2F forwardAndUp = node.position + Vec2F(direction, 1);
     Vec2F forwardAndDown = node.position + Vec2F(direction, -1);
 
-    RectF bounds = boundBox(node.position);
+    auto boundsResult = boundBox(node.position);
+    if (!boundsResult) return std::unexpected(std::move(boundsResult.error()));
+    RectF bounds = *boundsResult;
 
     bool slopeDown = false;
     bool slopeUp = false;
     Vec2F forwardGroundPos = direction > 0 ? Vec2F(bounds.xMax(), bounds.yMin()) : Vec2F(bounds.xMin(), bounds.yMin());
     Vec2F backGroundPos = direction < 0 ? Vec2F(bounds.xMax(), bounds.yMin()) : Vec2F(bounds.xMin(), bounds.yMin());
-    m_world->forEachCollisionBlock(groundCollisionRect(node.position, BoundBoxKind::Full).padded(1), [&](CollisionBlock const& block) {
-      if (slopeUp || slopeDown) return;
+    auto groundRect = groundCollisionRect(node.position, BoundBoxKind::Full);
+    if (!groundRect) return std::unexpected(std::move(groundRect.error()));
+    auto collisionScan = m_world->forEachCollisionBlock(groundRect->padded(1), [&](CollisionBlock const& block) -> std::expected<void, StarException> {
+      if (slopeUp || slopeDown) return {};
       for (std::size_t i = 0; i < block.poly.sides(); ++i) {
         auto side = block.poly.side(i);
         auto sideDir = side.direction();
@@ -243,202 +225,253 @@ namespace PlatformerAStar {
           if (slopeUp || slopeDown) break;
         }
       }
+      return {};
     });
+    if (!collisionScan) return std::unexpected(std::move(collisionScan.error()));
 
     std::optional<float> walkSpeed = m_movementParams.walkSpeed;
     std::optional<float> runSpeed = m_movementParams.runSpeed;
 
-    // Check if it's possible to walk up a block like a ramp first
-    if (slopeUp && onGround(forwardAndUp) && validPosition(forwardAndUp)) {
-      // Walk up a slope
-      addNode(Node{forwardAndUp, {}});
-    } else if (validPosition(forward) && onGround(forward)) {
-      // Walk along a flat plane
-      addNode(Node{forward, {}});
-    } else if (slopeDown && validPosition(forward) && validPosition(forwardAndDown) && onGround(forwardAndDown)) {
-      // Walk down a slope
-      addNode(Node{forwardAndDown, {}});
-    } else if (validPosition(forward)) {
-      // Fall off a ledge
-      bounds = m_movementParams.standingPoly.value().boundBox();
-      float back = direction > 0 ? bounds.xMin() : bounds.xMax();
-      forward[0] -= (1 - std::fmod(std::abs(back), 1.0f)) * direction;
-      if (walkSpeed.has_value())
-        addNode(Node{forward, Vec2F{std::copysign(*walkSpeed, direction), 0.0f}});
-      if (runSpeed.has_value())
-        addNode(Node{forward, Vec2F{std::copysign(*runSpeed, direction), 0.0f}});
-    }
-  }
-
-  void PathFinder::getWalkingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    getWalkingNeighborsInDirection(node, neighbors, NodeGranularity);
-    getWalkingNeighborsInDirection(node, neighbors, -NodeGranularity);
-  }
-
-  void PathFinder::getFallingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    forEachArcNeighbor(node,  0.0f, [this, &node, &neighbors](Node const& target, bool landed) {
-      neighbors.append(defaultCostEdge(Action::Arc, node, target));
-      if (landed) {
-        neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+    // Try walking up the ramp first, preserving the original predicate order.
+    if (slopeUp) {
+      auto grounded = onGround(forwardAndUp);
+      if (!grounded) return std::unexpected(std::move(grounded.error()));
+      if (*grounded) {
+        auto valid = validPosition(forwardAndUp);
+        if (!valid) return std::unexpected(std::move(valid.error()));
+        if (*valid) { addNode(Node{forwardAndUp, {}}); return {}; }
       }
-    });
-  }
-
-  void PathFinder::getJumpingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    if (std::optional<float> jumpSpeed = m_movementParams.airJumpProfile.jumpSpeed) {
-      float jumpCost = m_searchParams.jumpCost.value_or(DefaultJumpCost);
-      if (inLiquid(node.position))
-        jumpCost = m_searchParams.liquidJumpCost.value_or(DefaultLiquidJumpCost);
-      auto addVel = [jumpCost, &node, &neighbors](Vec2F const& vel) {
-        neighbors.append(Edge{jumpCost, Action::Jump, vel, node, node.withVelocity(vel)});
-      };
-
-      forEachArcVelocity(*jumpSpeed, addVel);
-      forEachArcVelocity(*jumpSpeed * m_searchParams.smallJumpMultiplier.value_or(DefaultSmallJumpMultiplier), addVel);
     }
-  }
-
-  void PathFinder::getSwimmingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    // TODO avoid damaging liquids, e.g. lava
-
-    // We assume when we're swimming we can move freely against gravity
-    getFlyingNeighbors(node, neighbors);
-
-    // Also allow jumping out of the water if we're at the surface:
-    RectF box = boundBox(node.position);
-    if (acceleration(node.position)[1] != 0.0f && m_world->liquidLevel(box).level < 1.0f)
-      getJumpingNeighbors(node, neighbors);
-
-    neighbors.filter([this](Edge& edge) -> bool {
-      return inLiquid(edge.target.position);
-    });
-    neighbors.transform([this](Edge& edge) -> Edge& {
-      if (edge.action == Action::Fly)
-        edge.action = Action::Swim;
-      edge.cost *= m_searchParams.swimCost.value_or(DefaultSwimCost);
-      return edge;
-    });
-  }
-
-  void PathFinder::getFlyingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    auto addNode = [this, &node, &neighbors](
-        Node const& target) { neighbors.append(defaultCostEdge(Action::Fly, node, target)); };
-
-    Vec2F roundedPosition = roundToNode(node.position);
-    for (int dx = -1; dx < 2; ++dx) {
-      for (int dy = -1; dy < 2; ++dy) {
-        Vec2F newPosition = roundedPosition + Vec2F(dx, dy) * NodeGranularity;
-        if (validPosition(newPosition)) {
-          addNode(Node{newPosition, {}});
+    auto forwardValid = validPosition(forward);
+    if (!forwardValid) return std::unexpected(std::move(forwardValid.error()));
+    if (*forwardValid) {
+      auto grounded = onGround(forward);
+      if (!grounded) return std::unexpected(std::move(grounded.error()));
+      if (*grounded) { addNode(Node{forward, {}}); return {}; }
+    }
+    if (slopeDown) {
+      auto valid = validPosition(forward);
+      if (!valid) return std::unexpected(std::move(valid.error()));
+      if (*valid) {
+        auto downValid = validPosition(forwardAndDown);
+        if (!downValid) return std::unexpected(std::move(downValid.error()));
+        if (*downValid) {
+          auto grounded = onGround(forwardAndDown);
+          if (!grounded) return std::unexpected(std::move(grounded.error()));
+          if (*grounded) { addNode(Node{forwardAndDown, {}}); return {}; }
         }
       }
     }
+    auto ledgeValid = validPosition(forward);
+    if (!ledgeValid) return std::unexpected(std::move(ledgeValid.error()));
+    if (*ledgeValid) {
+      if (!m_movementParams.standingPoly) return std::unexpected(MovementControllerException("PathFinder requires standingPoly for walking"));
+      bounds = m_movementParams.standingPoly->boundBox();
+      float back = direction > 0 ? bounds.xMin() : bounds.xMax();
+      forward[0] -= (1 - std::fmod(std::abs(back), 1.0f)) * direction;
+      if (walkSpeed) addNode(Node{forward, Vec2F{std::copysign(*walkSpeed, direction), 0.0f}});
+      if (runSpeed) addNode(Node{forward, Vec2F{std::copysign(*runSpeed, direction), 0.0f}});
+    }
+    return {};
   }
 
-  void PathFinder::getArcNeighbors(Node const& node, List<Edge>& neighbors) const {
-    auto addNode = [this, &node, &neighbors](Node const& target, bool landed) {
+  std::expected<void, StarException> PathFinder::getWalkingNeighbors(Node const& node, List<Edge>& neighbors) const {
+    auto right = getWalkingNeighborsInDirection(node, neighbors, NodeGranularity);
+    if (!right) return std::unexpected(std::move(right.error()));
+    return getWalkingNeighborsInDirection(node, neighbors, -NodeGranularity);
+  }
+
+  std::expected<void, StarException> PathFinder::getFallingNeighbors(Node const& node, List<Edge>& neighbors) const {
+    return forEachArcNeighbor(node, 0.0f, [this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
       neighbors.append(defaultCostEdge(Action::Arc, node, target));
-      if (landed) {
-        neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+      if (landed) neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+      return {};
+    });
+  }
+
+  std::expected<void, StarException> PathFinder::getJumpingNeighbors(Node const& node, List<Edge>& neighbors) const {
+    if (auto jumpSpeed = m_movementParams.airJumpProfile.jumpSpeed) {
+      float jumpCost = m_searchParams.jumpCost.value_or(DefaultJumpCost);
+      auto liquid = inLiquid(node.position);
+      if (!liquid) return std::unexpected(std::move(liquid.error()));
+      if (*liquid) jumpCost = m_searchParams.liquidJumpCost.value_or(DefaultLiquidJumpCost);
+      auto addVel = [jumpCost, &node, &neighbors](Vec2F const& vel) -> std::expected<void, StarException> {
+        neighbors.append(Edge{jumpCost, Action::Jump, vel, node, node.withVelocity(vel)});
+        return {};
+      };
+      auto fullJump = forEachArcVelocity(*jumpSpeed, addVel);
+      if (!fullJump) return std::unexpected(std::move(fullJump.error()));
+      return forEachArcVelocity(*jumpSpeed * m_searchParams.smallJumpMultiplier.value_or(DefaultSmallJumpMultiplier), addVel);
+    }
+    return {};
+  }
+
+  std::expected<void, StarException> PathFinder::getSwimmingNeighbors(Node const& node, List<Edge>& neighbors) const {
+    // We assume when swimming that movement can be freely against gravity.
+    auto flying = getFlyingNeighbors(node, neighbors);
+    if (!flying) return std::unexpected(std::move(flying.error()));
+    auto bounds = boundBox(node.position);
+    if (!bounds) return std::unexpected(std::move(bounds.error()));
+    auto acc = acceleration(node.position);
+    if (!acc) return std::unexpected(std::move(acc.error()));
+    if ((*acc)[1] != 0.0f) {
+      auto liquid = m_world->liquidLevel(*bounds);
+      if (!liquid) return std::unexpected(std::move(liquid.error()));
+      if (liquid->level < 1.0f) {
+        auto jumping = getJumpingNeighbors(node, neighbors);
+        if (!jumping) return std::unexpected(std::move(jumping.error()));
       }
-    };
-
-    simulateArc(node, addNode);
-  }
-
-  void PathFinder::forEachArcVelocity(float yVelocity, std::function<void(Vec2F)> func) const {
-    std::optional<float> walkSpeed = m_movementParams.walkSpeed;
-    std::optional<float> runSpeed = m_movementParams.runSpeed;
-
-    func(Vec2F(0, yVelocity));
-    if (m_searchParams.enableWalkSpeedJumps && walkSpeed.has_value()) {
-      func(Vec2F(*walkSpeed, yVelocity));
-      func(Vec2F(-*walkSpeed, yVelocity));
     }
-    if (runSpeed.has_value()) {
-      func(Vec2F(*runSpeed, yVelocity));
-      func(Vec2F(-*runSpeed, yVelocity));
+    // Filtering is stable and fallible predicates are checked before each erase.
+    for (auto it = neighbors.begin(); it != neighbors.end();) {
+      auto liquid = inLiquid(it->target.position);
+      if (!liquid) return std::unexpected(std::move(liquid.error()));
+      if (!*liquid) it = neighbors.erase(it);
+      else ++it;
     }
+    for (auto& edge : neighbors) {
+      if (edge.action == Action::Fly) edge.action = Action::Swim;
+      edge.cost *= m_searchParams.swimCost.value_or(DefaultSwimCost);
+    }
+    return {};
   }
 
-  void PathFinder::forEachArcNeighbor(Node const& node, float yVelocity, std::function<void(Node, bool)> func) const {
-    Vec2F position = roundToNode(node.position);
-    forEachArcVelocity(yVelocity,
-        [this, &position, &func](Vec2F const& vel) {
-          simulateArc(Node{position, vel}, func);
-        });
+  std::expected<void, StarException> PathFinder::getFlyingNeighbors(Node const& node, List<Edge>& neighbors) const {
+    auto roundedPosition = roundToNode(node.position);
+    if (!roundedPosition) return std::unexpected(std::move(roundedPosition.error()));
+    for (int dx = -1; dx < 2; ++dx) {
+      for (int dy = -1; dy < 2; ++dy) {
+        Vec2F newPosition = *roundedPosition + Vec2F(dx, dy) * NodeGranularity;
+        auto valid = validPosition(newPosition);
+        if (!valid) return std::unexpected(std::move(valid.error()));
+        if (*valid) neighbors.append(defaultCostEdge(Action::Fly, node, Node{newPosition, {}}));
+      }
+    }
+    return {};
   }
 
-  Vec2F PathFinder::acceleration(Vec2F pos) const {
+  std::expected<void, StarException> PathFinder::getArcNeighbors(Node const& node, List<Edge>& neighbors) const {
+    return simulateArc(node, [this, &node, &neighbors](Node const& target, bool landed) -> std::expected<void, StarException> {
+      neighbors.append(defaultCostEdge(Action::Arc, node, target));
+      if (landed) neighbors.append(defaultCostEdge(Action::Land, target, Node{target.position, {}}));
+      return {};
+    });
+  }
+
+  std::expected<void, StarException> PathFinder::forEachArcVelocity(float yVelocity, std::function<std::expected<void, StarException>(Vec2F)> func) const {
+    auto walkSpeed = m_movementParams.walkSpeed;
+    auto runSpeed = m_movementParams.runSpeed;
+    auto vertical = func(Vec2F(0, yVelocity));
+    if (!vertical) return std::unexpected(std::move(vertical.error()));
+    if (m_searchParams.enableWalkSpeedJumps && walkSpeed) {
+      auto right = func(Vec2F(*walkSpeed, yVelocity));
+      if (!right) return std::unexpected(std::move(right.error()));
+      auto left = func(Vec2F(-*walkSpeed, yVelocity));
+      if (!left) return std::unexpected(std::move(left.error()));
+    }
+    if (runSpeed) {
+      auto right = func(Vec2F(*runSpeed, yVelocity));
+      if (!right) return std::unexpected(std::move(right.error()));
+      auto left = func(Vec2F(-*runSpeed, yVelocity));
+      if (!left) return std::unexpected(std::move(left.error()));
+    }
+    return {};
+  }
+
+  std::expected<void, StarException> PathFinder::forEachArcNeighbor(Node const& node, float yVelocity, std::function<std::expected<void, StarException>(Node, bool)> func) const {
+    auto position = roundToNode(node.position);
+    if (!position) return std::unexpected(std::move(position.error()));
+    return forEachArcVelocity(yVelocity, [this, &position, &func](Vec2F const& vel) -> std::expected<void, StarException> {
+      return simulateArc(Node{*position, vel}, func);
+    });
+  }
+
+  std::expected<Vec2F, StarException> PathFinder::acceleration(Vec2F pos) const {
     auto const& parameters = m_movementParams;
-    float gravity = m_world->gravity(pos) * parameters.gravityMultiplier.value_or(1.0f);
-    if (!parameters.gravityEnabled.value_or(true) || parameters.mass.value_or(0.0f) == 0.0f)
-      gravity = 0.0f;
+    auto worldGravity = m_world->gravity(pos);
+    if (!worldGravity) return std::unexpected(std::move(worldGravity.error()));
+    float gravity = *worldGravity * parameters.gravityMultiplier.value_or(1.0f);
+    if (!parameters.gravityEnabled.value_or(true) || parameters.mass.value_or(0.0f) == 0.0f) gravity = 0.0f;
     float buoyancy = parameters.airBuoyancy.value_or(0.0f);
     return Vec2F(0, -gravity * (1.0f - buoyancy));
   }
 
-  Vec2F PathFinder::simulateArcCollision(Vec2F position, Vec2F velocity, float dt, bool& collidedX, bool& collidedY) const {
-    // Returns the new position and whether a collision in the Y axis occurred.
-    // We avoid actual collision detection / resolution as that would make
-    // pathfinding very expensive.
-
+  std::expected<Vec2F, StarException> PathFinder::simulateArcCollision(Vec2F position, Vec2F velocity, float dt, bool& collidedX, bool& collidedY) const {
+    // Use tile bounds, rather than expensive full collision resolution.
     Vec2F newPosition = position + velocity * dt;
-    if (validPosition(newPosition)) {
+    auto valid = validPosition(newPosition);
+    if (!valid) return std::unexpected(std::move(valid.error()));
+    if (*valid) {
       collidedX = collidedY = false;
       return newPosition;
+    }
+    collidedX = collidedY = true;
+    auto horizontal = validPosition(Vec2F(newPosition[0], position[1]));
+    if (!horizontal) return std::unexpected(std::move(horizontal.error()));
+    if (*horizontal) {
+      collidedX = false;
+      position[0] = newPosition[0];
     } else {
-      collidedX = collidedY = true;
-      
-      if (validPosition(Vec2F(newPosition[0], position[1]))) {
-        collidedX = false;
-        position[0] = newPosition[0];
-      } else if (validPosition(Vec2F(position[0], newPosition[1]), BoundBoxKind::Stand)) {
+      auto vertical = validPosition(Vec2F(position[0], newPosition[1]), BoundBoxKind::Stand);
+      if (!vertical) return std::unexpected(std::move(vertical.error()));
+      if (*vertical) {
         collidedY = false;
         position[1] = newPosition[1];
       }
     }
-
     return position;
   }
 
-  void PathFinder::simulateArc(Node const& node, std::function<void(Node, bool)> func) const {
+  std::expected<void, StarException> PathFinder::simulateArc(Node const& node, std::function<std::expected<void, StarException>(Node, bool)> func) const {
     Vec2F position = node.position;
-    Vec2F velocity = node.velocity.value();
+    if (!node.velocity) return std::unexpected(MovementControllerException("PathFinder arc requires velocity"));
+    Vec2F velocity = *node.velocity;
     bool jumping = velocity[1] > 0.0f;
     float maxLandingVelocity = m_searchParams.maxLandingVelocity.value_or(DefaultMaxLandingVelocity);
     
-    Vec2F acc = acceleration(position);
+    auto accResult = acceleration(position);
+    if (!accResult) return std::unexpected(std::move(accResult.error()));
+    Vec2F acc = *accResult;
     if (acc[1] == 0.0f)
-      return;
+      return {};
 
     // Simulate until we're roughly NodeGranularity distance from the previous
     // node
-    Vec2F start = roundToNode(node.position);
+    auto startResult = roundToNode(node.position);
+    if (!startResult) return std::unexpected(std::move(startResult.error()));
+    Vec2F start = *startResult;
     Vec2F rounded = start;
     while (rounded == start) {
       float speed = velocity.magnitude();
       float dt = std::fmin(0.2f, speed != 0.0f ? SimulateArcGranularity / speed : std::sqrt(SimulateArcGranularity * 2.0 * std::abs(acc[1])));
 
       bool collidedX = false, collidedY = false;
-      position = simulateArcCollision(position, velocity, dt, collidedX, collidedY);
-      rounded = roundToNode(position);
+      auto simulated = simulateArcCollision(position, velocity, dt, collidedX, collidedY);
+      if (!simulated) return std::unexpected(std::move(simulated.error()));
+      position = *simulated;
+      auto roundedResult = roundToNode(position);
+      if (!roundedResult) return std::unexpected(std::move(roundedResult.error()));
+      rounded = *roundedResult;
 
       if (collidedY) {
         // We've either landed or hit our head on the ceiling
         if (!jumping) {
           // Landed
           if (velocity[1] < maxLandingVelocity)
-            func(Node{rounded, velocity}, true);
-          return;
-        } else if (onGround(rounded, BoundBoxKind::Stand)) {
+            if (auto result = func(Node{rounded, velocity}, true); !result) return std::unexpected(std::move(result.error()));
+          return {};
+        } else {
+          auto grounded = onGround(rounded, BoundBoxKind::Stand);
+          if (!grounded) return std::unexpected(std::move(grounded.error()));
+          if (*grounded) {
           // Simultaneously hit head and landed -- this is a gap we can *just*
           // fit
           // through. No checking of the maxLandingVelocity, since the tiles'
           // polygons are rounded, making this an easier target to hit than it
           // seems.
-          func(Node{rounded, velocity}, true);
-          return;
+          if (auto result = func(Node{rounded, velocity}, true); !result) return std::unexpected(std::move(result.error()));
+          return {};
+          }
         }
         // Hit ceiling. Remove y velocity
         velocity[1] = 0.0f;
@@ -460,29 +493,37 @@ namespace PlatformerAStar {
         std::optional<float> walkSpeed = m_movementParams.walkSpeed;
         float crawlMultiplier = m_searchParams.jumpDropXMultiplier.value_or(DefaultJumpDropXMultiplier);
 
-        if (node.velocity.value()[0] != 0.0f || m_searchParams.enableVerticalJumpAirControl) {
+        if ((*node.velocity)[0] != 0.0f || m_searchParams.enableVerticalJumpAirControl) {
           if (runSpeed.has_value())
-            func(Node{position, Vec2F{std::copysign(*runSpeed, velocity[0]), 0.0f}}, false);
+            if (auto result = func(Node{position, Vec2F{std::copysign(*runSpeed, velocity[0]), 0.0f}}, false); !result) return std::unexpected(std::move(result.error()));
           if (m_searchParams.enableWalkSpeedJumps && walkSpeed.has_value()) {
-            func(Node{position, Vec2F{std::copysign(*walkSpeed, velocity[0]), 0.0f}}, false);
-            func(Node{position, Vec2F{std::copysign(*walkSpeed * crawlMultiplier, velocity[0]), 0.0f}}, false);
+            if (auto result = func(Node{position, Vec2F{std::copysign(*walkSpeed, velocity[0]), 0.0f}}, false); !result) return std::unexpected(std::move(result.error()));
+            if (auto result = func(Node{position, Vec2F{std::copysign(*walkSpeed * crawlMultiplier, velocity[0]), 0.0f}}, false); !result) return std::unexpected(std::move(result.error()));
           }
         }
         // Only fall straight down if we were going straight up originally.
         // Going from an arc to falling straight down looks unnatural.
-        if (node.velocity.value()[0] == 0.0f) {
-          func(Node{position, Vec2F(0.0f, 0.0f)}, false);
+        if ((*node.velocity)[0] == 0.0f) {
+          if (auto result = func(Node{position, Vec2F(0.0f, 0.0f)}, false); !result) return std::unexpected(std::move(result.error()));
         }
-        return;
+        return {};
       }
     }
 
     if (!jumping) {
       if (velocity[1] < maxLandingVelocity) {
-        if (onGround(rounded, BoundBoxKind::Stand) || inLiquid(rounded)) {
+        auto grounded = onGround(rounded, BoundBoxKind::Stand);
+        if (!grounded) return std::unexpected(std::move(grounded.error()));
+        bool landed = *grounded;
+        if (!landed) {
+          auto liquid = inLiquid(rounded);
+          if (!liquid) return std::unexpected(std::move(liquid.error()));
+          landed = *liquid;
+        }
+        if (landed) {
           // Collision with platform
-          func(Node{rounded, velocity}, true);
-          return;
+          if (auto result = func(Node{rounded, velocity}, true); !result) return std::unexpected(std::move(result.error()));
+          return {};
         }
       }
     }
@@ -490,89 +531,88 @@ namespace PlatformerAStar {
     if constexpr (Star::DebugEnabled) {
       Star::starAssertFailed((velocity[1] != 0.0f));
     }
-    func(Node{position, velocity}, false);
-    return;
+    if (auto result = func(Node{position, velocity}, false); !result) return std::unexpected(std::move(result.error()));
+    return {};
   }
 
-  bool PathFinder::validPosition(Vec2F pos, BoundBoxKind boundKind) const {
-    return !m_world->rectTileCollision(RectI::integral(boundBox(pos, boundKind)), CollisionSolid);
+  std::expected<bool, StarException> PathFinder::validPosition(Vec2F pos, BoundBoxKind boundKind) const {
+    auto bounds = boundBox(pos, boundKind);
+    if (!bounds) return std::unexpected(std::move(bounds.error()));
+    auto collision = m_world->rectTileCollision(RectI::integral(*bounds), CollisionSolid);
+    if (!collision) return std::unexpected(std::move(collision.error()));
+    return !*collision;
   }
 
-  bool PathFinder::onGround(Vec2F pos, BoundBoxKind boundKind) const {
+  std::expected<bool, StarException> PathFinder::onGround(Vec2F pos, BoundBoxKind boundKind) const {
     auto groundRect = groundCollisionRect(pos, boundKind);
-    // Check there is something under the feet.
-    // We allow walking over the tops of objects (e.g. trapdoors) without being
-    // able to float inside objects.
-    if (m_world->rectTileCollision(RectI::integral(boundBox(pos, boundKind)), CollisionDynamic))
-      // We're inside an object. Don't collide with object directly below our
-      // feet:
-      return m_world->rectTileCollision(groundRect, CollisionFloorOnly);
-    // Not inside an object, allow colliding with objects below our feet:
-    // We need to be for sure above platforms, but can be up to a full tile
-    // below the top of solid blocks because rounded collision polys
-    return m_world->rectTileCollision(groundRect, CollisionAny) || m_world->rectTileCollision(groundRect.translated(Vec2I(0, 1)), CollisionSolid);
+    if (!groundRect) return std::unexpected(std::move(groundRect.error()));
+    auto bounds = boundBox(pos, boundKind);
+    if (!bounds) return std::unexpected(std::move(bounds.error()));
+    auto insideObject = m_world->rectTileCollision(RectI::integral(*bounds), CollisionDynamic);
+    if (!insideObject) return std::unexpected(std::move(insideObject.error()));
+    if (*insideObject) return m_world->rectTileCollision(*groundRect, CollisionFloorOnly);
+    auto grounded = m_world->rectTileCollision(*groundRect, CollisionAny);
+    if (!grounded) return std::unexpected(std::move(grounded.error()));
+    if (*grounded) return true;
+    return m_world->rectTileCollision(groundRect->translated(Vec2I(0, 1)), CollisionSolid);
   }
 
-  bool PathFinder::onSolidGround(Vec2F pos) const {
-    return m_world->rectTileCollision(groundCollisionRect(pos, BoundBoxKind::Drop), CollisionSolid);
+  std::expected<bool, StarException> PathFinder::onSolidGround(Vec2F pos) const {
+    auto groundRect = groundCollisionRect(pos, BoundBoxKind::Drop);
+    if (!groundRect) return std::unexpected(std::move(groundRect.error()));
+    return m_world->rectTileCollision(*groundRect, CollisionSolid);
   }
 
-  bool PathFinder::inLiquid(Vec2F pos) const {
-    RectF box = boundBox(pos);
-    return m_world->liquidLevel(box).level >= m_movementParams.minimumLiquidPercentage.value_or(0.5f);
+  std::expected<bool, StarException> PathFinder::inLiquid(Vec2F pos) const {
+    auto bounds = boundBox(pos);
+    if (!bounds) return std::unexpected(std::move(bounds.error()));
+    auto liquid = m_world->liquidLevel(*bounds);
+    if (!liquid) return std::unexpected(std::move(liquid.error()));
+    return liquid->level >= m_movementParams.minimumLiquidPercentage.value_or(0.5f);
   }
 
-  RectF PathFinder::boundBox(Vec2F pos, BoundBoxKind boundKind) const {
-    RectF boundBox;
-    if (boundKind == BoundBoxKind::Drop && m_searchParams.droppingBoundBox) {
-      boundBox = *m_searchParams.droppingBoundBox;
-    } else if (boundKind == BoundBoxKind::Stand && m_searchParams.standingBoundBox) {
-      boundBox = *m_searchParams.standingBoundBox;
-    } else if (m_searchParams.boundBox.has_value()) {
-      boundBox = *m_searchParams.boundBox;
-    } else {
-      boundBox = m_movementParams.standingPoly.value().boundBox();
+  std::expected<RectF, StarException> PathFinder::boundBox(Vec2F pos, BoundBoxKind boundKind) const {
+    RectF bounds;
+    if (boundKind == BoundBoxKind::Drop && m_searchParams.droppingBoundBox)
+      bounds = *m_searchParams.droppingBoundBox;
+    else if (boundKind == BoundBoxKind::Stand && m_searchParams.standingBoundBox)
+      bounds = *m_searchParams.standingBoundBox;
+    else if (m_searchParams.boundBox)
+      bounds = *m_searchParams.boundBox;
+    else {
+      if (!m_movementParams.standingPoly) return std::unexpected(MovementControllerException("PathFinder requires standingPoly or boundBox"));
+      bounds = m_movementParams.standingPoly->boundBox();
     }
-
-    boundBox.scale(BoundBoxRoundingErrorScaling);
-    boundBox.translate(pos);
-    return boundBox;
+    bounds.scale(BoundBoxRoundingErrorScaling);
+    bounds.translate(pos);
+    return bounds;
   }
 
-  RectI PathFinder::groundCollisionRect(Vec2F pos, BoundBoxKind boundKind) const {
-    RectI bounds = RectI::integral(boundBox(pos, boundKind));
-
-    Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
-    Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
-    // Return a 1-tile-thick rectangle below the 'feet' of the entity
-    return RectI(min, max);
+  std::expected<RectI, StarException> PathFinder::groundCollisionRect(Vec2F pos, BoundBoxKind boundKind) const {
+    auto box = boundBox(pos, boundKind);
+    if (!box) return std::unexpected(std::move(box.error()));
+    RectI bounds = RectI::integral(*box);
+    return RectI(Vec2I(bounds.xMin(), bounds.yMin() - 1), Vec2I(bounds.xMax(), bounds.yMin()));
   }
 
-  Vec2I PathFinder::groundNodePosition(Vec2F pos) const {
-    RectI bounds = RectI::integral(boundBox(pos, BoundBoxKind::Full));
-
-    return Vec2I(std::floor(pos[0]), bounds.yMin() - 1);
+  std::expected<Vec2I, StarException> PathFinder::groundNodePosition(Vec2F pos) const {
+    auto box = boundBox(pos, BoundBoxKind::Full);
+    if (!box) return std::unexpected(std::move(box.error()));
+    return Vec2I(std::floor(pos[0]), RectI::integral(*box).yMin() - 1);
   }
 
-  Vec2F PathFinder::roundToNode(Vec2F pos) const {
-    // Round pos to the nearest node.
-
-    // Work out the distance from the entity's origin to the bottom of its
-    // feet. We round Y relative to this so that we ensure we're able to
-    // generate
-    // paths through gaps that are *just* tall enough for the entity to fit
-    // through.
-    RectF boundBox;
-    if (m_searchParams.boundBox.has_value()) {
-      boundBox = *m_searchParams.boundBox;
-    } else {
-      boundBox = m_movementParams.standingPoly.value().boundBox();
+  std::expected<Vec2F, StarException> PathFinder::roundToNode(Vec2F pos) const {
+    // Round Y relative to the feet so exact-height gaps retain their nodes.
+    RectF bounds;
+    if (m_searchParams.boundBox) bounds = *m_searchParams.boundBox;
+    else {
+      if (!m_movementParams.standingPoly) return std::unexpected(MovementControllerException("PathFinder requires standingPoly or boundBox"));
+      bounds = m_movementParams.standingPoly->boundBox();
     }
-    float bottom = boundBox.yMin();
-
+    float bottom = bounds.yMin();
     float x = std::round(pos[0] / NodeGranularity) * NodeGranularity;
     float y = std::round((pos[1] + bottom) / NodeGranularity) * NodeGranularity - bottom;
-    return {x, y};
+    return Vec2F(x, y);
   }
 
   float PathFinder::distance(Vec2F a, Vec2F b) const {

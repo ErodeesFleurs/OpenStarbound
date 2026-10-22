@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 
 namespace Star {
@@ -13,18 +14,17 @@ public:
     Finished = 2
   };
 	
-  ~UserGeneratedContentService() = default;
+  virtual ~UserGeneratedContentService() = default;
 
   // Returns a list of the content the user is currently subscribed to.
   virtual StringList subscribedContentIds() const = 0;
 
   // If the content has been downloaded successfully, returns the path to the
   // downloaded content directory on the filesystem, otherwise nothing.
-  virtual std::optional<String> contentDownloadDirectory(String const& contentId) const = 0;
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> contentDownloadDirectory(String const& contentId) const = 0;
 
-  // Start downloading subscribed content in the background, returns true when
-  // all content is synchronized.
-  virtual UserGeneratedContentService::UGCState triggerContentDownload() = 0;
+  // Starts or polls background downloads; failures retain their real diagnostic.
+  [[nodiscard]] virtual std::expected<UserGeneratedContentService::UGCState, StarException> triggerContentDownload() = 0;
 };
 
 }

@@ -103,7 +103,7 @@ public:
 
   char& operator[](std::size_t i);
   char operator[](std::size_t i) const;
-  char at(std::size_t i) const;
+  [[nodiscard]] std::expected<char const*, StarException> at(std::size_t i) const;
 
   bool operator<(ByteArray const& b) const;
   bool operator==(ByteArray const& b) const;
@@ -254,11 +254,11 @@ inline char ByteArray::operator[](std::size_t i) const {
   return m_data[i];
 }
 
-inline char ByteArray::at(std::size_t i) const {
+[[nodiscard]] inline std::expected<char const*, StarException> ByteArray::at(std::size_t i) const {
   if (i >= m_size)
-    throw OutOfRangeException(strf("Out of range in ByteArray::at({})", i));
+    return std::unexpected(OutOfRangeException(strf("Out of range in ByteArray::at({})", i)));
 
-  return m_data[i];
+  return m_data + i;
 }
 
 inline std::size_t hash<ByteArray>::operator()(ByteArray const& b) const {

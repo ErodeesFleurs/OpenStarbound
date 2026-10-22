@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -20,16 +21,26 @@ bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
   return std::tie(entityId, positionIndex) == std::tie(eas.entityId, eas.positionIndex);
 }
 
-DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState) {
-  ds.read(anchorState.entityId);
-  ds.readVlqS(anchorState.positionIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, EntityAnchorState& anchorState) {
+  EntityAnchorState decoded;
+  auto entityId = ds.read(decoded.entityId);
+  if (!entityId)
+    return std::unexpected(std::move(entityId.error()));
+  auto position = ds.readVlqS(decoded.positionIndex);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  anchorState = decoded;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState) {
-  ds.write(anchorState.entityId);
-  ds.writeVlqS(anchorState.positionIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, EntityAnchorState const& anchorState) {
+  auto entityId = ds.write(anchorState.entityId);
+  if (!entityId)
+    return std::unexpected(std::move(entityId.error()));
+  auto position = ds.writeVlqS(anchorState.positionIndex);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  return &ds;
 }
 
 }

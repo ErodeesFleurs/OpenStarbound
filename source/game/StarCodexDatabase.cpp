@@ -28,27 +28,44 @@ import star.codex_database;
 
 namespace Star {
 
-CodexDatabase::CodexDatabase(std::shared_ptr<Assets const> assets) {
-  auto& files = assets->scanExtension("codex");
+std::expected<std::shared_ptr<CodexDatabase>, StarException> CodexDatabase::create(std::shared_ptr<Assets const> assets) {
+  auto result = std::shared_ptr<CodexDatabase>(new CodexDatabase());
+  auto files = assets->scanExtension("codex");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
   auto codexConfig = assets->json("/codex.config");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    try {
+  if (!codexConfig)
+    return std::unexpected(std::move(codexConfig.error()));
+  auto queued = assets->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto loaded = [&]() -> std::expected<std::shared_ptr<Codex>, StarException> {
       auto codexJson = assets->json(file);
-      codexJson = codexJson.set("icon",
-          AssetPath::relativeTo(AssetPath::directory(file), codexJson.getString("icon", codexConfig.getString("defaultIcon"))));
-
-      auto codex = std::make_shared<Codex>(codexJson, file);
-
-      if (m_codexes.contains(codex->id()))
-        throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);
-
-      m_codexes[codex->id()] = codex;
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw CodexDatabaseException(strf("Error reading codex config {}", file), e);
-    }
+      if (!codexJson)
+        return std::unexpected(std::move(codexJson.error()));
+      auto defaultIcon = codexConfig->getString("defaultIcon");
+      if (!defaultIcon)
+        return std::unexpected(std::move(defaultIcon.error()));
+      auto icon = codexJson->getString("icon", *defaultIcon);
+      if (!icon)
+        return std::unexpected(std::move(icon.error()));
+      auto resolved = codexJson->set("icon", AssetPath::relativeTo(AssetPath::directory(file), *icon));
+      if (!resolved)
+        return std::unexpected(std::move(resolved.error()));
+      auto codex = Codex::create(*resolved, file);
+      if (!codex)
+        return std::unexpected(std::move(codex.error()));
+      if (result->m_codexes.contains((*codex)->id()))
+        return std::unexpected(CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", (*codex)->id(), file));
+      return codex;
+    }();
+    if (!loaded)
+      return std::unexpected(CodexDatabaseException(strf("Error reading codex config {}", file), loaded.error()));
+    result->m_codexes[(*loaded)->id()] = std::move(*loaded);
   }
+  return result;
 }
 
 StringMap<std::shared_ptr<Codex const>> CodexDatabase::codexes() const {
@@ -56,8 +73,8 @@ StringMap<std::shared_ptr<Codex const>> CodexDatabase::codexes() const {
 }
 
 std::shared_ptr<Codex const> CodexDatabase::codex(String const& codexId) const {
-  if (auto codex = m_codexes.maybe(codexId))
-    return takeOptional(codex);
+  if (auto codex = m_codexes.ptr(codexId))
+    return *codex;
   return {};
 }
 

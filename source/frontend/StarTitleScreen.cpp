@@ -1,5 +1,7 @@
 import std;
 import star.memory;
+import star.format;
+import star.output_proxy;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -221,127 +223,215 @@ import star.sky;
 
 namespace Star {
 
-TitleScreen::TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client)
-  : m_guiContext(&context), m_paneManager(context), m_cursor(context),
-    m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer),
-    m_musicTrackManager(context.root()) {
-  m_titleState = TitleState::Quit;
+TitleScreen::TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer)
+  : m_guiContext(&context), m_titleState(TitleState::Quit), m_playerStorage(std::move(playerStorage)),
+    m_skipMultiPlayerConnection(false), m_forceLegacy(false), m_mixer(std::move(mixer)),
+    m_musicTrackManager(context.root()) {}
 
-  auto assets = context.root().assets();
-
-  m_celestialDatabase = std::make_shared<CelestialMasterDatabase>(context.root());
-  auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
-      return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
-    }).value();
-
-  if (auto name = m_celestialDatabase->name(randomWorld))
-    context.root().logger().info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
-
-  SkyParameters skyParameters(context.root(), randomWorld, m_celestialDatabase);
-  m_skyBackdrop = std::make_shared<Sky>(context.root(), skyParameters, true);
-
-  m_musicTrack = std::make_shared<AmbientNoisesDescription>(assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
-
-  initMainMenu();
-  initCharSelectionMenu();
-  initCharCreationMenu();
-  initMultiPlayerMenu();
-  initOptionsMenu(client);
-  initModsMenu();
-
-  resetState();
+TitleScreen::~TitleScreen() {
+  if (auto r = close(); !r)
+    EmergencyLog::error("Error closing title screen: {}", outputException(ExceptionDiagnostic(r.error()), true));
 }
 
-void TitleScreen::renderInit(std::shared_ptr<Renderer> renderer) {
-  m_renderer = std::move(renderer);
-  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_guiContext->root(), m_renderer);
+std::expected<void, StarException> TitleScreen::close() {
+  std::optional<StarException> error;
+  if (m_scriptComponent) {
+    if (auto r = m_scriptComponent->uninit(); !r)
+      error = std::move(r.error());
+    m_scriptComponent.reset();
+  }
+  if (m_celestialDatabase) {
+    if (auto r = m_celestialDatabase->close(); !r) {
+      if (error)
+        error = StarException(strf("Title celestial cleanup failed: {}",
+            printException(ExceptionDiagnostic(r.error()), true)), ExceptionDiagnostic(*error));
+      else
+        error = std::move(r.error());
+    }
+    m_celestialDatabase.reset();
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void TitleScreen::render() {
+std::expected<std::shared_ptr<TitleScreen>, StarException> TitleScreen::create(GuiContext& context,
+    std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client) {
+  auto screen = std::shared_ptr<TitleScreen>(new TitleScreen(context, std::move(playerStorage), std::move(mixer)));
+  auto initialized = screen->initialize(std::move(client));
+  if (!initialized) {
+    auto closed = screen->close();
+    if (!closed)
+      return std::unexpected(StarException(strf("Title initialization cleanup failed: {}",
+          printException(ExceptionDiagnostic(closed.error()), true)), ExceptionDiagnostic(initialized.error())));
+    return std::unexpected(std::move(initialized.error()));
+  }
+  return screen;
+}
+
+std::expected<void, StarException> TitleScreen::initialize(std::shared_ptr<UniverseClient> client) {
+  auto manager = TitlePaneManager::create(*m_guiContext);
+  if (!manager)
+    return std::unexpected(std::move(manager.error()));
+  m_paneManager = std::move(*manager);
+  auto cursor = InterfaceCursor::create(*m_guiContext);
+  if (!cursor)
+    return std::unexpected(std::move(cursor.error()));
+  m_cursor = std::move(*cursor);
   auto assets = m_guiContext->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto database = CelestialMasterDatabase::create(m_guiContext->root());
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  m_celestialDatabase = std::move(*database);
+  auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50,
+      [this](CelestialCoordinate const& coordinate) -> std::expected<bool, StarException> {
+        auto parameters = m_celestialDatabase->parameters(coordinate);
+        if (!parameters)
+          return std::unexpected(std::move(parameters.error()));
+        if (!*parameters)
+          return std::unexpected(StarException("Title world has no celestial parameters"));
+        return is<TerrestrialWorldParameters>((**parameters).visitableParameters());
+      });
+  if (!randomWorld)
+    return std::unexpected(std::move(randomWorld.error()));
+  if (!*randomWorld)
+    return std::unexpected(StarException("Could not find a terrestrial world for the title screen"));
+  auto name = m_celestialDatabase->name(**randomWorld);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  if (*name) {
+    if (auto r = m_guiContext->root().logger().info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(**name), **randomWorld); !r)
+      return std::unexpected(std::move(r.error()));
+  }
+  auto skyParameters = SkyParameters::create(m_guiContext->root(), **randomWorld, m_celestialDatabase);
+  if (!skyParameters)
+    return std::unexpected(std::move(skyParameters.error()));
+  auto sky = Sky::create(m_guiContext->root(), *skyParameters, true);
+  if (!sky)
+    return std::unexpected(std::move(sky.error()));
+  m_skyBackdrop = std::move(*sky);
+  auto musicConfig = (*assets)->json("/interface/windowconfig/title.config:music");
+  if (!musicConfig)
+    return std::unexpected(std::move(musicConfig.error()));
+  auto musicObject = musicConfig->toObject();
+  if (!musicObject)
+    return std::unexpected(std::move(musicObject.error()));
+  auto music = AmbientNoisesDescription::create(*musicObject, "/");
+  if (!music)
+    return std::unexpected(std::move(music.error()));
+  m_musicTrack = std::make_shared<AmbientNoisesDescription>(std::move(*music));
+  if (auto r = initMainMenu(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = initCharSelectionMenu(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = initCharCreationMenu(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = initMultiPlayerMenu(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = initOptionsMenu(std::move(client)); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = initModsMenu(); !r) return std::unexpected(std::move(r.error()));
+  return resetState();
+}
 
+std::expected<void, StarException> TitleScreen::renderInit(std::shared_ptr<Renderer> renderer) {
+  auto painter = EnvironmentPainter::create(m_guiContext->root(), renderer);
+  if (!painter)
+    return std::unexpected(std::move(painter.error()));
+  m_environmentPainter = std::move(*painter);
+  m_renderer = std::move(renderer);
+  return {};
+}
+
+std::expected<void, StarException> TitleScreen::render() {
+  auto assets = m_guiContext->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   float pixelRatio = m_guiContext->interfaceScale();
-  Vec2F screenSize = Vec2F(m_guiContext->windowSize());
+  auto windowSize = m_guiContext->windowSize();
+  if (!windowSize)
+    return std::unexpected(std::move(windowSize.error()));
+  Vec2F screenSize(*windowSize);
   auto skyRenderData = m_skyBackdrop->renderData();
-
+  if (!skyRenderData)
+    return std::unexpected(std::move(skyRenderData.error()));
   float pixelRatioBasis = screenSize[1] / 1080.0f;
   float starAndDebrisRatio = lerp(0.0625f, pixelRatioBasis * 2.0f, pixelRatio);
   float orbiterAndPlanetRatio = lerp(0.125f, pixelRatioBasis * 3.0f, pixelRatio);
-
-  m_environmentPainter->renderStars(starAndDebrisRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderDebrisFields(starAndDebrisRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, screenSize, skyRenderData);
-  m_environmentPainter->renderSky(screenSize, skyRenderData);
-  m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, screenSize, skyRenderData);
-
-  m_renderer->flush();
-
-  auto skyBackdropDarken = jsonToColor(assets->json("/interface/windowconfig/title.config:skyBackdropDarken"));
-  m_renderer->render(renderFlatRect(RectF(0, 0, windowWidth(), windowHeight()), skyBackdropDarken.toRgba(), 0.0f));
-
-  m_renderer->flush();
-
-  if (auto canvas = m_backgroundMenu->findChild("canvas")) {
-    canvas->setPosition(Vec2I());
-    canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+  if (auto r = m_environmentPainter->renderStars(starAndDebrisRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_environmentPainter->renderDebrisFields(starAndDebrisRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_environmentPainter->renderSky(screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, screenSize, *skyRenderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_renderer->flush(); !r) return std::unexpected(std::move(r.error()));
+  auto darkenConfig = (*assets)->json("/interface/windowconfig/title.config:skyBackdropDarken");
+  if (!darkenConfig)
+    return std::unexpected(std::move(darkenConfig.error()));
+  auto darken = jsonToColor(*darkenConfig);
+  if (!darken)
+    return std::unexpected(std::move(darken.error()));
+  m_renderer->render(renderFlatRect(RectF(0, 0, screenSize[0], screenSize[1]), darken->toRgba(), 0.0f));
+  if (auto r = m_renderer->flush(); !r) return std::unexpected(std::move(r.error()));
+  auto interfaceSize = m_guiContext->windowInterfaceSize();
+  if (!interfaceSize)
+    return std::unexpected(std::move(interfaceSize.error()));
+  auto canvas = m_backgroundMenu->findChild("canvas");
+  if (!canvas) return std::unexpected(std::move(canvas.error()));
+  if (*canvas) {
+    (*canvas)->setPosition(Vec2I());
+    (*canvas)->setSize(Vec2I(*interfaceSize));
   }
-  m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}
-  });
-
-  m_renderer->flush();
-  m_backgroundMenu->render(RectI(Vec2I(), Vec2I(m_guiContext->windowInterfaceSize())));
-  m_paneManager.render();
-  renderCursor();
-
-  m_renderer->flush();
+  if (auto r = m_scriptComponent->invoke("render", JsonObject{{"interfaceScale", interfaceScale()}}); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = m_renderer->flush(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_backgroundMenu->render(RectI(Vec2I(), Vec2I(*interfaceSize))); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_paneManager->render(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderCursor(); !r) return std::unexpected(std::move(r.error()));
+  return m_renderer->flush();
 }
 
-bool TitleScreen::handleInputEvent(InputEvent const& event) {
+std::expected<bool, StarException> TitleScreen::handleInputEvent(InputEvent const& event) {
   if (auto mouseMove = std::get_if<MouseMoveEvent>(&event))
     m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
-
-  if (std::holds_alternative<KeyDownEvent>(event)) {
-    if (m_guiContext->actions(event).contains(InterfaceAction::TitleBack)) {
-      back();
-      return true;
-    }
+  if (std::holds_alternative<KeyDownEvent>(event) && m_guiContext->actions(event).contains(InterfaceAction::TitleBack)) {
+    if (auto r = back(); !r) return std::unexpected(std::move(r.error()));
+    return true;
   }
-
-  return m_paneManager.sendInputEvent(event);
+  return m_paneManager->sendInputEvent(event);
 }
 
-void TitleScreen::update(float dt) {
-  m_cursor.update(dt);
-
-  for (auto p : m_rightAnchoredButtons)
-    p.first->setPosition(Vec2I(m_guiContext->windowWidth() / m_guiContext->interfaceScale(), 0) + p.second);
+std::expected<void, StarException> TitleScreen::update(float dt) {
+  if (auto r = m_cursor->update(dt); !r) return std::unexpected(std::move(r.error()));
+  auto width = m_guiContext->windowWidth();
+  if (!width)
+    return std::unexpected(std::move(width.error()));
+  for (auto const& p : m_rightAnchoredButtons)
+    p.first->setPosition(Vec2I(*width / m_guiContext->interfaceScale(), 0) + p.second);
   m_mainMenu->determineSizeFromChildren();
   m_backgroundMenu->determineSizeFromChildren();
-
-  m_skyBackdrop->update(dt);
+  if (auto r = m_skyBackdrop->update(dt); !r) return std::unexpected(std::move(r.error()));
   m_environmentPainter->update(dt);
-
-  m_backgroundMenu->update(dt);
-  m_paneManager.update(dt);
-
-  m_scriptComponent->update(dt);
+  if (auto r = m_backgroundMenu->update(dt); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_paneManager->update(dt); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_scriptComponent->update(dt); !r) return std::unexpected(std::move(r.error()));
   if (!finishedState()) {
-    if (auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime())) {
-      m_currentMusicTrack = audioSample;
-      audioSample->setMixerGroup(MixerGroup::Music);
-      audioSample->setLoops(0);
-      m_mixer->play(audioSample);
+    auto audioSample = m_musicTrackManager.updateAmbient(m_musicTrack, m_skyBackdrop->isDayTime());
+    if (!audioSample)
+      return std::unexpected(std::move(audioSample.error()));
+    if (*audioSample) {
+      m_currentMusicTrack = *audioSample;
+      (*audioSample)->setMixerGroup(MixerGroup::Music);
+      (*audioSample)->setLoops(0);
+      if (auto r = m_mixer->play(*audioSample); !r) return std::unexpected(std::move(r.error()));
     }
   }
+  return {};
 }
 
-bool TitleScreen::textInputActive() const {
-  return m_paneManager.keyboardCapturedForTextInput();
+std::expected<bool, StarException> TitleScreen::textInputActive() const {
+  return m_paneManager->keyboardCapturedForTextInput();
 }
 
 TitleScreen::TitlePaneManager* TitleScreen::paneManager() {
-  return &m_paneManager;
+  return m_paneManager.get();
 }
 
 TitleState TitleScreen::currentState() const {
@@ -359,15 +449,16 @@ bool TitleScreen::finishedState() const {
   }
 }
 
-void TitleScreen::resetState() {
-  switchState(TitleState::Main);
+std::expected<void, StarException> TitleScreen::resetState() {
+  if (auto r = switchState(TitleState::Main); !r) return std::unexpected(std::move(r.error()));
   if (m_currentMusicTrack)
     m_currentMusicTrack->setVolume(1.0f, 4.0f);
+  return {};
 }
 
-void TitleScreen::goToMultiPlayerSelectCharacter(bool skipConnection) {
+std::expected<void, StarException> TitleScreen::goToMultiPlayerSelectCharacter(bool skipConnection) {
   m_skipMultiPlayerConnection = skipConnection;
-  switchState(TitleState::MultiPlayerSelectCharacter);
+  return switchState(TitleState::MultiPlayerSelectCharacter);
 }
 
 void TitleScreen::stopMusic() {
@@ -383,380 +474,455 @@ String TitleScreen::multiPlayerAddress() const {
   return m_connectionAddress;
 }
 
-void TitleScreen::setMultiPlayerAddress(String address) {
-  m_multiPlayerMenu->fetchChild<TextBoxWidget>("address")->setText(address);
+std::expected<void, StarException> TitleScreen::setMultiPlayerAddress(String address) {
+  auto widget = m_multiPlayerMenu->fetchChild<TextBoxWidget>("address");
+  if (!widget) return std::unexpected(std::move(widget.error()));
+  auto r = (*widget)->setText(address);
+  if (!r) return std::unexpected(std::move(r.error()));
   m_connectionAddress = std::move(address);
+  return {};
 }
 
 String TitleScreen::multiPlayerPort() const {
   return m_connectionPort;
 }
 
-void TitleScreen::setMultiPlayerPort(String port) {
-  m_multiPlayerMenu->fetchChild<TextBoxWidget>("port")->setText(port);
+std::expected<void, StarException> TitleScreen::setMultiPlayerPort(String port) {
+  auto widget = m_multiPlayerMenu->fetchChild<TextBoxWidget>("port");
+  if (!widget) return std::unexpected(std::move(widget.error()));
+  auto r = (*widget)->setText(port);
+  if (!r) return std::unexpected(std::move(r.error()));
   m_connectionPort = std::move(port);
+  return {};
 }
 
 String TitleScreen::multiPlayerAccount() const {
   return m_account;
 }
 
-void TitleScreen::setMultiPlayerAccount(String account) {
-  m_multiPlayerMenu->fetchChild<TextBoxWidget>("account")->setText(account);
+std::expected<void, StarException> TitleScreen::setMultiPlayerAccount(String account) {
+  auto widget = m_multiPlayerMenu->fetchChild<TextBoxWidget>("account");
+  if (!widget) return std::unexpected(std::move(widget.error()));
+  auto r = (*widget)->setText(account);
+  if (!r) return std::unexpected(std::move(r.error()));
   m_account = std::move(account);
+  return {};
 }
 
 String TitleScreen::multiPlayerPassword() const {
   return m_password;
 }
 
-void TitleScreen::setMultiPlayerPassword(String password) {
-  m_multiPlayerMenu->fetchChild<TextBoxWidget>("password")->setText(password);
+std::expected<void, StarException> TitleScreen::setMultiPlayerPassword(String password) {
+  auto widget = m_multiPlayerMenu->fetchChild<TextBoxWidget>("password");
+  if (!widget) return std::unexpected(std::move(widget.error()));
+  auto r = (*widget)->setText(password);
+  if (!r) return std::unexpected(std::move(r.error()));
   m_password = std::move(password);
+  return {};
 }
 
 bool TitleScreen::multiPlayerForceLegacy() const {
   return m_forceLegacy;
 }
 
-void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
-  m_multiPlayerMenu->fetchChild<ButtonWidget>("legacyCheckbox")->setChecked(forceLegacy);
+std::expected<void, StarException> TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
+  auto widget = m_multiPlayerMenu->fetchChild<ButtonWidget>("legacyCheckbox");
+  if (!widget) return std::unexpected(std::move(widget.error()));
+  (*widget)->setChecked(forceLegacy);
   m_forceLegacy = forceLegacy;
+  return {};
 }
 
-void TitleScreen::initMainMenu() {
-  m_mainMenu = std::make_shared<Pane>(*m_guiContext);
-  auto backMenu = std::make_shared<Pane>(*m_guiContext);
-
+std::expected<void, StarException> TitleScreen::initMainMenu() {
+  auto mainMenu = Pane::create(*m_guiContext);
+  if (!mainMenu) return std::unexpected(std::move(mainMenu.error()));
+  m_mainMenu = std::move(*mainMenu);
+  auto backMenu = Pane::create(*m_guiContext);
+  if (!backMenu) return std::unexpected(std::move(backMenu.error()));
   auto assets = m_guiContext->root().assets();
-  auto config = assets->json("/interface/windowconfig/title.config");
-
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/title.config");
+  if (!config) return std::unexpected(std::move(config.error()));
   StringMap<WidgetCallbackFunc> buttonCallbacks;
-  buttonCallbacks["singleplayer"] = [this](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
-  buttonCallbacks["multiplayer"] = [this](Widget*) { switchState(TitleState::MultiPlayerSelectCharacter); };
-  buttonCallbacks["options"] = [this](Widget*) { switchState(TitleState::Options); };
-  buttonCallbacks["quit"] = [this](Widget*) { switchState(TitleState::Quit); };
-  buttonCallbacks["back"] = [this](Widget*) { back(); };
-  buttonCallbacks["mods"] = [this](Widget*) { switchState(TitleState::Mods); };
-
-  for (auto buttonConfig : config.getArray("mainMenuButtons")) {
-    String key = buttonConfig.getString("key");
-    String image = buttonConfig.getString("button");
-    String imageHover = buttonConfig.getString("hover");
-    Vec2I offset = jsonToVec2I(buttonConfig.get("offset"));
-    WidgetCallbackFunc callback = buttonCallbacks.get(key);
-    bool rightAnchored = buttonConfig.getBool("rightAnchored", false);
-
-    auto button = std::make_shared<ButtonWidget>(*m_guiContext, callback, image, imageHover, "", "");
-    button->setPosition(offset);
-
-    if (rightAnchored)
-      m_rightAnchoredButtons.append({button, offset});
-
-    if (key == "back")
-      backMenu->addChild(key, button);
-    else
-      m_mainMenu->addChild(key, button);
+  buttonCallbacks["singleplayer"] = [this](Widget*) { return switchState(TitleState::SinglePlayerSelectCharacter); };
+  buttonCallbacks["multiplayer"] = [this](Widget*) { return switchState(TitleState::MultiPlayerSelectCharacter); };
+  buttonCallbacks["options"] = [this](Widget*) { return switchState(TitleState::Options); };
+  buttonCallbacks["quit"] = [this](Widget*) { return switchState(TitleState::Quit); };
+  buttonCallbacks["back"] = [this](Widget*) { return back(); };
+  buttonCallbacks["mods"] = [this](Widget*) { return switchState(TitleState::Mods); };
+  auto buttons = config->getArray("mainMenuButtons");
+  if (!buttons) return std::unexpected(std::move(buttons.error()));
+  for (auto const& buttonConfig : *buttons) {
+    auto key = buttonConfig.getString("key");
+    if (!key) return std::unexpected(std::move(key.error()));
+    auto image = buttonConfig.getString("button");
+    if (!image) return std::unexpected(std::move(image.error()));
+    auto hover = buttonConfig.getString("hover");
+    if (!hover) return std::unexpected(std::move(hover.error()));
+    auto offsetConfig = buttonConfig.get("offset");
+    if (!offsetConfig) return std::unexpected(std::move(offsetConfig.error()));
+    auto offset = jsonToVec2I(*offsetConfig);
+    if (!offset) return std::unexpected(std::move(offset.error()));
+    auto callback = buttonCallbacks.get(*key);
+    if (!callback) return std::unexpected(std::move(callback.error()));
+    auto rightAnchored = buttonConfig.getBool("rightAnchored", false);
+    if (!rightAnchored) return std::unexpected(std::move(rightAnchored.error()));
+    auto button = ButtonWidget::create(*m_guiContext, **callback, *image, *hover, "", "");
+    if (!button) return std::unexpected(std::move(button.error()));
+    (*button)->setPosition(*offset);
+    if (*rightAnchored)
+      m_rightAnchoredButtons.append({*button, *offset});
+    if (auto r = (*key == "back" ? *backMenu : m_mainMenu)->addChild(*key, *button); !r)
+      return std::unexpected(std::move(r.error()));
   }
-
   m_mainMenu->setAnchor(PaneAnchor::BottomLeft);
   m_mainMenu->lockPosition();
-
-  backMenu->determineSizeFromChildren();
-  backMenu->setAnchor(PaneAnchor::BottomLeft);
-  backMenu->lockPosition();
-  
-  m_backgroundMenu = std::make_shared<Pane>(*m_guiContext);
+  (*backMenu)->determineSizeFromChildren();
+  (*backMenu)->setAnchor(PaneAnchor::BottomLeft);
+  (*backMenu)->lockPosition();
+  auto background = Pane::create(*m_guiContext);
+  if (!background) return std::unexpected(std::move(background.error()));
+  m_backgroundMenu = std::move(*background);
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
-  m_backgroundMenu->addChild("canvas", std::make_shared<CanvasWidget>(*m_guiContext));
-  m_backgroundMenu->show();
-
-  m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
-  m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
-
+  auto canvas = CanvasWidget::create(*m_guiContext);
+  if (!canvas) return std::unexpected(std::move(canvas.error()));
+  if (auto r = m_backgroundMenu->addChild("canvas", *canvas); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_backgroundMenu->show(); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_paneManager->registerPane("mainMenu", PaneLayer::Hud, m_mainMenu); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_paneManager->registerPane("backMenu", PaneLayer::Hud, *backMenu); !r) return std::unexpected(std::move(r.error()));
   m_scriptComponent = std::make_shared<ScriptComponent>(m_guiContext->root());
-  m_scriptComponent->setLuaRoot(std::make_shared<LuaRoot>(m_guiContext->root()));
-  m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(*m_guiContext, m_backgroundMenu.get()));
-  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*m_guiContext, m_mainMenu.get()));
-  m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
-  m_scriptComponent->init();
+  auto luaRoot = LuaRoot::create(m_guiContext->root());
+  if (!luaRoot) return std::unexpected(std::move(luaRoot.error()));
+  if (auto r = m_scriptComponent->setLuaRoot(*luaRoot); !r) return std::unexpected(std::move(r.error()));
+  auto backgroundCallbacks = LuaBindings::makeWidgetCallbacks(*m_guiContext, m_backgroundMenu.get());
+  if (!backgroundCallbacks) return std::unexpected(std::move(backgroundCallbacks.error()));
+  if (auto r = m_scriptComponent->addCallbacks("background", std::move(*backgroundCallbacks)); !r) return std::unexpected(std::move(r.error()));
+  auto widgetCallbacks = LuaBindings::makeWidgetCallbacks(*m_guiContext, m_mainMenu.get());
+  if (!widgetCallbacks) return std::unexpected(std::move(widgetCallbacks.error()));
+  if (auto r = m_scriptComponent->addCallbacks("widget", std::move(*widgetCallbacks)); !r) return std::unexpected(std::move(r.error()));
+  auto scriptConfig = config->getArray("scripts", JsonArray());
+  if (!scriptConfig) return std::unexpected(std::move(scriptConfig.error()));
+  auto scripts = jsonToStringList(*scriptConfig);
+  if (!scripts) return std::unexpected(std::move(scripts.error()));
+  if (auto r = m_scriptComponent->setScripts(std::move(*scripts)); !r) return std::unexpected(std::move(r.error()));
+  auto initialized = m_scriptComponent->init();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  if (!*initialized)
+    return std::unexpected(StarException("Title script could not initialize its Lua context"));
+  return {};
 }
 
-void TitleScreen::initCharSelectionMenu() {
-  auto deleteDialog = std::make_shared<Pane>(*m_guiContext);
-
+std::expected<void, StarException> TitleScreen::initCharSelectionMenu() {
+  auto deleteDialog = Pane::create(*m_guiContext);
+  if (!deleteDialog) return std::unexpected(std::move(deleteDialog.error()));
   GuiReader reader(*m_guiContext);
-
-  reader.registerCallback("delete", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
-  reader.registerCallback("cancel", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
-
-  reader.construct(m_guiContext->root().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
-
-  auto charSelectionMenu = std::make_shared<CharSelectionPane>(*m_guiContext, m_playerStorage, [this]() {
-      if (m_titleState == TitleState::SinglePlayerSelectCharacter)
-        switchState(TitleState::SinglePlayerCreateCharacter);
-      else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
-        switchState(TitleState::MultiPlayerCreateCharacter);
-    }, [this](std::shared_ptr<Player> mainPlayer) {
-      m_mainAppPlayer = mainPlayer;
-      m_playerStorage->moveToFront(m_mainAppPlayer->uuid());
-      if (m_titleState == TitleState::SinglePlayerSelectCharacter) {
-        switchState(TitleState::StartSinglePlayer);
-        } else if (m_titleState == TitleState::MultiPlayerSelectCharacter) {
-          if (m_skipMultiPlayerConnection)
-            switchState(TitleState::StartMultiPlayer);
-          else
-            switchState(TitleState::MultiPlayerConnect);
-        }
-    }, [this](Uuid playerUuid) {
-      auto deleteDialog = m_paneManager.registeredPane("deleteDialog");
-      deleteDialog->fetchChild<ButtonWidget>("delete")->setCallback([this, playerUuid, dialog = deleteDialog.get()](Widget*) {
-        m_playerStorage->deletePlayer(playerUuid);
-        dialog->dismiss();
+  reader.registerCallback("delete", [dialog = *deleteDialog](Widget*) -> std::expected<void, StarException> { dialog->dismiss(); return {}; });
+  reader.registerCallback("cancel", [dialog = *deleteDialog](Widget*) -> std::expected<void, StarException> { dialog->dismiss(); return {}; });
+  auto assets = m_guiContext->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/deletedialog.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  if (auto r = reader.construct(*config, deleteDialog->get()); !r) return std::unexpected(std::move(r.error()));
+  auto charSelectionMenu = CharSelectionPane::create(*m_guiContext, m_playerStorage,
+      [this]() -> std::expected<void, StarException> {
+        if (m_titleState == TitleState::SinglePlayerSelectCharacter)
+          return switchState(TitleState::SinglePlayerCreateCharacter);
+        if (m_titleState == TitleState::MultiPlayerSelectCharacter)
+          return switchState(TitleState::MultiPlayerCreateCharacter);
+        return {};
+      }, [this](std::shared_ptr<Player> mainPlayer) -> std::expected<void, StarException> {
+        m_mainAppPlayer = std::move(mainPlayer);
+        auto uuid = m_mainAppPlayer->uuid();
+        if (!uuid) return std::unexpected(std::move(uuid.error()));
+        if (auto r = m_playerStorage->moveToFront(*uuid); !r) return std::unexpected(std::move(r.error()));
+        if (m_titleState == TitleState::SinglePlayerSelectCharacter)
+          return switchState(TitleState::StartSinglePlayer);
+        if (m_titleState == TitleState::MultiPlayerSelectCharacter)
+          return switchState(m_skipMultiPlayerConnection ? TitleState::StartMultiPlayer : TitleState::MultiPlayerConnect);
+        return {};
+      }, [this](Uuid playerUuid) -> std::expected<void, StarException> {
+        auto dialog = m_paneManager->registeredPane("deleteDialog");
+        if (!dialog) return std::unexpected(std::move(dialog.error()));
+        auto button = (*dialog)->fetchChild<ButtonWidget>("delete");
+        if (!button) return std::unexpected(std::move(button.error()));
+        (*button)->setCallback([this, playerUuid, dialog = *dialog](Widget*) -> std::expected<void, StarException> {
+          if (auto r = m_playerStorage->deletePlayer(playerUuid); !r) return std::unexpected(std::move(r.error()));
+          dialog->dismiss();
+          return {};
+        });
+        auto r = m_paneManager->displayRegisteredPane("deleteDialog");
+        if (!r) return std::unexpected(std::move(r.error()));
+        return {};
       });
-      m_paneManager.displayRegisteredPane("deleteDialog");
-    });
-  charSelectionMenu->setAnchor(PaneAnchor::Center);
-  charSelectionMenu->lockPosition();
-
-  m_paneManager.registerPane("deleteDialog", PaneLayer::ModalWindow, deleteDialog, [=](std::shared_ptr<Pane> const&) {
-      charSelectionMenu->updateCharacterPlates();
-    });
-  m_paneManager.registerPane("charSelectionMenu", PaneLayer::Hud, charSelectionMenu);
+  if (!charSelectionMenu) return std::unexpected(std::move(charSelectionMenu.error()));
+  (*charSelectionMenu)->setAnchor(PaneAnchor::Center);
+  (*charSelectionMenu)->lockPosition();
+  if (auto r = m_paneManager->registerPane("deleteDialog", PaneLayer::ModalWindow, *deleteDialog,
+      [menu = *charSelectionMenu](std::shared_ptr<Pane> const&) { return menu->updateCharacterPlates(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  return m_paneManager->registerPane("charSelectionMenu", PaneLayer::Hud, *charSelectionMenu);
 }
 
-void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = std::make_shared<CharCreationPane>(*m_guiContext, [this](std::shared_ptr<Player> newPlayer) {
+std::expected<void, StarException> TitleScreen::initCharCreationMenu() {
+  auto menu = CharCreationPane::create(*m_guiContext, [this](std::shared_ptr<Player> newPlayer) -> std::expected<void, StarException> {
     if (newPlayer) {
-      m_mainAppPlayer = newPlayer;
-      m_playerStorage->savePlayer(m_mainAppPlayer);
-      m_playerStorage->moveToFront(m_mainAppPlayer->uuid());
+      m_mainAppPlayer = std::move(newPlayer);
+      if (auto r = m_playerStorage->savePlayer(m_mainAppPlayer); !r) return std::unexpected(std::move(r.error()));
+      auto uuid = m_mainAppPlayer->uuid();
+      if (!uuid) return std::unexpected(std::move(uuid.error()));
+      if (auto r = m_playerStorage->moveToFront(*uuid); !r) return std::unexpected(std::move(r.error()));
     }
-    back();
+    return back();
   });
-  charCreationMenu->setAnchor(PaneAnchor::Center);
-  charCreationMenu->lockPosition();
-
-  m_paneManager.registerPane("charCreationMenu", PaneLayer::Hud, charCreationMenu);
+  if (!menu) return std::unexpected(std::move(menu.error()));
+  (*menu)->setAnchor(PaneAnchor::Center);
+  (*menu)->lockPosition();
+  return m_paneManager->registerPane("charCreationMenu", PaneLayer::Hud, *menu);
 }
 
 
-void TitleScreen::populateServerList(ListWidget* list){
+std::expected<void, StarException> TitleScreen::populateServerList(ListWidget* list) {
   if (!m_serverList.isNull()) {
-    list->clear();
-    for (auto const& server : m_serverList.iterateArray()) {
-      auto listItem = list->addItem();
-      listItem->fetchChild<LabelWidget>("address")->setText(server.getString("address"));
-      listItem->fetchChild<LabelWidget>("account")->setText(server.get("account", "").toString());
-      listItem->setData(server);
+    if (auto r = list->clear(); !r) return std::unexpected(std::move(r.error()));
+    auto servers = m_serverList.iterateArray();
+    if (!servers) return std::unexpected(std::move(servers.error()));
+    for (auto const& server : *servers) {
+      auto item = list->addItem();
+      if (!item) return std::unexpected(std::move(item.error()));
+      auto addressLabel = (*item)->fetchChild<LabelWidget>("address");
+      if (!addressLabel) return std::unexpected(std::move(addressLabel.error()));
+      auto address = server.getString("address");
+      if (!address) return std::unexpected(std::move(address.error()));
+      if (auto r = (*addressLabel)->setText(*address); !r) return std::unexpected(std::move(r.error()));
+      auto accountLabel = (*item)->fetchChild<LabelWidget>("account");
+      if (!accountLabel) return std::unexpected(std::move(accountLabel.error()));
+      auto accountConfig = server.get("account", "");
+      if (!accountConfig) return std::unexpected(std::move(accountConfig.error()));
+      auto account = accountConfig->toString();
+      if (!account) return std::unexpected(std::move(account.error()));
+      if (auto r = (*accountLabel)->setText(*account); !r) return std::unexpected(std::move(r.error()));
+      (*item)->setData(server);
     }
   }
-};
+  return {};
+}
 
-void TitleScreen::initMultiPlayerMenu() {
-  m_multiPlayerMenu = std::make_shared<Pane>(*m_guiContext);
-  m_serverSelectPane = std::make_shared<Pane>(*m_guiContext);
-
+std::expected<void, StarException> TitleScreen::initMultiPlayerMenu() {
+  auto multiplayer = Pane::create(*m_guiContext);
+  if (!multiplayer) return std::unexpected(std::move(multiplayer.error()));
+  m_multiPlayerMenu = std::move(*multiplayer);
+  auto serverSelect = Pane::create(*m_guiContext);
+  if (!serverSelect) return std::unexpected(std::move(serverSelect.error()));
+  m_serverSelectPane = std::move(*serverSelect);
   GuiReader readerConnect(*m_guiContext);
   GuiReader readerServer(*m_guiContext);
-
-  m_serverList = m_guiContext->root().configuration()->get("serverList");
+  auto configuration = m_guiContext->root().configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto servers = (*configuration)->get("serverList");
+  if (!servers) return std::unexpected(std::move(servers.error()));
+  m_serverList = std::move(*servers);
   if (!m_serverList.isType(Json::Type::Array))
     m_serverList = JsonArray();
-
   auto assets = m_guiContext->root().assets();
-
-  readerServer.registerCallback("saveServer", [this](Widget*) {
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  readerServer.registerCallback("saveServer", [this](Widget*) -> std::expected<void, StarException> {
     Json serverData = JsonObject{
-      {"address", multiPlayerAddress()},
-      {"account", multiPlayerAccount()},
-      {"port", multiPlayerPort()},
-      //{"password", multiPlayerPassword()},
-      {"forceLegacy", multiPlayerForceLegacy()}
+      {"address", multiPlayerAddress()}, {"account", multiPlayerAccount()},
+      {"port", multiPlayerPort()}, {"forceLegacy", multiPlayerForceLegacy()}
     };
-
-    auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
-    if (auto const pos = serverList->selectedItem(); pos != NPos) { // Edit existing
-      m_serverList = m_serverList.set(pos, serverData);
-    } else { // Save new
-      m_serverList = m_serverList.insert(0, serverData);
-    }
-
-    populateServerList(serverList.get());
-    m_guiContext->root().configuration()->set("serverList", m_serverList);
+    auto list = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
+    if (!list) return std::unexpected(std::move(list.error()));
+    auto pos = (*list)->selectedItem();
+    auto updated = pos != NPos ? m_serverList.set(pos, serverData) : m_serverList.insert(0, serverData);
+    if (!updated) return std::unexpected(std::move(updated.error()));
+    m_serverList = std::move(*updated);
+    if (auto r = populateServerList(list->get()); !r) return std::unexpected(std::move(r.error()));
+    auto configuration = m_guiContext->root().configuration();
+    if (!configuration) return std::unexpected(std::move(configuration.error()));
+    return (*configuration)->set("serverList", m_serverList);
   });
-
-  readerServer.construct(assets->json("/interface/windowconfig/serverselect.config"), m_serverSelectPane.get());
-
-
-
+  auto serverConfig = (*assets)->json("/interface/windowconfig/serverselect.config");
+  if (!serverConfig) return std::unexpected(std::move(serverConfig.error()));
+  if (auto r = readerServer.construct(*serverConfig, m_serverSelectPane.get()); !r) return std::unexpected(std::move(r.error()));
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
-  
-  serverList->registerMemberCallback("delete", [this, list = serverList.get()](Widget*) {
-    if (auto const pos = list->selectedItem(); pos != NPos) {
-      m_serverList = m_serverList.eraseIndex(pos);
+  if (!serverList) return std::unexpected(std::move(serverList.error()));
+  (*serverList)->registerMemberCallback("delete", [this, list = *serverList](Widget*) -> std::expected<void, StarException> {
+    if (auto pos = list->selectedItem(); pos != NPos) {
+      auto updated = m_serverList.eraseIndex(pos);
+      if (!updated) return std::unexpected(std::move(updated.error()));
+      m_serverList = std::move(*updated);
     }
-    populateServerList(list);
-    m_guiContext->root().configuration()->set("serverList", m_serverList);
+    if (auto r = populateServerList(list.get()); !r) return std::unexpected(std::move(r.error()));
+    auto configuration = m_guiContext->root().configuration();
+    if (!configuration) return std::unexpected(std::move(configuration.error()));
+    return (*configuration)->set("serverList", m_serverList);
   });
-
-  serverList->setCallback([this, list = serverList.get()](Widget*) {
-    if (auto selectedItem = list->selectedWidget()) {
-      if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
-        return;
-      auto& data = selectedItem->data();
-      setMultiPlayerAddress(data.getString("address", ""));
-      setMultiPlayerPort(data.getString("port", ""));
-      setMultiPlayerAccount(data.getString("account", ""));
-      setMultiPlayerPassword(data.getString("password", ""));
-      setMultiPlayerForceLegacy(data.getBool("forceLegacy", false));
-
-      if (auto passwordWidget = m_multiPlayerMenu->fetchChild("password"))
-        passwordWidget->focus();
+  (*serverList)->setCallback([this, list = *serverList](Widget*) -> std::expected<void, StarException> {
+    if (auto selected = list->selectedWidget()) {
+      auto deleteButton = selected->findChild<ButtonWidget>("delete");
+      if (!deleteButton) return std::unexpected(std::move(deleteButton.error()));
+      if (*deleteButton && (*deleteButton)->isHovered())
+        return {};
+      auto const& data = selected->data();
+      auto address = data.getString("address", "");
+      if (!address) return std::unexpected(std::move(address.error()));
+      if (auto r = setMultiPlayerAddress(std::move(*address)); !r) return std::unexpected(std::move(r.error()));
+      auto port = data.getString("port", "");
+      if (!port) return std::unexpected(std::move(port.error()));
+      if (auto r = setMultiPlayerPort(std::move(*port)); !r) return std::unexpected(std::move(r.error()));
+      auto account = data.getString("account", "");
+      if (!account) return std::unexpected(std::move(account.error()));
+      if (auto r = setMultiPlayerAccount(std::move(*account)); !r) return std::unexpected(std::move(r.error()));
+      auto password = data.getString("password", "");
+      if (!password) return std::unexpected(std::move(password.error()));
+      if (auto r = setMultiPlayerPassword(std::move(*password)); !r) return std::unexpected(std::move(r.error()));
+      auto legacy = data.getBool("forceLegacy", false);
+      if (!legacy) return std::unexpected(std::move(legacy.error()));
+      if (auto r = setMultiPlayerForceLegacy(*legacy); !r) return std::unexpected(std::move(r.error()));
+      auto passwordWidget = m_multiPlayerMenu->fetchChild("password");
+      if (!passwordWidget) return std::unexpected(std::move(passwordWidget.error()));
+      if (*passwordWidget)
+        return (*passwordWidget)->focus();
     }
+    return {};
   });
-
-  readerConnect.registerCallback("address", [this](Widget* obj) {
-      m_connectionAddress = convert<TextBoxWidget>(obj)->getText().trim();
-      m_serverSelectPane->fetchChild<ButtonWidget>("save")->setVisibility(multiPlayerAddress().length() > 0);
-    });
-
-  readerConnect.registerCallback("port", [this](Widget* obj) {
-      m_connectionPort = convert<TextBoxWidget>(obj)->getText().trim();
-    });
-
-  readerConnect.registerCallback("account", [this](Widget* obj) {
-      m_account = convert<TextBoxWidget>(obj)->getText().trim();
-    });
-
-  readerConnect.registerCallback("password", [this](Widget* obj) {
-      m_password = convert<TextBoxWidget>(obj)->getText().trim();
-    });
-  
-  readerConnect.registerCallback("legacyCheckbox", [this](Widget* obj) {
-      m_forceLegacy = convert<ButtonWidget>(obj)->isChecked();
-    });
-
-  readerConnect.registerCallback("connect", [this](Widget*) {
-    switchState(TitleState::StartMultiPlayer);
-    });
-
-
-  readerConnect.construct(assets->json("/interface/windowconfig/multiplayer.config"), m_multiPlayerMenu.get());
-
-  populateServerList(serverList.get());
-
-  m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu);
-  m_paneManager.registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane, [=](std::shared_ptr<Pane> const&) {
-    serverList->clearSelected();
+  readerConnect.registerCallback("address", [this](Widget* obj) -> std::expected<void, StarException> {
+    auto widget = convert<TextBoxWidget>(obj);
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    auto text = (*widget)->getText().trim();
+    if (!text) return std::unexpected(std::move(text.error()));
+    m_connectionAddress = std::move(*text);
+    auto save = m_serverSelectPane->fetchChild<ButtonWidget>("save");
+    if (!save) return std::unexpected(std::move(save.error()));
+    auto length = m_connectionAddress.length();
+    if (!length) return std::unexpected(std::move(length.error()));
+    return (*save)->setVisibility(*length > 0);
   });
+  readerConnect.registerCallback("port", [this](Widget* obj) -> std::expected<void, StarException> {
+    auto widget = convert<TextBoxWidget>(obj);
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    auto text = (*widget)->getText().trim();
+    if (!text) return std::unexpected(std::move(text.error()));
+    m_connectionPort = std::move(*text);
+    return {};
+  });
+  readerConnect.registerCallback("account", [this](Widget* obj) -> std::expected<void, StarException> {
+    auto widget = convert<TextBoxWidget>(obj);
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    auto text = (*widget)->getText().trim();
+    if (!text) return std::unexpected(std::move(text.error()));
+    m_account = std::move(*text);
+    return {};
+  });
+  readerConnect.registerCallback("password", [this](Widget* obj) -> std::expected<void, StarException> {
+    auto widget = convert<TextBoxWidget>(obj);
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    auto text = (*widget)->getText().trim();
+    if (!text) return std::unexpected(std::move(text.error()));
+    m_password = std::move(*text);
+    return {};
+  });
+  readerConnect.registerCallback("legacyCheckbox", [this](Widget* obj) -> std::expected<void, StarException> {
+    auto widget = convert<ButtonWidget>(obj);
+    if (!widget) return std::unexpected(std::move(widget.error()));
+    m_forceLegacy = (*widget)->isChecked();
+    return {};
+  });
+  readerConnect.registerCallback("connect", [this](Widget*) { return switchState(TitleState::StartMultiPlayer); });
+  auto connectConfig = (*assets)->json("/interface/windowconfig/multiplayer.config");
+  if (!connectConfig) return std::unexpected(std::move(connectConfig.error()));
+  if (auto r = readerConnect.construct(*connectConfig, m_multiPlayerMenu.get()); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = populateServerList(serverList->get()); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_paneManager->registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu); !r) return std::unexpected(std::move(r.error()));
+  return m_paneManager->registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane,
+      [list = *serverList](std::shared_ptr<Pane> const&) { return list->clearSelected(); });
 }
 
-void TitleScreen::initOptionsMenu(std::shared_ptr<UniverseClient> client) {
-  auto optionsMenu = std::make_shared<OptionsMenu>(*m_guiContext, &m_paneManager, client);
-  optionsMenu->setAnchor(PaneAnchor::Center);
-  optionsMenu->lockPosition();
-
-  m_paneManager.registerPane("optionsMenu", PaneLayer::Hud, optionsMenu, [this](std::shared_ptr<Pane> const&) {
-      back();
-    });
+std::expected<void, StarException> TitleScreen::initOptionsMenu(std::shared_ptr<UniverseClient> client) {
+  auto menu = OptionsMenu::create(*m_guiContext, m_paneManager.get(), std::move(client));
+  if (!menu) return std::unexpected(std::move(menu.error()));
+  (*menu)->setAnchor(PaneAnchor::Center);
+  (*menu)->lockPosition();
+  return m_paneManager->registerPane("optionsMenu", PaneLayer::Hud, *menu,
+      [this](std::shared_ptr<Pane> const&) { return back(); });
 }
 
-void TitleScreen::initModsMenu() {
-  auto modsMenu = std::make_shared<ModsMenu>(*m_guiContext);
-  modsMenu->setAnchor(PaneAnchor::Center);
-  modsMenu->lockPosition();
-
-  m_paneManager.registerPane("modsMenu", PaneLayer::Hud, modsMenu, [this](std::shared_ptr<Pane> const&) {
-      back();
-    });
+std::expected<void, StarException> TitleScreen::initModsMenu() {
+  auto menu = ModsMenu::create(*m_guiContext);
+  if (!menu) return std::unexpected(std::move(menu.error()));
+  (*menu)->setAnchor(PaneAnchor::Center);
+  (*menu)->lockPosition();
+  return m_paneManager->registerPane("modsMenu", PaneLayer::Hud, *menu,
+      [this](std::shared_ptr<Pane> const&) { return back(); });
 }
 
-void TitleScreen::switchState(TitleState titleState) {
+std::expected<void, StarException> TitleScreen::switchState(TitleState titleState) {
   if (m_titleState == titleState)
-    return;
-
-  m_paneManager.dismissAllPanes();
+    return {};
+  if (auto r = m_paneManager->dismissAllPanes(); !r) return std::unexpected(std::move(r.error()));
   m_titleState = titleState;
-
-  // Clear the 'skip multi player connection' flag if we leave the multi player
-  // menus
+  // Leaving the multiplayer menus forgets the skipped connection screen.
   if (m_titleState < TitleState::MultiPlayerSelectCharacter || m_titleState > TitleState::MultiPlayerConnect)
     m_skipMultiPlayerConnection = false;
-
   if (titleState == TitleState::Main) {
-    m_paneManager.displayRegisteredPane("mainMenu");
+    if (auto r = m_paneManager->displayRegisteredPane("mainMenu"); !r) return std::unexpected(std::move(r.error()));
   } else {
-    m_paneManager.displayRegisteredPane("backMenu");
-
+    if (auto r = m_paneManager->displayRegisteredPane("backMenu"); !r) return std::unexpected(std::move(r.error()));
     if (titleState == TitleState::Options) {
-      m_paneManager.displayRegisteredPane("optionsMenu");
-    } if (titleState == TitleState::Mods) {
-      m_paneManager.displayRegisteredPane("modsMenu");
-    } else if (titleState == TitleState::SinglePlayerSelectCharacter) {
-      m_paneManager.displayRegisteredPane("charSelectionMenu");
-    } else if (titleState == TitleState::SinglePlayerCreateCharacter) {
-      m_paneManager.displayRegisteredPane("charCreationMenu");
-    } else if (titleState == TitleState::MultiPlayerSelectCharacter) {
-      m_paneManager.displayRegisteredPane("charSelectionMenu");
-    } else if (titleState == TitleState::MultiPlayerCreateCharacter) {
-      m_paneManager.displayRegisteredPane("charCreationMenu");
+      if (auto r = m_paneManager->displayRegisteredPane("optionsMenu"); !r) return std::unexpected(std::move(r.error()));
+    } else if (titleState == TitleState::Mods) {
+      if (auto r = m_paneManager->displayRegisteredPane("modsMenu"); !r) return std::unexpected(std::move(r.error()));
+    } else if (titleState == TitleState::SinglePlayerSelectCharacter || titleState == TitleState::MultiPlayerSelectCharacter) {
+      if (auto r = m_paneManager->displayRegisteredPane("charSelectionMenu"); !r) return std::unexpected(std::move(r.error()));
+    } else if (titleState == TitleState::SinglePlayerCreateCharacter || titleState == TitleState::MultiPlayerCreateCharacter) {
+      if (auto r = m_paneManager->displayRegisteredPane("charCreationMenu"); !r) return std::unexpected(std::move(r.error()));
     } else if (titleState == TitleState::MultiPlayerConnect) {
-      m_paneManager.displayRegisteredPane("multiplayerMenu");
-      m_paneManager.displayRegisteredPane("serverSelect");
-      if (auto addressWidget = m_multiPlayerMenu->fetchChild("address"))
-        addressWidget->focus();
+      if (auto r = m_paneManager->displayRegisteredPane("multiplayerMenu"); !r) return std::unexpected(std::move(r.error()));
+      if (auto r = m_paneManager->displayRegisteredPane("serverSelect"); !r) return std::unexpected(std::move(r.error()));
+      auto addressWidget = m_multiPlayerMenu->fetchChild("address");
+      if (!addressWidget) return std::unexpected(std::move(addressWidget.error()));
+      if (*addressWidget) {
+        if (auto r = (*addressWidget)->focus(); !r) return std::unexpected(std::move(r.error()));
+      }
     }
   }
-
   if (titleState == TitleState::Quit)
     m_musicTrackManager.cancelAll();
+  return {};
 }
 
-void TitleScreen::back() {
-  if (m_titleState == TitleState::Options)
-    switchState(TitleState::Main);
-  else if (m_titleState == TitleState::Mods)
-    switchState(TitleState::Main);
-  else if (m_titleState == TitleState::SinglePlayerSelectCharacter)
-    switchState(TitleState::Main);
-  else if (m_titleState == TitleState::SinglePlayerCreateCharacter)
-    switchState(TitleState::SinglePlayerSelectCharacter);
-  else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
-    switchState(TitleState::Main);
-  else if (m_titleState == TitleState::MultiPlayerCreateCharacter)
-    switchState(TitleState::MultiPlayerSelectCharacter);
-  else if (m_titleState == TitleState::MultiPlayerConnect)
-    switchState(TitleState::MultiPlayerSelectCharacter);
+std::expected<void, StarException> TitleScreen::back() {
+  if (m_titleState == TitleState::Options || m_titleState == TitleState::Mods ||
+      m_titleState == TitleState::SinglePlayerSelectCharacter || m_titleState == TitleState::MultiPlayerSelectCharacter)
+    return switchState(TitleState::Main);
+  if (m_titleState == TitleState::SinglePlayerCreateCharacter)
+    return switchState(TitleState::SinglePlayerSelectCharacter);
+  if (m_titleState == TitleState::MultiPlayerCreateCharacter || m_titleState == TitleState::MultiPlayerConnect)
+    return switchState(TitleState::MultiPlayerSelectCharacter);
+  return {};
 }
 
-void TitleScreen::renderCursor() {
-  auto assets = m_guiContext->root().assets();
-
+std::expected<void, StarException> TitleScreen::renderCursor() {
   Vec2I cursorPos = m_cursorScreenPos;
-  Vec2I cursorSize = m_cursor.size();
-  Vec2I cursorOffset = m_cursor.offset();
-  float cursorScale = m_cursor.scale(interfaceScale());
-  Drawable cursorDrawable = m_cursor.drawable();
-
+  Vec2I cursorSize = m_cursor->size();
+  Vec2I cursorOffset = m_cursor->offset();
+  float cursorScale = m_cursor->scale(interfaceScale());
+  auto drawable = m_cursor->drawable();
+  if (!drawable) return std::unexpected(std::move(drawable.error()));
   cursorPos[0] -= cursorOffset[0] * cursorScale;
   cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
-
-  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
-    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
+  auto hardwareCursor = m_guiContext->trySetCursor(*drawable, cursorOffset, cursorScale);
+  if (!hardwareCursor) return std::unexpected(std::move(hardwareCursor.error()));
+  if (!*hardwareCursor)
+    return m_guiContext->drawDrawable(*drawable, Vec2F(cursorPos), cursorScale);
+  return {};
 }
 
 float TitleScreen::interfaceScale() const {
   return m_guiContext->interfaceScale();
 }
 
-unsigned TitleScreen::windowHeight() const {
-  return m_guiContext->windowHeight();
-}
-
-unsigned TitleScreen::windowWidth() const {
-  return m_guiContext->windowWidth();
-}
 
 }

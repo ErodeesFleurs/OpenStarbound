@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -56,7 +57,7 @@ import star.button_widget;
 namespace Star {
 
 void ButtonGroup::setCallback(WidgetCallbackFunc callback) {
-  m_callback = callback;
+  m_callback = std::move(callback);
 }
 
 ButtonWidget* ButtonGroup::button(int id) const {
@@ -75,7 +76,7 @@ int ButtonGroup::addButton(ButtonWidget* button, int id) {
   if (!button)
     return NoButton;
   else if (m_buttonIds.contains(button))
-    return m_buttonIds.get(button);
+    return *m_buttonIds.ptr(button);
 
   // If we are auto-generating an id, start at the last id and work forward.
   if (id == NoButton && !m_buttons.empty())
@@ -91,14 +92,14 @@ int ButtonGroup::addButton(ButtonWidget* button, int id) {
 
 void ButtonGroup::removeButton(ButtonWidget* button) {
   if (m_buttonIds.contains(button)) {
-    m_buttons.remove(m_buttonIds.get(button));
+    m_buttons.remove(*m_buttonIds.ptr(button));
     m_buttonIds.remove(button);
   }
 }
 
 int ButtonGroup::id(ButtonWidget* button) const {
   if (m_buttonIds.contains(button))
-    return m_buttonIds.get(button);
+    return *m_buttonIds.ptr(button);
   else
     return NoButton;
 }
@@ -115,20 +116,23 @@ int ButtonGroup::checkedId() const {
   return id(checkedButton());
 }
 
-void ButtonGroup::select(int id) {
+std::expected<void, StarException> ButtonGroup::select(int id) {
   auto b = button(id);
+  if (!b)
+    return std::unexpected(GuiException("Unknown button group id"));
   if (!b->isChecked())
-    b->check();
+    return b->check();
+  return {};
 }
 
-void ButtonGroup::wasChecked(ButtonWidget* self) {
+std::expected<void, StarException> ButtonGroup::wasChecked(ButtonWidget* self) {
   for (auto const& pair : m_buttons) {
     if (pair.second != self)
       pair.second->setChecked(false);
   }
-
   if (m_callback)
-    m_callback(self);
+    return m_callback(self);
+  return {};
 }
 
 bool ButtonGroup::toggle() const {

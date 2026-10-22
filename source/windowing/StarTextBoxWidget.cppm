@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -59,18 +60,18 @@ public:
     return Star::typeName<TextBoxWidget>();
   }
 
-  TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
+  [[nodiscard]] static std::expected<std::shared_ptr<TextBoxWidget>, StarException> create(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
 
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 
   String const& getText() const;
-  bool setText(String const& text, bool callback = true, bool moveCursor = true);
+  [[nodiscard]] std::expected<bool, StarException> setText(String const& text, bool callback = true, bool moveCursor = true);
 
   String const& getHint() const;
   void setHint(String const& hint);
 
   int const& getCursorPosition() const;
-  void setCursorPosition(int cursorPosition);
+  [[nodiscard]] std::expected<void, StarException> setCursorPosition(int cursorPosition);
 
 
   bool getHidden() const;
@@ -95,28 +96,32 @@ public:
 
   void setFont(String const& font);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
   void setDrawBorder(bool drawBorder);
   void setTextAlign(HorizontalAnchor hAnchor);
-  int getCursorDrawOffset() const;
+  [[nodiscard]] std::expected<int, StarException> getCursorDrawOffset() const;
 
-  virtual void mouseOver() override;
-  virtual void mouseOut() override;
-  virtual void mouseReturnStillDown() override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOver() override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOut() override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseReturnStillDown() override;
 
-  virtual void blur() override;
+  [[nodiscard]] virtual std::expected<void, StarException> blur() override;
 
-  virtual KeyboardCaptureMode keyboardCaptureMode() const override;
-  virtual std::optional<std::pair<RectI, int>> keyboardCaptureArea() const override;
+  [[nodiscard]] virtual std::expected<KeyboardCaptureMode, StarException> keyboardCaptureMode() const override;
+  [[nodiscard]] virtual std::expected<std::optional<std::pair<RectI, int>>, StarException> keyboardCaptureArea() const override;
 
 protected:
-  virtual void renderImpl() override;
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl() override;
 
 private:
-  bool innerSendEvent(InputEvent const& event);
-  bool modText(String const& text);
-  bool newTextValid(String const& text) const;
+  TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<String, StarException> displayText() const;
+  [[nodiscard]] std::expected<bool, StarException> innerSendEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<bool, StarException> modText(String const& text);
+  [[nodiscard]] std::expected<bool, StarException> editText(std::size_t start, std::size_t count, String const& replacement);
+  [[nodiscard]] std::expected<bool, StarException> newTextValid(String const& text) const;
 
   bool m_textHidden;
   String m_text;

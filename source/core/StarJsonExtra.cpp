@@ -5,483 +5,385 @@ import star.string;
 import star.list;
 import star.json;
 import star.format;
-import star.logging;
+import star.output_proxy;
 import star.random;
 import star.color;
 import star.set;
 import star.weighted_pool;
 import star.directives;
-
 import star.vector;
 import star.matrix3;
 import star.line;
 import star.rect;
 import star.poly;
 import star.algorithm;
+
 namespace Star {
 
-std::size_t jsonToSize(Json const& v) {
+std::expected<std::size_t, StarException> jsonToSize(Json const& v) {
   if (v.isNull())
     return NPos;
-
   if (!v.canConvert(Json::Type::Int))
-    throw JsonException("Json not an int in jsonToSize");
-
+    return std::unexpected(JsonException("Json not an int in jsonToSize"));
   return v.toUInt();
 }
 
 Json jsonFromSize(std::size_t s) {
-  if (s == NPos)
-    return Json();
-  return Json(s);
+  return s == NPos ? Json() : Json(s);
 }
 
-Vec2D jsonToVec2D(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 2)
-    throw JsonException("Json not an array of size 2 in jsonToVec2D");
-
-  return Vec2D(v.getDouble(0), v.getDouble(1));
-}
-
-Vec2F jsonToVec2F(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 2)
-    throw JsonException("Json not an array of size 2 in jsonToVec2F");
-
-  return Vec2F(v.getFloat(0), v.getFloat(1));
-}
-
-Json jsonFromVec2F(Vec2F const& v) {
-  return JsonArray{v[0], v[1]};
-}
-
-Vec2I jsonToVec2I(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 2)
-    throw JsonException("Json not an array of size 2 in jsonToVec2I");
-
-  return Vec2I(v.getInt(0), v.getInt(1));
-}
-
-Json jsonFromVec2I(Vec2I const& v) {
-  return JsonArray{v[0], v[1]};
-}
-
-Vec2U jsonToVec2U(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 2)
-    throw JsonException("Json not an array of size 2 in jsonToVec2I");
-
-  return Vec2U(v.getInt(0), v.getInt(1));
-}
-
-Json jsonFromVec2U(Vec2U const& v) {
-  return JsonArray{v[0], v[1]};
-}
-
-Vec2B jsonToVec2B(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 2)
-    throw JsonException("Json not an array of size 2 in jsonToVec2B");
-
-  return Vec2B(v.getInt(0), v.getInt(1));
-}
-
-Json jsonFromVec2B(Vec2B const& v) {
-  return JsonArray{v[0], v[1]};
-}
-
-Vec3D jsonToVec3D(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 3)
-    throw JsonException("Json not an array of size size 3 in jsonToVec3D");
-
-  return Vec3D(v.getDouble(0), v.getDouble(1), v.getDouble(2));
-}
-
-Vec3F jsonToVec3F(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 3)
-    throw JsonException("Json not an array of size 3 in jsonToVec3D");
-
-  return Vec3F(v.getFloat(0), v.getFloat(1), v.getFloat(2));
-}
-
-Json jsonFromVec3F(Vec3F const& v) {
-  return JsonArray{v[0], v[1], v[2]};
-}
-
-Vec3I jsonToVec3I(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 3)
-    throw JsonException("Json not an array of size 3 in jsonToVec3I");
-
-  return Vec3I(v.getInt(0), v.getInt(1), v.getInt(2));
-}
-
-Json jsonFromVec3I(Vec3I const& v) {
-  JsonArray result;
-  result.append(v[0]);
-  result.append(v[1]);
-  result.append(v[2]);
-  return result;
-}
-
-Vec3B jsonToVec3B(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 3)
-    throw JsonException("Json not an array of size 3 in jsonToVec3B");
-
-  return Vec3B(v.getInt(0), v.getInt(1), v.getInt(2));
-}
-
-Vec4B jsonToVec4B(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 4)
-    throw JsonException("Json not an array of size 4 in jsonToVec4B");
-
-  return Vec4B(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
-}
-
-Vec4I jsonToVec4I(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 4)
-    throw JsonException("Json not an array of size 4 in jsonToVec4B");
-
-  return Vec4I(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
-}
-
-Vec4F jsonToVec4F(Json const& v) {
-  if (v.type() != Json::Type::Array || v.size() != 4)
-    throw JsonException("Json not an array of size 4 in jsonToVec4B");
-
-  return Vec4F(v.getFloat(0), v.getFloat(1), v.getFloat(2), v.getFloat(3));
-}
-
-RectD jsonToRectD(Json const& v) {
-  if (v.type() != Json::Type::Array)
-    throw JsonException("Json not an array in jsonToRectD");
-
-  if (v.size() != 4 && v.size() != 2)
-    throw JsonException("Json not an array of proper size in jsonToRectD");
-
-  if (v.size() == 4)
-    return RectD(v.getDouble(0), v.getDouble(1), v.getDouble(2), v.getDouble(3));
-
-  try {
-    auto lowerLeft = jsonToVec2D(v.get(0));
-    auto upperRight = jsonToVec2D(v.get(1));
-    return RectD(lowerLeft, upperRight);
-  } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectD: {}", outputException(e, true)));
+namespace {
+  template <typename Vec, std::size_t Size, typename Getter>
+  std::expected<Vec, StarException> jsonVector(Json const& v, Getter getter, char const* diagnostic) {
+    if (v.type() != Json::Type::Array)
+      return std::unexpected(JsonException(diagnostic));
+    auto size = v.size();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    if (*size != Size)
+      return std::unexpected(JsonException(diagnostic));
+    Vec result;
+    for (std::size_t i = 0; i < Size; ++i) {
+      auto element = std::invoke(getter, v, i);
+      if (!element)
+        return std::unexpected(std::move(element.error()));
+      result[i] = *element;
+    }
+    return result;
   }
 }
 
-Json jsonFromRectD(RectD const& rect) {
-  return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+std::expected<Vec2D, StarException> jsonToVec2D(Json const& v) {
+  return jsonVector<Vec2D, 2>(v, [](Json const& j, std::size_t i) { return j.getDouble(i); }, "Json not an array of size 2 in jsonToVec2D");
+}
+std::expected<Vec2F, StarException> jsonToVec2F(Json const& v) {
+  return jsonVector<Vec2F, 2>(v, [](Json const& j, std::size_t i) { return j.getFloat(i); }, "Json not an array of size 2 in jsonToVec2F");
+}
+std::expected<Vec2I, StarException> jsonToVec2I(Json const& v) {
+  return jsonVector<Vec2I, 2>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 2 in jsonToVec2I");
+}
+std::expected<Vec2U, StarException> jsonToVec2U(Json const& v) {
+  return jsonVector<Vec2U, 2>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 2 in jsonToVec2I");
+}
+std::expected<Vec2B, StarException> jsonToVec2B(Json const& v) {
+  return jsonVector<Vec2B, 2>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 2 in jsonToVec2B");
+}
+std::expected<Vec3D, StarException> jsonToVec3D(Json const& v) {
+  return jsonVector<Vec3D, 3>(v, [](Json const& j, std::size_t i) { return j.getDouble(i); }, "Json not an array of size size 3 in jsonToVec3D");
+}
+std::expected<Vec3F, StarException> jsonToVec3F(Json const& v) {
+  return jsonVector<Vec3F, 3>(v, [](Json const& j, std::size_t i) { return j.getFloat(i); }, "Json not an array of size 3 in jsonToVec3D");
+}
+std::expected<Vec3I, StarException> jsonToVec3I(Json const& v) {
+  return jsonVector<Vec3I, 3>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 3 in jsonToVec3I");
+}
+std::expected<Vec3B, StarException> jsonToVec3B(Json const& v) {
+  return jsonVector<Vec3B, 3>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 3 in jsonToVec3B");
+}
+std::expected<Vec4B, StarException> jsonToVec4B(Json const& v) {
+  return jsonVector<Vec4B, 4>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 4 in jsonToVec4B");
+}
+std::expected<Vec4I, StarException> jsonToVec4I(Json const& v) {
+  return jsonVector<Vec4I, 4>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, "Json not an array of size 4 in jsonToVec4B");
+}
+std::expected<Vec4F, StarException> jsonToVec4F(Json const& v) {
+  return jsonVector<Vec4F, 4>(v, [](Json const& j, std::size_t i) { return j.getFloat(i); }, "Json not an array of size 4 in jsonToVec4B");
 }
 
-RectF jsonToRectF(Json const& v) {
-  return RectF(jsonToRectD(v));
-}
+Json jsonFromVec2F(Vec2F const& v) { return JsonArray{v[0], v[1]}; }
+Json jsonFromVec2I(Vec2I const& v) { return JsonArray{v[0], v[1]}; }
+Json jsonFromVec2U(Vec2U const& v) { return JsonArray{v[0], v[1]}; }
+Json jsonFromVec2B(Vec2B const& v) { return JsonArray{v[0], v[1]}; }
+Json jsonFromVec3F(Vec3F const& v) { return JsonArray{v[0], v[1], v[2]}; }
+Json jsonFromVec3I(Vec3I const& v) { return JsonArray{v[0], v[1], v[2]}; }
 
-Json jsonFromRectF(RectF const& rect) {
-  return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
-}
-
-RectI jsonToRectI(Json const& v) {
-  if (v.type() != Json::Type::Array)
-    throw JsonException("Json not an array in jsonToRectI");
-
-  if (v.size() != 4 && v.size() != 2)
-    throw JsonException("Json not an array of proper size in jsonToRectI");
-
-  if (v.size() == 4)
-    return RectI(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
-
-  try {
-    auto lowerLeft = jsonToVec2I(v.get(0));
-    auto upperRight = jsonToVec2I(v.get(1));
-    return RectI(lowerLeft, upperRight);
-  } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectI: {}", outputException(e, true)));
+namespace {
+  template <typename Rect, typename Vec, typename Getter, typename Converter>
+  std::expected<Rect, StarException> jsonRect(Json const& v, Getter getter, Converter converter, char const* name) {
+    if (v.type() != Json::Type::Array)
+      return std::unexpected(JsonException(strf("Json not an array in {}", name)));
+    auto size = v.size();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    if (*size != 4 && *size != 2)
+      return std::unexpected(JsonException(strf("Json not an array of proper size in {}", name)));
+    if (*size == 4) {
+      Vec lowerLeft, upperRight;
+      for (std::size_t i = 0; i < 4; ++i) {
+        auto value = getter(v, i);
+        if (!value)
+          return std::unexpected(std::move(value.error()));
+        (i < 2 ? lowerLeft : upperRight)[i % 2] = *value;
+      }
+      return Rect(lowerLeft, upperRight);
+    }
+    auto inner = [&]() -> std::expected<Rect, StarException> {
+      auto lower = v.get(0);
+      if (!lower)
+        return std::unexpected(std::move(lower.error()));
+      auto upper = v.get(1);
+      if (!upper)
+        return std::unexpected(std::move(upper.error()));
+      auto lowerLeft = converter(*lower);
+      if (!lowerLeft)
+        return std::unexpected(std::move(lowerLeft.error()));
+      auto upperRight = converter(*upper);
+      if (!upperRight)
+        return std::unexpected(std::move(upperRight.error()));
+      return Rect(*lowerLeft, *upperRight);
+    }();
+    if (!inner && inner.error().template is<JsonException>())
+      return std::unexpected(JsonException(strf("Inner position not well formed in {}: {}", name, outputException(ExceptionDiagnostic(inner.error()), true))));
+    return inner;
   }
 }
 
-Json jsonFromRectI(RectI const& rect) {
-  return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+std::expected<RectD, StarException> jsonToRectD(Json const& v) {
+  return jsonRect<RectD, Vec2D>(v, [](Json const& j, std::size_t i) { return j.getDouble(i); }, jsonToVec2D, "jsonToRectD");
 }
-
-RectU jsonToRectU(Json const& v) {
-  if (v.type() != Json::Type::Array)
-    throw JsonException("Json not an array in jsonToRectU");
-
-  if (v.size() != 4 && v.size() != 2)
-    throw JsonException("Json not an array of proper size in jsonToRectU");
-
-  if (v.size() == 4)
-    return RectU(v.getInt(0), v.getUInt(1), v.getUInt(2), v.getUInt(3));
-
-  try {
-    auto lowerLeft = jsonToVec2U(v.get(0));
-    auto upperRight = jsonToVec2U(v.get(1));
-    return RectU(lowerLeft, upperRight);
-  } catch (JsonException const& e) {
-    throw JsonException(strf("Inner position not well formed in jsonToRectU: {}", outputException(e, true)));
-  }
+std::expected<RectF, StarException> jsonToRectF(Json const& v) {
+  auto result = jsonToRectD(v);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return RectF(*result);
 }
-
-Json jsonFromRectU(RectU const& rect) {
-  return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+std::expected<RectI, StarException> jsonToRectI(Json const& v) {
+  return jsonRect<RectI, Vec2I>(v, [](Json const& j, std::size_t i) { return j.getInt(i); }, jsonToVec2I, "jsonToRectI");
 }
+std::expected<RectU, StarException> jsonToRectU(Json const& v) {
+  // The first component historically uses signed conversion, the others unsigned.
+  return jsonRect<RectU, Vec2U>(v, [](Json const& j, std::size_t i) -> std::expected<std::uint64_t, StarException> {
+    if (i != 0)
+      return j.getUInt(i);
+    auto value = j.getInt(i);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    return static_cast<std::uint64_t>(*value);
+  }, jsonToVec2U, "jsonToRectU");
+}
+Json jsonFromRectD(RectD const& r) { return JsonArray{r.xMin(), r.yMin(), r.xMax(), r.yMax()}; }
+Json jsonFromRectF(RectF const& r) { return JsonArray{r.xMin(), r.yMin(), r.xMax(), r.yMax()}; }
+Json jsonFromRectI(RectI const& r) { return JsonArray{r.xMin(), r.yMin(), r.xMax(), r.yMax()}; }
+Json jsonFromRectU(RectU const& r) { return JsonArray{r.xMin(), r.yMin(), r.xMax(), r.yMax()}; }
 
-Color jsonToColor(Json const& v) {
+std::expected<Color, StarException> jsonToColor(Json const& v) {
   if (v.type() == Json::Type::Array) {
-    if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
-      throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
-    Color c = Color::rgba(0, 0, 0, 255);
-    c.setRed(v.getInt(0));
-    c.setGreen(v.getInt(1));
-    c.setBlue(v.getInt(2));
-
-    if (v.size() == 4)
-      c.setAlpha(v.getInt(3));
-
-    return c;
-  } else if (v.type() == Json::Type::String) {
-    return Color(v.toString());
-  } else {
-    throw JsonException(strf("Json of type {} cannot be converted to color", v.typeName()));
+    auto size = v.size();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    if (*size != 3 && *size != 4)
+      return std::unexpected(JsonException("Json not an array of size 3 or 4 in jsonToColor"));
+    Vec4B channels(0, 0, 0, 255);
+    for (std::size_t i = 0; i < *size; ++i) {
+      auto channel = v.getInt(i);
+      if (!channel)
+        return std::unexpected(std::move(channel.error()));
+      channels[i] = *channel;
+    }
+    return Color::rgba(channels[0], channels[1], channels[2], channels[3]);
   }
+  if (v.type() == Json::Type::String) {
+    auto text = v.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    return Color::create(*text);
+  }
+  return std::unexpected(JsonException(strf("Json of type {} cannot be converted to color", v.typeName())));
 }
-
 Json jsonFromColor(Color const& color) {
-  JsonArray result;
-  result.push_back(color.red());
-  result.push_back(color.green());
-  result.push_back(color.blue());
+  JsonArray result{color.red(), color.green(), color.blue()};
   if (color.alpha() < 255)
     result.push_back(color.alpha());
   return result;
 }
 
-PolyD jsonToPolyD(Json const& v) {
+std::expected<PolyD, StarException> jsonToPolyD(Json const& v) {
+  auto vertices = v.iterateArray();
+  if (!vertices)
+    return std::unexpected(std::move(vertices.error()));
   PolyD poly;
-
-  for (Json const& vertex : v.iterateArray())
-    poly.add(jsonToVec2D(vertex));
-
-  return fixInsideOutPoly(poly);
+  for (auto const& vertex : *vertices) {
+    auto converted = jsonToVec2D(vertex);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    poly.add(*converted);
+  }
+  return fixInsideOutPoly(std::move(poly));
 }
-
-PolyF jsonToPolyF(Json const& v) {
+std::expected<PolyF, StarException> jsonToPolyF(Json const& v) {
+  auto vertices = v.iterateArray();
+  if (!vertices)
+    return std::unexpected(std::move(vertices.error()));
   PolyF poly;
-
-  for (Json const& vertex : v.iterateArray())
-    poly.add(jsonToVec2F(vertex));
-
-  return fixInsideOutPoly(poly);
+  for (auto const& vertex : *vertices) {
+    auto converted = jsonToVec2F(vertex);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    poly.add(*converted);
+  }
+  return fixInsideOutPoly(std::move(poly));
 }
-
-PolyI jsonToPolyI(Json const& v) {
+std::expected<PolyI, StarException> jsonToPolyI(Json const& v) {
+  auto vertices = v.iterateArray();
+  if (!vertices)
+    return std::unexpected(std::move(vertices.error()));
   PolyI poly;
-
-  for (Json const& vertex : v.iterateArray())
-    poly.add(jsonToVec2I(vertex));
-
-  return fixInsideOutPoly(poly);
+  for (auto const& vertex : *vertices) {
+    auto converted = jsonToVec2I(vertex);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    poly.add(*converted);
+  }
+  return fixInsideOutPoly(std::move(poly));
 }
-
 Json jsonFromPolyF(PolyF const& poly) {
-  JsonArray vertexList;
+  JsonArray result;
   for (auto const& vertex : poly.vertexes())
-    vertexList.append(JsonArray{vertex[0], vertex[1]});
-
-  return vertexList;
-}
-
-Line2F jsonToLine2F(Json const& v) {
-  return Line2F(jsonToVec2F(v.get(0)), jsonToVec2F(v.get(1)));
-}
-
-Json jsonFromLine2F(Line2F const& line) {
-  return JsonArray{jsonFromVec2F(line.min()), jsonFromVec2F(line.max())};
-}
-
-Mat3F jsonToMat3F(Json const& v) {
-  return Mat3F(jsonToVec3F(v.get(0)), jsonToVec3F(v.get(1)), jsonToVec3F(v.get(2)));
-}
-
-Json jsonFromMat3F(Mat3F const& v) {
-  return JsonArray{jsonFromVec3F(v[0]), jsonFromVec3F(v[1]), jsonFromVec3F(v[2])};
-}
-
-StringList jsonToStringList(Json const& v) {
-  StringList result;
-  for (auto const& entry : v.iterateArray())
-    result.push_back(entry.toString());
+    result.append(JsonArray{vertex[0], vertex[1]});
   return result;
 }
+std::expected<Line2F, StarException> jsonToLine2F(Json const& v) {
+  auto lower = v.get(0);
+  if (!lower)
+    return std::unexpected(std::move(lower.error()));
+  auto upper = v.get(1);
+  if (!upper)
+    return std::unexpected(std::move(upper.error()));
+  auto min = jsonToVec2F(*lower);
+  if (!min)
+    return std::unexpected(std::move(min.error()));
+  auto max = jsonToVec2F(*upper);
+  if (!max)
+    return std::unexpected(std::move(max.error()));
+  return Line2F(*min, *max);
+}
+Json jsonFromLine2F(Line2F const& line) { return JsonArray{jsonFromVec2F(line.min()), jsonFromVec2F(line.max())}; }
+std::expected<Mat3F, StarException> jsonToMat3F(Json const& v) {
+  Vec3F columns[3];
+  for (std::size_t i = 0; i < 3; ++i) {
+    auto item = v.get(i);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    auto column = jsonToVec3F(*item);
+    if (!column)
+      return std::unexpected(std::move(column.error()));
+    columns[i] = *column;
+  }
+  return Mat3F(columns[0], columns[1], columns[2]);
+}
+Json jsonFromMat3F(Mat3F const& v) { return JsonArray{jsonFromVec3F(v[0]), jsonFromVec3F(v[1]), jsonFromVec3F(v[2])}; }
 
+std::expected<StringList, StarException> jsonToStringList(Json const& v) { return jsonToList<String>(v, [](Json const& j) { return j.toString(); }); }
+std::expected<List<float>, StarException> jsonToFloatList(Json const& v) { return jsonToList<float>(v, [](Json const& j) { return j.toFloat(); }); }
+std::expected<List<int>, StarException> jsonToIntList(Json const& v) { return jsonToList<int>(v, [](Json const& j) { return j.toInt(); }); }
+std::expected<List<Vec2I>, StarException> jsonToVec2IList(Json const& v) { return jsonToList<Vec2I>(v, jsonToVec2I); }
+std::expected<List<Vec2U>, StarException> jsonToVec2UList(Json const& v) { return jsonToList<Vec2U>(v, jsonToVec2U); }
+std::expected<List<Vec2F>, StarException> jsonToVec2FList(Json const& v) { return jsonToList<Vec2F>(v, jsonToVec2F); }
+std::expected<List<Vec4B>, StarException> jsonToVec4BList(Json const& v) { return jsonToList<Vec4B>(v, jsonToVec4B); }
+std::expected<List<Color>, StarException> jsonToColorList(Json const& v) { return jsonToList<Color>(v, jsonToColor); }
+std::expected<StringSet, StarException> jsonToStringSet(Json const& v) { return jsonToSet<StringSet>(v, [](Json const& j) { return j.toString(); }); }
+std::expected<List<Directives>, StarException> jsonToDirectivesList(Json const& v) {
+  return jsonToList<Directives>(v, [](Json const& j) -> std::expected<Directives, StarException> {
+    auto text = j.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    return Directives(*text);
+  });
+}
 Json jsonFromStringList(List<String> const& v) {
   JsonArray result;
-  for (auto& e : v)
-    result.push_back(e);
+  for (auto const& entry : v)
+    result.push_back(entry);
   return result;
 }
-
-List<float> jsonToFloatList(Json const& v) {
-  List<float> result;
-  for (auto const& entry : v.iterateArray())
-    result.push_back(entry.toFloat());
-  return result;
-}
-
-StringSet jsonToStringSet(Json const& v) {
-  StringSet result;
-  for (auto const& entry : v.iterateArray())
-    result.add(entry.toString());
-  return result;
-}
-
 Json jsonFromStringSet(StringSet const& v) {
   JsonArray result;
-  for (auto& e : v)
-    result.push_back(e);
+  for (auto const& entry : v)
+    result.push_back(entry);
   return result;
 }
-
-List<int> jsonToIntList(Json const& v) {
-  List<int> result;
-  for (auto const& entry : v.iterateArray())
-    result.push_back(entry.toInt());
-  return result;
-}
-
-List<Vec2I> jsonToVec2IList(Json const& v) {
-  List<Vec2I> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(jsonToVec2I(entry));
-  return result;
-}
-
-List<Vec2U> jsonToVec2UList(Json const& v) {
-  List<Vec2U> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(jsonToVec2U(entry));
-  return result;
-}
-
-List<Vec2F> jsonToVec2FList(Json const& v) {
-  List<Vec2F> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(jsonToVec2F(entry));
-  return result;
-}
-
-List<Vec4B> jsonToVec4BList(Json const& v) {
-  List<Vec4B> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(jsonToVec4B(entry));
-  return result;
-}
-
-List<Color> jsonToColorList(Json const& v) {
-  List<Color> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(jsonToColor(entry));
-  return result;
-}
-
-List<Directives> jsonToDirectivesList(Json const& v) {
-  List<Directives> result;
-  for (auto const& entry : v.iterateArray())
-    result.append(entry.toString());
-  return result;
-}
-
 Json jsonFromDirectivesList(List<Directives> const& v) {
   JsonArray result;
-  for (auto& e : v) {
-    if (e)
-      result.push_back(*e.stringPtr());
-  }
+  for (auto const& entry : v)
+    if (entry)
+      result.push_back(*entry.stringPtr());
   return result;
 }
 
-Json weightedChoiceFromJson(RandomService& random, Json const& source, Json const& default_) {
+std::expected<Json, StarException> weightedChoiceFromJson(RandomService& random, Json const& source, Json const& default_) {
   if (source.isNull())
     return default_;
   if (source.type() != Json::Type::Array)
-    throw StarException("Json of array type expected.");
+    return std::unexpected(StarException("Json of array type expected."));
+  auto array = source.arrayPtr();
+  if (!array)
+    return std::unexpected(std::move(array.error()));
   List<std::pair<float, Json>> options;
   float sum = 0;
-  std::size_t idx = 0;
-  while (idx < source.size()) {
+  for (std::size_t idx = 0; idx < (*array)->size(); ++idx) {
     float weight = 1;
-    Json entry = source.get(idx);
+    Json entry = (**array)[idx];
     if (entry.type() == Json::Type::Int || entry.type() == Json::Type::Float) {
-      weight = entry.toDouble();
-      idx++;
-      if (idx >= source.size())
-        throw StarException("Weighted companion cube cannot cry.");
-      sum += weight;
-      options.append(std::pair<float, Json>{weight, source.get(idx)});
-    } else {
-      sum += weight;
-      options.append(std::pair<float, Json>{weight, entry});
+      auto number = entry.toDouble();
+      if (!number)
+        return std::unexpected(std::move(number.error()));
+      weight = *number;
+      if (++idx >= (*array)->size())
+        return std::unexpected(StarException("Weighted companion cube cannot cry."));
+      entry = (**array)[idx];
     }
-    idx++;
+    sum += weight;
+    options.append(std::pair<float, Json>{weight, std::move(entry)});
   }
-  if (!options.size())
+  if (options.empty())
     return default_;
   float choice = random.randf() * sum;
-  idx = 0;
-  while (idx < options.size()) {
-    auto const& entry = options[idx];
+  for (auto const& entry : options) {
     if (entry.first >= choice)
       return entry.second;
     choice -= entry.first;
-    idx++;
   }
   return options[options.size() - 1].second;
 }
 
-Json binnedChoiceFromJson(Json const& bins, float target, Json const& def) {
-  JsonArray binList = bins.toArray();
-  sortByComputedValue(binList, [](Json const& pair) { return -pair.getFloat(0); });
-  Json result = def;
-  for (auto const& pair : binList) {
-    if (pair.getFloat(0) <= target) {
-      result = pair.get(1);
-      break;
-    }
+std::expected<Json, StarException> binnedChoiceFromJson(Json const& bins, float target, Json const& def) {
+  auto entries = bins.iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  // Extract checked keys before sorting: a comparator cannot propagate errors.
+  List<std::pair<float, Json>> ordered;
+  for (auto const& entry : *entries) {
+    auto minimum = entry.getFloat(0);
+    if (!minimum)
+      return std::unexpected(std::move(minimum.error()));
+    ordered.append({*minimum, entry});
   }
-  return result;
+  sortByComputedValue(ordered, [](auto const& entry) { return -entry.first; });
+  for (auto const& entry : ordered)
+    if (entry.first <= target)
+      return entry.second.get(1);
+  return def;
 }
 
-template <>
-WeightedPool<int> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<int>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<int>(source, [](Json const& v) { return v.toInt(); });
 }
-
-template <>
-WeightedPool<unsigned> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<unsigned>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<unsigned>(source, [](Json const& v) { return v.toUInt(); });
 }
-
-template <>
-WeightedPool<float> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<float>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<float>(source, [](Json const& v) { return v.toFloat(); });
 }
-
-template <>
-WeightedPool<double> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<double>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<double>(source, [](Json const& v) { return v.toDouble(); });
 }
-
-template <>
-WeightedPool<String> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<String>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<String>(source, [](Json const& v) { return v.toString(); });
 }
-
-template <>
-WeightedPool<JsonArray> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<JsonArray>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<JsonArray>(source, [](Json const& v) { return v.toArray(); });
 }
-
-template <>
-WeightedPool<JsonObject> jsonToWeightedPool(Json const& source) {
+template <> std::expected<WeightedPool<JsonObject>, StarException> jsonToWeightedPool(Json const& source) {
   return jsonToWeightedPool<JsonObject>(source, [](Json const& v) { return v.toObject(); });
 }
 

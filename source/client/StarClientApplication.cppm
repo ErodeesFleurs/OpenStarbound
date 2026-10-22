@@ -39,27 +39,27 @@ class ClientApplication : public Application {
 public:
   Logger& logger() const override { return m_root->logger(); }
   ~ClientApplication() override;
-  void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
-  void setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save);
-  bool postProcessGroupEnabled(String const& group);
-  Json postProcessGroups();
+  [[nodiscard]] std::expected<void, StarException> setPostProcessLayerPasses(String const& layer, unsigned const& passes);
+  [[nodiscard]] std::expected<void, StarException> setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save);
+  [[nodiscard]] std::expected<bool, StarException> postProcessGroupEnabled(String const& group);
+  [[nodiscard]] std::expected<Json, StarException> postProcessGroups();
   virtual unsigned framesSkipped() const override;
 
 protected:
-  virtual void startup(StringList const& cmdLineArgs) override;
-  virtual void shutdown() override;
+  [[nodiscard]] std::expected<void, StarException> startup(StringList const& cmdLineArgs) override;
+  [[nodiscard]] std::expected<void, StarException> shutdown() override;
 
-  virtual void applicationInit(std::shared_ptr<ApplicationController> appController) override;
-  virtual void renderInit(std::shared_ptr<Renderer> renderer) override;
+  [[nodiscard]] std::expected<void, StarException> applicationInit(std::shared_ptr<ApplicationController> appController) override;
+  [[nodiscard]] std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer) override;
 
-  virtual void windowChanged(WindowMode windowMode, Vec2U screenSize) override;
+  [[nodiscard]] std::expected<void, StarException> windowChanged(WindowMode windowMode, Vec2U screenSize) override;
 
-  virtual void processInput(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> processInput(InputEvent const& event) override;
 
-  virtual void update() override;
-  virtual void render() override;
+  [[nodiscard]] std::expected<void, StarException> update() override;
+  [[nodiscard]] std::expected<void, StarException> render() override;
 
-  virtual void getAudioData(std::int16_t* stream, std::size_t len) override;
+  [[nodiscard]] std::expected<void, StarException> getAudioData(std::int16_t* stream, std::size_t len) override;
 
 private:
   enum class MainAppState {
@@ -92,25 +92,25 @@ private:
     PostProcessGroup* group;
   };
 
-  void renderReload();
+  [[nodiscard]] std::expected<void, StarException> renderReload();
 
-  void changeState(MainAppState newState);
-  void setError(String const& error);
-  void setError(String const& error, ExceptionDiagnostic const& e);
+  [[nodiscard]] std::expected<void, StarException> changeState(MainAppState newState);
+  [[nodiscard]] std::expected<void, StarException> setError(String const& error);
+  [[nodiscard]] std::expected<void, StarException> setError(String const& error, ExceptionDiagnostic const& e);
 
-  void loadMods();
-  void updateSteamFlatpakWarning(float dt);
-  void updateMods(float dt);
-  void updateModsWarning(float dt);
-  void updateSplash(float dt);
-  void updateError(float dt);
-  void updateTitle(float dt);
-  void updateRunning(float dt);
+  [[nodiscard]] std::expected<void, StarException> loadMods();
+  [[nodiscard]] std::expected<void, StarException> updateSteamFlatpakWarning(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateMods(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateModsWarning(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateSplash(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateError(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateTitle(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateRunning(float dt);
 
   bool isActionTaken(InterfaceAction action) const;
   bool isActionTakenEdge(InterfaceAction action) const;
 
-  void updateCamera(float dt);
+  [[nodiscard]] std::expected<void, StarException> updateCamera(float dt);
 
   std::unique_ptr<Root> m_root;
   ThreadFunction<void> m_rootLoader;

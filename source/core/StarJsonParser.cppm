@@ -8,25 +8,26 @@ import star.unicode;
 namespace Star {
 
 struct JsonStream {
-  virtual ~JsonStream() {}
-
-  virtual void beginObject() = 0;
-  virtual void objectKey(char32_t const*, std::size_t) = 0;
-  virtual void endObject() = 0;
-
-  virtual void beginArray() = 0;
-  virtual void endArray() = 0;
-
-  virtual void putString(char32_t const*, std::size_t) = 0;
-  virtual void putDouble(char32_t const*, std::size_t) = 0;
-  virtual void putInteger(char32_t const*, std::size_t) = 0;
-  virtual void putBoolean(bool) = 0;
-  virtual void putNull() = 0;
-
-  virtual void putWhitespace(char32_t const*, std::size_t) = 0;
-  virtual void putColon() = 0;
-  virtual void putComma() = 0;
+  virtual ~JsonStream() = default;
+  virtual std::expected<void, StarException> beginObject() = 0;
+  virtual std::expected<void, StarException> objectKey(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> endObject() = 0;
+  virtual std::expected<void, StarException> beginArray() = 0;
+  virtual std::expected<void, StarException> endArray() = 0;
+  virtual std::expected<void, StarException> putString(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putDouble(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putInteger(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putBoolean(bool) = 0;
+  virtual std::expected<void, StarException> putNull() = 0;
+  virtual std::expected<void, StarException> putWhitespace(char32_t const*, std::size_t) = 0;
+  virtual std::expected<void, StarException> putColon() = 0;
+  virtual std::expected<void, StarException> putComma() = 0;
 };
+
+struct JsonParserExceptionTag {
+  static constexpr char const* name() { return "JsonParserException"; }
+};
+using JsonParserException = StarError<JsonParserExceptionTag, StarException>;
 
 enum class JsonParseType : std::uint8_t {
   Top, // Top-level Object or Array
@@ -39,521 +40,505 @@ enum class JsonParseType : std::uint8_t {
 template <typename InputIterator>
 class JsonParser {
 public:
-  JsonParser(JsonStream& stream)
-    : m_line(0), m_column(0), m_error(nullptr), m_stream(stream) {}
-  virtual ~JsonParser() {}
+  explicit JsonParser(JsonStream& stream) : m_stream(stream) {}
 
-  // Does not throw.  On error, returned iterator will not be equal to end, and
-  // error() will be non-null.  Set fragment to true to parse any JSON type
-  // rather than just object or array.
-  InputIterator parse(InputIterator begin, InputIterator end, JsonParseType parseType = JsonParseType::Top) {
-    init(begin, end);
-
-    try {
-      white();
-      if (parseType == JsonParseType::Top)
-        top();
-      else if (parseType == JsonParseType::Value)
-        value();
-      else if (parseType == JsonParseType::Sequence)
-        sequence();
-      white();
-    } catch (ParsingException const&) {
-    }
-
+  std::expected<InputIterator, StarException> parse(InputIterator begin, InputIterator end,
+      JsonParseType parseType = JsonParseType::Top) {
+    m_current = begin;
+    m_end = end;
+    m_line = m_column = 0;
+    auto initialized = read();
+    if (!initialized)
+      return diagnostic(std::move(initialized.error()));
+    auto parsed = parseDocument(parseType);
+    if (!parsed)
+      return diagnostic(std::move(parsed.error()));
     return m_current;
   }
 
-  // Human readable parsing error, does not include line or column info.
-  char const* error() const {
-    return m_error;
-  }
-
-  std::size_t line() const {
-    return m_line + 1;
-  }
-
-  std::size_t column() const {
-    return m_column + 1;
-  }
+  std::size_t line() const { return m_line + 1; }
+  std::size_t column() const { return m_column + 1; }
 
 private:
-  typedef std::basic_string<char32_t> CharArray;
+  using CharArray = std::basic_string<char32_t>;
 
-  // Thrown internally to abort parsing.
-  class ParsingException {};
-
-  void top() {
-    switch (m_char) {
-      case '{':
-        object();
-        break;
-      case '[':
-        array();
-        break;
-      default:
-        error("expected JSON object or array at top level");
-        return;
-    }
+  std::unexpected<StarException> diagnostic(StarException error) const {
+    return std::unexpected(error.withContext(strf("Error parsing json at {}:{}", line(), column())));
   }
 
-  void value() {
-    switch (m_char) {
-      case '{':
-        object();
-        break;
-      case '[':
-        array();
-        break;
-      case '"':
-        string();
-        break;
-      case '-':
-        number();
-        break;
-      case 0:
-        error("unexpected end of stream parsing value");
-        return;
-      default:
-        m_char >= '0' && m_char <= '9' ? number() : word();
-        break;
-    }
+  std::expected<void, StarException> error(char const* message) const {
+    return std::unexpected(JsonParserException(message));
   }
 
-  void object() {
-    if (m_char != '{')
-      error("bad object, should be '{'");
-
-    next();
-    m_stream.beginObject();
-
-    white();
-    if (m_char == '}') {
-      next();
-      m_stream.endObject();
-      return;
+  std::expected<void, StarException> read() {
+    if (m_current == m_end) {
+      m_char = 0;
+      return {};
     }
-
-    while (true) {
-      CharArray s = parseString();
-      m_stream.objectKey(s.c_str(), s.length());
-
-      white();
-      if (m_char != ':')
-        error("bad object, should be ':'");
-      next();
-      m_stream.putColon();
-      white();
-
-      value();
-
-      white();
-      if (m_char == '}') {
-        next();
-        m_stream.endObject();
-        return;
-      } else if (m_char == ',') {
-        next();
-        m_stream.putComma();
-        white();
-      } else if (m_char == 0) {
-        error("unexpected end of stream parsing object.");
-      } else {
-        error("bad object, should be '}' or ','");
-      }
-    }
-  }
-
-  void array() {
-    if (m_char == '[') {
-      next();
-      m_stream.beginArray();
-      white();
-      if (m_char == ']') {
-        next();
-        m_stream.endArray();
-      } else {
-        while (true) {
-          value();
-          white();
-          if (m_char == ']') {
-            next();
-            m_stream.endArray();
-            break;
-          } else if (m_char == ',') {
-            next();
-            m_stream.putComma();
-            white();
-          } else if (m_char == 0) {
-            error("unexpected end of stream parsing array.");
-          } else {
-            error("bad array, should be ',' or ']'");
-          }
-        }
-      }
+    if constexpr (requires { m_current.read(); }) {
+      auto c = m_current.read();
+      if (!c)
+        return std::unexpected(std::move(c.error()));
+      m_char = *c;
     } else {
-      error("bad array");
+      m_char = *m_current;
     }
-  }
-
-  void sequence() {
-    m_stream.beginArray();
-    while (true) {
-      if (isSpace(m_char)) {
-        next();
-        continue;
-      } else if (m_char == '{')
-        object();
-      else if (m_char == '[')
-        array();
-      else if (m_char == '"')
-        string();
-      else if (m_char == '-')
-        number();
-      else if (m_char == 0)
-        break;
-      else {
-        auto begin = m_current;
-        auto b_char = m_char;
-        if (m_char >= '0' && m_char <= '9') {
-          try {
-            number(true);
-          }
-          catch (ParsingException const&) {
-            m_current = begin;
-            m_char = b_char;
-          }
-          if (m_error == nullptr) {
-            next();
-            continue;
-          }
-        }
-        m_error = nullptr;
-        if (m_char == 't' || m_char == 'f' || m_char == 'n') {
-          try {
-            word(true);
-          }
-          catch (ParsingException const&) {
-            m_current = begin;
-            m_char = b_char;
-          }
-          if (m_error == nullptr) {
-            next();
-            continue;
-          }
-        }
-        m_error = nullptr;
-        // well, shit. do a simple string parse until we hit whitespace
-        // no fancy things like \n, do a proper string if you want that
-        CharArray str;
-        do {
-          str += m_char;
-          next();
-        } while (m_char != 0 && !isSpace(m_char));
-        m_stream.putString(str.c_str(), str.length());
-      }
-      next();
-    }
-    m_stream.endArray();
-  }
-
-  void string() {
-    CharArray s = parseString();
-    m_stream.putString(s.c_str(), s.length());
-  }
-
-  void number(bool seq = false) {
-    std::basic_string<char32_t> buffer;
-    bool isDouble = false;
-
-    if (m_char == '-') {
-      buffer += '-';
-      next();
-    }
-
-    if (m_char == '0') {
-      buffer += '0';
-      next();
-    } else if (m_char > '0' && m_char <= '9') {
-      while (m_char >= '0' && m_char <= '9') {
-        buffer += m_char;
-        next();
-      }
-    } else {
-      error("bad number, must start with digit");
-    }
-
-    if (m_char == '.') {
-      isDouble = true;
-      buffer += '.';
-      next();
-      while (m_char >= '0' && m_char <= '9') {
-        buffer += m_char;
-        next();
-      }
-    }
-
-    if (m_char == 'e' || m_char == 'E') {
-      isDouble = true;
-      buffer += m_char;
-      next();
-      if (m_char == '-' || m_char == '+') {
-        buffer += m_char;
-        next();
-      }
-      while (m_char >= '0' && m_char <= '9') {
-        buffer += m_char;
-        next();
-      }
-    }
-    
-    if (seq && m_char != 0 && !isSpace(m_char))
-      error("unexpected character after number");
-
-    if (isDouble) {
-      try {
-        m_stream.putDouble(buffer.c_str(), buffer.length());
-      } catch (std::exception const& e) {
-        error("bad double");
-      }
-    } else {
-      try {
-        m_stream.putInteger(buffer.c_str(), buffer.length());
-      } catch (std::exception const& e) {
-        error("bad integer");
-      }
-    }
-  }
-
-  // true, false, or null
-  void word(bool seq = false) {
-    switch (m_char) {
-      case 't':
-        next();
-        check('r');
-        check('u');
-        check('e');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putBoolean(true);
-        break;
-      case 'f':
-        next();
-        check('a');
-        check('l');
-        check('s');
-        check('e');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putBoolean(false);
-        break;
-      case 'n':
-        next();
-        check('u');
-        check('l');
-        check('l');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putNull();
-        break;
-      default:
-        error("unexpected character parsing word");
-        return;
-    }
-  }
-
-  CharArray parseString() {
-    if (m_char != '"')
-      error("bad string, should be '\"'");
-    next();
-
-    CharArray str;
-
-    while (true) {
-      if (m_char == '\\') {
-        next();
-        if (m_char == 'u') {
-          std::string hexString;
-          next();
-          for (int i = 0; i < 4; ++i) {
-            hexString.push_back(m_char);
-            next();
-          }
-          char32_t codepoint = hexStringToUtf32(hexString);
-          if (isUtf16LeadSurrogate(codepoint)) {
-            check('\\');
-            check('u');
-            hexString.clear();
-            for (int i = 0; i < 4; ++i) {
-              hexString.push_back(m_char);
-              next();
-            }
-            codepoint = hexStringToUtf32(hexString, codepoint);
-          }
-          str += codepoint;
-        } else {
-          switch (m_char) {
-            case '"':
-              str += '"';
-              break;
-            case '\\':
-              str += '\\';
-              break;
-            case '/':
-              str += '/';
-              break;
-            case 'b':
-              str += '\b';
-              break;
-            case 'f':
-              str += '\f';
-              break;
-            case 'n':
-              str += '\n';
-              break;
-            case 'r':
-              str += '\r';
-              break;
-            case 't':
-              str += '\t';
-              break;
-            default:
-              error("bad string escape character");
-              break;
-          }
-          next();
-        }
-      } else if (m_char == '\"') {
-        next();
-        return str;
-      } else if (m_char == 0) {
-        error("unexpected end of stream reading string!");
-      } else {
-        str += m_char;
-        next();
-      }
-    }
-    error("parser bug");
     return {};
   }
 
-  // Checks current char then moves on to the next one
-  void check(char32_t c) {
-    if (m_char == 0)
-      error("unexpected end of stream parsing word");
-    if (m_char != c)
-      error("unexpected character in word");
-    next();
-  }
-
-  void init(InputIterator begin, InputIterator end) {
-    m_current = begin;
-    m_end = end;
-    m_line = 0;
-    m_column = 0;
-
-    if (m_current != m_end)
-      m_char = *m_current;
-    else
-      m_char = 0;
-  }
-
-  // Consumes next character.
-  void next() {
+  std::expected<void, StarException> next() {
     if (m_current == m_end)
-      return;
-
+      return {};
     if (m_char == '\n') {
       ++m_line;
       m_column = 0;
     } else {
       ++m_column;
     }
-    ++m_current;
-
-    if (m_current != m_end)
-      m_char = *m_current;
-    else
-      m_char = 0;
+    if constexpr (requires { m_current.advance(); }) {
+      auto advanced = m_current.advance();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+    } else {
+      ++m_current;
+    }
+    return read();
   }
 
-  // Will skip whitespace and comments between tokens.
-  void white() {
+  std::expected<void, StarException> parseDocument(JsonParseType parseType) {
+    auto whitespace = white();
+    if (!whitespace)
+      return std::unexpected(std::move(whitespace.error()));
+    std::expected<void, StarException> result;
+    if (parseType == JsonParseType::Sequence)
+      result = sequence();
+    else if (parseType == JsonParseType::Top && m_char != '{' && m_char != '[')
+      return error("expected JSON object or array at top level");
+    else
+      result = value();
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    return white();
+  }
+
+  std::expected<void, StarException> value() {
+    switch (m_char) {
+      case '{': return object();
+      case '[': return array();
+      case '"': return string();
+      case '-': return number();
+      case 0: return error("unexpected end of stream parsing value");
+      default: return m_char >= '0' && m_char <= '9' ? number() : word();
+    }
+  }
+
+  std::expected<void, StarException> object() {
+    auto advance = next();
+    if (!advance)
+      return std::unexpected(std::move(advance.error()));
+    auto begun = m_stream.beginObject();
+    if (!begun)
+      return std::unexpected(std::move(begun.error()));
+    auto whitespace = white();
+    if (!whitespace)
+      return std::unexpected(std::move(whitespace.error()));
+    if (m_char == '}') {
+      auto advanced = next();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+      return m_stream.endObject();
+    }
+    while (true) {
+      auto key = parseString();
+      if (!key)
+        return std::unexpected(std::move(key.error()));
+      auto written = m_stream.objectKey(key->data(), key->size());
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+      if (m_char != ':')
+        return error("bad object, should be ':'");
+      advance = next();
+      if (!advance)
+        return std::unexpected(std::move(advance.error()));
+      written = m_stream.putColon();
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+      auto parsed = value();
+      if (!parsed)
+        return std::unexpected(std::move(parsed.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+      if (m_char == '}') {
+        advance = next();
+        if (!advance)
+          return std::unexpected(std::move(advance.error()));
+        return m_stream.endObject();
+      }
+      if (m_char != ',')
+        return error(m_char == 0 ? "unexpected end of stream parsing object." : "bad object, should be '}' or ','");
+      advance = next();
+      if (!advance)
+        return std::unexpected(std::move(advance.error()));
+      written = m_stream.putComma();
+      if (!written)
+        return std::unexpected(std::move(written.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+    }
+  }
+
+  std::expected<void, StarException> array() {
+    auto advanced = next();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+    auto begun = m_stream.beginArray();
+    if (!begun)
+      return std::unexpected(std::move(begun.error()));
+    auto whitespace = white();
+    if (!whitespace)
+      return std::unexpected(std::move(whitespace.error()));
+    if (m_char == ']') {
+      advanced = next();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+      return m_stream.endArray();
+    }
+    while (true) {
+      auto parsed = value();
+      if (!parsed)
+        return std::unexpected(std::move(parsed.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+      if (m_char == ']') {
+        advanced = next();
+        if (!advanced)
+          return std::unexpected(std::move(advanced.error()));
+        return m_stream.endArray();
+      }
+      if (m_char != ',')
+        return error(m_char == 0 ? "unexpected end of stream parsing array." : "bad array, should be ',' or ']'");
+      advanced = next();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+      auto comma = m_stream.putComma();
+      if (!comma)
+        return std::unexpected(std::move(comma.error()));
+      whitespace = white();
+      if (!whitespace)
+        return std::unexpected(std::move(whitespace.error()));
+    }
+  }
+
+  std::expected<void, StarException> sequence() {
+    auto begun = m_stream.beginArray();
+    if (!begun)
+      return std::unexpected(std::move(begun.error()));
+    while (m_char != 0) {
+      if (isSpace(m_char)) {
+        auto advanced = next();
+        if (!advanced)
+          return std::unexpected(std::move(advanced.error()));
+        continue;
+      }
+      if (m_char == '{' || m_char == '[' || m_char == '"' || m_char == '-') {
+        auto parsed = value();
+        if (!parsed)
+          return std::unexpected(std::move(parsed.error()));
+      } else {
+        auto begin = m_current;
+        auto character = m_char;
+        auto savedLine = m_line;
+        auto savedColumn = m_column;
+        bool recognized = false;
+        if ((m_char >= '0' && m_char <= '9') || m_char == 't' || m_char == 'f' || m_char == 'n') {
+          // Only lexical failures permit the sequence's existing bare-string
+          // recovery. Stream/callback failures must never be swallowed.
+          auto token = m_char >= '0' && m_char <= '9' ? number(true) : word(true);
+          if (token) {
+            recognized = true;
+          } else if (!token.error().template is<JsonParserException>()) {
+            return std::unexpected(std::move(token.error()));
+          } else {
+            m_current = begin;
+            m_char = character;
+            m_line = savedLine;
+            m_column = savedColumn;
+          }
+        }
+        if (!recognized) {
+          CharArray text;
+          do {
+            text += m_char;
+            auto advanced = next();
+            if (!advanced)
+              return std::unexpected(std::move(advanced.error()));
+          } while (m_char != 0 && !isSpace(m_char));
+          auto written = m_stream.putString(text.data(), text.size());
+          if (!written)
+            return std::unexpected(std::move(written.error()));
+        }
+      }
+      auto advanced = next();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+    }
+    return m_stream.endArray();
+  }
+
+  std::expected<void, StarException> string() {
+    auto text = parseString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    return m_stream.putString(text->data(), text->size());
+  }
+
+  std::expected<void, StarException> number(bool seq = false) {
     CharArray buffer;
+    bool isDouble = false;
+    auto consume = [&]() -> std::expected<void, StarException> {
+      buffer += m_char;
+      return next();
+    };
+    if (m_char == '-') {
+      auto result = consume();
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+    if (m_char == '0') {
+      auto result = consume();
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    } else if (m_char > '0' && m_char <= '9') {
+      do {
+        auto result = consume();
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+      } while (m_char >= '0' && m_char <= '9');
+    } else {
+      return error("bad number, must start with digit");
+    }
+    if (m_char == '.' || m_char == 'e' || m_char == 'E') {
+      if (m_char == '.') {
+        isDouble = true;
+        auto result = consume();
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+        while (m_char >= '0' && m_char <= '9') {
+          result = consume();
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+        }
+      }
+      if (m_char == 'e' || m_char == 'E') {
+        isDouble = true;
+        auto result = consume();
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+        if (m_char == '-' || m_char == '+') {
+          result = consume();
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+        }
+        while (m_char >= '0' && m_char <= '9') {
+          result = consume();
+          if (!result)
+            return std::unexpected(std::move(result.error()));
+        }
+      }
+    }
+    if (seq && m_char != 0 && !isSpace(m_char))
+      return error("unexpected character after number");
+    return isDouble ? m_stream.putDouble(buffer.data(), buffer.size())
+                    : m_stream.putInteger(buffer.data(), buffer.size());
+  }
+
+  std::expected<void, StarException> word(bool seq = false) {
+    char32_t first = m_char;
+    std::u32string_view tail;
+    if (first == 't')
+      tail = U"rue";
+    else if (first == 'f')
+      tail = U"alse";
+    else if (first == 'n')
+      tail = U"ull";
+    else
+      return error("unexpected character parsing word");
+    auto advanced = next();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+    for (auto c : tail) {
+      auto checked = check(c);
+      if (!checked)
+        return std::unexpected(std::move(checked.error()));
+    }
+    if (seq && m_char != 0 && !isSpace(m_char))
+      return error("unexpected character after word");
+    return first == 'n' ? m_stream.putNull() : m_stream.putBoolean(first == 't');
+  }
+
+  std::expected<CharArray, StarException> parseString() {
+    if (m_char != '"')
+      return std::unexpected(JsonParserException("bad string, should be '\"'"));
+    auto advanced = next();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+    CharArray text;
+    while (true) {
+      if (m_char == '\\') {
+        advanced = next();
+        if (!advanced)
+          return std::unexpected(std::move(advanced.error()));
+        if (m_char == 'u') {
+          auto hex = readHexEscape();
+          if (!hex)
+            return std::unexpected(std::move(hex.error()));
+          auto codepoint = hexStringToUtf32(*hex);
+          if (!codepoint)
+            return std::unexpected(std::move(codepoint.error()));
+          if (isUtf16LeadSurrogate(*codepoint)) {
+            auto checked = check('\\');
+            if (!checked)
+              return std::unexpected(std::move(checked.error()));
+            checked = check('u');
+            if (!checked)
+              return std::unexpected(std::move(checked.error()));
+            hex = readHexDigits();
+            if (!hex)
+              return std::unexpected(std::move(hex.error()));
+            codepoint = hexStringToUtf32(*hex, *codepoint);
+            if (!codepoint)
+              return std::unexpected(std::move(codepoint.error()));
+          }
+          text += *codepoint;
+        } else {
+          switch (m_char) {
+            case '"': text += '"'; break;
+            case '\\': text += '\\'; break;
+            case '/': text += '/'; break;
+            case 'b': text += '\b'; break;
+            case 'f': text += '\f'; break;
+            case 'n': text += '\n'; break;
+            case 'r': text += '\r'; break;
+            case 't': text += '\t'; break;
+            default: return std::unexpected(JsonParserException("bad string escape character"));
+          }
+          advanced = next();
+          if (!advanced)
+            return std::unexpected(std::move(advanced.error()));
+        }
+      } else if (m_char == '"') {
+        advanced = next();
+        if (!advanced)
+          return std::unexpected(std::move(advanced.error()));
+        return text;
+      } else if (m_char == 0) {
+        return std::unexpected(JsonParserException("unexpected end of stream reading string!"));
+      } else {
+        text += m_char;
+        advanced = next();
+        if (!advanced)
+          return std::unexpected(std::move(advanced.error()));
+      }
+    }
+  }
+
+  std::expected<std::string, StarException> readHexEscape() {
+    auto advanced = next();
+    if (!advanced)
+      return std::unexpected(std::move(advanced.error()));
+    return readHexDigits();
+  }
+
+  std::expected<std::string, StarException> readHexDigits() {
+    std::string hex;
+    for (unsigned i = 0; i < 4; ++i) {
+      if (m_char > 127)
+        return std::unexpected(UnicodeException("Invalid unicode escape"));
+      hex.push_back(static_cast<char>(m_char));
+      auto advanced = next();
+      if (!advanced)
+        return std::unexpected(std::move(advanced.error()));
+    }
+    return hex;
+  }
+
+  std::expected<void, StarException> check(char32_t c) {
+    if (m_char == 0)
+      return error("unexpected end of stream parsing word");
+    if (m_char != c)
+      return error("unexpected character in word");
+    return next();
+  }
+
+  std::expected<void, StarException> white() {
+    CharArray buffer;
+    auto consume = [&]() -> std::expected<void, StarException> {
+      buffer += m_char;
+      return next();
+    };
     while (m_current != m_end) {
       if (m_char == '/') {
-        // Always consume '/' found in whitespace, because that is never valid
-        // JSON (other than comments)
-        buffer += m_char;
-        next();
-        if (m_current != m_end && m_char == '/') {
-          // eat "/"
-          buffer += m_char;
-          next();
-
-          // Read '//' style comments up until eol/eof.
-          while (m_current != m_end && m_char != '\n') {
-            buffer += m_char;
-            next();
-          }
-        } else if (m_current != m_end && m_char == '*') {
-          // eat "*"
-          buffer += m_char;
-          next();
-
-          // Read '/*' style comments up until '*/'.
+        auto consumed = consume();
+        if (!consumed)
+          return std::unexpected(std::move(consumed.error()));
+        if (m_char == '/') {
+          do {
+            consumed = consume();
+            if (!consumed)
+              return std::unexpected(std::move(consumed.error()));
+          } while (m_current != m_end && m_char != '\n');
+        } else if (m_char == '*') {
+          consumed = consume();
+          if (!consumed)
+            return std::unexpected(std::move(consumed.error()));
           while (m_current != m_end) {
-            if (m_char == '*') {
-              buffer += m_char;
-              next();
-              if (m_char == '/') {
-                buffer += m_char;
-                next();
-                break;
-              }
-            } else {
-              buffer += m_char;
-              next();
-              if (m_current == m_end)
-                error("/* comment has no matching */");
+            auto c = m_char;
+            consumed = consume();
+            if (!consumed)
+              return std::unexpected(std::move(consumed.error()));
+            if (c == '*' && m_char == '/') {
+              consumed = consume();
+              if (!consumed)
+                return std::unexpected(std::move(consumed.error()));
+              break;
             }
+            if (c != '*' && m_current == m_end)
+              return error("/* comment has no matching */");
           }
         } else {
-          // The only allowed characters following / in whitespace are / and *
-          error("/ character in whitespace is not followed by '/' or '*', invalid comment");
-          return;
+          return error("/ character in whitespace is not followed by '/' or '*', invalid comment");
         }
       } else if (isSpace(m_char)) {
-        buffer += m_char;
-        next();
+        auto consumed = consume();
+        if (!consumed)
+          return std::unexpected(std::move(consumed.error()));
       } else {
         break;
       }
     }
-    if (buffer.size() != 0)
-      m_stream.putWhitespace(buffer.c_str(), buffer.length());
+    if (!buffer.empty())
+      return m_stream.putWhitespace(buffer.data(), buffer.size());
+    return {};
   }
 
-  void error(const char* msg) {
-    m_error = msg;
-    throw ParsingException();
+  static bool isSpace(char32_t c) {
+    return c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d || c == 0xfeff;
   }
 
-  bool isSpace(char32_t c) {
-    // Only whitespace allowed by JSON
-    return c == 0x20 || // space
-           c == 0x09 || // horizontal tab
-           c == 0x0a || // newline
-           c == 0x0d || // carriage return
-           c == 0xfeff; // BOM or ZWNBSP
-  }
-
-  char32_t m_char;
+  char32_t m_char = 0;
   InputIterator m_current;
   InputIterator m_end;
-  std::size_t m_line;
-  std::size_t m_column;
-  const char* m_error;
+  std::size_t m_line = 0;
+  std::size_t m_column = 0;
   JsonStream& m_stream;
 };
 
@@ -561,244 +546,144 @@ private:
 template <typename OutputIterator>
 class JsonWriter : public JsonStream {
 public:
-  JsonWriter(OutputIterator out, unsigned pretty = 0)
-    : m_out(out), m_pretty(pretty) {}
-
-  void beginObject() {
-    startValue();
-    pushState(Object);
-    write('{');
+  JsonWriter(OutputIterator out, unsigned pretty = 0) : m_out(out), m_pretty(pretty) {}
+  std::expected<void, StarException> beginObject() override {
+    auto r = startValue();
+    if (!r) return std::unexpected(std::move(r.error()));
+    m_state.push_back(Object);
+    return write('{');
   }
-
-  void objectKey(char32_t const* s, std::size_t len) {
-    if (currentState() == ObjectElement) {
-      if (m_pretty)
-        write('\n');
-      indent();
-    } else {
-      pushState(ObjectElement);
-      if (m_pretty)
-        write('\n');
-      indent();
+  std::expected<void, StarException> objectKey(char32_t const* s, std::size_t len) override {
+    if (state() != ObjectElement) m_state.push_back(ObjectElement);
+    auto r = indent();
+    if (!r) return std::unexpected(std::move(r.error()));
+    r = write('"');
+    if (!r) return std::unexpected(std::move(r.error()));
+    for (std::size_t i = 0; i < len && s[i]; ++i) {
+      r = write(s[i]);
+      if (!r) return std::unexpected(std::move(r.error()));
     }
-
-    write('"');
-    char32_t c = *s;
-    while (c && len) {
-      write(c);
-      c = *++s;
-      --len;
+    r = write('"');
+    if (!r) return std::unexpected(std::move(r.error()));
+    return m_pretty ? write(' ') : std::expected<void, StarException>{};
+  }
+  std::expected<void, StarException> endObject() override {
+    bool nonempty = state() == ObjectElement;
+    pop(Object);
+    if (nonempty) {
+      auto r = indent();
+      if (!r) return std::unexpected(std::move(r.error()));
     }
-    write('"');
-    if (m_pretty)
-      write(' ');
+    return write('}');
   }
-
-  void endObject() {
-    bool isNotEmpty = currentState() == ObjectElement;
-    popState(Object);
-    if (isNotEmpty) {
-      if (m_pretty)
-        write('\n');
-      indent();
-    }
-    write('}');
+  std::expected<void, StarException> beginArray() override {
+    auto r = startValue();
+    if (!r) return std::unexpected(std::move(r.error()));
+    m_state.push_back(Array);
+    return write('[');
   }
-
-  void beginArray() {
-    startValue();
-    pushState(Array);
-    write('[');
+  std::expected<void, StarException> endArray() override { pop(Array); return write(']'); }
+  std::expected<void, StarException> putString(char32_t const* s, std::size_t len) override {
+    auto r = startValue();
+    if (!r) return std::unexpected(std::move(r.error()));
+    return quoted(s, len);
   }
-
-  void endArray() {
-    popState(Array);
-    write(']');
+  std::expected<void, StarException> putDouble(char32_t const* s, std::size_t len) override {
+    auto r = startValue();
+    if (!r) return std::unexpected(std::move(r.error()));
+    return text(s, len);
   }
-
-  void putString(char32_t const* s, std::size_t len) {
-    startValue();
-
-    write('"');
-    char32_t c = *s;
-    while (len > 0) {
-      if (!isPrintable(c)) {
-        switch (c) {
-          case '"':
-            write('\\');
-            write('"');
-            break;
-          case '\\':
-            write('\\');
-            write('\\');
-            break;
-          case '\b':
-            write('\\');
-            write('b');
-            break;
-          case '\f':
-            write('\\');
-            write('f');
-            break;
-          case '\n':
-            write('\\');
-            write('n');
-            break;
-          case '\r':
-            write('\\');
-            write('r');
-            break;
-          case '\t':
-            write('\\');
-            write('t');
-            break;
-          default:
-            auto hex = hexStringFromUtf32(c);
-            if (hex.size() == 4) {
-              write('\\');
-              write('u');
-              for (auto c : hex) {
-                write(c);
-              }
-            } else if (hex.size() == 8) {
-              write('\\');
-              write('u');
-              for (auto c : hex.substr(0, 4)) {
-                write(c);
-              }
-              write('\\');
-              write('u');
-              for (auto c : hex.substr(4)) {
-                write(c);
-              }
-            } else {
-              throw UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32.");
-            }
-            break;
+  std::expected<void, StarException> putInteger(char32_t const* s, std::size_t len) override { return putDouble(s, len); }
+  std::expected<void, StarException> putBoolean(bool b) override { return b ? putDouble(U"true", 4) : putDouble(U"false", 5); }
+  std::expected<void, StarException> putNull() override { return putDouble(U"null", 4); }
+  std::expected<void, StarException> putWhitespace(char32_t const* s, std::size_t len) override { return text(s, len); }
+  std::expected<void, StarException> putColon() override {
+    auto r = write(':');
+    if (!r) return std::unexpected(std::move(r.error()));
+    return m_pretty ? write(' ') : std::expected<void, StarException>{};
+  }
+  std::expected<void, StarException> putComma() override { return write(','); }
+private:
+  enum State { Top, Object, ObjectElement, Array, ArrayElement };
+  std::expected<void, StarException> quoted(char32_t const* s, std::size_t len) {
+    auto r = write('"');
+    if (!r) return std::unexpected(std::move(r.error()));
+    for (std::size_t i = 0; i < len; ++i) {
+      char32_t c = s[i];
+      std::u32string_view escape;
+      switch (c) {
+        case '"': escape = U"\\\""; break;
+        case '\\': escape = U"\\\\"; break;
+        case '\b': escape = U"\\b"; break;
+        case '\f': escape = U"\\f"; break;
+        case '\n': escape = U"\\n"; break;
+        case '\r': escape = U"\\r"; break;
+        case '\t': escape = U"\\t"; break;
+        default: break;
+      }
+      if (!escape.empty()) {
+        r = text(escape.data(), escape.size());
+      } else if (c < 0x20 || c > 0x10ffff) {
+        auto hex = hexStringFromUtf32(c);
+        if (!hex) return std::unexpected(std::move(hex.error()));
+        if (hex->size() != 4 && hex->size() != 8)
+          return std::unexpected(UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32."));
+        for (std::size_t j = 0; j < hex->size(); j += 4) {
+          r = text(U"\\u", 2);
+          if (!r) return std::unexpected(std::move(r.error()));
+          for (std::size_t k = j; k < j + 4; ++k) {
+            r = write(static_cast<unsigned char>((*hex)[k]));
+            if (!r) return std::unexpected(std::move(r.error()));
+          }
         }
       } else {
-        write(c);
+        r = write(c);
       }
-      c = *++s;
-      --len;
+      if (!r) return std::unexpected(std::move(r.error()));
     }
-    write('"');
+    return write('"');
   }
-
-  void putDouble(char32_t const* s, std::size_t len) {
-    startValue();
-    for (std::size_t i = 0; i < len; ++i)
-      write(s[i]);
-  }
-
-  void putInteger(char32_t const* s, std::size_t len) {
-    startValue();
-    for (std::size_t i = 0; i < len; ++i)
-      write(s[i]);
-  }
-
-  void putBoolean(bool b) {
-    startValue();
-    if (b) {
-      write('t');
-      write('r');
-      write('u');
-      write('e');
-    } else {
-      write('f');
-      write('a');
-      write('l');
-      write('s');
-      write('e');
+  std::expected<void, StarException> text(char32_t const* s, std::size_t len) {
+    for (std::size_t i = 0; i < len; ++i) {
+      auto r = write(s[i]);
+      if (!r) return std::unexpected(std::move(r.error()));
     }
+    return {};
   }
-
-  void putNull() {
-    startValue();
-    write('n');
-    write('u');
-    write('l');
-    write('l');
+  std::expected<void, StarException> startValue() {
+    if (state() == ArrayElement && m_pretty) return write(' ');
+    if (state() == Array) m_state.push_back(ArrayElement);
+    return {};
   }
-
-  void putWhitespace(char32_t const* s, std::size_t len) {
-    // If m_pretty is true, extra spurious whitespace will be inserted.
-    for (std::size_t i = 0; i < len; ++i)
-      write(s[i]);
-  }
-
-  void putColon() {
-    write(':');
-    if (m_pretty)
-      write(' ');
-  }
-
-  void putComma() {
-    write(',');
-  }
-
-private:
-  enum State {
-    Top,
-    Object,
-    ObjectElement,
-    Array,
-    ArrayElement
-  };
-
-  // Handles separating array elements if currently adding to an array
-  void startValue() {
-    if (currentState() == ArrayElement) {
-      if (m_pretty)
-        write(' ');
-    } else if (currentState() == Array) {
-      pushState(ArrayElement);
+  std::expected<void, StarException> indent() {
+    if (m_pretty) {
+      auto r = write('\n');
+      if (!r) return std::unexpected(std::move(r.error()));
     }
-  }
-
-  void indent() {
-    for (unsigned i = 0; i < m_state.size() / 2; ++i) {
+    for (unsigned i = 0; i < m_state.size() / 2; ++i)
       for (unsigned j = 0; j < m_pretty; ++j) {
-        write(' ');
+        auto r = write(' ');
+        if (!r) return std::unexpected(std::move(r.error()));
       }
-    }
+    return {};
   }
-
-  // Push state onto stack.
-  void pushState(State state) {
-    m_state.push_back(state);
-  }
-
-  // Pop state stack down to given state.
-  void popState(State state) {
-    while (true) {
-      if (m_state.empty())
-        return;
-
-      State last = currentState();
+  void pop(State target) {
+    while (!m_state.empty()) {
+      auto last = m_state.back();
       m_state.pop_back();
-      if (last == state)
-        return;
+      if (last == target) return;
     }
   }
-
-  State currentState() {
-    if (m_state.empty())
-      return Top;
-    else
-      return *std::prev(m_state.end());
+  State state() const { return m_state.empty() ? Top : m_state.back(); }
+  std::expected<void, StarException> write(char32_t c) {
+    if constexpr (requires { m_out.push(c); }) {
+      return m_out.push(c);
+    } else {
+      *m_out = c;
+      ++m_out;
+      return {};
+    }
   }
-
-  void write(char32_t c) {
-    *m_out = c;
-    ++m_out;
-  }
-
-  // Only chars that are unescaped according to JSON spec.
-  bool isPrintable(char32_t c) {
-    return (c >= 0x20 && c <= 0x21) || (c >= 0x23 && c <= 0x5b) || (c >= 0x5d && c <= 0x10ffff);
-  }
-
   OutputIterator m_out;
   unsigned m_pretty;
   std::vector<State> m_state;
@@ -810,6 +695,8 @@ export module star.json_parser;
 
 export namespace Star {
   using ::Star::JsonStream;
+  using ::Star::JsonParserExceptionTag;
+  using ::Star::JsonParserException;
   using ::Star::JsonParseType;
   using ::Star::JsonParser;
   using ::Star::JsonWriter;

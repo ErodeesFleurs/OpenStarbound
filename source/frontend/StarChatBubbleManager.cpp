@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -150,68 +151,181 @@ import star.image_metadata_database;
 
 import star.algorithm;
 namespace Star {
-
 ChatBubbleManager::ChatBubbleManager(GuiContext& context)
-  : m_guiContext(&context), m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {
-  auto assets = context.root().assets();
+  : m_guiContext(&context), m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {}
 
-  m_cachedInterfaceScale = m_guiContext->interfaceScale();
-
-  auto jsonData = assets->json("/interface/windowconfig/chatbubbles.config");
-
-  m_textStyle.color = jsonToColor(jsonData.get("textColor")).toRgba();
-  m_textStyle.loadJson(jsonData.get("textStyle"));
-  m_textPadding = jsonToVec2F(jsonData.get("textPadding"));
-
-  m_zoom = jsonData.getInt("textZoom");
-  m_bubbleOffset = jsonToVec2F(jsonData.get("bubbleOffset"));
-  m_maxAge = jsonData.getFloat("maxAge");
-  m_portraitMaxAge = jsonData.getFloat("portraitMaxAge");
-
-  unsigned textWrapWidth = jsonData.getUInt("textWrapWidth");
-  m_textTemplate = TextPositioning{Vec2F(), HorizontalAnchor::HMidAnchor, VerticalAnchor::TopAnchor, textWrapWidth * m_zoom};
-
-  m_interBubbleMargin = jsonData.getFloat("interBubbleMargin");
-
-  m_maxMessagePerEntity = jsonData.getInt("maxMessagePerEntity");
-
-  m_bubbles.setTweenFactor(jsonData.getFloat("tweenFactor"));
-  m_bubbles.setMovementThreshold(jsonData.getFloat("movementThreshold"));
-
-  m_portraitBackgroundImage = jsonData.getString("portraitBackgroundImage");
-  m_portraitMoreImage = jsonData.getString("portraitMoreImage");
-  m_portraitMorePosition = jsonToVec2I(jsonData.get("portraitMorePosition"));
-  m_portraitBackgroundSize = jsonToVec2I(jsonData.get("portraitBackgroundSize"));
-  m_portraitPosition = jsonToVec2I(jsonData.get("portraitPosition"));
-  m_portraitSize = jsonToVec2I(jsonData.get("portraitSize"));
-  m_portraitTextPosition = jsonToVec2I(jsonData.get("portraitTextPosition"));
-  m_portraitTextWidth = jsonData.getUInt("portraitTextWidth");
-  m_portraitChatterFramerate = jsonData.getFloat("portraitChatterFramerate");
-  m_portraitChatterDuration = jsonData.getFloat("portraitChatterDuration");
-
-  m_portraitTextTemplate = TextPositioning{Vec2F(m_portraitTextPosition), HorizontalAnchor::LeftAnchor, VerticalAnchor::TopAnchor, m_portraitTextWidth * m_zoom};
-
-  // This is a factor(0.0 - 1.0) based on the window size.
-  // 0.0 is directly over the player, 1.0 is the edge of the window
-  m_furthestVisibleTextDistance = jsonData.getFloat("furthestTextDistance");
-
-  String textFadeFunctionName = jsonData.getString("textFadeFunction");
-  m_textFadeFunction = context.root().functionDatabase()->function(textFadeFunctionName);
-
-  String bubbleFadeFunctionName = jsonData.getString("bubbleFadeFunction");
-  m_bubbleFadeFunction = context.root().functionDatabase()->function(bubbleFadeFunctionName);
+std::expected<std::shared_ptr<ChatBubbleManager>, StarException> ChatBubbleManager::create(GuiContext& context) {
+  auto manager = std::shared_ptr<ChatBubbleManager>(new ChatBubbleManager(context));
+  auto initialized = manager->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return manager;
 }
 
-void ChatBubbleManager::setCamera(WorldCamera const& camera) {
+std::expected<void, StarException> ChatBubbleManager::initialize() {
+  auto& context = *m_guiContext;
+  auto assets = context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/windowconfig/chatbubbles.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  m_cachedInterfaceScale = context.interfaceScale();
+  auto colorJson = config->get("textColor");
+  if (!colorJson) return std::unexpected(std::move(colorJson.error()));
+  auto color = jsonToColor(*colorJson);
+  if (!color) return std::unexpected(std::move(color.error()));
+  m_textStyle.color = color->toRgba();
+  auto styleJson = config->get("textStyle");
+  if (!styleJson) return std::unexpected(std::move(styleJson.error()));
+  auto style = m_textStyle.loadJson(*styleJson);
+  if (!style) return std::unexpected(std::move(style.error()));
+  {
+    auto json = config->get("textPadding");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2F(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_textPadding = *value;
+  }
+  {
+    auto json = config->get("bubbleOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2F(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_bubbleOffset = *value;
+  }
+  {
+    auto json = config->get("portraitMorePosition");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitMorePosition = *value;
+  }
+  {
+    auto json = config->get("portraitBackgroundSize");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitBackgroundSize = *value;
+  }
+  {
+    auto json = config->get("portraitPosition");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitPosition = *value;
+  }
+  {
+    auto json = config->get("portraitSize");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitSize = *value;
+  }
+  {
+    auto json = config->get("portraitTextPosition");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitTextPosition = *value;
+  }
+  {
+    auto value = config->getInt("textZoom");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_zoom = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("maxAge");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_maxAge = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("portraitMaxAge");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitMaxAge = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("interBubbleMargin");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_interBubbleMargin = std::move(*value);
+  }
+  {
+    auto value = config->getInt("maxMessagePerEntity");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_maxMessagePerEntity = std::move(*value);
+  }
+  {
+    auto value = config->getString("portraitBackgroundImage");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitBackgroundImage = std::move(*value);
+  }
+  {
+    auto value = config->getString("portraitMoreImage");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitMoreImage = std::move(*value);
+  }
+  {
+    auto value = config->getUInt("portraitTextWidth");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitTextWidth = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("portraitChatterFramerate");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitChatterFramerate = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("portraitChatterDuration");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitChatterDuration = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("furthestTextDistance");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_furthestVisibleTextDistance = std::move(*value);
+  }
+  auto wrap = config->getUInt("textWrapWidth");
+  if (!wrap) return std::unexpected(std::move(wrap.error()));
+  m_textTemplate = TextPositioning{Vec2F(), HorizontalAnchor::HMidAnchor, VerticalAnchor::TopAnchor, *wrap * m_zoom};
+  m_portraitTextTemplate = TextPositioning{Vec2F(m_portraitTextPosition), HorizontalAnchor::LeftAnchor, VerticalAnchor::TopAnchor, m_portraitTextWidth * m_zoom};
+  {
+    auto value = config->getFloat("tweenFactor");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_bubbles.setTweenFactor(*value);
+  }
+  {
+    auto value = config->getFloat("movementThreshold");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_bubbles.setMovementThreshold(*value);
+  }
+  auto functions = context.root().functionDatabase();
+  if (!functions) return std::unexpected(std::move(functions.error()));
+  {
+    auto name = config->getString("textFadeFunction");
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto value = (*functions)->function(*name);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_textFadeFunction = std::move(*value);
+  }
+  {
+    auto name = config->getString("bubbleFadeFunction");
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto value = (*functions)->function(*name);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_bubbleFadeFunction = std::move(*value);
+  }
+  return {};
+}
+
+std::expected<void, StarException> ChatBubbleManager::setCamera(WorldCamera const& camera) {
   float oldPixelRatio = m_camera.pixelRatio();
   float oldInterfaceScale = m_cachedInterfaceScale;
   m_camera = camera;
   m_cachedInterfaceScale = m_guiContext->interfaceScale();
   if (m_camera.pixelRatio() != oldPixelRatio || m_cachedInterfaceScale != oldInterfaceScale) {
     List<ChatAction> actions;
-    m_bubbles.forEach([&actions](BubbleState<Bubble> const& state, Bubble& bubble) {
+    auto collected = m_bubbles.forEach([&actions](BubbleState<Bubble> const& state, Bubble& bubble) -> std::expected<void, StarException> {
         actions.append(SayChatAction{bubble.entity, bubble.text, state.idealDestination, bubble.config});
+        return {};
       });
+    if (!collected) return std::unexpected(std::move(collected.error()));
     m_bubbles.clear();
     for (auto& portraitBubble : m_portraitBubbles)
       actions.append(PortraitChatAction{
@@ -222,27 +336,37 @@ void ChatBubbleManager::setCamera(WorldCamera const& camera) {
           portraitBubble.config
         });
     m_portraitBubbles.clear();
-    addChatActions(actions, true);
+    return addChatActions(std::move(actions), true);
   }
+  return {};
 }
 
-void ChatBubbleManager::update(float dt, std::shared_ptr<WorldClient> world) {
-  m_bubbles.forEach([this, dt, &world](BubbleState<Bubble>& bubbleState, Bubble& bubble) {
+std::expected<void, StarException> ChatBubbleManager::update(float dt, std::shared_ptr<WorldClient> world) {
+  auto updated = m_bubbles.forEach([this, dt, &world](BubbleState<Bubble>& bubbleState, Bubble& bubble) -> std::expected<void, StarException> {
     bubble.age += dt;
     if (auto entity = world->get<ChattyEntity>(bubble.entity)) {
-      bubble.onscreen = m_camera.worldGeometry().rectIntersectsRect(
-          m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
-      bubbleState.idealDestination = m_camera.worldToScreen(entity->mouthPosition() + m_bubbleOffset);
+      auto onscreen = m_camera.worldGeometry().rectIntersectsRect(m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
+      if (!onscreen) return std::unexpected(std::move(onscreen.error()));
+      bubble.onscreen = *onscreen;
+      auto mouth = entity->mouthPosition();
+      if (!mouth) return std::unexpected(std::move(mouth.error()));
+      bubbleState.idealDestination = m_camera.worldToScreen(*mouth + m_bubbleOffset);
     }
+    return {};
   });
+  if (!updated) return std::unexpected(std::move(updated.error()));
 
   for (auto& portraitBubble : m_portraitBubbles) {
     portraitBubble.age += dt;
     if (auto entity = world->entity(portraitBubble.entity)) {
-      portraitBubble.onscreen = m_camera.worldGeometry().rectIntersectsRect(m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
-      if (auto chatter = as<ChattyEntity>(entity))
-        portraitBubble.position = chatter->mouthPosition();
-      else
+      auto onscreen = m_camera.worldGeometry().rectIntersectsRect(m_camera.worldScreenRect(), entity->metaBoundBox().translated(entity->position()));
+      if (!onscreen) return std::unexpected(std::move(onscreen.error()));
+      portraitBubble.onscreen = *onscreen;
+      if (auto chatter = as<ChattyEntity>(entity)) {
+        auto mouth = chatter->mouthPosition();
+        if (!mouth) return std::unexpected(std::move(mouth.error()));
+        portraitBubble.position = *mouth;
+      } else
         portraitBubble.position = entity->position();
     }
   }
@@ -267,9 +391,10 @@ void ChatBubbleManager::update(float dt, std::shared_ptr<WorldClient> world) {
     });
 
   m_bubbles.update(dt);
+  return {};
 }
 
-std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const {
+std::expected<std::uint8_t, StarException> ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const {
   // first calculate bubble position as a factor, distance from center to edge
   // of screen (0.0-1.0)
   float halfScreenwidth = m_camera.screenSize()[0] * 0.5f;
@@ -279,29 +404,38 @@ std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition
   // to re-space the distance as a 0 - 1 over the max allowable distance
   distanceFactor = clamp(distanceFactor / m_furthestVisibleTextDistance, 0.0f, 1.0f);
 
-  int alpha = fadeFunction->evaluate(distanceFactor);
-  return clamp(alpha, 0, 255);
+  auto evaluated = fadeFunction->evaluate(distanceFactor);
+  if (!evaluated) return std::unexpected(std::move(evaluated.error()));
+  return clamp((int)*evaluated, 0, 255);
 }
-
-void ChatBubbleManager::render() {
+std::expected<void, StarException> ChatBubbleManager::render() {
   if (m_bubbles.empty() && m_portraitBubbles.empty())
-    return;
-  if (!m_guiContext->root().configuration()->get("speechBubbles").toBool())
-    return;
+    return {};
+  auto configuration = m_guiContext->root().configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto setting = (*configuration)->get("speechBubbles");
+  if (!setting) return std::unexpected(std::move(setting.error()));
+  auto enabled = setting->toBool();
+  if (!enabled) return std::unexpected(std::move(enabled.error()));
+  if (!*enabled) return {};
 
   float pixelRatio = m_guiContext->interfaceScale();
 
-  m_bubbles.forEach([this, pixelRatio](BubbleState<Bubble> const& state, Bubble& bubble) {
+  auto rendered = m_bubbles.forEach([this, pixelRatio](BubbleState<Bubble> const& state, Bubble& bubble) -> std::expected<void, StarException> {
       if (bubble.onscreen) {
-        int alpha = calcDistanceFadeAlpha(state.currentPosition, m_bubbleFadeFunction);
+        auto fade = calcDistanceFadeAlpha(state.currentPosition, m_bubbleFadeFunction);
+        if (!fade) return std::unexpected(std::move(fade.error()));
+        int alpha = *fade;
         if (alpha) {
           for (auto const& bubbleImage : bubble.backgroundImages)
-            drawBubbleImage(state.currentPosition, bubbleImage, pixelRatio, alpha);
+            { auto drawn = drawBubbleImage(state.currentPosition, bubbleImage, pixelRatio, alpha); if (!drawn) return std::unexpected(std::move(drawn.error())); }
           for (auto const& bubbleText : bubble.bubbleText)
-            drawBubbleText(state.currentPosition, bubbleText, pixelRatio, alpha, false);
+            { auto drawn = drawBubbleText(state.currentPosition, bubbleText, pixelRatio, alpha, false); if (!drawn) return std::unexpected(std::move(drawn.error())); }
         }
       }
+      return {};
     });
+  if (!rendered) return std::unexpected(std::move(rendered.error()));
 
   for (auto portraitBubble : m_portraitBubbles) {
     if (portraitBubble.onscreen) {
@@ -310,20 +444,28 @@ void ChatBubbleManager::render() {
       if (portraitBubble.age <= m_portraitChatterDuration)
         frame = int((portraitBubble.age / m_portraitChatterFramerate) * 2) % 2;
       // 255 here because portrait bubbles are always full opacity
-      for (auto const& bubbleImage : portraitBubble.backgroundImages)
-        drawBubbleImage(screenPos, std::make_tuple(std::get<0>(bubbleImage).replace("<frame>", toString(frame)), std::get<1>(bubbleImage)), pixelRatio, 255);
+      for (auto const& bubbleImage : portraitBubble.backgroundImages) {
+        auto frameImage = std::get<0>(bubbleImage).replace("<frame>", toString(frame));
+        if (!frameImage) return std::unexpected(std::move(frameImage.error()));
+        auto drawn = drawBubbleImage(screenPos, std::make_tuple(std::move(*frameImage), std::get<1>(bubbleImage)), pixelRatio, 255);
+        if (!drawn) return std::unexpected(std::move(drawn.error()));
+      }
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleText : portraitBubble.bubbleText)
-        drawBubbleText(screenPos, bubbleText, pixelRatio, 255, true);
+        { auto drawn = drawBubbleText(screenPos, bubbleText, pixelRatio, 255, true); if (!drawn) return std::unexpected(std::move(drawn.error())); }
     }
   }
+  return {};
 }
 
-void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent) {
+std::expected<void, StarException> ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent) {
   auto assets = m_guiContext->root().assets();
-  auto config = assets->json("/interface/windowconfig/chatbubbles.config");
-
-  float partSize = config.getFloat("partSize");
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto baseConfig = (*assets)->json("/interface/windowconfig/chatbubbles.config");
+  if (!baseConfig) return std::unexpected(std::move(baseConfig.error()));
+  auto part = baseConfig->getFloat("partSize");
+  if (!part) return std::unexpected(std::move(part.error()));
+  float partSize = *part;
   float pixelRatio = m_guiContext->interfaceScale();
 
   for (auto action : chatActions) {
@@ -332,7 +474,9 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
     if (std::holds_alternative<SayChatAction>(action)) {
       auto sayAction = std::get<SayChatAction>(action);
-      config = sayAction.config.optObject().value_or(JsonObject{});
+      auto actionConfig = sayAction.config.optObject();
+      if (!actionConfig) return std::unexpected(std::move(actionConfig.error()));
+      config = actionConfig->value_or(JsonObject{});
       position = sayAction.position;
 
       // TODO: Get rid of this stupid fucking bullshit, this is the ugliest
@@ -340,12 +484,14 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      m_guiContext->setTextStyle(m_textStyle, pixelRatio);
+      auto styled = m_guiContext->setTextStyle(m_textStyle, pixelRatio);
+      if (!styled) return std::unexpected(std::move(styled.error()));
       TextPositioning tp = m_textTemplate;
       tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
       auto result = m_guiContext->determineTextSize(sayAction.text, tp);
-      float textWidth = result.width() / pixelRatio + m_textPadding[0];
-      float textHeight = result.height() / pixelRatio + m_textPadding[1];
+      if (!result) return std::unexpected(std::move(result.error()));
+      float textWidth = result->width() / pixelRatio + m_textPadding[0];
+      float textHeight = result->height() / pixelRatio + m_textPadding[1];
 
       Vec2I innerTiles = Vec2I::ceil(Vec2F((textWidth + 4) / partSize, (textHeight + 4) / partSize));
       if (innerTiles[0] % 2 == 0)
@@ -355,7 +501,9 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       int middleIdx = (innerTiles[0] - 1) / 2;
 
       List<BubbleImage> backgroundImages;
-      if (config.getBool("drawBorder", true)) {
+      auto border = config.getBool("drawBorder", true);
+      if (!border) return std::unexpected(std::move(border.error()));
+      if (*border) {
         for (int y = 0; y < innerTiles[1]; y++) {
           for (int x = 0; x < innerTiles[0]; x++) {
             auto partPosition = [partSize](int x, int y) {
@@ -397,10 +545,21 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       Vec2F position = Vec2F(horizontalCenter, verticalShift);
       List<BubbleText> bubbleTexts;
       TextStyle textStyle = m_textStyle;
-      textStyle.fontSize = config.getUInt("fontSize", textStyle.fontSize);
-      if (auto jColor = config.opt("color"))
-        textStyle.color = jsonToColor(*jColor).toRgba();
-      textStyle.loadJson(config.get("style", Json()));
+      auto fontSize = config.getUInt("fontSize", textStyle.fontSize);
+      if (!fontSize) return std::unexpected(std::move(fontSize.error()));
+      textStyle.fontSize = *fontSize;
+      auto jColor = config.opt("color");
+      if (!jColor) return std::unexpected(std::move(jColor.error()));
+      if (*jColor) {
+        auto color = jsonToColor(**jColor);
+        if (!color) return std::unexpected(std::move(color.error()));
+        textStyle.color = color->toRgba();
+      }
+      auto styleJson = config.get("style", Json());
+      if (!styleJson) return std::unexpected(std::move(styleJson.error()));
+      auto loadedStyle = textStyle.loadJson(*styleJson);
+      if (!loadedStyle) return std::unexpected(std::move(loadedStyle.error()));
+
       bubbleTexts.append(std::make_tuple(sayAction.text, textStyle, true, position));
 
       for (auto& backgroundImage : backgroundImages)
@@ -409,9 +568,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
         std::get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
-      RectF boundBox = std::ranges::fold_left(backgroundImages, RectF::null(), [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
-          return boundBox.combined(bubbleImageRect(pos, bubbleImage, pixelRatio));
-        });
+      RectF boundBox = RectF::null();
+      for (auto const& image : backgroundImages) {
+        auto bounds = bubbleImageRect(pos, image, pixelRatio);
+        if (!bounds) return std::unexpected(std::move(bounds.error()));
+        boundBox.combine(*bounds);
+      }
       Bubble bubble = {sayAction.entity, sayAction.text, sayAction.config, 0, std::move(backgroundImages), std::move(bubbleTexts), false};
       List<BubbleState<Bubble>> oldBubbles = m_bubbles.filtered([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) {
           return bubble.entity == sayAction.entity;
@@ -424,12 +586,16 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
     } else if (std::holds_alternative<PortraitChatAction>(action)) {
       auto portraitAction = std::get<PortraitChatAction>(action);
-      config = portraitAction.config.optObject().value_or(JsonObject{});
+      auto actionConfig = portraitAction.config.optObject();
+      if (!actionConfig) return std::unexpected(std::move(actionConfig.error()));
+      config = actionConfig->value_or(JsonObject{});
       position = portraitAction.position;
 
       List<BubbleImage> backgroundImages;
       backgroundImages.append(std::make_tuple(m_portraitBackgroundImage, Vec2F()));
-      if (config.getBool("drawMoreIndicator", false))
+      auto more = config.getBool("drawMoreIndicator", false);
+      if (!more) return std::unexpected(std::move(more.error()));
+      if (*more)
         backgroundImages.append(std::make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
       backgroundImages.append(std::make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
       List<BubbleText> bubbleTexts;
@@ -454,39 +620,52 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
     }
 
     if (!silent) {
-      if (auto sound = config.optString("sound")) {
-        auto assets = m_guiContext->root().assets();
-        std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*assets->audio(*sound));
+      auto sound = config.optString("sound");
+      if (!sound) return std::unexpected(std::move(sound.error()));
+      if (*sound) {
+        auto audio = (*assets)->audio(**sound);
+        if (!audio) return std::unexpected(std::move(audio.error()));
+        auto instance = AudioInstance::create(**audio);
+        if (!instance) return std::unexpected(std::move(instance.error()));
+        auto audioInstance = std::move(*instance);
         audioInstance->setPosition(position);
-        audioInstance->setVolume(config.getFloat("volume", 1.0f));
-        audioInstance->setPitchMultiplier(config.getFloat("pitch", 1.0f));
-        m_guiContext->playAudio(audioInstance);
+        auto volume = config.getFloat("volume", 1.0f);
+        if (!volume) return std::unexpected(std::move(volume.error()));
+        auto pitch = config.getFloat("pitch", 1.0f);
+        if (!pitch) return std::unexpected(std::move(pitch.error()));
+        audioInstance->setVolume(*volume);
+        audioInstance->setPitchMultiplier(*pitch);
+        auto played = m_guiContext->playAudio(audioInstance);
+        if (!played) return std::unexpected(std::move(played.error()));
       }
     }
   }
+  return {};
 }
 
-RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio) {
-  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
-  auto& image = std::get<0>(bubbleImage);
-  return RectF::withSize(screenPos + std::get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
+std::expected<RectF, StarException> ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& image, float pixelRatio) {
+  auto metadata = m_guiContext->root().imageMetadataDatabase();
+  if (!metadata) return std::unexpected(std::move(metadata.error()));
+  auto size = (*metadata)->imageSize(std::get<0>(image));
+  if (!size) return std::unexpected(std::move(size.error()));
+  return RectF::withSize(screenPos + std::get<1>(image) * pixelRatio, Vec2F(*size) * pixelRatio);
 }
 
-void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha) {
-  auto& image = std::get<0>(bubbleImage);
-  auto offset = std::get<1>(bubbleImage) * pixelRatio;
-  m_guiContext->drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
+std::expected<void, StarException> ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& image, float pixelRatio, int alpha) {
+  return m_guiContext->drawQuad(std::get<0>(image), screenPos + std::get<1>(image) * pixelRatio, pixelRatio, {255, 255, 255, alpha});
 }
 
-void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait) {
-  TextStyle style = std::get<1>(bubbleText);
+std::expected<void, StarException> ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& text, float pixelRatio, int alpha, bool isPortrait) {
+  TextStyle style = std::get<1>(text);
   style.color[3] *= ((float)alpha / 255.f);
-  m_guiContext->setTextStyle(style, pixelRatio);
-  auto offset = std::get<3>(bubbleText) * pixelRatio;
+  auto styled = m_guiContext->setTextStyle(style, pixelRatio);
+  if (!styled) return std::unexpected(std::move(styled.error()));
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
-  tp.pos = screenPos + offset;
+  tp.pos = screenPos + std::get<3>(text) * pixelRatio;
   tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-  m_guiContext->renderText(std::get<0>(bubbleText), tp);
+  auto rendered = m_guiContext->renderText(std::get<0>(text), tp);
+  if (!rendered) return std::unexpected(std::move(rendered.error()));
+  return {};
 }
 
 }

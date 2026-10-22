@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -115,17 +116,24 @@ public:
     return Star::typeName<BlueprintItem>();
   }
 
-  BlueprintItem(Root& root, Json const& config, String const& directory, Json const& data);
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<BlueprintItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& data);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  virtual List<Drawable> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
 
-  virtual void fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
 
-  virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables(TileDrawer*) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> iconDrawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> dropDrawables(TileDrawer*) const override;
 
 private:
+  explicit BlueprintItem(Root& root) : Item(root) {}
   ItemDescriptor m_recipe;
   Drawable m_recipeIconUnderlay;
   List<Drawable> m_inHandDrawable;
@@ -135,47 +143,86 @@ private:
 
 namespace Star {
 
-BlueprintItem::BlueprintItem(Root& root, Json const& config, String const& directory, Json const& data)
-  : Item(root, config, directory, data), SwingableItem(config) {
-  setWindupTime(0.2f);
-  setCooldownTime(0.1f);
-  m_requireEdgeTrigger = true;
-  m_recipe = ItemDescriptor(instanceValue("recipe"));
-
-  m_recipeIconUnderlay = Drawable(*root.imageMetadataDatabase(), root.assets()->json("/blueprint.config:iconUnderlay"));
-  m_inHandDrawable = {Drawable::makeImage(
-      *root.imageMetadataDatabase(),
-      root.assets()->json("/blueprint.config:inHandImage").toString(),
-      1.0f / TilePixels,
-      true,
-      Vec2F())};
-
-  setPrice(int(price() * root.assets()->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
+std::expected<std::shared_ptr<BlueprintItem>, StarException> BlueprintItem::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<BlueprintItem>(new BlueprintItem(root));
+  auto initialized = item->initialize(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  item->setWindupTime(0.2f);
+  item->setCooldownTime(0.1f);
+  item->m_requireEdgeTrigger = true;
+  auto recipeValue = item->instanceValue("recipe");
+  if (!recipeValue)
+    return std::unexpected(std::move(recipeValue.error()));
+  auto recipe = ItemDescriptor::create(*recipeValue);
+  if (!recipe)
+    return std::unexpected(std::move(recipe.error()));
+  item->m_recipe = std::move(*recipe);
+  auto metadata = root.imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto underlayValue = (*assets)->json("/blueprint.config:iconUnderlay");
+  if (!underlayValue)
+    return std::unexpected(std::move(underlayValue.error()));
+  auto underlay = Drawable::create(**metadata, *underlayValue);
+  if (!underlay)
+    return std::unexpected(std::move(underlay.error()));
+  item->m_recipeIconUnderlay = std::move(*underlay);
+  auto image = (*assets)->json("/blueprint.config:inHandImage").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  auto drawable = Drawable::makeImage(**metadata, *image, 1.0f / TilePixels, true, Vec2F());
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  item->m_inHandDrawable = {std::move(*drawable)};
+  auto factor = (*assets)->json("/items/defaultParameters.config:blueprintPriceFactor").and_then([](Json const& value) { return value.toFloat(); });
+  if (!factor)
+    return std::unexpected(std::move(factor.error()));
+  item->setPrice(int(item->price() * *factor));
+  return item;
 }
 
-std::shared_ptr<Item> BlueprintItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> BlueprintItem::clone() const {
   return std::make_shared<BlueprintItem>(*this);
 }
 
-List<Drawable> BlueprintItem::drawables() const {
+std::expected<List<Drawable>, StarException> BlueprintItem::drawables() const {
   return m_inHandDrawable;
 }
 
-void BlueprintItem::fireTriggered() {
-  if (count())
-    if (auto player = as<Player>(owner()))
-      if (player->addBlueprint(m_recipe, true))
+std::expected<void, StarException> BlueprintItem::fireTriggered() {
+  if (count()) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    if (auto player = as<Player>(*itemOwner)) {
+      auto learned = player->addBlueprint(m_recipe, true);
+      if (!learned)
+        return std::unexpected(std::move(learned.error()));
+      if (*learned)
         setCount(count() - 1);
+    }
+  }
+  return {};
 }
 
-List<Drawable> BlueprintItem::iconDrawables() const {
+std::expected<List<Drawable>, StarException> BlueprintItem::iconDrawables() const {
   List<Drawable> result;
   result.append(m_recipeIconUnderlay);
-  result.appendAll(Item::iconDrawables());
+  auto icons = Item::iconDrawables();
+  if (!icons)
+    return std::unexpected(std::move(icons.error()));
+  result.appendAll(std::move(*icons));
   return result;
 }
 
-List<Drawable> BlueprintItem::dropDrawables(TileDrawer*) const {
+std::expected<List<Drawable>, StarException> BlueprintItem::dropDrawables(TileDrawer*) const {
   return m_inHandDrawable;
 }
 

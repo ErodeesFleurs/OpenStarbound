@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.string;
@@ -13,7 +14,7 @@ class Root;
 struct AmbientTrackGroup {
   AmbientTrackGroup();
   AmbientTrackGroup(StringList tracks);
-  AmbientTrackGroup(Json const& config, String const& directory = "");
+  [[nodiscard]] static std::expected<AmbientTrackGroup, StarException> create(Json const& config, String const& directory = "");
 
   Json toJson() const;
 
@@ -24,7 +25,7 @@ struct AmbientTrackGroup {
 struct AmbientNoisesDescription {
   AmbientNoisesDescription();
   AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops = -1);
-  AmbientNoisesDescription(Json const& config, String const& directory = "");
+  [[nodiscard]] static std::expected<AmbientNoisesDescription, StarException> create(Json const& config, String const& directory = "");
 
   Json toJson() const;
 
@@ -47,8 +48,8 @@ public:
   void setTrackFadeInTime(float fadeInTime);
 
   // Returns a new AudioInstance if a new ambient sound is to be started.
-  std::shared_ptr<AudioInstance> updateAmbient(std::shared_ptr<AmbientNoisesDescription> current, bool dayTime = false);
-  std::shared_ptr<AudioInstance> updateWeather(std::shared_ptr<WeatherNoisesDescription> current);
+  [[nodiscard]] std::expected<std::shared_ptr<AudioInstance>, StarException> updateAmbient(std::shared_ptr<AmbientNoisesDescription> current, bool dayTime = false);
+  [[nodiscard]] std::expected<std::shared_ptr<AudioInstance>, StarException> updateWeather(std::shared_ptr<WeatherNoisesDescription> current);
   void cancelAll();
 
   void setVolume(float volume, float delay, float duration);

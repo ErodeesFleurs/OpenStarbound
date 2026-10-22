@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -63,35 +64,36 @@ public:
     return Star::typeName<MerchantPane>();
   }
 
-  MerchantPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
+  [[nodiscard]] static std::expected<std::shared_ptr<MerchantPane>, StarException> create(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
 
-  void displayed() override;
-  void dismissed() override;
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
   EntityId sourceEntityId() const;
 
-  std::shared_ptr<Item> addItems(std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> addItems(std::shared_ptr<Item> const& items);
 
 protected:
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
-  void swapSlot();
+  explicit MerchantPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId);
+  [[nodiscard]] std::expected<void, StarException> swapSlot();
 
-  void buildItemList();
-  void setupWidget(std::shared_ptr<Widget> const& widget, Json const& itemConfig);
-  void updateSelection();
-  int itemPrice();
-  void updateBuyTotal();
-  void buy();
+  [[nodiscard]] std::expected<void, StarException> buildItemList();
+  [[nodiscard]] std::expected<void, StarException> setupWidget(std::shared_ptr<Widget> const& widget, Json const& itemConfig);
+  [[nodiscard]] std::expected<void, StarException> updateSelection();
+  [[nodiscard]] std::expected<void, StarException> updateBuyTotal();
+  [[nodiscard]] std::expected<void, StarException> buy();
 
-  void updateSellTotal();
-  void sell();
+  [[nodiscard]] std::expected<void, StarException> updateSellTotal();
+  [[nodiscard]] std::expected<void, StarException> sell();
 
-  int maxBuyCount();
-  void countChanged();
-  void countTextChanged();
+  [[nodiscard]] std::expected<int, StarException> maxBuyCount();
+  [[nodiscard]] std::expected<void, StarException> countChanged();
+  [[nodiscard]] std::expected<void, StarException> countTextChanged();
 
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<Player> m_player;

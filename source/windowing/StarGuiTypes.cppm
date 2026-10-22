@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 import star.vector;
 import star.bi_map;
@@ -27,14 +28,14 @@ enum class GuiDirection {
   Horizontal,
   Vertical
 };
-extern EnumMap<GuiDirection> const GuiDirectionNames;
+extern std::expected<EnumMap<GuiDirection>, StarException> const GuiDirectionNames;
 
 GuiDirection otherDirection(GuiDirection direction);
 
 template <typename T>
 T directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec);
 
-String rarityBorder(String border);
+[[nodiscard]] std::expected<String, StarException> rarityBorder(String border);
 
 template <typename T>
 T& directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec) {

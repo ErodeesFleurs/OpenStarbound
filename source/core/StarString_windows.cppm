@@ -3,12 +3,13 @@ module;
 #include <windows.h>
 
 import std;
+import star.format;
 import star.string;
 
 namespace Star {
 
-String utf16ToString(WCHAR const* s);
-std::unique_ptr<WCHAR[]> stringToUtf16(String const& s);
+[[nodiscard]] std::expected<String, StarException> utf16ToString(WCHAR const* s);
+[[nodiscard]] std::expected<std::unique_ptr<WCHAR[]>, StarException> stringToUtf16(String const& s);
 
 }
 

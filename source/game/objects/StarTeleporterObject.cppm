@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.type_identity;
 import star.json;
@@ -79,22 +80,40 @@ public:
     return Star::typeName<TeleporterObject>();
   }
 
-  TeleporterObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
+  [[nodiscard]] static std::expected<std::shared_ptr<TeleporterObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
-  Vec2F footPosition() const override;
+  [[nodiscard]] std::expected<Vec2F, StarException> footPosition() const override;
+private:
+  explicit TeleporterObject(Root& rootContext);
 };
 
 }
 
 namespace Star {
 
-TeleporterObject::TeleporterObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
-  setUniqueId(configValue("uniqueId", Uuid(root().random()).hex()).optString());
+TeleporterObject::TeleporterObject(Root& rootContext) : Entity(rootContext), Object(rootContext) {}
+
+std::expected<std::shared_ptr<TeleporterObject>, StarException> TeleporterObject::create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) {
+  auto object = std::shared_ptr<TeleporterObject>(new TeleporterObject(rootContext));
+  auto initialized = object->initialize(std::move(config), parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto idConfig = object->configValue("uniqueId", Uuid(rootContext.random()).hex());
+  if (!idConfig)
+    return std::unexpected(std::move(idConfig.error()));
+  auto id = idConfig->optString();
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  object->setUniqueId(std::move(*id));
+  return object;
 }
 
-Vec2F TeleporterObject::footPosition() const {
-  if (auto footPos = configValue("teleporterFootPosition"))
-    return jsonToVec2F(footPos);
+std::expected<Vec2F, StarException> TeleporterObject::footPosition() const {
+  auto foot = configValue("teleporterFootPosition");
+  if (!foot)
+    return std::unexpected(std::move(foot.error()));
+  if (*foot)
+    return jsonToVec2F(*foot);
   return Vec2F();
 }
 

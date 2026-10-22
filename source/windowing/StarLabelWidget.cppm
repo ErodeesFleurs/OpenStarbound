@@ -45,6 +45,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 class LabelWidget : public Widget {
@@ -56,8 +57,7 @@ public:
     return Star::typeName<LabelWidget>();
   }
 
-  LabelWidget(GuiContext& context);
-  LabelWidget(GuiContext& context, String text,
+  [[nodiscard]] static std::expected<std::shared_ptr<LabelWidget>, StarException> create(GuiContext& context, String text = {},
       Color const& color = Color::White,
       HorizontalAnchor const& hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor const& vAnchor = VerticalAnchor::BottomAnchor,
@@ -66,26 +66,27 @@ public:
 
   String const& text() const;
   std::optional<unsigned> getTextCharLimit() const;
-  void setText(String newText);
-  void setFontSize(int fontSize);
+  [[nodiscard]] std::expected<void, StarException> setText(String newText);
+  [[nodiscard]] std::expected<void, StarException> setFontSize(int fontSize);
   void setFontMode(FontMode fontMode);
   void setColor(Color newColor);
-  void setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor);
-  void setWrapWidth(std::optional<unsigned> wrapWidth);
-  void setLineSpacing(std::optional<float> lineSpacing);
-  void setDirectives(String const& directives);
-  void setTextCharLimit(std::optional<unsigned> charLimit);
-  void setTextStyle(TextStyle const& style);
-  void setFont(String const& font);
+  [[nodiscard]] std::expected<void, StarException> setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor);
+  [[nodiscard]] std::expected<void, StarException> setWrapWidth(std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<void, StarException> setLineSpacing(std::optional<float> lineSpacing);
+  [[nodiscard]] std::expected<void, StarException> setDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setTextCharLimit(std::optional<unsigned> charLimit);
+  [[nodiscard]] std::expected<void, StarException> setTextStyle(TextStyle const& style);
+  [[nodiscard]] std::expected<void, StarException> setFont(String const& font);
 
   RectI relativeBoundRect() const override;
 
 protected:
   virtual RectI getScissorRect() const override;
-  virtual void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
-  void updateTextRegion();
+  LabelWidget(GuiContext& context, HorizontalAnchor hAnchor, VerticalAnchor vAnchor, std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<void, StarException> updateTextRegion();
 
   String m_text;
   TextStyle m_style;

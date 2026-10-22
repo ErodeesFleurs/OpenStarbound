@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.lua;
 import star.json;
 import star.thread;
@@ -89,13 +90,13 @@ struct CharacterCreationResult {
 
 class SpeciesDefinition {
 public:
-  SpeciesDefinition(Root& root, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<SpeciesDefinition>, StarException> create(Root& root, Json const& config);
 
   Json config() const;
   String kind() const;
   bool playerSelectable() const;
   SpeciesOption const& options() const;
-  Json humanoidConfig() const;
+  [[nodiscard]] std::expected<Json, StarException> humanoidConfig() const;
   List<Personality> const& personalities() const;
   String nameGen(Gender gender) const;
   String ouchNoise(Gender gender) const;
@@ -109,6 +110,8 @@ public:
   SpeciesCharCreationTooltip const& tooltip() const;
 
 private:
+  explicit SpeciesDefinition(Root& root) : m_root(root) {}
+  [[nodiscard]] std::expected<void, StarException> init(Json const& config);
   Root& m_root;
   String m_kind;
   SpeciesCharCreationTooltip m_tooltip;
@@ -135,17 +138,18 @@ private:
 
 class SpeciesDatabase {
 public:
-  explicit SpeciesDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<SpeciesDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<SpeciesDefinition> species(String const& kind) const;
+  [[nodiscard]] std::expected<std::shared_ptr<SpeciesDefinition>, StarException> species(String const& kind) const;
   StringMap<std::shared_ptr<SpeciesDefinition>> allSpecies() const;
 
-  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr) const;
-  CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<Json, StarException> humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<CharacterCreationResult, StarException> createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
-  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<CharacterCreationResult, StarException> generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
 private:
+  explicit SpeciesDatabase(Root& root) : m_root(root) {}
   Root& m_root;
 
   StringMap<std::shared_ptr<SpeciesDefinition>> m_species;

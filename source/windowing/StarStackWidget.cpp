@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -55,34 +56,48 @@ import star.stack_widget;
 
 namespace Star {
 
-void StackWidget::showPage(std::size_t page) {
-  if (m_shownPage)
-    m_shownPage->hide();
+std::expected<void, StarException> StackWidget::showPage(std::size_t page) {
+  if (page >= m_members.size())
+    return std::unexpected(GuiException("Stack page index out of range"));
+  if (m_shownPage) {
+    auto hidden = m_shownPage->hide();
+    if (!hidden)
+      return std::unexpected(std::move(hidden.error()));
+  }
   m_shownPage = m_members[page];
   m_page = makeLeft(page);
   if (m_shownPage)
-    m_shownPage->show();
+    return m_shownPage->show();
+  return {};
 }
 
-void StackWidget::showPage(String const& name) {
-  if (m_shownPage)
-    m_shownPage->hide();
-  m_shownPage = m_memberHash.get(name);
+std::expected<void, StarException> StackWidget::showPage(String const& name) {
+  auto page = m_memberHash.ptr(name);
+  if (!page)
+    return std::unexpected(GuiException::format("Unknown stack page: {}", name));
+  if (m_shownPage) {
+    auto hidden = m_shownPage->hide();
+    if (!hidden)
+      return std::unexpected(std::move(hidden.error()));
+  }
+  m_shownPage = *page;
   m_page = makeRight(name);
   if (m_shownPage)
-    m_shownPage->show();
+    return m_shownPage->show();
+  return {};
 }
 
 Either<std::size_t, String> StackWidget::currentPage() const {
   return m_page;
 }
 
-void StackWidget::addChild(String const& name, std::shared_ptr<Widget> member) {
-  Widget::addChild(name, member);
+std::expected<void, StarException> StackWidget::addChild(String const& name, std::shared_ptr<Widget> member) {
+  auto added = Widget::addChild(name, member);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
   if (m_members.size() != 1)
-    member->hide();
-  else
-    showPage(0);
+    return member->hide();
+  return showPage(0);
 }
 
 }

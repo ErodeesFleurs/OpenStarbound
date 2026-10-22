@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import star.vector;
 import star.game_types;
@@ -20,9 +21,9 @@ class WireProcessor : public WireCoordinator {
 public:
   WireProcessor(std::shared_ptr<WorldStorage> worldStorage);
 
-  void process();
+  [[nodiscard]] std::expected<void, StarException> process();
 
-  bool readInputConnection(WireConnection const& connection) override;
+  [[nodiscard]] std::expected<bool, StarException> readInputConnection(WireConnection const& connection) override;
 
 private:
   struct WireEntityState {
@@ -33,11 +34,11 @@ private:
 
   // Add the given WireEntity to the working entities set, populating inbound /
   // outbound nodes and states.
-  void populateWorking(WireEntity* wireEntity);
+  [[nodiscard]] std::expected<void, StarException> populateWorking(WireEntity* wireEntity);
   // Scans a wire network, starting at an entity at the given position, while
   // also loading any unloaded entries in the network and marking each entry as
   // now having been 'networkLoaded'.
-  void loadNetwork(Vec2I tilePosition);
+  [[nodiscard]] std::expected<void, StarException> loadNetwork(Vec2I tilePosition);
 
   std::shared_ptr<WorldStorage> m_worldStorage;
   StableHashMap<Vec2I, WireEntityState> m_workingWireEntities;

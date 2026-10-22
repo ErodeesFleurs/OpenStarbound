@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -52,15 +53,17 @@ public:
     return Star::typeName<ModsMenu>();
   }
 
-  ModsMenu(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<ModsMenu>, StarException> create(GuiContext& guiContext);
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
-  static String bestModName(JsonObject const& metadata, String const& sourcePath);
+  explicit ModsMenu(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> init();
+  [[nodiscard]] static std::expected<String, StarException> bestModName(JsonObject const& metadata, String const& sourcePath);
 
-  void openLink();
-  void openWorkshop();
+  [[nodiscard]] std::expected<void, StarException> openLink();
+  [[nodiscard]] std::expected<void, StarException> openWorkshop();
 
   StringList m_assetsSources;
 

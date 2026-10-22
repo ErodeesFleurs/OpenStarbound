@@ -55,6 +55,7 @@ import star.gui_context;
 import star.widget;
 import star.pane;
 import star.player_universe_map;
+import star.format;
 
 namespace Star {
 
@@ -67,24 +68,26 @@ public:
     return Star::typeName<EditBookmarkDialog>();
   }
 
-  EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
+  [[nodiscard]] static std::expected<std::shared_ptr<EditBookmarkDialog>, StarException> create(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
 
-  virtual void show() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
 
-  void setBookmark(TeleportBookmark bookmark);
+  [[nodiscard]] std::expected<void, StarException> setBookmark(TeleportBookmark bookmark);
 
-  void ok();
-  void remove();
+  [[nodiscard]] std::expected<void, StarException> ok();
+  [[nodiscard]] std::expected<void, StarException> remove();
   void close();
 
 private:
+  EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   std::shared_ptr<PlayerUniverseMap> m_playerUniverseMap;
   TeleportBookmark m_bookmark;
 
   bool m_isNew;
 };
 
-void setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark);
+[[nodiscard]] std::expected<void, StarException> setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark);
 }
 
 export module star.bookmark_interface;

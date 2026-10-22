@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.string;
 import star.list;
 import star.bi_map;
@@ -35,19 +36,19 @@ enum class NodeParameterType : std::uint8_t {
   Table,
   String
 };
-extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
+extern std::expected<EnumMap<NodeParameterType>, StarException> const NodeParameterTypeNames;
 
 typedef std::variant<String, Json> NodeParameterValue;
 typedef std::pair<NodeParameterType, NodeParameterValue> NodeParameter;
 typedef std::pair<NodeParameterType, std::pair<std::optional<String>, bool>> NodeOutput;
 
-NodeParameterValue nodeParameterValueFromJson(Json const& json);
+[[nodiscard]] std::expected<NodeParameterValue, StarException> nodeParameterValueFromJson(Json const& json);
 
-Json jsonFromNodeParameter(NodeParameter const& parameter);
-NodeParameter jsonToNodeParameter(Json const& json);
+[[nodiscard]] std::expected<Json, StarException> jsonFromNodeParameter(NodeParameter const& parameter);
+[[nodiscard]] std::expected<NodeParameter, StarException> jsonToNodeParameter(Json const& json);
 
-Json jsonFromNodeOutput(NodeOutput const& output);
-NodeOutput jsonToNodeOutput(Json const& json);
+[[nodiscard]] std::expected<Json, StarException> jsonFromNodeOutput(NodeOutput const& output);
+[[nodiscard]] std::expected<NodeOutput, StarException> jsonToNodeOutput(Json const& json);
 
 enum class BehaviorNodeType : std::uint16_t {
   Action,
@@ -55,7 +56,7 @@ enum class BehaviorNodeType : std::uint16_t {
   Composite,
   Module
 };
-extern EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames;
+extern std::expected<EnumMap<BehaviorNodeType>, StarException> const BehaviorNodeTypeNames;
 
 enum class CompositeType : std::uint16_t {
   Sequence,
@@ -64,12 +65,12 @@ enum class CompositeType : std::uint16_t {
   Dynamic,
   Randomize
 };
-extern EnumMap<CompositeType> const CompositeTypeNames;
+extern std::expected<EnumMap<CompositeType>, StarException> const CompositeTypeNames;
 
 // replaces global tags in nodeParameters in place
-NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
-std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
-void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
+[[nodiscard]] std::expected<NodeParameterValue, StarException> replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
+[[nodiscard]] std::expected<std::optional<String>, StarException> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
+[[nodiscard]] std::expected<void, StarException> applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
 
 struct ActionNode {
   ActionNode(String name, StringMap<NodeParameter> parameters, StringMap<NodeOutput> output);
@@ -100,7 +101,7 @@ struct SelectorNode {
 };
 
 struct ParallelNode {
-  ParallelNode(StringMap<NodeParameter>, List<std::shared_ptr<BehaviorNode const>> children);
+  ParallelNode(int succeed, int fail, List<std::shared_ptr<BehaviorNode const>> children);
 
   int succeed;
   int fail;
@@ -132,23 +133,24 @@ struct BehaviorTree {
 
 class BehaviorDatabase {
 public:
-  explicit BehaviorDatabase(std::shared_ptr<Assets const> assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<BehaviorDatabase>, StarException> create(std::shared_ptr<Assets const> assets);
 
-  std::shared_ptr<BehaviorTree const> behaviorTree(String const& name) const;
-  std::shared_ptr<BehaviorTree const> buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;
-  Json behaviorConfig(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<BehaviorTree const>, StarException> behaviorTree(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<BehaviorTree const>, StarException> buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;
+  [[nodiscard]] std::expected<Json, StarException> behaviorConfig(String const& name) const;
 
 private:
+  BehaviorDatabase() = default;
   StringMap<Json> m_configs;
   StringMap<std::shared_ptr<BehaviorTree const>> m_behaviors;
   StringMap<StringMap<NodeParameter>> m_nodeParameters;
   StringMap<StringMap<NodeOutput>> m_nodeOutput;
 
-  void loadTree(String const& name);
+  [[nodiscard]] std::expected<void, StarException> loadTree(String const& name);
 
   // constructs node variants
-  CompositeNode compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
-  std::shared_ptr<BehaviorNode const> behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
+  [[nodiscard]] std::expected<CompositeNode, StarException> compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
+  [[nodiscard]] std::expected<std::shared_ptr<BehaviorNode const>, StarException> behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
 };
 
 }

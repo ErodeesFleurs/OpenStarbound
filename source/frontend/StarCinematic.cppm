@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.thread;
 import star.time;
@@ -34,14 +35,14 @@ class GuiContext;
 
 class Cinematic {
 public:
-  Cinematic(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<Cinematic>, StarException> create(GuiContext& context);
 
-  void load(Json const& definition);
+  [[nodiscard]] std::expected<void, StarException> load(Json const& definition);
 
   void setPlayer(std::shared_ptr<Player> player);
 
   void update(float dt);
-  void render();
+  [[nodiscard]] std::expected<void, StarException> render();
 
   bool completed() const;
   bool completable() const;
@@ -51,13 +52,16 @@ public:
 
   void stop();
 
-  bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<bool, StarException> handleInputEvent(InputEvent const& event);
   bool suppressInput() const;
 
   bool muteSfx() const;
   bool muteMusic() const;
 
 private:
+  explicit Cinematic(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> loadDefinition(Json const& definition);
+
   struct TimeSkip {
     float availableTime;
     float skipToTime;
@@ -65,7 +69,12 @@ private:
 
   struct KeyFrame {
     float timecode;
-    Json command;
+    std::optional<bool> complete;
+    std::optional<float> zoom;
+    std::optional<float> alpha;
+    std::optional<Vec2F> position;
+    std::optional<float> frame;
+    std::optional<float> textPercentage;
   };
 
   struct CameraKeyFrame {
@@ -105,7 +114,7 @@ private:
     float endTimecode;
   };
 
-  void drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation);
+  [[nodiscard]] std::expected<void, StarException> drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation);
 
   void updateCamera(float timecode);
 

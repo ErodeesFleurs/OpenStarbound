@@ -1,4 +1,5 @@
 module;
+import star.format;
 
 import std;
 import star.json;
@@ -10,7 +11,7 @@ class Root;
 class InterpolationTracker {
 public:
   InterpolationTracker();
-  InterpolationTracker(Root& root, Json config);
+  [[nodiscard]] static std::expected<InterpolationTracker, StarException> create(Root& root, Json config);
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.
@@ -28,7 +29,7 @@ public:
   float interpolationLeadTime() const;
 
 private:
-  void readConfig(Json const& config);
+  [[nodiscard]] std::expected<void, StarException> readConfig(Json const& config);
   bool m_interpolationEnabled;
   float m_entityUpdateDelta;
   double m_timeLead;

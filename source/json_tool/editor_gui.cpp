@@ -104,33 +104,55 @@ void JsonEditor::back() {
 }
 
 void JsonEditor::updatePreview(QString const& valueStr) {
-  try {
-    FormattedJson newValue = m_editFormat->toJson(valueStr.toStdString());
-    FormattedJson preview = addOrSet(false, m_path, m_currentJson, m_options.insertLocation, newValue);
-    m_jsonDocument->setPlainText(preview.repr().utf8Ptr());
-
-  } catch (JsonException const&) {
-  } catch (JsonParsingException const&) {
-    // Don't update the preview if it's not valid Json.
+  if (!m_valueEditor->isEnabled())
+    return;
+  auto value = m_editFormat->toJson(valueStr.toStdString());
+  if (!value) {
+    if (!value.error().is<JsonException>() && !value.error().is<JsonParsingException>())
+      m_errorDialog->showMessage(value.error().what());
+    return;
   }
+  auto preview = addOrSet(false, m_path, m_currentJson, m_options.insertLocation, *value);
+  if (!preview) {
+    if (!preview.error().is<JsonException>() && !preview.error().is<JsonParsingException>())
+      m_errorDialog->showMessage(preview.error().what());
+    return;
+  }
+  auto repr = preview->repr();
+  if (!repr) {
+    m_errorDialog->showMessage(repr.error().what());
+    return;
+  }
+  m_jsonDocument->setPlainText(repr->utf8Ptr());
 }
 
 bool JsonEditor::saveChanges() {
-  try {
-    FormattedJson newValue = m_editFormat->toJson(m_valueEditor->text().toStdString());
-    m_currentJson = addOrSet(false, m_path, m_currentJson, m_options.insertLocation, newValue);
-    String repr = reprWithLineEnding(m_currentJson);
-    File::writeFile(repr, m_files.get(m_fileIndex));
-    return true;
-
-  } catch (StarException const& e) {
-    m_errorDialog->showMessage(e.what());
+  auto value = m_editFormat->toJson(m_valueEditor->text().toStdString());
+  if (!value) {
+    m_errorDialog->showMessage(value.error().what());
     return false;
   }
+  auto updated = addOrSet(false, m_path, m_currentJson, m_options.insertLocation, *value);
+  if (!updated) {
+    m_errorDialog->showMessage(updated.error().what());
+    return false;
+  }
+  auto repr = reprWithLineEnding(*updated);
+  if (!repr) {
+    m_errorDialog->showMessage(repr.error().what());
+    return false;
+  }
+  auto saved = File::overwriteFileWithRename(*repr, m_files[m_fileIndex]);
+  if (!saved) {
+    m_errorDialog->showMessage(saved.error().what());
+    return false;
+  }
+  m_currentJson = std::move(*updated);
+  return true;
 }
 
 void JsonEditor::displayCurrentFile() {
-  String file = m_files.get(m_fileIndex);
+  String const& file = m_files[m_fileIndex];
 
   std::size_t progress = (m_fileIndex + 1) * 100 / m_files.size();
   String status = strf("Editing file {}/{} ({}%):    {}", m_fileIndex + 1, m_files.size(), progress, file);
@@ -143,23 +165,28 @@ void JsonEditor::displayCurrentFile() {
 
   m_imageLabel->setText("No preview");
   m_jsonDocument->setPlainText("");
-  m_valueEditor->setText("");
   m_valueEditor->setEnabled(false);
+  m_valueEditor->setText("");
 
-  try {
-    m_currentJson = FormattedJson::parse(File::readFileString(file));
-
-    m_jsonDocument->setPlainText(m_currentJson.repr().utf8Ptr());
-
+  auto load = [&]() -> std::expected<void, StarException> {
+    auto contents = File::readFileString(file);
+    if (!contents)
+      return std::unexpected(std::move(contents.error()));
+    auto parsed = FormattedJson::parse(*contents);
+    if (!parsed)
+      return std::unexpected(std::move(parsed.error()));
+    auto repr = parsed->repr();
+    if (!repr)
+      return std::unexpected(std::move(repr.error()));
+    m_currentJson = std::move(*parsed);
+    m_jsonDocument->setPlainText(repr->utf8Ptr());
     updateValueEditor();
-
     updateImagePreview();
-
-  } catch (StarException const& e) {
-    // Something else went wrong (maybe while parsing the document) and allowing
-    // the user to edit this file might cause us to lose data.
-    m_errorDialog->showMessage(e.what());
-  }
+    return {};
+  };
+  auto loaded = load();
+  if (!loaded)
+    m_errorDialog->showMessage(loaded.error().what());
 
   m_jsonPreview->moveCursor(QTextCursor::Start);
 
@@ -168,56 +195,85 @@ void JsonEditor::displayCurrentFile() {
 }
 
 void JsonEditor::updateValueEditor() {
-  FormattedJson value;
-  try {
-    value = m_path->get(m_currentJson);
-  } catch (JsonPath::TraversalException const&) {
-    // Path does not already exist in the Json document. We're adding it.
+  auto value = m_path->get(m_currentJson);
+  if (!value) {
+    if (!value.error().is<JsonPath::TraversalException>()) {
+      m_errorDialog->showMessage(value.error().what());
+      return;
+    }
     value = m_editFormat->getDefault();
+    if (!value) {
+      m_errorDialog->showMessage(value.error().what());
+      return;
+    }
   }
-
-  String valueText;
-  try {
-    valueText = m_editFormat->fromJson(value);
-  } catch (JsonException const& e) {
-    // The value already present in the was no thte type we expected, e.g.
-    // it was an int, when we wanted a string array for CSV.
-    // Clear the value already present.
-    m_errorDialog->showMessage(e.what());
-    valueText = m_editFormat->fromJson(m_editFormat->getDefault());
+  auto text = m_editFormat->fromJson(*value);
+  if (!text) {
+    m_errorDialog->showMessage(text.error().what());
+    if (!text.error().is<JsonException>())
+      return;
+    auto fallback = m_editFormat->getDefault();
+    if (!fallback) {
+      m_errorDialog->showMessage(fallback.error().what());
+      return;
+    }
+    text = m_editFormat->fromJson(*fallback);
+    if (!text) {
+      m_errorDialog->showMessage(text.error().what());
+      return;
+    }
   }
-  m_valueEditor->setText(valueText.utf8Ptr());
+  m_valueEditor->setText(text->utf8Ptr());
   m_valueEditor->setEnabled(true);
 }
 
 void JsonEditor::updateImagePreview() {
-  String file = m_files.get(m_fileIndex);
-  for (std::shared_ptr<::Star::JsonPath::Path> const& imagePath : m_options.editorImages) {
-    try {
-      String image = imagePath->get(m_currentJson).toJson().toString();
-      image = File::relativeTo(File::dirName(file), image.extract(":"));
-
-      QPixmap pixmap = QPixmap(image.utf8Ptr()).scaledToWidth(ImagePreviewWidth);
-      if (pixmap.height() > ImagePreviewHeight)
-        pixmap = pixmap.scaledToHeight(ImagePreviewHeight);
-      m_imageLabel->setPixmap(pixmap);
-      break;
-    } catch (JsonPath::TraversalException const&) {
+  String const& file = m_files[m_fileIndex];
+  for (auto const& imagePath : m_options.editorImages) {
+    auto value = imagePath->get(m_currentJson);
+    if (!value) {
+      if (value.error().is<JsonPath::TraversalException>())
+        continue;
+      m_errorDialog->showMessage(value.error().what());
+      return;
     }
+    auto image = value->toJson().toString();
+    if (!image) {
+      m_errorDialog->showMessage(image.error().what());
+      return;
+    }
+    auto imageFile = image->extract(":");
+    if (!imageFile) {
+      m_errorDialog->showMessage(imageFile.error().what());
+      return;
+    }
+    String imageName = File::relativeTo(File::dirName(file), *imageFile);
+    QPixmap pixmap = QPixmap(imageName.utf8Ptr()).scaledToWidth(ImagePreviewWidth);
+    if (pixmap.height() > ImagePreviewHeight)
+      pixmap = pixmap.scaledToHeight(ImagePreviewHeight);
+    m_imageLabel->setPixmap(pixmap);
+    break;
   }
 }
 
-int Star::edit(Logger& logger, int argc, char* argv[], std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<Input> const& inputs) {
+std::expected<int, StarException> Star::edit(Logger& logger, int argc, char* argv[],
+    std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<Input> const& inputs) {
   QApplication app(argc, argv);
   StringList files;
   for (Input const& input : inputs) {
-    if (std::holds_alternative<FindInput>(input))
-      files.appendAll(findFiles(logger, std::get<FindInput>(input)));
-    else
+    if (auto find = std::get_if<FindInput>(&input)) {
+      auto found = findFiles(logger, *find);
+      if (!found)
+        return std::unexpected(std::move(found.error()));
+      files.appendAll(std::move(*found));
+    } else {
       files.append(std::get<FileInput>(input).filename);
+    }
   }
-  JsonEditor e(path, options, files);
-  e.show();
+  if (files.empty())
+    return 0;
+  JsonEditor editor(path, options, files);
+  editor.show();
   return app.exec();
 }
 

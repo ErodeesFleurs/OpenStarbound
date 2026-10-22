@@ -56,55 +56,55 @@ using InventoryException = StarError<InventoryExceptionTag, StarException>;
 class PlayerInventory : public NetElementSyncGroup {
 public:
   // Whether the given item is allowed to go in the given slot type
-  bool itemAllowedInBag(std::shared_ptr<Item> const& item, String const& bagType) const;
+  [[nodiscard]] std::expected<bool, StarException> itemAllowedInBag(std::shared_ptr<Item> const& item, String const& bagType) const;
   static bool itemAllowedAsEquipment(std::shared_ptr<Item> const& item, EquipmentSlot equipmentSlot);
 
-  explicit PlayerInventory(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerInventory>, StarException> create(Root& root);
 
   // Items may be consumed through shared aliases. Queries observe exhausted
   // stacks as empty without releasing the inventory's ownership.
-  std::shared_ptr<Item> itemsAt(InventorySlot const& slot) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> itemsAt(InventorySlot const& slot) const;
 
   // Attempts to combine the items with the given slot, and returns the items
   // left over (if any).
-  std::shared_ptr<Item> stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items);
 
   // Empty the slot and take what it contains, if any.
-  std::shared_ptr<Item> takeSlot(InventorySlot const& slot);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> takeSlot(InventorySlot const& slot);
 
   // Try to exchange items between any two slots, returns true on success.
-  bool exchangeItems(InventorySlot const& first, InventorySlot const& second);
+  [[nodiscard]] std::expected<bool, StarException> exchangeItems(InventorySlot const& first, InventorySlot const& second);
 
   // Forces the given item into the given slot, overriding what was already
   // there.  If the item is not allowed in the given location, does nothing and
   // returns false.
-  bool setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item);
+  [[nodiscard]] std::expected<bool, StarException> setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item);
 
-  bool consumeSlot(InventorySlot const& slot, std::uint64_t count = 1);
+  [[nodiscard]] std::expected<bool, StarException> consumeSlot(InventorySlot const& slot, std::uint64_t count = 1);
 
   bool slotValid(InventorySlot const& slot) const;
 
   // Adds items to any slot except the trash or swap slots, returns stack left
   // over.
-  std::shared_ptr<Item> addItems(std::shared_ptr<Item> items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> addItems(std::shared_ptr<Item> items);
 
   // Adds items to the first matching item bag, avoiding the equipment, swap,
   // or trash slots
-  std::shared_ptr<Item> addToBags(std::shared_ptr<Item> items);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> addToBags(std::shared_ptr<Item> items);
 
   // Returns number of items in the given set that can fit anywhere in any item
   // slot except the trash slot (the number of items that would be added by a
   // call to addItems).
-  std::uint64_t itemsCanFit(std::shared_ptr<Item> const& items) const;
+  [[nodiscard]] std::expected<std::uint64_t, StarException> itemsCanFit(std::shared_ptr<Item> const& items) const;
 
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   std::uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
 
   // Consume items based on ItemDescriptor. Can take from any manageable item slot.
   bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
-  ItemDescriptor takeItems(ItemDescriptor const& descriptor, bool takePartial = false, bool exactMatch = false);
+  [[nodiscard]] std::expected<ItemDescriptor, StarException> takeItems(ItemDescriptor const& descriptor, bool takePartial = false, bool exactMatch = false);
   // Return a summary of every item that can be consumed by ItemDescriptor.
-  HashMap<ItemDescriptor, std::uint64_t> availableItems() const;
+  [[nodiscard]] std::expected<HashMap<ItemDescriptor, std::uint64_t>, StarException> availableItems() const;
 
   std::shared_ptr<HeadArmor> headArmor() const;
   std::shared_ptr<ChestArmor> chestArmor() const;
@@ -120,25 +120,25 @@ public:
 
   std::shared_ptr<ItemBag const> bagContents(String const& bag) const;
 
-  void condenseBagStacks(String const& bag);
+  [[nodiscard]] std::expected<void, StarException> condenseBagStacks(String const& bag);
 
   // Sorting a bag will not change the contents of an action bar location.  It
   // will instead potentially change the pointed to slot of an action bar
   // location to point to the new slot that contains the same item.
-  void sortBag(String const& bag);
+  [[nodiscard]] std::expected<void, StarException> sortBag(String const& bag);
 
   // Either move the contents of the given slot into the swap slot, move the
   // contents of the swap slot into the given inventory slot, or swap the
   // contents of the swap slot and the inventory slot, or combine them,
   // whichever makes the most sense.
-  void shiftSwap(InventorySlot const& slot);
+  [[nodiscard]] std::expected<void, StarException> shiftSwap(InventorySlot const& slot);
 
   // Puts the swap slot back into the inventory, if there is room.  Returns
   // true if this was successful, and the swap slot is now empty.
-  bool clearSwap();
+  [[nodiscard]] std::expected<bool, StarException> clearSwap();
 
   std::shared_ptr<Item> swapSlotItem() const;
-  void setSwapSlotItem(std::shared_ptr<Item> const& items);
+  [[nodiscard]] std::expected<void, StarException> setSwapSlotItem(std::shared_ptr<Item> const& items);
 
   // Non-manageable essential items that are always available as action bar
   // entries.
@@ -148,7 +148,7 @@ public:
   // Non-manageable currencies
   StringMap<std::uint64_t> availableCurrencies() const;
   std::uint64_t currency(String const& currencyType) const;
-  void addCurrency(String const& currencyType, std::uint64_t amount);
+  [[nodiscard]] std::expected<void, StarException> addCurrency(String const& currencyType, std::uint64_t amount);
   bool consumeCurrency(String const& currencyType, std::uint64_t amount);
 
   // A custom bar location primary and secondary cannot point to a slot that
@@ -156,13 +156,13 @@ public:
   // will simply be cleared.  If a primary slot is set to a two handed item, it
   // will clear the secondary slot.  Any secondary slot that is set must be a
   // one handed item.
-  std::optional<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
-  std::optional<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
-  void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
-  void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
+  [[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
+  [[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
+  [[nodiscard]] std::expected<void, StarException> setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
+  [[nodiscard]] std::expected<void, StarException> setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
 
   // Add the given slot to a free place in the custom bar if one is available.
-  void addToCustomBar(InventorySlot slot);
+  [[nodiscard]] std::expected<void, StarException> addToCustomBar(InventorySlot slot);
 
   // The custom bar has 'CustomBarGroups' groups that can be switched between.
   // This will not change the selected action bar location, but may change the
@@ -181,67 +181,70 @@ public:
   // Held items are either the items shortcutted to in the currently selected
   // ActionBar primary / secondary locations, or if the swap slot is non-empty
   // then the swap slot.
-  std::shared_ptr<Item> primaryHeldItem() const;
-  std::shared_ptr<Item> secondaryHeldItem() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> primaryHeldItem() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> secondaryHeldItem() const;
 
   // If the primary / secondary held items are valid manageable slots, returns
   // them.
-  std::optional<InventorySlot> primaryHeldSlot() const;
-  std::optional<InventorySlot> secondaryHeldSlot() const;
+  [[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> primaryHeldSlot() const;
+  [[nodiscard]] std::expected<std::optional<InventorySlot>, StarException> secondaryHeldSlot() const;
 
   List<std::shared_ptr<Item>> pullOverflow();
   void setEquipmentVisibility(EquipmentSlot slot, bool visible);
   bool equipmentVisibility(EquipmentSlot slot) const;
 
-  void load(Json const& store);
-  Json store() const;
+  [[nodiscard]] std::expected<void, StarException> load(Json const& store);
+  [[nodiscard]] std::expected<Json, StarException> store() const;
 
-  // Loop over every non-empty manageable item and normalize mutations to null.
-  void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function);
-  // Pure traversal of every non-empty manageable item.
-  void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const;
+  // Checked traversal retains normalization after each successful mutation.
+  [[nodiscard]] std::expected<void, StarException> forEveryItem(std::function<std::expected<void, StarException>(InventorySlot const&, std::shared_ptr<Item>&)> function);
+  [[nodiscard]] std::expected<void, StarException> forEveryItem(std::function<std::expected<void, StarException>(InventorySlot const&, std::shared_ptr<Item> const&)> function) const;
   // Return every manageable item
-  List<std::shared_ptr<Item>> allItems() const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<Item>>, StarException> allItems() const;
   // Return summary of every manageable item name and the count of that item
-  Map<String, std::uint64_t> itemSummary() const;
+  [[nodiscard]] std::expected<Map<String, std::uint64_t>, StarException> itemSummary() const;
 
   // Clears away any empty items and sets them as null, and updates action bar
   // slots to maintain the rules for the action bar.  Should be called every
   // tick.
-  void cleanup();
+  [[nodiscard]] std::expected<void, StarException> cleanup();
 
   // The given player pointer must be valid for the lifetime of this inventory
   void setPlayer(Player*);
 
   // Empty network state with this inventory's original bag and action-bar schema.
-  PlayerInventory const& blankInventory() const;
+  [[nodiscard]] std::expected<PlayerInventory const*, StarException> blankInventory() const;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
 
 private:
   typedef std::pair<std::optional<InventorySlot>, std::optional<InventorySlot>> CustomBarLink;
 
+  template <typename> friend class NetElementTop;
+  explicit PlayerInventory(Root& root);
   PlayerInventory(Root& root, Json inventoryConfig, Json currenciesConfig);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerInventory>, StarException> create(Root& root, Json inventoryConfig, Json currenciesConfig);
+  [[nodiscard]] std::expected<void, StarException> initialize();
 
-  bool checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const;
+  [[nodiscard]] std::expected<bool, StarException> checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const;
 
   static void normalizeItem(std::shared_ptr<Item>& item);
-  std::shared_ptr<Item> retrieve(InventorySlot const& slot) const;
-  std::shared_ptr<Item>& retrieveForMutation(InventorySlot const& slot);
+  [[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> retrieve(InventorySlot const& slot) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Item>*, StarException> retrieveForMutation(InventorySlot const& slot);
 
   void swapCustomBarLinks(InventorySlot a, InventorySlot b);
-  void autoAddToCustomBar(InventorySlot slot);
+  [[nodiscard]] std::expected<void, StarException> autoAddToCustomBar(InventorySlot slot);
 
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   // Borrowed for this inventory's lifetime; resource lookups remain reload-aware.
   Root* m_root;
   // Preserve the construction schema for the per-inventory empty network state.
   Json m_inventoryConfig;
   Json m_currenciesConfig;
-  mutable std::unique_ptr<PlayerInventory> m_blankInventory;
+  mutable std::shared_ptr<PlayerInventory> m_blankInventory;
 
   Map<EquipmentSlot, std::shared_ptr<Item>> m_equipment;
   Map<String, std::shared_ptr<ItemBag>> m_bags;

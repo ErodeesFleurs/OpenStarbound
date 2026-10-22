@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -35,8 +36,8 @@ import star.collision_block;
 namespace Star {
 
 struct MaterialSpace {
-  friend DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);
-  friend DataStream& operator>>(DataStream& ds, MaterialSpace& materialSpace);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
   MaterialSpace();
   MaterialSpace(Vec2I space, MaterialId material);
 
@@ -46,8 +47,8 @@ struct MaterialSpace {
   MaterialId material;
 };
 
-DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);
-DataStream& operator>>(DataStream& ds, MaterialSpace& materialSpace);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace);
 
 // Entities that derive from TileEntity are those that can be placed in the
 // tile grid, and occupy tile spaces, possibly affecting collision.
@@ -67,7 +68,7 @@ public:
 
   // The base tile position of this object.
   virtual Vec2I tilePosition() const = 0;
-  virtual void setTilePosition(Vec2I const& pos) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setTilePosition(Vec2I const& pos) = 0;
 
   // TileEntities occupy the given spaces in tile space.  This is relative to
   // the current base position, and may include negative positions.  A 1x1
@@ -84,37 +85,37 @@ public:
   virtual List<MaterialSpace> materialSpaces() const;
   
   // Returns whether the entity was destroyed
-  virtual bool damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage);
-  virtual bool canBeDamaged() const;
+  [[nodiscard]] virtual std::expected<bool, StarException> damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage);
+  [[nodiscard]] virtual std::expected<bool, StarException> canBeDamaged() const;
 
   // Forces the tile entity to do an immediate check if it has been invalidly
   // placed in some way.  The tile entity may do this check on its own, but
   // less often.
-  virtual bool checkBroken() = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> checkBroken() = 0;
 
   // If the entity accepts interaction through right clicking, by default,
   // returns false.
   virtual bool isInteractive() const override;
   // By default, does nothing.  Will be called only on the server.
-  virtual InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] virtual std::expected<InteractAction, StarException> interact(InteractRequest const& request) override;
   // Specific subset spaces that are interactive, by default, just returns
   // spaces()
   virtual List<Vec2I> interactiveSpaces() const;
 
-  virtual List<QuestArcDescriptor> offeredQuests() const override;
-  virtual StringSet turnInQuests() const override;
-  virtual Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] virtual std::expected<List<QuestArcDescriptor>, StarException> offeredQuests() const override;
+  [[nodiscard]] virtual std::expected<StringSet, StarException> turnInQuests() const override;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> questIndicatorPosition() const override;
 
 protected:
   // Checks whether any of a given spaces list (relative to current tile
   // position) is occupied by a real material.  (Does not include tile
   // entities).
-  bool anySpacesOccupied(List<Vec2I> const& relativeSpaces) const;
+  [[nodiscard]] std::expected<bool, StarException> anySpacesOccupied(List<Vec2I> const& relativeSpaces) const;
 
   // Checks that *all* spaces are occupied by a real material.
-  bool allSpacesOccupied(List<Vec2I> const& relativeSpaces) const;
+  [[nodiscard]] std::expected<bool, StarException> allSpacesOccupied(List<Vec2I> const& relativeSpaces) const;
 
-  float spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const;
+  [[nodiscard]] std::expected<float, StarException> spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const;
 };
 
 inline MaterialSpace::MaterialSpace()

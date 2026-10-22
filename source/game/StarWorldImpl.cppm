@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -95,7 +96,8 @@ namespace Star {
 
 namespace WorldImpl {
   template <typename TileSectorArray>
-  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision = false);
 
   template <typename TileSectorArray>
@@ -103,74 +105,92 @@ namespace WorldImpl {
     Vec2I const& pos);
 
   template <typename TileSectorArray>
-  bool rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
+  [[nodiscard]]
+  std::expected<bool, StarException> rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  bool lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  [[nodiscard]]
+  std::expected<bool, StarException> lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  [[nodiscard]]
+  std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<List<Vec2I>, StarException> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, std::size_t maxSize, bool includeEdges);
 
-  inline TileDamageParameters tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
+  [[nodiscard]]
+  inline std::expected<TileDamageParameters, StarException> tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
   template <typename TileSectorArray>
-  bool damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
+  [[nodiscard]]
+  std::expected<bool, StarException> damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
   
   template <typename GetTileFunction>
-  bool canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   // returns true if this material could be placed if in the same batch other
   // tiles can be placed
   // that connect to it
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  bool canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  bool canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
-  bool validateTileReplacement(Root& root, TileModification const& modification);
+  [[nodiscard]]
+  std::expected<std::pair<bool, bool>, StarException> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
+  [[nodiscard]]
+  std::expected<bool, StarException> validateTileReplacement(Root& root, TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
+  [[nodiscard]]
+  std::expected<std::pair<TileModificationList, TileModificationList>, StarException> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
+    bool allowEntityOverlap, GetTileFunction& getTile, std::function<std::expected<bool, StarException>(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
   float windLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
 
-  template <typename TileSectorArray>
-  float temperature(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<WorldTemplate const> const& worldTemplate,
-      std::shared_ptr<Sky const> const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(Root& root, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> breathable(Root& root, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  float lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+  [[nodiscard]]
+  std::expected<float, StarException> lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos);
 
-  std::shared_ptr<InteractiveEntity> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<std::shared_ptr<InteractiveEntity>, StarException> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange);
-  bool isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       EntityId targetEntity, Vec2F const& sourcePosition, float maxRange);
   template <typename TileSectorArray>
-  bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<bool, StarException> canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       std::shared_ptr<EntityMap> const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive = true);
 
   template <typename TileSectorArray>
-  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) {
     auto& tile = tileSectorArray->tile(pos);
-    if (layer == TileLayer::Foreground)
-      return (checkCollision ? tile.getCollision() >= CollisionKind::Dynamic : tile.foreground != EmptyMaterialId) || entityMap->tileIsOccupied(pos, includeEphemeral);
-    else
-      return tile.background != EmptyMaterialId;
+    if (layer == TileLayer::Foreground) {
+      if (checkCollision ? tile.getCollision() >= CollisionKind::Dynamic : tile.foreground != EmptyMaterialId)
+        return true;
+      return entityMap->tileIsOccupied(pos, includeEphemeral);
+    }
+    return tile.background != EmptyMaterialId;
   }
 
   template <typename TileSectorArray>
@@ -180,25 +200,31 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet) {
-    return tileSectorArray->tileSatisfies(region, [&collisionSet](Vec2I const&, typename TileSectorArray::Tile const& tile) {
+  [[nodiscard]]
+  std::expected<bool, StarException> rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet) {
+    return tileSectorArray->tileSatisfies(region, [&collisionSet](Vec2I const&, typename TileSectorArray::Tile const& tile) -> std::expected<bool, StarException> {
         return isColliding(tile.getCollision(), collisionSet);
       });
   }
 
   template <typename TileSectorArray>
-  bool lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<bool, StarException> lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
-    return !forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=](int x, int y) -> bool {
+    auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=](int x, int y) -> std::expected<bool, StarException> {
         return !tileSectorArray->tile({x, y}).isColliding(collisionSet);
       });
+    if (!clear)
+      return std::unexpected(std::move(clear.error()));
+    return !*clear;
   }
 
   template <typename TileSectorArray>
-  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<std::optional<std::pair<Vec2F, Vec2I>>, StarException> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
     std::optional<Vec2I> collidingBlock;
-    auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=, &collidingBlock](int x, int y) -> bool {
+    auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=, &collidingBlock](int x, int y) -> std::expected<bool, StarException> {
         if (tileSectorArray->tile({x, y}).isColliding(collisionSet)) {
           collidingBlock = Vec2I(x, y);
           return false;
@@ -207,8 +233,10 @@ namespace WorldImpl {
         }
       });
 
-    if (clear)
-      return {}; // no colliding blocks along the line
+    if (!clear)
+      return std::unexpected(std::move(clear.error()));
+    if (*clear)
+      return std::optional<std::pair<Vec2F, Vec2I>>{};
 
     Vec2F direction = worldGeometry.diff(end, begin).normalized();
     Vec2F blockPosition = Vec2F(*collidingBlock);
@@ -243,7 +271,8 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  inline LiquidLevel liquidLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectF const& region) {
+  [[nodiscard]]
+  inline std::expected<LiquidLevel, StarException> liquidLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectF const& region) {
     if (region.isEmpty())
       return LiquidLevel();
 
@@ -253,13 +282,16 @@ namespace WorldImpl {
     // common liquid is reported.
     float totalSpace = 0;
     Map<LiquidId, float> totals;
-    tileSectorArray->tileEach(sampleRect, [&region, &totalSpace, &totals](Vec2I const& pos, typename TileSectorArray::Tile const& tile) {
+    auto sampled = tileSectorArray->tileEach(sampleRect, [&region, &totalSpace, &totals](Vec2I const& pos, typename TileSectorArray::Tile const& tile) -> std::expected<void, StarException> {
         float blockIncidence = RectF(pos[0], pos[1], pos[0] + 1, pos[1] + 1).overlap(region).volume();
         totalSpace += blockIncidence;
         auto liquidLevel = tile.liquid;
         if (liquidLevel.liquid != EmptyLiquidId)
           totals[liquidLevel.liquid] += std::min(1.0f, liquidLevel.level) * blockIncidence;
+        return {};
       });
+    if (!sampled)
+      return std::unexpected(std::move(sampled.error()));
 
     float totalLiquidLevel = 0.0f;
     float maximumLiquidLevel = 0.0f;
@@ -275,16 +307,19 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<List<Vec2I>, StarException> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, std::size_t maxSize, bool includeEdges) {
     List<Vec2I> res;
-    forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [&](int x, int y) {
+    auto traversed = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [&](int x, int y) -> std::expected<bool, StarException> {
         if (res.size() >= maxSize)
           return false;
         if (tileSectorArray->tile({x, y}).isColliding(collisionSet))
           res.append({x, y});
         return true;
       });
+    if (!traversed)
+      return std::unexpected(std::move(traversed.error()));
 
     if (includeEdges)
       return res;
@@ -293,7 +328,9 @@ namespace WorldImpl {
       auto tileRect = RectF::withSize(Vec2F(worldGeometry.xwrap(*tileIt)), Vec2F::filled(1.0f));
       Line2F line{worldGeometry.xwrap(begin), worldGeometry.xwrap(end)};
       auto lineSet = worldGeometry.splitLine(line);
-      if (std::ranges::any_of(lineSet, [&](Line2F const& line) { return tileRect.edgeIntersection(line).glances; }))
+      if (!lineSet)
+        return std::unexpected(std::move(lineSet.error()));
+      if (std::ranges::any_of(*lineSet, [&](Line2F const& line) { return tileRect.edgeIntersection(line).glances; }))
         tileIt = res.erase(tileIt);
       else
         ++tileIt;
@@ -301,29 +338,40 @@ namespace WorldImpl {
     return res;
   }
 
-  inline TileDamageParameters tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage) {
+  inline std::expected<TileDamageParameters, StarException> tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage) {
     bool foreground = layer == TileLayer::Foreground;
     auto materialDatabase = root.materialDatabase();
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
     auto target = foreground ? tile->foreground : tile->background;
     auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
-
-    if (!isRealMod(mod))
-      return materialDatabase->materialDamageParameters(target);
-
-    if (tileDamageIsPenetrating(tileDamage.type))
-      return materialDatabase->materialDamageParameters(target);
-
-    if (materialDatabase->modBreaksWithTile(mod))
-      return materialDatabase->modDamageParameters(mod).sum(materialDatabase->materialDamageParameters(target));
-    
-    return materialDatabase->modDamageParameters(mod);
+    if (!isRealMod(mod) || tileDamageIsPenetrating(tileDamage.type))
+      return (*materialDatabase)->materialDamageParameters(target);
+    auto breaksWithTile = (*materialDatabase)->modBreaksWithTile(mod);
+    if (!breaksWithTile)
+      return std::unexpected(std::move(breaksWithTile.error()));
+    auto modDamage = (*materialDatabase)->modDamageParameters(mod);
+    if (!modDamage)
+      return std::unexpected(std::move(modDamage.error()));
+    if (!*breaksWithTile)
+      return std::move(*modDamage);
+    auto materialDamage = (*materialDatabase)->materialDamageParameters(target);
+    if (!materialDamage)
+      return std::unexpected(std::move(materialDamage.error()));
+    return modDamage->sum(*materialDamage);
   }
 
   template <typename TileSectorArray>
-  bool damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
+  [[nodiscard]]
+  std::expected<bool, StarException> damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
     if (auto tile = tileSectorArray->modifyTile(pos)) {
       auto damageParameters = tileDamageParameters(root, tile, layer, tileDamage);
-      float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
+      if (!damageParameters)
+        return std::unexpected(std::move(damageParameters.error()));
+      auto damageDone = damageParameters->damageDone(tileDamage);
+      if (!damageDone)
+        return std::unexpected(std::move(damageDone.error()));
+      float percentageDelta = *damageDone / damageParameters->totalHealth();
       auto damage = layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       return percentageDelta + damage.damagePercentage() >= 1.0f;
     }
@@ -332,26 +380,29 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = root.materialDatabase();
-
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
     if (!isRealMaterial(material))
       return false;
 
-    auto isAdjacentToConnectable = [&](Vec2I const& pos, int distance, bool foreground) {
+    auto isAdjacentToConnectable = [&](Vec2I const& pos, int distance, bool foreground) -> std::expected<bool, StarException> {
       if (pos.y() - distance < 0)
         return true;
-
       int maxY = pos.y() + distance + 1;
       int maxX = pos.x() + distance + 1;
       for (int y = pos.y() - distance; y != maxY; ++y) {
-        Vec2I tPos = { 0, y };
+        Vec2I tPos = {0, y};
         for (int x = pos.x() - distance; x != maxX; ++x) {
           tPos[0] = x;
           if (tPos != pos) {
-            const auto& tile = getTile(tPos);
-            if (isConnectableMaterial(foreground ? tile.foreground : tile.background))
+            auto tile = getTile(tPos);
+            if (!tile)
+              return std::unexpected(std::move(tile.error()));
+            if (isConnectableMaterial(foreground ? (*tile)->foreground : (*tile)->background))
               return true;
           }
         }
@@ -359,94 +410,131 @@ namespace WorldImpl {
       return false;
     };
 
-    if (!materialDatabase->canPlaceInLayer(material, layer))
+    auto canPlace = (*materialDatabase)->canPlaceInLayer(material, layer);
+    if (!canPlace)
+      return std::unexpected(std::move(canPlace.error()));
+    if (!*canPlace)
       return false;
-
-    auto& tile = getTile(pos);
+    auto tile = getTile(pos);
+    if (!tile)
+      return std::unexpected(std::move(tile.error()));
     if (layer == TileLayer::Background) {
-      if (tile.background != EmptyMaterialId && tile.background != ObjectPlatformMaterialId)
+      if ((*tile)->background != EmptyMaterialId && (*tile)->background != ObjectPlatformMaterialId)
         return false;
-
-      // Can attach background blocks to other background blocks, *or* the
-      // foreground block in front of it.
-      if (!isAdjacentToConnectable(pos, 1, false) && !isConnectableMaterial(tile.foreground))
+      auto adjacent = isAdjacentToConnectable(pos, 1, false);
+      if (!adjacent)
+        return std::unexpected(std::move(adjacent.error()));
+      if (!*adjacent && !isConnectableMaterial((*tile)->foreground))
         return false;
     } else {
-      if (tile.foreground != EmptyMaterialId && tile.foreground != ObjectPlatformMaterialId)
+      if ((*tile)->foreground != EmptyMaterialId && (*tile)->foreground != ObjectPlatformMaterialId)
         return false;
-
-      if (!allowTileOverlap && entityMap->tileIsOccupied(pos))
-        return false;
-
-      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f))))
-        return false;
-
-      if (!isAdjacentToConnectable(pos, 1, true) && !isConnectableMaterial(tile.background))
+      if (!allowTileOverlap) {
+        auto occupied = entityMap->tileIsOccupied(pos);
+        if (!occupied)
+          return std::unexpected(std::move(occupied.error()));
+        if (*occupied)
+          return false;
+      }
+      if (!allowEntityOverlap) {
+        auto occupied = entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f)));
+        if (!occupied)
+          return std::unexpected(std::move(occupied.error()));
+        if (*occupied)
+          return false;
+      }
+      auto adjacent = isAdjacentToConnectable(pos, 1, true);
+      if (!adjacent)
+        return std::unexpected(std::move(adjacent.error()));
+      if (!*adjacent && !isConnectableMaterial((*tile)->background))
         return false;
     }
-
     return true;
   }
 
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = root.materialDatabase();
-
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
     if (!isRealMaterial(material))
       return false;
-
-    if (!materialDatabase->canPlaceInLayer(material, layer))
+    auto canPlace = (*materialDatabase)->canPlaceInLayer(material, layer);
+    if (!canPlace)
+      return std::unexpected(std::move(canPlace.error()));
+    if (!*canPlace)
       return false;
-
-    const auto& tile = getTile(pos);
-    if (layer == TileLayer::Background) {
-      if (tile.background != EmptyMaterialId && tile.background != ObjectPlatformMaterialId)
-        return false;
-    } else {
-      if (tile.foreground != EmptyMaterialId && tile.foreground != ObjectPlatformMaterialId)
-        return false;
-
-      if (!allowTileOverlap && entityMap->tileIsOccupied(pos))
-        return false;
-
-      if (!allowEntityOverlap && entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f))))
+    auto tile = getTile(pos);
+    if (!tile)
+      return std::unexpected(std::move(tile.error()));
+    if (layer == TileLayer::Background)
+      return (*tile)->background == EmptyMaterialId || (*tile)->background == ObjectPlatformMaterialId;
+    if ((*tile)->foreground != EmptyMaterialId && (*tile)->foreground != ObjectPlatformMaterialId)
+      return false;
+    if (!allowTileOverlap) {
+      auto occupied = entityMap->tileIsOccupied(pos);
+      if (!occupied)
+        return std::unexpected(std::move(occupied.error()));
+      if (*occupied)
         return false;
     }
-
+    if (!allowEntityOverlap) {
+      auto occupied = entityMap->spaceIsOccupied(RectF::withSize(Vec2F(pos), Vec2F(0.999f, 0.999f)));
+      if (!occupied)
+        return std::unexpected(std::move(occupied.error()));
+      if (*occupied)
+        return false;
+    }
     return true;
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile) {
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile) {
     auto materialDatabase = root.materialDatabase();
-    auto& tile = getTile(pos);
-    auto mat = tile.material(layer);
-    auto existingColor = tile.materialColor(layer);
-    auto existingHue = layer == TileLayer::Foreground ? tile.foregroundHueShift : tile.backgroundHueShift;
-    return existingHue != 0 || (existingColor != color && materialDatabase->isMultiColor(mat));
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
+    auto tile = getTile(pos);
+    if (!tile)
+      return std::unexpected(std::move(tile.error()));
+    auto existingColor = (*tile)->materialColor(layer);
+    auto existingHue = layer == TileLayer::Foreground ? (*tile)->foregroundHueShift : (*tile)->backgroundHueShift;
+    if (existingHue != 0)
+      return true;
+    if (existingColor == color)
+      return false;
+    return (*materialDatabase)->isMultiColor((*tile)->material(layer));
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile) {
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile) {
     if (!isRealMod(mod))
       return false;
-
     auto materialDatabase = root.materialDatabase();
-    auto mat = getTile(pos).material(layer);
-    auto existingMod = getTile(pos).mod(layer);
-
-    return existingMod != mod && materialDatabase->supportsMod(mat, mod);
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
+    auto tile = getTile(pos);
+    if (!tile)
+      return std::unexpected(std::move(tile.error()));
+    if ((*tile)->mod(layer) == mod)
+      return false;
+    return (*materialDatabase)->supportsMod((*tile)->material(layer), mod);
   }
 
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
-    bool good = false;
+  [[nodiscard]]
+  std::expected<std::pair<bool, bool>, StarException> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
+    std::expected<bool, StarException> good = false;
     bool perhaps = false;
-    
     if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
-      perhaps = WorldImpl::perhapsCanPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
+      auto possible = WorldImpl::perhapsCanPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
+      if (!possible)
+        return std::unexpected(std::move(possible.error()));
+      perhaps = *possible;
       if (perhaps)
         good = WorldImpl::canPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
     } else if (auto placeMod = std::get_if<PlaceMod>(&modification)) {
@@ -454,40 +542,49 @@ namespace WorldImpl {
     } else if (auto placeMaterialColor = std::get_if<PlaceMaterialColor>(&modification)) {
       good = WorldImpl::canPlaceMaterialColorVariant(root, pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
     } else if (std::holds_alternative<PlaceLiquid>(modification)) {
-      good = getTile(pos).collision == CollisionKind::None;
-    } else {
-      good = false;
+      auto tile = getTile(pos);
+      if (!tile)
+        return std::unexpected(std::move(tile.error()));
+      good = (*tile)->collision == CollisionKind::None;
     }
-
-    return { good, perhaps };
+    if (!good)
+      return std::unexpected(std::move(good.error()));
+    return std::pair<bool, bool>(*good, perhaps);
   }
 
-  inline bool validateTileReplacement(Root& root, TileModification const& modification) {
+  inline std::expected<bool, StarException> validateTileReplacement(Root& root, TileModification const& modification) {
     if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
       if (!isRealMaterial(placeMaterial->material))
         return false;
-      
       auto materialDatabase = root.materialDatabase();
-      if (!materialDatabase->canPlaceInLayer(placeMaterial->material, placeMaterial->layer))
-        return false;
-      
-      return true;
+      if (!materialDatabase)
+        return std::unexpected(std::move(materialDatabase.error()));
+      return (*materialDatabase)->canPlaceInLayer(placeMaterial->material, placeMaterial->layer);
     }
-
     return false;
   }
 
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck) {
+  [[nodiscard]]
+  std::expected<std::pair<TileModificationList, TileModificationList>, StarException> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
+    bool allowEntityOverlap, GetTileFunction& getTile, std::function<std::expected<bool, StarException>(Vec2I pos, TileModification modification)> extraCheck) {
     TileModificationList success;
     TileModificationList unknown;
     TileModificationList failures;
     for (auto const& pair : modificationList) {
 
       bool good = false, perhaps = false;
-      if (!extraCheck || extraCheck(pair.first, pair.second))
-        std::tie(good, perhaps) = validateTileModification(root, entityMap, pair.first, pair.second, allowEntityOverlap, getTile);
+      std::expected<bool, StarException> allowed = true;
+      if (extraCheck)
+        allowed = extraCheck(pair.first, pair.second);
+      if (!allowed)
+        return std::unexpected(std::move(allowed.error()));
+      if (*allowed) {
+        auto valid = validateTileModification(root, entityMap, pair.first, pair.second, allowEntityOverlap, getTile);
+        if (!valid)
+          return std::unexpected(std::move(valid.error()));
+        std::tie(good, perhaps) = *valid;
+      }
 
       if (good)
         success.append(pair);
@@ -502,7 +599,7 @@ namespace WorldImpl {
     else
       failures.appendAll(unknown);
 
-    return {success, failures};
+    return std::pair<TileModificationList, TileModificationList>(std::move(success), std::move(failures));
   }
 
   template <typename TileSectorArray>
@@ -516,23 +613,27 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool breathable(Root& root, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+  [[nodiscard]]
+  std::expected<bool, StarException> breathable(Root&, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos) {
     Vec2I ipos = Vec2I::floor(pos);
     float remainder = pos[1] - ipos[1];
-    auto materialDatabase = root.materialDatabase();
-    auto liquidsDatabase = root.liquidsDatabase();
-
-    auto tile = tileSectorArray->tile(ipos);
+    auto const& tile = tileSectorArray->tile(ipos);
     bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value_or(worldTemplate->breathable(ipos[0], ipos[1]));
     bool liquidBreathable = remainder >= tile.liquid.level;
-    bool foregroundBreathable = tile.getCollision() != CollisionKind::Block || !world->pointCollision(pos);
-
+    bool foregroundBreathable = true;
+    if (tile.getCollision() == CollisionKind::Block) {
+      auto collision = world->pointCollision(pos);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      foregroundBreathable = !*collision;
+    }
     return environmentBreathable && foregroundBreathable && liquidBreathable;
   }
 
   template <typename TileSectorArray>
-  float lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+  [[nodiscard]]
+  std::expected<float, StarException> lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos) {
     if (pos[1] < 0 || pos[1] >= worldGeometry.height())
       return 0;
@@ -543,35 +644,52 @@ namespace WorldImpl {
     Vec3F environmentLight = sky->environmentLight().toRgbF();
     float undergroundLevel = worldTemplate->undergroundLevel();
     auto materialDatabase = root.materialDatabase();
+    if (!materialDatabase)
+      return std::unexpected(std::move(materialDatabase.error()));
     auto liquidsDatabase = root.liquidsDatabase();
+    if (!liquidsDatabase)
+      return std::unexpected(std::move(liquidsDatabase.error()));
 
     lighting.begin(pos);
 
     // Each column in tileEvalColumns is guaranteed to be no larger than the
     // sector size.
     CellularLightIntensityCalculator::Cell lightingCellColumn[WorldSectorSize];
-    tileSectorArray->tileEvalColumns(lighting.calculationRegion(), [&](Vec2I const& pos, typename TileSectorArray::Tile const* column, std::size_t ySize) {
+    auto evaluated = tileSectorArray->tileEvalColumns(lighting.calculationRegion(), [&](Vec2I const& pos, typename TileSectorArray::Tile const* column, std::size_t ySize) -> std::expected<void, StarException> {
         for (std::size_t y = 0; y < ySize; ++y) {
           auto& tile = column[y];
           auto& cell = lightingCellColumn[y];
 
-          bool backgroundTransparent = materialDatabase->backgroundLightTransparent(tile.background);
-          bool foregroundTransparent = materialDatabase->foregroundLightTransparent(tile.foreground)
-              && tile.getCollision() != CollisionKind::Dynamic;
+          auto backgroundTransparent = (*materialDatabase)->backgroundLightTransparent(tile.background);
+          if (!backgroundTransparent)
+            return std::unexpected(std::move(backgroundTransparent.error()));
+          auto foregroundTransparency = (*materialDatabase)->foregroundLightTransparent(tile.foreground);
+          if (!foregroundTransparency)
+            return std::unexpected(std::move(foregroundTransparency.error()));
+          bool foregroundTransparent = *foregroundTransparency && tile.getCollision() != CollisionKind::Dynamic;
 
-          cell = {materialDatabase->radiantLight(tile.foreground, tile.foregroundMod).sum() / 3.0f, !foregroundTransparent};
-          cell.light += liquidsDatabase->radiantLight(tile.liquid).sum() / 3.0f;
+          cell = {(*materialDatabase)->radiantLight(tile.foreground, tile.foregroundMod).sum() / 3.0f, !foregroundTransparent};
+          cell.light += (*liquidsDatabase)->radiantLight(tile.liquid).sum() / 3.0f;
           if (foregroundTransparent) {
-            cell.light += materialDatabase->radiantLight(tile.background, tile.backgroundMod).sum() / 3.0f;
-            if (backgroundTransparent && pos[1] > undergroundLevel)
+            cell.light += (*materialDatabase)->radiantLight(tile.background, tile.backgroundMod).sum() / 3.0f;
+            if (*backgroundTransparent && pos[1] > undergroundLevel)
               cell.light += environmentLight.sum() / 3.0f;
           }
         }
         lighting.setCellColumn(pos, lightingCellColumn, ySize);
+        return {};
       });
 
-    for (auto const& entity : entityMap->entityQuery(RectF(lighting.calculationRegion()))) {
-      for (auto const& light : entity->lightSources()) {
+    if (!evaluated)
+      return std::unexpected(std::move(evaluated.error()));
+    auto entities = entityMap->entityQuery(RectF(lighting.calculationRegion()));
+    if (!entities)
+      return std::unexpected(std::move(entities.error()));
+    for (auto const& entity : *entities) {
+      auto lights = entity->lightSources();
+      if (!lights)
+        return std::unexpected(std::move(lights.error()));
+      for (auto const& light : *lights) {
         Vec2F position = worldGeometry.nearestTo(Vec2F(lighting.calculationRegion().min()), light.position);
         if (light.type == LightType::Spread)
           lighting.addSpreadLight(position, light.color.sum() / 3.0f);
@@ -583,22 +701,26 @@ namespace WorldImpl {
     return lighting.calculate();
   }
 
-  inline std::shared_ptr<InteractiveEntity> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
+  inline std::expected<std::shared_ptr<InteractiveEntity>, StarException> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) {
-    if (auto entity = entityMap->interactiveEntityNear(targetPosition, maxRange)) {
-      if (auto tileEntity = as<TileEntity>(entity)) {
-        if (isTileEntityInRange(geometry, entityMap, tileEntity->entityId(), sourcePosition, maxRange))
-          return entity;
-      } else {
-        if (geometry.diffToNearestCoordInBox(entity->interactiveBoundBox().translated(entity->position()), sourcePosition) .magnitude() <= maxRange)
-          return entity;
+    auto entity = entityMap->interactiveEntityNear(targetPosition, maxRange);
+    if (!entity)
+      return std::unexpected(std::move(entity.error()));
+    if (*entity) {
+      if (auto tileEntity = as<TileEntity>(*entity)) {
+        auto inRange = isTileEntityInRange(geometry, entityMap, tileEntity->entityId(), sourcePosition, maxRange);
+        if (!inRange)
+          return std::unexpected(std::move(inRange.error()));
+        if (*inRange)
+          return std::move(*entity);
+      } else if (geometry.diffToNearestCoordInBox((*entity)->interactiveBoundBox().translated((*entity)->position()), sourcePosition).magnitude() <= maxRange) {
+        return std::move(*entity);
       }
     }
-
-    return {};
+    return std::shared_ptr<InteractiveEntity>{};
   }
 
-  inline bool isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap, EntityId targetEntity,
+  inline std::expected<bool, StarException> isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap, EntityId targetEntity,
       Vec2F const& sourcePosition, float maxRange) {
     if (auto entity = entityMap->get<TileEntity>(targetEntity)) {
       // If any of the entity spaces is within interaction range, then assume the
@@ -613,16 +735,17 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  [[nodiscard]]
+  std::expected<bool, StarException> canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       std::shared_ptr<EntityMap> const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive) {
     auto entity = entityMap->entity(targetEntity);
     if (!entity)
       return false;
 
     // exclude the final tile from the collision check since many targets will be collidable tile entities, e.g. doors
-    auto const canReachTile = [&](Vec2F const& end) -> bool {
+    auto const canReachTile = [&](Vec2F const& end) -> std::expected<bool, StarException> {
       Vec2I const& endTile = Vec2I::floor(end);
-      return forBlocksAlongLine<float>(sourcePosition, geometry.diff(end, sourcePosition), [=](int x, int y) -> bool {
+      return forBlocksAlongLine<float>(sourcePosition, geometry.diff(end, sourcePosition), [=](int x, int y) -> std::expected<bool, StarException> {
           Vec2I diff = geometry.diff(endTile, Vec2I(x, y));
           if (diff[0] == 0 && diff[1] == 0)
             return true;
@@ -634,27 +757,58 @@ namespace WorldImpl {
       for (auto space : preferInteractive ? tileEntity->interactiveSpaces() : tileEntity->spaces()) {
         auto spacePosition = entity->position() + centerOfTile(space);
         if (geometry.diff(spacePosition, sourcePosition).magnitude() <= maxRange) {
-          if (canReachTile(spacePosition))
+          auto reachable = canReachTile(spacePosition);
+          if (!reachable)
+            return std::unexpected(std::move(reachable.error()));
+          if (*reachable)
             return true;
         }
       }
     } else if (preferInteractive && is<InteractiveEntity>(entity)) {
       auto interactiveEntity = as<InteractiveEntity>(entity);
       auto entityBounds = interactiveEntity->interactiveBoundBox().translated(entity->position());
-      if (geometry.rectContains(entityBounds, sourcePosition))
+      auto contains = geometry.rectContains(entityBounds, sourcePosition);
+      if (!contains)
+        return std::unexpected(std::move(contains.error()));
+      if (*contains)
         return true;
-      if (!geometry.rectIntersectsCircle(entityBounds, sourcePosition, maxRange))
+      auto intersects = geometry.rectIntersectsCircle(entityBounds, sourcePosition, maxRange);
+      if (!intersects)
+        return std::unexpected(std::move(intersects.error()));
+      if (!*intersects)
         return false;
 
-      return
-          !lineTileCollision(geometry, tileSectorArray, sourcePosition, entityBounds.nearestCoordTo(sourcePosition), DefaultCollisionSet) ||
-          !lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMin(), entityBounds.yMin()), DefaultCollisionSet) ||
-          !lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMin(), entityBounds.yMax()), DefaultCollisionSet) ||
-          !lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMax(), entityBounds.yMax()), DefaultCollisionSet) ||
-          !lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMax(), entityBounds.yMin()), DefaultCollisionSet);
+      auto collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, entityBounds.nearestCoordTo(sourcePosition), DefaultCollisionSet);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      if (!*collision)
+        return true;
+      collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMin(), entityBounds.yMin()), DefaultCollisionSet);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      if (!*collision)
+        return true;
+      collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMin(), entityBounds.yMax()), DefaultCollisionSet);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      if (!*collision)
+        return true;
+      collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMax(), entityBounds.yMax()), DefaultCollisionSet);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      if (!*collision)
+        return true;
+      collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, Vec2F(entityBounds.xMax(), entityBounds.yMin()), DefaultCollisionSet);
+      if (!collision)
+        return std::unexpected(std::move(collision.error()));
+      return !*collision;
     } else {
-      if (geometry.diff(entity->position(), sourcePosition).magnitude() <= maxRange)
-        return !lineTileCollision(geometry, tileSectorArray, sourcePosition, entity->position(), DefaultCollisionSet);
+      if (geometry.diff(entity->position(), sourcePosition).magnitude() <= maxRange) {
+        auto collision = lineTileCollision(geometry, tileSectorArray, sourcePosition, entity->position(), DefaultCollisionSet);
+        if (!collision)
+          return std::unexpected(std::move(collision.error()));
+        return !*collision;
+      }
     }
 
     return false;
@@ -682,7 +836,6 @@ export namespace Star::WorldImpl {
   using ::Star::WorldImpl::validateTileReplacement;
   using ::Star::WorldImpl::splitTileModifications;
   using ::Star::WorldImpl::windLevel;
-  using ::Star::WorldImpl::temperature;
   using ::Star::WorldImpl::breathable;
   using ::Star::WorldImpl::lightLevel;
   using ::Star::WorldImpl::getInteractiveInRange;

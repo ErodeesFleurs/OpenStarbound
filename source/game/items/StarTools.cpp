@@ -145,243 +145,472 @@ import star.material_database;
 
 namespace Star {
 
-MiningTool::MiningTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), SwingableItem(config) {
-  auto assets = this->root().assets();
-
-  m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_frames = instanceValue("frames", 1).toInt();
-  m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  m_frameTiming = 0;
-  for (std::size_t i = 0; i < (std::size_t)m_frames; i++)
-    m_animationFrame.append(m_image.replace("{frame}", toString(i)));
-  m_idleFrame = m_image.replace("{frame}", "idle");
-  m_handPosition = jsonToVec2F(instanceValue("handPosition"));
-  m_blockRadius = instanceValue("blockRadius").toFloat();
-  m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
-  m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
-  m_breakSound = instanceValue("breakSound", "").toString();
-  m_pointable = instanceValue("pointable", false).toBool();
-
-  m_toolVolume = assets->json("/sfx.config:miningToolVolume").toFloat();
-  m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
+std::expected<std::shared_ptr<MiningTool>, StarException> MiningTool::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<MiningTool>(new MiningTool(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  item->m_image = AssetPath::relativeTo(directory, *image);
+  auto frames = item->instanceValue("frames", 1).and_then([](Json const& value) { return value.toInt(); });
+  if (!frames)
+    return std::unexpected(std::move(frames.error()));
+  item->m_frames = *frames;
+  auto cycle = item->instanceValue("animationCycle", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!cycle)
+    return std::unexpected(std::move(cycle.error()));
+  item->m_frameCycle = *cycle;
+  item->m_frameTiming = 0;
+  for (std::size_t i = 0; i < (std::size_t)item->m_frames; i++) {
+    auto frame = item->m_image.replace("{frame}", toString(i));
+    if (!frame)
+      return std::unexpected(std::move(frame.error()));
+    item->m_animationFrame.append(std::move(*frame));
+  }
+  auto idle = item->m_image.replace("{frame}", "idle");
+  if (!idle)
+    return std::unexpected(std::move(idle.error()));
+  item->m_idleFrame = std::move(*idle);
+  auto position = item->instanceValue("handPosition").and_then(jsonToVec2F);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  item->m_handPosition = *position;
+  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+    auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  item->m_strikeSounds = std::move(*sounds);
+  auto breakSound = item->instanceValue("breakSound", "").and_then([](Json const& value) { return value.toString(); });
+  if (!breakSound)
+    return std::unexpected(std::move(breakSound.error()));
+  item->m_breakSound = std::move(*breakSound);
+  auto pointable = item->instanceValue("pointable", false).and_then([](Json const& value) { return value.toBool(); });
+  if (!pointable)
+    return std::unexpected(std::move(pointable.error()));
+  item->m_pointable = *pointable;
+  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+    auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
+    if (!volume)
+      return std::unexpected(std::move(volume.error()));
+    *target = *volume;
+  }
+  return item;
 }
 
-std::shared_ptr<Item> MiningTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> MiningTool::clone() const {
   return std::make_shared<MiningTool>(*this);
 }
 
-List<Drawable> MiningTool::drawables() const {
-  if (m_frameTiming == 0) {
-    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
-  } else {
-    int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
-    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
-  }
+std::expected<List<Drawable>, StarException> MiningTool::drawables() const {
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto const& image = m_frameTiming == 0 ? m_idleFrame : m_animationFrame[std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)))];
+  auto drawable = Drawable::makeImage(**metadata, image, 1.0f / TilePixels, true, -handPosition() / TilePixels);
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  return List<Drawable>{std::move(*drawable)};
 }
 
 Vec2F MiningTool::handPosition() const {
   return m_handPosition;
 }
 
-void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
+    return {};
 
   auto materialDatabase = root().materialDatabase();
+  if (!materialDatabase)
+    return std::unexpected(std::move(materialDatabase.error()));
 
   if (initialized()) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto itemWorld = world();
+    if (!itemWorld)
+      return std::unexpected(std::move(itemWorld.error()));
     bool used = false;
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    if (owner()->isAdmin() || owner()->inToolRange()) {
-      brushArea = tileAreaBrush(radius, owner()->aimPosition(), true);
+    bool inRange = (*itemOwner)->isAdmin();
+    if (!inRange) {
+      auto range = (*itemOwner)->inToolRange();
+      if (!range)
+        return std::unexpected(std::move(range.error()));
+      inRange = *range;
+    }
+    if (inRange) {
+      auto aimPosition = (*itemOwner)->aimPosition();
+      if (!aimPosition)
+        return std::unexpected(std::move(aimPosition.error()));
+      brushArea = tileAreaBrush(radius, *aimPosition, true);
       for (auto pos : brushArea) {
-        blockSound = materialDatabase->miningSound(world()->material(pos, layer), world()->mod(pos, layer));
+        auto sound = (*materialDatabase)->miningSound((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+        if (!sound)
+          return std::unexpected(std::move(sound.error()));
+        blockSound = std::move(*sound);
         if (!blockSound.empty())
           break;
       }
       if (blockSound.empty()) {
         for (auto pos : brushArea) {
-          blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
-          if (!blockSound.empty()
-              && blockSound != root().assets()->json("/client.config:defaultFootstepSound").toString())
-            break;
+          auto sound = (*materialDatabase)->footstepSound((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+          if (!sound)
+            return std::unexpected(std::move(sound.error()));
+          blockSound = std::move(*sound);
+          if (!blockSound.empty()) {
+            auto assets = root().assets();
+            if (!assets)
+              return std::unexpected(std::move(assets.error()));
+            auto defaultSound = (*assets)->json("/client.config:defaultFootstepSound").and_then([](Json const& value) { return value.toString(); });
+            if (!defaultSound)
+              return std::unexpected(std::move(defaultSound.error()));
+            if (blockSound != *defaultSound)
+              break;
+          }
         }
       }
 
       TileDamage damage;
-      damage.type = TileDamageTypeNames.getLeft(instanceValue("tileDamageType", "blockish").toString());
-
-      if (durabilityStatus() == 0)
-        damage.amount = instanceValue("tileDamageBlunted", 0.1f).toFloat();
-      else
-        damage.amount = instanceValue("tileDamage", 1.0f).toFloat();
-
-      damage.harvestLevel = instanceValue("harvestLevel", 1).toUInt();
-
-      auto damageResult = world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId());
-
-      if (damageResult != TileDamageResult::None) {
+      auto damageTypeName = instanceValue("tileDamageType", "blockish").and_then([](Json const& value) { return value.toString(); });
+      if (!damageTypeName)
+        return std::unexpected(std::move(damageTypeName.error()));
+      if (!TileDamageTypeNames)
+        return std::unexpected(TileDamageTypeNames.error());
+      auto damageType = TileDamageTypeNames->getLeft(*damageTypeName);
+      if (!damageType)
+        return std::unexpected(std::move(damageType.error()));
+      damage.type = **damageType;
+      auto status = durabilityStatus();
+      if (!status)
+        return std::unexpected(std::move(status.error()));
+      auto amount = (*status == 0 ? instanceValue("tileDamageBlunted", 0.1f) : instanceValue("tileDamage", 1.0f)).and_then([](Json const& value) { return value.toFloat(); });
+      if (!amount)
+        return std::unexpected(std::move(amount.error()));
+      damage.amount = *amount;
+      auto harvest = instanceValue("harvestLevel", 1).and_then([](Json const& value) { return value.toUInt(); });
+      if (!harvest)
+        return std::unexpected(std::move(harvest.error()));
+      damage.harvestLevel = *harvest;
+      auto damageResult = (*itemWorld)->damageTiles(brushArea, layer, (*itemOwner)->position(), damage, (*itemOwner)->entityId());
+      if (!damageResult)
+        return std::unexpected(std::move(damageResult.error()));
+      if (*damageResult != TileDamageResult::None) {
         used = true;
-        if (!owner()->isAdmin())
-          changeDurability(instanceValue("durabilityPerUse", 1.0f).toFloat());
+        if (!(*itemOwner)->isAdmin()) {
+          auto perUse = instanceValue("durabilityPerUse", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
+          if (!perUse)
+            return std::unexpected(std::move(perUse.error()));
+          auto changed = changeDurability(*perUse);
+          if (!changed)
+            return std::unexpected(std::move(changed.error()));
+        }
       }
-
-      if (damageResult == TileDamageResult::Protected) {
-        blockSound = root().assets()->json("/client.config:defaultDingSound").toString();
+      if (*damageResult == TileDamageResult::Protected) {
+        auto assets = root().assets();
+        if (!assets)
+          return std::unexpected(std::move(assets.error()));
+        auto ding = (*assets)->json("/client.config:defaultDingSound").and_then([](Json const& value) { return value.toString(); });
+        if (!ding)
+          return std::unexpected(std::move(ding.error()));
+        blockSound = std::move(*ding);
       }
     }
 
     if (used) {
-      owner()->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
-      owner()->addSound(blockSound, m_blockVolume);
+      auto strike = (*itemOwner)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+      if (!strike)
+        return std::unexpected(std::move(strike.error()));
+      auto sound = (*itemOwner)->addSound(blockSound, m_blockVolume);
+      if (!sound)
+        return std::unexpected(std::move(sound.error()));
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
-        if (auto miningParticleConfig = materialDatabase->miningParticle(world()->material(pos, layer), world()->mod(pos, layer))) {
-          auto miningParticle = miningParticleConfig->instance();
+        auto miningParticleConfig = (*materialDatabase)->miningParticle((*itemWorld)->material(pos, layer), (*itemWorld)->mod(pos, layer));
+        if (!miningParticleConfig)
+          return std::unexpected(std::move(miningParticleConfig.error()));
+        if (*miningParticleConfig) {
+          auto miningParticle = (*miningParticleConfig)->instance();
           miningParticle.position += (Vec2F)pos;
           miningParticles.append(miningParticle);
         }
       }
-      owner()->addParticles(miningParticles);
-      SwingableItem::fire(mode, shifting, edgeTriggered);
+      auto particles = (*itemOwner)->addParticles(miningParticles);
+      if (!particles)
+        return std::unexpected(std::move(particles.error()));
+      return SwingableItem::fire(mode, shifting, edgeTriggered);
     }
   }
+  return {};
 }
 
-void MiningTool::update(float dt, FireMode mode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(dt, mode, shifting, moves);
+std::expected<void, StarException> MiningTool::update(float dt, FireMode mode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto updated = SwingableItem::update(dt, mode, shifting, moves);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
 
   if (!ready() && !coolingDown())
     m_frameTiming = std::fmod((m_frameTiming + dt), m_frameCycle);
   else
     m_frameTiming = 0;
+  return {};
 }
 
-float MiningTool::durabilityStatus() {
-  return clamp(
-      1.0f - instanceValue("durabilityHit", 0.0f).toFloat() / instanceValue("durability").toFloat(), 0.0f, 1.0f);
+std::expected<float, StarException> MiningTool::durabilityStatus() {
+  auto hit = instanceValue("durabilityHit", 0.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!hit)
+    return std::unexpected(std::move(hit.error()));
+  auto durability = instanceValue("durability").and_then([](Json const& value) { return value.toFloat(); });
+  if (!durability)
+    return std::unexpected(std::move(durability.error()));
+  return clamp(1.0f - *hit / *durability, 0.0f, 1.0f);
 }
 
-float MiningTool::getAngle(float aimAngle) {
+std::expected<float, StarException> MiningTool::getAngle(float aimAngle) {
   if ((!ready() && !coolingDown()) || !m_pointable)
     return SwingableItem::getAngle(aimAngle);
   return aimAngle;
 }
 
-void MiningTool::changeDurability(float amount) {
-  setInstanceValue("durabilityHit", clamp(instanceValue("durabilityHit", 0.0f).toFloat() + amount, 0.0f, instanceValue("durability").toFloat()));
-  if (durabilityStatus() == 0.0f && !instanceValue("canBeRepaired", false).toBool()) {
-    owner()->addSound(m_breakSound);
-    consume(1);
+std::expected<void, StarException> MiningTool::changeDurability(float amount) {
+  auto hit = instanceValue("durabilityHit", 0.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!hit)
+    return std::unexpected(std::move(hit.error()));
+  auto durability = instanceValue("durability").and_then([](Json const& value) { return value.toFloat(); });
+  if (!durability)
+    return std::unexpected(std::move(durability.error()));
+  auto stored = setInstanceValue("durabilityHit", clamp(*hit + amount, 0.0f, *durability));
+  if (!stored)
+    return std::unexpected(std::move(stored.error()));
+  auto status = durabilityStatus();
+  if (!status)
+    return std::unexpected(std::move(status.error()));
+  if (*status == 0.0f) {
+    auto repairable = instanceValue("canBeRepaired", false).and_then([](Json const& value) { return value.toBool(); });
+    if (!repairable)
+      return std::unexpected(std::move(repairable.error()));
+    if (!*repairable) {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto sound = (*itemOwner)->addSound(m_breakSound);
+      if (!sound)
+        return std::unexpected(std::move(sound.error()));
+      consume(1);
+    }
   }
+  return {};
 }
 
-HarvestingTool::HarvestingTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), SwingableItem(config) {
-  auto assets = this->root().assets();
-
-  m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_frames = instanceValue("frames", 1).toInt();
-  m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  for (std::size_t i = 0; i < (std::size_t)m_frames; i++)
-    m_animationFrame.append(m_image.replace("{frame}", toString(i)));
-  m_idleFrame = m_image.replace("{frame}", "idle");
-
-  m_handPosition = jsonToVec2F(instanceValue("handPosition"));
-  m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
-  m_toolVolume = assets->json("/sfx.config:harvestToolVolume").toFloat();
-  m_harvestPower = instanceValue("harvestPower", 1.0f).toFloat();
-  m_frameTiming = 0;
+std::expected<std::shared_ptr<HarvestingTool>, StarException> HarvestingTool::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<HarvestingTool>(new HarvestingTool(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  item->m_image = AssetPath::relativeTo(directory, *image);
+  auto frames = item->instanceValue("frames", 1).and_then([](Json const& value) { return value.toInt(); });
+  if (!frames)
+    return std::unexpected(std::move(frames.error()));
+  item->m_frames = *frames;
+  auto cycle = item->instanceValue("animationCycle", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!cycle)
+    return std::unexpected(std::move(cycle.error()));
+  item->m_frameCycle = *cycle;
+  for (std::size_t i = 0; i < (std::size_t)item->m_frames; i++) {
+    auto frame = item->m_image.replace("{frame}", toString(i));
+    if (!frame)
+      return std::unexpected(std::move(frame.error()));
+    item->m_animationFrame.append(std::move(*frame));
+  }
+  auto idle = item->m_image.replace("{frame}", "idle");
+  if (!idle)
+    return std::unexpected(std::move(idle.error()));
+  item->m_idleFrame = std::move(*idle);
+  auto position = item->instanceValue("handPosition").and_then(jsonToVec2F);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  item->m_handPosition = *position;
+  auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  item->m_strikeSounds = std::move(*sounds);
+  auto volume = (*assets)->json("/sfx.config:harvestToolVolume").and_then([](Json const& value) { return value.toFloat(); });
+  if (!volume)
+    return std::unexpected(std::move(volume.error()));
+  item->m_toolVolume = *volume;
+  auto power = item->instanceValue("harvestPower", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!power)
+    return std::unexpected(std::move(power.error()));
+  item->m_harvestPower = *power;
+  item->m_frameTiming = 0;
+  return item;
 }
 
-std::shared_ptr<Item> HarvestingTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> HarvestingTool::clone() const {
   return std::make_shared<HarvestingTool>(*this);
 }
 
-List<Drawable> HarvestingTool::drawables() const {
-  if (m_frameTiming == 0)
-    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
-  else {
-    int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
-    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
-  }
+std::expected<List<Drawable>, StarException> HarvestingTool::drawables() const {
+  auto metadata = root().imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto const& image = m_frameTiming == 0 ? m_idleFrame : m_animationFrame[std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)))];
+  auto drawable = Drawable::makeImage(**metadata, image, 1.0f / TilePixels, true, -handPosition() / TilePixels);
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  return List<Drawable>{std::move(*drawable)};
 }
 
 Vec2F HarvestingTool::handPosition() const {
   return m_handPosition;
 }
 
-void HarvestingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> HarvestingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
-
-  if (owner()) {
-    bool used = false;
-
-    if (owner()->isAdmin() || owner()->inToolRange()) {
-      auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-      used = world()->damageTile(Vec2I::floor(owner()->aimPosition()), layer, owner()->position(), {TileDamageType::Plantish, m_harvestPower}) != TileDamageResult::None;
-    }
-
-    if (used) {
-      owner()->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
-      SwingableItem::fire(mode, shifting, edgeTriggered);
-    }
+    return {};
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  bool inRange = (*itemOwner)->isAdmin();
+  if (!inRange) {
+    auto range = (*itemOwner)->inToolRange();
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    inRange = *range;
   }
+  bool used = false;
+  if (inRange) {
+    auto itemWorld = world();
+    if (!itemWorld)
+      return std::unexpected(std::move(itemWorld.error()));
+    auto layer = mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background;
+    auto aimPosition = (*itemOwner)->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    auto damaged = (*itemWorld)->damageTile(Vec2I::floor(*aimPosition), layer, (*itemOwner)->position(), {TileDamageType::Plantish, m_harvestPower});
+    if (!damaged)
+      return std::unexpected(std::move(damaged.error()));
+    used = *damaged != TileDamageResult::None;
+  }
+  if (used) {
+    auto sound = (*itemOwner)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+    if (!sound)
+      return std::unexpected(std::move(sound.error()));
+    return SwingableItem::fire(mode, shifting, edgeTriggered);
+  }
+  return {};
 }
 
-void HarvestingTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  SwingableItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> HarvestingTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto updated = SwingableItem::update(dt, fireMode, shifting, moves);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
 
   if (!ready() && !coolingDown())
     m_frameTiming = std::fmod((m_frameTiming + dt), m_frameCycle);
   else
     m_frameTiming = 0;
+  return {};
 }
 
-float HarvestingTool::getAngle(float aimAngle) {
+std::expected<float, StarException> HarvestingTool::getAngle(float aimAngle) {
   if (!ready() && !coolingDown())
     return SwingableItem::getAngle(aimAngle);
   return aimAngle;
 }
 
 
-WireTool::WireTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config.setAll(parameters.toObject())) {
-  auto assets = this->root().assets();
-
-  m_handPosition = jsonToVec2F(instanceValue("handPosition"));
-  m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
-  m_toolVolume = assets->json("/sfx.config:miningToolVolume").toFloat();
-  m_wireConnector = 0;
-  m_endType = EndType::Wire;
+std::expected<std::shared_ptr<WireTool>, StarException> WireTool::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<WireTool>(new WireTool(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto fireable = item->initializeFireable(config);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto overrides = parameters.toObject();
+  if (!overrides)
+    return std::unexpected(std::move(overrides.error()));
+  auto merged = config.setAll(*overrides);
+  if (!merged)
+    return std::unexpected(std::move(merged.error()));
+  auto beam = item->initializeBeam(std::move(*merged));
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto position = item->instanceValue("handPosition").and_then(jsonToVec2F);
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  item->m_handPosition = *position;
+  auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  item->m_strikeSounds = std::move(*sounds);
+  auto volume = (*assets)->json("/sfx.config:miningToolVolume").and_then([](Json const& value) { return value.toFloat(); });
+  if (!volume)
+    return std::unexpected(std::move(volume.error()));
+  item->m_toolVolume = *volume;
+  item->m_wireConnector = nullptr;
+  item->m_endType = EndType::Wire;
+  return item;
 }
 
-std::shared_ptr<Item> WireTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> WireTool::clone() const {
   return std::make_shared<WireTool>(*this);
 }
 
-void WireTool::init(ToolUserEntity* owner, ToolHand hand) {
-  FireableItem::init(owner, hand);
-  BeamItem::init(owner, hand);
-  m_wireConnector = 0;
+std::expected<void, StarException> WireTool::init(ToolUserEntity* owner, ToolHand hand) {
+  auto fireable = FireableItem::init(owner, hand);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = BeamItem::init(owner, hand);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  m_wireConnector = nullptr;
+  return {};
 }
 
-void WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(dt, fireMode, shifting, moves);
-  BeamItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto fireable = FireableItem::update(dt, fireMode, shifting, moves);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  return BeamItem::update(dt, fireMode, shifting, moves);
 }
 
-List<Drawable> WireTool::drawables() const {
+std::expected<List<Drawable>, StarException> WireTool::drawables() const {
   return BeamItem::drawables();
 }
 
-List<Drawable> WireTool::nonRotatedDrawables() const {
+std::expected<List<Drawable>, StarException> WireTool::nonRotatedDrawables() const {
   if (m_wireConnector && m_wireConnector->connecting())
     return BeamItem::nonRotatedDrawables();
   return {};
@@ -395,30 +624,54 @@ Vec2F WireTool::handPosition() const {
   return m_handPosition;
 }
 
-void WireTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> WireTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
-
+    return {};
   auto ownerp = owner();
+  if (!ownerp)
+    return std::unexpected(std::move(ownerp.error()));
   auto worldp = world();
-
-  if (ownerp && worldp && m_wireConnector) {
-    Vec2F pos(ownerp->aimPosition());
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      auto swingResult = m_wireConnector->swing(worldp->geometry(), pos, mode);
-      if (swingResult == WireConnector::Connect) {
-        ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
-        FireableItem::fire(mode, shifting, edgeTriggered);
-      } else if (swingResult == WireConnector::Mismatch || swingResult == WireConnector::Protected) {
-        auto wireErrorSound = root().assets()->json("/client.config:wireFailSound").toString();
-        ownerp->addSound(wireErrorSound, m_toolVolume);
-        FireableItem::fire(mode, shifting, edgeTriggered);
+  if (!worldp)
+    return std::unexpected(std::move(worldp.error()));
+  if (m_wireConnector) {
+    auto aimPosition = (*ownerp)->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    Vec2F pos(*aimPosition);
+    bool inRange = (*ownerp)->isAdmin();
+    if (!inRange) {
+      auto range = (*ownerp)->inToolRange();
+      if (!range)
+        return std::unexpected(std::move(range.error()));
+      inRange = *range;
+    }
+    if (inRange) {
+      auto swingResult = m_wireConnector->swing((*worldp)->geometry(), pos, mode);
+      if (!swingResult)
+        return std::unexpected(std::move(swingResult.error()));
+      if (*swingResult == WireConnector::Connect) {
+        auto sound = (*ownerp)->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+        if (!sound)
+          return std::unexpected(std::move(sound.error()));
+        return FireableItem::fire(mode, shifting, edgeTriggered);
+      } else if (*swingResult == WireConnector::Mismatch || *swingResult == WireConnector::Protected) {
+        auto assets = root().assets();
+        if (!assets)
+          return std::unexpected(std::move(assets.error()));
+        auto wireErrorSound = (*assets)->json("/client.config:wireFailSound").and_then([](Json const& value) { return value.toString(); });
+        if (!wireErrorSound)
+          return std::unexpected(std::move(wireErrorSound.error()));
+        auto sound = (*ownerp)->addSound(*wireErrorSound, m_toolVolume);
+        if (!sound)
+          return std::unexpected(std::move(sound.error()));
+        return FireableItem::fire(mode, shifting, edgeTriggered);
       }
     }
   }
+  return {};
 }
 
-float WireTool::getAngle(float aimAngle) {
+std::expected<float, StarException> WireTool::getAngle(float aimAngle) {
   return BeamItem::getAngle(aimAngle);
 }
 
@@ -426,36 +679,82 @@ void WireTool::setConnector(WireConnector* connector) {
   m_wireConnector = connector;
 }
 
-BeamMiningTool::BeamMiningTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config.setAll(parameters.toObject())) {
-  auto assets = this->root().assets();
-
-  m_blockRadius = instanceValue("blockRadius").toFloat();
-  m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
-  m_tileDamage = instanceValue("tileDamage", 1.0f).toFloat();
-  m_harvestLevel = instanceValue("harvestLevel", 1).toUInt();
-  m_canCollectLiquid = instanceValue("canCollectLiquid", false).toBool();
-  m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
-  m_toolVolume = assets->json("/sfx.config:miningToolVolume").toFloat();
-  m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
-  m_endType = EndType::Object;
-
-  if (auto jRate = instanceValue("scaleRate")) {
-    if (jRate.canConvert(Json::Type::Float)) {
-      float rate = jRate.toFloat();
-      m_tileDamage /= rate;
-      m_cooldownTime /= rate;
-    }
+std::expected<std::shared_ptr<BeamMiningTool>, StarException> BeamMiningTool::create(Root& root, Json const& config, String const& directory, Json const& directoryParameters) {
+  auto item = std::shared_ptr<BeamMiningTool>(new BeamMiningTool(root));
+  auto initialized = item->initialize(config, directory, directoryParameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto fireable = item->initializeFireable(config);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto overrides = directoryParameters.toObject();
+  if (!overrides)
+    return std::unexpected(std::move(overrides.error()));
+  auto merged = config.setAll(*overrides);
+  if (!merged)
+    return std::unexpected(std::move(merged.error()));
+  auto beam = item->initializeBeam(std::move(*merged));
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+    auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
   }
-
-  m_inhandStatusEffects = instanceValue("inhandStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+  auto damage = item->instanceValue("tileDamage", 1.0f).and_then([](Json const& value) { return value.toFloat(); });
+  if (!damage)
+    return std::unexpected(std::move(damage.error()));
+  item->m_tileDamage = *damage;
+  auto harvest = item->instanceValue("harvestLevel", 1).and_then([](Json const& value) { return value.toUInt(); });
+  if (!harvest)
+    return std::unexpected(std::move(harvest.error()));
+  item->m_harvestLevel = *harvest;
+  auto collect = item->instanceValue("canCollectLiquid", false).and_then([](Json const& value) { return value.toBool(); });
+  if (!collect)
+    return std::unexpected(std::move(collect.error()));
+  item->m_canCollectLiquid = *collect;
+  auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  item->m_strikeSounds = std::move(*sounds);
+  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+    auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
+    if (!volume)
+      return std::unexpected(std::move(volume.error()));
+    *target = *volume;
+  }
+  item->m_endType = EndType::Object;
+  auto rateValue = item->instanceValue("scaleRate");
+  if (!rateValue)
+    return std::unexpected(std::move(rateValue.error()));
+  if (*rateValue && rateValue->canConvert(Json::Type::Float)) {
+    auto rate = rateValue->toFloat();
+    if (!rate)
+      return std::unexpected(std::move(rate.error()));
+    item->m_tileDamage /= *rate;
+    item->m_cooldownTime /= *rate;
+  }
+  auto effects = item->instanceValue("inhandStatusEffects", JsonArray()).and_then([](Json const& value) { return value.toArray(); });
+  if (!effects)
+    return std::unexpected(std::move(effects.error()));
+  for (auto const& value : *effects) {
+    auto effect = jsonToPersistentStatusEffect(value);
+    if (!effect)
+      return std::unexpected(std::move(effect.error()));
+    item->m_inhandStatusEffects.append(std::move(*effect));
+  }
+  return item;
 }
 
-std::shared_ptr<Item> BeamMiningTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> BeamMiningTool::clone() const {
   return std::make_shared<BeamMiningTool>(*this);
 }
 
-List<Drawable> BeamMiningTool::drawables() const {
+std::expected<List<Drawable>, StarException> BeamMiningTool::drawables() const {
   return BeamItem::drawables();
 }
 
@@ -463,58 +762,88 @@ void BeamMiningTool::setEnd(EndType) {
   m_endType = EndType::Object;
 }
 
-List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
+std::expected<List<PreviewTile>, StarException> BeamMiningTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   auto ownerp = owner();
+  if (!ownerp)
+    return std::unexpected(std::move(ownerp.error()));
   auto worldp = world();
-
-  if (ownerp && worldp) {
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      Color lightColor = ownerp->favoriteColor();
-      if (!ready())
-        lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
-      Vec3B light = lightColor.toRgb();
-      int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-      for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
-        if (worldp->tileIsOccupied(pos, TileLayer::Foreground, true)) {
-          result.append({pos, true, light, true});
-        } else if (worldp->tileIsOccupied(pos, TileLayer::Background, true)) {
+  if (!worldp)
+    return std::unexpected(std::move(worldp.error()));
+  bool inRange = (*ownerp)->isAdmin();
+  if (!inRange) {
+    auto range = (*ownerp)->inToolRange();
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    inRange = *range;
+  }
+  if (inRange) {
+    Color lightColor = (*ownerp)->favoriteColor();
+    if (!ready())
+      lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
+    Vec3B light = lightColor.toRgb();
+    int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+    auto aimPosition = (*ownerp)->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
+      auto foreground = (*worldp)->tileIsOccupied(pos, TileLayer::Foreground, true);
+      if (!foreground)
+        return std::unexpected(std::move(foreground.error()));
+      if (*foreground) {
+        result.append({pos, true, light, true});
+      } else {
+        auto background = (*worldp)->tileIsOccupied(pos, TileLayer::Background, true);
+        if (!background)
+          return std::unexpected(std::move(background.error()));
+        if (*background)
           result.append({pos, false, light, true});
-        }
       }
     }
   }
   return result;
 }
 
-void BeamMiningTool::init(ToolUserEntity* owner, ToolHand hand) {
-  FireableItem::init(owner, hand);
-  BeamItem::init(owner, hand);
+std::expected<void, StarException> BeamMiningTool::init(ToolUserEntity* owner, ToolHand hand) {
+  auto fireable = FireableItem::init(owner, hand);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  return BeamItem::init(owner, hand);
 }
 
-void BeamMiningTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(dt, fireMode, shifting, moves);
-  BeamItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> BeamMiningTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto fireable = FireableItem::update(dt, fireMode, shifting, moves);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  return BeamItem::update(dt, fireMode, shifting, moves);
 }
 
-List<PersistentStatusEffect> BeamMiningTool::statusEffects() const {
+std::expected<List<PersistentStatusEffect>, StarException> BeamMiningTool::statusEffects() const {
   return m_inhandStatusEffects;
 }
 
-List<Drawable> BeamMiningTool::nonRotatedDrawables() const {
+std::expected<List<Drawable>, StarException> BeamMiningTool::nonRotatedDrawables() const {
   if (!ready() && !coolingDown())
     return BeamItem::nonRotatedDrawables();
   return {};
 }
 
-void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
+    return {};
 
-  auto materialDatabase = root().materialDatabase();
-
-  auto worldp = world();
-  auto ownerp = owner();
+  auto database = root().materialDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto materialDatabase = *database;
+  auto worldResult = world();
+  if (!worldResult)
+    return std::unexpected(std::move(worldResult.error()));
+  auto worldp = *worldResult;
+  auto ownerResult = owner();
+  if (!ownerResult)
+    return std::unexpected(std::move(ownerResult.error()));
+  auto ownerp = *ownerResult;
   if (ownerp && worldp) {
     bool used = false;
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
@@ -522,29 +851,63 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     List<Vec2I> brushArea;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      brushArea = tileAreaBrush(radius, ownerp->aimPosition(), true);
-      auto aimPosition = Vec2I(ownerp->aimPosition());
+    bool inRange = ownerp->isAdmin();
+    if (!inRange) {
+      auto range = ownerp->inToolRange();
+      if (!range)
+        return std::unexpected(std::move(range.error()));
+      inRange = *range;
+    }
+    if (inRange) {
+      auto brushAimPosition = ownerp->aimPosition();
+      if (!brushAimPosition)
+        return std::unexpected(std::move(brushAimPosition.error()));
+      brushArea = tileAreaBrush(radius, *brushAimPosition, true);
+      auto tileAimPosition = ownerp->aimPosition();
+      if (!tileAimPosition)
+        return std::unexpected(std::move(tileAimPosition.error()));
+      auto aimPosition = Vec2I(*tileAimPosition);
 
       for (auto pos : brushArea) {
-        blockSound = materialDatabase->miningSound(worldp->material(pos, layer), worldp->mod(pos, layer));
+        auto sound = materialDatabase->miningSound(worldp->material(pos, layer), worldp->mod(pos, layer));
+        if (!sound)
+          return std::unexpected(std::move(sound.error()));
+        blockSound = std::move(*sound);
         if (!blockSound.empty())
           break;
       }
       if (blockSound.empty()) {
         for (auto pos : brushArea) {
-          blockSound = materialDatabase->footstepSound(worldp->material(pos, layer), worldp->mod(pos, layer));
-          if (!blockSound.empty()
-              && blockSound != root().assets()->json("/client.config:defaultFootstepSound").toString())
-            break;
+          auto sound = materialDatabase->footstepSound(worldp->material(pos, layer), worldp->mod(pos, layer));
+          if (!sound)
+            return std::unexpected(std::move(sound.error()));
+          blockSound = std::move(*sound);
+          if (!blockSound.empty()) {
+            auto assets = root().assets();
+            if (!assets)
+              return std::unexpected(std::move(assets.error()));
+            auto defaultSound = (*assets)->json("/client.config:defaultFootstepSound").and_then([](Json const& value) { return value.toString(); });
+            if (!defaultSound)
+              return std::unexpected(std::move(defaultSound.error()));
+            if (blockSound != *defaultSound)
+              break;
+          }
         }
       }
 
       auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId());
-      used = damageResult != TileDamageResult::None;
+      if (!damageResult)
+        return std::unexpected(std::move(damageResult.error()));
+      used = *damageResult != TileDamageResult::None;
 
-      if (damageResult == TileDamageResult::Protected) {
-        blockSound = root().assets()->json("/client.config:defaultDingSound").toString();
+      if (*damageResult == TileDamageResult::Protected) {
+        auto assets = root().assets();
+        if (!assets)
+          return std::unexpected(std::move(assets.error()));
+        auto ding = (*assets)->json("/client.config:defaultDingSound").and_then([](Json const& value) { return value.toString(); });
+        if (!ding)
+          return std::unexpected(std::move(ding.error()));
+        blockSound = std::move(*ding);
       }
 
       if (!used && m_canCollectLiquid && layer == TileLayer::Foreground && worldp->material(aimPosition, TileLayer::Foreground) == EmptyMaterialId) {
@@ -567,12 +930,22 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           }
         }
 
-        float bucketSize = root().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
-        if (totalLiquid >= bucketSize) {
-          if (auto clientWorld = as<WorldClient>(worldp))
-            clientWorld->collectLiquid(drainTiles, targetLiquid);
-
-          blockSound = root().assets()->json("/items/defaultParameters.config:liquidBlockSound").toString();
+        auto assets = root().assets();
+        if (!assets)
+          return std::unexpected(std::move(assets.error()));
+        auto bucketSize = (*assets)->json("/items/defaultParameters.config:liquidItems.bucketSize").and_then([](Json const& value) { return value.toUInt(); });
+        if (!bucketSize)
+          return std::unexpected(std::move(bucketSize.error()));
+        if (totalLiquid >= *bucketSize) {
+          if (auto clientWorld = as<WorldClient>(worldp)) {
+            auto collected = clientWorld->collectLiquid(drainTiles, targetLiquid);
+            if (!collected)
+              return std::unexpected(std::move(collected.error()));
+          }
+          auto sound = (*assets)->json("/items/defaultParameters.config:liquidBlockSound").and_then([](Json const& value) { return value.toString(); });
+          if (!sound)
+            return std::unexpected(std::move(sound.error()));
+          blockSound = std::move(*sound);
 
           used = true;
         }
@@ -580,63 +953,113 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
-      ownerp->addSound(blockSound, m_blockVolume);
+      auto strike = ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+      if (!strike)
+        return std::unexpected(std::move(strike.error()));
+      auto sound = ownerp->addSound(blockSound, m_blockVolume);
+      if (!sound)
+        return std::unexpected(std::move(sound.error()));
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
-        if (auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer))) {
-          auto miningParticle = miningParticleConfig->instance();
+        auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer));
+        if (!miningParticleConfig)
+          return std::unexpected(std::move(miningParticleConfig.error()));
+        if (*miningParticleConfig) {
+          auto miningParticle = (*miningParticleConfig)->instance();
           miningParticle.position += (Vec2F)pos;
           miningParticles.append(miningParticle);
         }
       }
-      ownerp->addParticles(miningParticles);
-      FireableItem::fire(mode, shifting, edgeTriggered);
+      auto particles = ownerp->addParticles(miningParticles);
+      if (!particles)
+        return std::unexpected(std::move(particles.error()));
+      return FireableItem::fire(mode, shifting, edgeTriggered);
     }
   }
+  return {};
 }
 
-float BeamMiningTool::getAngle(float angle) {
+std::expected<float, StarException> BeamMiningTool::getAngle(float angle) {
   return BeamItem::getAngle(angle);
 }
 
 
-PaintingBeamTool::PaintingBeamTool(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config) {
-  auto assets = this->root().assets();
-
-  m_blockRadius = instanceValue("blockRadius").toFloat();
-  m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
-  m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
-  m_toolVolume = assets->json("/sfx.config:miningToolVolume").toFloat();
-  m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
-  m_endType = EndType::Object;
-
-  for (auto& color : instanceValue("colorNumbers").toArray())
-    m_colors.append(jsonToColor(color));
-
-  m_colorKeys = jsonToStringList(instanceValue("colorKeys"));
-
-  m_colorIndex = instanceValue("colorIndex", 0).toInt();
-  m_color = m_colors[m_colorIndex];
+std::expected<std::shared_ptr<PaintingBeamTool>, StarException> PaintingBeamTool::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<PaintingBeamTool>(new PaintingBeamTool(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto fireable = item->initializeFireable(config);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = item->initializeBeam(config);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  for (auto const& [key, target] : {std::pair{"blockRadius", &item->m_blockRadius}, std::pair{"altBlockRadius", &item->m_altBlockRadius}}) {
+    auto value = item->instanceValue(key).and_then([](Json const& value) { return value.toFloat(); });
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *target = *value;
+  }
+  auto sounds = item->instanceValue("strikeSounds").and_then(jsonToStringList);
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  item->m_strikeSounds = std::move(*sounds);
+  for (auto const& [path, target] : {std::pair{"/sfx.config:miningToolVolume", &item->m_toolVolume}, std::pair{"/sfx.config:miningBlockVolume", &item->m_blockVolume}}) {
+    auto volume = (*assets)->json(path).and_then([](Json const& value) { return value.toFloat(); });
+    if (!volume)
+      return std::unexpected(std::move(volume.error()));
+    *target = *volume;
+  }
+  item->m_endType = EndType::Object;
+  auto colors = item->instanceValue("colorNumbers").and_then([](Json const& value) { return value.toArray(); });
+  if (!colors)
+    return std::unexpected(std::move(colors.error()));
+  for (auto const& color : *colors) {
+    auto value = jsonToColor(color);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    item->m_colors.append(*value);
+  }
+  auto keys = item->instanceValue("colorKeys").and_then(jsonToStringList);
+  if (!keys)
+    return std::unexpected(std::move(keys.error()));
+  item->m_colorKeys = std::move(*keys);
+  auto index = item->instanceValue("colorIndex", 0).and_then([](Json const& value) { return value.toInt(); });
+  if (!index)
+    return std::unexpected(std::move(index.error()));
+  item->m_colorIndex = *index;
+  item->m_color = item->m_colors[item->m_colorIndex];
+  return item;
 }
 
-std::shared_ptr<Item> PaintingBeamTool::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> PaintingBeamTool::clone() const {
   return std::make_shared<PaintingBeamTool>(*this);
 }
 
-List<Drawable> PaintingBeamTool::drawables() const {
+std::expected<List<Drawable>, StarException> PaintingBeamTool::drawables() const {
   auto result = BeamItem::drawables();
-  for (auto& entry : result) {
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  for (auto& entry : *result) {
     if (entry.isImage()) {
       auto& image = entry.imagePart().image;
       auto& color = m_colorKeys[m_colorIndex];
-      if (std::size_t directives_start = color.find('?'); directives_start != NPos) {
-        auto index      = color.substr(0, directives_start);
-        auto directives = color.substr(directives_start);
-
-        image.subPath = image.subPath.value_or("0") + index;
-        image.directives += directives;
+      auto directivesStart = color.find('?');
+      if (!directivesStart)
+        return std::unexpected(std::move(directivesStart.error()));
+      if (*directivesStart != NPos) {
+        auto index = color.substr(0, *directivesStart);
+        if (!index)
+          return std::unexpected(std::move(index.error()));
+        auto directives = color.substr(*directivesStart);
+        if (!directives)
+          return std::unexpected(std::move(directives.error()));
+        image.subPath = image.subPath.value_or("0") + *index;
+        image.directives += *directives;
       } else {
         image.subPath = image.subPath.value_or("0") + color;
       }
@@ -650,89 +1073,131 @@ void PaintingBeamTool::setEnd(EndType type) {
   m_endType = EndType::Object;
 }
 
-void PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  BeamItem::update(dt, fireMode, shifting, moves);
-  FireableItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto beam = BeamItem::update(dt, fireMode, shifting, moves);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  return FireableItem::update(dt, fireMode, shifting, moves);
 }
 
-List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
+std::expected<List<PreviewTile>, StarException> PaintingBeamTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
-  auto ownerp = owner();
-  auto worldp = world();
-  if (ownerp && worldp) {
-    Vec3B light = Color::White.toRgb();
-
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-
-      for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
-        if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}, true)) {
-          result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, (MaterialColorVariant)m_colorIndex});
-        } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, (MaterialColorVariant)m_colorIndex}, true)) {
-          result.append({pos, false, NullMaterialId, MaterialHue(), false, light, true, (MaterialColorVariant)m_colorIndex});
-        } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, DefaultMaterialColorVariant}, true)) {
-          result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, DefaultMaterialColorVariant});
-        } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, DefaultMaterialColorVariant}, true)) {
-          result.append({pos, false, NullMaterialId, MaterialHue(), false, light, true, DefaultMaterialColorVariant});
+  auto ownerResult = owner();
+  if (!ownerResult)
+    return std::unexpected(std::move(ownerResult.error()));
+  auto ownerp = *ownerResult;
+  auto worldResult = world();
+  if (!worldResult)
+    return std::unexpected(std::move(worldResult.error()));
+  auto worldp = *worldResult;
+  Vec3B light = Color::White.toRgb();
+  bool inRange = ownerp->isAdmin();
+  if (!inRange) {
+    auto range = ownerp->inToolRange();
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    inRange = *range;
+  }
+  if (inRange) {
+    int radius = !shifting ? m_blockRadius : m_altBlockRadius;
+    auto aimPosition = ownerp->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
+      for (auto const& [layer, color] : {
+          std::pair{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex},
+          std::pair{TileLayer::Background, (MaterialColorVariant)m_colorIndex},
+          std::pair{TileLayer::Foreground, DefaultMaterialColorVariant},
+          std::pair{TileLayer::Background, DefaultMaterialColorVariant}}) {
+        auto placeable = worldp->canModifyTile(pos, PlaceMaterialColor{layer, color}, true);
+        if (!placeable)
+          return std::unexpected(std::move(placeable.error()));
+        if (*placeable) {
+          result.append({pos, layer == TileLayer::Foreground, NullMaterialId, MaterialHue(), false, light, true, color});
+          break;
         }
       }
     }
   }
-
   return result;
 }
 
-void PaintingBeamTool::init(ToolUserEntity* owner, ToolHand hand) {
-  FireableItem::init(owner, hand);
-  BeamItem::init(owner, hand);
+std::expected<void, StarException> PaintingBeamTool::init(ToolUserEntity* owner, ToolHand hand) {
+  auto fireable = FireableItem::init(owner, hand);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = BeamItem::init(owner, hand);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
   m_color = m_colors[m_colorIndex];
+  return {};
 }
 
-List<Drawable> PaintingBeamTool::nonRotatedDrawables() const {
+std::expected<List<Drawable>, StarException> PaintingBeamTool::nonRotatedDrawables() const {
   if (!coolingDown())
     return BeamItem::nonRotatedDrawables();
   return {};
 }
 
-void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+std::expected<void, StarException> PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
-    return;
+    return {};
 
   if (mode == FireMode::Alt && edgeTriggered) {
     m_colorIndex = (m_colorIndex + 1) % m_colors.size();
     m_color = m_colors[m_colorIndex];
-    setInstanceValue("colorIndex", m_colorIndex);
-    return;
+    return setInstanceValue("colorIndex", m_colorIndex);
   }
 
   if (mode == FireMode::Primary) {
-    auto worldp = world();
-    auto ownerp = owner();
+    auto worldResult = world();
+    if (!worldResult)
+      return std::unexpected(std::move(worldResult.error()));
+    auto worldp = *worldResult;
+    auto ownerResult = owner();
+    if (!ownerResult)
+      return std::unexpected(std::move(ownerResult.error()));
+    auto ownerp = *ownerResult;
     if (ownerp && worldp) {
       bool used = false;
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
-      if (ownerp->isAdmin() || ownerp->inToolRange()) {
-        for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      bool inRange = ownerp->isAdmin();
+      if (!inRange) {
+        auto range = ownerp->inToolRange();
+        if (!range)
+          return std::unexpected(std::move(range.error()));
+        inRange = *range;
+      }
+      if (inRange) {
+        auto aimPosition = ownerp->aimPosition();
+        if (!aimPosition)
+          return std::unexpected(std::move(aimPosition.error()));
+        for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
           TileModificationList modifications = {
             {pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}},
             {pos, PlaceMaterialColor{TileLayer::Background, (MaterialColorVariant)m_colorIndex}}
           };
           auto failed = worldp->applyTileModifications(modifications, true);
-          if (failed.count() < 2)
+          if (!failed)
+            return std::unexpected(std::move(failed.error()));
+          if (failed->count() < 2)
             used = true;
         }
       }
 
       if (used) {
-        ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
-        FireableItem::fire(mode, shifting, edgeTriggered);
+        auto sound = ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
+        if (!sound)
+          return std::unexpected(std::move(sound.error()));
+        return FireableItem::fire(mode, shifting, edgeTriggered);
       }
     }
   }
+  return {};
 }
 
-float PaintingBeamTool::getAngle(float angle) {
+std::expected<float, StarException> PaintingBeamTool::getAngle(float angle) {
   return BeamItem::getAngle(angle);
 }
 

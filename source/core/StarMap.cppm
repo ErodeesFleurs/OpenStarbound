@@ -18,6 +18,34 @@ struct MapExceptionTag {
 };
 using MapException = StarError<MapExceptionTag, StarException>;
 
+template <typename T>
+[[nodiscard]] std::expected<std::string, StarException> mapDiagnosticValue(T const& value) {
+  if constexpr (std::is_enum_v<T>) {
+    return strf("{}", std::to_underlying(value));
+  } else {
+    std::ostringstream stream;
+    stream.imbue(std::locale::classic());
+    using PrintResult = decltype(stream << outputAny(value));
+    if constexpr (std::same_as<PrintResult, std::expected<std::ostream*, StarException>>) {
+      auto printed = stream << outputAny(value);
+      if (!printed)
+        return std::unexpected(std::move(printed.error()));
+    } else {
+      stream << outputAny(value);
+    }
+    return std::move(stream).str();
+  }
+}
+
+template <typename Error = MapException, typename T>
+[[nodiscard]] StarException mapDiagnosticError(std::format_string<std::string> message,
+    std::string_view context, T const& value) {
+  auto rendered = mapDiagnosticValue(value);
+  if (!rendered)
+    return std::move(rendered.error()).withContext(std::string(context));
+  return Error(strf(message, std::move(*rendered)));
+}
+
 template <typename BaseMap>
 class MapMixin : public BaseMap {
 public:
@@ -52,14 +80,16 @@ public:
   // true if any elements were removed.
   bool removeValues(mapped_type const& v);
 
-  // Throws exception if key not found
-  mapped_type take(key_type const& k);
+  // Returns an error if the key is not found.
+  [[nodiscard]] std::expected<mapped_type, StarException> take(key_type const& k);
 
   std::optional<mapped_type> maybeTake(key_type const& k);
 
-  // Throws exception if key not found
-  mapped_type& get(key_type const& k);
-  mapped_type const& get(key_type const& k) const;
+  // Returns an error if the key is not found.
+  [[nodiscard]] std::expected<mapped_type*, StarException> get(key_type const& k);
+  [[nodiscard]] std::expected<mapped_type const*, StarException> get(key_type const& k) const;
+  [[nodiscard]] std::expected<mapped_type*, StarException> at(key_type const& k) { return get(k); }
+  [[nodiscard]] std::expected<mapped_type const*, StarException> at(key_type const& k) const { return get(k); }
 
   // Return d if key not found
   mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
@@ -70,7 +100,7 @@ public:
   mapped_ptr ptr(key_type const& k);
 
   // Finds first value matching the given value and returns its key.
-  key_type keyOf(mapped_type const& v) const;
+  [[nodiscard]] std::expected<key_type, StarException> keyOf(mapped_type const& v) const;
 
   // Finds all of the values matching the given value and returns their keys.
   List<key_type> keysOf(mapped_type const& v) const;
@@ -87,20 +117,20 @@ public:
 
   template <typename LookupKey>
     requires requires(Base& base, LookupKey const& key) { base.find(key); }
-  mapped_type& get(LookupKey const& key) {
+  [[nodiscard]] std::expected<mapped_type*, StarException> get(LookupKey const& key) {
     auto position = Base::find(key);
     if (position == Base::end())
-      throw MapException(strf("Key '{}' not found in Map::get()", outputAny(key)));
-    return position->second;
+      return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
+    return &position->second;
   }
 
   template <typename LookupKey>
     requires requires(Base const& base, LookupKey const& key) { base.find(key); }
-  mapped_type const& get(LookupKey const& key) const {
+  [[nodiscard]] std::expected<mapped_type const*, StarException> get(LookupKey const& key) const {
     auto position = Base::find(key);
     if (position == Base::end())
-      throw MapException(strf("Key '{}' not found in Map::get()", outputAny(key)));
-    return position->second;
+      return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", key));
+    return &position->second;
   }
 
   template <typename LookupKey>
@@ -138,8 +168,8 @@ public:
   // new element was inserted.
   std::pair<iterator, bool> insert(key_type k, mapped_type v);
 
-  // Add a key / value pair, throw if the key already exists
-  mapped_type& add(key_type k, mapped_type v);
+  // Add a key / value pair, returning an error if the key already exists.
+  [[nodiscard]] std::expected<mapped_type*, StarException> add(key_type k, mapped_type v);
 
   // Set a key to a value, always override if it already exists
   mapped_type& set(key_type k, mapped_type v);
@@ -221,10 +251,10 @@ bool MapMixin<BaseMap>::removeValues(mapped_type const& v) {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::take(key_type const& k) -> mapped_type {
+auto MapMixin<BaseMap>::take(key_type const& k) -> std::expected<mapped_type, StarException> {
   if (auto v = maybeTake(k))
-    return std::move(v.value());
-  throw MapException(strf("Key '{}' not found in Map::take()", outputAny(k)));
+    return std::move(*v);
+  return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::take()", "Map::take: key not found while rendering its diagnostic", k));
 }
 
 template <typename BaseMap>
@@ -240,19 +270,19 @@ auto MapMixin<BaseMap>::maybeTake(key_type const& k) -> std::optional<mapped_typ
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::get(key_type const& k) -> mapped_type& {
+auto MapMixin<BaseMap>::get(key_type const& k) -> std::expected<mapped_type*, StarException> {
   iterator i = Base::find(k);
   if (i == Base::end())
-    throw MapException(strf("Key '{}' not found in Map::get()", outputAny(k)));
-  return i->second;
+    return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", k));
+  return &i->second;
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::get(key_type const& k) const -> mapped_type const& {
+auto MapMixin<BaseMap>::get(key_type const& k) const -> std::expected<mapped_type const*, StarException> {
   const_iterator i = Base::find(k);
   if (i == Base::end())
-    throw MapException(strf("Key '{}' not found in Map::get()", outputAny(k)));
-  return i->second;
+    return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()", "Map::get: key not found while rendering its diagnostic", k));
+  return &i->second;
 }
 
 template <typename BaseMap>
@@ -292,12 +322,12 @@ auto MapMixin<BaseMap>::ptr(key_type const& k) -> mapped_ptr {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
+auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> std::expected<key_type, StarException> {
   for (const_iterator i = Base::begin(); i != Base::end(); ++i) {
     if (i->second == v)
       return i->first;
   }
-  throw MapException(strf("Value '{}' not found in Map::keyOf()", outputAny(v)));
+  return std::unexpected(mapDiagnosticError("Value '{}' not found in Map::keyOf()", "Map::keyOf: value not found while rendering its diagnostic", v));
 }
 
 template <typename BaseMap>
@@ -325,12 +355,11 @@ auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> std::pair<iterator,
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
+auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> std::expected<mapped_type*, StarException> {
   auto pair = Base::try_emplace(std::move(k), std::move(v));
   if (!pair.second)
-    throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
-  else
-    return pair.first->second;
+    return std::unexpected(mapDiagnosticError("Entry with key '{}' already present.", "Map::add: key already present while rendering its diagnostic", pair.first->first));
+  return &pair.first->second;
 }
 
 template <typename BaseMap>
@@ -387,6 +416,8 @@ struct std::formatter<Star::MapMixin<BaseMap>> : Star::StreamFormatter {};
 export namespace Star {
   using ::Star::MapExceptionTag;
   using ::Star::MapException;
+  using ::Star::mapDiagnosticValue;
+  using ::Star::mapDiagnosticError;
   using ::Star::MapMixin;
   using ::Star::Map;
   using ::Star::HashMap;

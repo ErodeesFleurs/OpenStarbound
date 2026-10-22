@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -14,16 +15,44 @@ import star.codex;
 
 namespace Star {
 
-Codex::Codex(Json const& config, String const& path) {
-  m_directory = AssetPath::directory(path);
-  m_filename = AssetPath::filename(path);
-  m_id = config.getString("id");
-  m_species = config.getString("species", "other");
-  m_title = config.getString("title");
-  m_description = config.getString("description", "");
-  m_icon = config.getString("icon");
-  m_pages = jsonToStringList(config.get("contentPages"));
-  m_itemConfig = config.get("itemConfig", Json());
+std::expected<std::shared_ptr<Codex>, StarException> Codex::create(Json const& config, String const& path) {
+  auto result = std::shared_ptr<Codex>(new Codex());
+  result->m_directory = AssetPath::directory(path);
+  result->m_filename = AssetPath::filename(path);
+  auto id = config.getString("id");
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  result->m_id = std::move(*id);
+  auto species = config.getString("species", "other");
+  if (!species)
+    return std::unexpected(std::move(species.error()));
+  result->m_species = std::move(*species);
+  auto title = config.getString("title");
+  if (!title)
+    return std::unexpected(std::move(title.error()));
+  result->m_title = std::move(*title);
+  auto description = config.getString("description", "");
+  if (!description)
+    return std::unexpected(std::move(description.error()));
+  result->m_description = std::move(*description);
+  auto icon = config.getString("icon");
+  if (!icon)
+    return std::unexpected(std::move(icon.error()));
+  result->m_icon = std::move(*icon);
+  auto pages = config.get("contentPages").and_then([](Json const& value) { return value.iterateArray(); });
+  if (!pages)
+    return std::unexpected(std::move(pages.error()));
+  for (auto const& page : *pages) {
+    auto text = page.toString();
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    result->m_pages.append(std::move(*text));
+  }
+  auto itemConfig = config.get("itemConfig", Json());
+  if (!itemConfig)
+    return std::unexpected(std::move(itemConfig.error()));
+  result->m_itemConfig = std::move(*itemConfig);
+  return result;
 }
 
 Json Codex::toJson() const {

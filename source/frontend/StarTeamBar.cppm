@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.vector;
@@ -67,14 +68,16 @@ public:
     return Star::typeName<TeamInvite>();
   }
 
-  TeamInvite(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeamInvite>, StarException> create(GuiContext& guiContext, TeamBar* owner);
 
-  virtual void show() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
 
 private:
+  TeamInvite(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   TeamBar* m_owner;
 
-  void ok();
+  [[nodiscard]] std::expected<void, StarException> ok();
   void close();
 };
 
@@ -87,15 +90,17 @@ public:
     return Star::typeName<TeamInvitation>();
   }
 
-  TeamInvitation(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeamInvitation>, StarException> create(GuiContext& guiContext, TeamBar* owner);
 
-  void open(Uuid const& inviterUuid, String const& inviterName);
+  [[nodiscard]] std::expected<void, StarException> open(Uuid const& inviterUuid, String const& inviterName);
 
 private:
+  TeamInvitation(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   TeamBar* m_owner;
   Uuid m_inviterUuid;
 
-  void ok();
+  [[nodiscard]] std::expected<void, StarException> ok();
   void close();
 };
 
@@ -108,19 +113,21 @@ public:
     return Star::typeName<TeamMemberMenu>();
   }
 
-  TeamMemberMenu(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeamMemberMenu>, StarException> create(GuiContext& guiContext, TeamBar* owner);
 
-  void open(Uuid memberUuid, Vec2I position);
+  [[nodiscard]] std::expected<void, StarException> open(Uuid memberUuid, Vec2I position);
 
-  virtual void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
-  void updateWidgets();
+  TeamMemberMenu(GuiContext& guiContext, TeamBar* owner);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> updateWidgets();
 
   void close();
-  void beamToShip();
-  void makeLeader();
-  void removeFromTeam();
+  [[nodiscard]] std::expected<void, StarException> beamToShip();
+  [[nodiscard]] std::expected<void, StarException> makeLeader();
+  [[nodiscard]] std::expected<void, StarException> removeFromTeam();
 
   TeamBar* m_owner;
   Uuid m_memberUuid;
@@ -136,32 +143,29 @@ public:
     return Star::typeName<TeamBar>();
   }
 
-  TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<TeamBar>, StarException> create(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  void invitePlayer(String const& playerName);
-  void acceptInvitation(Uuid const& inviterUuid);
+  [[nodiscard]] std::expected<void, StarException> invitePlayer(String const& playerName);
+  [[nodiscard]] std::expected<void, StarException> acceptInvitation(Uuid const& inviterUuid);
 
 protected:
-  virtual void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
-  void updatePlayerResources();
+  TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> updatePlayerResources();
 
-  void inviteButton();
+  [[nodiscard]] std::expected<void, StarException> inviteButton();
 
-  void buildTeamBar();
+  [[nodiscard]] std::expected<void, StarException> buildTeamBar();
 
-  void showMemberMenu(Uuid memberUuid, Vec2I position);
+  [[nodiscard]] std::expected<void, StarException> showMemberMenu(Uuid memberUuid, Vec2I position);
 
   MainInterface* m_mainInterface;
   std::shared_ptr<UniverseClient> m_client;
-
-
-
-  TextStyle m_nameStyle;
-  Vec2F m_nameOffset;
 
   std::shared_ptr<TeamInvite> m_teamInvite;
   std::shared_ptr<TeamInvitation> m_teamInvitation;

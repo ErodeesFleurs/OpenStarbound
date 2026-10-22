@@ -41,65 +41,62 @@ public:
 
   // Do a read or write that may result in less data read or written than
   // requested.
-  virtual std::size_t read(char* data, std::size_t len) = 0;
-  virtual std::size_t write(char const* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> read(char* data, std::size_t len) = 0;
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> write(char const* data, std::size_t len) = 0;
 
-  virtual StreamOffset pos() = 0;
-  virtual void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
+  [[nodiscard]] virtual std::expected<StreamOffset, StarException> pos() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
 
-  // Default implementation throws unsupported exception.
-  virtual void resize(StreamOffset size);
+  // Default implementation reports unsupported operation.
+  [[nodiscard]] virtual std::expected<void, StarException> resize(StreamOffset size);
 
   // Read / write from an absolute offset in the file without modifying the
   // current file position.  Default implementation stores the file position,
   // then seeks and calls read/write partial, then restores the file position,
   // and is not thread safe.
-  virtual std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len);
-  virtual std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> readAbsolute(StreamOffset readPosition, char* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<std::size_t, StarException> writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
 
-  // Read and write fully, and throw an exception in every other case.  The
-  // default implementations here will call the normal read or write, and if
-  // the full amount is not read will throw an exception.
-  virtual void readFull(char* data, std::size_t len);
-  virtual void writeFull(char const* data, std::size_t len);
-  virtual void readFullAbsolute(StreamOffset readPosition, char* data, std::size_t len);
-  virtual void writeFullAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
+  // Full operations report short transfers, including a distinct EOF error.
+  [[nodiscard]] virtual std::expected<void, StarException> readFull(char* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<void, StarException> writeFull(char const* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<void, StarException> readFullAbsolute(StreamOffset readPosition, char* data, std::size_t len);
+  [[nodiscard]] virtual std::expected<void, StarException> writeFullAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
 
-  // Default implementation throws exception if opening in a different mode
-  // than the current mode.
-  virtual void open(IOMode mode);
+  // Default implementation only accepts the current mode.
+  [[nodiscard]] virtual std::expected<void, StarException> open(IOMode mode);
 
-  // Default implementation sets mode equal to Closed
-  virtual void close();
+  // Default implementation sets mode equal to Closed.
+  [[nodiscard]] virtual std::expected<void, StarException> close();
 
-  // Default implementation is a no-op
-  virtual void sync();
+  // Devices without buffered state have nothing to synchronize.
+  [[nodiscard]] virtual std::expected<void, StarException> sync();
 
-  // Returns a clone of this device with the same mode
-  virtual std::shared_ptr<IODevice> clone() = 0;
+  // Returns a clone of this device with the same mode.
+  [[nodiscard]] virtual std::expected<std::shared_ptr<IODevice>, StarException> clone() = 0;
 
   // Default implementation just prints address of generic IODevice
-  virtual String deviceName() const;
+  [[nodiscard]] virtual std::expected<String, StarException> deviceName() const;
 
   // Is the file position at the end of the file and there is no more to read?
   // This is not the same as feof, which returns true after an unsuccesful read
   // past the end, it should return true after succesfully reading the final
   // byte.  Default implementation returns pos() >= size();
-  virtual bool atEnd();
+  [[nodiscard]] virtual std::expected<bool, StarException> atEnd();
 
   // Default is to store position, seek end, then restore position.
-  virtual StreamOffset size();
+  [[nodiscard]] virtual std::expected<StreamOffset, StarException> size();
 
   IOMode mode() const;
   bool isOpen() const;
   bool isReadable() const;
   bool isWritable() const;
 
-  ByteArray readBytes(std::size_t size);
-  void writeBytes(ByteArray const& p);
+  [[nodiscard]] std::expected<ByteArray, StarException> readBytes(std::size_t size);
+  [[nodiscard]] std::expected<void, StarException> writeBytes(ByteArray const& p);
 
-  ByteArray readBytesAbsolute(StreamOffset readPosition, std::size_t size);
-  void writeBytesAbsolute(StreamOffset writePosition, ByteArray const& p);
+  [[nodiscard]] std::expected<ByteArray, StarException> readBytesAbsolute(StreamOffset readPosition, std::size_t size);
+  [[nodiscard]] std::expected<void, StarException> writeBytesAbsolute(StreamOffset writePosition, ByteArray const& p);
 
 protected:
   void setMode(IOMode mode);

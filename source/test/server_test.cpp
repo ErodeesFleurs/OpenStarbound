@@ -133,8 +133,12 @@ import star.game_test;
 using namespace Star;
 
 const GameTestRegistration serverRun("ServerTest", "Run", [](GameTest& fixture) {
-  UniverseServer server(fixture.root(), fixture.root().toStoragePath("universe"));
-  server.start();
-  server.stop();
-  server.join();
+  auto server = UniverseServer::create(fixture.root(), fixture.root().toStoragePath("universe"));
+  ASSERT_TRUE(server) << server.error().what();
+  auto started = (*server)->start();
+  ASSERT_TRUE(started) << started.error().what();
+  auto stopped = (*server)->stop();
+  EXPECT_TRUE(stopped) << (stopped ? "" : stopped.error().what());
+  auto joined = (*server)->join();
+  ASSERT_TRUE(joined) << joined.error().what();
 });

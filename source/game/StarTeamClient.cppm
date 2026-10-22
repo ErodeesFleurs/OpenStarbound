@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 
 import star.data_stream;
@@ -47,13 +48,13 @@ public:
 
   TeamClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext);
 
-  void invitePlayer(String const& playerName);
-  void acceptInvitation(Uuid const& inviterUuid);
+  [[nodiscard]] std::expected<void, StarException> invitePlayer(String const& playerName);
+  [[nodiscard]] std::expected<void, StarException> acceptInvitation(Uuid const& inviterUuid);
 
   std::optional<Uuid> currentTeam() const;
 
-  void makeLeader(Uuid const& playerUuid);
-  void removeFromTeam(Uuid const& playerUuid);
+  [[nodiscard]] std::expected<void, StarException> makeLeader(Uuid const& playerUuid);
+  [[nodiscard]] std::expected<void, StarException> removeFromTeam(Uuid const& playerUuid);
 
   bool isTeamLeader();
   bool isTeamLeader(Uuid const& playerUuid);
@@ -63,22 +64,22 @@ public:
   std::pair<Uuid, String> pullInvitation();
   List<std::variant<std::pair<String, bool>, StringList>> pullInviteResults();
 
-  void update();
+  [[nodiscard]] std::expected<void, StarException> update();
 
-  void pullFullUpdate();
-  void statusUpdate();
+  [[nodiscard]] std::expected<void, StarException> pullFullUpdate();
+  [[nodiscard]] std::expected<void, StarException> statusUpdate();
 
   void forceUpdate();
 
   List<Member> members();
 
 private:
-  typedef std::pair<RpcPromise<Json>, std::function<void(Json const&)>> RpcResponseHandler;
+  typedef std::pair<RpcPromise<Json>, std::function<std::expected<void, StarException>(Json const&)>> RpcResponseHandler;
 
-  void invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction = {});
-  void handleRpcResponses();
+  [[nodiscard]] std::expected<void, StarException> invokeRemote(String const& method, Json const& args, std::function<std::expected<void, StarException>(Json const&)> responseFunction = {});
+  [[nodiscard]] std::expected<void, StarException> handleRpcResponses();
 
-  void writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite = false) const;
+  [[nodiscard]] std::expected<void, StarException> writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite = false) const;
 
   void clearTeam();
 

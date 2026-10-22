@@ -33,24 +33,40 @@ SteamStatisticsService::SteamStatisticsService(std::shared_ptr<PcPlatformService
   m_callbackUserStatsStored(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsStored),
   m_callbackAchievementStored(m_state->steamDispatch, this, &SteamStatisticsService::onAchievementStored) {
   m_appId = SteamAPI_ISteamUtils_GetAppID(SteamAPI_SteamUtils());
-  refresh();
+}
+
+std::expected<std::shared_ptr<SteamStatisticsService>, StarException> SteamStatisticsService::create(std::shared_ptr<PcPlatformServicesState> state) {
+  auto service = std::shared_ptr<SteamStatisticsService>(new SteamStatisticsService(std::move(state)));
+  auto refreshed = service->refresh();
+  if (!refreshed) {
+    auto logged = service->m_state->logger.error("Steam statistics unavailable: {}", refreshed.error().what());
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
+  }
+  return service;
 }
 
 bool SteamStatisticsService::initialized() const {
   return m_initialized;
 }
 
-std::optional<String> SteamStatisticsService::error() const {
+std::optional<StarException> SteamStatisticsService::error() const {
   return m_error;
 }
 
-bool SteamStatisticsService::setStat(String const& name, String const& type, Json const& value) {
-  if (type == "int")
-    return SteamAPI_ISteamUserStats_SetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), (std::int32_t)value.toInt());
-
-  if (type == "float")
-    return SteamAPI_ISteamUserStats_SetStatFloat(SteamAPI_SteamUserStats(), name.utf8Ptr(), value.toFloat());
-
+std::expected<bool, StarException> SteamStatisticsService::setStat(String const& name, String const& type, Json const& value) {
+  if (type == "int") {
+    auto converted = value.toInt();
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    return SteamAPI_ISteamUserStats_SetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), (std::int32_t)*converted);
+  }
+  if (type == "float") {
+    auto converted = value.toFloat();
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    return SteamAPI_ISteamUserStats_SetStatFloat(SteamAPI_SteamUserStats(), name.utf8Ptr(), *converted);
+  }
   return false;
 }
 
@@ -75,9 +91,11 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
   return false;
 }
 
-bool SteamStatisticsService::unlockAchievement(String const& name) {
+std::expected<bool, StarException> SteamStatisticsService::unlockAchievement(String const& name) {
   if (!SteamAPI_ISteamUserStats_SetAchievement(SteamAPI_SteamUserStats(), name.utf8Ptr())) {
-    m_state->logger.error("Cannot set Steam achievement {}", name);
+    auto logged = m_state->logger.error("Cannot set Steam achievement {}", name);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
     return false;
   }
   return true;
@@ -96,60 +114,69 @@ StringSet SteamStatisticsService::achievementsUnlocked() const {
   return {};
 }
 
-void SteamStatisticsService::refresh() {
+std::expected<void, StarException> SteamStatisticsService::refresh() {
   if (!SteamAPI_ISteamUser_BLoggedOn(SteamAPI_SteamUser())) {
-    m_error = {"Not logged in"};
-    return;
+    m_error = ApplicationException("Not logged in");
+    return std::unexpected(*m_error);
   }
-
-  SteamAPI_ISteamUserStats_RequestCurrentStats(SteamAPI_SteamUserStats());
+  if (!SteamAPI_ISteamUserStats_RequestCurrentStats(SteamAPI_SteamUserStats())) {
+    m_error = ApplicationException("Steam RequestCurrentStats was rejected");
+    return std::unexpected(*m_error);
+  }
+  return {};
 }
 
-void SteamStatisticsService::flush() {
-  SteamAPI_ISteamUserStats_StoreStats(SteamAPI_SteamUserStats());
+std::expected<void, StarException> SteamStatisticsService::flush() {
+  if (!SteamAPI_ISteamUserStats_StoreStats(SteamAPI_SteamUserStats())) {
+    m_error = ApplicationException("Steam StoreStats was rejected");
+    return std::unexpected(*m_error);
+  }
+  return {};
 }
 
 bool SteamStatisticsService::reset() {
-  SteamAPI_ISteamUserStats_ResetAllStats(SteamAPI_SteamUserStats(), true);
-  return true;
+  return SteamAPI_ISteamUserStats_ResetAllStats(SteamAPI_SteamUserStats(), true);
 }
 
-void SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) {
+std::expected<void, StarException> SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) {
   if (callback->m_nGameID != m_appId)
-    return;
+    return {};
 
   if (callback->m_eResult != k_EResultOK) {
-    m_error = {strf("Steam RequestCurrentStats failed with code {}", (int)callback->m_eResult)};
-    return;
+    m_error = ApplicationException::format("Steam RequestCurrentStats failed with code {}", (int)callback->m_eResult);
+    return {};
   }
 
-  m_state->logger.debug("Steam RequestCurrentStats successful");
+  auto logged = m_state->logger.debug("Steam RequestCurrentStats successful");
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
   m_initialized = true;
+  m_error.reset();
+  return {};
 }
 
-void SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
+std::expected<void, StarException> SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
   if (callback->m_nGameID != m_appId)
-    return;
+    return {};
 
   if (callback->m_eResult == k_EResultOK) {
-    m_state->logger.debug("Steam StoreStats successful");
-    return;
+    return m_state->logger.debug("Steam StoreStats successful");
   }
 
   if (callback->m_eResult == k_EResultInvalidParam) {
     // A stat we set broke a constraint and was reverted on the service.
-    m_state->logger.info("Steam StoreStats: Some stats failed validation");
-    return;
+    return m_state->logger.info("Steam StoreStats: Some stats failed validation");
   }
 
-  m_error = {strf("Steam StoreStats failed with code {}", (int)callback->m_eResult)};
+  m_error = ApplicationException::format("Steam StoreStats failed with code {}", (int)callback->m_eResult);
+  return {};
 }
 
-void SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {
+std::expected<void, StarException> SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {
   if (callback->m_nGameID != m_appId)
-    return;
+    return {};
 
-  m_state->logger.debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
+  return m_state->logger.debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
 }
 
 }

@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 
 import star.audio;
 import star.thread;
@@ -41,21 +42,21 @@ public:
 
   virtual TileDrawer* tileDrawer() const;
 
-  virtual void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) = 0;
-  virtual void addLightSource(LightSource lightSource) = 0;
-  virtual void addParticle(Particle particle) = 0;
-  virtual void addAudio(std::shared_ptr<AudioInstance> audio) = 0;
-  virtual void addTilePreview(PreviewTile preview) = 0;
-  virtual void addOverheadBar(OverheadBar bar) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addDrawable(Drawable drawable, EntityRenderLayer renderLayer) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addLightSource(LightSource lightSource) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addParticle(Particle particle) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addAudio(std::shared_ptr<AudioInstance> audio) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addTilePreview(PreviewTile preview) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> addOverheadBar(OverheadBar bar) = 0;
 
   // Convenience non-virtuals
 
-  void addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate = Vec2F());
-  void addLightSources(List<LightSource> lightSources, Vec2F translate = Vec2F());
-  void addParticles(List<Particle> particles, Vec2F translate = Vec2F());
-  void addAudios(List<std::shared_ptr<AudioInstance>> audios, Vec2F translate = Vec2F());
-  void addTilePreviews(List<PreviewTile> previews);
-  void addOverheadBars(List<OverheadBar> bars, Vec2F translate = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> addLightSources(List<LightSource> lightSources, Vec2F translate = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> addParticles(List<Particle> particles, Vec2F translate = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> addAudios(List<std::shared_ptr<AudioInstance>> audios, Vec2F translate = Vec2F());
+  [[nodiscard]] std::expected<void, StarException> addTilePreviews(List<PreviewTile> previews);
+  [[nodiscard]] std::expected<void, StarException> addOverheadBars(List<OverheadBar> bars, Vec2F translate = Vec2F());
 };
 
 }

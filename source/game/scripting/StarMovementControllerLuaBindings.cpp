@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.lua;
@@ -40,85 +41,135 @@ module star.movement_controller_lua_bindings;
 import star.rect;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* movementController) {
+std::expected<LuaCallbacks, StarException> LuaBindings::makeMovementControllerCallbacks(MovementController* movementController) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback(
-      "parameters", [movementController]() { return movementController->parameters().toJson(); });
-  callbacks.registerCallbackWithSignature<void, Json>(
-      "applyParameters", std::bind(&MovementController::applyParameters, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Json>(
-      "resetParameters", std::bind(&MovementController::resetParameters, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<float>("mass", std::bind(&MovementController::mass, movementController));
-  callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionPoly", std::bind(&MovementController::collisionPoly, movementController));
-  callbacks.registerCallback("boundBox", [movementController]() -> RectF {
+  if (auto registration = callbacks.registerCallback(
+      "parameters", [movementController]() { return movementController->parameters().toJson(); }); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("applyParameters", [movementController](Json const& config) -> std::expected<void, StarException> {
+      auto parameters = MovementParameters::create(config);
+      if (!parameters)
+        return std::unexpected(std::move(parameters.error()));
+      return movementController->applyParameters(*parameters);
+    }); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("resetParameters", [movementController](Json const& config) -> std::expected<void, StarException> {
+      auto parameters = MovementParameters::create(config);
+      if (!parameters)
+        return std::unexpected(std::move(parameters.error()));
+      return movementController->resetParameters(*parameters);
+    }); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("mass", std::bind(&MovementController::mass, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<PolyF>(
+      "collisionPoly", std::bind(&MovementController::collisionPoly, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("boundBox", [movementController]() -> RectF {
       return movementController->collisionPoly().boundBox();
-    });
-  callbacks.registerCallback("collisionArea", [movementController]() -> float {
+    }); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallback("collisionArea", [movementController]() -> float {
       return movementController->collisionPoly().convexArea();
-    });
+    }); !registration)
+    return std::unexpected(std::move(registration.error()));
 
-  callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&MovementController::position, movementController));
-  callbacks.registerCallbackWithSignature<float>("xPosition", std::bind(&MovementController::xPosition, movementController));
-  callbacks.registerCallbackWithSignature<float>("yPosition", std::bind(&MovementController::yPosition, movementController));
-  callbacks.registerCallbackWithSignature<Vec2F>("velocity", std::bind(&MovementController::velocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("xVelocity", std::bind(&MovementController::xVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("yVelocity", std::bind(&MovementController::yVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("rotation", std::bind(&MovementController::rotation, movementController));
-  callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionBody", std::bind(&MovementController::collisionBody, movementController));
-  callbacks.registerCallbackWithSignature<RectF>(
-      "collisionBoundBox", std::bind(&MovementController::collisionBoundBox, movementController));
-  callbacks.registerCallbackWithSignature<RectF>(
-      "localBoundBox", std::bind(&MovementController::localBoundBox, movementController));
-  callbacks.registerCallbackWithSignature<bool>(
-      "isColliding", std::bind(&MovementController::isColliding, movementController));
-  callbacks.registerCallbackWithSignature<bool>(
-      "isNullColliding", std::bind(&MovementController::isNullColliding, movementController));
-  callbacks.registerCallbackWithSignature<bool>(
-      "isCollisionStuck", std::bind(&MovementController::isCollisionStuck, movementController));
-  callbacks.registerCallbackWithSignature<std::optional<float>>(
-      "stickingDirection", std::bind(&MovementController::stickingDirection, movementController));
-  callbacks.registerCallbackWithSignature<float>(
-      "liquidPercentage", std::bind(&MovementController::liquidPercentage, movementController));
-  callbacks.registerCallbackWithSignature<LiquidId>(
-      "liquidId", std::bind(&MovementController::liquidId, movementController));
-  callbacks.registerCallbackWithSignature<bool>("onGround", std::bind(&MovementController::onGround, movementController));
-  callbacks.registerCallbackWithSignature<bool>("zeroG", std::bind(&MovementController::zeroG, movementController));
-  callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", std::bind(&MovementController::atWorldLimit, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setPosition", std::bind(&MovementController::setPosition, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "setXPosition", std::bind(&MovementController::setXPosition, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "setYPosition", std::bind(&MovementController::setYPosition, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "translate", std::bind(&MovementController::translate, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setVelocity", std::bind(&MovementController::setVelocity, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "setXVelocity", std::bind(&MovementController::setXVelocity, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "setYVelocity", std::bind(&MovementController::setYVelocity, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "addMomentum", std::bind(&MovementController::addMomentum, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "setRotation", std::bind(&MovementController::setRotation, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, float>(
-      "rotate", std::bind(&MovementController::rotate, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "accelerate", std::bind(&MovementController::accelerate, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "force", std::bind(&MovementController::force, movementController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, Vec2F, float>(
-      "approachVelocity", std::bind(&MovementController::approachVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
-  callbacks.registerCallbackWithSignature<void, float, float, float, bool>("approachVelocityAlongAngle",
-      std::bind(&MovementController::approachVelocityAlongAngle, movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-  callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachXVelocity", std::bind(&MovementController::approachXVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
-  callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachYVelocity", std::bind(&MovementController::approachYVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
+  if (auto registration = callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&MovementController::position, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("xPosition", std::bind(&MovementController::xPosition, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("yPosition", std::bind(&MovementController::yPosition, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<Vec2F>("velocity", std::bind(&MovementController::velocity, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("xVelocity", std::bind(&MovementController::xVelocity, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("yVelocity", std::bind(&MovementController::yVelocity, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>("rotation", std::bind(&MovementController::rotation, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<PolyF>(
+      "collisionBody", std::bind(&MovementController::collisionBody, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<RectF>(
+      "collisionBoundBox", std::bind(&MovementController::collisionBoundBox, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<RectF>(
+      "localBoundBox", std::bind(&MovementController::localBoundBox, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>(
+      "isColliding", std::bind(&MovementController::isColliding, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>(
+      "isNullColliding", std::bind(&MovementController::isNullColliding, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>(
+      "isCollisionStuck", std::bind(&MovementController::isCollisionStuck, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<std::optional<float>>(
+      "stickingDirection", std::bind(&MovementController::stickingDirection, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<float>(
+      "liquidPercentage", std::bind(&MovementController::liquidPercentage, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<LiquidId>(
+      "liquidId", std::bind(&MovementController::liquidId, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("onGround", std::bind(&MovementController::onGround, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool>("zeroG", std::bind(&MovementController::zeroG, movementController)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", std::bind(&MovementController::atWorldLimit, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "setPosition", std::bind(&MovementController::setPosition, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "setXPosition", std::bind(&MovementController::setXPosition, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "setYPosition", std::bind(&MovementController::setYPosition, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "translate", std::bind(&MovementController::translate, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "setVelocity", std::bind(&MovementController::setVelocity, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "setXVelocity", std::bind(&MovementController::setXVelocity, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "setYVelocity", std::bind(&MovementController::setYVelocity, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "addMomentum", std::bind(&MovementController::addMomentum, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "setRotation", std::bind(&MovementController::setRotation, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float>(
+      "rotate", std::bind(&MovementController::rotate, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "accelerate", std::bind(&MovementController::accelerate, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F>(
+      "force", std::bind(&MovementController::force, movementController, std::placeholders::_1)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, Vec2F, float>(
+      "approachVelocity", std::bind(&MovementController::approachVelocity, movementController, std::placeholders::_1, std::placeholders::_2)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float, float, float, bool>("approachVelocityAlongAngle",
+      std::bind(&MovementController::approachVelocityAlongAngle, movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float, float>(
+      "approachXVelocity", std::bind(&MovementController::approachXVelocity, movementController, std::placeholders::_1, std::placeholders::_2)); !registration)
+    return std::unexpected(std::move(registration.error()));
+  if (auto registration = callbacks.registerCallbackWithSignature<void, float, float>(
+      "approachYVelocity", std::bind(&MovementController::approachYVelocity, movementController, std::placeholders::_1, std::placeholders::_2)); !registration)
+    return std::unexpected(std::move(registration.error()));
 
   return callbacks;
 }

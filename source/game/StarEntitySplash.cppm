@@ -1,6 +1,7 @@
 module;
 import std;
 import star.json;
+import star.format;
 
 import star.color;
 import star.bi_map;
@@ -24,7 +25,7 @@ class EntitySplashHelper;
 
 struct EntitySplashConfig {
   EntitySplashConfig();
-  EntitySplashConfig(Root& root, Json const& config);
+  [[nodiscard]] static std::expected<EntitySplashConfig, StarException> create(Root& root, Json const& config);
   float splashSpeedMin;
   Vec2F splashBottomSensor;
   Vec2F splashTopSensor;
@@ -34,7 +35,7 @@ struct EntitySplashConfig {
   Particle splashParticleVariance;
   float splashYVelocityFactor;
 
-  List<Particle> doSplash(Vec2F position, Vec2F velocity, World* world) const;
+  [[nodiscard]] std::expected<List<Particle>, StarException> doSplash(Vec2F position, Vec2F velocity, World* world) const;
 };
 
 }

@@ -53,7 +53,7 @@ using PlayerException = StarError<PlayerExceptionTag, StarException>;
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.
 struct PlayerConfig {
-  PlayerConfig(Root& root, JsonObject const& cfg);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerConfig>, StarException> create(Root& root, JsonObject const& cfg);
 
   HumanoidIdentity defaultIdentity;
   Humanoid::HumanoidTiming humanoidTiming;
@@ -90,17 +90,20 @@ struct PlayerConfig {
   Json deploymentConfig;
 
   StringMap<String> genericScriptContexts;
+private:
+  explicit PlayerConfig(Humanoid::HumanoidTiming timing) : humanoidTiming(std::move(timing)) {}
 };
 
 class PlayerFactory {
 public:
-  PlayerFactory(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerFactory>, StarException> create(Root& root);
 
-  std::shared_ptr<Player> create() const;
-  std::shared_ptr<Player> diskLoadPlayer(Json const& diskStore) const;
-  std::shared_ptr<Player> netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Player>, StarException> create() const;
+  [[nodiscard]] std::expected<std::shared_ptr<Player>, StarException> diskLoadPlayer(Json const& diskStore) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Player>, StarException> netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
+  explicit PlayerFactory(Root& root);
   Root& m_root;
   std::shared_ptr<PlayerConfig> m_config;
 

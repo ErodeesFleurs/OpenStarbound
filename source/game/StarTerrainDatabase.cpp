@@ -39,14 +39,29 @@ namespace Star {
 TerrainSelectorParameters::TerrainSelectorParameters(RandomService& random) {
   seed = random.randu64();
   worldWidth = 0;
+  baseHeight = 0;
   commonality = 1.0f;
 }
 
-TerrainSelectorParameters::TerrainSelectorParameters(Json const& v) {
-  worldWidth = v.getUInt("worldWidth");
-  baseHeight = v.getFloat("baseHeight");
-  seed = v.getUInt("seed");
-  commonality = v.getFloat("commonality");
+std::expected<TerrainSelectorParameters, StarException> TerrainSelectorParameters::create(Json const& v) {
+  TerrainSelectorParameters result;
+  auto worldWidth = v.getUInt("worldWidth");
+  if (!worldWidth)
+    return std::unexpected(std::move(worldWidth.error()));
+  result.worldWidth = *worldWidth;
+  auto baseHeight = v.getFloat("baseHeight");
+  if (!baseHeight)
+    return std::unexpected(std::move(baseHeight.error()));
+  result.baseHeight = *baseHeight;
+  auto seed = v.getUInt("seed");
+  if (!seed)
+    return std::unexpected(std::move(seed.error()));
+  result.seed = *seed;
+  auto commonality = v.getFloat("commonality");
+  if (!commonality)
+    return std::unexpected(std::move(commonality.error()));
+  result.commonality = *commonality;
+  return result;
 }
 
 Json TerrainSelectorParameters::toJson() const {
@@ -71,51 +86,64 @@ TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParame
 
 TerrainSelector::~TerrainSelector() {}
 
-TerrainDatabase::TerrainDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random) : m_random(random) {
+TerrainDatabase::TerrainDatabase(ConstructionKey, RandomService& random) : m_random(random) {}
 
-  // 'type' here is the extension of the file, and determines the selector type
-  auto scanFiles = [this, assets](String const& type) {
-    auto& files = assets->scanExtension(type);
-    assets->queueJsons(files);
-    for (auto& path : files) {
-      auto parameters = assets->json(path);
-      auto name = parameters.getString("name");
-      if (m_terrainSelectors.contains(name))
-        throw TerrainException(strf("Duplicate terrain generator name '{}'", name));
-      m_terrainSelectors[name] = {type, parameters};
+std::expected<std::shared_ptr<TerrainDatabase>, StarException> TerrainDatabase::create(std::shared_ptr<Assets const> const& assets, RandomService& random) {
+  auto result = std::make_shared<TerrainDatabase>(ConstructionKey{}, random);
+
+  // The extension determines the selector type; retain scan and seed order.
+  auto scanFiles = [&](String const& type, bool composed) -> std::expected<void, StarException> {
+    auto files = assets->scanExtension(type);
+    if (!files)
+      return std::unexpected(std::move(files.error()));
+    auto queued = assets->queueJsons(**files);
+    if (!queued)
+      return std::unexpected(std::move(queued.error()));
+    for (auto const& path : **files) {
+      auto parameters = assets->json(path.string());
+      if (!parameters)
+        return std::unexpected(std::move(parameters.error()));
+      auto name = parameters->getString("name");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      auto selectorType = type;
+      if (composed) {
+        auto configuredType = parameters->getString("type");
+        if (!configuredType)
+          return std::unexpected(std::move(configuredType.error()));
+        selectorType = std::move(*configuredType);
+      }
+      if (result->m_terrainSelectors.contains(*name))
+        return std::unexpected(TerrainException(strf("Duplicate {}terrain generator name '{}'", composed ? "composed " : "", *name)));
+      result->m_terrainSelectors[*name] = {std::move(selectorType), std::move(*parameters)};
     }
+    return {};
   };
-
-  scanFiles(KarstCaveSelector::Name);
-  scanFiles(WormCaveSelector::Name);
-  scanFiles(RidgeBlocksSelector::Name);
-
-  auto& files = assets->scanExtension("terrain");
-  assets->queueJsons(files);
-  for (auto& path : files) {
-    auto parameters = assets->json(path);
-    auto name = parameters.getString("name");
-    auto type = parameters.getString("type");
-    if (m_terrainSelectors.contains(name))
-      throw TerrainException(strf("Duplicate composed terrain generator name '{}'", name));
-    m_terrainSelectors[name] = {type, parameters};
+  for (char const* type : {KarstCaveSelector::Name, WormCaveSelector::Name, RidgeBlocksSelector::Name}) {
+    auto scanned = scanFiles(type, false);
+    if (!scanned)
+      return std::unexpected(std::move(scanned.error()));
   }
+  auto composed = scanFiles("terrain", true);
+  if (!composed)
+    return std::unexpected(std::move(composed.error()));
+  return result;
 }
 
-TerrainDatabase::Config TerrainDatabase::selectorConfig(String const& name) const {
+std::expected<TerrainDatabase::Config, StarException> TerrainDatabase::selectorConfig(String const& name) const {
   if (auto config = m_terrainSelectors.maybe(name))
-    return std::move(config.value());
-  else
-    throw TerrainException(strf("No such terrain selector '{}'", name));
+    return std::move(*config);
+  return std::unexpected(TerrainException(strf("No such terrain selector '{}'", name)));
 }
 
-std::shared_ptr<TerrainSelector const> TerrainDatabase::createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const {
+std::expected<std::shared_ptr<TerrainSelector const>, StarException> TerrainDatabase::createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const {
   auto config = selectorConfig(name);
-
-  return createSelectorType(config.type, config.parameters, parameters);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  return createSelectorType(config->type, config->parameters, parameters);
 }
 
-std::shared_ptr<TerrainSelector const> TerrainDatabase::constantSelector(float value) {
+std::expected<std::shared_ptr<TerrainSelector const>, StarException> TerrainDatabase::constantSelector(float value) {
   return createSelectorType(ConstantSelector::Name, JsonObject{{"value", value}}, TerrainSelectorParameters(m_random));
 }
 
@@ -130,42 +158,52 @@ Json TerrainDatabase::storeSelector(std::shared_ptr<TerrainSelector const> const
   };
 }
 
-std::shared_ptr<TerrainSelector const> TerrainDatabase::loadSelector(Json const& store) const {
+std::expected<std::shared_ptr<TerrainSelector const>, StarException> TerrainDatabase::loadSelector(Json const& store) const {
   if (store.isNull())
-    return {};
-  return createSelectorType(store.getString("type"), store.get("config"),
-      TerrainSelectorParameters(store.get("parameters")));
+    return std::shared_ptr<TerrainSelector const>{};
+  auto type = store.getString("type");
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  auto config = store.get("config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto storedParameters = store.get("parameters");
+  if (!storedParameters)
+    return std::unexpected(std::move(storedParameters.error()));
+  auto parameters = TerrainSelectorParameters::create(*storedParameters);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  return createSelectorType(*type, *config, *parameters);
 }
 
-std::shared_ptr<TerrainSelector const> TerrainDatabase::createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const {
+std::expected<std::shared_ptr<TerrainSelector const>, StarException> TerrainDatabase::createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const {
   if (type == WormCaveSelector::Name)
-    return std::make_shared<WormCaveSelector>(config, parameters);
+    return WormCaveSelector::create(config, parameters);
   else if (type == KarstCaveSelector::Name)
-    return std::make_shared<KarstCaveSelector>(config, parameters);
+    return KarstCaveSelector::create(config, parameters);
   else if (type == ConstantSelector::Name)
-    return std::make_shared<ConstantSelector>(config, parameters);
+    return ConstantSelector::create(config, parameters);
   else if (type == MaxSelector::Name)
-    return std::make_shared<MaxSelector>(config, parameters, this);
+    return MaxSelector::create(config, parameters, this);
   else if (type == MinMaxSelector::Name)
-    return std::make_shared<MinMaxSelector>(config, parameters, this);
+    return MinMaxSelector::create(config, parameters, this);
   else if (type == IslandSurfaceSelector::Name)
-    return std::make_shared<IslandSurfaceSelector>(config, parameters);
+    return IslandSurfaceSelector::create(config, parameters);
   else if (type == FlatSurfaceSelector::Name)
-    return std::make_shared<FlatSurfaceSelector>(config, parameters);
+    return FlatSurfaceSelector::create(config, parameters);
   else if (type == DisplacementSelector::Name)
-    return std::make_shared<DisplacementSelector>(config, parameters, this);
+    return DisplacementSelector::create(config, parameters, this);
   else if (type == RotateSelector::Name)
-    return std::make_shared<RotateSelector>(config, parameters, this);
+    return RotateSelector::create(config, parameters, this);
   else if (type == MixSelector::Name)
-    return std::make_shared<MixSelector>(config, parameters, this);
+    return MixSelector::create(config, parameters, this);
   else if (type == PerlinSelector::Name)
-    return std::make_shared<PerlinSelector>(config, parameters);
+    return PerlinSelector::create(config, parameters);
   else if (type == RidgeBlocksSelector::Name)
-    return std::make_shared<RidgeBlocksSelector>(config, parameters);
+    return RidgeBlocksSelector::create(config, parameters);
   else if (type == CacheSelector::Name)
-    return std::make_shared<CacheSelector>(config, parameters, this);
-  else
-    throw TerrainException(strf("Unknown terrain selector type '{}'", type));
+    return CacheSelector::create(config, parameters, this);
+  return std::unexpected(TerrainException(strf("Unknown terrain selector type '{}'", type)));
 }
 
 }

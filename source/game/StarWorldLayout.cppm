@@ -54,7 +54,7 @@ struct WorldRegionLiquids {
 
 struct WorldRegion {
   WorldRegion();
-  explicit WorldRegion(Json const& store);
+  [[nodiscard]] static std::expected<WorldRegion, StarException> create(Json const& store);
 
   Json toJson() const;
 
@@ -76,18 +76,16 @@ class Root;
 class WorldLayout {
   Root& m_root;
   Root& root() const { return m_root; }
-  friend DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);
-  friend DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 public:
   struct BlockNoise {
-    static BlockNoise build(Json const& config, std::uint64_t seed);
+    [[nodiscard]] static std::expected<BlockNoise, StarException> build(Json const& config, std::uint64_t seed);
 
     BlockNoise();
-    explicit BlockNoise(Json const& store);
+    [[nodiscard]] static std::expected<BlockNoise, StarException> create(Json const& store);
 
-    Json toJson() const;
+    [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
-    Vec2I apply(Vec2I const& input, Vec2U const& worldSize) const;
+    [[nodiscard]] std::expected<Vec2I, StarException> apply(Vec2I const& input, Vec2U const& worldSize) const;
 
     // Individual noise only applied for horizontal / vertical biome transitions
     PerlinF horizontalNoise;
@@ -104,35 +102,35 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(Root& root, AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(Root& root, FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed);
+  [[nodiscard]] static std::expected<WorldLayout, StarException> buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
+  [[nodiscard]] static std::expected<WorldLayout, StarException> buildAsteroidsLayout(Root& root, AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed);
+  [[nodiscard]] static std::expected<WorldLayout, StarException> buildFloatingDungeonLayout(Root& root, FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed);
 
   WorldLayout(Root& root);
-  WorldLayout(Root& root, Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldLayout>, StarException> create(Root& root, Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   std::optional<BlockNoise> const& blockNoise() const;
   std::optional<PerlinF> const& blendNoise() const;
 
   List<RectI> playerStartSearchRegions() const;
 
-  std::shared_ptr<Biome const> const& getBiome(BiomeIndex index) const;
-  std::shared_ptr<TerrainSelector const> const& getTerrainSelector(TerrainSelectorIndex index) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Biome const> const*, StarException> getBiome(BiomeIndex index) const;
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const> const*, StarException> getTerrainSelector(TerrainSelectorIndex index) const;
 
   // Will return region weighting in order of greatest to least weighting.
-  List<RegionWeighting> getWeighting(int x, int y) const;
+  [[nodiscard]] std::expected<List<RegionWeighting>, StarException> getWeighting(int x, int y) const;
 
-  List<RectI> previewAddBiomeRegion(Vec2I const& position, int width) const;
-  List<RectI> previewExpandBiomeRegion(Vec2I const& position, int width) const;
+  [[nodiscard]] std::expected<List<RectI>, StarException> previewAddBiomeRegion(Vec2I const& position, int width) const;
+  [[nodiscard]] std::expected<List<RectI>, StarException> previewExpandBiomeRegion(Vec2I const& position, int width) const;
 
-  void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
-  void expandBiomeRegion(Vec2I const& position, int newWidth);
+  [[nodiscard]] std::expected<void, StarException> addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
+  [[nodiscard]] std::expected<void, StarException> expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // sets the environment biome index for all regions in the current layer
   // to the biome at the specified position, and returns the name of the biome
-  String setLayerEnvironmentBiome(Vec2I const& position);
+  [[nodiscard]] std::expected<String, StarException> setLayerEnvironmentBiome(Vec2I const& position);
 
   std::pair<std::size_t, std::size_t> findLayerAndCell(int x, int y) const;
 
@@ -158,18 +156,18 @@ private:
     WorldRegionLiquids regionLiquids;
   };
 
-  std::pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const;
+  [[nodiscard]] std::expected<std::pair<WorldLayer, List<RectI>>, StarException> expandRegionInLayer(WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const;
 
   BiomeIndex registerBiome(std::shared_ptr<Biome const> biome);
   TerrainSelectorIndex registerTerrainSelector(std::shared_ptr<TerrainSelector const> terrainSelector);
 
-  WorldRegion buildRegion(std::uint64_t seed, RegionParams const& regionParams);
-  void addLayer(std::uint64_t seed, int yStart, RegionParams regionParams);
-  void addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
+  [[nodiscard]] std::expected<WorldRegion, StarException> buildRegion(std::uint64_t seed, RegionParams const& regionParams);
+  [[nodiscard]] std::expected<void, StarException> addLayer(std::uint64_t seed, int yStart, RegionParams regionParams);
+  [[nodiscard]] std::expected<void, StarException> addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
       RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
       List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
       Vec2F secondaryRegionSize, Vec2F subRegionSize);
-  void finalize(Color mainSkyColor);
+  [[nodiscard]] std::expected<void, StarException> finalize(Color mainSkyColor);
 
   std::pair<std::size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
   std::pair<std::size_t, int> leftCell(WorldLayer const& layer, std::size_t cellIndex, int x) const;
@@ -188,19 +186,17 @@ private:
   List<RectI> m_playerStartSearchRegions;
 };
 
-DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);
-DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 
-inline std::shared_ptr<Biome const> const& WorldLayout::getBiome(BiomeIndex index) const {
+[[nodiscard]] inline std::expected<std::shared_ptr<Biome const> const*, StarException> WorldLayout::getBiome(BiomeIndex index) const {
   if (index == NullBiomeIndex || index > m_biomes.size())
-    throw StarException("WorldLayout::getTerrainSelector called with null or out of range BiomeIndex");
-  return m_biomes[index - 1];
+    return std::unexpected(StarException("WorldLayout::getTerrainSelector called with null or out of range BiomeIndex"));
+  return &m_biomes[index - 1];
 }
 
-inline std::shared_ptr<TerrainSelector const> const& WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
+[[nodiscard]] inline std::expected<std::shared_ptr<TerrainSelector const> const*, StarException> WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
   if (index == NullBiomeIndex || index > m_terrainSelectors.size())
-    throw StarException("WorldLayout::getTerrainSelector called with null or out of range TerrainSelectorIndex");
-  return m_terrainSelectors[index - 1];
+    return std::unexpected(StarException("WorldLayout::getTerrainSelector called with null or out of range TerrainSelectorIndex"));
+  return &m_terrainSelectors[index - 1];
 }
 
 }

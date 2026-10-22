@@ -1,3 +1,4 @@
+import star.format;
 import star.json_extra;
 import star.json;
 import star.id_map;
@@ -125,7 +126,7 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
+std::expected<EnumMap<EntityType>, StarException> const EntityFactory::EntityStorageIdentifiers = EnumMap<EntityType>::create({
   {EntityType::Player, "PlayerEntity"},
   {EntityType::Monster, "MonsterEntity"},
   {EntityType::Object, "ObjectEntity"},
@@ -136,19 +137,37 @@ EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
   {EntityType::Npc, "NpcEntity"},
   {EntityType::Stagehand, "StagehandEntity"},
   {EntityType::Vehicle, "VehicleEntity"}
-};
+});
 
-EntityFactory::EntityFactory(Root& root) : m_root(root) {
-  m_playerFactory = root.playerFactory();
-  m_monsterDatabase = root.monsterDatabase();
-  m_objectDatabase = root.objectDatabase();
-  m_projectileDatabase = root.projectileDatabase();
-  m_npcDatabase = root.npcDatabase();
-  m_vehicleDatabase = root.vehicleDatabase();
-  m_versioningDatabase = root.versioningDatabase();
+EntityFactory::EntityFactory(Root& root) : m_root(root) {}
+
+std::expected<std::shared_ptr<EntityFactory>, StarException> EntityFactory::create(Root& root) {
+  auto factory = std::shared_ptr<EntityFactory>(new EntityFactory(root));
+  auto player = root.playerFactory();
+  if (!player) return std::unexpected(std::move(player.error()));
+  factory->m_playerFactory = std::move(*player);
+  auto monster = root.monsterDatabase();
+  if (!monster) return std::unexpected(std::move(monster.error()));
+  factory->m_monsterDatabase = std::move(*monster);
+  auto object = root.objectDatabase();
+  if (!object) return std::unexpected(std::move(object.error()));
+  factory->m_objectDatabase = std::move(*object);
+  auto projectile = root.projectileDatabase();
+  if (!projectile) return std::unexpected(std::move(projectile.error()));
+  factory->m_projectileDatabase = std::move(*projectile);
+  auto npc = root.npcDatabase();
+  if (!npc) return std::unexpected(std::move(npc.error()));
+  factory->m_npcDatabase = std::move(*npc);
+  auto vehicle = root.vehicleDatabase();
+  if (!vehicle) return std::unexpected(std::move(vehicle.error()));
+  factory->m_vehicleDatabase = std::move(*vehicle);
+  auto versioning = root.versioningDatabase();
+  if (!versioning) return std::unexpected(std::move(versioning.error()));
+  factory->m_versioningDatabase = std::move(*versioning);
+  return factory;
 }
 
-ByteArray EntityFactory::netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules) const {
+std::expected<ByteArray, StarException> EntityFactory::netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -172,11 +191,14 @@ ByteArray EntityFactory::netStoreEntity(std::shared_ptr<Entity> const& entity, N
   } else if (auto vehicle = as<Vehicle>(entity)) {
     return m_vehicleDatabase->netStore(vehicle, rules);
   } else {
-    throw EntityFactoryException::format("Don't know how to make net store for entity type '{}'", EntityTypeNames.getRight(entity->entityType()));
+    if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
+    auto name = EntityTypeNames->getRight(entity->entityType());
+    if (!name) return std::unexpected(std::move(name.error()));
+    return std::unexpected(EntityFactoryException::format("Don't know how to make net store for entity type '{}'", **name));
   }
 }
 
-std::shared_ptr<Entity> EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -186,25 +208,28 @@ std::shared_ptr<Entity> EntityFactory::netLoadEntity(EntityType type, ByteArray 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return std::make_shared<Plant>(m_root, netStore, rules);
+    return Plant::create(m_root, netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return std::make_shared<PlantDrop>(m_root, netStore, rules);
+    return PlantDrop::create(m_root, netStore, rules);
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return std::make_shared<ItemDrop>(m_root, netStore, rules);
+    return ItemDrop::create(m_root, netStore, rules);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
-    return std::make_shared<Stagehand>(m_root, netStore, rules);
+    return Stagehand::create(m_root, netStore, rules);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->netLoad(netStore, rules);
   } else {
-    throw EntityFactoryException::format("Don't know how to create entity type '{}' from net store", EntityTypeNames.getRight(type));
+    if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
+    auto name = EntityTypeNames->getRight(type);
+    if (!name) return std::unexpected(std::move(name.error()));
+    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from net store", **name));
   }
 }
 
-Json EntityFactory::diskStoreEntity(std::shared_ptr<Entity> const& entity) const {
+std::expected<Json, StarException> EntityFactory::diskStoreEntity(std::shared_ptr<Entity> const& entity) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -224,11 +249,14 @@ Json EntityFactory::diskStoreEntity(std::shared_ptr<Entity> const& entity) const
   } else if (auto vehicle = as<Vehicle>(entity)) {
     return m_vehicleDatabase->diskStore(vehicle);
   } else {
-    throw EntityFactoryException::format("Don't know how to make disk store for entity type '{}'", EntityTypeNames.getRight(entity->entityType()));
+    if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
+    auto name = EntityTypeNames->getRight(entity->entityType());
+    if (!name) return std::unexpected(std::move(name.error()));
+    return std::unexpected(EntityFactoryException::format("Don't know how to make disk store for entity type '{}'", **name));
   }
 }
 
-std::shared_ptr<Entity> EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
+std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -238,44 +266,53 @@ std::shared_ptr<Entity> EntityFactory::diskLoadEntity(EntityType type, Json cons
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return std::make_shared<Plant>(m_root, diskStore);
+    return Plant::create(m_root, diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return std::make_shared<ItemDrop>(m_root, diskStore);
+    return ItemDrop::create(m_root, diskStore);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {
-    return std::make_shared<Stagehand>(m_root, diskStore);
+    return Stagehand::create(m_root, diskStore);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->diskLoad(diskStore);
   } else {
-    throw EntityFactoryException::format("Don't know how to create entity type '{}' from disk store", EntityTypeNames.getRight(type));
+    if (!EntityTypeNames) return std::unexpected(EntityTypeNames.error());
+    auto name = EntityTypeNames->getRight(type);
+    if (!name) return std::unexpected(std::move(name.error()));
+    return std::unexpected(EntityFactoryException::format("Don't know how to create entity type '{}' from disk store", **name));
   }
 }
 
-Json EntityFactory::loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const {
+std::expected<Json, StarException> EntityFactory::loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const {
   RecursiveMutexLocker locker(m_mutex);
-
-  String identifier = EntityStorageIdentifiers.getRight(expectedType);
-  return m_versioningDatabase->loadVersionedJson(versionedJson, identifier);
+  if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
+  auto identifier = EntityStorageIdentifiers->getRight(expectedType);
+  if (!identifier) return std::unexpected(std::move(identifier.error()));
+  return m_versioningDatabase->loadVersionedJson(versionedJson, **identifier);
 }
 
-VersionedJson EntityFactory::storeVersionedJson(EntityType type, Json const& store) const {
+std::expected<VersionedJson, StarException> EntityFactory::storeVersionedJson(EntityType type, Json const& store) const {
   RecursiveMutexLocker locker(m_mutex);
-
-  String identifier = EntityStorageIdentifiers.getRight(type);
-  return m_versioningDatabase->makeCurrentVersionedJson(identifier, store);
+  if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
+  auto identifier = EntityStorageIdentifiers->getRight(type);
+  if (!identifier) return std::unexpected(std::move(identifier.error()));
+  return m_versioningDatabase->makeCurrentVersionedJson(**identifier, store);
 }
 
-std::shared_ptr<Entity> EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
+std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
   RecursiveMutexLocker locker(m_mutex);
-
-  EntityType type = EntityStorageIdentifiers.getLeft(versionedJson.identifier);
-  auto store = loadVersionedJson(versionedJson, type);
-  return diskLoadEntity(type, store);
+  if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
+  auto type = EntityStorageIdentifiers->getLeft(versionedJson.identifier);
+  if (!type) return std::unexpected(std::move(type.error()));
+  auto store = loadVersionedJson(versionedJson, **type);
+  if (!store) return std::unexpected(std::move(store.error()));
+  return diskLoadEntity(**type, *store);
 }
 
-VersionedJson EntityFactory::storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const {
-  return storeVersionedJson(entityPtr->entityType(), diskStoreEntity(entityPtr));
+std::expected<VersionedJson, StarException> EntityFactory::storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const {
+  auto store = diskStoreEntity(entityPtr);
+  if (!store) return std::unexpected(std::move(store.error()));
+  return storeVersionedJson(entityPtr->entityType(), *store);
 }
 
 }

@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.vector;
 import star.input_event;
 import star.application;
@@ -9,30 +10,33 @@ import star.string;
 
 namespace Star {
 
-void Application::startup(StringList const&) {}
+std::expected<void, StarException> Application::startup(StringList const&) { return {}; }
 
-void Application::applicationInit(std::shared_ptr<ApplicationController> appController) {
+std::expected<void, StarException> Application::applicationInit(std::shared_ptr<ApplicationController> appController) {
   m_appController = std::move(appController);
+  return {};
 }
 
-void Application::renderInit(std::shared_ptr<Renderer> renderer) {
+std::expected<void, StarException> Application::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
+  return {};
 }
 
-void Application::windowChanged(WindowMode, Vec2U) {}
+std::expected<void, StarException> Application::windowChanged(WindowMode, Vec2U) { return {}; }
 
-void Application::processInput(InputEvent const&) {}
+std::expected<void, StarException> Application::processInput(InputEvent const&) { return {}; }
 
-void Application::update() {}
+std::expected<void, StarException> Application::update() { return {}; }
 
 unsigned Application::framesSkipped() const { return 0; }
 
-void Application::render() {}
+std::expected<void, StarException> Application::render() { return {}; }
 
-void Application::getAudioData(std::int16_t* samples, std::size_t sampleCount) {
+std::expected<void, StarException> Application::getAudioData(std::int16_t* samples, std::size_t sampleCount) {
   for (std::size_t i = 0; i < sampleCount; ++i)
     samples[i] = 0;
+  return {};
 }
 
-void Application::shutdown() {}
+std::expected<void, StarException> Application::shutdown() { return {}; }
 }

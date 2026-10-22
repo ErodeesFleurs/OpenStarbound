@@ -30,7 +30,8 @@ using TreasureException = StarError<TreasureExceptionTag, StarException>;
 
 class TreasureDatabase {
 public:
-  explicit TreasureDatabase(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<TreasureDatabase>, StarException> create(Root& root);
 
   StringList treasurePools() const;
   bool isTreasurePool(String const& treasurePool) const;
@@ -38,23 +39,32 @@ public:
   StringList treasureChestSets() const;
   bool isTreasureChestSet(String const& treasurePool) const;
 
-  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level) const;
-  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed) const;
-  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed, ItemDatabase const* itemCatalog) const;
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> createTreasure(String const& treasurePool, float level) const;
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> createTreasure(String const& treasurePool, float level, std::uint64_t seed) const;
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> createTreasure(String const& treasurePool, float level, std::uint64_t seed, ItemDatabase const* itemCatalog) const;
 
   // Adds created treasure to the given ItemBags, does not clear the ItemBag
   // first.  Returns overflow items.
-  List<std::shared_ptr<Item>> fillWithTreasure(std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level) const;
-  List<std::shared_ptr<Item>> fillWithTreasure(std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const;
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> fillWithTreasure(std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level) const;
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> fillWithTreasure(std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const;
 
   // If the given container does not fit at this position, or if the treasure
   // box set does not have an entry with a minimum level less than the given
   // world threat level, this method will return null.
-  std::shared_ptr<ContainerObject> createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
-  std::shared_ptr<ContainerObject> createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<ContainerObject>, StarException> createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<ContainerObject>, StarException> createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const;
 
 private:
-  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, ItemDatabase const* itemCatalog) const;
+  explicit TreasureDatabase(Root& root) : m_root(root) {}
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Item>>, StarException> createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, ItemDatabase const* itemCatalog) const;
 
   // Specifies either an item descriptor or the name of a valid treasurepool to
   // be

@@ -7,12 +7,12 @@ import star.lexical_cast;
 
 namespace Star {
 
-void throwLexicalCastError(std::errc ec, const char* first, const char* last) {
-  StringView str(first, last - first);
+BadLexicalCast lexicalCastError(std::errc ec, const char* first, const char* last) {
+  std::string_view str(first, last - first);
   if (ec == std::errc::invalid_argument)
-    throw BadLexicalCast(strf("Lexical cast failed on '{}' (invalid argument)", str));
+    return BadLexicalCast(strf("Lexical cast failed on '{}' (invalid argument)", str));
   else
-    throw BadLexicalCast(strf("Lexical cast failed on '{}'", str));
+    return BadLexicalCast(strf("Lexical cast failed on '{}'", str));
 }
 
 template <>
@@ -35,12 +35,12 @@ bool tryLexicalCast(bool& result, const char* first, const char* last) {
 }
 
 template <>
-bool lexicalCast(const char* first, const char* last) {
+std::expected<bool, StarException> lexicalCast(const char* first, const char* last) {
   std::size_t len = last - first;
   if (len == 4 && std::memcmp(first, "true", 4) == 0)
     return true;
   else if (len != 5 || std::memcmp(first, "false", 5) != 0)
-    throwLexicalCastError(std::errc(), first, last);
+    return std::unexpected(lexicalCastError(std::errc(), first, last));
 
   return false;
 }

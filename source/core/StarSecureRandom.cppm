@@ -19,27 +19,31 @@ export namespace Star {
 
 // Generate cryptographically secure random numbers for usage in password salts
 // and such using OS facilities
-ByteArray secureRandomBytes(std::size_t size);
+[[nodiscard]] std::expected<ByteArray, StarException> secureRandomBytes(std::size_t size);
 
 }
 
 namespace Star {
 
-ByteArray secureRandomBytes(std::size_t size) {
+std::expected<ByteArray, StarException> secureRandomBytes(std::size_t size) {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
   HCRYPTPROV context = 0;
-  auto res = ByteArray(size, '\0');
 
-  CryptAcquireContext(&context, 0, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+  if (!CryptAcquireContext(&context, 0, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+    return std::unexpected(StarException("Could not acquire secure random source."));
+  auto res = ByteArray(size, '\0');
   auto success = CryptGenRandom(context, size, (PBYTE)res.ptr());
   CryptReleaseContext(context, 0);
 
   if (!success)
-    throw StarException("Could not read random bytes from source.");
+    return std::unexpected(StarException("Could not read random bytes from source."));
 
   return res;
 #else
-  return File::open("/dev/urandom", IOMode::Read)->readBytes(size);
+  auto file = File::open("/dev/urandom", IOMode::Read);
+  if (!file)
+    return std::unexpected(std::move(file.error()));
+  return (*file)->readBytes(size);
 #endif
 }
 

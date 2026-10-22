@@ -49,6 +49,7 @@ import star.button_widget;
 import star.portrait_widget;
 import star.label_widget;
 
+import star.format;
 namespace Star {
 
 class Player;
@@ -62,23 +63,24 @@ public:
     return Star::typeName<LargeCharPlateWidget>();
   }
 
-  LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = std::shared_ptr<Player>());
+  [[nodiscard]] static std::expected<std::shared_ptr<LargeCharPlateWidget>, StarException> create(GuiContext& context, WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = {});
 
-  void mouseOut() override;
+  [[nodiscard]] std::expected<void, StarException> mouseOut() override;
 
-  void setPlayer(std::shared_ptr<Player> player = std::shared_ptr<Player>());
+  [[nodiscard]] std::expected<void, StarException> setPlayer(std::shared_ptr<Player> player = {});
 
-  void enableDelete(WidgetCallbackFunc const& callback);
+  [[nodiscard]] std::expected<void, StarException> enableDelete(WidgetCallbackFunc const& callback);
   void disableDelete();
 
-  virtual bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 protected:
-  virtual void renderImpl() override;
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
+  explicit LargeCharPlateWidget(GuiContext& context);
   std::shared_ptr<Player> m_player;
   Json m_config;
 

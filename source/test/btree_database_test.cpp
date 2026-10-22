@@ -28,20 +28,23 @@ namespace {
     bool failSync = false;
     unsigned syncCalls = 0;
 
-    void sync() override {
+    [[nodiscard]] std::expected<void, StarException> sync() override {
       ++syncCalls;
       if (failSync)
-        throw IOException("Injected sync failure");
+        return std::unexpected(IOException("Injected sync failure"));
+      return {};
     }
   };
 
   struct FailingCloseBuffer : Buffer {
     unsigned closeCalls = 0;
 
-    void close() override {
+    [[nodiscard]] std::expected<void, StarException> close() override {
       ++closeCalls;
-      IODevice::close();
-      throw IOException("Injected close failure");
+      auto closed = IODevice::close();
+      if (!closed)
+        return std::unexpected(std::move(closed.error()));
+      return std::unexpected(IOException("Injected close failure"));
     }
   };
 
@@ -76,19 +79,23 @@ namespace {
   void putAll(RandomService& random, BTreeDatabase& db, const List<std::uint32_t>& keys) {
     for (std::uint32_t k : keys) {
       ByteArray val = genBlock(k);
-      db.insert(toByteArray(k), val);
+      auto inserted = db.insert(toByteArray(k), val);
+      ASSERT_TRUE(inserted) << inserted.error().what();
 
       int i = random.randi32();
-      if (i % 23 == 0)
-        db.commit();
+      if (i % 23 == 0) {
+        auto committed = db.commit();
+        ASSERT_TRUE(committed) << committed.error().what();
+      }
     }
   }
 
   void checkAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
     for (std::uint32_t k : keys) {
       auto res = db.find(toByteArray(k));
-      EXPECT_TRUE((bool)res);
-      EXPECT_TRUE(checkBlock(k, *res));
+      ASSERT_TRUE(res) << res.error().what();
+      ASSERT_TRUE(*res) << "Missing record for key " << k;
+      EXPECT_TRUE(checkBlock(k, **res));
     }
 
     // Also check that forAll works.
@@ -97,37 +104,67 @@ namespace {
     for (std::uint32_t k : keys)
       keySet.add(toByteArray(k));
 
-    db.forAll([&keySet](ByteArray const& key, ByteArray const&) { EXPECT_TRUE(keySet.remove(key)); });
+    ASSERT_TRUE(db.forAll([&keySet](ByteArray const& key, ByteArray const&) -> std::expected<void, StarException> {
+      EXPECT_TRUE(keySet.remove(key));
+      return {};
+    }));
 
     EXPECT_TRUE(keySet.empty());
   }
 
-  std::size_t removeAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
+  [[nodiscard]] std::expected<std::size_t, StarException> removeAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
     std::size_t totalRemoved = 0;
     for (std::uint32_t k : keys) {
       auto old = db.find(toByteArray(k));
-      EXPECT_TRUE(!old || *old == genBlock(k));
+      if (!old)
+        return std::unexpected(std::move(old.error()));
+      EXPECT_TRUE(!*old || **old == genBlock(k));
 
-      if (db.remove(toByteArray(k))) {
-        EXPECT_FALSE((bool)db.find(toByteArray(k)));
+      auto removed = db.remove(toByteArray(k));
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+      if (*removed) {
+        auto found = db.find(toByteArray(k));
+        if (!found)
+          return std::unexpected(std::move(found.error()));
+        EXPECT_FALSE(*found);
         ++totalRemoved;
       }
     }
     return totalRemoved;
   }
 
+  void checkBlockCounts(BTreeDatabase& db) {
+    auto total = db.totalBlockCount();
+    ASSERT_TRUE(total) << total.error().what();
+    auto free = db.freeBlockCount();
+    ASSERT_TRUE(free) << free.error().what();
+    auto index = db.indexBlockCount();
+    ASSERT_TRUE(index) << index.error().what();
+    auto leaf = db.leafBlockCount();
+    ASSERT_TRUE(leaf) << leaf.error().what();
+    EXPECT_EQ(*total, *free + *index + *leaf);
+  }
+
   void testBTreeDatabase(std::size_t testCount, std::size_t writeRepeat, std::size_t randCount, std::size_t rollbackCount, std::size_t blockSize) {
-    RandomService random;
+    auto randomResult = RandomService::create();
+    ASSERT_TRUE(randomResult);
+    auto& random = **randomResult;
     Logger logger;
-    auto tmpFile = File::temporaryFile(random);
-    auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
+    auto tmpFileResult = File::temporaryFile(random);
+    ASSERT_TRUE(tmpFileResult);
+    auto tmpFile = std::move(*tmpFileResult);
+    auto finallyGuard = finally([&tmpFile]() { EXPECT_TRUE(tmpFile->remove()); });
 
     Set<std::uint32_t> keySet;
     BTreeDatabase db(logger, "TestDB", 4);
-    db.setAutoCommit(false);
+    ASSERT_TRUE(db.setAutoCommit(false));
 
-    while (keySet.size() < testCount)
-      keySet.add(random.randUInt(0, MaxKey));
+    while (keySet.size() < testCount) {
+      auto key = random.randUInt(0, MaxKey);
+      ASSERT_TRUE(key);
+      keySet.add(*key);
+    }
 
     List<std::uint32_t> keys;
     for (std::uint32_t k : keySet) {
@@ -136,15 +173,17 @@ namespace {
     }
 
     db.setIndexCacheSize(0);
-    db.setBlockSize(blockSize);
-    db.setIODevice(tmpFile);
-    db.open();
+    ASSERT_TRUE(db.setBlockSize(blockSize));
+    ASSERT_TRUE(db.setIODevice(tmpFile));
+    ASSERT_TRUE(db.open());
 
     // record writes/reads repeated writeRepeat times randomly each cycle
     random.shuffle(keys);
     putAll(random, db, keys);
 
-    EXPECT_EQ(db.recordCount(), testCount);
+    auto recordCount = db.recordCount();
+    ASSERT_TRUE(recordCount) << recordCount.error().what();
+    EXPECT_EQ(*recordCount, testCount);
 
     random.shuffle(keys);
     checkAll(db, keys);
@@ -154,7 +193,9 @@ namespace {
       List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
 
       random.shuffle(keysTemp);
-      removeAll(db, keysTemp);
+      auto removed = removeAll(db, keysTemp);
+      ASSERT_TRUE(removed) << removed.error().what();
+      ASSERT_GT(*removed, 0u);
 
       random.shuffle(keysTemp);
       putAll(random, db, keysTemp);
@@ -163,45 +204,48 @@ namespace {
       checkAll(db, keys);
     }
 
-    db.commit();
+    ASSERT_TRUE(db.commit());
 
     // Random reads/writes/rollbacks with rollbackCount cycles...
     for (std::uint32_t i = 0; i < rollbackCount ; ++i) {
       List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
       random.shuffle(keysTemp);
 
-      removeAll(db, keysTemp);
-      db.rollback();
+      auto removed = removeAll(db, keysTemp);
+      ASSERT_TRUE(removed) << removed.error().what();
+      ASSERT_GT(*removed, 0u);
+      ASSERT_TRUE(db.rollback());
 
       checkAll(db, keys);
     }
 
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+    checkBlockCounts(db);
 
     // Now testing closing and reading
 
-    db.close();
+    ASSERT_TRUE(db.close());
 
     // Set the wrong value, should be set to correct value in open()
-    db.setBlockSize(blockSize + 512);
+    ASSERT_TRUE(db.setBlockSize(blockSize + 512));
 
-    db.open();
+    ASSERT_TRUE(db.open());
 
     // Checking values...
 
     checkAll(db, keys);
 
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+    checkBlockCounts(db);
 
     // Removing all records...
 
-    std::size_t totalRemoved = removeAll(db, keys);
+    auto totalRemoved = removeAll(db, keys);
+    ASSERT_TRUE(totalRemoved) << totalRemoved.error().what();
 
-    EXPECT_EQ(totalRemoved, testCount);
+    EXPECT_EQ(*totalRemoved, testCount);
 
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+    checkBlockCounts(db);
 
-    db.close();
+    EXPECT_TRUE(db.close());
   }
 }
 
@@ -215,16 +259,20 @@ TEST(BTreeDatabaseTest, Consistency) {
 }
 
 TEST(BTreeDatabaseTest, Threading) {
-  RandomService random;
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto& random = **randomResult;
   Logger logger;
-  auto tmpFile = File::temporaryFile(random);
-  auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
+  auto tmpFileResult = File::temporaryFile(random);
+  ASSERT_TRUE(tmpFileResult);
+  auto tmpFile = std::move(*tmpFileResult);
+  auto finallyGuard = finally([&tmpFile]() { EXPECT_TRUE(tmpFile->remove()); });
 
   BTreeDatabase db(logger, "TestDB", 4);
-  db.setAutoCommit(false);
-  db.setBlockSize(256);
-  db.setIODevice(tmpFile);
-  db.open();
+  ASSERT_TRUE(db.setAutoCommit(false));
+  ASSERT_TRUE(db.setBlockSize(256));
+  ASSERT_TRUE(db.setIODevice(tmpFile));
+  ASSERT_TRUE(db.open());
 
   List<std::uint32_t> writeKeySet;
   List<std::uint32_t> deleteKeySet;
@@ -239,65 +287,74 @@ TEST(BTreeDatabaseTest, Threading) {
 
   {
     auto writer = Thread::invoke("databaseTestWriter",
-        [&random, &db, &writeKeySet]() {
-          try {
-            for (std::uint32_t k : writeKeySet) {
-              ByteArray val = genBlock(k);
-              db.insert(toByteArray(k), val);
-              if (random.randi32() % 23 == 0)
-                db.commit();
+        [&random, &db, &writeKeySet]() -> std::expected<void, StarException> {
+          for (std::uint32_t k : writeKeySet) {
+            ByteArray val = genBlock(k);
+            auto inserted = db.insert(toByteArray(k), val);
+            if (!inserted)
+              return std::unexpected(std::move(inserted.error()));
+            if (random.randi32() % 23 == 0) {
+              auto committed = db.commit();
+              if (!committed)
+                return std::unexpected(std::move(committed.error()));
             }
-          } catch (std::exception const&) {
-            ExceptionDiagnostic const e(std::current_exception());
-            SCOPED_TRACE(outputException(e, true));
-            FAIL();
           }
+          return {};
         });
+    ASSERT_TRUE(writer) << writer.error().what();
 
     auto deleter = Thread::invoke("databaseTestDeleter",
-        [&random, &db, &deleteKeySet]() {
-          try {
-            for (std::uint32_t k : deleteKeySet) {
-              db.remove(toByteArray(k));
-              if (random.randi32() % 23 == 0)
-                db.commit();
+        [&random, &db, &deleteKeySet]() -> std::expected<void, StarException> {
+          for (std::uint32_t k : deleteKeySet) {
+            auto removed = db.remove(toByteArray(k));
+            if (!removed)
+              return std::unexpected(std::move(removed.error()));
+            if (random.randi32() % 23 == 0) {
+              auto committed = db.commit();
+              if (!committed)
+                return std::unexpected(std::move(committed.error()));
             }
-          } catch (std::exception const&) {
-            ExceptionDiagnostic const e(std::current_exception());
-            SCOPED_TRACE(outputException(e, true));
-            FAIL();
           }
+          return {};
         });
+    ASSERT_TRUE(deleter) << deleter.error().what();
 
-    writer.finish();
-    deleter.finish();
+    auto writerFinished = writer->finish();
+    EXPECT_TRUE(writerFinished) << writerFinished.error().what();
+    auto deleterFinished = deleter->finish();
+    EXPECT_TRUE(deleterFinished) << deleterFinished.error().what();
+    ASSERT_TRUE(writerFinished && deleterFinished);
 
-    db.close(false);
-    tmpFile->open(IOMode::Read);
-    db.open();
+    ASSERT_TRUE(db.close(false));
+    ASSERT_TRUE(tmpFile->open(IOMode::Read));
+    ASSERT_TRUE(db.open());
 
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+    checkBlockCounts(db);
 
     List<ThreadFunction<void>> readers;
     for (std::size_t i = 0; i < 5; ++i) {
-      readers.append(Thread::invoke("databaseTestReader",
-          [&db, &writeKeySet, &deleteKeySet]() {
-            try {
-              for (std::uint32_t k : writeKeySet) {
-                if (auto res = db.find(toByteArray(k)))
-                  EXPECT_TRUE(checkBlock(k, *res));
-                else
-                  EXPECT_TRUE(deleteKeySet.contains(k));
-              }
-            } catch (std::exception const&) {
-              ExceptionDiagnostic const e(std::current_exception());
-              SCOPED_TRACE(outputException(e, true));
-              FAIL();
+      auto reader = Thread::invoke("databaseTestReader",
+          [&db, &writeKeySet, &deleteKeySet]() -> std::expected<void, StarException> {
+            for (std::uint32_t k : writeKeySet) {
+              auto res = db.find(toByteArray(k));
+              if (!res)
+                return std::unexpected(std::move(res.error()));
+              if (*res)
+                EXPECT_TRUE(checkBlock(k, **res));
+              else
+                EXPECT_TRUE(deleteKeySet.contains(k));
             }
-          }));
+            return {};
+          });
+      ASSERT_TRUE(reader) << reader.error().what();
+      readers.append(std::move(*reader));
+    }
+    for (auto& reader : readers) {
+      auto finished = reader.finish();
+      EXPECT_TRUE(finished) << finished.error().what();
     }
   }
-  db.close();
+  EXPECT_TRUE(db.close());
 }
 
 
@@ -305,15 +362,17 @@ TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
   Logger logger;
   auto device = std::make_shared<FailingSyncBuffer>();
   auto db = std::make_unique<BTreeDatabase>(logger, "TestDB", 4);
-  db->setAutoCommit(false);
-  db->setIODevice(device);
-  db->open();
-  db->insert(toByteArray(0), genBlock(0));
-  db->commit();
-  db->insert(toByteArray(1), genBlock(1));
+  ASSERT_TRUE(db->setAutoCommit(false));
+  ASSERT_TRUE(db->setIODevice(device));
+  ASSERT_TRUE(db->open());
+  ASSERT_TRUE(db->insert(toByteArray(0), genBlock(0)));
+  ASSERT_TRUE(db->commit());
+  ASSERT_TRUE(db->insert(toByteArray(1), genBlock(1)));
   device->failSync = true;
 
-  EXPECT_THROW(db->commit(), IOException);
+  auto committedResult = db->commit();
+  ASSERT_FALSE(committedResult);
+  EXPECT_TRUE(committedResult.error().is<IOException>());
   EXPECT_TRUE(db->isOpen());
   unsigned callsAfterFailure = device->syncCalls;
   db.reset();
@@ -326,40 +385,48 @@ TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
   // particular visibility outcome for the failed transaction.
   device->failSync = false;
   BTreeDatabase recovered(logger);
-  recovered.setIODevice(device);
-  recovered.open();
+  ASSERT_TRUE(recovered.setIODevice(device));
+  ASSERT_TRUE(recovered.open());
   auto committed = recovered.find(toByteArray(0));
-  ASSERT_TRUE(committed);
-  EXPECT_EQ(*committed, genBlock(0));
+  ASSERT_TRUE(committed) << committed.error().what();
+  ASSERT_TRUE(*committed);
+  EXPECT_EQ(**committed, genBlock(0));
   auto uncertain = recovered.find(toByteArray(1));
-  if (uncertain)
-    EXPECT_EQ(*uncertain, genBlock(1));
-  auto recoveredCount = uncertain ? 2u : 1u;
-  EXPECT_EQ(recovered.recordCount(), recoveredCount);
-  EXPECT_EQ(recovered.totalBlockCount(),
-      recovered.freeBlockCount() + recovered.indexBlockCount() + recovered.leafBlockCount());
+  ASSERT_TRUE(uncertain) << uncertain.error().what();
+  if (*uncertain)
+    EXPECT_EQ(**uncertain, genBlock(1));
+  auto recoveredCount = *uncertain ? 2u : 1u;
+  auto recordCount = recovered.recordCount();
+  ASSERT_TRUE(recordCount) << recordCount.error().what();
+  EXPECT_EQ(*recordCount, recoveredCount);
+  checkBlockCounts(recovered);
 
-  recovered.insert(toByteArray(2), genBlock(2));
-  recovered.close();
-  recovered.open();
+  ASSERT_TRUE(recovered.insert(toByteArray(2), genBlock(2)));
+  ASSERT_TRUE(recovered.close());
+  ASSERT_TRUE(recovered.open());
   auto subsequent = recovered.find(toByteArray(2));
-  ASSERT_TRUE(subsequent);
-  EXPECT_EQ(*subsequent, genBlock(2));
-  EXPECT_EQ(recovered.recordCount(), recoveredCount + 1);
-  recovered.close();
+  ASSERT_TRUE(subsequent) << subsequent.error().what();
+  ASSERT_TRUE(*subsequent);
+  EXPECT_EQ(**subsequent, genBlock(2));
+  auto subsequentCount = recovered.recordCount();
+  ASSERT_TRUE(subsequentCount) << subsequentCount.error().what();
+  EXPECT_EQ(*subsequentCount, recoveredCount + 1);
+  EXPECT_TRUE(recovered.close());
 }
 
 TEST(BTreeDatabaseTest, FailedCloseIsReportedWithoutDestructorRetry) {
   Logger logger;
   auto device = std::make_shared<FailingSyncBuffer>();
   auto db = std::make_unique<BTreeDatabase>(logger, "TestDB", 4);
-  db->setAutoCommit(false);
-  db->setIODevice(device);
-  db->open();
-  db->insert(toByteArray(1), genBlock(1));
+  ASSERT_TRUE(db->setAutoCommit(false));
+  ASSERT_TRUE(db->setIODevice(device));
+  ASSERT_TRUE(db->open());
+  ASSERT_TRUE(db->insert(toByteArray(1), genBlock(1)));
   device->failSync = true;
 
-  EXPECT_THROW(db->close(true), IOException);
+  auto closed = db->close(true);
+  ASSERT_FALSE(closed);
+  EXPECT_TRUE(closed.error().is<IOException>());
   EXPECT_TRUE(db->isOpen());
   EXPECT_TRUE(device->isOpen());
   unsigned callsAfterFailure = device->syncCalls;
@@ -371,12 +438,14 @@ TEST(BTreeDatabaseTest, FailedDeviceCloseIsConsumedOnce) {
   Logger logger;
   auto device = std::make_shared<FailingCloseBuffer>();
   BTreeDatabase db(logger, "TestDB", 4);
-  db.setIODevice(device);
-  db.open();
+  ASSERT_TRUE(db.setIODevice(device));
+  ASSERT_TRUE(db.open());
 
-  EXPECT_THROW(db.close(true), IOException);
+  auto closed = db.close(true);
+  ASSERT_FALSE(closed);
+  EXPECT_TRUE(closed.error().is<IOException>());
   EXPECT_FALSE(db.isOpen());
   EXPECT_FALSE(device->isOpen());
-  EXPECT_NO_THROW(db.close(true));
+  EXPECT_TRUE(db.close(true));
   EXPECT_EQ(device->closeCalls, 1u);
 }

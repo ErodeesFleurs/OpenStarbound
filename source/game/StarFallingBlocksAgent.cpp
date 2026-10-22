@@ -1,3 +1,4 @@
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.vector;
@@ -57,10 +58,21 @@ namespace Star {
 
 FallingBlocksAgent::FallingBlocksAgent(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade)
   : m_facade(std::move(worldFacade)), m_random(root.random().randu64()) {
-  m_immediateUpwardPropagateProbability = root.assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
 
-void FallingBlocksAgent::update() {
+std::expected<std::shared_ptr<FallingBlocksAgent>, StarException> FallingBlocksAgent::create(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade) {
+  auto result = std::shared_ptr<FallingBlocksAgent>(new FallingBlocksAgent(root, std::move(worldFacade)));
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto probability = config->toFloat();
+  if (!probability) return std::unexpected(std::move(probability.error()));
+  result->m_immediateUpwardPropagateProbability = *probability;
+  return result;
+}
+
+std::expected<void, StarException> FallingBlocksAgent::update() {
   HashSet<Vec2I> processing = take(m_pending);
 
   while (!processing.empty()) {
@@ -79,8 +91,18 @@ void FallingBlocksAgent::update() {
       Vec2I belowLeftPos = pos + Vec2I(-1, -1);
       Vec2I belowRightPos = pos + Vec2I(1, -1);
 
-      FallingBlockType thisBlock = m_facade->blockType(pos);
-      FallingBlockType belowBlock = m_facade->blockType(belowPos);
+      auto thisBlockResult = m_facade->blockType(pos);
+
+
+      if (!thisBlockResult) return std::unexpected(std::move(thisBlockResult.error()));
+
+
+      FallingBlockType thisBlock = *thisBlockResult;
+      auto belowBlockResult = m_facade->blockType(belowPos);
+
+      if (!belowBlockResult) return std::unexpected(std::move(belowBlockResult.error()));
+
+      FallingBlockType belowBlock = *belowBlockResult;
 
       std::optional<Vec2I> moveTo;
 
@@ -91,8 +113,16 @@ void FallingBlocksAgent::update() {
         if (belowBlock == FallingBlockType::Open) {
           moveTo = belowPos;
         } else {
-          FallingBlockType belowLeftBlock = m_facade->blockType(belowLeftPos);
-          FallingBlockType belowRightBlock = m_facade->blockType(belowRightPos);
+          auto belowLeftBlockResult = m_facade->blockType(belowLeftPos);
+
+          if (!belowLeftBlockResult) return std::unexpected(std::move(belowLeftBlockResult.error()));
+
+          FallingBlockType belowLeftBlock = *belowLeftBlockResult;
+          auto belowRightBlockResult = m_facade->blockType(belowRightPos);
+
+          if (!belowRightBlockResult) return std::unexpected(std::move(belowRightBlockResult.error()));
+
+          FallingBlockType belowRightBlock = *belowRightBlockResult;
 
           if (belowLeftBlock == FallingBlockType::Open && belowRightBlock == FallingBlockType::Open)
             moveTo = m_random.randb() ? belowLeftPos : belowRightPos;
@@ -104,7 +134,7 @@ void FallingBlocksAgent::update() {
       }
 
       if (moveTo) {
-        m_facade->moveBlock(pos, *moveTo);
+        if (auto r = m_facade->moveBlock(pos, *moveTo); !r) return std::unexpected(std::move(r.error()));
         if (m_random.randf() < m_immediateUpwardPropagateProbability) {
           processing.add(pos + Vec2I(0, 1));
           processing.add(pos + Vec2I(-1, 1));
@@ -116,6 +146,7 @@ void FallingBlocksAgent::update() {
       }
     }
   }
+  return {};
 }
 
 void FallingBlocksAgent::visitLocation(Vec2I const& location) {

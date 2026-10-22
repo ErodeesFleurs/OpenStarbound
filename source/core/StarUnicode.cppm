@@ -4,244 +4,126 @@ import std;
 import star.format;
 
 namespace Star {
-
-struct UnicodeExceptionTag {
-  static constexpr char const* name() { return "UnicodeException"; }
-};
+struct UnicodeExceptionTag { static constexpr char const* name() { return "UnicodeException"; } };
 using UnicodeException = StarError<UnicodeExceptionTag, StarException>;
-
-typedef char Utf8Type;
-typedef char32_t Utf32Type;
-
+using Utf8Type = char;
+using Utf32Type = char32_t;
 inline constexpr long STAR_UTF32_REPLACEMENT_CHAR = 0x000000b7L;
 
-void throwInvalidUtf8Sequence();
-void throwMissingUtf8End();
-void throwInvalidUtf32CodePoint(Utf32Type val);
+// NPos denotes a null-terminated sequence; an explicit size preserves embedded NUL.
+[[nodiscard]] std::expected<std::size_t, StarException> utf8Length(Utf8Type const*, std::size_t size = NPos);
+[[nodiscard]] std::expected<std::size_t, StarException> utf8DecodeChar(Utf8Type const*, Utf32Type*, std::size_t len = NPos);
+[[nodiscard]] std::expected<std::size_t, StarException> utf8EncodeChar(Utf8Type*, Utf32Type, std::size_t len = 6);
+[[nodiscard]] std::expected<Utf32Type, StarException> hexStringToUtf32(std::string const&, std::optional<Utf32Type> previousCodepoint = {});
+[[nodiscard]] std::expected<std::string, StarException> hexStringFromUtf32(Utf32Type);
+bool isUtf16LeadSurrogate(Utf32Type);
+bool isUtf16TrailSurrogate(Utf32Type);
+[[nodiscard]] std::expected<Utf32Type, StarException> utf32FromUtf16SurrogatePair(Utf32Type, Utf32Type);
+[[nodiscard]] std::expected<std::pair<Utf32Type, std::optional<Utf32Type>>, StarException> utf32ToUtf16SurrogatePair(Utf32Type);
 
-// If passed NPos as a size, assumes modified UTF-8 and stops on NULL byte.
-// Otherwise, ignores NULL.
-std::size_t utf8Length(Utf8Type const* utf8, std::size_t size = NPos);
-// Encode up to six utf8 bytes into a utf32 character.  If passed NPos as len,
-// assumes modified UTF-8 and stops on NULL, otherwise ignores.
-std::size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, std::size_t len = NPos);
-// Encode single utf32 char into up to 6 utf8 characters.
-std::size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len = 6);
+// Lazy checked cursor for short-circuit algorithms over unvalidated bytes.
+class Utf8Cursor {
+public:
+  explicit Utf8Cursor(std::string_view bytes) : m_bytes(bytes) {}
+  static Utf8Cursor end(std::string_view bytes) {
+    Utf8Cursor cursor(bytes);
+    cursor.m_offset = bytes.size();
+    return cursor;
+  }
+  bool atEnd() const { return m_offset == m_bytes.size(); }
+  std::size_t offset() const { return m_offset; }
+  [[nodiscard]] std::expected<Utf32Type, StarException> read() const;
+  [[nodiscard]] std::expected<void, StarException> advance();
+  [[nodiscard]] std::expected<void, StarException> retreat();
+private:
+  [[nodiscard]] std::expected<void, StarException> decode() const;
+  std::string_view m_bytes;
+  std::size_t m_offset = 0;
+  mutable std::size_t m_width = 0;
+  mutable Utf32Type m_point = 0;
+};
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint = {});
-std::string hexStringFromUtf32(Utf32Type character);
-
-bool isUtf16LeadSurrogate(Utf32Type codepoint);
-bool isUtf16TrailSurrogate(Utf32Type codepoint);
-
-Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail);
-std::pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
-
-// Bidirectional iterator that can make utf8 appear as utf32
+// Validation happens at creation, not through an error channel hidden in a
+// standard iterator operation. Positions must remain within the validated range.
 template <class BaseIterator, class U32Type = Utf32Type>
 class U8ToU32Iterator {
 public:
-  typedef std::ptrdiff_t difference_type;
-  typedef U32Type value_type;
-  typedef U32Type* pointer;
-  typedef U32Type& reference;
-  typedef std::bidirectional_iterator_tag iterator_category;
-
-  U8ToU32Iterator() : m_position(), m_value(pending_read) {}
-
-  U8ToU32Iterator(BaseIterator b) : m_position(b), m_value(pending_read) {}
-
-  BaseIterator const& base() const {
-    return m_position;
+  using difference_type = std::ptrdiff_t;
+  using value_type = U32Type;
+  using pointer = U32Type const*;
+  using reference = U32Type const&;
+  using iterator_category = std::bidirectional_iterator_tag;
+  U8ToU32Iterator() = default;
+  [[nodiscard]] static std::expected<U8ToU32Iterator, StarException> create(BaseIterator first, BaseIterator last) {
+    if constexpr (std::contiguous_iterator<BaseIterator> && std::same_as<std::iter_value_t<BaseIterator>, char>) {
+      auto validated = utf8Length(std::to_address(first), static_cast<std::size_t>(last - first));
+      if (!validated) return std::unexpected(std::move(validated.error()));
+    } else {
+      auto position = first;
+      while (position != last) {
+        char bytes[4];
+        std::size_t available = 0;
+        auto next = position;
+        while (available != 4 && next != last) bytes[available++] = *next++;
+        Utf32Type point;
+        auto decoded = utf8DecodeChar(bytes, &point, available);
+        if (!decoded) return std::unexpected(std::move(decoded.error()));
+        std::advance(position, *decoded);
+      }
+    }
+    return U8ToU32Iterator(first);
   }
-
-  U32Type const& operator*() const {
-    if (m_value == pending_read)
-      extract_current();
+  static U8ToU32Iterator end(BaseIterator last) { return U8ToU32Iterator(last); }
+  BaseIterator const& base() const { return m_position; }
+  reference operator*() const {
+    if (m_pending) {
+      auto next = m_position;
+      auto first = static_cast<unsigned char>(*next++);
+      unsigned count = byteCount(first);
+      std::uint32_t point = first & (count == 1 ? 0x7fu : (0x7fu >> count));
+      for (unsigned i = 1; i != count; ++i) point = (point << 6) | (static_cast<unsigned char>(*next++) & 0x3fu);
+      m_value = static_cast<U32Type>(point);
+      m_pending = false;
+    }
     return m_value;
   }
-
-  U8ToU32Iterator const& operator++() {
-    increment();
-    return *this;
-  }
-
-  U8ToU32Iterator operator++(int) {
-    U8ToU32Iterator clone(*this);
-    increment();
-    return clone;
-  }
-
-  U8ToU32Iterator const& operator--() {
-    decrement();
-    return *this;
-  }
-
-  U8ToU32Iterator operator--(int) {
-    U8ToU32Iterator clone(*this);
-    decrement();
-    return clone;
-  }
-
-  bool operator==(U8ToU32Iterator const& that) const {
-    return equal(that);
-  }
-
-  bool operator!=(U8ToU32Iterator const& that) const {
-    return !equal(that);
-  }
-
+  U8ToU32Iterator& operator++() { std::advance(m_position, byteCount(static_cast<unsigned char>(*m_position))); m_pending = true; return *this; }
+  U8ToU32Iterator operator++(int) { auto old = *this; ++*this; return old; }
+  U8ToU32Iterator& operator--() { do { --m_position; } while ((static_cast<unsigned char>(*m_position) & 0xc0u) == 0x80u); m_pending = true; return *this; }
+  U8ToU32Iterator operator--(int) { auto old = *this; --*this; return old; }
+  bool operator==(U8ToU32Iterator const& other) const { return m_position == other.m_position; }
 private:
-  // special values for pending iterator reads:
-  static U32Type const pending_read = 0xffffffffu;
-
-  static void invalid_sequence() {
-    throwInvalidUtf8Sequence();
-  }
-
-  static unsigned utf8_byte_count(Utf8Type c) {
-    // if the most significant bit with a zero in it is in position
-    // 8-N then there are N bytes in this UTF-8 sequence:
-    std::uint8_t mask = 0x80u;
-    unsigned result = 0;
-    while (c & mask) {
-      ++result;
-      mask >>= 1;
-    }
-    return (result == 0) ? 1 : ((result > 4) ? 4 : result);
-  }
-
-  static unsigned utf8_trailing_byte_count(Utf8Type c) {
-    return utf8_byte_count(c) - 1;
-  }
-
-  void increment() {
-    // skip high surrogate first if there is one:
-    unsigned c = utf8_byte_count(*m_position);
-    std::advance(m_position, c);
-    m_value = pending_read;
-  }
-
-  void decrement() {
-    // Keep backtracking until we don't have a trailing character:
-    unsigned count = 0;
-    while (((std::uint8_t) * --m_position & 0xC0u) == 0x80u)
-      ++count;
-    // now check that the sequence was valid:
-    if (count != utf8_trailing_byte_count(*m_position))
-      invalid_sequence();
-    m_value = pending_read;
-  }
-
-  bool equal(const U8ToU32Iterator& that) const {
-    return m_position == that.m_position;
-  }
-
-  void extract_current() const {
-    m_value = static_cast<Utf8Type>(*m_position);
-    // we must not have a continuation character:
-    if (((std::uint8_t)m_value & 0xC0u) == 0x80u)
-      invalid_sequence();
-    // see how many extra byts we have:
-    unsigned extra = utf8_trailing_byte_count(*m_position);
-    // extract the extra bits, 6 from each extra byte:
-    BaseIterator next(m_position);
-    for (unsigned c = 0; c < extra; ++c) {
-      ++next;
-      m_value <<= 6;
-      auto entry = static_cast<std::uint8_t>(*next);
-      if ((c > 0) && ((entry & 0xC0u) != 0x80u))
-        invalid_sequence();
-      m_value += entry & 0x3Fu;
-    }
-    // we now need to remove a few of the leftmost bits, but how many depends
-    // upon how many extra bytes we've extracted:
-    static const Utf32Type masks[4] = {
-        0x7Fu, 0x7FFu, 0xFFFFu, 0x1FFFFFu,
-    };
-    m_value &= masks[extra];
-    // check the result:
-    if ((std::uint32_t)m_value > (std::uint32_t)0x10FFFFu)
-      invalid_sequence();
-  }
-
-  BaseIterator m_position;
-  mutable U32Type m_value;
+  explicit U8ToU32Iterator(BaseIterator position) : m_position(position) {}
+  static unsigned byteCount(unsigned char c) { return c < 0x80 ? 1 : c < 0xe0 ? 2 : c < 0xf0 ? 3 : 4; }
+  BaseIterator m_position{};
+  mutable U32Type m_value{};
+  mutable bool m_pending = true;
 };
 
-// Output iterator
+// An explicit checked writer, rather than a standard output iterator whose
+// assignment result would be discarded by algorithms.
 template <class BaseIterator, class U32Type = Utf32Type>
 class Utf8OutputIterator {
 public:
-  typedef void difference_type;
-  typedef void value_type;
-  typedef U32Type* pointer;
-  typedef U32Type& reference;
-
-  Utf8OutputIterator(const BaseIterator& b) : m_position(b) {}
-  Utf8OutputIterator(const Utf8OutputIterator& that) : m_position(that.m_position) {}
-  Utf8OutputIterator& operator=(const Utf8OutputIterator& that) {
-    m_position = that.m_position;
-    return *this;
+  explicit Utf8OutputIterator(BaseIterator position) : m_position(position) {}
+  [[nodiscard]] std::expected<void, StarException> push(U32Type point) {
+    char bytes[4];
+    auto encoded = utf8EncodeChar(bytes, static_cast<Utf32Type>(point), sizeof(bytes));
+    if (!encoded) return std::unexpected(std::move(encoded.error()));
+    for (std::size_t i = 0; i != *encoded; ++i) *m_position++ = bytes[i];
+    return {};
   }
-
-  const Utf8OutputIterator& operator*() const {
-    return *this;
-  }
-
-  void operator=(U32Type val) const {
-    push(val);
-  }
-
-  Utf8OutputIterator& operator++() {
-    return *this;
-  }
-
-  Utf8OutputIterator& operator++(int) {
-    return *this;
-  }
-
 private:
-  static void invalid_utf32_code_point(U32Type val) {
-    throwInvalidUtf32CodePoint(val);
-  }
-
-  void push(U32Type c) const {
-    if (c > 0x10FFFFu)
-      invalid_utf32_code_point(c);
-
-    if ((std::uint32_t)c < 0x80u) {
-      *m_position++ = static_cast<Utf8Type>((std::uint32_t)c);
-    } else if ((std::uint32_t)c < 0x800u) {
-      *m_position++ = static_cast<Utf8Type>(0xC0u + ((std::uint32_t)c >> 6));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
-    } else if ((std::uint32_t)c < 0x10000u) {
-      *m_position++ = static_cast<Utf8Type>(0xE0u + ((std::uint32_t)c >> 12));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
-    } else {
-      *m_position++ = static_cast<Utf8Type>(0xF0u + ((std::uint32_t)c >> 18));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 12) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
-    }
-  }
-
-  mutable BaseIterator m_position;
+  BaseIterator m_position;
 };
-
 }
 export module star.unicode;
-
 export namespace Star {
   using ::Star::UnicodeExceptionTag;
   using ::Star::UnicodeException;
   using ::Star::Utf8Type;
   using ::Star::Utf32Type;
   using ::Star::STAR_UTF32_REPLACEMENT_CHAR;
-  using ::Star::throwInvalidUtf8Sequence;
-  using ::Star::throwMissingUtf8End;
-  using ::Star::throwInvalidUtf32CodePoint;
   using ::Star::utf8Length;
   using ::Star::utf8DecodeChar;
   using ::Star::utf8EncodeChar;
@@ -253,4 +135,5 @@ export namespace Star {
   using ::Star::utf32ToUtf16SurrogatePair;
   using ::Star::U8ToU32Iterator;
   using ::Star::Utf8OutputIterator;
+  using ::Star::Utf8Cursor;
 }

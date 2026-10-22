@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -62,24 +63,61 @@ import star.label_widget;
 
 namespace Star {
 
-PopupInterface::PopupInterface(GuiContext& guiContext) : Pane(guiContext) {
-  auto assets = context()->root().assets();
+PopupInterface::PopupInterface(GuiContext& guiContext) : Pane(guiContext) {}
 
-  GuiReader reader(*context());
-
-  reader.registerCallback("close", [this](Widget*) { dismiss(); });
-  reader.registerCallback("ok", [this](Widget*) { dismiss(); });
-
-  reader.construct(assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
+std::expected<std::shared_ptr<PopupInterface>, StarException> PopupInterface::create(GuiContext& guiContext) {
+  auto pane = std::shared_ptr<PopupInterface>(new PopupInterface(guiContext));
+  auto initialized = pane->initializePane();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto assets = guiContext.root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  GuiReader reader(guiContext);
+  auto close = [panePtr = pane.get()](Widget*) -> std::expected<void, StarException> { panePtr->dismiss(); return {}; };
+  reader.registerCallback("close", close);
+  reader.registerCallback("ok", close);
+  auto layout = (*assets)->json("/interface/windowconfig/popup.config:paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, pane.get());
+  if (!constructed)
+    return std::unexpected(std::move(constructed.error()));
+  return pane;
 }
 
-void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound) {
+std::expected<void, StarException> PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound) {
   setTitleString(title, subtitle);
-  fetchChild<LabelWidget>("message")->setText(message);
-  show();
-  auto sound = onShowSound.value_or(context()->root().random().randValueFrom(context()->root().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
-  if (!sound.empty())
-    context()->playAudio(sound);
+  auto label = fetchChild<LabelWidget>("message");
+  if (!label)
+    return std::unexpected(std::move(label.error()));
+  if (!*label)
+    return std::unexpected(GUIBuilderException("Missing popup message label"));
+  auto text = (*label)->setText(message);
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto shown = show();
+  if (!shown)
+    return std::unexpected(std::move(shown.error()));
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto soundsJson = (*assets)->json("/interface/windowconfig/popup.config:onShowSound");
+  if (!soundsJson)
+    return std::unexpected(std::move(soundsJson.error()));
+  auto sounds = soundsJson->toArray();
+  if (!sounds)
+    return std::unexpected(std::move(sounds.error()));
+  auto chosen = context()->root().random().randValueFrom(*sounds, "").toString();
+  if (!chosen)
+    return std::unexpected(std::move(chosen.error()));
+  auto sound = onShowSound.value_or(std::move(*chosen));
+  if (!sound.empty()) {
+    auto played = context()->playAudio(sound);
+    if (!played)
+      return std::unexpected(std::move(played.error()));
+  }
+  return {};
 }
 
 }

@@ -517,6 +517,6 @@ endif()
 
 # Check the complete target graph, including optional tools and tests, only once
 # all subdirectories have declared their source and usage requirements.
-cmake_language(DEFER CALL star_check_no_rtti_directory "${PROJECT_SOURCE_DIR}")
+cmake_language(DEFER CALL star_check_language_directory "${PROJECT_SOURCE_DIR}")
 
 

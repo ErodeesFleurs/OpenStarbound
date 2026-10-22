@@ -96,29 +96,32 @@ struct NpcVariant {
 
 class NpcDatabase {
 public:
-  explicit NpcDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<NpcDatabase>, StarException> create(Root& root);
 
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog = nullptr) const;
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog = nullptr) const;
 
-  ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
-  NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
-  Json writeNpcVariantToJson(NpcVariant const& variant) const;
-  NpcVariant readNpcVariantFromJson(Json const& data) const;
+  [[nodiscard]] std::expected<Json, StarException> writeNpcVariantToJson(NpcVariant const& variant) const;
+  [[nodiscard]] std::expected<NpcVariant, StarException> readNpcVariantFromJson(Json const& data) const;
 
-  std::shared_ptr<Npc> createNpc(NpcVariant const& npcVariant) const;
-  std::shared_ptr<Npc> diskLoadNpc(Json const& diskStore) const;
-  std::shared_ptr<Npc> netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Npc>, StarException> createNpc(NpcVariant const& npcVariant) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Npc>, StarException> diskLoadNpc(Json const& diskStore) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Npc>, StarException> netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog = nullptr) const;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog = nullptr) const;
 
-  Json buildConfig(String const& typeName, Json const& overrides = Json()) const;
+  [[nodiscard]] std::expected<Json, StarException> buildConfig(String const& typeName, Json const& overrides = Json()) const;
 
 private:
+  explicit NpcDatabase(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
-  Json mergeConfigValues(Json const& base, Json const& merger) const;
+  [[nodiscard]] std::expected<Json, StarException> mergeConfigValues(Json const& base, Json const& merger) const;
 
   Root& m_root;
 

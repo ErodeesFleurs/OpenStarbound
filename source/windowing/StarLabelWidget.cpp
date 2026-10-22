@@ -54,26 +54,28 @@ import star.gui_context;
 import star.widget;
 import star.label_widget;
 
+import star.format;
 namespace Star {
 
-LabelWidget::LabelWidget(GuiContext& context)
-  : LabelWidget(context, String(), Color::White, HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, {}, {}) {}
+LabelWidget::LabelWidget(GuiContext& context, HorizontalAnchor hAnchor, VerticalAnchor vAnchor, std::optional<unsigned> wrapWidth)
+  : Widget(context), m_hAnchor(hAnchor), m_vAnchor(vAnchor), m_wrapWidth(wrapWidth) {}
 
-LabelWidget::LabelWidget(GuiContext& context, String text,
-    Color const& color,
-    HorizontalAnchor const& hAnchor,
-    VerticalAnchor const& vAnchor,
-    std::optional<unsigned> wrapWidth,
-    std::optional<float> lineSpacing)
-  : Widget(context), m_hAnchor(hAnchor),
-    m_vAnchor(vAnchor),
-    m_wrapWidth(std::move(wrapWidth)) {
-  auto assets = this->context()->root().assets();
-  m_style = assets->json("/interface.config:labelTextStyle");
-  m_style.color = color.toRgba();
-  if (lineSpacing)
-    m_style.lineSpacing = *lineSpacing;
-  setText(std::move(text));
+std::expected<std::shared_ptr<LabelWidget>, StarException> LabelWidget::create(GuiContext& context, String text,
+    Color const& color, HorizontalAnchor const& hAnchor, VerticalAnchor const& vAnchor,
+    std::optional<unsigned> wrapWidth, std::optional<float> lineSpacing) {
+  auto widget = std::shared_ptr<LabelWidget>(new LabelWidget(context, hAnchor, vAnchor, wrapWidth));
+  auto assets = context.root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto json = (*assets)->json("/interface.config:labelTextStyle");
+  if (!json) return std::unexpected(std::move(json.error()));
+  auto style = TextStyle::create(*json);
+  if (!style) return std::unexpected(std::move(style.error()));
+  widget->m_style = std::move(*style);
+  widget->m_style.color = color.toRgba();
+  if (lineSpacing) widget->m_style.lineSpacing = *lineSpacing;
+  auto result = widget->setText(std::move(text));
+  if (!result) return std::unexpected(std::move(result.error()));
+  return widget;
 }
 
 String const& LabelWidget::text() const {
@@ -84,14 +86,14 @@ std::optional<unsigned> LabelWidget::getTextCharLimit() const {
   return m_textCharLimit;
 }
 
-void LabelWidget::setText(String newText) {
+std::expected<void, StarException> LabelWidget::setText(String newText) {
   m_text = std::move(newText);
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setFontSize(int fontSize) {
+std::expected<void, StarException> LabelWidget::setFontSize(int fontSize) {
   m_style.fontSize = fontSize;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
 void LabelWidget::setFontMode(FontMode fontMode) {
@@ -102,40 +104,40 @@ void LabelWidget::setColor(Color newColor) {
   m_style.color = newColor.toRgba();
 }
 
-void LabelWidget::setFont(String const& font) {
+std::expected<void, StarException> LabelWidget::setFont(String const& font) {
   m_style.font = font;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor) {
+std::expected<void, StarException> LabelWidget::setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor) {
   m_hAnchor = hAnchor;
   m_vAnchor = vAnchor;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setWrapWidth(std::optional<unsigned> wrapWidth) {
-  m_wrapWidth = std::move(wrapWidth);
-  updateTextRegion();
+std::expected<void, StarException> LabelWidget::setWrapWidth(std::optional<unsigned> wrapWidth) {
+  m_wrapWidth = wrapWidth;
+  return updateTextRegion();
 }
 
-void LabelWidget::setLineSpacing(std::optional<float> lineSpacing) {
+std::expected<void, StarException> LabelWidget::setLineSpacing(std::optional<float> lineSpacing) {
   m_style.lineSpacing = lineSpacing.value_or(DefaultLineSpacing);
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setDirectives(String const& directives) {
+std::expected<void, StarException> LabelWidget::setDirectives(String const& directives) {
   m_style.directives = directives;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setTextCharLimit(std::optional<unsigned> charLimit) {
+std::expected<void, StarException> LabelWidget::setTextCharLimit(std::optional<unsigned> charLimit) {
   m_textCharLimit = charLimit;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
-void LabelWidget::setTextStyle(TextStyle const& textStyle) {
+std::expected<void, StarException> LabelWidget::setTextStyle(TextStyle const& textStyle) {
   m_style = textStyle;
-  updateTextRegion();
+  return updateTextRegion();
 }
 
 
@@ -147,15 +149,22 @@ RectI LabelWidget::getScissorRect() const {
   return noScissor();
 }
 
-void LabelWidget::renderImpl() {
-  context()->setTextStyle(m_style);
-  context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+std::expected<void, StarException> LabelWidget::renderImpl() {
+  auto style = context()->setTextStyle(m_style);
+  if (!style) return std::unexpected(std::move(style.error()));
+  auto result = context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
 
-void LabelWidget::updateTextRegion() {
-  context()->setTextStyle(m_style);
-  m_textRegion = RectI(context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit}));
+std::expected<void, StarException> LabelWidget::updateTextRegion() {
+  auto style = context()->setTextStyle(m_style);
+  if (!style) return std::unexpected(std::move(style.error()));
+  auto region = context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+  if (!region) return std::unexpected(std::move(region.error()));
+  m_textRegion = RectI(*region);
   setSize(m_textRegion.size());
+  return {};
 }
 
 }

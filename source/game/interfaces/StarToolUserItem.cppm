@@ -90,25 +90,34 @@ public:
 
   // Owner must be initialized when a ToolUserItem is initialized and
   // uninitialized before the owner is uninitialized.
-  virtual void init(ToolUserEntity* owner, ToolHand hand);
-  virtual void uninit();
+  [[nodiscard]]
+  virtual std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand);
+  [[nodiscard]]
+  virtual std::expected<void, StarException> uninit();
 
   // Default implementation does nothing
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
+  [[nodiscard]]
+  virtual std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
 
   // Default implementations return empty list
-  virtual List<DamageSource> damageSources() const;
-  virtual List<PolyF> shieldPolys() const;
-  virtual List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]]
+  virtual std::expected<List<DamageSource>, StarException> damageSources() const;
+  [[nodiscard]]
+  virtual std::expected<List<PolyF>, StarException> shieldPolys() const;
+  [[nodiscard]]
+  virtual std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const;
 
   bool initialized() const;
 
-  // owner, entityMode, hand, and world throw ToolUserException if
-  // initialized() is false
-  ToolUserEntity* owner() const;
-  EntityMode entityMode() const;
-  ToolHand hand() const;
-  World* world() const;
+  // Accessors report an error when initialized() is false.
+  [[nodiscard]]
+  std::expected<ToolUserEntity*, StarException> owner() const;
+  [[nodiscard]]
+  std::expected<EntityMode, StarException> entityMode() const;
+  [[nodiscard]]
+  std::expected<ToolHand, StarException> hand() const;
+  [[nodiscard]]
+  std::expected<World*, StarException> world() const;
 
 private:
   ToolUserEntity* m_owner;

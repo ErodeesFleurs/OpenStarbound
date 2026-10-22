@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 
 
 namespace Star {
@@ -7,18 +8,18 @@ namespace Star {
 class Listener {
 public:
   virtual ~Listener();
-  virtual void trigger() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> trigger() = 0;
 };
 
 class CallbackListener : public Listener {
 public:
-  CallbackListener(std::function<void()> callback);
+  CallbackListener(std::function<std::expected<void, StarException>()> callback);
 
 protected:
-  virtual void trigger() override;
+  [[nodiscard]] virtual std::expected<void, StarException> trigger() override;
 
 private:
-  std::function<void()> callback;
+  std::function<std::expected<void, StarException>()> callback;
 };
 
 class TrackerListener : public Listener {
@@ -28,7 +29,7 @@ public:
   bool pullTriggered();
 
 protected:
-  virtual void trigger() override;
+  [[nodiscard]] virtual std::expected<void, StarException> trigger() override;
 
 private:
   std::atomic<bool> triggered;
@@ -63,7 +64,7 @@ public:
   void clearExpiredListeners();
   void clearAllListeners();
 
-  void trigger();
+  [[nodiscard]] std::expected<void, StarException> trigger();
 
 private:
   // Registry access never invokes callbacks. Dispatch is serial within a group,
@@ -78,8 +79,9 @@ inline bool TrackerListener::pullTriggered() {
   return triggered.exchange(false);
 }
 
-inline void TrackerListener::trigger() {
+[[nodiscard]] inline std::expected<void, StarException> TrackerListener::trigger() {
   triggered = true;
+  return {};
 }
 
 }

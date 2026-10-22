@@ -1,5 +1,6 @@
 import star.json_extra;
 import std;
+import star.output_proxy;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -195,156 +196,151 @@ import star.player_factory;
 
 namespace Star {
 
-CharCreationPane::CharCreationPane(GuiContext& guiContext, std::function<void(std::shared_ptr<Player>)> requestCloseFunc) : Pane(guiContext) {
-  auto& root = context()->root();
+CharCreationPane::CharCreationPane(GuiContext& guiContext)
+  : Pane(guiContext), m_speciesChoice(0), m_genderChoice(0), m_modeChoice(1), m_bodyColor(0), m_alty(0),
+    m_hairChoice(0), m_heady(0), m_shirtChoice(0), m_shirtColor(0), m_pantsChoice(0), m_pantsColor(0),
+    m_personality(0) {}
 
-  m_speciesList = jsonToStringList(root.assets()->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
+std::expected<std::shared_ptr<CharCreationPane>, StarException> CharCreationPane::create(GuiContext& guiContext,
+    std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc) {
+  if (!requestCloseFunc)
+    return std::unexpected(CharCreationException("Character creation requires a close callback"));
+  auto pane = std::shared_ptr<CharCreationPane>(new CharCreationPane(guiContext));
+  if (auto result = pane->initializePane(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = pane->init(std::move(requestCloseFunc)); !result)
+    return std::unexpected(std::move(result.error()));
+  return pane;
+}
 
+std::expected<void, StarException> CharCreationPane::init(
+    std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc) {
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto speciesConfig = (*assets)->json("/interface/windowconfig/charcreation.config:speciesOrdering");
+  if (!speciesConfig)
+    return std::unexpected(std::move(speciesConfig.error()));
+  auto speciesList = jsonToStringList(*speciesConfig);
+  if (!speciesList)
+    return std::unexpected(std::move(speciesList.error()));
+  m_speciesList = std::move(*speciesList);
+  if (m_speciesList.empty())
+    return std::unexpected(CharCreationException("Character creation species ordering is empty"));
   GuiReader guiReader(*context());
-  guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
-  guiReader.registerCallback("saveChar", [=, this](Widget*) {
-      if (fetchChild<ButtonWidget>("btnSkipIntro")->isChecked())
-        m_previewPlayer->log()->setIntroComplete(true);
-      requestCloseFunc(m_previewPlayer);
-      createPlayer();
-      randomize();
-      randomizeName();
-    });
-
-  guiReader.registerCallback("mainSkinColor.up", [this](Widget*) {
-      m_bodyColor++;
-      changed();
-    });
-  guiReader.registerCallback("mainSkinColor.down", [this](Widget*) {
-      m_bodyColor--;
-      changed();
-    });
-  guiReader.registerCallback("alty.up", [this](Widget*) {
-      m_alty++;
-      changed();
-    });
-  guiReader.registerCallback("alty.down", [this](Widget*) {
-      m_alty--;
-      changed();
-    });
-  guiReader.registerCallback("hairStyle.up", [this](Widget*) {
-      m_hairChoice++;
-      changed();
-    });
-  guiReader.registerCallback("hairStyle.down", [this](Widget*) {
-      m_hairChoice--;
-      changed();
-    });
-  guiReader.registerCallback("shirt.up", [this](Widget*) {
-      m_shirtChoice++;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("shirt.down", [this](Widget*) {
-      m_shirtChoice--;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("pants.up", [this](Widget*) {
-      m_pantsChoice++;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("pants.down", [this](Widget*) {
-      m_pantsChoice--;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("heady.up", [this](Widget*) {
-      m_heady++;
-      changed();
-    });
-  guiReader.registerCallback("heady.down", [this](Widget*) {
-      m_heady--;
-      changed();
-    });
-  guiReader.registerCallback("shirtColor.up", [this](Widget*) {
-      m_shirtColor++;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("shirtColor.down", [this](Widget*) {
-      m_shirtColor--;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("pantsColor.up", [this](Widget*) {
-      m_pantsColor++;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("pantsColor.down", [this](Widget*) {
-      m_pantsColor--;
-      fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
-      changed();
-    });
-  guiReader.registerCallback("personality.up", [this](Widget*) {
-      m_personality++;
-      changed();
-    });
-  guiReader.registerCallback("personality.down", [this](Widget*) {
-      m_personality--;
-      changed();
-    });
-  guiReader.registerCallback("toggleClothing", [this](Widget*) {
-      changed();
-    });
-
-  guiReader.registerCallback("randomName", [this](Widget*) { randomizeName(); });
-  guiReader.registerCallback("randomize", [this](Widget*) { randomize(); });
-
-  guiReader.registerCallback("name", [this](Widget* object) { nameBoxCallback(object); });
-
-  guiReader.registerCallback("species", [this](Widget* button) {
-      std::size_t speciesChoice = convert<ButtonWidget>(button)->buttonGroupId();
-      if (speciesChoice < m_speciesList.size() && speciesChoice != m_speciesChoice) {
-        m_speciesChoice = speciesChoice;
-        randomize();
-        randomizeName();
+  guiReader.registerCallback("cancel", [requestCloseFunc](Widget*) { return requestCloseFunc({}); });
+  guiReader.registerCallback("saveChar", [this, requestCloseFunc](Widget*) -> std::expected<void, StarException> {
+    auto skipIntro = requireChild<ButtonWidget>("btnSkipIntro");
+    if (!skipIntro)
+      return std::unexpected(std::move(skipIntro.error()));
+    if ((*skipIntro)->isChecked())
+      m_previewPlayer->log()->setIntroComplete(true);
+    if (auto result = requestCloseFunc(m_previewPlayer); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = createPlayer(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = randomize(); !result)
+      return std::unexpected(std::move(result.error()));
+    return randomizeName();
+  });
+  for (auto const& [callback, member, increment, clothing] : {
+      std::tuple{"mainSkinColor.up", &CharCreationPane::m_bodyColor, true, false},
+      std::tuple{"mainSkinColor.down", &CharCreationPane::m_bodyColor, false, false},
+      std::tuple{"alty.up", &CharCreationPane::m_alty, true, false},
+      std::tuple{"alty.down", &CharCreationPane::m_alty, false, false},
+      std::tuple{"hairStyle.up", &CharCreationPane::m_hairChoice, true, false},
+      std::tuple{"hairStyle.down", &CharCreationPane::m_hairChoice, false, false},
+      std::tuple{"shirt.up", &CharCreationPane::m_shirtChoice, true, true},
+      std::tuple{"shirt.down", &CharCreationPane::m_shirtChoice, false, true},
+      std::tuple{"pants.up", &CharCreationPane::m_pantsChoice, true, true},
+      std::tuple{"pants.down", &CharCreationPane::m_pantsChoice, false, true},
+      std::tuple{"heady.up", &CharCreationPane::m_heady, true, false},
+      std::tuple{"heady.down", &CharCreationPane::m_heady, false, false},
+      std::tuple{"shirtColor.up", &CharCreationPane::m_shirtColor, true, true},
+      std::tuple{"shirtColor.down", &CharCreationPane::m_shirtColor, false, true},
+      std::tuple{"pantsColor.up", &CharCreationPane::m_pantsColor, true, true},
+      std::tuple{"pantsColor.down", &CharCreationPane::m_pantsColor, false, true},
+      std::tuple{"personality.up", &CharCreationPane::m_personality, true, false},
+      std::tuple{"personality.down", &CharCreationPane::m_personality, false, false}}) {
+    guiReader.registerCallback(callback, [this, member, increment, clothing](Widget*) -> std::expected<void, StarException> {
+      if (increment)
+        ++(this->*member);
+      else
+        --(this->*member);
+      if (clothing) {
+        auto toggle = requireChild<ButtonWidget>("btnToggleClothing");
+        if (!toggle)
+          return std::unexpected(std::move(toggle.error()));
+        (*toggle)->setChecked(true);
       }
+      return changed();
     });
-  guiReader.registerCallback("gender", [this](Widget* button) {
-      m_genderChoice = convert<ButtonWidget>(button)->buttonGroupId();
-      changed();
-    });
-
-  guiReader.registerCallback("mode", [this](Widget* button) {
-      m_modeChoice = convert<ButtonWidget>(button)->buttonGroupId();
-      changed();
-    });
-
-  guiReader.construct(root.assets()->json("/interface/windowconfig/charcreation.config:paneLayout"), this);
-
-  createPlayer();
-
+  }
+  guiReader.registerCallback("toggleClothing", [this](Widget*) { return changed(); });
+  guiReader.registerCallback("randomName", [this](Widget*) { return randomizeName(); });
+  guiReader.registerCallback("randomize", [this](Widget*) { return randomize(); });
+  guiReader.registerCallback("name", [this](Widget* object) { return nameBoxCallback(object); });
+  guiReader.registerCallback("species", [this](Widget* widget) -> std::expected<void, StarException> {
+    auto button = convert<ButtonWidget>(widget);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    std::size_t choice = (*button)->buttonGroupId();
+    if (choice < m_speciesList.size() && choice != m_speciesChoice) {
+      m_speciesChoice = choice;
+      if (auto result = randomize(); !result)
+        return std::unexpected(std::move(result.error()));
+      return randomizeName();
+    }
+    return {};
+  });
+  guiReader.registerCallback("gender", [this](Widget* widget) -> std::expected<void, StarException> {
+    auto button = convert<ButtonWidget>(widget);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    m_genderChoice = (*button)->buttonGroupId();
+    return changed();
+  });
+  guiReader.registerCallback("mode", [this](Widget* widget) -> std::expected<void, StarException> {
+    auto button = convert<ButtonWidget>(widget);
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    m_modeChoice = (*button)->buttonGroupId();
+    return changed();
+  });
+  auto layout = (*assets)->json("/interface/windowconfig/charcreation.config:paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  if (auto result = guiReader.construct(*layout, this); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = createPlayer(); !result)
+    return std::unexpected(std::move(result.error()));
   RandomSource random(context()->root().random().randu64());
   m_speciesChoice = random.randu32() % m_speciesList.size();
   m_genderChoice = random.randu32();
   m_modeChoice = 1;
-  randomize();
-  randomizeName();
+  if (auto result = randomize(); !result)
+    return std::unexpected(std::move(result.error()));
+  return randomizeName();
 }
 
-void CharCreationPane::createPlayer() {
-  m_previewPlayer = context()->root().playerFactory()->create();
-  try {
-    auto portrait = fetchChild<PortraitWidget>("charPreview");
-    if ((bool)portrait) {
-      portrait->setEntity(m_previewPlayer);
-    } else {
-      throw CharCreationException("The charPreview portrait has the wrong type.");
-    }
-  } catch (CharCreationException const& e) {
-    context()->root().logger().error("Character Preview portrait was not found in the json specification. {}", outputException(e, false));
-  }
+std::expected<void, StarException> CharCreationPane::createPlayer() {
+  auto factory = context()->root().playerFactory();
+  if (!factory)
+    return std::unexpected(std::move(factory.error()));
+  auto player = (*factory)->create();
+  if (!player)
+    return std::unexpected(std::move(player.error()));
+  m_previewPlayer = std::move(*player);
+  auto portrait = fetchChild<PortraitWidget>("charPreview");
+  if (!portrait)
+    return std::unexpected(std::move(portrait.error()));
+  if (*portrait)
+    return (*portrait)->setEntity(m_previewPlayer);
+  auto error = CharCreationException("The charPreview portrait has the wrong type.");
+  return context()->root().logger().error("Character Preview portrait was not found in the json specification. {}", outputException(ExceptionDiagnostic(error), false));
 }
 
-void CharCreationPane::randomize() {
+std::expected<void, StarException> CharCreationPane::randomize() {
   RandomSource random(context()->root().random().randu64());
   m_bodyColor = random.randu32();
   m_hairChoice = random.randu32();
@@ -355,19 +351,18 @@ void CharCreationPane::randomize() {
   m_pantsChoice = random.randu32();
   m_pantsColor = random.randu32();
   m_personality = random.randu32();
-  changed();
+  return changed();
 }
 
-void CharCreationPane::tick(float dt) {
-  Pane::tick(dt);
-  if (!active())
-    return;
-  if (!m_previewPlayer)
-    return;
-  m_previewPlayer->animatePortrait(dt);
+std::expected<void, StarException> CharCreationPane::tick(float dt) {
+  if (auto result = Pane::tick(dt); !result)
+    return std::unexpected(std::move(result.error()));
+  if (!active() || !m_previewPlayer)
+    return {};
+  return m_previewPlayer->animatePortrait(dt);
 }
 
-bool CharCreationPane::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> CharCreationPane::sendEvent(InputEvent const& event) {
   if (active() && m_previewPlayer) {
     if (std::holds_alternative<KeyDownEvent>(event)) {
       auto actions = context()->actions(event);
@@ -402,158 +397,221 @@ bool CharCreationPane::sendEvent(InputEvent const& event) {
   return Pane::sendEvent(event);
 }
 
-void CharCreationPane::randomizeName() {
-  auto species = context()->root().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
-  auto tb = fetchChild<TextBoxWidget>("name");
-  auto genderOption = species->options().genderOptions.wrap(m_genderChoice);
+std::expected<void, StarException> CharCreationPane::randomizeName() {
+  auto database = context()->root().speciesDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto species = (*database)->species(m_speciesList[m_speciesChoice]);
+  if (!species)
+    return std::unexpected(std::move(species.error()));
+  auto textBox = requireChild<TextBoxWidget>("name");
+  if (!textBox)
+    return std::unexpected(std::move(textBox.error()));
+  auto genderOption = (*species)->options().genderOptions.wrap(m_genderChoice);
+  if (!genderOption)
+    return std::unexpected(std::move(genderOption.error()));
+  auto generator = context()->root().nameGenerator();
+  if (!generator)
+    return std::unexpected(std::move(generator.error()));
   int limiter = 100;
-  while (!tb->setText(context()->root().nameGenerator()->generateName(species->nameGen(genderOption.gender)))) {
-    if (limiter == 0)
+  while (true) {
+    auto name = (*generator)->generateName((*species)->nameGen((*genderOption)->gender));
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto accepted = (*textBox)->setText(*name);
+    if (!accepted)
+      return std::unexpected(std::move(accepted.error()));
+    if (*accepted || limiter == 0)
       break;
-    limiter--;
+    --limiter;
   }
-  changed();
+  return changed();
 }
 
-void CharCreationPane::changed() {
+std::expected<void, StarException> CharCreationPane::changed() {
   auto& root = context()->root();
-
-  auto textBox = fetchChild<TextBoxWidget>("name");
-  auto speciesDefinition = context()->root().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
-  auto species = speciesDefinition->options();
+  auto setRequiredLabel = [this](String const& name, String const& text) -> std::expected<void, StarException> {
+    auto label = requireChild<LabelWidget>(name);
+    if (!label)
+      return std::unexpected(std::move(label.error()));
+    return (*label)->setText(text);
+  };
+  auto textBox = requireChild<TextBoxWidget>("name");
+  if (!textBox)
+    return std::unexpected(std::move(textBox.error()));
+  auto database = root.speciesDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto speciesDefinition = (*database)->species(m_speciesList[m_speciesChoice]);
+  if (!speciesDefinition)
+    return std::unexpected(std::move(speciesDefinition.error()));
+  auto const& species = (*speciesDefinition)->options();
   auto genderOptions = species.genderOptions.wrap(m_genderChoice);
+  if (!genderOptions)
+    return std::unexpected(std::move(genderOptions.error()));
   int genderIdx = pmod<std::int64_t>(m_genderChoice, species.genderOptions.size());
-
-  auto labels = speciesDefinition->charGenTextLabels();
-
-  fetchChild<LabelWidget>("labelMainSkinColor")->setText(labels[0]);
-  fetchChild<LabelWidget>("labelHairStyle")->setText(labels[1]);
-  fetchChild<LabelWidget>("labelShirt")->setText(labels[2]);
-  fetchChild<LabelWidget>("labelPants")->setText(labels[3]);
-  if (!labels[4].empty()) {
-    fetchChild<LabelWidget>("labelAlty")->setText(labels[4]);
-    fetchChild<LabelWidget>("labelAlty")->show();
-    fetchChild<Widget>("alty")->show();
-  } else {
-    fetchChild<LabelWidget>("labelAlty")->hide();
-    fetchChild<Widget>("alty")->hide();
+  auto const& labels = (*speciesDefinition)->charGenTextLabels();
+  for (auto const& [name, index] : {
+      std::pair{"labelMainSkinColor", 0}, std::pair{"labelHairStyle", 1},
+      std::pair{"labelShirt", 2}, std::pair{"labelPants", 3}, std::pair{"labelHeady", 5},
+      std::pair{"labelShirtColor", 6}, std::pair{"labelPantsColor", 7},
+      std::pair{"labelPortrait", 8}, std::pair{"labelPersonality", 9}}) {
+    auto label = labels.at(index);
+    if (!label)
+      return std::unexpected(std::move(label.error()));
+    if (auto result = setRequiredLabel(name, **label); !result)
+      return std::unexpected(std::move(result.error()));
   }
-  fetchChild<LabelWidget>("labelHeady")->setText(labels[5]);
-  fetchChild<LabelWidget>("labelShirtColor")->setText(labels[6]);
-  fetchChild<LabelWidget>("labelPantsColor")->setText(labels[7]);
-  fetchChild<LabelWidget>("labelPortrait")->setText(labels[8]);
-  fetchChild<LabelWidget>("labelPersonality")->setText(labels[9]);
-
-  if (auto speciesButton = fetchChild<ButtonWidget>(strf("species.{}", m_speciesChoice)))
-    speciesButton->check();
-  if (auto genderButton = fetchChild<ButtonWidget>(strf("gender.{}", genderIdx)))
-    genderButton->check();
-
-  auto modeButton = fetchChild<ButtonWidget>(strf("mode.{}", m_modeChoice));
-  modeButton->check();
-  setLabel("labelMode", modeButton->data().getString("description", "fail"));
-
-  // Update the gender images for the new species
-  for (std::size_t i = 0; i < species.genderOptions.size(); i++)
-    if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", i)))
-      button->setOverlayImage(species.genderOptions[i].image);
-
-  for (auto const& nameDefPair : root.speciesDatabase()->allSpecies()) {
-    String name;
-    std::shared_ptr<SpeciesDefinition> def;
-    std::tie(name, def) = nameDefPair;
-    if (auto speciesIt = std::ranges::find(m_speciesList, name); speciesIt != m_speciesList.end()) {
-      if (auto bw = fetchChild<ButtonWidget>(strf("species.{}", static_cast<std::size_t>(speciesIt - m_speciesList.begin()))))
-        bw->setOverlayImage(def->options().genderOptions[genderIdx].characterImage);
+  auto altyLabel = labels.at(4);
+  if (!altyLabel)
+    return std::unexpected(std::move(altyLabel.error()));
+  if (!(**altyLabel).empty()) {
+    if (auto result = setRequiredLabel("labelAlty", **altyLabel); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  for (char const* name : {"labelAlty", "alty"}) {
+    auto child = requireChild(name);
+    if (!child)
+      return std::unexpected(std::move(child.error()));
+    if (auto result = (*child)->setVisibility(!(**altyLabel).empty()); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto speciesButton = fetchChild<ButtonWidget>(strf("species.{}", m_speciesChoice));
+  if (!speciesButton)
+    return std::unexpected(std::move(speciesButton.error()));
+  if (*speciesButton) {
+    if (auto result = (*speciesButton)->check(); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto genderButton = fetchChild<ButtonWidget>(strf("gender.{}", genderIdx));
+  if (!genderButton)
+    return std::unexpected(std::move(genderButton.error()));
+  if (*genderButton) {
+    if (auto result = (*genderButton)->check(); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  auto modeButton = requireChild<ButtonWidget>(strf("mode.{}", m_modeChoice));
+  if (!modeButton)
+    return std::unexpected(std::move(modeButton.error()));
+  if (auto result = (*modeButton)->check(); !result)
+    return std::unexpected(std::move(result.error()));
+  auto description = (*modeButton)->data().getString("description", "fail");
+  if (!description)
+    return std::unexpected(std::move(description.error()));
+  if (auto result = setRequiredLabel("labelMode", *description); !result)
+    return std::unexpected(std::move(result.error()));
+  for (std::size_t i = 0; i < species.genderOptions.size(); ++i) {
+    auto button = fetchChild<ButtonWidget>(strf("gender.{}", i));
+    if (!button)
+      return std::unexpected(std::move(button.error()));
+    if (*button)
+      (*button)->setOverlayImage(species.genderOptions[i].image);
+  }
+  for (auto const& [name, definition] : (*database)->allSpecies()) {
+    if (auto it = std::ranges::find(m_speciesList, name); it != m_speciesList.end()) {
+      auto button = fetchChild<ButtonWidget>(strf("species.{}", static_cast<std::size_t>(it - m_speciesList.begin())));
+      if (!button)
+        return std::unexpected(std::move(button.error()));
+      if (*button) {
+        auto option = definition->options().genderOptions.at(genderIdx);
+        if (!option)
+          return std::unexpected(std::move(option.error()));
+        (*button)->setOverlayImage((*option)->characterImage);
+      }
     }
   }
-
-  auto portrait = fetchChild<PortraitWidget>("charPreview");
-  if (fetchChild<ButtonWidget>("btnToggleClothing")->isChecked())
-    portrait->setMode(PortraitMode::Full);
-  else
-    portrait->setMode(PortraitMode::FullNude);
-
-  auto results = root.speciesDatabase()->createHumanoid(
-    textBox->getText(),
-    species.species,
-    m_genderChoice,
-    m_bodyColor,
-    m_alty,
-    m_hairChoice,
-    m_heady,
-    m_shirtChoice,
-    m_shirtColor,
-    m_pantsChoice,
-    m_pantsColor,
-    m_personality
-  );
-
-
-  m_previewPlayer->setModeType((PlayerMode)m_modeChoice);
-
-  m_previewPlayer->setHumanoidParameters(results.humanoidParameters);
-  m_previewPlayer->setIdentity(results.identity);
-  m_previewPlayer->refreshHumanoidParameters();
-  for (auto p : EquipmentSlotNames) {
-    if (auto equipment = results.armor.maybe(p.second)) {
-      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), root.itemDatabase()->item(ItemDescriptor(equipment.value_or(Json{}))));
-    } else {
-      m_previewPlayer->inventory()->consumeSlot(InventorySlot(p.first));
+  auto portrait = requireChild<PortraitWidget>("charPreview");
+  if (!portrait)
+    return std::unexpected(std::move(portrait.error()));
+  auto clothing = requireChild<ButtonWidget>("btnToggleClothing");
+  if (!clothing)
+    return std::unexpected(std::move(clothing.error()));
+  if (auto result = (*portrait)->setMode((*clothing)->isChecked() ? PortraitMode::Full : PortraitMode::FullNude); !result)
+    return std::unexpected(std::move(result.error()));
+  auto results = (*database)->createHumanoid((*textBox)->getText(), species.species, m_genderChoice, m_bodyColor,
+      m_alty, m_hairChoice, m_heady, m_shirtChoice, m_shirtColor, m_pantsChoice, m_pantsColor, m_personality);
+  if (!results)
+    return std::unexpected(std::move(results.error()));
+  if (auto result = m_previewPlayer->setModeType((PlayerMode)m_modeChoice); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_previewPlayer->setHumanoidParameters(std::move(results->humanoidParameters)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_previewPlayer->setIdentity(std::move(results->identity)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_previewPlayer->refreshHumanoidParameters(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (!EquipmentSlotNames)
+    return std::unexpected(EquipmentSlotNames.error());
+  auto itemDatabase = root.itemDatabase();
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  for (auto const& slot : *EquipmentSlotNames) {
+    if (auto equipment = results->armor.maybe(slot.second)) {
+      auto descriptor = ItemDescriptor::create(*equipment);
+      if (!descriptor)
+        return std::unexpected(std::move(descriptor.error()));
+      auto item = (*itemDatabase)->item(*descriptor);
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      if (auto result = m_previewPlayer->inventory()->setItem(InventorySlot(slot.first), *item); !result)
+        return std::unexpected(std::move(result.error()));
+    } else if (auto result = m_previewPlayer->inventory()->consumeSlot(InventorySlot(slot.first)); !result) {
+      return std::unexpected(std::move(result.error()));
     }
   }
-  m_previewPlayer->refreshEquipment();
-
-  m_previewPlayer->finalizeCreation();
+  if (auto result = m_previewPlayer->refreshEquipment(); !result)
+    return std::unexpected(std::move(result.error()));
+  return m_previewPlayer->finalizeCreation();
 }
 
-void CharCreationPane::nameBoxCallback(Widget* object) {
-  if (as<TextBoxWidget>(object))
-    changed();
-  else
-    throw GuiException("Invalid object type, expected TextBoxWidget.");
+std::expected<void, StarException> CharCreationPane::nameBoxCallback(Widget* object) {
+  if (!as<TextBoxWidget>(object))
+    return std::unexpected(GuiException("Invalid object type, expected TextBoxWidget."));
+  return changed();
 }
 
-std::shared_ptr<Pane> CharCreationPane::createTooltip(Vec2I const& screenPosition) {
-  // what's under my cursor
-  if (std::shared_ptr<Widget> child = getChildAt(screenPosition)) {
-    // is it a species button ?
+std::expected<std::shared_ptr<Pane>, StarException> CharCreationPane::createTooltip(Vec2I const& screenPosition) {
+  if (auto child = getChildAt(screenPosition)) {
     if (child->parent()->name() == "species") {
-      // which species is it ?
-      std::size_t speciesIndex = convert<ButtonWidget>(child)->buttonGroupId();
-
-      // no tooltips for unassigned button indices
+      auto button = convert<ButtonWidget>(child);
+      if (!button)
+        return std::unexpected(std::move(button.error()));
+      std::size_t speciesIndex = (*button)->buttonGroupId();
       if (speciesIndex >= m_speciesList.size())
-        return {};
-
-      String speciesName = m_speciesList[speciesIndex];
-      std::shared_ptr<SpeciesDefinition> speciesDefinition = context()->root().speciesDatabase()->species(speciesName);
-
-      // make a tooltip from the config file
-      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(*context());
-      tooltip->removeAllChildren();
+        return std::shared_ptr<Pane>{};
+      auto database = context()->root().speciesDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto definition = (*database)->species(m_speciesList[speciesIndex]);
+      if (!definition)
+        return std::unexpected(std::move(definition.error()));
+      auto tooltip = Pane::create(*context());
+      if (!tooltip)
+        return std::unexpected(std::move(tooltip.error()));
+      (*tooltip)->removeAllChildren();
       GuiReader reader(*context());
-      auto& root = context()->root();
-      String tooltipKind = "/interface/tooltips/species.tooltip";
-      reader.construct(root.assets()->json(tooltipKind), tooltip.get());
-
-      // find out the gender option block from the currently selected gender
-      auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
-      // makes an icon out of the default gendered character image
-      std::shared_ptr<Widget> titleIcon = std::make_shared<ImageWidget>(*context(), genderOption.characterImage);
-
-      // read the description out of the already loaded species database.
-      String title = speciesDefinition->tooltip().title;
-      String subTitle = speciesDefinition->tooltip().subTitle;
-      tooltip->setTitle(titleIcon, title, subTitle);
-
-      tooltip->setLabel("descriptionLabel", speciesDefinition->tooltip().description);
-
-      return tooltip;
+      auto assets = context()->root().assets();
+      if (!assets)
+        return std::unexpected(std::move(assets.error()));
+      auto config = (*assets)->json("/interface/tooltips/species.tooltip");
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      if (auto result = reader.construct(*config, tooltip->get()); !result)
+        return std::unexpected(std::move(result.error()));
+      auto genderOption = (*definition)->options().genderOptions.wrap(m_genderChoice);
+      if (!genderOption)
+        return std::unexpected(std::move(genderOption.error()));
+      auto icon = ImageWidget::create(*context(), (*genderOption)->characterImage);
+      if (!icon)
+        return std::unexpected(std::move(icon.error()));
+      if (auto result = (*tooltip)->setTitle(*icon, (*definition)->tooltip().title, (*definition)->tooltip().subTitle); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto result = (*tooltip)->setLabel("descriptionLabel", (*definition)->tooltip().description); !result)
+        return std::unexpected(std::move(result.error()));
+      return std::move(*tooltip);
     }
   }
-
-  return {};
+  return std::shared_ptr<Pane>{};
 }
 
 }

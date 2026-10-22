@@ -117,127 +117,126 @@ import star.portrait_widget;
 
 import star.image_metadata_database;
 
+import star.format;
 namespace Star {
 
-PortraitWidget::PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode) : Widget(context), m_entity(entity), m_portraitMode(mode) {
-  m_scale = 1;
-  m_renderHumanoid = false;
-  m_iconMode = false;
+PortraitWidget::PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode)
+  : Widget(context), m_entity(std::move(entity)), m_portraitMode(mode), m_scale(1), m_renderHumanoid(false), m_iconMode(false) {}
 
-  init();
-}
-
-PortraitWidget::PortraitWidget(GuiContext& context) : Widget(context) {
-  m_entity = {};
-  m_portraitMode = PortraitMode::Full;
-  m_scale = 1;
-  m_renderHumanoid = false;
-  m_iconMode = false;
-
-  init();
+std::expected<std::shared_ptr<PortraitWidget>, StarException> PortraitWidget::create(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode) {
+  auto widget = std::shared_ptr<PortraitWidget>(new PortraitWidget(context, std::move(entity), mode));
+  auto result = widget->init();
+  if (!result) return std::unexpected(std::move(result.error()));
+  return widget;
 }
 
 RectI PortraitWidget::getScissorRect() const {
   return noScissor();
 }
 
-void PortraitWidget::renderImpl() {
-  auto imgMetadata = this->context()->root().imageMetadataDatabase();
-
-  Vec2I offset = Vec2I();
+std::expected<void, StarException> PortraitWidget::renderImpl() {
+  auto metadata = context()->root().imageMetadataDatabase();
+  if (!metadata) return std::unexpected(std::move(metadata.error()));
+  Vec2I offset;
   if (m_iconMode) {
-    auto imgSize = Vec2F(imgMetadata->imageSize(m_iconImage));
-    offset = Vec2I(m_scale * imgSize / 2);
-    offset += m_iconOffset;
-    context()->drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
+    auto imageSize = (*metadata)->imageSize(m_iconImage);
+    if (!imageSize) return std::unexpected(std::move(imageSize.error()));
+    offset = Vec2I(m_scale * Vec2F(*imageSize) / 2) + m_iconOffset;
+    auto result = context()->drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
+    if (!result) return std::unexpected(std::move(result.error()));
   }
   if (m_entity) {
-    std::shared_ptr<Humanoid> humanoid = nullptr;
-    if (m_renderHumanoid) {
+    std::shared_ptr<Humanoid> humanoid;
+    if (m_renderHumanoid)
       if (auto player = as<Player>(m_entity))
-        if (!player->isPermaDead())
-          humanoid = player->humanoid();
-    }
-
-    List<Drawable> portrait = humanoid ? humanoid->render(false, false) : m_entity->portrait(m_portraitMode);
-    for (auto& i : portrait) {
-      i.scale(humanoid ? m_scale * 8.0f : m_scale);
-      context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + offset));
+        if (!player->isPermaDead()) humanoid = player->humanoid();
+    auto portrait = humanoid ? humanoid->render(false, false) : m_entity->portrait(m_portraitMode);
+    if (!portrait) return std::unexpected(std::move(portrait.error()));
+    for (auto& drawable : *portrait) {
+      drawable.scale(humanoid ? m_scale * 8.0f : m_scale);
+      auto result = context()->drawInterfaceDrawable(drawable, Vec2F(screenPosition() + offset));
+      if (!result) return std::unexpected(std::move(result.error()));
     }
   } else {
-    if (m_portraitMode == PortraitMode::Bust || m_portraitMode == PortraitMode::Head) {
-      Vec2I pos = offset;
-      auto imgSize = Vec2F(imgMetadata->imageSize(m_noEntityImagePart));
-      pos -= Vec2I(m_scale * imgSize * 0.5);
-      context()->drawInterfaceQuad(m_noEntityImagePart, Vec2F(screenPosition() + pos), m_scale);
-    } else {
-      Vec2I pos = offset;
-      auto imgSize = Vec2F(imgMetadata->imageSize(m_noEntityImageFull));
-      pos -= Vec2I(m_scale * imgSize * 0.5);
-      context()->drawInterfaceQuad(m_noEntityImageFull, Vec2F(screenPosition() + pos), m_scale);
-    }
+    auto const& image = m_portraitMode == PortraitMode::Bust || m_portraitMode == PortraitMode::Head ? m_noEntityImagePart : m_noEntityImageFull;
+    auto imageSize = (*metadata)->imageSize(image);
+    if (!imageSize) return std::unexpected(std::move(imageSize.error()));
+    auto pos = offset - Vec2I(m_scale * Vec2F(*imageSize) * 0.5);
+    return context()->drawInterfaceQuad(image, Vec2F(screenPosition() + pos), m_scale);
   }
+  return {};
 }
 
-void PortraitWidget::init() {
-  auto assets = this->context()->root().assets();
-
-  m_noEntityImageFull = assets->json("/interface.config:portraitNullPlayerImageFull").toString();
-  m_noEntityImagePart = assets->json("/interface.config:portraitNullPlayerImagePart").toString();
-  m_iconImage = assets->json("/interface.config:portraitIconImage").toString();
-  m_iconOffset = jsonToVec2I(assets->json("/interface.config:portraitIconOffset"));
-
-  updateSize();
+std::expected<void, StarException> PortraitWidget::init() {
+  auto assets = context()->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto fullJson = (*assets)->json("/interface.config:portraitNullPlayerImageFull");
+  if (!fullJson) return std::unexpected(std::move(fullJson.error()));
+  auto full = fullJson->toString();
+  if (!full) return std::unexpected(std::move(full.error()));
+  m_noEntityImageFull = AssetPath(*full);
+  auto partJson = (*assets)->json("/interface.config:portraitNullPlayerImagePart");
+  if (!partJson) return std::unexpected(std::move(partJson.error()));
+  auto part = partJson->toString();
+  if (!part) return std::unexpected(std::move(part.error()));
+  m_noEntityImagePart = AssetPath(*part);
+  auto iconJson = (*assets)->json("/interface.config:portraitIconImage");
+  if (!iconJson) return std::unexpected(std::move(iconJson.error()));
+  auto icon = iconJson->toString();
+  if (!icon) return std::unexpected(std::move(icon.error()));
+  m_iconImage = AssetPath(*icon);
+  auto offsetJson = (*assets)->json("/interface.config:portraitIconOffset");
+  if (!offsetJson) return std::unexpected(std::move(offsetJson.error()));
+  auto offset = jsonToVec2I(*offsetJson);
+  if (!offset) return std::unexpected(std::move(offset.error()));
+  m_iconOffset = *offset;
+  return updateSize();
 }
 
-void PortraitWidget::setEntity(std::shared_ptr<PortraitEntity> entity) {
-  m_entity = entity;
-  updateSize();
+std::expected<void, StarException> PortraitWidget::setEntity(std::shared_ptr<PortraitEntity> entity) {
+  m_entity = std::move(entity);
+  return updateSize();
 }
 
-void PortraitWidget::setMode(PortraitMode mode) {
+std::expected<void, StarException> PortraitWidget::setMode(PortraitMode mode) {
   m_portraitMode = mode;
-  updateSize();
+  return updateSize();
 }
 
-void PortraitWidget::setScale(float scale) {
+std::expected<void, StarException> PortraitWidget::setScale(float scale) {
   m_scale = scale;
-  updateSize();
+  return updateSize();
 }
 
-void PortraitWidget::setIconMode() {
+std::expected<void, StarException> PortraitWidget::setIconMode() {
   m_iconMode = true;
-  updateSize();
+  return updateSize();
 }
 
 void PortraitWidget::setRenderHumanoid(bool renderHumanoid) {
   m_renderHumanoid = renderHumanoid;
 }
 
-bool PortraitWidget::sendEvent(InputEvent const&) {
+std::expected<bool, StarException> PortraitWidget::sendEvent(InputEvent const&) {
   return false;
 }
 
-void PortraitWidget::updateSize() {
-  auto imgMetadata = this->context()->root().imageMetadataDatabase();
-
-  if (m_iconMode) {
-    setSize(Vec2I(imgMetadata->imageSize(m_iconImage) * m_scale));
+std::expected<void, StarException> PortraitWidget::updateSize() {
+  auto metadata = context()->root().imageMetadataDatabase();
+  if (!metadata) return std::unexpected(std::move(metadata.error()));
+  if (!m_iconMode && m_entity) {
+    auto portrait = m_entity->portrait(m_portraitMode);
+    if (!portrait) return std::unexpected(std::move(portrait.error()));
+    auto bounds = Drawable::boundBoxAll(**metadata, *portrait, false);
+    if (!bounds) return std::unexpected(std::move(bounds.error()));
+    setSize(Vec2I((bounds->size() * TilePixels * m_scale).ceil()));
   } else {
-    if (m_entity) {
-      setSize(Vec2I(
-          (Drawable::boundBoxAll(*this->context()->root().imageMetadataDatabase(), m_entity->portrait(m_portraitMode), false)
-                  .size()
-              * TilePixels
-              * m_scale)
-              .ceil()));
-    } else {
-      if (m_portraitMode == PortraitMode::Bust || m_portraitMode == PortraitMode::Head)
-        setSize(Vec2I(imgMetadata->imageSize(m_iconImage) * m_scale));
-      else
-        setSize(Vec2I(imgMetadata->imageSize(m_noEntityImageFull) * m_scale));
-    }
+    auto const& image = m_iconMode || m_portraitMode == PortraitMode::Bust || m_portraitMode == PortraitMode::Head ? m_iconImage : m_noEntityImageFull;
+    auto imageSize = (*metadata)->imageSize(image);
+    if (!imageSize) return std::unexpected(std::move(imageSize.error()));
+    setSize(Vec2I(*imageSize * m_scale));
   }
+  return {};
 }
 
 }

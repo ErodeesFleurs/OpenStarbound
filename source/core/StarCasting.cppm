@@ -82,23 +82,23 @@ bool ris(Type2 const& r) {
 }
 
 template <typename Type, typename Ptr>
-auto convert(Ptr const& p) -> decltype(as<Type>(p)) {
+[[nodiscard]] auto convert(Ptr const& p) -> std::expected<decltype(as<Type>(p)), StarException> {
   if (!p)
-    throw PointerConvertException::format("Could not convert from nullptr to {}", typeName<Type>());
+    return std::unexpected(PointerConvertException::format("Could not convert from nullptr to {}", typeName<Type>()));
   else if (auto a = as<Type>(p))
     return a;
   else
-    throw PointerConvertException::format("Could not convert from {} to {}", p->dynamicTypeName(), typeName<Type>());
+    return std::unexpected(PointerConvertException::format("Could not convert from {} to {}", p->dynamicTypeName(), typeName<Type>()));
 }
 
 template <typename Type1, typename Type2>
-Type1& rconvert(Type2& r) {
-  return *as<Type1>(&r);
+[[nodiscard]] std::expected<Type1*, StarException> rconvert(Type2& r) {
+  return convert<Type1>(&r);
 }
 
 template <typename Type1, typename Type2>
-Type1 const& rconvert(Type2 const& r) {
-  return *as<Type1>(&r);
+[[nodiscard]] std::expected<Type1 const*, StarException> rconvert(Type2 const& r) {
+  return convert<Type1 const>(&r);
 }
 
 template <typename Type>

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -64,37 +65,38 @@ public:
     return Star::typeName<CraftingPane>();
   }
 
-  CraftingPane(GuiContext& guiContext,
+  [[nodiscard]] static std::expected<std::shared_ptr<CraftingPane>, StarException> create(GuiContext& guiContext,
       std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
 
-  void displayed() override;
-  void dismissed() override;
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
   EntityId sourceEntityId() const;
 
 private:
-  void upgradeTable();
+  explicit CraftingPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId);
+  [[nodiscard]] std::expected<void, StarException> upgradeTable();
 
-  List<ItemRecipe> determineRecipes();
+  [[nodiscard]] std::expected<List<ItemRecipe>, StarException> determineRecipes();
 
-  virtual void update(float dt) override;
-  void updateCraftButtons();
-  void updateAvailableRecipes();
-  bool consumeIngredients(ItemRecipe& recipe, int count);
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> updateCraftButtons();
+  [[nodiscard]] std::expected<void, StarException> updateAvailableRecipes();
+  [[nodiscard]] std::expected<bool, StarException> consumeIngredients(ItemRecipe& recipe, int count);
   void stopCrafting();
-  void toggleCraft();
-  void craft(int count);
-  void countChanged();
-  void countTextChanged();
-  int maxCraft();
-  void setupList(std::shared_ptr<Widget> widget, ItemRecipe const& recipe);
-  ItemRecipe recipeFromSelectedWidget() const;
-  void setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag);
+  [[nodiscard]] std::expected<void, StarException> toggleCraft();
+  [[nodiscard]] std::expected<void, StarException> craft(int count);
+  [[nodiscard]] std::expected<void, StarException> countChanged();
+  [[nodiscard]] std::expected<void, StarException> countTextChanged();
+  [[nodiscard]] std::expected<int, StarException> maxCraft();
+  [[nodiscard]] std::expected<ItemRecipe, StarException> recipeFromSelectedWidget() const;
+  [[nodiscard]] std::expected<void, StarException> setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag);
 
-  std::shared_ptr<Pane> setupTooltip(ItemRecipe const& recipe);
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> setupTooltip(ItemRecipe const& recipe);
 
-  std::size_t itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item);
+  [[nodiscard]] std::expected<std::size_t, StarException> itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item);
 
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<Player> m_player;

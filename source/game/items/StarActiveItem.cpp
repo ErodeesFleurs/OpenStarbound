@@ -19,6 +19,7 @@ import star.asset_path;
 import star.rpc_promise;
 import star.a_star;
 import std;
+import star.format;
 import star.lua;
 import star.data_stream_extra;
 import star.set;
@@ -113,203 +114,379 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-ActiveItem::ActiveItem(Root& root, Json const& config, String const& directory, Json const& parameters)
-  : Item(root, config, directory, parameters), m_script(root), m_itemAnimator(root), m_scriptedAnimator(root) {
+std::expected<std::shared_ptr<ActiveItem>, StarException> ActiveItem::create(Root& root, Json const& config, String const& directory, Json const& parameters) {
+  auto item = std::shared_ptr<ActiveItem>(new ActiveItem(root));
+  auto initialized = item->initialize(config, directory, parameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   auto assets = root.assets();
-  auto animationConfig = assets->fetchJson(instanceValue("animation"), directory);
-  if (auto customConfig = instanceValue("animationCustom"))
-    animationConfig = jsonMerge(animationConfig, customConfig);
-  m_itemAnimator = NetworkedAnimator(root, animationConfig, directory);
-  for (auto const& pair : instanceValue("animationParts", JsonObject()).iterateObject())
-    m_itemAnimator.setPartTag(pair.first, "partImage", pair.second.toString());
-  m_scriptedAnimationParameters.reset(config.getObject("scriptedAnimationParameters", {}));
-
-  addNetElement(&m_itemAnimator);
-  addNetElement(&m_holdingItem);
-  addNetElement(&m_backArmFrame);
-  addNetElement(&m_frontArmFrame);
-  addNetElement(&m_twoHandedGrip);
-  addNetElement(&m_recoil);
-  addNetElement(&m_outsideOfHand);
-  addNetElement(&m_armAngle);
-  addNetElement(&m_facingDirection);
-  addNetElement(&m_damageSources);
-  addNetElement(&m_itemDamageSources);
-  addNetElement(&m_shieldPolys);
-  addNetElement(&m_itemShieldPolys);
-  addNetElement(&m_forceRegions);
-  addNetElement(&m_itemForceRegions);
-
-  // don't interpolate scripted animation parameters
-  addNetElement(&m_scriptedAnimationParameters, false);
-
-  m_holdingItem.set(true);
-  m_armAngle.setFixedPointBase(0.01f);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto animationValue = item->instanceValue("animation");
+  if (!animationValue)
+    return std::unexpected(std::move(animationValue.error()));
+  auto animationConfig = (*assets)->fetchJson(*animationValue, directory);
+  if (!animationConfig)
+    return std::unexpected(std::move(animationConfig.error()));
+  auto custom = item->instanceValue("animationCustom");
+  if (!custom)
+    return std::unexpected(std::move(custom.error()));
+  if (*custom)
+    animationConfig = jsonMerge(*animationConfig, *custom);
+  auto animator = NetworkedAnimator::create(root, *animationConfig, directory);
+  if (!animator)
+    return std::unexpected(std::move(animator.error()));
+  item->m_itemAnimator = std::move(*animator);
+  auto parts = item->instanceValue("animationParts", JsonObject()).and_then([](Json const& value) { return value.iterateObject(); });
+  if (!parts)
+    return std::unexpected(std::move(parts.error()));
+  for (auto const& pair : *parts) {
+    auto part = pair.second.toString();
+    if (!part)
+      return std::unexpected(std::move(part.error()));
+    item->m_itemAnimator->setPartTag(pair.first, "partImage", *part);
+  }
+  auto animationParameters = config.getObject("scriptedAnimationParameters", {});
+  if (!animationParameters)
+    return std::unexpected(std::move(animationParameters.error()));
+  item->m_scriptedAnimationParameters.reset(std::move(*animationParameters));
+  for (NetElement* element : std::initializer_list<NetElement*>{
+      static_cast<NetElement*>(item->m_itemAnimator.get()),
+      &item->m_holdingItem, &item->m_backArmFrame, &item->m_frontArmFrame,
+      &item->m_twoHandedGrip, &item->m_recoil, &item->m_outsideOfHand,
+      &item->m_armAngle, &item->m_facingDirection, &item->m_damageSources,
+      &item->m_itemDamageSources, &item->m_shieldPolys, &item->m_itemShieldPolys,
+      &item->m_forceRegions, &item->m_itemForceRegions}) {
+    auto added = item->addNetElement(element);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+  }
+  auto parametersAdded = item->addNetElement(&item->m_scriptedAnimationParameters, false);
+  if (!parametersAdded)
+    return std::unexpected(std::move(parametersAdded.error()));
+  item->m_holdingItem.set(true);
+  item->m_armAngle.setFixedPointBase(0.01f);
+  return item;
 }
 
-ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.root(), rhs.config(), rhs.directory(), rhs.parameters()) {}
-
-std::shared_ptr<Item> ActiveItem::clone() const {
-  return std::make_shared<ActiveItem>(*this);
+std::expected<std::shared_ptr<Item>, StarException> ActiveItem::clone() const {
+  return create(root(), config(), directory(), parameters()).transform([](std::shared_ptr<ActiveItem> item) -> std::shared_ptr<Item> { return item; });
 }
 
-void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
-  ToolUserItem::init(owner, hand);
-  if (entityMode() == EntityMode::Master) {
-    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
-    m_script.setUpdateDelta(instanceValue("scriptDelta", 1).toUInt());
+std::expected<void, StarException> ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
+  auto initialized = ToolUserItem::init(owner, hand);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master) {
+    auto scripts = instanceValue("scripts").and_then(jsonToStringList);
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    auto configured = m_script.setScripts(scripts->transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
+    if (!configured)
+      return std::unexpected(std::move(configured.error()));
+    auto delta = instanceValue("scriptDelta", 1).and_then([](Json const& value) { return value.toUInt(); });
+    if (!delta)
+      return std::unexpected(std::move(delta.error()));
+    m_script.setUpdateDelta(*delta);
     m_twoHandedGrip.set(twoHanded());
-
-    if (auto previousStorage = instanceValue("scriptStorage"))
-      m_script.setScriptStorage(previousStorage.toObject());
-
-    m_script.addCallbacks("activeItem", makeActiveItemCallbacks());
-    m_script.addCallbacks("item", LuaBindings::makeItemCallbacks(this));
-    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)));
-    m_script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_itemAnimator));
-    m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(owner->statusController()));
-    m_script.addActorMovementCallbacks(owner->movementController());
-    if (auto player = as<Player>(owner))
-      m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(root(), player));
-    m_script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(as<Entity>(owner)));
-    m_script.init(world());
+    auto previousStorage = instanceValue("scriptStorage");
+    if (!previousStorage)
+      return std::unexpected(std::move(previousStorage.error()));
+    if (*previousStorage) {
+      auto stored = previousStorage->toObject().and_then([&](JsonObject storage) { return m_script.setScriptStorage(std::move(storage)); });
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+    }
+    auto activeCallbacks = makeActiveItemCallbacks().and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("activeItem", std::move(callbacks)); });
+    if (!activeCallbacks)
+      return std::unexpected(std::move(activeCallbacks.error()));
+    auto itemCallbacks = LuaBindings::makeItemCallbacks(this).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("item", std::move(callbacks)); });
+    if (!itemCallbacks)
+      return std::unexpected(std::move(itemCallbacks.error()));
+    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("config", std::move(callbacks)); });
+    if (!configCallbacks)
+      return std::unexpected(std::move(configCallbacks.error()));
+    auto animatorCallbacks = LuaBindings::makeNetworkedAnimatorCallbacks(m_itemAnimator.get()).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("animator", std::move(callbacks)); });
+    if (!animatorCallbacks)
+      return std::unexpected(std::move(animatorCallbacks.error()));
+    auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(owner->statusController()).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("status", std::move(callbacks)); });
+    if (!statusCallbacks)
+      return std::unexpected(std::move(statusCallbacks.error()));
+    auto movementCallbacks = m_script.addActorMovementCallbacks(owner->movementController());
+    if (!movementCallbacks)
+      return std::unexpected(std::move(movementCallbacks.error()));
+    if (auto player = as<Player>(owner)) {
+      auto playerCallbacks = LuaBindings::makePlayerCallbacks(root(), player).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("player", std::move(callbacks)); });
+      if (!playerCallbacks)
+        return std::unexpected(std::move(playerCallbacks.error()));
+    }
+    auto entityCallbacks = LuaBindings::makeEntityCallbacks(as<Entity>(owner)).and_then([&](LuaCallbacks callbacks) { return m_script.addCallbacks("entity", std::move(callbacks)); });
+    if (!entityCallbacks)
+      return std::unexpected(std::move(entityCallbacks.error()));
+    auto itemWorld = world();
+    if (!itemWorld)
+      return std::unexpected(std::move(itemWorld.error()));
+    auto scriptInitialized = m_script.init(*itemWorld);
+    if (!scriptInitialized)
+      return std::unexpected(std::move(scriptInitialized.error()));
     m_currentFireMode = FireMode::None;
   }
-  if (world()->isClient()) {
-    if (auto animationScripts = instanceValue("animationScripts")) {
-      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
-      m_scriptedAnimator.setUpdateDelta(instanceValue("animationDelta", 1).toUInt());
-
-      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(&m_itemAnimator,
-        [this](String const& name, Json const& defaultValue) -> Json {
-          return m_scriptedAnimationParameters.value(name, defaultValue);
-        }));
-      m_scriptedAnimator.addCallbacks("activeItemAnimation", makeScriptedAnimationCallbacks());
-      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)));
-      m_scriptedAnimator.init(world());
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  if ((*itemWorld)->isClient()) {
+    auto animationScripts = instanceValue("animationScripts");
+    if (!animationScripts)
+      return std::unexpected(std::move(animationScripts.error()));
+    if (*animationScripts) {
+      auto scripts = jsonToStringList(*animationScripts);
+      if (!scripts)
+        return std::unexpected(std::move(scripts.error()));
+      auto configured = m_scriptedAnimator.setScripts(scripts->transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
+      if (!configured)
+        return std::unexpected(std::move(configured.error()));
+      auto delta = instanceValue("animationDelta", 1).and_then([](Json const& value) { return value.toUInt(); });
+      if (!delta)
+        return std::unexpected(std::move(delta.error()));
+      m_scriptedAnimator.setUpdateDelta(*delta);
+      auto animationCallbacks = LuaBindings::makeScriptedAnimatorCallbacks(m_itemAnimator.get(),
+          [this](String const& name, Json const& defaultValue) -> Json { return m_scriptedAnimationParameters.value(name, defaultValue); })
+          .and_then([&](LuaCallbacks callbacks) { return m_scriptedAnimator.addCallbacks("animationConfig", std::move(callbacks)); });
+      if (!animationCallbacks)
+        return std::unexpected(std::move(animationCallbacks.error()));
+      auto activeCallbacks = makeScriptedAnimationCallbacks().and_then([&](LuaCallbacks callbacks) { return m_scriptedAnimator.addCallbacks("activeItemAnimation", std::move(callbacks)); });
+      if (!activeCallbacks)
+        return std::unexpected(std::move(activeCallbacks.error()));
+      auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)).and_then([&](LuaCallbacks callbacks) { return m_scriptedAnimator.addCallbacks("config", std::move(callbacks)); });
+      if (!configCallbacks)
+        return std::unexpected(std::move(configCallbacks.error()));
+      auto animationInitialized = m_scriptedAnimator.init(*itemWorld);
+      if (!animationInitialized)
+        return std::unexpected(std::move(animationInitialized.error()));
     }
   }
+  return {};
 }
 
-void ActiveItem::uninit() {
-  if (entityMode() == EntityMode::Master) {
-    m_script.uninit();
-    m_script.removeCallbacks("activeItem");
-    m_script.removeCallbacks("item");
-    m_script.removeCallbacks("config");
-    m_script.removeCallbacks("animator");
-    m_script.removeCallbacks("status");
-    m_script.removeActorMovementCallbacks();
-    m_script.removeCallbacks("player");
-    m_script.removeCallbacks("entity");
-  }
-  if (world()->isClient()) {
-    if (auto animationScripts = instanceValue("animationScripts")) {
-      m_scriptedAnimator.uninit();
-      m_scriptedAnimator.removeCallbacks("animationConfig");
-      m_scriptedAnimator.removeCallbacks("activeItemAnimation");
-      m_scriptedAnimator.removeCallbacks("config");
+std::expected<void, StarException> ActiveItem::uninit() {
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master) {
+    auto uninitialized = m_script.uninit();
+    if (!uninitialized)
+      return std::unexpected(std::move(uninitialized.error()));
+    for (auto const& name : {"activeItem", "item", "config", "animator", "status"}) {
+      auto removed = m_script.removeCallbacks(name);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+    }
+    auto movementRemoved = m_script.removeActorMovementCallbacks();
+    if (!movementRemoved)
+      return std::unexpected(std::move(movementRemoved.error()));
+    for (auto const& name : {"player", "entity"}) {
+      auto removed = m_script.removeCallbacks(name);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
     }
   }
-
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  if ((*itemWorld)->isClient()) {
+    auto animationScripts = instanceValue("animationScripts");
+    if (!animationScripts)
+      return std::unexpected(std::move(animationScripts.error()));
+    if (*animationScripts) {
+      auto uninitialized = m_scriptedAnimator.uninit();
+      if (!uninitialized)
+        return std::unexpected(std::move(uninitialized.error()));
+      for (auto const& name : {"animationConfig", "activeItemAnimation", "config"}) {
+        auto removed = m_scriptedAnimator.removeCallbacks(name);
+        if (!removed)
+          return std::unexpected(std::move(removed.error()));
+      }
+    }
+  }
   m_itemAnimatorDynamicTarget.stopAudio();
-  ToolUserItem::uninit();
+  auto uninitialized = ToolUserItem::uninit();
+  if (!uninitialized)
+    return std::unexpected(std::move(uninitialized.error()));
   m_activeAudio.clear();
+  return {};
 }
 
-void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+std::expected<void, StarException> ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
   StringMap<bool> moveMap;
-  for (auto m : moves)
-    moveMap[MoveControlTypeNames.getRight(m)] = true;
-
-  if (entityMode() == EntityMode::Master) {
+  for (auto move : moves) {
+    if (!MoveControlTypeNames)
+      return std::unexpected(MoveControlTypeNames.error());
+    auto name = MoveControlTypeNames->getRight(move);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    moveMap[**name] = true;
+  }
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master) {
+    if (!FireModeNames)
+      return std::unexpected(FireModeNames.error());
+    auto fireModeName = FireModeNames->getRight(fireMode);
+    if (!fireModeName)
+      return std::unexpected(std::move(fireModeName.error()));
     if (fireMode != m_currentFireMode) {
       m_currentFireMode = fireMode;
-      if (fireMode != FireMode::None)
-        m_script.invoke("activate", FireModeNames.getRight(fireMode), shifting, moveMap);
+      if (fireMode != FireMode::None) {
+        auto activated = m_script.invoke("activate", **fireModeName, shifting, moveMap);
+        if (!activated)
+          return std::unexpected(std::move(activated.error()));
+      }
     }
-    m_script.update(m_script.updateDt(dt), FireModeNames.getRight(fireMode), shifting, moveMap);
-
-    if (instanceValue("retainScriptStorageInItem", false).toBool()) {
-      setInstanceValue("scriptStorage", m_script.getScriptStorage());
+    auto updated = m_script.update(m_script.updateDt(dt), **fireModeName, shifting, moveMap);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+    auto retain = instanceValue("retainScriptStorageInItem", false).and_then([](Json const& value) { return value.toBool(); });
+    if (!retain)
+      return std::unexpected(std::move(retain.error()));
+    if (*retain) {
+      auto storage = m_script.getScriptStorage();
+      if (!storage)
+        return std::unexpected(std::move(storage.error()));
+      auto stored = setInstanceValue("scriptStorage", *storage);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
     }
   }
-
-  bool isClient = world()->isClient();
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  bool isClient = (*itemWorld)->isClient();
+  auto animated = m_itemAnimator->update(dt, isClient ? &m_itemAnimatorDynamicTarget : nullptr);
+  if (!animated)
+    return std::unexpected(std::move(animated.error()));
   if (isClient) {
-    m_itemAnimator.update(dt, &m_itemAnimatorDynamicTarget);
-    m_scriptedAnimator.update(m_scriptedAnimator.updateDt(dt));
-  } else {
-    m_itemAnimator.update(dt, nullptr);
+    auto updated = m_scriptedAnimator.update(m_scriptedAnimator.updateDt(dt));
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
   }
-
-  eraseWhere(m_activeAudio, [this](std::pair<std::shared_ptr<AudioInstance> const, Vec2F> const& a) {
-      a.first->setPosition(owner()->position() + handPosition(a.second));
-      return a.first->finished();
-    });
-
-  for (auto shieldPoly : shieldPolys()) {
-    shieldPoly.translate(owner()->position());
+  for (auto it = m_activeAudio.begin(); it != m_activeAudio.end();) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto position = handPosition(it->second);
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    it->first->setPosition((*itemOwner)->position() + *position);
+    if (it->first->finished())
+      it = m_activeAudio.erase(it);
+    else
+      ++it;
+  }
+  auto shields = shieldPolys();
+  if (!shields)
+    return std::unexpected(std::move(shields.error()));
+  for (auto shieldPoly : *shields) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    shieldPoly.translate((*itemOwner)->position());
     if (isClient)
       root().spatialLogger().logPoly("world", shieldPoly, {255, 255, 0, 255});
   }
-
   if (isClient) {
-    for (auto forceRegion : forceRegions()) {
+    auto forces = forceRegions();
+    if (!forces)
+      return std::unexpected(std::move(forces.error()));
+    for (auto forceRegion : *forces) {
       if (auto dfr = std::get_if<DirectionalForceRegion>(&forceRegion))
-        root().spatialLogger().logPoly("world", dfr->region, { 155, 0, 255, 255 });
+        root().spatialLogger().logPoly("world", dfr->region, {155, 0, 255, 255});
       else if (auto rfr = std::get_if<RadialForceRegion>(&forceRegion))
-        root().spatialLogger().logPoint("world", rfr->center, { 155, 0, 255, 255 });
+        root().spatialLogger().logPoint("world", rfr->center, {155, 0, 255, 255});
     }
   }
+  return {};
 }
 
-List<DamageSource> ActiveItem::damageSources() const {
+std::expected<List<DamageSource>, StarException> ActiveItem::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
   for (auto ds : m_itemDamageSources.get()) {
     if (std::holds_alternative<PolyF>(ds.damageArea)) {
       auto& poly = std::get<PolyF>(ds.damageArea);
       poly.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      if ((*itemOwner)->facingDirection() == Direction::Left)
         poly.flipHorizontal(0.0f);
-      poly.translate(handPosition(Vec2F()));
+      auto position = handPosition(Vec2F());
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      poly.translate(*position);
     } else if (std::holds_alternative<Line2F>(ds.damageArea)) {
       auto& line = std::get<Line2F>(ds.damageArea);
       line.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      if ((*itemOwner)->facingDirection() == Direction::Left)
         line.flipHorizontal(0.0f);
-      line.translate(handPosition(Vec2F()));
+      auto position = handPosition(Vec2F());
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      line.translate(*position);
     }
     damageSources.append(std::move(ds));
   }
   return damageSources;
 }
 
-List<PolyF> ActiveItem::shieldPolys() const {
+std::expected<List<PolyF>, StarException> ActiveItem::shieldPolys() const {
   List<PolyF> shieldPolys = m_shieldPolys.get();
   for (auto sp : m_itemShieldPolys.get()) {
     sp.rotate(m_armAngle.get());
-    if (owner()->facingDirection() == Direction::Left)
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    if ((*itemOwner)->facingDirection() == Direction::Left)
       sp.flipHorizontal(0.0f);
-    sp.translate(handPosition(Vec2F()));
+    auto position = handPosition(Vec2F());
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    sp.translate(*position);
     shieldPolys.append(std::move(sp));
   }
   return shieldPolys;
 }
 
-List<PhysicsForceRegion> ActiveItem::forceRegions() const {
+std::expected<List<PhysicsForceRegion>, StarException> ActiveItem::forceRegions() const {
   List<PhysicsForceRegion> forceRegions = m_forceRegions.get();
   for (auto fr : m_itemForceRegions.get()) {
     if (auto dfr = std::get_if<DirectionalForceRegion>(&fr)) {
       dfr->region.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      if ((*itemOwner)->facingDirection() == Direction::Left)
         dfr->region.flipHorizontal(0.0f);
-      dfr->region.translate(owner()->position() + handPosition(Vec2F()));
+      auto position = handPosition(Vec2F());
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      dfr->region.translate((*itemOwner)->position() + *position);
     } else if (auto rfr = std::get_if<RadialForceRegion>(&fr)) {
       rfr->center = rfr->center.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      if ((*itemOwner)->facingDirection() == Direction::Left)
         rfr->center[0] *= -1;
-      rfr->center += owner()->position() + handPosition(Vec2F());
+      auto position = handPosition(Vec2F());
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      rfr->center += (*itemOwner)->position() + *position;
     }
     forceRegions.append(std::move(fr));
   }
@@ -348,27 +525,38 @@ std::optional<Direction> ActiveItem::facingDirection() const {
   return m_facingDirection.get();
 }
 
-List<Drawable> ActiveItem::handDrawables() const {
-  if (m_itemAnimator.constParts().empty()) {
+std::expected<List<Drawable>, StarException> ActiveItem::handDrawables() const {
+  if (m_itemAnimator->constParts().empty()) {
     auto drawables = Item::iconDrawables();
-    Drawable::scaleAll(drawables, 1.0f / TilePixels);
+    if (!drawables)
+      return std::unexpected(std::move(drawables.error()));
+    Drawable::scaleAll(*drawables, 1.0f / TilePixels);
     return drawables;
   } else {
-    return m_itemAnimator.drawables();
+    return m_itemAnimator->drawables();
   }
 }
 
-List<std::pair<Drawable, std::optional<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+std::expected<List<std::pair<Drawable, std::optional<EntityRenderLayer>>>, StarException> ActiveItem::entityDrawables() const {
   return m_scriptedAnimator.drawables();
 }
 
-List<LightSource> ActiveItem::lights() const {
+std::expected<List<LightSource>, StarException> ActiveItem::lights() const {
   // Same as pullNewAudios, we translate and flip ourselves.
   List<LightSource> result;
-  for (auto& light : m_itemAnimator.lightSources()) {
-    light.position = owner()->position() + handPosition(light.position);
+  auto lights = m_itemAnimator->lightSources();
+  if (!lights)
+    return std::unexpected(std::move(lights.error()));
+  for (auto& light : *lights) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto position = handPosition(light.position);
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    light.position = (*itemOwner)->position() + *position;
     light.beamAngle += m_armAngle.get();
-    if (owner()->facingDirection() == Direction::Left) {
+    if ((*itemOwner)->facingDirection() == Direction::Left) {
       if (light.beamAngle > 0)
         light.beamAngle = std::numbers::pi / 2 + constrainAngle(std::numbers::pi / 2 - light.beamAngle);
       else
@@ -380,7 +568,7 @@ List<LightSource> ActiveItem::lights() const {
   return result;
 }
 
-List<std::shared_ptr<AudioInstance>> ActiveItem::pullNewAudios() {
+std::expected<List<std::shared_ptr<AudioInstance>>, StarException> ActiveItem::pullNewAudios() {
   // Because the item animator is in hand-space, and Humanoid does all the
   // translation *and flipping*, we cannot use NetworkedAnimator's built-in
   // functionality to rotate and flip, and instead must do it manually.  We do
@@ -391,20 +579,32 @@ List<std::shared_ptr<AudioInstance>> ActiveItem::pullNewAudios() {
   List<std::shared_ptr<AudioInstance>> result;
   for (auto& audio : m_itemAnimatorDynamicTarget.pullNewAudios()) {
     m_activeAudio[audio] = *audio->position();
-    audio->setPosition(owner()->position() + handPosition(*audio->position()));
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto position = handPosition(*audio->position());
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    audio->setPosition((*itemOwner)->position() + *position);
     result.append(std::move(audio));
   }
   result.appendAll(m_scriptedAnimator.pullNewAudios());
   return result;
 }
 
-List<Particle> ActiveItem::pullNewParticles() {
+std::expected<List<Particle>, StarException> ActiveItem::pullNewParticles() {
   // Same as pullNewAudios, we translate, rotate, and flip ourselves
   List<Particle> result;
   for (auto& particle : m_itemAnimatorDynamicTarget.pullNewParticles()) {
-    particle.position = owner()->position() + handPosition(particle.position);
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    auto position = handPosition(particle.position);
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    particle.position = (*itemOwner)->position() + *position;
     particle.velocity = particle.velocity.rotate(m_armAngle.get());
-    if (owner()->facingDirection() == Direction::Left) {
+    if ((*itemOwner)->facingDirection() == Direction::Left) {
       particle.velocity[0] *= -1;
       particle.flip = !particle.flip;
     }
@@ -418,253 +618,356 @@ std::optional<String> ActiveItem::cursor() const {
   return m_cursor;
 }
 
-std::optional<ChainableJsonMessageResponse> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_script.handleMessage(message, localMessage, args);
 }
 
-float ActiveItem::durabilityStatus() {
-  auto durability = instanceValue("durability").optFloat();
-  if (durability) {
-    auto durabilityHit = instanceValue("durabilityHit").optFloat().value_or(*durability);
-    return durabilityHit / *durability;
+std::expected<float, StarException> ActiveItem::durabilityStatus() {
+  auto durability = instanceValue("durability").and_then([](Json const& value) { return value.optFloat(); });
+  if (!durability)
+    return std::unexpected(std::move(durability.error()));
+  if (*durability) {
+    auto durabilityHit = instanceValue("durabilityHit").and_then([](Json const& value) { return value.optFloat(); });
+    if (!durabilityHit)
+      return std::unexpected(std::move(durabilityHit.error()));
+    return durabilityHit->value_or(**durability) / **durability;
   }
-  return 1.0;
+  return 1.0f;
 }
 
-Vec2F ActiveItem::armPosition(Vec2F const& offset) const {
-  return owner()->armPosition(hand(), owner()->facingDirection(), m_armAngle.get(), offset);
+std::expected<Vec2F, StarException> ActiveItem::armPosition(Vec2F const& offset) const {
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemHand = hand();
+  if (!itemHand)
+    return std::unexpected(std::move(itemHand.error()));
+  return (*itemOwner)->armPosition(*itemHand, (*itemOwner)->facingDirection(), m_armAngle.get(), offset);
 }
 
-Vec2F ActiveItem::handPosition(Vec2F const& offset) const {
-  return armPosition(offset + owner()->handOffset(hand(), owner()->facingDirection()));
+std::expected<Vec2F, StarException> ActiveItem::handPosition(Vec2F const& offset) const {
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto itemHand = hand();
+  if (!itemHand)
+    return std::unexpected(std::move(itemHand.error()));
+  auto handOffset = (*itemOwner)->handOffset(*itemHand, (*itemOwner)->facingDirection());
+  if (!handOffset)
+    return std::unexpected(std::move(handOffset.error()));
+  return armPosition(offset + *handOffset);
 }
 
-LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
+std::expected<LuaCallbacks, StarException> ActiveItem::makeActiveItemCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("ownerEntityId", [this]() {
-      return owner()->entityId();
-    });
-  callbacks.registerCallback("ownerTeam", [this]() {
-      return owner()->getTeam().toJson();
-    });
-  callbacks.registerCallback("ownerAimPosition", [this]() {
-      return owner()->aimPosition();
-    });
-  callbacks.registerCallback("ownerPowerMultiplier", [this]() {
-      return owner()->powerMultiplier();
-    });
-  callbacks.registerCallback("fireMode", [this]() {
-      return FireModeNames.getRight(m_currentFireMode);
-    });
-  callbacks.registerCallback("hand", [this]() {
-      return ToolHandNames.getRight(hand());
-    });
-  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
+  if (auto added = callbacks.registerCallback("ownerEntityId", [this]() {
+      return owner().transform([](ToolUserEntity* owner) { return owner->entityId(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerTeam", [this]() {
+      return owner().and_then([](ToolUserEntity* owner) { return owner->getTeam().toJson(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerAimPosition", [this]() {
+      return owner().and_then([](ToolUserEntity* owner) { return owner->aimPosition(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerPowerMultiplier", [this]() {
+      return owner().and_then([](ToolUserEntity* owner) { return owner->powerMultiplier(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("fireMode", [this]() -> std::expected<String, StarException> {
+      if (!FireModeNames)
+        return std::unexpected(FireModeNames.error());
+      return FireModeNames->getRight(m_currentFireMode).transform([](String const* name) { return *name; });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("hand", [this]() -> std::expected<String, StarException> {
+      auto itemHand = hand();
+      if (!itemHand)
+        return std::unexpected(std::move(itemHand.error()));
+      if (!ToolHandNames)
+        return std::unexpected(ToolHandNames.error());
+      return ToolHandNames->getRight(*itemHand).transform([](String const* name) { return *name; });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
       return handPosition(offset.value_or(Vec2F{}));
-    });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
 
-  // Gets the required aim angle to aim a "barrel" of the item that has the given
-  // vertical offset from the hand at the given target.  The line that is aimed
-  // at the target is the horizontal line going through the aimVerticalOffset.
-  callbacks.registerCallback("aimAngleAndDirection", [this](float aimVerticalOffset, Vec2F targetPosition) {
-      // This was figured out using pencil and paper geometry from the hand
-      // rotation center, the target position, and the 90 deg vertical offset of
-      // the "barrel".
-
-      Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
-      Vec2F ownerPosition = owner()->position();
-
-      // Vector in owner entity space to target.
-      Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, ownerPosition);
-      // Raptor - in retail if you have a hand rotation center that is to the right of the entity centerline, then any time the
-      // aim position is behind it the character will repeatedly flip every single frame, we want to prevent this
-      auto dir = numericalDirection(owner()->facingDirection());
-      // get local X coords by multiplying by our direction
-      auto targetX = (toTarget[0] * dir);
-      auto centerX = (handRotationCenter[0] * dir);
-      if ((centerX >= 0) && (targetX >= 0) && (targetX < centerX)) {
-        // if the target is between the centerline and our rotation center then we need to
-        // change target x to a pixel offset from our rotation center x so we won't rapidly flip
+  // Aim a barrel with a vertical offset from the hand at the given target.
+  if (auto added = callbacks.registerCallback("aimAngleAndDirection", [this](float aimVerticalOffset, Vec2F targetPosition) -> std::expected<LuaTupleReturn<float, int>, StarException> {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto itemHand = hand();
+      if (!itemHand)
+        return std::unexpected(std::move(itemHand.error()));
+      auto rotationCenter = (*itemOwner)->armPosition(*itemHand, (*itemOwner)->facingDirection(), 0.0f, Vec2F());
+      if (!rotationCenter)
+        return std::unexpected(std::move(rotationCenter.error()));
+      Vec2F handRotationCenter = *rotationCenter;
+      Vec2F ownerPosition = (*itemOwner)->position();
+      auto itemWorld = (*itemOwner)->world();
+      if (!itemWorld)
+        return std::unexpected(std::move(itemWorld.error()));
+      Vec2F toTarget = (*itemWorld)->geometry().diff(targetPosition, ownerPosition);
+      // Keep the target beyond the hand's rotation center to avoid rapid flips.
+      auto dir = numericalDirection((*itemOwner)->facingDirection());
+      auto targetX = toTarget[0] * dir;
+      auto centerX = handRotationCenter[0] * dir;
+      if (centerX >= 0 && targetX >= 0 && targetX < centerX)
         toTarget[0] = handRotationCenter[0] + (0.125 * dir);
-      }
-      // get from owner entity space to hand rotation space
       toTarget -= handRotationCenter;
       float toTargetDist = toTarget.magnitude();
-
-      // If the aim position is inside the circle formed by the barrel line as it
-      // goes around (aimVerticalOffset <= toTargetDist) absolutely no angle will
-      // give you an intersect, so we just bail out and assume the target is at the
-      // edge of the circle to retain continuity.
+      // Clamp targets inside the barrel-offset circle to retain continuity.
       float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
       auto angleSide = getAngleSide(toTarget.angle());
       return luaTupleReturn(angleSide.first + angleAdjust, numericalDirection(angleSide.second));
-    });
-
-  // Similar to aimAngleAndDirection, but only provides the offset-adjusted aimAngle for the current facing direction
-  callbacks.registerCallback("aimAngle", [this](float aimVerticalOffset, Vec2F targetPosition) {
-      Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
-      Vec2F ownerPosition = owner()->position();
-      Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, (ownerPosition + handRotationCenter));
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("aimAngle", [this](float aimVerticalOffset, Vec2F targetPosition) -> std::expected<float, StarException> {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto itemHand = hand();
+      if (!itemHand)
+        return std::unexpected(std::move(itemHand.error()));
+      auto rotationCenter = (*itemOwner)->armPosition(*itemHand, (*itemOwner)->facingDirection(), 0.0f, Vec2F());
+      if (!rotationCenter)
+        return std::unexpected(std::move(rotationCenter.error()));
+      Vec2F handRotationCenter = *rotationCenter;
+      Vec2F ownerPosition = (*itemOwner)->position();
+      auto itemWorld = (*itemOwner)->world();
+      if (!itemWorld)
+        return std::unexpected(std::move(itemWorld.error()));
+      Vec2F toTarget = (*itemWorld)->geometry().diff(targetPosition, ownerPosition + handRotationCenter);
       float toTargetDist = toTarget.magnitude();
       float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
       return toTarget.angle() + angleAdjust;
-    });
-
-  callbacks.registerCallback("setHoldingItem", [this](bool holdingItem) {
-      m_holdingItem.set(holdingItem);
-    });
-
-  callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> armFrame) {
-      m_backArmFrame.set(armFrame);
-    });
-
-  callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> armFrame) {
-      m_frontArmFrame.set(armFrame);
-    });
-
-  callbacks.registerCallback("setTwoHandedGrip", [this](bool twoHandedGrip) {
-      m_twoHandedGrip.set(twoHandedGrip);
-    });
-
-  callbacks.registerCallback("setRecoil", [this](bool recoil) {
-      m_recoil.set(recoil);
-    });
-
-  callbacks.registerCallback("setOutsideOfHand", [this](bool outsideOfHand) {
-      m_outsideOfHand.set(outsideOfHand);
-    });
-
-  callbacks.registerCallback("setArmAngle", [this](float armAngle) {
-      m_armAngle.set(armAngle);
-    });
-
-  callbacks.registerCallback("setFacingDirection", [this](float direction) {
-      m_facingDirection.set(directionOf(direction));
-    });
-
-  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
-      m_damageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
-    });
-
-  callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& damageSources) {
-      m_itemDamageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
-    });
-
-  callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
-      m_shieldPolys.set(shieldPolys.value_or(List<PolyF>{}));
-    });
-
-  callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
-      m_itemShieldPolys.set(shieldPolys.value_or(List<PolyF>{}));
-    });
-
-  callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
-      if (forceRegions)
-        m_forceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
-      else
-        m_forceRegions.set({});
-    });
-
-  callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
-      if (forceRegions)
-        m_itemForceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
-      else
-        m_itemForceRegions.set({});
-    });
-
-  callbacks.registerCallback("setCursor", [this](std::optional<String> cursor) {
-      m_cursor = std::move(cursor);
-    });
-
-  callbacks.registerCallback("setScriptedAnimationParameter", [this](String name, Json value) {
-      m_scriptedAnimationParameters.set(std::move(name), std::move(value));
-    });
-
-  callbacks.registerCallback("setInventoryIcon", [this](Json inventoryIcon) {
-    setInstanceValue("inventoryIcon", inventoryIcon);
-
-    if (inventoryIcon.type() == Json::Type::Array) {
-      setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
-        if (auto image = config.optString("image"))
-          return Drawable(*root().imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(directory(), *image)));
-        return Drawable(*root().imageMetadataDatabase(), config);
-      }));
-    } else {
-      auto image = AssetPath::relativeTo(directory(), inventoryIcon.toString());
-      setIconDrawables({Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
-    }
-  });
-  callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) {
-    setInstanceValue("secondaryIcon", secondaryIcon);
-    if (secondaryIcon.type() == Json::Type::Array) {
-      setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
-        if (auto image = config.optString("image"))
-          return Drawable(*root().imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(directory(), *image)));
-        return Drawable(*root().imageMetadataDatabase(), config);
-      }));
-    } else if (secondaryIcon.type() == Json::Type::String) {
-      auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
-      setSecondaryIconDrawables(List<Drawable>{Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
-    } else {
-      setSecondaryIconDrawables(std::optional<List<Drawable>>());
-    }
-  });
-
-  callbacks.registerCallback("setInstanceValue", [this](String name, Json val) {
-      setInstanceValue(std::move(name), std::move(val));
-    });
-
-  callbacks.registerCallback("callOtherHandScript", [this](String const& func, LuaVariadic<LuaValue> const& args) {
-      if (auto otherHandItem = owner()->handItem(hand() == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
-        if (auto otherActiveItem = as<ActiveItem>(otherHandItem))
-          return otherActiveItem->m_script.invoke(func, args).value_or(LuaValue{});
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setHoldingItem", [this](bool value) { m_holdingItem.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> value) { m_backArmFrame.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> value) { m_frontArmFrame.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setTwoHandedGrip", [this](bool value) { m_twoHandedGrip.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setRecoil", [this](bool value) { m_recoil.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setOutsideOfHand", [this](bool value) { m_outsideOfHand.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setArmAngle", [this](float value) { m_armAngle.set(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setFacingDirection", [this](float value) { m_facingDirection.set(directionOf(value)); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& values) -> std::expected<void, StarException> {
+      List<DamageSource> sources;
+      if (values) {
+        for (auto const& value : *values) {
+          auto source = DamageSource::create(value);
+          if (!source)
+            return std::unexpected(std::move(source.error()));
+          sources.append(std::move(*source));
+        }
       }
-      return LuaValue();
-    });
+      m_damageSources.set(std::move(sources));
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& values) -> std::expected<void, StarException> {
+      List<DamageSource> sources;
+      if (values) {
+        for (auto const& value : *values) {
+          auto source = DamageSource::create(value);
+          if (!source)
+            return std::unexpected(std::move(source.error()));
+          sources.append(std::move(*source));
+        }
+      }
+      m_itemDamageSources.set(std::move(sources));
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& value) { m_shieldPolys.set(value.value_or(List<PolyF>{})); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& value) { m_itemShieldPolys.set(value.value_or(List<PolyF>{})); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& values) -> std::expected<void, StarException> {
+      List<PhysicsForceRegion> regions;
+      if (values) {
+        for (auto const& value : *values) {
+          auto region = jsonToPhysicsForceRegion(value);
+          if (!region)
+            return std::unexpected(std::move(region.error()));
+          regions.append(std::move(*region));
+        }
+      }
+      m_forceRegions.set(std::move(regions));
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& values) -> std::expected<void, StarException> {
+      List<PhysicsForceRegion> regions;
+      if (values) {
+        for (auto const& value : *values) {
+          auto region = jsonToPhysicsForceRegion(value);
+          if (!region)
+            return std::unexpected(std::move(region.error()));
+          regions.append(std::move(*region));
+        }
+      }
+      m_itemForceRegions.set(std::move(regions));
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setCursor", [this](std::optional<String> value) { m_cursor = std::move(value); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setScriptedAnimationParameter", [this](String name, Json value) { m_scriptedAnimationParameters.set(std::move(name), std::move(value)); }); !added)
+    return std::unexpected(std::move(added.error()));
 
-  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) {
-      owner()->interact(InteractAction(type, sourceEntityId.value_or(NullEntityId), configData));
-    });
-
-  callbacks.registerCallback("emote", [this](String const& emoteName) {
-      auto emote = HumanoidEmoteNames.getLeft(emoteName);
-      if (auto entity = as<EmoteEntity>(owner()))
-        entity->playEmote(emote);
-    });
-
-  callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& cameraFocusEntity) {
-      owner()->setCameraFocusEntity(cameraFocusEntity);
-    });
-
-  callbacks.registerCallback("setDescription", [this](String const& description) {
-    setInstanceValue("description", description);
-    setDescription(description);
-  });
-  callbacks.registerCallback("setShortDescription", [this](String const& description) {
-    setInstanceValue("shortdescription", description);
-    setShortDescription(description);
-  });
-
+  auto loadIcon = [this](Json const& icon) -> std::expected<List<Drawable>, StarException> {
+    List<Drawable> drawables;
+    if (icon.type() == Json::Type::Array) {
+      auto configs = icon.toArray();
+      if (!configs)
+        return std::unexpected(std::move(configs.error()));
+      for (auto config : *configs) {
+        auto image = config.optString("image");
+        if (!image)
+          return std::unexpected(std::move(image.error()));
+        auto metadata = root().imageMetadataDatabase();
+        if (!metadata)
+          return std::unexpected(std::move(metadata.error()));
+        if (*image) {
+          auto updated = config.set("image", AssetPath::relativeTo(directory(), **image));
+          if (!updated)
+            return std::unexpected(std::move(updated.error()));
+          config = std::move(*updated);
+        }
+        auto drawable = Drawable::create(**metadata, config);
+        if (!drawable)
+          return std::unexpected(std::move(drawable.error()));
+        drawables.append(std::move(*drawable));
+      }
+    } else {
+      auto image = icon.toString();
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+      auto metadata = root().imageMetadataDatabase();
+      if (!metadata)
+        return std::unexpected(std::move(metadata.error()));
+      auto drawable = Drawable::makeImage(**metadata, AssetPath::relativeTo(directory(), *image), 1.0f, true, Vec2F());
+      if (!drawable)
+        return std::unexpected(std::move(drawable.error()));
+      drawables.append(std::move(*drawable));
+    }
+    return drawables;
+  };
+  if (auto added = callbacks.registerCallback("setInventoryIcon", [this, loadIcon](Json icon) -> std::expected<void, StarException> {
+      auto stored = setInstanceValue("inventoryIcon", icon);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+      return loadIcon(icon).and_then([&](List<Drawable> drawables) { return setIconDrawables(std::move(drawables)); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setSecondaryIcon", [this, loadIcon](Json icon) -> std::expected<void, StarException> {
+      auto stored = setInstanceValue("secondaryIcon", icon);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+      if (icon.type() == Json::Type::Array || icon.type() == Json::Type::String)
+        return loadIcon(icon).and_then([&](List<Drawable> drawables) { return setSecondaryIconDrawables(std::move(drawables)); });
+      return setSecondaryIconDrawables(std::nullopt);
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setInstanceValue", [this](String name, Json value) { return setInstanceValue(std::move(name), std::move(value)); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("callOtherHandScript", [this](String const& function, LuaVariadic<LuaValue> const& args) -> std::expected<LuaValue, StarException> {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto itemHand = hand();
+      if (!itemHand)
+        return std::unexpected(std::move(itemHand.error()));
+      if (auto otherHandItem = (*itemOwner)->handItem(*itemHand == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
+        if (auto otherActiveItem = as<ActiveItem>(otherHandItem))
+          return otherActiveItem->m_script.invoke(function, args).transform([](std::optional<LuaValue> value) { return value.value_or(LuaValue{}); });
+      }
+      return LuaValue{};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) -> std::expected<void, StarException> {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      auto action = InteractAction::create(type, sourceEntityId.value_or(NullEntityId), configData);
+      if (!action)
+        return std::unexpected(std::move(action.error()));
+      return (*itemOwner)->interact(*action);
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("emote", [this](String const& name) -> std::expected<void, StarException> {
+      if (!HumanoidEmoteNames)
+        return std::unexpected(HumanoidEmoteNames.error());
+      auto emote = HumanoidEmoteNames->getLeft(name);
+      if (!emote)
+        return std::unexpected(std::move(emote.error()));
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      if (auto entity = as<EmoteEntity>(*itemOwner))
+        return entity->playEmote(**emote);
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& entity) -> std::expected<void, StarException> {
+      auto itemOwner = owner();
+      if (!itemOwner)
+        return std::unexpected(std::move(itemOwner.error()));
+      (*itemOwner)->setCameraFocusEntity(entity);
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setDescription", [this](String const& value) -> std::expected<void, StarException> {
+      auto stored = setInstanceValue("description", value);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+      setDescription(value);
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("setShortDescription", [this](String const& value) -> std::expected<void, StarException> {
+      auto stored = setInstanceValue("shortdescription", value);
+      if (!stored)
+        return std::unexpected(std::move(stored.error()));
+      setShortDescription(value);
+      return {};
+    }); !added)
+    return std::unexpected(std::move(added.error()));
   return callbacks;
 }
 
-LuaCallbacks ActiveItem::makeScriptedAnimationCallbacks() {
+std::expected<LuaCallbacks, StarException> ActiveItem::makeScriptedAnimationCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("ownerPosition", [this]() {
-      return owner()->position();
-    });
-  callbacks.registerCallback("ownerAimPosition", [this]() {
-      return owner()->aimPosition();
-    });
-  callbacks.registerCallback("ownerArmAngle", [this]() {
-      return m_armAngle.get();
-    });
-  callbacks.registerCallback("ownerFacingDirection", [this]() {
-      return numericalDirection(owner()->facingDirection());
-    });
-  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
-      return handPosition(offset.value_or(Vec2F{}));
-    });
+  if (auto added = callbacks.registerCallback("ownerPosition", [this]() {
+      return owner().transform([](ToolUserEntity* owner) { return owner->position(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerAimPosition", [this]() {
+      return owner().and_then([](ToolUserEntity* owner) { return owner->aimPosition(); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerArmAngle", [this]() { return m_armAngle.get(); }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("ownerFacingDirection", [this]() {
+      return owner().transform([](ToolUserEntity* owner) { return numericalDirection(owner->facingDirection()); });
+    }); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) { return handPosition(offset.value_or(Vec2F{})); }); !added)
+    return std::unexpected(std::move(added.error()));
   return callbacks;
 }
 

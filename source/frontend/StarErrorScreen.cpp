@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.vector;
@@ -71,75 +72,107 @@ import star.label_widget;
 
 namespace Star {
 
-ErrorScreen::ErrorScreen(GuiContext& context)
-  : m_guiContext(&context), m_cursor(context) {
-  m_paneManager = std::make_shared<PaneManager>(context);
+ErrorScreen::ErrorScreen(GuiContext& context) : m_guiContext(&context), m_accepted(true) {}
 
-  m_accepted = true;
-
+std::expected<std::shared_ptr<ErrorScreen>, StarException> ErrorScreen::create(GuiContext& context) {
+  auto screen = std::shared_ptr<ErrorScreen>(new ErrorScreen(context));
+  auto cursor = InterfaceCursor::create(context);
+  if (!cursor)
+    return std::unexpected(std::move(cursor.error()));
+  screen->m_cursor = std::move(*cursor);
+  auto manager = PaneManager::create(context);
+  if (!manager)
+    return std::unexpected(std::move(manager.error()));
+  screen->m_paneManager = std::move(*manager);
   auto assets = context.root().assets();
-
-  m_errorPane = std::make_shared<Pane>(context);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto pane = Pane::create(context);
+  if (!pane)
+    return std::unexpected(std::move(pane.error()));
+  screen->m_errorPane = std::move(*pane);
   GuiReader reader(context);
-  reader.registerCallback("btnOk", [this](Widget*) {
-      m_accepted = true;
-    });
-  reader.construct(assets->json("/interface/windowconfig/error.config:paneLayout"), m_errorPane.get());
+  reader.registerCallback("btnOk", [screenPtr = screen.get()](Widget*) -> std::expected<void, StarException> {
+    screenPtr->m_accepted = true;
+    return {};
+  });
+  auto layout = (*assets)->json("/interface/windowconfig/error.config:paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, screen->m_errorPane.get());
+  if (!constructed)
+    return std::unexpected(std::move(constructed.error()));
+  return screen;
 }
 
-void ErrorScreen::setMessage(String const& errorMessage) {
-  m_errorPane->fetchChild<LabelWidget>("labelError")->setText(errorMessage);
+std::expected<void, StarException> ErrorScreen::setMessage(String const& errorMessage) {
+  auto label = m_errorPane->fetchChild<LabelWidget>("labelError");
+  if (!label)
+    return std::unexpected(std::move(label.error()));
+  if (!*label)
+    return std::unexpected(GUIBuilderException("Missing error message label"));
+  auto text = (*label)->setText(errorMessage);
+  if (!text)
+    return std::unexpected(std::move(text.error()));
   m_accepted = false;
-
   if (!m_paneManager->isDisplayed(m_errorPane)) {
-    m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](std::shared_ptr<Pane>) {
+    return m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](std::shared_ptr<Pane> const&) -> std::expected<void, StarException> {
       m_accepted = true;
+      return {};
     });
   }
+  return {};
 }
 
 bool ErrorScreen::accepted() {
   return m_accepted;
 }
 
-void ErrorScreen::render() {
-  m_paneManager->render();
+std::expected<void, StarException> ErrorScreen::render() {
+  return m_paneManager->render();
 }
 
-bool ErrorScreen::handleInputEvent(InputEvent const& event) {
+std::expected<bool, StarException> ErrorScreen::handleInputEvent(InputEvent const& event) {
   if (auto mouseMove = std::get_if<MouseMoveEvent>(&event))
     m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
   return m_paneManager->sendInputEvent(event);
 }
 
-void ErrorScreen::update(float dt) {
-  m_paneManager->update(dt);
-  m_cursor.update(dt);
+std::expected<void, StarException> ErrorScreen::update(float dt) {
+  auto updated = m_paneManager->update(dt);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  return m_cursor->update(dt);
 }
 
-void ErrorScreen::renderCursor() {
+std::expected<void, StarException> ErrorScreen::renderCursor() {
   Vec2I cursorPos = m_cursorScreenPos;
-  Vec2I cursorSize = m_cursor.size();
-  Vec2I cursorOffset = m_cursor.offset();
-  float cursorScale = m_cursor.scale(interfaceScale());
-  Drawable cursorDrawable = m_cursor.drawable();
-
+  Vec2I cursorSize = m_cursor->size();
+  Vec2I cursorOffset = m_cursor->offset();
+  float cursorScale = m_cursor->scale(interfaceScale());
+  auto cursorDrawable = m_cursor->drawable();
+  if (!cursorDrawable)
+    return std::unexpected(std::move(cursorDrawable.error()));
   cursorPos[0] -= cursorOffset[0] * cursorScale;
   cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
-  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
-    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
+  auto setCursor = m_guiContext->trySetCursor(*cursorDrawable, cursorOffset, cursorScale);
+  if (!setCursor)
+    return std::unexpected(std::move(setCursor.error()));
+  if (!*setCursor)
+    return m_guiContext->drawDrawable(*cursorDrawable, Vec2F(cursorPos), cursorScale);
+  return {};
 }
 
 float ErrorScreen::interfaceScale() const {
   return m_guiContext->interfaceScale();
 }
 
-unsigned ErrorScreen::windowHeight() const {
+std::expected<unsigned, StarException> ErrorScreen::windowHeight() const {
   return m_guiContext->windowHeight();
 }
 
-unsigned ErrorScreen::windowWidth() const {
+std::expected<unsigned, StarException> ErrorScreen::windowWidth() const {
   return m_guiContext->windowWidth();
 }
 

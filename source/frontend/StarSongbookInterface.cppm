@@ -36,6 +36,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
+import star.format;
 
 namespace Star {
 
@@ -50,19 +51,21 @@ public:
     return Star::typeName<SongbookInterface>();
   }
 
-  SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
+  [[nodiscard]] static std::expected<std::shared_ptr<SongbookInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<Player> player);
   ~SongbookInterface() override;
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
+  SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   std::shared_ptr<Player> m_player;
   StringList m_files;
   String m_lastSearch;
   std::shared_ptr<CallbackListener> m_reloadListener;
   ListenerSubscription m_reloadSubscription;
-  bool play();
-  void refresh(bool reloadFiles = false);
+  [[nodiscard]] std::expected<bool, StarException> play();
+  [[nodiscard]] std::expected<void, StarException> refresh(bool reloadFiles = false);
 };
 
 }

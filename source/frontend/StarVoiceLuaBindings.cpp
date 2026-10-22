@@ -1,5 +1,6 @@
 module;
 import std;
+import star.vector;
 import star.json;
 import star.lua;
 import star.string;
@@ -10,8 +11,6 @@ import star.format;
 import star.game_types;
 import star.thread;
 import star.data_stream_devices;
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import star.input_event;
 import star.application;
 import star.statistics_service;
@@ -28,40 +27,55 @@ module star.voice_lua_bindings;
 
 namespace Star {
 
-typedef Voice::SpeakerId SpeakerId;
-LuaCallbacks LuaBindings::makeVoiceCallbacks(Voice& owner) {
+using SpeakerId = Voice::SpeakerId;
+std::expected<LuaCallbacks, StarException> LuaBindings::makeVoiceCallbacks(Voice& owner) {
   LuaCallbacks callbacks;
-
   auto voice = &owner;
-
-  callbacks.registerCallbackWithSignature<StringList>("devices", std::bind(&Voice::availableDevices, voice));
-  callbacks.registerCallback(  "getSettings", [voice]() -> Json      { return voice->saveJson();         });
-  callbacks.registerCallback("mergeSettings", [voice](Json const& settings) { voice->loadJson(settings); });
-  // i have an alignment addiction i'm so sorry
-  callbacks.registerCallback("setSpeakerMuted",  [voice](SpeakerId speakerId, bool muted)  { voice->speaker(speakerId)->muted = muted; });
-  callbacks.registerCallback(   "speakerMuted",  [voice](SpeakerId speakerId) { return (bool)voice->speaker(speakerId)->muted;         });
-  // it just looks so neat to me!!
-  callbacks.registerCallback("setSpeakerVolume", [voice](SpeakerId speakerId, float volume) { voice->speaker(speakerId)->volume = volume; });
-  callbacks.registerCallback(   "speakerVolume", [voice](SpeakerId speakerId) { return (float)voice->speaker(speakerId)->volume;          });
-
-  callbacks.registerCallback("speakerPosition", [voice](SpeakerId speakerId) { return voice->speaker(speakerId)->position; });
-
-  callbacks.registerCallback("speaker",  [voice](std::optional<SpeakerId> speakerId) {
-    if (speakerId)
-      return voice->speaker(*speakerId)->toJson();
-    else
-      return voice->localSpeaker()->toJson();
-  });
-
-  callbacks.registerCallback("speakers", [voice](std::optional<bool> onlyPlaying) -> List<Json> {
+  if (auto r = callbacks.registerCallback("devices", [voice]() { return voice->availableDevices(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("getSettings", [voice]() { return voice->saveJson(); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("mergeSettings", [voice](Json const& settings) { return voice->loadJson(settings); }); !r)
+    return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setSpeakerMuted", [voice](SpeakerId id, bool muted) -> std::expected<void, StarException> {
+    auto speaker = voice->speaker(id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    (*speaker)->muted = muted;
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("speakerMuted", [voice](SpeakerId id) -> std::expected<bool, StarException> {
+    auto speaker = voice->speaker(id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    return (bool)(*speaker)->muted;
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("setSpeakerVolume", [voice](SpeakerId id, float volume) -> std::expected<void, StarException> {
+    auto speaker = voice->speaker(id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    (*speaker)->volume = volume;
+    return {};
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("speakerVolume", [voice](SpeakerId id) -> std::expected<float, StarException> {
+    auto speaker = voice->speaker(id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    return (float)(*speaker)->volume;
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("speakerPosition", [voice](SpeakerId id) -> std::expected<Vec2F, StarException> {
+    auto speaker = voice->speaker(id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    return (*speaker)->position;
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("speaker", [voice](std::optional<SpeakerId> id) -> std::expected<Json, StarException> {
+    if (!id) return voice->localSpeaker()->toJson();
+    auto speaker = voice->speaker(*id);
+    if (!speaker) return std::unexpected(std::move(speaker.error()));
+    return (*speaker)->toJson();
+  }); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = callbacks.registerCallback("speakers", [voice](std::optional<bool> onlyPlaying) -> List<Json> {
     List<Json> list;
-
     for (auto& speaker : voice->sortedSpeakers(onlyPlaying.value_or(true)))
       list.append(speaker->toJson());
-
     return list;
-  });
-
+  }); !r) return std::unexpected(std::move(r.error()));
   return callbacks;
 }
 

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -47,23 +48,23 @@ class Root;
 // dividing by the pixel ratio.
 class Sky {
 public:
-  explicit Sky(Root& root);
-  Sky(Root& root, SkyParameters const& skyParameters, bool inOrbit);
+  [[nodiscard]] static std::expected<std::shared_ptr<Sky>, StarException> create(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<Sky>, StarException> create(Root& root, SkyParameters const& skyParameters, bool inOrbit);
 
   // Controls the space sky "flight" system
-  void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
+  [[nodiscard]] std::expected<void, StarException> startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
   // Stops flying animation copying the new pertinant sky data from the given
   // sky, as though the sky as moved to a new world.
-  void stopFlyingAt(std::optional<SkyParameters> SkyParameters);
+  [[nodiscard]] std::expected<void, StarException> stopFlyingAt(std::optional<SkyParameters> SkyParameters);
 
-  void jumpTo(SkyParameters SkyParameters);
+  [[nodiscard]] std::expected<void, StarException> jumpTo(SkyParameters SkyParameters);
 
-  std::pair<ByteArray, std::uint64_t> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
-  void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<void, StarException> readUpdate(ByteArray data, NetCompatibilityRules rules = {});
   
   // handles flying and warp state transitions
-  void stateUpdate();
-  void update(double dt);
+  [[nodiscard]] std::expected<void, StarException> stateUpdate();
+  [[nodiscard]] std::expected<void, StarException> update(double dt);
 
   void setType(SkyType type);
   SkyType type() const;
@@ -90,8 +91,8 @@ public:
   void setReferenceClock(std::shared_ptr<Clock const> const& referenceClock);
   std::shared_ptr<Clock const> referenceClock() const;
 
-  String ambientNoise() const;
-  List<std::shared_ptr<AudioInstance>> pullSounds();
+  [[nodiscard]] std::expected<String, StarException> ambientNoise() const;
+  [[nodiscard]] std::expected<List<std::shared_ptr<AudioInstance>>, StarException> pullSounds();
 
   // How close is the atmosphere to space?
   float spaceLevel() const;
@@ -126,18 +127,19 @@ public:
   WarpPhase warpPhase() const;
   bool inHyperspace() const;
 
-  SkyRenderData renderData() const;
+  [[nodiscard]] std::expected<SkyRenderData, StarException> renderData() const;
 
 private:
+  explicit Sky(Root& root);
   // TODO: This needs to be more explicit/handled better
   static constexpr float DefaultDayLength = 1000.0f;
 
-  void writeNetStates();
-  void readNetStates();
+  [[nodiscard]] std::expected<void, StarException> writeNetStates();
+  [[nodiscard]] std::expected<void, StarException> readNetStates();
 
-  void enterHyperspace();
-  void exitHyperspace();
-  bool controlledMovement(JsonArray const& path, Json const& origin, float timeOffset);
+  [[nodiscard]] std::expected<void, StarException> enterHyperspace();
+  [[nodiscard]] std::expected<void, StarException> exitHyperspace();
+  [[nodiscard]] std::expected<bool, StarException> controlledMovement(JsonArray const& path, Json const& origin, float timeOffset);
   Vec2F getStarOffset() const;
   float getStarRotation() const;
   Vec2F getWorldOffset() const;
@@ -145,10 +147,26 @@ private:
   float speedupTime() const;
   float slowdownTime() const;
 
-  void skyParametersUpdated();
+  [[nodiscard]] std::expected<void, StarException> skyParametersUpdated();
  
   Root& m_root;
   Json m_settings;
+  // Validated on settings changes; frame-by-frame sky math stays nonfallible.
+  struct NumericSettings {
+    float flyMaxVelocity = 0;
+    float starVelocityFactor = 0;
+    float correctionPower = 0;
+    float flyingTimer = 0;
+    float enterHyperspaceAudioLeadIn = 0;
+    float exitHyperspaceAudioLeadIn = 0;
+    float dayTransitionTime = 0;
+    float skyLevelExponent = 0;
+    float flashTimer = 0;
+    float hyperspaceSpeedupTime = 0;
+    float speedupTime = 0;
+    float hyperspaceSlowdownTime = 0;
+    float slowdownTime = 0;
+  } m_numericSettings;
   SkyParameters m_skyParameters;
   bool m_skyParametersUpdated;
 

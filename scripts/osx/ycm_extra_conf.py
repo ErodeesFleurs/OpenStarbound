@@ -38,7 +38,7 @@ flags = [
 '-Wall',
 '-Wextra',
 '-Werror',
-'-fexceptions',
+'-fno-exceptions',
 '-DNDEBUG',
 # THIS IS IMPORTANT! Without a "-std=<something>" flag, clang won't know which
 # language to use when compiling headers. So it will guess. Badly. So C++

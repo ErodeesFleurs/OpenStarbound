@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -14,18 +15,19 @@ struct Particle;
 
 class EffectSource {
 public:
-  EffectSource(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition);
+  [[nodiscard]] static std::expected<std::shared_ptr<EffectSource>, StarException> create(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition);
   String const& kind() const;
   void tick(float dt);
   bool expired() const;
   void stop();
-  List<String> particles();
-  List<std::shared_ptr<AudioInstance>> sounds(Vec2F offset);
+  [[nodiscard]] std::expected<List<String>, StarException> particles();
+  [[nodiscard]] std::expected<List<std::shared_ptr<AudioInstance>>, StarException> sounds(Vec2F offset);
   void postRender();
   String effectSpawnLocation() const;
   String suggestedSpawnLocation() const;
 
 private:
+  explicit EffectSource(Root& root) : m_root(root) {}
   Root& m_root;
   String m_kind;
   Json m_config;
@@ -47,11 +49,12 @@ private:
 
 class EffectSourceConfig {
 public:
-  EffectSourceConfig(Root& root, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<EffectSourceConfig>, StarException> create(Root& root, Json const& config);
   String const& kind();
-  std::shared_ptr<EffectSource> instance(String const& suggestedSpawnLocation);
+  [[nodiscard]] std::expected<std::shared_ptr<EffectSource>, StarException> instance(String const& suggestedSpawnLocation);
 
 private:
+  explicit EffectSourceConfig(Root& root) : m_root(root) {}
   Root& m_root;
   String m_kind;
   Json m_config;
@@ -59,16 +62,17 @@ private:
 
 class EffectSourceDatabase {
 public:
-  explicit EffectSourceDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<EffectSourceDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<EffectSourceConfig> effectSourceConfig(String const& kind) const;
+  [[nodiscard]] std::expected<std::shared_ptr<EffectSourceConfig>, StarException> effectSourceConfig(String const& kind) const;
 
 private:
+  EffectSourceDatabase() = default;
   StringMap<std::shared_ptr<EffectSourceConfig>> m_sourceConfigs;
 };
 
-List<Particle> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
-List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
+[[nodiscard]] std::expected<List<Particle>, StarException> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
+[[nodiscard]] std::expected<List<std::shared_ptr<AudioInstance>>, StarException> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
 
 }
 

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.type_identity;
 import star.json;
@@ -81,24 +82,25 @@ public:
     return Star::typeName<PhysicsObject>();
   }
 
-  PhysicsObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
+  [[nodiscard]] static std::expected<std::shared_ptr<PhysicsObject>, StarException> create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
-  void enableInterpolation(float extrapolationHint = 0.0f) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
   RectF metaBoundBox() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
 
   std::size_t movingCollisionCount() const override;
-  std::optional<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
+  [[nodiscard]] std::expected<std::optional<PhysicsMovingCollision>, StarException> movingCollision(std::size_t positionIndex) const override;
 
 private:
+  explicit PhysicsObject(Root& rootContext);
   struct PhysicsForceConfig {
     PhysicsForceRegion forceRegion;
     NetElementBool enabled;

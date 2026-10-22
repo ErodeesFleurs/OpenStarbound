@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.memory;
 import star.json;
 import star.casting;
@@ -67,118 +68,212 @@ import star.image_widget;
 
 namespace Star {
 
-ModsMenu::ModsMenu(GuiContext& contextRef) : Pane(contextRef) {
+ModsMenu::ModsMenu(GuiContext& guiContext) : Pane(guiContext) {}
+
+std::expected<std::shared_ptr<ModsMenu>, StarException> ModsMenu::create(GuiContext& guiContext) {
+  auto menu = std::shared_ptr<ModsMenu>(new ModsMenu(guiContext));
+  if (auto result = menu->initializePane(); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = menu->init(); !result)
+    return std::unexpected(std::move(result.error()));
+  return menu;
+}
+
+std::expected<void, StarException> ModsMenu::init() {
   auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
 
   GuiReader reader(*context());
-  reader.registerCallback("linkbutton", std::bind(&ModsMenu::openLink, this));
-  reader.registerCallback("workshopbutton", std::bind(&ModsMenu::openWorkshop, this));
-  reader.construct(assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
+  reader.registerCallback("linkbutton", [this](Widget*) { return openLink(); });
+  reader.registerCallback("workshopbutton", [this](Widget*) { return openWorkshop(); });
+  auto layout = (*assets)->json("/interface/modsmenu/modsmenu.config:paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  if (auto result = reader.construct(*layout, this); !result)
+    return std::unexpected(std::move(result.error()));
 
-  m_assetsSources = assets->assetSources();
-  m_modList = fetchChild<ListWidget>("mods.list");
+  m_assetsSources = (*assets)->assetSources();
+  auto modList = requireChild<ListWidget>("mods.list");
+  if (!modList)
+    return std::unexpected(std::move(modList.error()));
+  m_modList = std::move(*modList);
   for (auto const& assetsSource : m_assetsSources) {
-    auto metadata = assets->assetSourceMetadata(assetsSource);
+    auto metadata = (*assets)->assetSourceMetadata(assetsSource);
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
     auto listItem = m_modList->addItem();
-    auto modName = listItem->fetchChild<LabelWidget>("name");
-    modName->setText(bestModName(metadata, assetsSource));
-    if (auto iconImage = metadata.ptr("icon")) {
-      auto modIcon = listItem->fetchChild<ImageWidget>("icon");
-      modIcon->setImage(iconImage->toString());
+    if (!listItem)
+      return std::unexpected(std::move(listItem.error()));
+    auto modName = (*listItem)->requireChild<LabelWidget>("name");
+    if (!modName)
+      return std::unexpected(std::move(modName.error()));
+    auto name = bestModName(*metadata, assetsSource);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    if (auto result = (*modName)->setText(*name); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto iconImage = metadata->ptr("icon")) {
+      auto image = iconImage->toString();
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+      auto icon = (*listItem)->requireChild<ImageWidget>("icon");
+      if (!icon)
+        return std::unexpected(std::move(icon.error()));
+      if (auto result = (*icon)->setImage(*image); !result)
+        return std::unexpected(std::move(result.error()));
     }
   }
 
-  m_modName = findChild<LabelWidget>("modname");
-  m_modAuthor = findChild<LabelWidget>("modauthor");
-  m_modVersion = findChild<LabelWidget>("modversion");
-  m_modPath = findChild<LabelWidget>("modpath");
-  m_modDescription = findChild<LabelWidget>("moddescription");
-
-  m_linkButton = fetchChild<ButtonWidget>("linkbutton");
-  m_copyLinkButton = fetchChild<ButtonWidget>("copylinkbutton");
-
-  auto linkLabel = fetchChild<LabelWidget>("linklabel");
-  auto copyLinkLabel = fetchChild<LabelWidget>("copylinklabel");
-  auto workshopLinkButton = fetchChild<ButtonWidget>("workshopbutton");
-
-  auto& guiContext = *context();
-  bool hasDesktopService = (bool)guiContext.applicationController()->desktopService();
-
-  workshopLinkButton->setEnabled(hasDesktopService);
-
-  m_linkButton->setVisibility(hasDesktopService);
-  m_copyLinkButton->setVisibility(!hasDesktopService);
-
+  for (auto const& [name, member] : {
+      std::pair{"modname", &ModsMenu::m_modName},
+      std::pair{"modauthor", &ModsMenu::m_modAuthor},
+      std::pair{"modversion", &ModsMenu::m_modVersion},
+      std::pair{"modpath", &ModsMenu::m_modPath},
+      std::pair{"moddescription", &ModsMenu::m_modDescription}}) {
+    auto label = findChild<LabelWidget>(name);
+    if (!label)
+      return std::unexpected(std::move(label.error()));
+    if (!*label)
+      return std::unexpected(GuiException::format("Required mod label '{}' was not found", name));
+    this->*member = std::move(*label);
+  }
+  auto linkButton = requireChild<ButtonWidget>("linkbutton");
+  if (!linkButton)
+    return std::unexpected(std::move(linkButton.error()));
+  m_linkButton = std::move(*linkButton);
+  auto copyLinkButton = requireChild<ButtonWidget>("copylinkbutton");
+  if (!copyLinkButton)
+    return std::unexpected(std::move(copyLinkButton.error()));
+  m_copyLinkButton = std::move(*copyLinkButton);
+  auto linkLabel = requireChild<LabelWidget>("linklabel");
+  if (!linkLabel)
+    return std::unexpected(std::move(linkLabel.error()));
+  auto copyLinkLabel = requireChild<LabelWidget>("copylinklabel");
+  if (!copyLinkLabel)
+    return std::unexpected(std::move(copyLinkLabel.error()));
+  auto workshopLinkButton = requireChild<ButtonWidget>("workshopbutton");
+  if (!workshopLinkButton)
+    return std::unexpected(std::move(workshopLinkButton.error()));
+  bool hasDesktopService = (bool)context()->applicationController()->desktopService();
+  (*workshopLinkButton)->setEnabled(hasDesktopService);
+  if (auto result = m_linkButton->setVisibility(hasDesktopService); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_copyLinkButton->setVisibility(!hasDesktopService); !result)
+    return std::unexpected(std::move(result.error()));
   m_linkButton->setEnabled(false);
   m_copyLinkButton->setEnabled(false);
-
-  linkLabel->setVisibility(hasDesktopService);
-  copyLinkLabel->setVisibility(!hasDesktopService);
+  if (auto result = (*linkLabel)->setVisibility(hasDesktopService); !result)
+    return std::unexpected(std::move(result.error()));
+  return (*copyLinkLabel)->setVisibility(!hasDesktopService);
 }
 
-void ModsMenu::update(float dt) {
-  Pane::update(dt);
+std::expected<void, StarException> ModsMenu::update(float dt) {
+  if (auto result = Pane::update(dt); !result)
+    return std::unexpected(std::move(result.error()));
 
   std::size_t selectedItem = m_modList->selectedItem();
   if (selectedItem == NPos) {
-    m_modName->setText("");
-    m_modAuthor->setText("");
-    m_modVersion->setText("");
-    m_modPath->setText("");
-    m_modDescription->setText("");
-
+    for (auto label : {m_modName.get(), m_modAuthor.get(), m_modVersion.get(), m_modPath.get(), m_modDescription.get()}) {
+      if (auto result = label->setText(""); !result)
+        return std::unexpected(std::move(result.error()));
+    }
   } else {
-    String assetsSource = m_assetsSources.at(selectedItem);
-    JsonObject assetsSourceMetadata = context()->root().assets()->assetSourceMetadata(assetsSource);
-
-    m_modName->setText(bestModName(assetsSourceMetadata, assetsSource));
-    m_modAuthor->setText(assetsSourceMetadata.value("author", "No Author Set").toString());
-    m_modVersion->setText(assetsSourceMetadata.value("version", "No Version Set").printString());
-    m_modPath->setText(assetsSource);
-    m_modDescription->setText(assetsSourceMetadata.value("description", "").toString());
-
-    String link = assetsSourceMetadata.value("link", "").toString();
-
-    m_linkButton->setEnabled(!link.empty());
-    m_copyLinkButton->setEnabled(!link.empty());
+    auto source = m_assetsSources.at(selectedItem);
+    if (!source)
+      return std::unexpected(std::move(source.error()));
+    auto assets = context()->root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto metadata = (*assets)->assetSourceMetadata(**source);
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    auto name = bestModName(*metadata, **source);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto author = metadata->value("author", "No Author Set").toString();
+    if (!author)
+      return std::unexpected(std::move(author.error()));
+    auto version = metadata->value("version", "No Version Set").printString();
+    if (!version)
+      return std::unexpected(std::move(version.error()));
+    auto description = metadata->value("description", "").toString();
+    if (!description)
+      return std::unexpected(std::move(description.error()));
+    auto link = metadata->value("link", "").toString();
+    if (!link)
+      return std::unexpected(std::move(link.error()));
+    if (auto result = m_modName->setText(*name); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_modAuthor->setText(*author); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_modVersion->setText(*version); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_modPath->setText(**source); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_modDescription->setText(*description); !result)
+      return std::unexpected(std::move(result.error()));
+    m_linkButton->setEnabled(!link->empty());
+    m_copyLinkButton->setEnabled(!link->empty());
   }
+  return {};
 }
 
-String ModsMenu::bestModName(JsonObject const& metadata, String const& sourcePath) {
+std::expected<String, StarException> ModsMenu::bestModName(JsonObject const& metadata, String const& sourcePath) {
   if (auto ptr = metadata.ptr("friendlyName"))
     return ptr->toString();
   if (auto ptr = metadata.ptr("name"))
     return ptr->toString();
   String baseName = File::baseName(sourcePath);
-  if (baseName.contains("."))
-    baseName.rextract(".");
+  auto contains = baseName.contains(".");
+  if (!contains)
+    return std::unexpected(std::move(contains.error()));
+  if (*contains) {
+    if (auto result = baseName.rextract("."); !result)
+      return std::unexpected(std::move(result.error()));
+  }
   return baseName;
 }
 
-void ModsMenu::openLink() {
+std::expected<void, StarException> ModsMenu::openLink() {
   std::size_t selectedItem = m_modList->selectedItem();
   if (selectedItem == NPos)
-    return;
-
-  String assetsSource = m_assetsSources.at(selectedItem);
-  JsonObject assetsSourceMetadata = context()->root().assets()->assetSourceMetadata(assetsSource);
-  String link = assetsSourceMetadata.value("link", "").toString();
-
-  if (link.empty())
-    return;
-
-  auto& guiContext = *context();
-  if (auto desktopService = guiContext.applicationController()->desktopService())
-    desktopService->openUrl(link);
+    return {};
+  auto source = m_assetsSources.at(selectedItem);
+  if (!source)
+    return std::unexpected(std::move(source.error()));
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto metadata = (*assets)->assetSourceMetadata(**source);
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto link = metadata->value("link", "").toString();
+  if (!link)
+    return std::unexpected(std::move(link.error()));
+  if (link->empty())
+    return {};
+  if (auto desktopService = context()->applicationController()->desktopService())
+    desktopService->openUrl(*link);
   else
-    guiContext.setClipboard(link);
+    context()->setClipboard(*link);
+  return {};
 }
 
-void ModsMenu::openWorkshop() {
-  auto assets = context()->root().assets();
-  auto& guiContext = *context();
-  if (auto desktopService = guiContext.applicationController()->desktopService())
-    desktopService->openUrl(assets->json("/interface/modsmenu/modsmenu.config:workshopLink").toString());
+std::expected<void, StarException> ModsMenu::openWorkshop() {
+  if (auto desktopService = context()->applicationController()->desktopService()) {
+    auto assets = context()->root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto config = (*assets)->json("/interface/modsmenu/modsmenu.config:workshopLink");
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto link = config->toString();
+    if (!link)
+      return std::unexpected(std::move(link.error()));
+    desktopService->openUrl(*link);
+  }
+  return {};
 }
 
 }

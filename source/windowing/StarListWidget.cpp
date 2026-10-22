@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.memory;
 import star.json;
 import star.json_extra;
@@ -63,17 +64,21 @@ import star.image_widget;
 
 namespace Star {
 
-ListWidget::ListWidget(GuiContext& context, Json const& schema) : Widget(context), m_schema(schema), m_reader(context) {
-  m_selectedItem = NPos;
-  m_columns = 1;
-  setSchema(m_schema);
+ListWidget::ListWidget(GuiContext& context) : Widget(context), m_reader(context),
+    m_selectedItem(NPos), m_fillDown(false), m_columns(1) {
   updateSizeAndPosition();
 }
 
-ListWidget::ListWidget(GuiContext& context) : Widget(context), m_reader(context) {
-  m_selectedItem = NPos;
-  m_columns = 1;
-  updateSizeAndPosition();
+std::expected<std::shared_ptr<ListWidget>, StarException> ListWidget::create(GuiContext& context) {
+  return std::shared_ptr<ListWidget>(new ListWidget(context));
+}
+
+std::expected<std::shared_ptr<ListWidget>, StarException> ListWidget::create(GuiContext& context, Json const& schema) {
+  auto widget = std::shared_ptr<ListWidget>(new ListWidget(context));
+  auto configured = widget->setSchema(schema);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
+  return widget;
 }
 
 RectI ListWidget::relativeBoundRect() const {
@@ -87,74 +92,119 @@ void ListWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = std::move(callback);
 }
 
-bool ListWidget::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> ListWidget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
-
   for (std::size_t i = m_members.size(); i != 0; --i) {
     auto child = m_members[i - 1];
-    if (child->sendEvent(event)
-        || (std::holds_alternative<MouseButtonDownEvent>(event) && child->inMember(*context()->mousePosition(event))
-              && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left)) {
-      setSelected(i - 1);
+    auto handled = child->sendEvent(event);
+    if (!handled)
+      return std::unexpected(std::move(handled.error()));
+    if (*handled || (std::holds_alternative<MouseButtonDownEvent>(event)
+          && child->inMember(*context()->mousePosition(event))
+          && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left)) {
+      auto selected = setSelected(i - 1);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
       return true;
     }
-    setHovered(i - 1, std::holds_alternative<MouseMoveEvent>(event) && child->inMember(*context()->mousePosition(event)));
+    auto hovered = setHovered(i - 1, std::holds_alternative<MouseMoveEvent>(event)
+        && child->inMember(*context()->mousePosition(event)));
+    if (!hovered)
+      return std::unexpected(std::move(hovered.error()));
   }
-
   return false;
 }
 
-void ListWidget::setSchema(Json const& schema) {
-  clear();
+std::expected<void, StarException> ListWidget::setSchema(Json const& schema) {
+  auto cleared = clear();
+  if (!cleared)
+    return std::unexpected(std::move(cleared.error()));
   m_schema = schema;
-  try {
-    m_selectedBG = schema.getString("selectedBG", "");
-    m_unselectedBG = schema.getString("unselectedBG", "");
-    m_hoverBG = schema.getString("hoverBG", "");
-    m_disabledBG = schema.getString("disabledBG", "");
-    if (m_disabledBG.empty() && !m_unselectedBG.empty())
-      m_disabledBG = m_unselectedBG + this->context()->root().assets()->json("/interface.config:disabledButton").toString();
-    m_spacing = jsonToVec2I(schema.get("spacing"));
-    m_memberSize = jsonToVec2I(schema.get("memberSize"));
-  } catch (JsonException const& e) {
-    throw GuiException(strf("Missing required value in map: {}", outputException(e, false)));
+  auto schemaError = [](StarException error) -> std::expected<void, StarException> {
+    if (error.is<JsonException>())
+      return std::unexpected(GuiException("Missing required value in map", ExceptionDiagnostic(error)));
+    return std::unexpected(std::move(error));
+  };
+  for (auto entry : {std::pair{"selectedBG", &m_selectedBG}, std::pair{"unselectedBG", &m_unselectedBG},
+           std::pair{"hoverBG", &m_hoverBG}, std::pair{"disabledBG", &m_disabledBG}}) {
+    auto value = schema.getString(entry.first, "");
+    if (!value)
+      return schemaError(std::move(value.error()));
+    *entry.second = std::move(*value);
   }
+  if (m_disabledBG.empty() && !m_unselectedBG.empty()) {
+    auto assets = context()->root().assets();
+    if (!assets)
+      return std::unexpected(std::move(assets.error()));
+    auto json = (*assets)->json("/interface.config:disabledButton");
+    if (!json)
+      return schemaError(std::move(json.error()));
+    auto suffix = json->toString();
+    if (!suffix)
+      return schemaError(std::move(suffix.error()));
+    m_disabledBG = m_unselectedBG + *suffix;
+  }
+  auto spacingJson = schema.get("spacing");
+  if (!spacingJson)
+    return schemaError(std::move(spacingJson.error()));
+  auto spacing = jsonToVec2I(*spacingJson);
+  if (!spacing)
+    return schemaError(std::move(spacing.error()));
+  auto sizeJson = schema.get("memberSize");
+  if (!sizeJson)
+    return schemaError(std::move(sizeJson.error()));
+  auto size = jsonToVec2I(*sizeJson);
+  if (!size)
+    return schemaError(std::move(size.error()));
+  m_spacing = *spacing;
+  m_memberSize = *size;
   updateSizeAndPosition();
+  return {};
 }
 
-std::shared_ptr<Widget> ListWidget::addItem() {
-  auto newItem = constructWidget();
-  addChild(toString(this->context()->root().random().randu64()), newItem);
-  updateSizeAndPosition();
-
-  return newItem;
+std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem() {
+  auto item = constructWidget();
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  return addItem(*item);
 }
 
-std::shared_ptr<Widget> ListWidget::addItem(std::size_t at) {
-  auto newItem = constructWidget();
-  addChildAt(toString(this->context()->root().random().randu64()), newItem, at);
+std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::size_t at) {
+  auto item = constructWidget();
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  auto added = addChildAt(toString(context()->root().random().randu64()), *item, at);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
   updateSizeAndPosition();
-
-  if (m_selectedItem != NPos && at <= m_selectedItem)
-    setSelected(m_selectedItem + 1);
-
-  return newItem;
+  if (m_selectedItem != NPos && at <= m_selectedItem) {
+    auto selected = setSelected(m_selectedItem + 1);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+  }
+  return *item;
 }
 
-std::shared_ptr<Widget> ListWidget::addItem(std::shared_ptr<Widget> existingItem) {
-  addChild(toString(this->context()->root().random().randu64()), existingItem);
+std::expected<std::shared_ptr<Widget>, StarException> ListWidget::addItem(std::shared_ptr<Widget> item) {
+  auto added = addChild(toString(context()->root().random().randu64()), item);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
   updateSizeAndPosition();
-
-  return existingItem;
+  return item;
 }
 
-std::shared_ptr<Widget> ListWidget::constructWidget() {
-  std::shared_ptr<Widget> newItem = std::make_shared<Widget>(*this->context());
-  m_reader.construct(m_schema.get("listTemplate"), newItem.get());
-  newItem->setSize(m_memberSize);
-  m_doScissor ? newItem->enableScissoring() : newItem->disableScissoring();
-  return newItem;
+std::expected<std::shared_ptr<Widget>, StarException> ListWidget::constructWidget() {
+  auto item = std::make_shared<Widget>(*context());
+  auto schema = m_schema.get("listTemplate");
+  if (!schema)
+    return std::unexpected(std::move(schema.error()));
+  auto constructed = m_reader.construct(*schema, item.get());
+  if (!constructed)
+    return std::unexpected(std::move(constructed.error()));
+  item->setSize(m_memberSize);
+  m_doScissor ? item->enableScissoring() : item->disableScissoring();
+  return item;
 }
 
 void ListWidget::updateSizeAndPosition() {
@@ -179,66 +229,71 @@ void ListWidget::updateSizeAndPosition() {
   }
 }
 
-void ListWidget::setEnabled(std::size_t pos, bool enabled) {
+std::expected<void, StarException> ListWidget::setBackground(std::size_t pos, String const& image) {
+  auto item = itemAt(pos);
+  if (!item)
+    return std::unexpected(GuiException("List item index out of range"));
+  auto background = item->fetchChild<ImageWidget>("background");
+  if (!background)
+    return std::unexpected(std::move(background.error()));
+  if (*background)
+    return (*background)->setImage(image);
+  return {};
+}
+
+std::expected<void, StarException> ListWidget::setEnabled(std::size_t pos, bool enabled) {
   if (pos != NPos && pos < listSize()) {
     if (enabled) {
       m_disabledItems.remove(pos);
-      if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background"))
-        bgWidget->setImage(pos == m_selectedItem ? m_selectedBG : m_unselectedBG);
-    } else {
-      m_disabledItems.add(pos);
-      if (m_selectedItem == pos)
-        clearSelected();
-      if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background"))
-        bgWidget->setImage(m_disabledBG);
+      return setBackground(pos, pos == m_selectedItem ? m_selectedBG : m_unselectedBG);
     }
+    m_disabledItems.add(pos);
+    if (m_selectedItem == pos) {
+      auto cleared = clearSelected();
+      if (!cleared)
+        return std::unexpected(std::move(cleared.error()));
+    }
+    return setBackground(pos, m_disabledBG);
   }
+  return {};
 }
 
-void ListWidget::setHovered(std::size_t pos, bool hovered) {
-  if (m_hoverBG == "")
-    return;
-
-  if (pos != m_selectedItem && pos < listSize() && !m_disabledItems.contains(pos)) {
-    if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background")) {
-      if (hovered)
-        bgWidget->setImage(m_hoverBG);
-      else
-        bgWidget->setImage(m_unselectedBG);
-    }
-  }
+std::expected<void, StarException> ListWidget::setHovered(std::size_t pos, bool hovered) {
+  if (!m_hoverBG.empty() && pos != m_selectedItem && pos < listSize() && !m_disabledItems.contains(pos))
+    return setBackground(pos, hovered ? m_hoverBG : m_unselectedBG);
+  return {};
 }
 
-void ListWidget::setSelected(std::size_t pos) {
-  if ((m_selectedItem != NPos) && (m_selectedItem < listSize())) {
-    if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
-      bgWidget->setImage(m_unselectedBG);
+std::expected<void, StarException> ListWidget::setSelected(std::size_t pos) {
+  if (pos != NPos && pos >= listSize())
+    return std::unexpected(GuiException("List selection index out of range"));
+  if (m_selectedItem != NPos && m_selectedItem < listSize()) {
+    auto background = setBackground(m_selectedItem, m_unselectedBG);
+    if (!background)
+      return std::unexpected(std::move(background.error()));
   }
-
   if (!m_disabledItems.contains(pos) && m_selectedItem != pos) {
     m_selectedItem = pos;
-    if (m_callback)
-      m_callback(this);
+    if (m_callback) {
+      auto called = m_callback(this);
+      if (!called)
+        return std::unexpected(std::move(called.error()));
+    }
   }
-
-  if (m_selectedItem != NPos) {
-    if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
-      bgWidget->setImage(m_selectedBG);
-  }
+  if (m_selectedItem != NPos)
+    return setBackground(m_selectedItem, m_selectedBG);
+  return {};
 }
 
-void ListWidget::clearSelected() {
-  setSelected(NPos);
+std::expected<void, StarException> ListWidget::clearSelected() {
+  return setSelected(NPos);
 }
 
-void ListWidget::setSelectedWidget(std::shared_ptr<Widget> selected) {
+std::expected<void, StarException> ListWidget::setSelectedWidget(std::shared_ptr<Widget> selected) {
   auto offset = itemPosition(selected);
-
-  if (offset == NPos) {
-    throw GuiException("Attempted to select item not in list.");
-  }
-
-  setSelected(offset);
+  if (offset == NPos)
+    return std::unexpected(GuiException("Attempted to select item not in list."));
+  return setSelected(offset);
 }
 
 void ListWidget::registerMemberCallback(String const& name, WidgetCallbackFunc const& callback) {
@@ -249,34 +304,44 @@ void ListWidget::setFillDown(bool fillDown) {
   m_fillDown = fillDown;
 }
 
-void ListWidget::setColumns(std::uint64_t columns) {
+std::expected<void, StarException> ListWidget::setColumns(std::uint64_t columns) {
+  if (!columns)
+    return std::unexpected(GuiException("List column count must be positive"));
   m_columns = columns;
+  return {};
 }
 
-void ListWidget::removeItem(std::size_t at) {
+std::expected<void, StarException> ListWidget::removeItem(std::size_t at) {
+  if (at >= m_members.size())
+    return std::unexpected(GuiException("List removal index out of range"));
   removeChildAt(at);
-  if (m_selectedItem == at)
-    setSelected(NPos);
-  else if (m_selectedItem != NPos && m_selectedItem > at)
-    setSelected(m_selectedItem - 1);
-
-  updateSizeAndPosition();
-}
-
-void ListWidget::removeItem(std::shared_ptr<Widget> item) {
-  auto offset = itemPosition(item);
-
-  if (offset == NPos) {
-    throw GuiException("Attempted to remove item not in list.");
+  if (m_selectedItem == at) {
+    auto selected = setSelected(NPos);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
+  } else if (m_selectedItem != NPos && m_selectedItem > at) {
+    auto selected = setSelected(m_selectedItem - 1);
+    if (!selected)
+      return std::unexpected(std::move(selected.error()));
   }
-
-  removeItem(offset);
+  updateSizeAndPosition();
+  return {};
 }
 
-void ListWidget::clear() {
-  setSelected(NPos);
+std::expected<void, StarException> ListWidget::removeItem(std::shared_ptr<Widget> item) {
+  auto offset = itemPosition(item);
+  if (offset == NPos)
+    return std::unexpected(GuiException("Attempted to remove item not in list."));
+  return removeItem(offset);
+}
+
+std::expected<void, StarException> ListWidget::clear() {
+  auto selected = setSelected(NPos);
+  if (!selected)
+    return std::unexpected(std::move(selected.error()));
   removeAllChildren();
   updateSizeAndPosition();
+  return {};
 }
 
 std::size_t ListWidget::selectedItem() const {

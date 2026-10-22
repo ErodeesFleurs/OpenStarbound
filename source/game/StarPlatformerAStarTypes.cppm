@@ -2,6 +2,7 @@ module;
 import std;
 import star.optional;
 import star.format;
+import star.string;
 import star.stream_formatter;
 
 import star.vector;
@@ -27,11 +28,9 @@ struct Node {
 };
 
 enum class Action { Walk, Jump, Arc, Drop, Swim, Fly, Land };
-extern EnumMap<Action> const ActionNames;
+extern std::expected<EnumMap<Action>, StarException> const ActionNames;
 
 struct Edge {
-  friend std::ostream& operator<<(std::ostream& os, Edge const& edge);
-
   float cost;
   Action action;
   Vec2F jumpVelocity;
@@ -109,8 +108,8 @@ inline bool operator==(Node const& a, Node const& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node);
-inline std::ostream& operator<<(std::ostream& os, Action action);
-inline std::ostream& operator<<(std::ostream& os, Edge const& edge);
+[[nodiscard]] std::expected<String const*, StarException> actionName(Action action);
+[[nodiscard]] std::expected<String, StarException> printEdge(Edge const& edge);
 
 }
 
@@ -119,27 +118,12 @@ inline std::ostream& operator<<(std::ostream& os, Edge const& edge);
 // The formatter specializations have to be visible before the stream operators
 // that use them are defined below, otherwise the instantiations come first.
 template <> struct std::formatter<Star::PlatformerAStar::Node> : Star::StreamFormatter {};
-template <> struct std::formatter<Star::PlatformerAStar::Action> : Star::StreamFormatter {};
-template <> struct std::formatter<Star::PlatformerAStar::Edge> : Star::StreamFormatter {};
 
 namespace Star {
 namespace PlatformerAStar {
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node) {
   return os << strf("Node{{position = {}, velocity = {}}}", node.position, outputOptional(node.velocity));
-}
-
-inline std::ostream& operator<<(std::ostream& os, Action action) {
-  return os << ActionNames.getRight(action);
-}
-
-inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
-  return os << strf("Edge{{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}}",
-          edge.cost,
-          edge.action,
-          edge.jumpVelocity,
-          edge.source,
-          edge.target);
 }
 
 inline bool Node::operator<(Node const& other) const {
@@ -178,8 +162,6 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 export module star.platformer_astar_types;
 
 export template <> struct std::formatter<Star::PlatformerAStar::Node>;
-export template <> struct std::formatter<Star::PlatformerAStar::Action>;
-export template <> struct std::formatter<Star::PlatformerAStar::Edge>;
 
 export namespace Star::PlatformerAStar {
   using ::Star::PlatformerAStar::PathFinder;
@@ -189,5 +171,7 @@ export namespace Star::PlatformerAStar {
   using ::Star::PlatformerAStar::Edge;
   using ::Star::PlatformerAStar::Path;
   using ::Star::PlatformerAStar::Parameters;
+  using ::Star::PlatformerAStar::actionName;
+  using ::Star::PlatformerAStar::printEdge;
   using ::Star::PlatformerAStar::operator<<;
 }

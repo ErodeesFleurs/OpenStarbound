@@ -45,8 +45,10 @@ public:
   void resize(std::size_t size, Element const& e = Element());
   void reserve(std::size_t capacity);
 
-  reference at(std::size_t i);
-  const_reference at(std::size_t i) const;
+  [[nodiscard]]
+  std::expected<Element*, StarException> at(std::size_t i);
+  [[nodiscard]]
+  std::expected<Element const*, StarException> at(std::size_t i) const;
 
   reference operator[](std::size_t i);
   const_reference operator[](std::size_t i) const;
@@ -68,7 +70,8 @@ public:
   Element* ptr();
 
   void push_back(Element e);
-  void pop_back();
+  [[nodiscard]]
+  std::expected<void, StarException> pop_back();
 
   iterator insert(iterator pos, Element e);
   template <typename Iterator>
@@ -91,6 +94,10 @@ public:
   bool operator<(SmallVector const& other) const;
 
 private:
+  void discardBack() {
+    --m_end;
+    std::destroy_at(m_end);
+  }
   alignas(Element) std::byte m_stackElements[MaxStackSize ? MaxStackSize * sizeof(Element) : alignof(Element)];
 
   bool isHeapAllocated() const;
@@ -179,7 +186,7 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> 
   while (size() < other.size())
     emplace_back(other[size()]);
   while (size() > other.size())
-    pop_back();
+    discardBack();
 
   return *this;
 }
@@ -206,7 +213,7 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other) -> Small
     while (size() < other.size())
       emplace_back(std::move(other[size()]));
     while (size() > other.size())
-      pop_back();
+      discardBack();
     other.clear();
   }
 
@@ -222,7 +229,7 @@ auto SmallVector<Element, MaxStackSize>::operator=(std::initializer_list<Element
   while (size() < list.size())
     emplace_back(list.begin()[size()]);
   while (size() > list.size())
-    pop_back();
+    discardBack();
   return *this;
 }
 
@@ -241,7 +248,7 @@ void SmallVector<Element, MaxStackSize>::resize(std::size_t size, Element const&
   reserve(size);
 
   for (std::size_t i = this->size(); i > size; --i)
-    pop_back();
+    discardBack();
   for (std::size_t i = this->size(); i < size; ++i)
     emplace_back(e);
 }
@@ -257,24 +264,15 @@ void SmallVector<Element, MaxStackSize>::reserve(std::size_t newCapacity) {
     } else {
       newMem = static_cast<Element*>(Star::malloc(newCapacity * sizeof(Element)));
       if (!newMem)
-        throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
+        std::terminate();
     }
 
     std::size_t size = m_end - m_begin;
     auto oldMem = m_begin;
     auto oldHeapAllocated = isHeapAllocated();
 
-    // Copy when a throwing move can be avoided.  A throwing move-only type
-    // keeps its original storage and live elements, but may be moved-from.
-    std::size_t constructed = 0;
-    try {
-      for (; constructed < size; ++constructed)
-        std::construct_at(newMem + constructed, std::move_if_noexcept(oldMem[constructed]));
-    } catch (...) {
-      std::destroy_n(newMem, constructed);
-      freeHeapElements(newMem, newCapacity);
-      throw;
-    }
+    for (std::size_t constructed = 0; constructed < size; ++constructed)
+      std::construct_at(newMem + constructed, std::move(oldMem[constructed]));
 
     m_begin = newMem;
     m_end = m_begin + size;
@@ -287,17 +285,17 @@ void SmallVector<Element, MaxStackSize>::reserve(std::size_t newCapacity) {
 }
 
 template <typename Element, std::size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(std::size_t i) -> reference {
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) -> std::expected<Element*, StarException> {
   if (i >= size())
-    throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
-  return m_begin[i];
+    return std::unexpected(OutOfRangeException::format("out of range in SmallVector::at({})", i));
+  return m_begin + i;
 }
 
 template <typename Element, std::size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(std::size_t i) const -> const_reference {
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) const -> std::expected<Element const*, StarException> {
   if (i >= size())
-    throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
-  return m_begin[i];
+    return std::unexpected(OutOfRangeException::format("out of range in SmallVector::at({})", i));
+  return m_begin + i;
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -372,11 +370,11 @@ void SmallVector<Element, MaxStackSize>::push_back(Element e) {
 }
 
 template <typename Element, std::size_t MaxStackSize>
-void SmallVector<Element, MaxStackSize>::pop_back() {
+std::expected<void, StarException> SmallVector<Element, MaxStackSize>::pop_back() {
   if (m_begin == m_end)
-    throw OutOfRangeException("SmallVector::pop_back called on empty SmallVector");
-  --m_end;
-  std::destroy_at(m_end);
+    return std::unexpected(OutOfRangeException("SmallVector::pop_back called on empty SmallVector"));
+  discardBack();
+  return {};
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -393,14 +391,8 @@ auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Iterator first, It
   auto previousSize = size();
   if constexpr (std::forward_iterator<Iterator>)
     reserve(previousSize + std::distance(first, last));
-  try {
-    for (; first != last; ++first)
-      emplace_back(*first);
-  } catch (...) {
-    while (size() > previousSize)
-      pop_back();
-    throw;
-  }
+  for (; first != last; ++first)
+    emplace_back(*first);
   std::rotate(begin() + index, begin() + previousSize, end());
   return begin() + index;
 }
@@ -437,7 +429,7 @@ void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
 template <typename Element, std::size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::clear() {
   while (m_begin != m_end)
-    pop_back();
+    discardBack();
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -445,7 +437,7 @@ auto SmallVector<Element, MaxStackSize>::erase(iterator pos) -> iterator {
   std::size_t index = pos - ptr();
   for (std::size_t i = index; i < size() - 1; ++i)
     operator[](i) = std::move(operator[](i + 1));
-  pop_back();
+  discardBack();
   return pos;
 }
 
@@ -459,7 +451,7 @@ auto SmallVector<Element, MaxStackSize>::erase(iterator begin, iterator end) -> 
   for (std::size_t i = endIndex; i < size(); ++i)
     operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
   while (toRemove--)
-    pop_back();
+    discardBack();
   return begin;
 }
 

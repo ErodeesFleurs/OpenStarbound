@@ -1,4 +1,5 @@
 import star.json;
+import star.output_proxy;
 import star.native_runtime;
 import star.ordered_map;
 import star.either;
@@ -80,47 +81,89 @@ import star.celestial_database;
 import star.static_random;
 using namespace Star;
 
-int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-
+[[nodiscard]]
+static std::expected<void, StarException> run(int argc, char** argv) {
+    auto nativeRuntime = NativeRuntime::create();
+    if (!nativeRuntime)
+      return std::unexpected(std::move(nativeRuntime.error()));
+    auto loader = RootLoader::create({{}, {}, {}, LogLevel::Error, false, {}});
+    if (!loader)
+      return std::unexpected(std::move(loader.error()));
+    auto& rootLoader = *loader;
     rootLoader.setSummary("Generate a WorldTemplate and output the data in it to an image");
+    auto coordinateParameter = rootLoader.addParameter("coordinate", "coordinate", OptionParser::Optional, "coordinate for the celestial world");
+    if (!coordinateParameter)
+      return std::unexpected(std::move(coordinateParameter.error()));
+    auto seedParameter = rootLoader.addParameter("coordseed", "seed", OptionParser::Optional, "seed to use when selecting a random celestial world coordinate");
+    if (!seedParameter)
+      return std::unexpected(std::move(seedParameter.error()));
+    auto sizeParameter = rootLoader.addParameter("size", "size", OptionParser::Optional, "x,y size of the region to be rendered");
+    if (!sizeParameter)
+      return std::unexpected(std::move(sizeParameter.error()));
+    auto weightingSwitch = rootLoader.addSwitch("weighting", "Output instead the region weighting at each point");
+    if (!weightingSwitch)
+      return std::unexpected(std::move(weightingSwitch.error()));
+    auto noiseSwitch = rootLoader.addSwitch("weightingblocknoise", "apply layout block noise before outputting weighting");
+    if (!noiseSwitch)
+      return std::unexpected(std::move(noiseSwitch.error()));
+    auto transitionSwitch = rootLoader.addSwitch("transition", "show biome transition regions");
+    if (!transitionSwitch)
+      return std::unexpected(std::move(transitionSwitch.error()));
 
-    rootLoader.addParameter("coordinate", "coordinate", OptionParser::Optional, "coordinate for the celestial world");
-    rootLoader.addParameter("coordseed", "seed", OptionParser::Optional, "seed to use when selecting a random celestial world coordinate");
-    rootLoader.addParameter("size", "size", OptionParser::Optional, "x,y size of the region to be rendered");
-    rootLoader.addSwitch("weighting", "Output instead the region weighting at each point");
-    rootLoader.addSwitch("weightingblocknoise", "apply layout block noise before outputting weighting");
-    rootLoader.addSwitch("transition", "show biome transition regions");
-
-    std::unique_ptr<::Star::Root> root;
-    OptionParser::Options options;
-    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
-
-    std::shared_ptr<::Star::CelestialMasterDatabase> celestialDatabase = std::make_shared<CelestialMasterDatabase>(*root);
+    auto initialized = rootLoader.commandInitOrDie(argc, argv);
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    auto& [root, options] = *initialized;
+    auto celestialDatabase = CelestialMasterDatabase::create(*root);
+    if (!celestialDatabase)
+      return std::unexpected(std::move(celestialDatabase.error()));
 
     std::optional<CelestialCoordinate> coordinate;
-    if (!options.parameters["coordinate"].empty())
-      coordinate = CelestialCoordinate(options.parameters["coordinate"].first());
-    else if (!options.parameters["coordseed"].empty())
-      coordinate = celestialDatabase->findRandomWorld(
-          10, 50, {}, lexicalCast<std::uint64_t>(options.parameters["coordseed"].first()));
-    else
-      coordinate = celestialDatabase->findRandomWorld();
-
+    if (auto coordinateOption = options.parameters.ptr("coordinate"); coordinateOption && !coordinateOption->empty()) {
+      auto parsed = CelestialCoordinate::create(Json((*coordinateOption)[0]));
+      if (!parsed)
+        return std::unexpected(std::move(parsed.error()));
+      coordinate = std::move(*parsed);
+    } else {
+      std::optional<std::uint64_t> seed;
+      if (auto seedOption = options.parameters.ptr("coordseed"); seedOption && !seedOption->empty()) {
+        auto parsed = lexicalCast<std::uint64_t>((*seedOption)[0]);
+        if (!parsed)
+          return std::unexpected(std::move(parsed.error()));
+        seed = *parsed;
+      }
+      auto found = (*celestialDatabase)->findRandomWorld(10, 50, {}, seed);
+      if (!found)
+        return std::unexpected(std::move(found.error()));
+      coordinate = std::move(*found);
+    }
     if (!coordinate)
-      throw StarException("Could not find world to generate, try again");
+      return std::unexpected(StarException("Could not find world to generate, try again"));
 
     coutf("Generating world with coordinate {}\n", *coordinate);
-
-    WorldTemplate worldTemplate(*root, *coordinate, celestialDatabase);
+    auto createdTemplate = WorldTemplate::create(*root, *coordinate, *celestialDatabase);
+    if (!createdTemplate)
+      return std::unexpected(std::move(createdTemplate.error()));
+    auto& worldTemplate = **createdTemplate;
     auto size = worldTemplate.size();
 
-    if (!options.parameters["size"].empty()) {
-      auto regionSize = Vec2U(lexicalCast<unsigned>(options.parameters["size"].first().split(",")[0]),
-          lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
-      size = regionSize.piecewiseClamp(Vec2U(0, 0), size);
+    if (auto sizeOption = options.parameters.ptr("size"); sizeOption && !sizeOption->empty()) {
+      auto components = (*sizeOption)[0].split(",");
+      if (!components)
+        return std::unexpected(std::move(components.error()));
+      auto widthText = components->at(0);
+      if (!widthText)
+        return std::unexpected(std::move(widthText.error()));
+      auto heightText = components->at(1);
+      if (!heightText)
+        return std::unexpected(std::move(heightText.error()));
+      auto width = lexicalCast<unsigned>(**widthText);
+      if (!width)
+        return std::unexpected(std::move(width.error()));
+      auto height = lexicalCast<unsigned>(**heightText);
+      if (!height)
+        return std::unexpected(std::move(height.error()));
+      size = Vec2U(*width, *height).piecewiseClamp(Vec2U(0, 0), size);
     } else if (size[0] > 1000) {
       size[0] = 1000;
     }
@@ -139,56 +182,89 @@ int main(int argc, char** argv) {
           Color color = Color::Black;
           Vec2I pos(x, y);
           if (options.switches.contains("weightingblocknoise")) {
-            if (auto blockNoise = layout->blockNoise())
-              pos = blockNoise->apply(pos, size);
+            if (auto blockNoise = layout->blockNoise()) {
+              auto adjusted = blockNoise->apply(pos, size);
+              if (!adjusted)
+                return std::unexpected(std::move(adjusted.error()));
+              pos = *adjusted;
+            }
           }
           auto weightings = layout->getWeighting(pos[0], pos[1]);
-          for (auto const& weighting : weightings) {
+          if (!weightings)
+            return std::unexpected(std::move(weightings.error()));
+          for (auto const& weighting : *weightings) {
             Color mixColor = Color::rgb(128, 0, 0);
             mixColor.setHue(staticRandomFloat((std::uint64_t)weighting.region));
             color = Color::rgbaf(color.toRgbaF() + mixColor.toRgbaF() * weighting.weight);
           }
-          outputImage->set(x, y, color.toRgb());
+          auto written = outputImage->set(x, y, color.toRgb());
+          if (!written)
+            return std::unexpected(std::move(written.error()));
         } else if (options.switches.contains("transition")) {
-          auto blockInfo = worldTemplate.blockInfo(x, y);
+          auto block = worldTemplate.blockInfo(x, y);
+          if (!block)
+            return std::unexpected(std::move(block.error()));
+          auto const& blockInfo = *block;
           if (isRealMaterial(blockInfo.foreground)) {
             Color color = groundColor;
             color.setHue(blockInfo.biomeTransition ? 0 : 0.5f);
-            outputImage->set(x, y, color.toRgb());
+            auto written = outputImage->set(x, y, color.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           } else if (isRealMaterial(blockInfo.background)) {
             Color color = caveColor;
             color.setHue(blockInfo.biomeTransition ? 0 : 0.5f);
-            outputImage->set(x, y, color.toRgb());
+            auto written = outputImage->set(x, y, color.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           } else {
-            outputImage->set(x, y, blankColor.toRgb());
+            auto written = outputImage->set(x, y, blankColor.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           }
         } else {
           // Image y = 0 is the top, so reverse it for the world tile
-          auto blockInfo = worldTemplate.blockInfo(x, y);
+          auto block = worldTemplate.blockInfo(x, y);
+          if (!block)
+            return std::unexpected(std::move(block.error()));
+          auto const& blockInfo = *block;
           if (isRealMaterial(blockInfo.foreground)) {
             Color color = groundColor;
             color.setHue(staticRandomFloat(blockInfo.foreground));
             color.setSaturation(staticRandomFloat(blockInfo.foregroundMod));
-            outputImage->set(x, y, color.toRgb());
+            auto written = outputImage->set(x, y, color.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           } else if (isRealMaterial(blockInfo.background)) {
             Color color = caveColor;
             color.setHue(staticRandomFloat(blockInfo.background));
             color.setSaturation(staticRandomFloat(blockInfo.backgroundMod));
-            outputImage->set(x, y, color.toRgb());
+            auto written = outputImage->set(x, y, color.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           } else {
-            outputImage->set(x, y, blankColor.toRgb());
+            auto written = outputImage->set(x, y, blankColor.toRgb());
+            if (!written)
+              return std::unexpected(std::move(written.error()));
           }
         }
       }
     }
 
     auto outputFile = File::open("mapgen.png", IOMode::Write);
-    outputImage->writePng(root->logger(), outputFile);
-    outputFile->close();
-    return 0;
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("exception caught: {}\n", outputException(e, true));
+    if (!outputFile)
+      return std::unexpected(std::move(outputFile.error()));
+    auto written = outputImage->writePng(root->logger(), *outputFile);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+    return (*outputFile)->close();
+}
+
+int main(int argc, char** argv) {
+  auto result = run(argc, argv);
+  if (!result) {
+    cerrf("exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
     return 1;
   }
+  return 0;
 }

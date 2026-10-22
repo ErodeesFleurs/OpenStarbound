@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 
@@ -30,27 +31,40 @@ struct BiomePlaceables;
 
 class BiomeDatabase {
 public:
-  explicit BiomeDatabase(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<BiomeDatabase>, StarException> create(Root& root);
 
   StringList biomeNames() const;
 
-  float biomeHueShift(String const& biomeName, std::uint64_t seed) const;
-  bool biomeHasWeather(String const& biomeName) const;
-  WeatherPool biomeWeathers(String const& biomeName, std::uint64_t seed, float threatLevel) const;
-  bool biomeIsAirless(String const& biomeName) const;
-  SkyColoring biomeSkyColoring(String const& biomeName, std::uint64_t seed) const;
-  String biomeFriendlyName(String const& biomeName) const;
-  StringList biomeStatusEffects(String const& biomeName) const;
-  StringList biomeOres(String const& biomeName, float threatLevel) const;
+  [[nodiscard]]
+  std::expected<float, StarException> biomeHueShift(String const& biomeName, std::uint64_t seed) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> biomeHasWeather(String const& biomeName) const;
+  [[nodiscard]]
+  std::expected<WeatherPool, StarException> biomeWeathers(String const& biomeName, std::uint64_t seed, float threatLevel) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> biomeIsAirless(String const& biomeName) const;
+  [[nodiscard]]
+  std::expected<SkyColoring, StarException> biomeSkyColoring(String const& biomeName, std::uint64_t seed) const;
+  [[nodiscard]]
+  std::expected<String, StarException> biomeFriendlyName(String const& biomeName) const;
+  [[nodiscard]]
+  std::expected<StringList, StarException> biomeStatusEffects(String const& biomeName) const;
+  [[nodiscard]]
+  std::expected<StringList, StarException> biomeOres(String const& biomeName, float threatLevel) const;
 
   StringList weatherNames() const;
-  WeatherType weatherType(String const& weatherName) const;
+  [[nodiscard]]
+  std::expected<WeatherType, StarException> weatherType(String const& weatherName) const;
 
-  std::shared_ptr<Biome> createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Biome>, StarException> createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const;
 
-  Json biomeConfig(String const& biomeName) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> biomeConfig(String const& biomeName) const;
 
 private:
+  explicit BiomeDatabase(Root& root) : m_root(root) {}
   Root& m_root;
   struct Config {
     String path;
@@ -60,10 +74,13 @@ private:
   };
   typedef StringMap<Config> ConfigMap;
 
-  static float pickHueShiftFromJson(Json source, std::uint64_t seed, String const& key);
+  [[nodiscard]]
+  static std::expected<float, StarException> pickHueShiftFromJson(Json source, std::uint64_t seed, String const& key);
 
-  BiomePlaceables readBiomePlaceables(Json const& config, std::uint64_t seed, float biomeHueShift) const;
-  List<std::pair<ModId, float>> readOres(Json const& oreDistribution, float threatLevel) const;
+  [[nodiscard]]
+  std::expected<BiomePlaceables, StarException> readBiomePlaceables(Json const& config, std::uint64_t seed, float biomeHueShift) const;
+  [[nodiscard]]
+  std::expected<List<std::pair<ModId, float>>, StarException> readOres(Json const& oreDistribution, float threatLevel) const;
 
   ConfigMap m_biomes;
   ConfigMap m_weathers;

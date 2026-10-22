@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.color;
@@ -70,16 +71,18 @@ void ParticleManager::setUndergroundLevel(float undergroundLevel) {
   m_undergroundLevel = undergroundLevel;
 }
 
-void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
+std::expected<void, StarException> ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
   if (!m_tileSectorArray)
-    return;
+    return {};
 
   auto cullRects = m_worldGeometry.splitRect(cullRegion);
+  if (!cullRects)
+    return std::unexpected(std::move(cullRects.error()));
 
   for (auto& particle : m_particles) {
     bool inRegion = false;
     Vec2F worldPos = m_worldGeometry.xwrap(particle.position);
-    for (auto cullRect : cullRects) {
+    for (auto const& cullRect : *cullRects) {
       if (cullRect.contains(worldPos)) {
         inRegion = true;
         break;
@@ -88,7 +91,9 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
     if (!inRegion)
       continue;
 
-    particle.update(m_root, dt, Vec2F(wind, 0));
+    auto updated = particle.update(m_root, dt, Vec2F(wind, 0));
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
     Vec2I pos(particle.position.floor());
     TileType tiletype;
     auto const& tile = m_tileSectorArray->tile(pos);
@@ -140,6 +145,7 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
 
   m_particles.clear();
   std::swap(m_particles, m_nextParticles);
+  return {};
 }
 
 List<Particle> const& ParticleManager::particles() const {

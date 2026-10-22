@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -98,28 +99,38 @@ public:
     return Star::typeName<LiquidItem>();
   }
 
-  LiquidItem(Root& root, Json const& config, String const& directory, Json const& settings);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<LiquidItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() {}
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(ToolUserEntity* owner, ToolHand hand) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> nonRotatedDrawables() const override;
 
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  [[nodiscard]]
+  std::expected<void, StarException> fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
   LiquidId liquidId() const;
   float liquidQuantity() const;
 
-  List<PreviewTile> previewTiles(bool shifting) const override;
+  [[nodiscard]]
+  std::expected<List<PreviewTile>, StarException> previewTiles(bool shifting) const override;
 
-  bool canPlace(bool shifting) const;
-  bool canPlaceAtTile(Vec2I pos) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlace(bool shifting) const;
+  [[nodiscard]]
+  std::expected<bool, StarException> canPlaceAtTile(Vec2I pos) const;
   bool multiplaceEnabled() const;
 
 private:
+  explicit LiquidItem(Root& root) : Item(root), BeamItem(root) {}
   LiquidId m_liquidId;
   float m_quantity;
 
@@ -132,74 +143,129 @@ private:
 
 namespace Star {
 
-LiquidItem::LiquidItem(Root& root, Json const& config, String const& directory, Json const& settings)
-  : Item(root, config, directory, settings), FireableItem(config), BeamItem(root, config) {
-  m_liquidId = this->root().liquidsDatabase()->liquidId(config.getString("liquid"));
-
-  setTwoHanded(config.getBool("twoHanded", true));
-
-  auto assets = this->root().assets();
-  m_quantity = assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
-  setCooldownTime(assets->json("/items/defaultParameters.config:liquidItems.cooldown").toFloat());
-  m_blockRadius = assets->json("/items/defaultParameters.config:blockRadius").toFloat();
-  m_altBlockRadius = assets->json("/items/defaultParameters.config:altBlockRadius").toFloat();
-  m_shifting = false;
+std::expected<std::shared_ptr<LiquidItem>, StarException> LiquidItem::create(Root& root, Json const& config, String const& directory, Json const& settings) {
+  auto item = std::shared_ptr<LiquidItem>(new LiquidItem(root));
+  auto initialized = item->initialize(config, directory, settings);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto fireable = item->initializeFireable(config);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = item->initializeBeam(config);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
+  auto database = root.liquidsDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto liquid = config.getString("liquid");
+  if (!liquid)
+    return std::unexpected(std::move(liquid.error()));
+  auto id = (*database)->liquidId(*liquid);
+  if (!id)
+    return std::unexpected(std::move(id.error()));
+  item->m_liquidId = *id;
+  auto twoHanded = config.getBool("twoHanded", true);
+  if (!twoHanded)
+    return std::unexpected(std::move(twoHanded.error()));
+  item->setTwoHanded(*twoHanded);
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto quantity = (*assets)->json("/items/defaultParameters.config:liquidItems.bucketSize").and_then([](Json const& value) { return value.toUInt(); });
+  if (!quantity)
+    return std::unexpected(std::move(quantity.error()));
+  item->m_quantity = *quantity;
+  auto cooldown = (*assets)->json("/items/defaultParameters.config:liquidItems.cooldown").and_then([](Json const& value) { return value.toFloat(); });
+  if (!cooldown)
+    return std::unexpected(std::move(cooldown.error()));
+  item->setCooldownTime(*cooldown);
+  auto radius = (*assets)->json("/items/defaultParameters.config:blockRadius").and_then([](Json const& value) { return value.toFloat(); });
+  if (!radius)
+    return std::unexpected(std::move(radius.error()));
+  item->m_blockRadius = *radius;
+  auto altRadius = (*assets)->json("/items/defaultParameters.config:altBlockRadius").and_then([](Json const& value) { return value.toFloat(); });
+  if (!altRadius)
+    return std::unexpected(std::move(altRadius.error()));
+  item->m_altBlockRadius = *altRadius;
+  item->m_shifting = false;
+  return item;
 }
 
-std::shared_ptr<Item> LiquidItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> LiquidItem::clone() const {
   return std::make_shared<LiquidItem>(*this);
 }
 
-void LiquidItem::init(ToolUserEntity* owner, ToolHand hand) {
-  FireableItem::init(owner, hand);
-  BeamItem::init(owner, hand);
+std::expected<void, StarException> LiquidItem::init(ToolUserEntity* owner, ToolHand hand) {
+  auto initialized = FireableItem::init(owner, hand);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return BeamItem::init(owner, hand);
 }
 
-void LiquidItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
-  FireableItem::update(dt, fireMode, shifting, moves);
-  BeamItem::update(dt, fireMode, shifting, moves);
+std::expected<void, StarException> LiquidItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
+  auto fireable = FireableItem::update(dt, fireMode, shifting, moves);
+  if (!fireable)
+    return std::unexpected(std::move(fireable.error()));
+  auto beam = BeamItem::update(dt, fireMode, shifting, moves);
+  if (!beam)
+    return std::unexpected(std::move(beam.error()));
   if (shifting || !multiplaceEnabled())
     setEnd(BeamItem::EndType::Tile);
   else
     setEnd(BeamItem::EndType::TileGroup);
-
   m_shifting = shifting;
+  return {};
 }
 
-List<Drawable> LiquidItem::nonRotatedDrawables() const {
-  return beamDrawables(canPlace(m_shifting));
+std::expected<List<Drawable>, StarException> LiquidItem::nonRotatedDrawables() const {
+  auto placeable = canPlace(m_shifting);
+  if (!placeable)
+    return std::unexpected(std::move(placeable.error()));
+  return beamDrawables(*placeable);
 }
 
-void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
-  if (!initialized() || !ready() || !owner()->inToolRange())
-    return;
-
+std::expected<void, StarException> LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
+  if (!initialized() || !ready())
+    return {};
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  auto range = (*itemOwner)->inToolRange();
+  if (!range)
+    return std::unexpected(std::move(range.error()));
+  if (!*range)
+    return {};
   PlaceLiquid placeLiquid{liquidId(), liquidQuantity()};
   TileModificationList modifications;
-
-  float radius;
-
-  if (!shifting)
-    radius = m_blockRadius;
-  else
-    radius = m_altBlockRadius;
-
+  float radius = shifting ? m_altBlockRadius : m_blockRadius;
   if (!multiplaceEnabled())
     radius = 1;
-
-  for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
-    if (canPlaceAtTile(pos))
+  auto aimPosition = (*itemOwner)->aimPosition();
+  if (!aimPosition)
+    return std::unexpected(std::move(aimPosition.error()));
+  for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
+    auto placeable = canPlaceAtTile(pos);
+    if (!placeable)
+      return std::unexpected(std::move(placeable.error()));
+    if (*placeable)
       modifications.append({pos, placeLiquid});
   }
-
-  // Make sure not to make any more modifications than we have consumables.
+  // Cap the batch before submitting or consuming.
   if (modifications.size() > count())
     modifications.resize(count());
-  std::size_t failed = world()->applyTileModifications(modifications, false).size();
-  if (failed < modifications.size()) {
-    FireableItem::fire(mode, shifting, edgeTriggered);
-    consume(modifications.size() - failed);
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto failed = (*itemWorld)->applyTileModifications(modifications, false);
+  if (!failed)
+    return std::unexpected(std::move(failed.error()));
+  if (failed->size() < modifications.size()) {
+    auto fired = FireableItem::fire(mode, shifting, edgeTriggered);
+    if (!fired)
+      return std::unexpected(std::move(fired.error()));
+    consume(modifications.size() - failed->size());
   }
+  return {};
 }
 
 LiquidId LiquidItem::liquidId() const {
@@ -210,26 +276,27 @@ float LiquidItem::liquidQuantity() const {
   return m_quantity;
 }
 
-List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
+std::expected<List<PreviewTile>, StarException> LiquidItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
     auto liquid = liquidId();
-
-    float radius;
-    if (!shifting)
-      radius = m_blockRadius;
-    else
-      radius = m_altBlockRadius;
-
+    float radius = shifting ? m_altBlockRadius : m_blockRadius;
     if (!multiplaceEnabled())
       radius = 1;
-
     std::size_t c = 0;
-
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+    auto aimPosition = (*itemOwner)->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
       if (c >= count())
         break;
-      if (canPlaceAtTile(pos))
+      auto placeable = canPlaceAtTile(pos);
+      if (!placeable)
+        return std::unexpected(std::move(placeable.error()));
+      if (*placeable)
         c++;
       result.append({pos, liquid});
     }
@@ -237,31 +304,37 @@ List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
   return result;
 }
 
-bool LiquidItem::canPlace(bool shifting) const {
+std::expected<bool, StarException> LiquidItem::canPlace(bool shifting) const {
   if (initialized()) {
-    float radius;
-    if (!shifting)
-      radius = m_blockRadius;
-    else
-      radius = m_altBlockRadius;
-
+    auto itemOwner = owner();
+    if (!itemOwner)
+      return std::unexpected(std::move(itemOwner.error()));
+    float radius = shifting ? m_altBlockRadius : m_blockRadius;
     if (!multiplaceEnabled())
       radius = 1;
-
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
-      if (canPlaceAtTile(pos))
+    auto aimPosition = (*itemOwner)->aimPosition();
+    if (!aimPosition)
+      return std::unexpected(std::move(aimPosition.error()));
+    for (auto pos : tileAreaBrush(radius, *aimPosition, true)) {
+      auto placeable = canPlaceAtTile(pos);
+      if (!placeable)
+        return std::unexpected(std::move(placeable.error()));
+      if (*placeable)
         return true;
     }
   }
   return false;
 }
 
-bool LiquidItem::canPlaceAtTile(Vec2I pos) const {
-  auto bgTileMaterial = world()->material(pos, TileLayer::Background);
+std::expected<bool, StarException> LiquidItem::canPlaceAtTile(Vec2I pos) const {
+  auto itemWorld = world();
+  if (!itemWorld)
+    return std::unexpected(std::move(itemWorld.error()));
+  auto bgTileMaterial = (*itemWorld)->material(pos, TileLayer::Background);
   if (bgTileMaterial != EmptyMaterialId) {
-    auto fgTileMaterial = world()->material(pos, TileLayer::Foreground);
+    auto fgTileMaterial = (*itemWorld)->material(pos, TileLayer::Foreground);
     if (fgTileMaterial == EmptyMaterialId) {
-      auto tileLiquid = world()->liquidLevel(pos).liquid;
+      auto tileLiquid = (*itemWorld)->liquidLevel(pos).liquid;
       if (tileLiquid == EmptyLiquidId || tileLiquid == liquidId())
         return true;
     }

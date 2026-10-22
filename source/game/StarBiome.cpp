@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.bi_map;
@@ -56,24 +57,47 @@ BiomePlaceables::BiomePlaceables() {
   ceilingGrassModDensity = 0.0f;
 }
 
-BiomePlaceables::BiomePlaceables(Assets const& assets, Json const& variant) {
-  grassMod = variant.getInt("grassMod");
-  grassModDensity = variant.getFloat("grassModDensity");
-  ceilingGrassMod = variant.getInt("ceilingGrassMod");
-  ceilingGrassModDensity = variant.getFloat("ceilingGrassModDensity");
-  itemDistributions = variant.getArray("itemDistributions").transformed([&assets](Json const& item) {
-    return BiomeItemDistribution(assets, item);
-  });
+std::expected<BiomePlaceables, StarException> BiomePlaceables::create(Assets const& assets, Json const& variant) {
+  BiomePlaceables result;
+  {
+    auto value = variant.getInt("grassMod");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.grassMod = std::move(*value);
+  }
+  {
+    auto value = variant.getFloat("grassModDensity");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.grassModDensity = std::move(*value);
+  }
+  {
+    auto value = variant.getInt("ceilingGrassMod");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.ceilingGrassMod = std::move(*value);
+  }
+  {
+    auto value = variant.getFloat("ceilingGrassModDensity");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.ceilingGrassModDensity = std::move(*value);
+  }
+  auto items = variant.getArray("itemDistributions");
+  if (!items) return std::unexpected(std::move(items.error()));
+  for (auto const& item : *items) {
+    auto distribution = BiomeItemDistribution::create(assets, item);
+    if (!distribution) return std::unexpected(std::move(distribution.error()));
+    result.itemDistributions.append(std::move(*distribution));
+  }
+  return result;
 }
 
-Json BiomePlaceables::toJson() const {
-  return JsonObject{
-    {"grassMod", grassMod},
-    {"grassModDensity", grassModDensity},
-    {"ceilingGrassMod", ceilingGrassMod},
-    {"ceilingGrassModDensity", ceilingGrassModDensity},
-    {"itemDistributions", itemDistributions.transformed(std::mem_fn(&BiomeItemDistribution::toJson))}
-  };
+std::expected<Json, StarException> BiomePlaceables::toJson() const {
+  JsonArray distributions;
+  for (auto const& distribution : itemDistributions) {
+    auto json = distribution.toJson();
+    if (!json) return std::unexpected(std::move(json.error()));
+    distributions.append(std::move(*json));
+  }
+  return JsonObject{{"grassMod", grassMod}, {"grassModDensity", grassModDensity}, {"ceilingGrassMod", ceilingGrassMod},
+      {"ceilingGrassModDensity", ceilingGrassModDensity}, {"itemDistributions", std::move(distributions)}};
 }
 
 std::optional<TreeVariant> BiomePlaceables::firstTreeType() const {
@@ -92,49 +116,119 @@ Biome::Biome() {
   materialHueShift = MaterialHue();
 }
 
-Biome::Biome(Root& root, Json const& store) : Biome() {
-  baseName = store.getString("baseName");
-  description = store.getString("description");
-
-  mainBlock = store.getUInt("mainBlock");
-  subBlocks = store.getArray("subBlocks").transformed([](Json const& v) -> MaterialId { return v.toUInt(); });
-  ores =
-      store.getArray("ores").transformed([](Json const& v) { return std::pair<ModId, float>(v.getUInt(0), v.getFloat(1)); });
-  hueShift = store.getFloat("hueShift");
-  materialHueShift = store.getUInt("materialHueShift");
-
+std::expected<Biome, StarException> Biome::create(Root& root, Json const& store) {
+  Biome result;
+  {
+    auto value = store.getString("baseName");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.baseName = std::move(*value);
+  }
+  {
+    auto value = store.getString("description");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.description = std::move(*value);
+  }
+  {
+    auto value = store.getUInt("mainBlock");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.mainBlock = std::move(*value);
+  }
+  {
+    auto value = store.getFloat("hueShift");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.hueShift = std::move(*value);
+  }
+  {
+    auto value = store.getUInt("materialHueShift");
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.materialHueShift = std::move(*value);
+  }
+  auto blocks = store.getArray("subBlocks");
+  if (!blocks) return std::unexpected(std::move(blocks.error()));
+  for (auto const& entry : *blocks) {
+    auto block = entry.toUInt();
+    if (!block) return std::unexpected(std::move(block.error()));
+    result.subBlocks.append(*block);
+  }
+  auto ores = store.getArray("ores");
+  if (!ores) return std::unexpected(std::move(ores.error()));
+  for (auto const& entry : *ores) {
+    auto mod = entry.getUInt(0);
+    if (!mod) return std::unexpected(std::move(mod.error()));
+    auto density = entry.getFloat(1);
+    if (!density) return std::unexpected(std::move(density.error()));
+    result.ores.append({(ModId)*mod, *density});
+  }
   auto assets = root.assets();
-  surfacePlaceables = BiomePlaceables(*assets, store.get("surfacePlaceables"));
-  undergroundPlaceables = BiomePlaceables(*assets, store.get("undergroundPlaceables"));
-
-  if (auto config = store.opt("spawnProfile"))
-    spawnProfile = SpawnProfile(*config);
-
-  if (auto config = store.opt("parallax"))
-    parallax = std::make_shared<Parallax>(root, *config);
-
-  if (auto config = store.opt("ambientNoises"))
-    ambientNoises = std::make_shared<AmbientNoisesDescription>(*config);
-  if (auto config = store.opt("musicTrack"))
-    musicTrack = std::make_shared<AmbientNoisesDescription>(*config);
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto surfacePlaceablesConfig = store.get("surfacePlaceables");
+  if (!surfacePlaceablesConfig) return std::unexpected(std::move(surfacePlaceablesConfig.error()));
+  {
+    auto value = BiomePlaceables::create(**assets, *surfacePlaceablesConfig);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.surfacePlaceables = std::move(*value);
+  }
+  auto undergroundPlaceablesConfig = store.get("undergroundPlaceables");
+  if (!undergroundPlaceablesConfig) return std::unexpected(std::move(undergroundPlaceablesConfig.error()));
+  {
+    auto value = BiomePlaceables::create(**assets, *undergroundPlaceablesConfig);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result.undergroundPlaceables = std::move(*value);
+  }
+  auto spawnConfig = store.opt("spawnProfile");
+  if (!spawnConfig) return std::unexpected(std::move(spawnConfig.error()));
+  if (*spawnConfig) {
+    {
+      auto value = SpawnProfile::create(**spawnConfig);
+      if (!value) return std::unexpected(std::move(value.error()));
+      result.spawnProfile = std::move(*value);
+    }
+  }
+  auto parallaxConfig = store.opt("parallax");
+  if (!parallaxConfig) return std::unexpected(std::move(parallaxConfig.error()));
+  if (*parallaxConfig) {
+    {
+      auto value = Parallax::create(root, **parallaxConfig);
+      if (!value) return std::unexpected(std::move(value.error()));
+      result.parallax = std::move(*value);
+    }
+  }
+  auto ambientNoisesConfig = store.opt("ambientNoises");
+  if (!ambientNoisesConfig) return std::unexpected(std::move(ambientNoisesConfig.error()));
+  if (*ambientNoisesConfig) {
+    auto description = AmbientNoisesDescription::create(**ambientNoisesConfig);
+    if (!description) return std::unexpected(std::move(description.error()));
+    result.ambientNoises = std::make_shared<AmbientNoisesDescription>(std::move(*description));
+  }
+  auto musicTrackConfig = store.opt("musicTrack");
+  if (!musicTrackConfig) return std::unexpected(std::move(musicTrackConfig.error()));
+  if (*musicTrackConfig) {
+    auto description = AmbientNoisesDescription::create(**musicTrackConfig);
+    if (!description) return std::unexpected(std::move(description.error()));
+    result.musicTrack = std::make_shared<AmbientNoisesDescription>(std::move(*description));
+  }
+  return result;
 }
 
-Json Biome::toJson() const {
-  return JsonObject{{"baseName", baseName},
-      {"description", description},
-      {"mainBlock", mainBlock},
+std::expected<Json, StarException> Biome::toJson() const {
+  auto surface = surfacePlaceables.toJson();
+  if (!surface) return std::unexpected(std::move(surface.error()));
+  auto underground = undergroundPlaceables.toJson();
+  if (!underground) return std::unexpected(std::move(underground.error()));
+  Json parallaxStore;
+  if (parallax) {
+    {
+      auto value = parallax->store();
+      if (!value) return std::unexpected(std::move(value.error()));
+      parallaxStore = std::move(*value);
+    }
+  }
+  return JsonObject{{"baseName", baseName}, {"description", description}, {"mainBlock", mainBlock},
       {"subBlocks", subBlocks.transformed(construct<Json>())},
-      {"ores",
-          ores.transformed([](std::pair<ModId, float> const& p) -> Json {
-            return JsonArray{p.first, p.second};
-          })},
-      {"hueShift", hueShift},
-      {"materialHueShift", materialHueShift},
-      {"surfacePlaceables", surfacePlaceables.toJson()},
-      {"undergroundPlaceables", undergroundPlaceables.toJson()},
-      {"spawnProfile", spawnProfile.toJson()},
-      {"parallax", parallax ? parallax->store() : Json()},
-      {"ambientNoises", ambientNoises ? ambientNoises->toJson() : Json()},
+      {"ores", ores.transformed([](std::pair<ModId, float> const& p) -> Json { return JsonArray{p.first, p.second}; })},
+      {"hueShift", hueShift}, {"materialHueShift", materialHueShift}, {"surfacePlaceables", std::move(*surface)},
+      {"undergroundPlaceables", std::move(*underground)}, {"spawnProfile", spawnProfile.toJson()},
+      {"parallax", std::move(parallaxStore)}, {"ambientNoises", ambientNoises ? ambientNoises->toJson() : Json()},
       {"musicTrack", musicTrack ? musicTrack->toJson() : Json()}};
 }
 

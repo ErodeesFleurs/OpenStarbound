@@ -46,11 +46,11 @@ public:
   std::uint64_t randUInt(std::uint64_t max);
 
   // Random integer from [min, max]
-  std::int64_t randInt(std::int64_t min, std::int64_t max);
-  std::uint64_t randUInt(std::uint64_t min, std::uint64_t max);
+  [[nodiscard]] std::expected<std::int64_t, StarException> randInt(std::int64_t min, std::int64_t max);
+  [[nodiscard]] std::expected<std::uint64_t, StarException> randUInt(std::uint64_t min, std::uint64_t max);
 
-  float randf(float min, float max);
-  double randd(double min, double max);
+  [[nodiscard]] std::expected<float, StarException> randf(float min, float max);
+  [[nodiscard]] std::expected<double, StarException> randd(double min, double max);
 
   bool randb();
 
@@ -68,9 +68,9 @@ public:
 
   // Pick a random value out of a container
   template <typename Container>
-  typename Container::value_type const& randFrom(Container const& container);
+  [[nodiscard]] std::expected<typename Container::value_type const*, StarException> randFrom(Container const& container);
   template <typename Container>
-  typename Container::value_type& randFrom(Container& container);
+  [[nodiscard]] std::expected<typename Container::value_type*, StarException> randFrom(Container& container);
   template <typename Container>
   typename Container::value_type randValueFrom(Container const& container);
   template <typename Container>
@@ -90,12 +90,12 @@ private:
 // An independently owned, synchronized random stream.
 class RandomService {
 public:
-  RandomService();
+  [[nodiscard]] static std::expected<std::unique_ptr<RandomService>, StarException> create();
   explicit RandomService(std::uint64_t seed);
-  void init();
+  [[nodiscard]] std::expected<void, StarException> init();
   void init(std::uint64_t seed);
 
-  void addEntropy();
+  [[nodiscard]] std::expected<void, StarException> addEntropy();
   void addEntropy(std::uint64_t seed);
 
   std::uint32_t randu32();
@@ -106,10 +106,10 @@ public:
   double randd();
   long long randInt(long long max);
   unsigned long long randUInt(unsigned long long max);
-  long long randInt(long long min, long long max);
-  unsigned long long randUInt(unsigned long long min, unsigned long long max);
-  float randf(float min, float max);
-  double randd(double min, double max);
+  [[nodiscard]] std::expected<long long, StarException> randInt(long long min, long long max);
+  [[nodiscard]] std::expected<unsigned long long, StarException> randUInt(unsigned long long min, unsigned long long max);
+  [[nodiscard]] std::expected<float, StarException> randf(float min, float max);
+  [[nodiscard]] std::expected<double, StarException> randd(double min, double max);
   bool randb();
 
   float nrandf(float stddev = 1.0f, float mean = 0.0f);
@@ -121,9 +121,9 @@ public:
   ByteArray randBytes(std::size_t len);
 
   template <typename Container>
-  typename Container::value_type const& randFrom(Container const& container);
+  [[nodiscard]] std::expected<typename Container::value_type const*, StarException> randFrom(Container const& container);
   template <typename Container>
-  typename Container::value_type& randFrom(Container& container);
+  [[nodiscard]] std::expected<typename Container::value_type*, StarException> randFrom(Container& container);
   template <typename Container>
   typename Container::value_type randValueFrom(Container const& container);
   template <typename Container>
@@ -137,43 +137,43 @@ private:
 };
 
 template <typename Container>
-typename Container::value_type const& RandomSource::randFrom(Container const& container) {
+std::expected<typename Container::value_type const*, StarException> RandomSource::randFrom(Container const& container) {
   if (container.empty())
-    throw RandomException("Empty container in randFrom");
+    return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container>
-typename Container::value_type& RandomSource::randFrom(Container& container) {
+std::expected<typename Container::value_type*, StarException> RandomSource::randFrom(Container& container) {
   if (container.empty())
-    throw RandomException("Empty container in randFrom");
+    return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container>
-typename Container::value_type const& RandomService::randFrom(Container const& container) {
+std::expected<typename Container::value_type const*, StarException> RandomService::randFrom(Container const& container) {
   if (container.empty())
-    throw RandomException("Empty container in randFrom");
+    return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container>
-typename Container::value_type& RandomService::randFrom(Container& container) {
+std::expected<typename Container::value_type*, StarException> RandomService::randFrom(Container& container) {
   if (container.empty())
-    throw RandomException("Empty container in randFrom");
+    return std::unexpected(RandomException("Empty container in randFrom"));
 
   auto i = container.begin();
   std::advance(i, randUInt(container.size() - 1));
-  return *i;
+  return std::addressof(*i);
 }
 
 template <typename Container>

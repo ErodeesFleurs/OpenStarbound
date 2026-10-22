@@ -1,6 +1,7 @@
 module;
 import star.json;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.rpc_promise;
@@ -29,11 +30,11 @@ public:
   
   virtual std::shared_ptr<CelestialDatabase> celestialDatabase() = 0;
   
-  virtual void passMessage(Message&& message) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> passMessage(Message&& message) = 0;
   // Sends a universe message to the target universe's main universe script context.
-  virtual RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) = 0;
-  
-  virtual std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<Json>, StarException> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) = 0;
+
+  [[nodiscard]] virtual std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool const& local, JsonArray const& args) = 0;
 };
 
 }

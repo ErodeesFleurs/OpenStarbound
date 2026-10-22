@@ -82,9 +82,12 @@ FireableItem::FireableItem()
     m_stopWhileFiring(false),
     m_mode(FireMode::None) {}
 
-FireableItem::FireableItem(Json const& params) : FireableItem() {
-  setParams(params);
+std::expected<void, StarException> FireableItem::initializeFireable(Json const& params) {
+  auto initialized = setParams(params);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   m_fireableParams = params;
+  return {};
 }
 
 FireableItem::FireableItem(FireableItem const& rhs) : ToolUserItem(rhs), StatusEffectItem(rhs) {
@@ -108,38 +111,69 @@ FireableItem::FireableItem(FireableItem const& rhs) : ToolUserItem(rhs), StatusE
   m_mode = rhs.m_mode;
 }
 
-void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
-  ToolUserItem::init(owner, hand);
-
+std::expected<void, StarException> FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
+  auto initialized = ToolUserItem::init(owner, hand);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
   m_fireWhenReady = false;
   m_startWhenReady = false;
-
-  auto scripts = m_fireableParams.opt("scripts").transform(jsonToStringList);
-  if (entityMode() == EntityMode::Master && scripts) {
+  auto scriptValue = m_fireableParams.opt("scripts");
+  if (!scriptValue)
+    return std::unexpected(std::move(scriptValue.error()));
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master && *scriptValue) {
+    auto scripts = jsonToStringList(**scriptValue);
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
     if (!m_scriptComponent) {
       m_scriptComponent.emplace(owner->root());
-      m_scriptComponent->setScripts(*scripts);
+      auto setScripts = m_scriptComponent->setScripts(std::move(*scripts));
+      if (!setScripts)
+        return std::unexpected(std::move(setScripts.error()));
     }
-    m_scriptComponent->addCallbacks(
-        "config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)));
-    m_scriptComponent->addCallbacks("fireableItem", LuaBindings::makeFireableItemCallbacks(this));
-    m_scriptComponent->addCallbacks("item", LuaBindings::makeItemCallbacks(as<Item>(this)));
-    m_scriptComponent->init(world());
+    auto configCallbacks = LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2));
+    if (!configCallbacks)
+      return std::unexpected(std::move(configCallbacks.error()));
+    auto addedConfig = m_scriptComponent->addCallbacks("config", std::move(*configCallbacks));
+    if (!addedConfig)
+      return std::unexpected(std::move(addedConfig.error()));
+    auto fireableCallbacks = LuaBindings::makeFireableItemCallbacks(this);
+    if (!fireableCallbacks)
+      return std::unexpected(std::move(fireableCallbacks.error()));
+    auto addedFireable = m_scriptComponent->addCallbacks("fireableItem", std::move(*fireableCallbacks));
+    if (!addedFireable)
+      return std::unexpected(std::move(addedFireable.error()));
+    auto itemCallbacks = LuaBindings::makeItemCallbacks(as<Item>(this));
+    if (!itemCallbacks)
+      return std::unexpected(std::move(itemCallbacks.error()));
+    auto addedItem = m_scriptComponent->addCallbacks("item", std::move(*itemCallbacks));
+    if (!addedItem)
+      return std::unexpected(std::move(addedItem.error()));
+    auto itemWorld = world();
+    if (!itemWorld)
+      return std::unexpected(std::move(itemWorld.error()));
+    return m_scriptComponent->init(*itemWorld);
   }
+  return {};
 }
 
-void FireableItem::uninit() {
+std::expected<void, StarException> FireableItem::uninit() {
   if (m_scriptComponent) {
-    m_scriptComponent->uninit();
-    m_scriptComponent->removeCallbacks("config");
-    m_scriptComponent->removeCallbacks("fireableItem");
-    m_scriptComponent->removeCallbacks("item");
+    auto uninitialized = m_scriptComponent->uninit();
+    if (!uninitialized)
+      return std::unexpected(std::move(uninitialized.error()));
+    for (auto const& name : {"config", "fireableItem", "item"}) {
+      auto removed = m_scriptComponent->removeCallbacks(name);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+    }
   }
-
-  ToolUserItem::uninit();
+  return ToolUserItem::uninit();
 }
 
-void FireableItem::fire(FireMode mode, bool, bool edgeTriggered) {
+std::expected<void, StarException> FireableItem::fire(FireMode mode, bool, bool edgeTriggered) {
   m_attemptedFire = true;
   if (ready()) {
     m_inUse = true;
@@ -154,20 +188,29 @@ void FireableItem::fire(FireMode mode, bool, bool edgeTriggered) {
     }
   }
 
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("attemptedFire");
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("attemptedFire");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
+  return {};
 }
 
-void FireableItem::endFire(FireMode mode, bool) {
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("endFire");
-
+std::expected<void, StarException> FireableItem::endFire(FireMode mode, bool) {
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("endFire");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
   m_attemptedFire = false;
   if (m_fireOnRelease && m_timeFiring) {
     m_mode = mode;
-    triggerCooldown();
-    fireTriggered();
+    auto cooldown = triggerCooldown();
+    if (!cooldown)
+      return std::unexpected(std::move(cooldown.error()));
+    return fireTriggered();
   }
+  return {};
 }
 
 FireMode FireableItem::fireMode() const {
@@ -210,25 +253,39 @@ bool FireableItem::stopWhileFiring() const {
   return m_stopWhileFiring;
 }
 
-bool FireableItem::windup() const {
+std::expected<bool, StarException> FireableItem::windup() const {
   if (ready())
     return false;
 
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("triggerWindup");
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("triggerWindup");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
 
   return fireTimer() > cooldownTime();
 }
 
-void FireableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const&) {
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("update", dt, FireModeNames.getRight(fireMode), shifting);
+std::expected<void, StarException> FireableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const&) {
+  if (m_scriptComponent) {
+    if (!FireModeNames)
+      return std::unexpected(FireModeNames.error());
+    auto modeName = FireModeNames->getRight(fireMode);
+    if (!modeName)
+      return std::unexpected(std::move(modeName.error()));
+    auto invoked = m_scriptComponent->invoke("update", dt, **modeName, shifting);
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
 
   if (m_attemptedFire) {
     if (m_startTimingFire) {
       m_timeFiring += dt;
-      if (m_scriptComponent)
-        m_scriptComponent->invoke("continueFire", dt);
+      if (m_scriptComponent) {
+        auto invoked = m_scriptComponent->invoke("continueFire", dt);
+        if (!invoked)
+          return std::unexpected(std::move(invoked.error()));
+      }
     }
   } else {
     m_timeFiring = 0.0f;
@@ -236,7 +293,10 @@ void FireableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
   }
   m_attemptedFire = false;
 
-  if (entityMode() == EntityMode::Master) {
+  auto mode = entityMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  if (*mode == EntityMode::Master) {
     if (fireTimer() > 0.0f) {
       setFireTimer(fireTimer() - dt);
       if (fireTimer() < 0.0f) {
@@ -249,22 +309,31 @@ void FireableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
     }
     if (m_startWhenReady) {
       m_startWhenReady = false;
-      startTriggered();
+      auto started = startTriggered();
+      if (!started)
+        return std::unexpected(std::move(started.error()));
     }
     if (m_fireWhenReady) {
       if (fireTimer() <= cooldownTime()) {
         m_fireWhenReady = false;
-        fireTriggered();
+        auto fired = fireTriggered();
+        if (!fired)
+          return std::unexpected(std::move(fired.error()));
       }
     }
   }
+  return {};
 }
 
-void FireableItem::triggerCooldown() {
+std::expected<void, StarException> FireableItem::triggerCooldown() {
   setFireTimer(cooldownTime());
   m_cooldown = true;
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("triggerCooldown");
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("triggerCooldown");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
+  return {};
 }
 
 bool FireableItem::coolingDown() const {
@@ -291,11 +360,11 @@ Vec2F FireableItem::firePosition() const {
   return Vec2F();
 }
 
-Json FireableItem::fireableParam(String const& key) const {
+std::expected<Json, StarException> FireableItem::fireableParam(String const& key) const {
   return m_fireableParams.get(key);
 }
 
-Json FireableItem::fireableParam(String const& key, Json const& defaultVal) const {
+std::expected<Json, StarException> FireableItem::fireableParam(String const& key, Json const& defaultVal) const {
   return m_fireableParams.get(key, defaultVal);
 }
 
@@ -303,41 +372,85 @@ bool FireableItem::validAimPos(Vec2F const&) {
   return true;
 }
 
-void FireableItem::setParams(Json const& params) {
+std::expected<void, StarException> FireableItem::setParams(Json const& params) {
   if (!m_alreadyInit) {
-    // cannot use setWindupTime or setCooldownTime here, because object is not fully constructed
-    m_windupTime = params.getFloat("windupTime", 0.0f);
-    m_cooldownTime = params.getFloat("cooldown", params.getFloat("fireTime", 0.15f) - m_windupTime);
-    if (params.contains("handPosition")) {
-      m_handPosition = jsonToVec2F(params.get("handPosition"));
+    auto windup = params.getFloat("windupTime", 0.0f);
+    if (!windup)
+      return std::unexpected(std::move(windup.error()));
+    m_windupTime = *windup;
+    auto fireTime = params.getFloat("fireTime", 0.15f);
+    if (!fireTime)
+      return std::unexpected(std::move(fireTime.error()));
+    auto cooldown = params.getFloat("cooldown", *fireTime - m_windupTime);
+    if (!cooldown)
+      return std::unexpected(std::move(cooldown.error()));
+    m_cooldownTime = *cooldown;
+    auto hasPosition = params.contains("handPosition");
+    if (!hasPosition)
+      return std::unexpected(std::move(hasPosition.error()));
+    if (*hasPosition) {
+      auto position = params.get("handPosition").and_then(jsonToVec2F);
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      m_handPosition = *position;
     }
-    m_requireEdgeTrigger = params.getBool("edgeTrigger", false);
-    m_fireOnRelease = params.getBool("fireOnRelease", false);
-    m_walkWhileFiring = params.getBool("walkWhileFiring", false);
-    m_stopWhileFiring = params.getBool("stopWhileFiring", false);
+    auto edge = params.getBool("edgeTrigger", false);
+    if (!edge)
+      return std::unexpected(std::move(edge.error()));
+    m_requireEdgeTrigger = *edge;
+    auto release = params.getBool("fireOnRelease", false);
+    if (!release)
+      return std::unexpected(std::move(release.error()));
+    m_fireOnRelease = *release;
+    auto walk = params.getBool("walkWhileFiring", false);
+    if (!walk)
+      return std::unexpected(std::move(walk.error()));
+    m_walkWhileFiring = *walk;
+    auto stop = params.getBool("stopWhileFiring", false);
+    if (!stop)
+      return std::unexpected(std::move(stop.error()));
+    m_stopWhileFiring = *stop;
     m_alreadyInit = true;
   }
+  return {};
 }
 
-void FireableItem::setFireableParam(String const& key, Json const& value) {
-  m_fireableParams = m_fireableParams.set(key, value);
+std::expected<void, StarException> FireableItem::setFireableParam(String const& key, Json const& value) {
+  auto updated = m_fireableParams.set(key, value);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  m_fireableParams = std::move(*updated);
+  return {};
 }
 
-void FireableItem::startTriggered() {
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("startTriggered");
+std::expected<void, StarException> FireableItem::startTriggered() {
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("startTriggered");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
+  return {};
 }
 
-void FireableItem::fireTriggered() {
-  if (m_scriptComponent)
-    m_scriptComponent->invoke("fireTriggered");
+std::expected<void, StarException> FireableItem::fireTriggered() {
+  if (m_scriptComponent) {
+    auto invoked = m_scriptComponent->invoke("fireTriggered");
+    if (!invoked)
+      return std::unexpected(std::move(invoked.error()));
+  }
+  return {};
 }
 
-Vec2F FireableItem::ownerFirePosition() const {
+std::expected<Vec2F, StarException> FireableItem::ownerFirePosition() const {
   if (!initialized())
-    throw StarException("FireableItem uninitialized in ownerFirePosition");
-
-  return owner()->handPosition(hand(), (this->firePosition() - handPosition()) / TilePixels);
+    return std::unexpected(StarException("FireableItem uninitialized in ownerFirePosition"));
+  auto ownerResult = owner();
+  if (!ownerResult)
+    return std::unexpected(std::move(ownerResult.error()));
+  auto handResult = hand();
+  if (!handResult)
+    return std::unexpected(std::move(handResult.error()));
+  return (*ownerResult)->handPosition(*handResult, (this->firePosition() - handPosition()) / TilePixels);
 }
 
 float FireableItem::windupTime() const {
@@ -348,8 +461,8 @@ void FireableItem::setWindupTime(float time) {
   m_windupTime = time;
 }
 
-List<PersistentStatusEffect> FireableItem::statusEffects() const {
-  return {};
+std::expected<List<PersistentStatusEffect>, StarException> FireableItem::statusEffects() const {
+  return List<PersistentStatusEffect>{};
 }
 
 }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -58,12 +59,12 @@ public:
 
   explicit StackWidget(GuiContext& context) : Widget(context) {}
 
-  void showPage(std::size_t page);
-  void showPage(String const& name);
+  [[nodiscard]] std::expected<void, StarException> showPage(std::size_t page);
+  [[nodiscard]] std::expected<void, StarException> showPage(String const& name);
 
   Either<std::size_t, String> currentPage() const;
 
-  virtual void addChild(String const& name, std::shared_ptr<Widget> member) override;
+  [[nodiscard]] virtual std::expected<void, StarException> addChild(String const& name, std::shared_ptr<Widget> member) override;
 
 private:
   std::shared_ptr<Widget> m_shownPage;

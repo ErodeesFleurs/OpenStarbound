@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -84,19 +85,25 @@ public:
   }
 
   SwingableItem();
-  SwingableItem(Json const& params);
   virtual ~SwingableItem() {}
 
   // These can be different
   // Default implementation is the same though
-  virtual float getAngleDir(float aimAngle, Direction facingDirection);
-  virtual float getAngle(float aimAngle);
-  virtual float getItemAngle(float aimAngle);
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAngleDir(float aimAngle, Direction facingDirection);
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getAngle(float aimAngle);
+  [[nodiscard]]
+  virtual std::expected<float, StarException> getItemAngle(float aimAngle);
   virtual String getArmFrame();
 
-  virtual List<Drawable> drawables() const = 0;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> drawables() const = 0;
 
-  void setParams(Json const& params);
+  [[nodiscard]]
+  std::expected<void, StarException> initializeSwingable(Json const& params);
+  [[nodiscard]]
+  std::expected<void, StarException> setParams(Json const& params);
 
 protected:
   float m_swingStart;

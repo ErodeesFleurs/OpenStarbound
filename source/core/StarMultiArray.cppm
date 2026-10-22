@@ -69,17 +69,17 @@ public:
   template <typename... T>
   Element const& operator()(std::size_t i1, T... rest) const;
 
-  // Throws exception if out of bounds
-  Element& at(IndexArray const& index);
-  Element const& at(IndexArray const& index) const;
+  // Returns an error if out of bounds.
+  [[nodiscard]] std::expected<Element*, StarException> at(IndexArray const& index);
+  [[nodiscard]] std::expected<Element const*, StarException> at(IndexArray const& index) const;
 
   template <typename... T>
-  Element& at(std::size_t i1, T... rest);
+  [[nodiscard]] std::expected<Element*, StarException> at(std::size_t i1, T... rest);
   template <typename... T>
-  Element const& at(std::size_t i1, T... rest) const;
+  [[nodiscard]] std::expected<Element const*, StarException> at(std::size_t i1, T... rest) const;
 
-  // Throws an exception of out of bounds
-  void set(IndexArray const& index, Element element);
+  // Returns an error if out of bounds.
+  [[nodiscard]] std::expected<void, StarException> set(IndexArray const& index, Element element);
 
   // Returns default element if out of bounds.
   Element get(IndexArray const& index, Element def = Element());
@@ -293,45 +293,46 @@ Element const& MultiArray<Element, Rank>::operator()(std::size_t i1, T... rest) 
 }
 
 template <typename Element, std::size_t Rank>
-Element const& MultiArray<Element, Rank>::at(IndexArray const& index) const {
+std::expected<Element const*, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) const {
   for (std::size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
+      return std::unexpected(MultiArrayException(strf("Out of bounds on MultiArray::at({})", index)));
   }
 
-  return m_data[storageIndex(index)];
+  return &m_data[storageIndex(index)];
 }
 
 template <typename Element, std::size_t Rank>
-Element& MultiArray<Element, Rank>::at(IndexArray const& index) {
+std::expected<Element*, StarException> MultiArray<Element, Rank>::at(IndexArray const& index) {
   for (std::size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
+      return std::unexpected(MultiArrayException(strf("Out of bounds on MultiArray::at({})", index)));
   }
 
-  return m_data[storageIndex(index)];
+  return &m_data[storageIndex(index)];
 }
 
 template <typename Element, std::size_t Rank>
 template <typename... T>
-Element& MultiArray<Element, Rank>::at(std::size_t i1, T... rest) {
+std::expected<Element*, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) {
   return at(IndexArray(i1, rest...));
 }
 
 template <typename Element, std::size_t Rank>
 template <typename... T>
-Element const& MultiArray<Element, Rank>::at(std::size_t i1, T... rest) const {
+std::expected<Element const*, StarException> MultiArray<Element, Rank>::at(std::size_t i1, T... rest) const {
   return at(IndexArray(i1, rest...));
 }
 
 template <typename Element, std::size_t Rank>
-void MultiArray<Element, Rank>::set(IndexArray const& index, Element element) {
+std::expected<void, StarException> MultiArray<Element, Rank>::set(IndexArray const& index, Element element) {
   for (std::size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      throw MultiArrayException(strf("Out of bounds on MultiArray::set({})", index));
+      return std::unexpected(MultiArrayException(strf("Out of bounds on MultiArray::set({})", index)));
   }
 
   m_data[storageIndex(index)] = std::move(element);
+  return {};
 }
 
 template <typename Element, std::size_t Rank>

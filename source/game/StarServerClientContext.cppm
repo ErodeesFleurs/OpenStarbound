@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.net_compatibility;
@@ -90,7 +91,7 @@ class Root;
 
 class ServerClientContext {
 public:
-  ServerClientContext(Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+  [[nodiscard]] static std::expected<std::shared_ptr<ServerClientContext>, StarException> create(Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account);
 
   ConnectionId clientId() const;
@@ -104,7 +105,7 @@ public:
   String const& account() const;
 
   // Register additional rpc methods from other server side services.
-  void registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
+  [[nodiscard]] std::expected<void, StarException> registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
 
   // The coordinate for the world which the *player's* ship is currently
   // orbiting, if it is currently orbiting a world.
@@ -135,10 +136,9 @@ public:
   WorldChunks shipChunks() const;
   void updateShipChunks(WorldChunks newShipChunks);
 
-  ByteArray writeInitialState() const;
 
-  void readUpdate(ByteArray data);
-  ByteArray writeUpdate();
+  [[nodiscard]] std::expected<void, StarException> readUpdate(ByteArray data);
+  [[nodiscard]] std::expected<ByteArray, StarException> writeUpdate();
 
   void setPlayerWorld(std::shared_ptr<WorldServerThread> worldThread);
   std::shared_ptr<WorldServerThread> playerWorld() const;
@@ -161,26 +161,29 @@ public:
   WarpToWorld playerReviveWarp() const;
   void setPlayerReviveWarp(WarpToWorld warp);
   
-  void customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise);
-  void customWorldReceived(String name, WorldChunks chunks);
-  void failWorldRequests();
+  [[nodiscard]] std::expected<void, StarException> customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise);
+  [[nodiscard]] std::expected<void, StarException> customWorldReceived(String name, WorldChunks chunks);
+  [[nodiscard]] std::expected<void, StarException> failWorldRequests();
   
   std::optional<WorldChunks> customWorldChunks(String name) const;
   void updateCustomWorldChunks(String name, WorldChunks newWorldChunks);
   void setCustomWorldActive(String name, bool active);
   List<String> customWorlds() const;
   
-  void cleanInactiveCustomWorlds();
+  [[nodiscard]] std::expected<void, StarException> cleanInactiveCustomWorlds();
 
   // Store and load the data for this client that should be persisted on the
   // server, such as celestial log data, admin state, team, and current ship
   // location, and warp history.  Does not store ship data or ship upgrades.
-  void loadServerData(Json const& store);
-  Json storeServerData();
+  [[nodiscard]] std::expected<void, StarException> loadServerData(Json const& store);
+  [[nodiscard]] std::expected<Json, StarException> storeServerData();
 
   std::int64_t creationTime() const;
 
 private:
+  ServerClientContext(Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   struct CustomWorld {
     WorldChunks chunks;
     WorldChunks chunksUpdate;

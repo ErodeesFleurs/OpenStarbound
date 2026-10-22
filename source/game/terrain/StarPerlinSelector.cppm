@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.bi_map;
@@ -14,9 +15,14 @@ export namespace Star {
 struct PerlinSelector : TerrainSelector {
   static char const* const Name;
 
-  PerlinSelector(Json const& config, TerrainSelectorParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<PerlinSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  PerlinSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters, PerlinF value, float x, float y)
+    : TerrainSelector(Name, config, parameters), function(std::move(value)), xInfluence(x), yInfluence(y) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
   PerlinF function;
 
@@ -30,25 +36,45 @@ namespace Star {
 
 char const* const PerlinSelector::Name = "perlin";
 
-PerlinSelector::PerlinSelector(Json const& config, TerrainSelectorParameters const& parameters)
-  : TerrainSelector(Name, config, parameters) {
+std::expected<std::shared_ptr<PerlinSelector>, StarException> PerlinSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
   RandomSource random(parameters.seed);
-
-  auto type = PerlinTypeNames.getLeft(config.getString("function"));
+  auto functionName = config.getString("function");
+  if (!functionName)
+    return std::unexpected(std::move(functionName.error()));
+  if (!PerlinTypeNames)
+    return std::unexpected(PerlinTypeNames.error());
+  auto type = PerlinTypeNames->getLeft(*functionName);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
   auto octaves = config.getFloat("octaves");
+  if (!octaves)
+    return std::unexpected(std::move(octaves.error()));
   auto freq = config.getFloat("freq");
+  if (!freq)
+    return std::unexpected(std::move(freq.error()));
   auto amp = config.getFloat("amp");
+  if (!amp)
+    return std::unexpected(std::move(amp.error()));
   auto bias = config.getFloat("bias", 0.0f);
+  if (!bias)
+    return std::unexpected(std::move(bias.error()));
   auto alpha = config.getFloat("alpha", 2.0f);
+  if (!alpha)
+    return std::unexpected(std::move(alpha.error()));
   auto beta = config.getFloat("beta", 2.0f);
-
-  function = PerlinF(type, octaves, freq, amp, bias, alpha, beta, random.randu64());
-
-  xInfluence = config.getFloat("xInfluence", 1.0f);
-  yInfluence = config.getFloat("yInfluence", 1.0f);
+  if (!beta)
+    return std::unexpected(std::move(beta.error()));
+  PerlinF function(**type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
+  auto xInfluence = config.getFloat("xInfluence", 1.0f);
+  if (!xInfluence)
+    return std::unexpected(std::move(xInfluence.error()));
+  auto yInfluence = config.getFloat("yInfluence", 1.0f);
+  if (!yInfluence)
+    return std::unexpected(std::move(yInfluence.error()));
+  return std::make_shared<PerlinSelector>(ConstructionKey{}, config, parameters, std::move(function), *xInfluence, *yInfluence);
 }
 
-float PerlinSelector::get(int x, int y) const {
+std::expected<float, StarException> PerlinSelector::get(int x, int y) const {
   return function.get(x * xInfluence, y * yInfluence);
 }
 

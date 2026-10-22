@@ -1,5 +1,6 @@
 import star.world_lua_bindings;
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -202,75 +203,127 @@ import star.status_controller_lua_bindings;
 
 namespace Star {
 
-ScriptPane::ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId) : BaseScriptPane(guiContext, config) {
-  auto& root = context()->root();
-  auto assets = root.assets();
+ScriptPane::ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, EntityId sourceEntityId)
+  : BaseScriptPane(guiContext), m_client(std::move(client)), m_sourceEntityId(sourceEntityId) {}
 
-  m_client = std::move(client);
-  m_sourceEntityId = sourceEntityId;
-
-  m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get()));
-  m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-  m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(context()->root(), m_client.get()));
+std::expected<std::shared_ptr<ScriptPane>, StarException> ScriptPane::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId) {
+  auto pane = std::shared_ptr<ScriptPane>(new ScriptPane(guiContext, std::move(client), sourceEntityId));
+  auto initialized = pane->init(std::move(config));
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto player = LuaBindings::makePlayerCallbacks(guiContext.root(), pane->m_client->mainPlayer().get());
+  if (!player)
+    return std::unexpected(std::move(player.error()));
+  auto playerAdded = pane->m_script.addCallbacks("player", std::move(*player));
+  if (!playerAdded)
+    return std::unexpected(std::move(playerAdded.error()));
+  auto status = LuaBindings::makeStatusControllerCallbacks(pane->m_client->mainPlayer()->statusController());
+  if (!status)
+    return std::unexpected(std::move(status.error()));
+  auto statusAdded = pane->m_script.addCallbacks("status", std::move(*status));
+  if (!statusAdded)
+    return std::unexpected(std::move(statusAdded.error()));
+  auto celestial = LuaBindings::makeCelestialCallbacks(guiContext.root(), pane->m_client.get());
+  if (!celestial)
+    return std::unexpected(std::move(celestial.error()));
+  auto celestialAdded = pane->m_script.addCallbacks("celestial", std::move(*celestial));
+  if (!celestialAdded)
+    return std::unexpected(std::move(celestialAdded.error()));
+  return pane;
 }
 
-void ScriptPane::displayed() {
+std::expected<void, StarException> ScriptPane::displayed() {
   auto world = m_client->worldClient();
   if (world && world->inWorld()) {
-    m_script.setLuaRoot(world->luaRoot());
-    m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(context()->root(), world.get()));
+    auto configured = m_script.setLuaRoot(world->luaRoot());
+    if (!configured)
+      return std::unexpected(std::move(configured.error()));
+    auto callbacks = LuaBindings::makeWorldCallbacks(context()->root(), world.get());
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    auto added = m_script.addCallbacks("world", std::move(*callbacks));
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
-  BaseScriptPane::displayed();
+  return BaseScriptPane::displayed();
 }
 
-void ScriptPane::dismissed() {
-  BaseScriptPane::dismissed();
-  m_script.removeCallbacks("world");
+std::expected<void, StarException> ScriptPane::dismissed() {
+  auto dismissed = BaseScriptPane::dismissed();
+  auto removed = m_script.removeCallbacks("world");
+  if (!dismissed)
+    return std::unexpected(std::move(dismissed.error()));
+  if (!removed)
+    return std::unexpected(std::move(removed.error()));
+  return {};
 }
 
-void ScriptPane::tick(float dt) {
-  if (m_sourceEntityId != NullEntityId && !m_client->worldClient()->playerCanReachEntity(m_sourceEntityId))
-    dismiss();
-
-  BaseScriptPane::tick(dt);
+std::expected<void, StarException> ScriptPane::tick(float dt) {
+  if (m_sourceEntityId != NullEntityId) {
+    auto reachable = m_client->worldClient()->playerCanReachEntity(m_sourceEntityId);
+    if (!reachable)
+      return std::unexpected(std::move(reachable.error()));
+    if (!*reachable)
+      dismiss();
+  }
+  return BaseScriptPane::tick(dt);
 }
 
-std::shared_ptr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
+std::expected<std::shared_ptr<Pane>, StarException> ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
-  if (result && !result.value_or(Json{}).isNull()) {
-    if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(*context(), result->toString());
-    } else {
-      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(*context());
-      m_reader->construct(*result, tooltip.get());
-      return tooltip;
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  if (*result && !(**result).isNull()) {
+    auto const& value = **result;
+    if (value.type() == Json::Type::String) {
+      auto text = value.toString();
+      if (!text)
+        return std::unexpected(std::move(text.error()));
+      return SimpleTooltipBuilder::buildTooltip(*context(), *text);
     }
-  } else {
-    std::shared_ptr<Item> item;
-    if (auto child = getChildAt(screenPosition)) {
-      if (auto itemSlot = as<ItemSlotWidget>(child))
-        item = itemSlot->item();
-      if (auto itemGrid = as<ItemGridWidget>(child))
-        item = itemGrid->itemAt(screenPosition);
-    }
-    if (item)
-      return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_client->mainPlayer());
-    return {};
+    auto tooltip = Pane::create(*context());
+    if (!tooltip)
+      return std::unexpected(std::move(tooltip.error()));
+    auto constructed = m_reader->construct(value, tooltip->get());
+    if (!constructed)
+      return std::unexpected(std::move(constructed.error()));
+    return std::move(*tooltip);
   }
+  std::shared_ptr<Item> item;
+  if (auto child = getChildAt(screenPosition)) {
+    if (auto itemSlot = as<ItemSlotWidget>(child))
+      item = itemSlot->item();
+    if (auto itemGrid = as<ItemGridWidget>(child)) {
+      auto selected = itemGrid->itemAt(screenPosition);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
+      item = std::move(*selected);
+    }
+  }
+  if (item)
+    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_client->mainPlayer());
+  return std::shared_ptr<Pane>{};
 }
 
-LuaCallbacks ScriptPane::makePaneCallbacks() {
-  LuaCallbacks callbacks = BaseScriptPane::makePaneCallbacks();
-  callbacks.registerCallback("sourceEntity", [this]() { return m_sourceEntityId; });
-  return callbacks;
+std::expected<LuaCallbacks, StarException> ScriptPane::makePaneCallbacks() {
+  auto callbacks = BaseScriptPane::makePaneCallbacks();
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  auto registered = callbacks->registerCallback("sourceEntity", [this]() { return m_sourceEntityId; });
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  return std::move(*callbacks);
 }
 
-bool ScriptPane::openWithInventory() const {
+std::expected<bool, StarException> ScriptPane::openWithInventory() const {
   return m_config.getBool("openWithInventory", false);
 }
 
-bool ScriptPane::closeWithInventory() const {
-  return m_config.getBool("closeWithInventory", openWithInventory());
+std::expected<bool, StarException> ScriptPane::closeWithInventory() const {
+  auto open = openWithInventory();
+  if (!open)
+    return std::unexpected(std::move(open.error()));
+  return m_config.getBool("closeWithInventory", *open);
 }
 
 EntityId ScriptPane::sourceEntityId() const {

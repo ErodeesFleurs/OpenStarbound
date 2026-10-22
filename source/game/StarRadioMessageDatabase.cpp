@@ -27,80 +27,149 @@ import star.radio_message_database;
 
 namespace Star {
 
-extern EnumMap<RadioMessageType> const RadioMessageTypeNames{
+extern std::expected<EnumMap<RadioMessageType>, StarException> const RadioMessageTypeNames = EnumMap<RadioMessageType>::create({
     {RadioMessageType::Generic, "generic"},
     {RadioMessageType::Mission, "mission"},
     {RadioMessageType::Quest, "quest"},
     {RadioMessageType::Tutorial, "tutorial"},
-};
+});
 
-RadioMessageDatabase::RadioMessageDatabase(Root& root) : m_root(root) {
-  auto assets = m_root.assets();
-  auto& files = assets->scanExtension("radiomessages");
-  for (auto& file : files) {
-    try {
-      Json messages = assets->json(file);
-      for (auto pair : messages.iterateObject()) {
-        if (m_radioMessages.contains(pair.first))
-          throw RadioMessageDatabaseException(strf("Duplicate radiomessage {} in file {}", pair.first, file));
+RadioMessageDatabase::RadioMessageDatabase(Root& root) : m_root(root) {}
 
-        m_radioMessages[pair.first] = createRadioMessage(pair.second, pair.first);
+std::expected<std::shared_ptr<RadioMessageDatabase>, StarException> RadioMessageDatabase::create(Root& root) {
+  auto result = std::shared_ptr<RadioMessageDatabase>(new RadioMessageDatabase(root));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("radiomessages");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto loaded = [&]() -> std::expected<void, StarException> {
+      auto messages = (*assets)->json(file);
+      if (!messages)
+        return std::unexpected(std::move(messages.error()));
+      auto entries = messages->iterateObject();
+      if (!entries)
+        return std::unexpected(std::move(entries.error()));
+      for (auto const& pair : *entries) {
+        if (result->m_radioMessages.contains(pair.first))
+          return std::unexpected(RadioMessageDatabaseException(strf("Duplicate radiomessage {} in file {}", pair.first, file)));
+        auto message = result->createRadioMessage(pair.second, pair.first);
+        if (!message)
+          return std::unexpected(std::move(message.error()));
+        result->m_radioMessages[pair.first] = std::move(*message);
       }
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw RadioMessageDatabaseException(strf("Error loading radiomessages file {}", file), e);
+      return {};
+    }();
+    if (!loaded)
+      return std::unexpected(RadioMessageDatabaseException(strf("Error loading radiomessages file {}", file), loaded.error()));
+  }
+  return result;
+}
+
+std::expected<RadioMessage, StarException> RadioMessageDatabase::radioMessage(String const& messageName) const {
+  if (auto message = m_radioMessages.ptr(messageName))
+    return *message;
+  return std::unexpected(RadioMessageDatabaseException(strf("Unknown radio message {}", messageName)));
+}
+
+std::expected<RadioMessage, StarException> RadioMessageDatabase::createRadioMessage(Json const& config, std::optional<String> const& messageId) const {
+  if (config.isType(Json::Type::String)) {
+    auto name = config.toString();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return radioMessage(*name);
+  }
+  if (!config.isType(Json::Type::Object))
+    return std::unexpected(RadioMessageDatabaseException("Invalid radio message specification; expected message name or configuration."));
+  if (!RadioMessageTypeNames)
+    return std::unexpected(RadioMessageTypeNames.error());
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto defaults = (*assets)->json("/radiomessages.config:messageDefaults");
+  if (!defaults)
+    return std::unexpected(std::move(defaults.error()));
+  auto mergedConfig = jsonMerge(*defaults, config);
+  RadioMessage message;
+  auto configuredId = mergedConfig.getString("messageId", "");
+  if (!configuredId)
+    return std::unexpected(std::move(configuredId.error()));
+  message.messageId = messageId.value_or(*configuredId);
+  if (message.messageId.empty())
+    return std::unexpected(RadioMessageDatabaseException("Custom radio messages must specify a messageId!"));
+  auto typeName = mergedConfig.getString("type");
+  if (!typeName)
+    return std::unexpected(std::move(typeName.error()));
+  auto type = RadioMessageTypeNames->leftPtr(*typeName);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  if (!*type)
+    return std::unexpected(RadioMessageDatabaseException(strf("Unknown radio message type '{}'", *typeName)));
+  message.type = **type;
+  // Mission messages may repeat when the mission is replayed.
+  auto unique = message.type == RadioMessageType::Mission ? config.getBool("unique", false) : mergedConfig.getBool("unique");
+  if (!unique)
+    return std::unexpected(std::move(unique.error()));
+  message.unique = *unique;
+  auto important = mergedConfig.getBool("important");
+  if (!important)
+    return std::unexpected(std::move(important.error()));
+  message.important = *important;
+  auto text = mergedConfig.getString("text");
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  message.text = std::move(*text);
+  auto senderName = mergedConfig.getString("senderName");
+  if (!senderName)
+    return std::unexpected(std::move(senderName.error()));
+  message.senderName = std::move(*senderName);
+  auto portraitImage = mergedConfig.getString("portraitImage");
+  if (!portraitImage)
+    return std::unexpected(std::move(portraitImage.error()));
+  message.portraitImage = std::move(*portraitImage);
+  auto portraitFrames = mergedConfig.getInt("portraitFrames");
+  if (!portraitFrames)
+    return std::unexpected(std::move(portraitFrames.error()));
+  message.portraitFrames = *portraitFrames;
+  auto portraitSpeed = mergedConfig.getFloat("portraitSpeed");
+  if (!portraitSpeed)
+    return std::unexpected(std::move(portraitSpeed.error()));
+  message.portraitSpeed = *portraitSpeed;
+  auto textSpeed = mergedConfig.getFloat("textSpeed");
+  if (!textSpeed)
+    return std::unexpected(std::move(textSpeed.error()));
+  message.textSpeed = *textSpeed;
+  auto persistTime = mergedConfig.getFloat("persistTime");
+  if (!persistTime)
+    return std::unexpected(std::move(persistTime.error()));
+  message.persistTime = *persistTime;
+  auto chatterSound = mergedConfig.getString("chatterSound");
+  if (!chatterSound)
+    return std::unexpected(std::move(chatterSound.error()));
+  message.chatterSound = std::move(*chatterSound);
+  auto withoutAi = config.eraseKey("speciesAiMessage");
+  if (!withoutAi)
+    return std::unexpected(std::move(withoutAi.error()));
+  auto merger = withoutAi->eraseKey("speciesMessage");
+  if (!merger)
+    return std::unexpected(std::move(merger.error()));
+  for (auto const& key : {"speciesAiMessage", "speciesMessage"}) {
+    auto variants = mergedConfig.get(key, JsonObject()).and_then([](Json const& value) { return value.iterateObject(); });
+    if (!variants)
+      return std::unexpected(std::move(variants.error()));
+    for (auto const& pair : *variants) {
+      auto nested = createRadioMessage(jsonMerge(*merger, pair.second), messageId);
+      if (!nested)
+        return std::unexpected(std::move(nested.error()));
+      message.speciesMessage[pair.first] = std::move(*nested);
     }
   }
-}
-
-RadioMessage RadioMessageDatabase::radioMessage(String const& messageName) const {
-  if (auto message = m_radioMessages.maybe(messageName))
-    return takeOptional(message);
-  throw RadioMessageDatabaseException(strf("Unknown radio message {}", messageName));
-}
-
-RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  std::optional<String> const& messageId) const {
-  if (config.isType(Json::Type::String)) {
-    return radioMessage(config.toString());
-  } else if (config.isType(Json::Type::Object)) {
-    Json const& defaults = m_root.assets()->json("/radiomessages.config:messageDefaults");
-    auto mergedConfig = jsonMerge(defaults, config);
-
-    RadioMessage message;
-    message.messageId = messageId.value_or(mergedConfig.getString("messageId", ""));
-    if (message.messageId.empty())
-      throw RadioMessageDatabaseException("Custom radio messages must specify a messageId!");
-    message.type = RadioMessageTypeNames.getLeft(mergedConfig.getString("type"));
-    // mission messages default to non unique because they are already restricted to play
-    // once per session (cleared on player init) but should repeat when the mission is replayed
-    if (message.type == RadioMessageType::Mission)
-      message.unique = config.getBool("unique", false);
-    else
-      message.unique = mergedConfig.getBool("unique");
-    message.important = mergedConfig.getBool("important");
-    message.text = mergedConfig.getString("text");
-    message.senderName = mergedConfig.getString("senderName");
-    message.portraitImage = mergedConfig.getString("portraitImage");
-    message.portraitFrames = mergedConfig.getInt("portraitFrames");
-    message.portraitSpeed = mergedConfig.getFloat("portraitSpeed");
-    message.textSpeed = mergedConfig.getFloat("textSpeed");
-    message.persistTime = mergedConfig.getFloat("persistTime");
-    message.chatterSound = mergedConfig.getString("chatterSound");
-
-    auto merger = config.eraseKey("speciesAiMessage").eraseKey("speciesMessage");
-    for (auto p : mergedConfig.getObject("speciesAiMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
-    for (auto p : mergedConfig.getObject("speciesMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
-
-    if (message.portraitFrames <= 0)
-      throw RadioMessageDatabaseException(
-          strf("Invalid portraitFrames {} in radio message config!", message.portraitFrames));
-
-    return message;
-  } else {
-    throw RadioMessageDatabaseException("Invalid radio message specification; expected message name or configuration.");
-  }
+  if (message.portraitFrames <= 0)
+    return std::unexpected(RadioMessageDatabaseException(strf("Invalid portraitFrames {} in radio message config!", message.portraitFrames)));
+  return message;
 }
 
 }

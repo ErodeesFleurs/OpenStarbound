@@ -22,7 +22,7 @@ enum class LogLevel {
   Warn,
   Error
 };
-extern EnumMap<LogLevel> const LogLevelNames;
+extern std::expected<EnumMap<LogLevel>, StarException> const LogLevelNames;
 
 // A sink for Logger messages.
 class LogSink {
@@ -30,7 +30,7 @@ public:
   LogSink();
   virtual ~LogSink();
 
-  virtual void log(char const* msg, LogLevel level) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> log(char const* msg, LogLevel level) = 0;
 
   void setLevel(LogLevel level);
   LogLevel level();
@@ -41,7 +41,7 @@ private:
 
 class StdoutLogSink : public LogSink {
 public:
-  virtual void log(char const* msg, LogLevel level);
+  [[nodiscard]] std::expected<void, StarException> log(char const* msg, LogLevel level) override;
 
 private:
   Mutex m_logMutex;
@@ -49,11 +49,13 @@ private:
 
 class FileLogSink : public LogSink {
 public:
-  FileLogSink(String const& filename, LogLevel level, bool truncate);
+  [[nodiscard]] static std::expected<std::shared_ptr<FileLogSink>, StarException> create(
+      String const& filename, LogLevel level, bool truncate);
 
-  virtual void log(char const* msg, LogLevel level);
+  [[nodiscard]] std::expected<void, StarException> log(char const* msg, LogLevel level) override;
 
 private:
+  FileLogSink() = default;
   std::shared_ptr<File> m_output;
   Mutex m_logMutex;
 };
@@ -66,28 +68,18 @@ public:
   void removeSink(std::shared_ptr<LogSink> s);
   std::shared_ptr<LogSink> stdoutSink();
   void removeStdoutSink();
-  void log(LogLevel level, char const* msg);
+  [[nodiscard]] std::expected<void, StarException> log(LogLevel level, char const* msg);
 
   template <typename... Args>
-  void logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  void logf(LogLevel level, S const& msg, Args const&... args);
+  [[nodiscard]] std::expected<void, StarException> logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
   template <typename... Args>
-  void debug(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  void debug(S const& msg, Args const&... args);
+  [[nodiscard]] std::expected<void, StarException> debug(std::format_string<Args...> msg, Args const&... args);
   template <typename... Args>
-  void info(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  void info(S const& msg, Args const&... args);
+  [[nodiscard]] std::expected<void, StarException> info(std::format_string<Args...> msg, Args const&... args);
   template <typename... Args>
-  void warn(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  void warn(S const& msg, Args const&... args);
+  [[nodiscard]] std::expected<void, StarException> warn(std::format_string<Args...> msg, Args const&... args);
   template <typename... Args>
-  void error(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  void error(S const& msg, Args const&... args);
+  [[nodiscard]] std::expected<void, StarException> error(std::format_string<Args...> msg, Args const&... args);
   bool loggable(LogLevel level);
 
 private:
@@ -106,19 +98,9 @@ public:
     auto message = strfChecked(format, args...);
     log(LogLevel::Debug, message.c_str());
   }
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  static void debug(S const& format, Args const&... args) {
-    auto message = strf(format, args...);
-    log(LogLevel::Debug, message.c_str());
-  }
   template <typename... Args>
   static void info(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Info, message.c_str());
-  }
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  static void info(S const& format, Args const&... args) {
-    auto message = strf(format, args...);
     log(LogLevel::Info, message.c_str());
   }
   template <typename... Args>
@@ -126,19 +108,9 @@ public:
     auto message = strfChecked(format, args...);
     log(LogLevel::Warn, message.c_str());
   }
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  static void warn(S const& format, Args const&... args) {
-    auto message = strf(format, args...);
-    log(LogLevel::Warn, message.c_str());
-  }
   template <typename... Args>
   static void error(std::format_string<Args...> format, Args const&... args) {
     auto message = strfChecked(format, args...);
-    log(LogLevel::Error, message.c_str());
-  }
-  template <typename S, typename... Args> requires RuntimeFormatString<S>
-  static void error(S const& format, Args const&... args) {
-    auto message = strf(format, args...);
     log(LogLevel::Error, message.c_str());
   }
 };
@@ -208,74 +180,32 @@ private:
 };
 
 template <typename... Args>
-void Logger::logf(LogLevel level, std::format_string<Args...> msg, Args const&... args) {
+[[nodiscard]] std::expected<void, StarException> Logger::logf(LogLevel level, std::format_string<Args...> msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strfChecked(msg, args...);
-    MutexLocker locker(s_mutex);
-    for (auto const& l : s_sinks) {
-      if (l->level() <= level) {
-        l->log(output.c_str(), level);
-      }
-    }
+    return log(level, output.c_str());
   }
-}
-
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-void Logger::logf(LogLevel level, S const& msg, Args const&... args) {
-  if (loggable(level)) {
-    std::string output = strf(msg, args...);
-    MutexLocker locker(s_mutex);
-    for (auto const& l : s_sinks) {
-      if (l->level() <= level) {
-        l->log(output.c_str(), level);
-      }
-    }
-  }
+  return {};
 }
 
 template <typename... Args>
-void Logger::debug(std::format_string<Args...> msg, Args const&... args) {
-  logf(LogLevel::Debug, msg, args...);
-}
-
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-void Logger::debug(S const& msg, Args const&... args) {
-  logf(LogLevel::Debug, msg, args...);
+[[nodiscard]] std::expected<void, StarException> Logger::debug(std::format_string<Args...> msg, Args const&... args) {
+  return logf(LogLevel::Debug, msg, args...);
 }
 
 template <typename... Args>
-void Logger::info(std::format_string<Args...> msg, Args const&... args) {
-  logf(LogLevel::Info, msg, args...);
-}
-
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-void Logger::info(S const& msg, Args const&... args) {
-  logf(LogLevel::Info, msg, args...);
+[[nodiscard]] std::expected<void, StarException> Logger::info(std::format_string<Args...> msg, Args const&... args) {
+  return logf(LogLevel::Info, msg, args...);
 }
 
 template <typename... Args>
-void Logger::warn(std::format_string<Args...> msg, Args const&... args) {
-  logf(LogLevel::Warn, msg, args...);
-}
-
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-void Logger::warn(S const& msg, Args const&... args) {
-  logf(LogLevel::Warn, msg, args...);
+[[nodiscard]] std::expected<void, StarException> Logger::warn(std::format_string<Args...> msg, Args const&... args) {
+  return logf(LogLevel::Warn, msg, args...);
 }
 
 template <typename... Args>
-void Logger::error(std::format_string<Args...> msg, Args const&... args) {
-  logf(LogLevel::Error, msg, args...);
-}
-
-template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-void Logger::error(S const& msg, Args const&... args) {
-  logf(LogLevel::Error, msg, args...);
+[[nodiscard]] std::expected<void, StarException> Logger::error(std::format_string<Args...> msg, Args const&... args) {
+  return logf(LogLevel::Error, msg, args...);
 }
 
 template <typename T>

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -81,18 +82,20 @@ public:
     return Star::typeName<ContainerPane>();
   }
 
-  ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  [[nodiscard]] static std::expected<std::shared_ptr<ContainerPane>, StarException> create(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
 
-  void displayed() override;
-  void dismissed() override;
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
 
-  bool giveContainerResult(ContainerResult result);
+  [[nodiscard]] std::expected<bool, StarException> giveContainerResult(ContainerResult result);
 
 protected:
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
 private:
+  explicit ContainerPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
   enum class ExpectingSwap {
     None,
     Inventory,
@@ -100,12 +103,12 @@ private:
     SwapSlotStack
   };
 
-  void swapSlot(ItemGridWidget* grid);
-  void startCrafting();
-  void stopCrafting();
-  void toggleCrafting();
-  void clear();
-  void burn();
+  [[nodiscard]] std::expected<void, StarException> swapSlot(ItemGridWidget* grid);
+  [[nodiscard]] std::expected<void, StarException> startCrafting();
+  [[nodiscard]] std::expected<void, StarException> stopCrafting();
+  [[nodiscard]] std::expected<void, StarException> toggleCrafting();
+  [[nodiscard]] std::expected<void, StarException> clear();
+  [[nodiscard]] std::expected<void, StarException> burn();
 
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<Player> m_player;

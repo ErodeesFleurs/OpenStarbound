@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 import star.ordered_map;
 import star.bi_map;
@@ -47,12 +48,13 @@ struct Dance {
 
 class DanceDatabase {
 public:
-  DanceDatabase(std::shared_ptr<Assets const> assets, Logger& logger);
+  [[nodiscard]] static std::expected<std::shared_ptr<DanceDatabase>, StarException> create(std::shared_ptr<Assets const> assets, Logger& logger);
 
-  std::shared_ptr<Dance> getDance(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Dance>, StarException> getDance(String const& name) const;
 
 private:
-  static std::shared_ptr<Dance> readDance(Assets const& assets, String const& path);
+  explicit DanceDatabase(Logger& logger) : m_logger(logger) {}
+  [[nodiscard]] static std::expected<std::shared_ptr<Dance>, StarException> readDance(Assets const& assets, String const& path);
 
   Logger& m_logger;
   StringMap<std::shared_ptr<Dance>> m_dances;

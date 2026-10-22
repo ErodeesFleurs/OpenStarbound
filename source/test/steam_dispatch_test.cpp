@@ -2,6 +2,7 @@
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
 import star.steam_dispatch;
+import star.format;
 
 import std;
 
@@ -61,23 +62,25 @@ thread_local ManualApi* api = nullptr;
 
 struct StatsObserver {
   std::vector<uint64> received;
-  std::function<void()> action;
-  void receive(UserStatsReceived_t* event) {
+  std::function<std::expected<void, Star::StarException>()> action;
+  [[nodiscard]] std::expected<void, Star::StarException> receive(UserStatsReceived_t* event) {
     uint64 game = event->m_nGameID;
     received.push_back(game);
     if (action)
-      action();
+      return action();
+    return {};
   }
 };
 
 struct ResultObserver {
   std::vector<std::pair<PublishedFileId_t, bool>> received;
-  std::function<void(PublishedFileId_t)> action;
-  void receive(CreateItemResult_t* event, bool failed) {
+  std::function<std::expected<void, Star::StarException>(PublishedFileId_t)> action;
+  [[nodiscard]] std::expected<void, Star::StarException> receive(CreateItemResult_t* event, bool failed) {
     PublishedFileId_t file = event->m_nPublishedFileId;
     received.emplace_back(file, failed);
     if (action)
-      action(file);
+      return action(file);
+    return {};
   }
 };
 
@@ -85,7 +88,7 @@ class SteamDispatchTest : public testing::Test {
 protected:
   void SetUp() override {
     api = &runtime;
-    dispatch.initialize();
+    ASSERT_TRUE(dispatch.initialize());
   }
   void TearDown() override {
     EXPECT_FALSE(runtime.outstanding);
@@ -139,28 +142,34 @@ TEST_F(SteamDispatchTest, CancellationDuringDeliveryPreservesRemainingCallbacks)
   auto surviving = std::make_unique<Callback>(dispatch, &survivor, &StatsObserver::receive);
   auto removed = std::make_unique<Callback>(dispatch, &victim, &StatsObserver::receive);
   auto current = std::make_unique<Callback>(dispatch, &controller, &StatsObserver::receive);
-  controller.action = [&] {
+  controller.action = [&]() -> std::expected<void, Star::StarException> {
     current.reset();
     removed.reset();
-    dispatch.runCallbacks();
+    return dispatch.runCallbacks();
   };
   runtime.stats(11);
   runtime.stats(12);
-  dispatch.runCallbacks();
+  ASSERT_TRUE(dispatch.runCallbacks());
   EXPECT_EQ(controller.received, (std::vector<uint64>{11}));
   EXPECT_EQ(victim.received, (std::vector<uint64>{}));
   EXPECT_EQ(survivor.received, (std::vector<uint64>{11, 12}));
 }
 
-TEST_F(SteamDispatchTest, ExceptionDoesNotPoisonNextPumpOrRetainCallbackStorage) {
+TEST_F(SteamDispatchTest, ErrorDoesNotPoisonNextPumpOrRetainCallbackStorage) {
   StatsObserver observer;
   Star::SteamCallback<StatsObserver, UserStatsReceived_t> callback(dispatch, &observer, &StatsObserver::receive);
-  observer.action = [] { throw std::runtime_error("handler failure"); };
+  observer.action = []() -> std::expected<void, Star::StarException> {
+    return std::unexpected(Star::StarException("handler failure"));
+  };
   runtime.stats(13);
   runtime.stats(14);
-  EXPECT_THROW(dispatch.runCallbacks(), std::runtime_error);
+  auto failed = dispatch.runCallbacks();
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().is<Star::StarException>());
+  EXPECT_NE(std::string_view(failed.error().what()).find("handler failure"), std::string_view::npos);
+  EXPECT_FALSE(runtime.outstanding);
   observer.action = {};
-  dispatch.runCallbacks();
+  ASSERT_TRUE(dispatch.runCallbacks());
   EXPECT_EQ(observer.received, (std::vector<uint64>{13, 14}));
 }
 
@@ -168,9 +177,10 @@ TEST_F(SteamDispatchTest, OneShotResultsCanRearmAndPropagateIoFailure) {
   using Result = Star::SteamCallResult<ResultObserver, CreateItemResult_t>;
   ResultObserver observer;
   auto current = std::make_unique<Result>(dispatch, 1, &observer, &ResultObserver::receive);
-  observer.action = [&](PublishedFileId_t file) {
+  observer.action = [&](PublishedFileId_t file) -> std::expected<void, Star::StarException> {
     if (file == 101)
       current = std::make_unique<Result>(dispatch, 2, &observer, &ResultObserver::receive);
+    return {};
   };
   auto abandonedObserver = std::make_unique<ResultObserver>();
   auto abandoned = std::make_unique<Result>(dispatch, 3, abandonedObserver.get(), &ResultObserver::receive);
@@ -183,11 +193,11 @@ TEST_F(SteamDispatchTest, OneShotResultsCanRearmAndPropagateIoFailure) {
   runtime.complete(2);
   runtime.complete(1);
   runtime.complete(3);
-  dispatch.runCallbacks();
+  ASSERT_TRUE(dispatch.runCallbacks());
   EXPECT_EQ(observer.received, (std::vector<std::pair<PublishedFileId_t, bool>>{{101, false}, {202, true}}));
 }
 
-TEST_F(SteamDispatchTest, IncorrectPayloadSizesAreIgnoredWithoutLosingValidResults) {
+TEST_F(SteamDispatchTest, IncorrectPayloadSizesReportErrorsWithoutLosingValidResults) {
   StatsObserver stats;
   ResultObserver result;
   Star::SteamCallback<StatsObserver, UserStatsReceived_t> callback(dispatch, &stats, &StatsObserver::receive);
@@ -198,7 +208,15 @@ TEST_F(SteamDispatchTest, IncorrectPayloadSizesAreIgnoredWithoutLosingValidResul
   runtime.result(4, 404, false);
   runtime.complete(4, sizeof(CreateItemResult_t) - 1);
   runtime.complete(4);
-  dispatch.runCallbacks();
+  auto invalidStats = dispatch.runCallbacks();
+  ASSERT_FALSE(invalidStats);
+  EXPECT_TRUE(invalidStats.error().is<Star::StarException>());
+  EXPECT_FALSE(runtime.outstanding);
+  auto invalidResult = dispatch.runCallbacks();
+  ASSERT_FALSE(invalidResult);
+  EXPECT_TRUE(invalidResult.error().is<Star::StarException>());
+  EXPECT_FALSE(runtime.outstanding);
+  ASSERT_TRUE(dispatch.runCallbacks());
   EXPECT_EQ(stats.received, (std::vector<uint64>{16}));
   EXPECT_EQ(result.received, (std::vector<std::pair<PublishedFileId_t, bool>>{{404, false}}));
 }

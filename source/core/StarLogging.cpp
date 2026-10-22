@@ -19,12 +19,12 @@ import star.poly;
 import star.algorithm;
 namespace Star {
 
-extern EnumMap<LogLevel> const LogLevelNames{
+extern std::expected<EnumMap<LogLevel>, StarException> const LogLevelNames = EnumMap<LogLevel>::create({
   {LogLevel::Debug, "Debug"},
   {LogLevel::Info, "Info"},
   {LogLevel::Warn, "Warn"},
   {LogLevel::Error, "Error"}
-};
+});
 
 LogSink::LogSink()
   : m_level(LogLevel::Info) {}
@@ -39,23 +39,42 @@ LogLevel LogSink::level() {
   return m_level;
 }
 
-void StdoutLogSink::log(char const* msg, LogLevel level) {
+std::expected<void, StarException> StdoutLogSink::log(char const* msg, LogLevel level) {
   MutexLocker locker(m_logMutex);
-  coutf("[{}] {}\n", LogLevelNames.getRight(level), msg);
+  if (!LogLevelNames)
+    return std::unexpected(LogLevelNames.error());
+  auto name = LogLevelNames->getRight(level);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  coutf("[{}] {}\n", **name, msg);
+  return {};
 }
 
-FileLogSink::FileLogSink(String const& filename, LogLevel level, bool truncate) {
-  if (truncate)
-    m_output = File::open(filename, IOMode::Write | IOMode::Append | IOMode::Truncate);
-  else
-    m_output = File::open(filename, IOMode::Write | IOMode::Append);
-  setLevel(level);
+std::expected<std::shared_ptr<FileLogSink>, StarException> FileLogSink::create(
+    String const& filename, LogLevel level, bool truncate) {
+  auto output = File::open(filename,
+      truncate ? IOMode::Write | IOMode::Append | IOMode::Truncate : IOMode::Write | IOMode::Append);
+  if (!output)
+    return std::unexpected(std::move(output.error()));
+  auto sink = std::shared_ptr<FileLogSink>(new FileLogSink());
+  sink->m_output = std::move(*output);
+  sink->setLevel(level);
+  return sink;
 }
 
-void FileLogSink::log(char const* msg, LogLevel level) {
+std::expected<void, StarException> FileLogSink::log(char const* msg, LogLevel level) {
   MutexLocker locker(m_logMutex);
-  auto line = strf("[{}] [{}] {}\n", Time::printCurrentDateAndTime("<hours>:<minutes>:<seconds>.<millis>"), LogLevelNames.getRight(level), msg);
-  m_output->write(line.data(), line.size());
+  auto timestamp = Time::printCurrentDateAndTime("<hours>:<minutes>:<seconds>.<millis>");
+  if (!LogLevelNames)
+    return std::unexpected(LogLevelNames.error());
+  auto name = LogLevelNames->getRight(level);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto line = strf("[{}] [{}] {}\n", timestamp, **name, msg);
+  auto written = m_output->write(line.data(), line.size());
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return {};
 }
 
 void Logger::addSink(std::shared_ptr<LogSink> s) {
@@ -78,14 +97,18 @@ void Logger::removeStdoutSink() {
   s_sinks.erase(s_stdoutSink);
 }
 
-void Logger::log(LogLevel level, char const* msg) {
+std::expected<void, StarException> Logger::log(LogLevel level, char const* msg) {
   if (loggable(level)) {
     MutexLocker locker(s_mutex);
     for (auto const& l : s_sinks) {
-      if (l->level() <= level)
-        l->log(msg, level);
+      if (l->level() <= level) {
+        auto result = l->log(msg, level);
+        if (!result)
+          return std::unexpected(std::move(result.error()).withContext(strf("While writing log message: {}", msg)));
+      }
     }
   }
+  return {};
 }
 
 Logger::Logger()
@@ -142,7 +165,7 @@ void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& c
   }
 
   while (lines.size() > MaximumLines)
-    lines.removeFirst();
+    lines.erase(lines.begin());
 }
 
 void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& color) {
@@ -154,7 +177,7 @@ void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& 
   lines.append(Line{line.min(), line.max(), color});
 
   while (lines.size() > MaximumLines)
-    lines.removeFirst();
+    lines.erase(lines.begin());
 }
 
 void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color) {
@@ -166,7 +189,7 @@ void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& 
   lines.append(Line{begin, end, color});
 
   while (lines.size() > MaximumLines)
-    lines.removeFirst();
+    lines.erase(lines.begin());
 }
 
 void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B const& color) {
@@ -176,9 +199,8 @@ void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B con
   auto& points = s_points[space];
 
   points.append(Point{position, color});
-
   while (points.size() > MaximumPoints)
-    points.removeFirst();
+    points.erase(points.begin());
 }
 
 void SpatialLogger::logText(char const* space, String text, Vec2F const& position, Vec4B const& color) {
@@ -190,7 +212,7 @@ void SpatialLogger::logText(char const* space, String text, Vec2F const& positio
   texts.append(LogText{text, position, color});
 
   while (texts.size() > MaximumText)
-    texts.removeFirst();
+    texts.erase(texts.begin());
 }
 
 Deque<SpatialLogger::Line> SpatialLogger::getLines(char const* space, bool andClear) {

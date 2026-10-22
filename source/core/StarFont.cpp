@@ -16,14 +16,8 @@ namespace Star {
 constexpr int FontLoadFlags = FT_LOAD_NO_SVG | FT_LOAD_COLOR;
 
 struct FTContext {
-  FT_Library library;
+  FT_Library library = nullptr;
   std::mutex mutex;
-
-  FTContext() {
-    library = nullptr;
-    if (FT_Init_FreeType(&library))
-      throw FontException("Could not initialize FreeType library.");
-  }
 
   ~FTContext() {
     if (library) {
@@ -33,7 +27,13 @@ struct FTContext {
   }
 };
 
-FontLibrary::FontLibrary() : m_context(std::make_shared<FTContext>()) {}
+std::expected<FontLibrary, StarException> FontLibrary::create() {
+  FontLibrary result;
+  result.m_context = std::make_shared<FTContext>();
+  if (FT_Init_FreeType(&result.m_context->library))
+    return std::unexpected(FontException("Could not initialize FreeType library."));
+  return result;
+}
 FontLibrary::~FontLibrary() = default;
 
 struct FontImpl {
@@ -48,15 +48,22 @@ struct FontImpl {
   }
 };
 
-std::shared_ptr<Font> Font::loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize) {
-  return loadFont(library, std::make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
+std::expected<std::shared_ptr<Font>, StarException> Font::loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize) {
+  auto bytes = File::readFile(fileName);
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  return loadFont(library, std::make_shared<ByteArray>(std::move(*bytes)), pixelSize);
 }
 
-std::shared_ptr<Font> Font::loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize) {
+std::expected<std::shared_ptr<Font>, StarException> Font::loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize) {
   std::shared_ptr<Font> font = std::make_shared<Font>(library);
   font->m_fontBuffer = bytes;
-  font->setPixelSize(pixelSize);
-
+  auto sizeResult = font->setPixelSize(pixelSize);
+  if (!sizeResult)
+    return std::unexpected(std::move(sizeResult.error()));
+  auto loaded = font->loadFontImpl();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
   return font;
 }
 
@@ -67,23 +74,29 @@ Font::Font(std::shared_ptr<FTContext> context)
 
 Font::~Font() = default;
 
-std::shared_ptr<Font> Font::clone() const {
+std::expected<std::shared_ptr<Font>, StarException> Font::clone() const {
   std::shared_ptr<Font> font(new Font(m_context));
   font->m_fontBuffer = m_fontBuffer;
-  font->setPixelSize(m_pixelSize);
+  auto sizeResult = font->setPixelSize(m_pixelSize);
+  if (!sizeResult)
+    return std::unexpected(std::move(sizeResult.error()));
+  auto loaded = font->loadFontImpl();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
   return font;
 }
 
-void Font::setPixelSize(unsigned pixelSize) {
+std::expected<void, StarException> Font::setPixelSize(unsigned pixelSize) {
   if (pixelSize == 0)
     pixelSize = 1;
 
   if (m_pixelSize == pixelSize)
-    return;
+    return {};
 
+  if (m_fontImpl && FT_Set_Pixel_Sizes(m_fontImpl->face, pixelSize, 0))
+    return std::unexpected(FontException(strf("Cannot set font pixel size to: {}", pixelSize)));
   m_pixelSize = pixelSize;
-  if (m_fontImpl && FT_Set_Pixel_Sizes(m_fontImpl->face, m_pixelSize, 0))
-    throw FontException(strf("Cannot set font pixel size to: {}", m_pixelSize));
+  return {};
 }
 
 void Font::setAlphaThreshold(std::uint8_t alphaThreshold) {
@@ -94,51 +107,57 @@ unsigned Font::height() const {
   return m_pixelSize;
 }
 
-unsigned Font::width(String::Char c) {
+std::expected<unsigned, StarException> Font::width(String::Char c) {
   if (auto width = m_widthCache.maybe({c, m_pixelSize})) {
     return *width;
   } else {
-    loadFontImpl();
-    FT_Load_Char(m_fontImpl->face, c, FontLoadFlags);
+    auto loaded = loadFontImpl();
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+    if (FT_Load_Char(m_fontImpl->face, c, FontLoadFlags))
+      return std::unexpected(FontException::format("Cannot load font character: {}", static_cast<std::uint32_t>(c)));
     unsigned newWidth = (m_fontImpl->face->glyph->linearHoriAdvance + 32768) / 65536;
     m_widthCache.insert({c, m_pixelSize}, newWidth);
     return newWidth;
   }
 }
 
-void Font::loadFontImpl() {
+std::expected<void, StarException> Font::loadFontImpl() {
   if (!m_fontImpl) {
     if (!m_fontBuffer || m_fontBuffer->empty())
-      throw FontException("Font buffer is null or empty");
+      return std::unexpected(FontException("Font buffer is null or empty"));
 
     std::shared_ptr<FontImpl> fontImpl = std::make_shared<FontImpl>();
     fontImpl->context = m_context;
     {
       std::lock_guard lock(m_context->mutex);
       if (FT_New_Memory_Face(m_context->library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
-        throw FontException::format("Could not load font from buffer");
+        return std::unexpected(FontException::format("Could not load font from buffer"));
     }
 
     if (FT_Set_Pixel_Sizes(fontImpl->face, m_pixelSize, 0))
-      throw FontException::format("Cannot set font pixel size to: {}", m_pixelSize);
+      return std::unexpected(FontException::format("Cannot set font pixel size to: {}", m_pixelSize));
 
     m_fontImpl = fontImpl;
   }
+  return {};
 }
 
-std::tuple<Image, Vec2I, bool> Font::render(String::Char c) {
-  loadFontImpl();
+std::expected<std::tuple<Image, Vec2I, bool>, StarException> Font::render(String::Char c) {
+  auto loaded = loadFontImpl();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
 
   FT_Face face = m_fontImpl->face;
   if (FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FontLoadFlags) != 0)
-    return {};
+    return std::unexpected(FontException::format("Cannot load font glyph: {}", static_cast<std::uint32_t>(c)));
 
   if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
-    return {};
+    return std::unexpected(FontException::format("Cannot render font glyph: {}", static_cast<std::uint32_t>(c)));
 
   FT_GlyphSlot slot = face->glyph;
   if (!slot->bitmap.buffer)
-    return {};
+    return std::tuple<Image, Vec2I, bool>{};
 
   unsigned width = slot->bitmap.width;
   unsigned height = slot->bitmap.rows;
@@ -155,7 +174,7 @@ std::tuple<Image, Vec2I, bool> Font::render(String::Char c) {
           white[3] = m_alphaThreshold
             ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
             :  *(p + x);
-          image.set(x + 1, height - y, white);
+          image.set32(x + 1, height - y, white);
         }
       }
     }
@@ -177,7 +196,7 @@ std::tuple<Image, Vec2I, bool> Font::render(String::Char c) {
       }
     });
   } else {
-    return {};
+    return std::unexpected(FontException::format("Unsupported font bitmap pixel mode: {}", slot->bitmap.pixel_mode));
   }
 
   return std::make_tuple(
@@ -186,8 +205,10 @@ std::tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     colored);
 }
 
-bool Font::exists(String::Char c) {
-  loadFontImpl();
+std::expected<bool, StarException> Font::exists(String::Char c) {
+  auto loaded = loadFontImpl();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
   return FT_Get_Char_Index(m_fontImpl->face, c);
 }
 

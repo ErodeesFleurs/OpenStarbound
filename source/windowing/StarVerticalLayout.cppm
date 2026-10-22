@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -61,7 +62,7 @@ public:
   VerticalLayout(GuiContext& context);
   VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor, int verticalSpacing = 0);
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
   Vec2I size() const override;
   RectI relativeBoundRect() const override;
 
@@ -72,6 +73,7 @@ public:
 
 private:
   RectI contentBoundRect() const;
+  void updateLayout();
 
   HorizontalAnchor m_horizontalAnchor;
   VerticalAnchor m_verticalAnchor;

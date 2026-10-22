@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 
 
 namespace Star {
@@ -15,10 +16,12 @@ public:
   }
 
   virtual ~ActivatableItem() {}
-  virtual bool active() const = 0;
+  [[nodiscard]]
+  virtual std::expected<bool, StarException> active() const = 0;
   virtual void setActive(bool active) = 0;
   virtual bool usable() const = 0;
-  virtual void activate() = 0;
+  [[nodiscard]]
+  virtual std::expected<void, StarException> activate() = 0;
 };
 
 }

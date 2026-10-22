@@ -49,42 +49,74 @@ import star.game_test;
 
 using namespace Star;
 
-void validateWorld(Root& root, TestUniverse& testUniverse) {
-  testUniverse.update(100);
+[[nodiscard]] std::expected<void, StarException> validateWorld(Root& root, TestUniverse& testUniverse) {
+  auto update = testUniverse.update(100);
+  if (!update)
+    return std::unexpected(std::move(update.error()));
 
   // Just make sure the test world draws something for now, this will grow to
   // include more than this.
-  EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", printWorldId(testUniverse.currentPlayerWorld()));
+  auto drawables = testUniverse.currentClientDrawables();
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  auto world = printWorldId(testUniverse.currentPlayerWorld());
+  if (!world)
+    return std::unexpected(std::move(world.error()));
+  EXPECT_GE(drawables->size(), 1u) << strf("world: {}", *world);
 
   auto assets = root.assets();
-  for (auto const& drawable : testUniverse.currentClientDrawables()) {
-    if (drawable.isImage())
-      assets->image(drawable.imagePart().image);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  for (auto const& drawable : *drawables) {
+    if (drawable.isImage()) {
+      auto image = (*assets)->image(drawable.imagePart().image);
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+    }
   }
+  return {};
 }
 
 const GameTestRegistration randomCelestialWorld("SpawnTest", "RandomCelestialWorld", [](GameTest& fixture) {
-  CelestialMasterDatabase celestialDatabase(fixture.root());
-  std::optional<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
-      return celestialDatabase.parameters(coord)->isVisitable();
-    });
-  ASSERT_TRUE((bool)celestialWorld);
+  auto celestialDatabase = CelestialMasterDatabase::create(fixture.root());
+  ASSERT_TRUE(celestialDatabase);
+  auto celestialWorld = (*celestialDatabase)->findRandomWorld(10, 50,
+      [&](CelestialCoordinate const& coord) -> std::expected<bool, StarException> {
+        auto parameters = (*celestialDatabase)->parameters(coord);
+        if (!parameters)
+          return std::unexpected(std::move(parameters.error()));
+        return (*parameters)->isVisitable();
+      });
+  ASSERT_TRUE(celestialWorld);
+  ASSERT_TRUE(*celestialWorld);
 
-  TestUniverse testUniverse(fixture.root(), Vec2U(100, 100));
-  WorldId worldId = CelestialWorldId(*celestialWorld);
-  testUniverse.warpPlayer(worldId);
-  EXPECT_EQ(testUniverse.currentPlayerWorld(), worldId);
-  validateWorld(fixture.root(), testUniverse);
+  auto testUniverse = TestUniverse::create(fixture.root(), Vec2U(100, 100));
+  ASSERT_TRUE(testUniverse);
+  WorldId worldId = CelestialWorldId(**celestialWorld);
+  ASSERT_TRUE((*testUniverse)->warpPlayer(worldId));
+  EXPECT_EQ((*testUniverse)->currentPlayerWorld(), worldId);
+  ASSERT_TRUE(validateWorld(fixture.root(), **testUniverse));
+  ASSERT_TRUE((*testUniverse)->close());
 });
 
 const GameTestRegistration randomInstanceWorld("SpawnTest", "RandomInstanceWorld", [](GameTest& fixture) {
   auto& root = fixture.root();
-  StringList instanceWorlds = root.assets()->json("/instance_worlds.config").toObject().keys();
+  auto assets = root.assets();
+  ASSERT_TRUE(assets);
+  auto config = (*assets)->json("/instance_worlds.config");
+  ASSERT_TRUE(config);
+  auto worlds = config->toObject();
+  ASSERT_TRUE(worlds);
+  StringList instanceWorlds = worlds->keys();
   ASSERT_GT(instanceWorlds.size(), 0u);
-  WorldId instanceWorld = InstanceWorldId(root.random().randFrom(instanceWorlds));
+  auto selectedWorld = root.random().randFrom(instanceWorlds);
+  ASSERT_TRUE(selectedWorld);
+  WorldId instanceWorld = InstanceWorldId(**selectedWorld);
 
-  TestUniverse testUniverse(root, Vec2U(100, 100));
-  testUniverse.warpPlayer(instanceWorld);
-  EXPECT_EQ(testUniverse.currentPlayerWorld(), instanceWorld);
-  validateWorld(root, testUniverse);
+  auto testUniverse = TestUniverse::create(root, Vec2U(100, 100));
+  ASSERT_TRUE(testUniverse);
+  ASSERT_TRUE((*testUniverse)->warpPlayer(instanceWorld));
+  EXPECT_EQ((*testUniverse)->currentPlayerWorld(), instanceWorld);
+  ASSERT_TRUE(validateWorld(root, **testUniverse));
+  ASSERT_TRUE((*testUniverse)->close());
 });

@@ -37,6 +37,7 @@ import star.image;
 import star.weighted_pool;
 import star.net_compatibility;
 import std;
+import star.format;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -151,20 +152,42 @@ import star.player_factory;
 
 namespace Star {
 
-TestUniverse::TestUniverse(Root& root, Vec2U clientWindowSize) {
+TestUniverse::TestUniverse(Vec2U clientWindowSize)
+  : m_clientWindowSize(clientWindowSize) {}
 
-  m_clientWindowSize = clientWindowSize;
-
-  m_storagePath = File::temporaryDirectory(root.random());
-  auto playerStorage = std::make_shared<PlayerStorage>(root, File::relativeTo(m_storagePath, "player"));
-  auto statistics = std::make_shared<Statistics>(root, File::relativeTo(m_storagePath, "statistics"));
-  m_server = std::make_shared<UniverseServer>(root, File::relativeTo(m_storagePath, "universe"));
-  m_client = std::make_shared<UniverseClient>(root, playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
-
-  m_server->start();
-
-  m_mainPlayer = root.playerFactory()->create();
-  m_mainPlayer->finalizeCreation();
+std::expected<std::unique_ptr<TestUniverse>, StarException> TestUniverse::create(Root& root, Vec2U clientWindowSize) {
+  auto fixture = std::unique_ptr<TestUniverse>(new TestUniverse(clientWindowSize));
+  auto storagePath = File::temporaryDirectory(root.random());
+  if (!storagePath)
+    return std::unexpected(std::move(storagePath.error()));
+  fixture->m_storagePath = std::move(*storagePath);
+  auto playerStorage = PlayerStorage::create(root, File::relativeTo(fixture->m_storagePath, "player"));
+  if (!playerStorage)
+    return std::unexpected(std::move(playerStorage.error()));
+  auto statistics = Statistics::create(root, File::relativeTo(fixture->m_storagePath, "statistics"));
+  if (!statistics)
+    return std::unexpected(std::move(statistics.error()));
+  auto server = UniverseServer::create(root, File::relativeTo(fixture->m_storagePath, "universe"));
+  if (!server)
+    return std::unexpected(std::move(server.error()));
+  fixture->m_server = std::move(*server);
+  auto client = UniverseClient::create(root, *playerStorage, *statistics, File::relativeTo(fixture->m_storagePath, "universeclient"));
+  if (!client)
+    return std::unexpected(std::move(client.error()));
+  fixture->m_client = std::move(*client);
+  auto started = fixture->m_server->start();
+  if (!started)
+    return std::unexpected(std::move(started.error()));
+  auto playerFactory = root.playerFactory();
+  if (!playerFactory)
+    return std::unexpected(std::move(playerFactory.error()));
+  auto player = (*playerFactory)->create();
+  if (!player)
+    return std::unexpected(std::move(player.error()));
+  fixture->m_mainPlayer = std::move(*player);
+  auto finalized = fixture->m_mainPlayer->finalizeCreation();
+  if (!finalized)
+    return std::unexpected(std::move(finalized.error()));
   // A player only carries a ship species once it has been saved and loaded
   // (Player::diskStore falls back to the identity species, Player's save/load
   // ctor reads it back), which is what the real client always does
@@ -172,10 +195,14 @@ TestUniverse::TestUniverse(Root& root, Vec2U clientWindowSize) {
   // species and the server builds the ship world from it, so a player that was
   // only created in memory cannot connect: the server fails to create its ship
   // world and drops the connection.
-  m_mainPlayer->setShipSpecies(m_mainPlayer->species());
-  m_mainPlayer->setAdmin(true);
-  m_mainPlayer->setModeType(PlayerMode::Survival);
-  m_client->setMainPlayer(m_mainPlayer);
+  fixture->m_mainPlayer->setShipSpecies(fixture->m_mainPlayer->species());
+  fixture->m_mainPlayer->setAdmin(true);
+  auto mode = fixture->m_mainPlayer->setModeType(PlayerMode::Survival);
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  auto mainPlayer = fixture->m_client->setMainPlayer(fixture->m_mainPlayer);
+  if (!mainPlayer)
+    return std::unexpected(std::move(mainPlayer.error()));
   // The real client supplies input callbacks bound to its explicit Input owner.
   // This headless fixture has no input device or client Input, so provide
   // callbacks where nothing is ever bound. OpenStarbound's player
@@ -185,47 +212,130 @@ TestUniverse::TestUniverse(Root& root, Vec2U clientWindowSize) {
   auto bindState = [](String const&, String const&) -> std::optional<unsigned> { return {}; };
   auto noKey = [](String const&) -> std::optional<unsigned> { return {}; };
   auto noButton = [](String const&) -> std::optional<List<Vec2F>> { return {}; };
-  inputCallbacks.registerCallback("bindDown", bindState);
-  inputCallbacks.registerCallback("bindUp", bindState);
-  inputCallbacks.registerCallback("bindHeld", [](String const&, String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("bind", [](String const&, String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("keyDown", noKey);
-  inputCallbacks.registerCallback("keyUp", noKey);
-  inputCallbacks.registerCallback("keyHeld", [](String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("key", [](String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("mouseDown", noButton);
-  inputCallbacks.registerCallback("mouseUp", noButton);
-  inputCallbacks.registerCallback("mouseHeld", [](String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("mouse", [](String const&) -> bool { return false; });
-  inputCallbacks.registerCallback("mousePosition", []() -> Vec2F { return {}; });
-  inputCallbacks.registerCallback("getTag", [](String const&) -> unsigned { return 0; });
-  inputCallbacks.registerCallback("events", []() -> Json { return JsonArray(); });
-  inputCallbacks.registerCallback("resetBinds", [](String const&, String const&) {});
-  inputCallbacks.registerCallback("setBinds", [](String const&, String const&, Json const&) {});
-  inputCallbacks.registerCallback("getDefaultBinds", [](String const&, String const&) -> Json { return JsonObject(); });
-  inputCallbacks.registerCallback("getBinds", [](String const&, String const&) -> Json { return JsonObject(); });
-  m_client->setLuaCallbacks("input", inputCallbacks);
-  m_client->connect(m_server->addLocalClient(), "test", "");
+  auto bindDown = inputCallbacks.registerCallback("bindDown", bindState);
+  if (!bindDown)
+    return std::unexpected(std::move(bindDown.error()));
+  auto bindUp = inputCallbacks.registerCallback("bindUp", bindState);
+  if (!bindUp)
+    return std::unexpected(std::move(bindUp.error()));
+  auto bindHeld = inputCallbacks.registerCallback("bindHeld", [](String const&, String const&) -> bool { return false; });
+  if (!bindHeld)
+    return std::unexpected(std::move(bindHeld.error()));
+  auto bind = inputCallbacks.registerCallback("bind", [](String const&, String const&) -> bool { return false; });
+  if (!bind)
+    return std::unexpected(std::move(bind.error()));
+  auto keyDown = inputCallbacks.registerCallback("keyDown", noKey);
+  if (!keyDown)
+    return std::unexpected(std::move(keyDown.error()));
+  auto keyUp = inputCallbacks.registerCallback("keyUp", noKey);
+  if (!keyUp)
+    return std::unexpected(std::move(keyUp.error()));
+  auto keyHeld = inputCallbacks.registerCallback("keyHeld", [](String const&) -> bool { return false; });
+  if (!keyHeld)
+    return std::unexpected(std::move(keyHeld.error()));
+  auto key = inputCallbacks.registerCallback("key", [](String const&) -> bool { return false; });
+  if (!key)
+    return std::unexpected(std::move(key.error()));
+  auto mouseDown = inputCallbacks.registerCallback("mouseDown", noButton);
+  if (!mouseDown)
+    return std::unexpected(std::move(mouseDown.error()));
+  auto mouseUp = inputCallbacks.registerCallback("mouseUp", noButton);
+  if (!mouseUp)
+    return std::unexpected(std::move(mouseUp.error()));
+  auto mouseHeld = inputCallbacks.registerCallback("mouseHeld", [](String const&) -> bool { return false; });
+  if (!mouseHeld)
+    return std::unexpected(std::move(mouseHeld.error()));
+  auto mouse = inputCallbacks.registerCallback("mouse", [](String const&) -> bool { return false; });
+  if (!mouse)
+    return std::unexpected(std::move(mouse.error()));
+  auto mousePosition = inputCallbacks.registerCallback("mousePosition", []() -> Vec2F { return {}; });
+  if (!mousePosition)
+    return std::unexpected(std::move(mousePosition.error()));
+  auto getTag = inputCallbacks.registerCallback("getTag", [](String const&) -> unsigned { return 0; });
+  if (!getTag)
+    return std::unexpected(std::move(getTag.error()));
+  auto events = inputCallbacks.registerCallback("events", []() -> Json { return JsonArray(); });
+  if (!events)
+    return std::unexpected(std::move(events.error()));
+  auto resetBinds = inputCallbacks.registerCallback("resetBinds", [](String const&, String const&) {});
+  if (!resetBinds)
+    return std::unexpected(std::move(resetBinds.error()));
+  auto setBinds = inputCallbacks.registerCallback("setBinds", [](String const&, String const&, Json const&) {});
+  if (!setBinds)
+    return std::unexpected(std::move(setBinds.error()));
+  auto getDefaultBinds = inputCallbacks.registerCallback("getDefaultBinds", [](String const&, String const&) -> Json { return JsonObject(); });
+  if (!getDefaultBinds)
+    return std::unexpected(std::move(getDefaultBinds.error()));
+  auto getBinds = inputCallbacks.registerCallback("getBinds", [](String const&, String const&) -> Json { return JsonObject(); });
+  if (!getBinds)
+    return std::unexpected(std::move(getBinds.error()));
+  auto callbacks = fixture->m_client->setLuaCallbacks("input", inputCallbacks);
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  auto localClient = fixture->m_server->addLocalClient();
+  if (!localClient)
+    return std::unexpected(std::move(localClient.error()));
+  auto connected = fixture->m_client->connect(std::move(*localClient), true);
+  if (!connected)
+    return std::unexpected(std::move(connected.error()));
+  if (*connected)
+    return std::unexpected(StarException(strf("Test universe login rejected: {}", **connected)));
+  return fixture;
 }
 
 TestUniverse::~TestUniverse() {
-  m_client = {};
-  m_server = {};
-  m_mainPlayer = {};
-  File::removeDirectoryRecursive(m_storagePath);
+  auto closed = close();
+  if (!closed)
+    EmergencyLog::log(LogLevel::Error, closed.error().what());
 }
 
-void TestUniverse::warpPlayer(WorldId worldId) {
+std::expected<void, StarException> TestUniverse::close() {
+  std::optional<StarException> error;
+  if (m_client) {
+    auto disconnected = m_client->disconnect();
+    if (!disconnected)
+      error = std::move(disconnected.error());
+    m_client.reset();
+  }
+  if (m_server) {
+    auto stopped = m_server->stop();
+    if (!stopped && !error)
+      error = std::move(stopped.error());
+    auto joined = m_server->join();
+    if (!joined && !error)
+      error = std::move(joined.error());
+    m_server.reset();
+  }
+  m_mainPlayer.reset();
+  if (!m_storagePath.empty()) {
+    auto removed = File::removeDirectoryRecursive(m_storagePath);
+    if (removed)
+      m_storagePath.clear();
+    else if (!error)
+      error = std::move(removed.error());
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
+}
+
+std::expected<void, StarException> TestUniverse::warpPlayer(WorldId worldId) {
   // The client context only exists once the server has answered the connect
   // handshake, and both the warp call and the caller's expectations read it, so
   // let the client settle first.
   std::int64_t connectStart = Time::monotonicMilliseconds();
   while (!m_client->clientContext() && Time::monotonicMilliseconds() - connectStart < 60000) {
-    m_client->update(0.016f);
+    auto updated = m_client->update(0.016f);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
     Thread::sleep(16);
   }
 
-  m_client->warpPlayer(WarpToWorld(worldId), true);
+  if (!m_client->clientContext())
+    return std::unexpected(StarException("Timed out waiting for the test universe login handshake"));
+  auto warped = m_client->warpPlayer(WarpToWorld(worldId), true);
+  if (!warped)
+    return std::unexpected(std::move(warped.error()));
   // Bounded by wall clock: if the world cannot be loaded the player stays
   // teleporting forever, so give up after five minutes and let the caller's
   // expectations report the failure instead of hanging the test.  A ship flight
@@ -234,11 +344,14 @@ void TestUniverse::warpPlayer(WorldId worldId) {
   // (OPENSTARBOUND_TEST_TIMEOUT) is the practical limit.
   std::int64_t startTime = Time::monotonicMilliseconds();
   while (m_mainPlayer->isTeleporting() || std::holds_alternative<std::monostate>(m_client->playerWorld())) {
-    m_client->update(0.016f);
+    auto updated = m_client->update(0.016f);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
     Thread::sleep(16);
     if (Time::monotonicMilliseconds() - startTime > 300000)
-      break;
+      return std::unexpected(StarException("Timed out waiting for the test player to finish warping"));
   }
+  return {};
 }
 
 WorldId TestUniverse::currentPlayerWorld() const {
@@ -248,18 +361,25 @@ WorldId TestUniverse::currentPlayerWorld() const {
   return {};
 }
 
-void TestUniverse::update(unsigned times) {
+std::expected<void, StarException> TestUniverse::update(unsigned times) {
   for (unsigned i = 0; i < times; ++i) {
-    m_client->update(0.016f);
+    auto updated = m_client->update(0.016f);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
     Thread::sleep(16);
   }
+  return {};
 }
 
-List<Drawable> TestUniverse::currentClientDrawables() {
+std::expected<List<Drawable>, StarException> TestUniverse::currentClientDrawables() {
   WorldRenderData renderData;
   auto worldClient = m_client->worldClient();
+  if (!worldClient)
+    return std::unexpected(StarException("Test player has no world to render"));
   worldClient->centerClientWindowOnPlayer(m_clientWindowSize);
-  worldClient->render(renderData, 0, nullptr);
+  auto rendered = worldClient->render(renderData, 0, nullptr);
+  if (!rendered)
+    return std::unexpected(std::move(rendered.error()));
 
   List<Drawable> drawables;
   for (auto& ed : renderData.entityDrawables) {

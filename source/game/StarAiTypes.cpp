@@ -1,3 +1,4 @@
+import star.format;
 import star.json_extra;
 import std;
 import star.json;
@@ -16,9 +17,19 @@ namespace Star {
 
 AiState::AiState() {}
 
-AiState::AiState(Json const& v) {
-  availableMissions.addAll(jsonToStringList(v.get("availableMissions", JsonArray())));
-  completedMissions.addAll(jsonToStringList(v.get("completedMissions", JsonArray())));
+std::expected<AiState, StarException> AiState::create(Json const& v) {
+  AiState result;
+  auto available = v.get("availableMissions", JsonArray());
+  if (!available) return std::unexpected(std::move(available.error()));
+  auto availableList = jsonToStringList(*available);
+  if (!availableList) return std::unexpected(std::move(availableList.error()));
+  result.availableMissions.addAll(*availableList);
+  auto completed = v.get("completedMissions", JsonArray());
+  if (!completed) return std::unexpected(std::move(completed.error()));
+  auto completedList = jsonToStringList(*completed);
+  if (!completedList) return std::unexpected(std::move(completedList.error()));
+  result.completedMissions.addAll(*completedList);
+  return result;
 }
 
 Json AiState::toJson() const {

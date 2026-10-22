@@ -14,6 +14,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 
 import star.asset_source;
@@ -52,91 +53,98 @@ namespace {
 class RootIsolationErrorSink : public LogSink {
 public:
   RootIsolationErrorSink() { setLevel(LogLevel::Error); }
-  void log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
     ADD_FAILURE() << "Error was logged: " << message;
+    return {};
   }
 };
 
 const GameTestRegistration rootAll("RootTest", "All", [](GameTest& fixture) {
   auto& root = fixture.root();
 
-  EXPECT_TRUE((bool)root.assets());
-  EXPECT_TRUE((bool)root.objectDatabase());
-  EXPECT_TRUE((bool)root.plantDatabase());
-  EXPECT_TRUE((bool)root.projectileDatabase());
-  EXPECT_TRUE((bool)root.monsterDatabase());
-  EXPECT_TRUE((bool)root.npcDatabase());
-  EXPECT_TRUE((bool)root.playerFactory());
-  EXPECT_TRUE((bool)root.entityFactory());
-  EXPECT_TRUE((bool)root.nameGenerator());
-  EXPECT_TRUE((bool)root.itemDatabase());
-  EXPECT_TRUE((bool)root.materialDatabase());
-  EXPECT_TRUE((bool)root.terrainDatabase());
-  EXPECT_TRUE((bool)root.biomeDatabase());
-  EXPECT_TRUE((bool)root.liquidsDatabase());
-  EXPECT_TRUE((bool)root.statusEffectDatabase());
-  EXPECT_TRUE((bool)root.damageDatabase());
-  EXPECT_TRUE((bool)root.particleDatabase());
-  EXPECT_TRUE((bool)root.effectSourceDatabase());
-  EXPECT_TRUE((bool)root.functionDatabase());
-  EXPECT_TRUE((bool)root.treasureDatabase());
-  EXPECT_TRUE((bool)root.dungeonDefinitions());
-  EXPECT_TRUE((bool)root.emoteProcessor());
-  EXPECT_TRUE((bool)root.speciesDatabase());
-  EXPECT_TRUE((bool)root.imageMetadataDatabase());
-  EXPECT_TRUE((bool)root.versioningDatabase());
-  EXPECT_TRUE((bool)root.questTemplateDatabase());
-  EXPECT_TRUE((bool)root.aiDatabase());
-  EXPECT_TRUE((bool)root.techDatabase());
-  EXPECT_TRUE((bool)root.codexDatabase());
-  EXPECT_TRUE((bool)root.stagehandDatabase());
-  EXPECT_TRUE((bool)root.behaviorDatabase());
-  EXPECT_TRUE((bool)root.tenantDatabase());
-  EXPECT_TRUE((bool)root.danceDatabase());
-  EXPECT_TRUE((bool)root.spawnTypeDatabase());
+  auto expectCatalog = [](auto result) {
+    ASSERT_TRUE(result) << result.error().what();
+    EXPECT_TRUE(*result);
+  };
+  expectCatalog(root.assets());
+  expectCatalog(root.objectDatabase());
+  expectCatalog(root.plantDatabase());
+  expectCatalog(root.projectileDatabase());
+  expectCatalog(root.monsterDatabase());
+  expectCatalog(root.npcDatabase());
+  expectCatalog(root.playerFactory());
+  expectCatalog(root.entityFactory());
+  expectCatalog(root.nameGenerator());
+  expectCatalog(root.itemDatabase());
+  expectCatalog(root.materialDatabase());
+  expectCatalog(root.terrainDatabase());
+  expectCatalog(root.biomeDatabase());
+  expectCatalog(root.liquidsDatabase());
+  expectCatalog(root.statusEffectDatabase());
+  expectCatalog(root.damageDatabase());
+  expectCatalog(root.particleDatabase());
+  expectCatalog(root.effectSourceDatabase());
+  expectCatalog(root.functionDatabase());
+  expectCatalog(root.treasureDatabase());
+  expectCatalog(root.dungeonDefinitions());
+  expectCatalog(root.emoteProcessor());
+  expectCatalog(root.speciesDatabase());
+  expectCatalog(root.imageMetadataDatabase());
+  expectCatalog(root.versioningDatabase());
+  expectCatalog(root.questTemplateDatabase());
+  expectCatalog(root.aiDatabase());
+  expectCatalog(root.techDatabase());
+  expectCatalog(root.codexDatabase());
+  expectCatalog(root.stagehandDatabase());
+  expectCatalog(root.behaviorDatabase());
+  expectCatalog(root.tenantDatabase());
+  expectCatalog(root.danceDatabase());
+  expectCatalog(root.spawnTypeDatabase());
 
-  root.reload();
+  ASSERT_TRUE(root.reload());
 
-  EXPECT_TRUE((bool)root.assets());
-  EXPECT_TRUE((bool)root.objectDatabase());
-  EXPECT_TRUE((bool)root.plantDatabase());
-  EXPECT_TRUE((bool)root.projectileDatabase());
-  EXPECT_TRUE((bool)root.monsterDatabase());
-  EXPECT_TRUE((bool)root.npcDatabase());
-  EXPECT_TRUE((bool)root.playerFactory());
-  EXPECT_TRUE((bool)root.entityFactory());
-  EXPECT_TRUE((bool)root.nameGenerator());
-  EXPECT_TRUE((bool)root.itemDatabase());
-  EXPECT_TRUE((bool)root.materialDatabase());
-  EXPECT_TRUE((bool)root.terrainDatabase());
-  EXPECT_TRUE((bool)root.biomeDatabase());
-  EXPECT_TRUE((bool)root.liquidsDatabase());
-  EXPECT_TRUE((bool)root.statusEffectDatabase());
-  EXPECT_TRUE((bool)root.damageDatabase());
-  EXPECT_TRUE((bool)root.particleDatabase());
-  EXPECT_TRUE((bool)root.effectSourceDatabase());
-  EXPECT_TRUE((bool)root.functionDatabase());
-  EXPECT_TRUE((bool)root.treasureDatabase());
-  EXPECT_TRUE((bool)root.dungeonDefinitions());
-  EXPECT_TRUE((bool)root.emoteProcessor());
-  EXPECT_TRUE((bool)root.speciesDatabase());
-  EXPECT_TRUE((bool)root.imageMetadataDatabase());
-  EXPECT_TRUE((bool)root.versioningDatabase());
-  EXPECT_TRUE((bool)root.questTemplateDatabase());
-  EXPECT_TRUE((bool)root.aiDatabase());
-  EXPECT_TRUE((bool)root.techDatabase());
-  EXPECT_TRUE((bool)root.codexDatabase());
-  EXPECT_TRUE((bool)root.stagehandDatabase());
-  EXPECT_TRUE((bool)root.behaviorDatabase());
-  EXPECT_TRUE((bool)root.tenantDatabase());
-  EXPECT_TRUE((bool)root.danceDatabase());
-  EXPECT_TRUE((bool)root.spawnTypeDatabase());
+  expectCatalog(root.assets());
+  expectCatalog(root.objectDatabase());
+  expectCatalog(root.plantDatabase());
+  expectCatalog(root.projectileDatabase());
+  expectCatalog(root.monsterDatabase());
+  expectCatalog(root.npcDatabase());
+  expectCatalog(root.playerFactory());
+  expectCatalog(root.entityFactory());
+  expectCatalog(root.nameGenerator());
+  expectCatalog(root.itemDatabase());
+  expectCatalog(root.materialDatabase());
+  expectCatalog(root.terrainDatabase());
+  expectCatalog(root.biomeDatabase());
+  expectCatalog(root.liquidsDatabase());
+  expectCatalog(root.statusEffectDatabase());
+  expectCatalog(root.damageDatabase());
+  expectCatalog(root.particleDatabase());
+  expectCatalog(root.effectSourceDatabase());
+  expectCatalog(root.functionDatabase());
+  expectCatalog(root.treasureDatabase());
+  expectCatalog(root.dungeonDefinitions());
+  expectCatalog(root.emoteProcessor());
+  expectCatalog(root.speciesDatabase());
+  expectCatalog(root.imageMetadataDatabase());
+  expectCatalog(root.versioningDatabase());
+  expectCatalog(root.questTemplateDatabase());
+  expectCatalog(root.aiDatabase());
+  expectCatalog(root.techDatabase());
+  expectCatalog(root.codexDatabase());
+  expectCatalog(root.stagehandDatabase());
+  expectCatalog(root.behaviorDatabase());
+  expectCatalog(root.tenantDatabase());
+  expectCatalog(root.danceDatabase());
+  expectCatalog(root.spawnTypeDatabase());
 });
 
-void writeIsolationAssets(String const& overlay, String const& owner) {
-  File::writeFile(Json(JsonObject{{"owner", owner}}).repr(),
-      File::relativeTo(overlay, "root-isolation.config"));
-  File::writeFile(Json(JsonObject{
+[[nodiscard]] std::expected<void, StarException> writeIsolationAssets(String const& overlay, String const& owner) {
+  auto config = Json(JsonObject{{"owner", owner}}).repr();
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto writeConfig = File::writeFile(*config, File::relativeTo(overlay, "root-isolation.config"));
+  if (!writeConfig) return std::unexpected(std::move(writeConfig.error()));
+  auto tech = Json(JsonObject{
       {"name", "root-isolation"},
       {"type", "Head"},
       {"scripts", JsonArray{}},
@@ -144,16 +152,24 @@ void writeIsolationAssets(String const& overlay, String const& owner) {
       {"shortDescription", owner},
       {"rarity", "common"},
       {"icon", "/interface/missing.png"}
-    }).repr(), File::relativeTo(overlay, "root-isolation.tech"));
-  File::writeFile("function isolationScriptOwner() return " + Json(owner).repr() + " end",
+    }).repr();
+  if (!tech) return std::unexpected(std::move(tech.error()));
+  auto writeTech = File::writeFile(*tech, File::relativeTo(overlay, "root-isolation.tech"));
+  if (!writeTech) return std::unexpected(std::move(writeTech.error()));
+  auto quotedOwner = Json(owner).repr();
+  if (!quotedOwner) return std::unexpected(std::move(quotedOwner.error()));
+  return File::writeFile("function isolationScriptOwner() return " + *quotedOwner + " end",
       File::relativeTo(overlay, "root-isolation.lua"));
 }
 
-Root::Settings isolationSettings(Root::Settings const& base, String const& directory, String const& owner) {
+[[nodiscard]] std::expected<Root::Settings, StarException> isolationSettings(
+    Root::Settings const& base, String const& directory, String const& owner) {
   auto settings = base;
   auto overlay = File::relativeTo(directory, "assets");
-  File::makeDirectory(overlay);
-  writeIsolationAssets(overlay, owner);
+  auto makeOverlay = File::makeDirectory(overlay);
+  if (!makeOverlay) return std::unexpected(std::move(makeOverlay.error()));
+  auto writeAssets = writeIsolationAssets(overlay, owner);
+  if (!writeAssets) return std::unexpected(std::move(writeAssets.error()));
   // Keep the fixture's legal base pak and production mod sources; only the
   // test-owned overlay, runtime configuration, storage, and logs are private.
   settings.assetSources.append(overlay);
@@ -165,89 +181,150 @@ Root::Settings isolationSettings(Root::Settings const& base, String const& direc
   settings.logDirectory = {};
   settings.logFile = {};
   settings.includeUGC = false;
-  settings.defaultConfiguration = settings.defaultConfiguration.set("rootIsolationOwner", owner);
+  auto configuration = settings.defaultConfiguration.set("rootIsolationOwner", owner);
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  settings.defaultConfiguration = std::move(*configuration);
   return settings;
 }
 
-void expectIsolationConsumers(Root& root, LuaContext& context, String const& owner, String const& scriptOwner,
-    String const& configurationOwner) {
-  EXPECT_EQ(root.assets()->json("/root-isolation.config").getString("owner"), owner);
-  EXPECT_EQ(root.techDatabase()->tech("root-isolation").description, owner);
-  EXPECT_EQ(root.configuration()->get("rootIsolationOwner").toString(), configurationOwner);
+[[nodiscard]] std::expected<void, StarException> expectIsolationConsumers(Root& root, LuaContext& context,
+    String const& owner, String const& scriptOwner, String const& configurationOwner) {
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/root-isolation.config");
+  if (!config) return std::unexpected(std::move(config.error()));
+  EXPECT_EQ(config->getString("owner"), owner);
+  auto database = root.techDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto tech = (*database)->tech("root-isolation");
+  if (!tech) return std::unexpected(std::move(tech.error()));
+  EXPECT_EQ(tech->description, owner);
+  auto configuration = root.configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto value = (*configuration)->get("rootIsolationOwner");
+  if (!value) return std::unexpected(std::move(value.error()));
+  EXPECT_EQ(value->toString(), configurationOwner);
   EXPECT_EQ(context.eval<String>("root.assetJson('/root-isolation.config').owner"), owner);
   EXPECT_EQ(context.eval<String>("root.techConfig('root-isolation').description"), owner);
   EXPECT_EQ(context.eval<String>("root.getConfiguration('rootIsolationOwner')"), configurationOwner);
   EXPECT_EQ(context.invokePath<String>("isolationScriptOwner"), scriptOwner);
+  return {};
+}
+
+[[nodiscard]] std::expected<std::shared_ptr<LuaRoot>, StarException> isolationLua(Root& root, bool utilities = false) {
+  auto lua = LuaRoot::create(root);
+  if (!lua) return std::unexpected(std::move(lua.error()));
+  auto callbacks = LuaBindings::makeRootCallbacks(root);
+  if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+  (*lua)->addCallbacks("root", *callbacks);
+  if (utilities) {
+    auto utilityCallbacks = LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap());
+    if (!utilityCallbacks) return std::unexpected(std::move(utilityCallbacks.error()));
+    (*lua)->addCallbacks("sb", *utilityCallbacks);
+  }
+  return std::move(*lua);
+}
+
+[[nodiscard]] std::expected<bool, StarException> isolationLogContains(String const& path, String const& text) {
+  auto content = File::readFileString(path);
+  if (!content) return std::unexpected(std::move(content.error()));
+  return content->contains(text);
+}
+
+[[nodiscard]] std::expected<String, StarException> isolationStoredOwner(String const& directory) {
+  auto content = File::readFileString(File::relativeTo(directory, "root-isolation.config"));
+  if (!content) return std::unexpected(std::move(content.error()));
+  auto json = Json::parseJson(*content);
+  if (!json) return std::unexpected(std::move(json.error()));
+  return json->getString("rootIsolationOwner");
 }
 
 const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", [](GameTest& fixture) {
   auto directoryA = File::temporaryDirectory(fixture.root().random());
-  auto cleanupA = finally([&] { File::removeDirectoryRecursive(directoryA); });
+  ASSERT_TRUE(directoryA) << directoryA.error().what();
+  auto cleanupA = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directoryA)); });
   auto directoryB = File::temporaryDirectory(fixture.root().random());
-  auto cleanupB = finally([&] { File::removeDirectoryRecursive(directoryB); });
-  auto settingsA = isolationSettings(fixture.rootSettings(), directoryA, "A");
-  auto settingsB = isolationSettings(fixture.rootSettings(), directoryB, "B");
-  auto overlayA = File::relativeTo(directoryA, "assets");
-  auto overlayB = File::relativeTo(directoryB, "assets");
-  auto rootA = std::make_unique<Root>(settingsA);
+  ASSERT_TRUE(directoryB) << directoryB.error().what();
+  auto cleanupB = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directoryB)); });
+  auto settingsResultA = isolationSettings(fixture.rootSettings(), *directoryA, "A");
+  ASSERT_TRUE(settingsResultA) << settingsResultA.error().what();
+  auto settingsA = std::move(*settingsResultA);
+  auto settingsResultB = isolationSettings(fixture.rootSettings(), *directoryB, "B");
+  ASSERT_TRUE(settingsResultB) << settingsResultB.error().what();
+  auto settingsB = std::move(*settingsResultB);
+  auto overlayA = File::relativeTo(*directoryA, "assets");
+  auto overlayB = File::relativeTo(*directoryB, "assets");
+  auto createdA = Root::create(settingsA);
+  ASSERT_TRUE(createdA) << createdA.error().what();
+  auto rootA = std::move(*createdA);
   rootA->logger().addSink(std::make_shared<RootIsolationErrorSink>());
-  auto rootB = std::make_unique<Root>(settingsB);
+  auto createdB = Root::create(settingsB);
+  ASSERT_TRUE(createdB) << createdB.error().what();
+  auto rootB = std::move(*createdB);
   rootB->logger().addSink(std::make_shared<RootIsolationErrorSink>());
-  auto logPathA = File::relativeTo(directoryA, "isolation.log");
-  auto logPathB = File::relativeTo(directoryB, "isolation.log");
-  auto sinkA = std::make_shared<FileLogSink>(logPathA, LogLevel::Info, true);
-  auto sinkB = std::make_shared<FileLogSink>(logPathB, LogLevel::Info, true);
-  rootA->logger().addSink(sinkA);
-  rootB->logger().addSink(sinkB);
+  auto logPathA = File::relativeTo(*directoryA, "isolation.log");
+  auto logPathB = File::relativeTo(*directoryB, "isolation.log");
+  auto sinkA = FileLogSink::create(logPathA, LogLevel::Info, true);
+  ASSERT_TRUE(sinkA) << sinkA.error().what();
+  auto sinkB = FileLogSink::create(logPathB, LogLevel::Info, true);
+  ASSERT_TRUE(sinkB) << sinkB.error().what();
+  rootA->logger().addSink(*sinkA);
+  rootB->logger().addSink(*sinkB);
 
   EXPECT_NE(rootA->toStoragePath("root-isolation.config"), rootB->toStoragePath("root-isolation.config"));
   {
-    auto luaA = std::make_unique<LuaRoot>(*rootA);
-    LuaRoot luaB(*rootB);
-    luaA->addCallbacks("root", LuaBindings::makeRootCallbacks(*rootA));
-    luaB.addCallbacks("root", LuaBindings::makeRootCallbacks(*rootB));
-    luaA->addCallbacks("sb", LuaBindings::makeUtilityCallbacks(rootA->random(), rootA->logger(), rootA->logMap()));
-    luaB.addCallbacks("sb", LuaBindings::makeUtilityCallbacks(rootB->random(), rootB->logger(), rootB->logMap()));
-    auto contextA = std::make_unique<LuaContext>(luaA->createContext("/root-isolation.lua"));
-    auto contextB = luaB.createContext("/root-isolation.lua");
-    expectIsolationConsumers(*rootA, *contextA, "A", "A", "A");
-    expectIsolationConsumers(*rootB, contextB, "B", "B", "B");
+    auto createdLuaA = isolationLua(*rootA, true);
+    ASSERT_TRUE(createdLuaA) << createdLuaA.error().what();
+    auto luaA = std::move(*createdLuaA);
+    auto createdLuaB = isolationLua(*rootB, true);
+    ASSERT_TRUE(createdLuaB) << createdLuaB.error().what();
+    auto luaB = std::move(*createdLuaB);
+    auto createdContextA = luaA->createContext("/root-isolation.lua");
+    ASSERT_TRUE(createdContextA) << createdContextA.error().what();
+    auto contextA = std::make_unique<LuaContext>(std::move(*createdContextA));
+    auto contextB = luaB->createContext("/root-isolation.lua");
+    ASSERT_TRUE(contextB) << contextB.error().what();
+    ASSERT_TRUE(expectIsolationConsumers(*rootA, *contextA, "A", "A", "A"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B"));
 
     // Exercise writes through the real Lua root table, not only C++ getters.
-    contextA->eval("root.setConfiguration('rootIsolationOwner', 'A-written')");
-    contextB.eval("root.setConfiguration('rootIsolationOwner', 'B-written')");
-    expectIsolationConsumers(*rootA, *contextA, "A", "A", "A-written");
-    expectIsolationConsumers(*rootB, contextB, "B", "B", "B-written");
-    contextA->eval("sb.logInfo('root-isolation-log-A'); sb.setLogMap('root-isolation', 'A')");
-    contextB.eval("sb.logInfo('root-isolation-log-B'); sb.setLogMap('root-isolation', 'B')");
+    ASSERT_TRUE(contextA->eval("root.setConfiguration('rootIsolationOwner', 'A-written')"));
+    ASSERT_TRUE(contextB->eval("root.setConfiguration('rootIsolationOwner', 'B-written')"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootA, *contextA, "A", "A", "A-written"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B-written"));
+    ASSERT_TRUE(contextA->eval("sb.logInfo('root-isolation-log-A'); sb.setLogMap('root-isolation', 'A')"));
+    ASSERT_TRUE(contextB->eval("sb.logInfo('root-isolation-log-B'); sb.setLogMap('root-isolation', 'B')"));
     EXPECT_EQ(rootA->logMap().getValue("root-isolation"), "A");
     EXPECT_EQ(rootB->logMap().getValue("root-isolation"), "B");
     rootA->logMap().clear();
     EXPECT_TRUE(rootA->logMap().getValues().empty());
     EXPECT_EQ(rootB->logMap().getValue("root-isolation"), "B");
-    EXPECT_TRUE(File::readFileString(logPathA).contains("root-isolation-log-A"));
-    EXPECT_FALSE(File::readFileString(logPathA).contains("root-isolation-log-B"));
-    EXPECT_TRUE(File::readFileString(logPathB).contains("root-isolation-log-B"));
-    EXPECT_FALSE(File::readFileString(logPathB).contains("root-isolation-log-A"));
+    EXPECT_EQ(isolationLogContains(logPathA, "root-isolation-log-A"), true);
+    EXPECT_EQ(isolationLogContains(logPathA, "root-isolation-log-B"), false);
+    EXPECT_EQ(isolationLogContains(logPathB, "root-isolation-log-B"), true);
+    EXPECT_EQ(isolationLogContains(logPathB, "root-isolation-log-A"), false);
 
     // A real filesystem failure must leave both live owners usable and must
     // not prevent a subsequent successful Root construction.
     auto failedSettings = settingsA;
-    failedSettings.storageDirectory = File::relativeTo(directoryA, "not-a-directory");
-    File::writeFile("regular file", failedSettings.storageDirectory);
-    EXPECT_THROW((Root{failedSettings}), std::exception);
+    failedSettings.storageDirectory = File::relativeTo(*directoryA, "not-a-directory");
+    ASSERT_TRUE(File::writeFile("regular file", failedSettings.storageDirectory));
+    auto failedRoot = Root::create(failedSettings);
+    EXPECT_FALSE(failedRoot);
     auto recoveredSettings = settingsA;
-    recoveredSettings.storageDirectory = File::relativeTo(directoryA, "recovered-storage");
+    recoveredSettings.storageDirectory = File::relativeTo(*directoryA, "recovered-storage");
     {
-      Root recovered(recoveredSettings);
-      recovered.logger().addSink(std::make_shared<RootIsolationErrorSink>());
-      LuaRoot recoveredLua(recovered);
-      recoveredLua.addCallbacks("root", LuaBindings::makeRootCallbacks(recovered));
-      auto recoveredContext = recoveredLua.createContext("/root-isolation.lua");
-      expectIsolationConsumers(recovered, recoveredContext, "A", "A", "A");
+      auto recovered = Root::create(recoveredSettings);
+      ASSERT_TRUE(recovered) << recovered.error().what();
+      (*recovered)->logger().addSink(std::make_shared<RootIsolationErrorSink>());
+      auto recoveredLua = isolationLua(**recovered);
+      ASSERT_TRUE(recoveredLua) << recoveredLua.error().what();
+      auto recoveredContext = (*recoveredLua)->createContext("/root-isolation.lua");
+      ASSERT_TRUE(recoveredContext) << recoveredContext.error().what();
+      ASSERT_TRUE(expectIsolationConsumers(**recovered, *recoveredContext, "A", "A", "A"));
     }
-    expectIsolationConsumers(*rootA, *contextA, "A", "A", "A-written");
-    expectIsolationConsumers(*rootB, contextB, "B", "B", "B-written");
+    ASSERT_TRUE(expectIsolationConsumers(*rootA, *contextA, "A", "A", "A-written"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B-written"));
 
     auto listenerA = std::make_shared<TrackerListener>();
     auto listenerB = std::make_shared<TrackerListener>();
@@ -255,30 +332,46 @@ const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", []
     auto subscriptionB = rootB->registerReloadListener(listenerB);
     {
       auto assetsA = rootA->assets();
+      ASSERT_TRUE(assetsA) << assetsA.error().what();
       auto assetsB = rootB->assets();
+      ASSERT_TRUE(assetsB) << assetsB.error().what();
       auto databaseA = rootA->techDatabase();
+      ASSERT_TRUE(databaseA) << databaseA.error().what();
       auto databaseB = rootB->techDatabase();
-      writeIsolationAssets(overlayA, "A-reloaded");
-      writeIsolationAssets(overlayB, "B-reloaded");
+      ASSERT_TRUE(databaseB) << databaseB.error().what();
+      ASSERT_TRUE(writeIsolationAssets(overlayA, "A-reloaded"));
+      ASSERT_TRUE(writeIsolationAssets(overlayB, "B-reloaded"));
 
-      rootA->reload();
+      ASSERT_TRUE(rootA->reload());
       EXPECT_TRUE(listenerA->pullTriggered());
       EXPECT_FALSE(listenerB->pullTriggered());
       EXPECT_FALSE(luaA->scriptLoaded("/root-isolation.lua"));
-      EXPECT_TRUE(luaB.scriptLoaded("/root-isolation.lua"));
-      EXPECT_NE(rootA->assets().get(), assetsA.get());
-      EXPECT_NE(rootA->techDatabase().get(), databaseA.get());
-      EXPECT_EQ(rootB->assets().get(), assetsB.get());
-      EXPECT_EQ(rootB->techDatabase().get(), databaseB.get());
-      EXPECT_EQ(databaseA->tech("root-isolation").description, "A");
+      EXPECT_TRUE(luaB->scriptLoaded("/root-isolation.lua"));
+      auto reloadedAssetsA = rootA->assets();
+      ASSERT_TRUE(reloadedAssetsA) << reloadedAssetsA.error().what();
+      auto reloadedDatabaseA = rootA->techDatabase();
+      ASSERT_TRUE(reloadedDatabaseA) << reloadedDatabaseA.error().what();
+      auto retainedAssetsB = rootB->assets();
+      ASSERT_TRUE(retainedAssetsB) << retainedAssetsB.error().what();
+      auto retainedDatabaseB = rootB->techDatabase();
+      ASSERT_TRUE(retainedDatabaseB) << retainedDatabaseB.error().what();
+      EXPECT_NE(reloadedAssetsA->get(), assetsA->get());
+      EXPECT_NE(reloadedDatabaseA->get(), databaseA->get());
+      EXPECT_EQ(retainedAssetsB->get(), assetsB->get());
+      EXPECT_EQ(retainedDatabaseB->get(), databaseB->get());
+      auto retainedTechA = (*databaseA)->tech("root-isolation");
+      ASSERT_TRUE(retainedTechA) << retainedTechA.error().what();
+      EXPECT_EQ(retainedTechA->description, "A");
       // Existing closures follow their own owner's reloaded services, while
       // already instantiated Lua functions keep their original script body.
-      expectIsolationConsumers(*rootA, *contextA, "A-reloaded", "A", "A-written");
+      ASSERT_TRUE(expectIsolationConsumers(*rootA, *contextA, "A-reloaded", "A", "A-written"));
       auto reloadedContextA = luaA->createContext("/root-isolation.lua");
-      expectIsolationConsumers(*rootA, reloadedContextA, "A-reloaded", "A-reloaded", "A-written");
-      expectIsolationConsumers(*rootB, contextB, "B", "B", "B-written");
-      auto cachedContextB = luaB.createContext("/root-isolation.lua");
-      expectIsolationConsumers(*rootB, cachedContextB, "B", "B", "B-written");
+      ASSERT_TRUE(reloadedContextA) << reloadedContextA.error().what();
+      ASSERT_TRUE(expectIsolationConsumers(*rootA, *reloadedContextA, "A-reloaded", "A-reloaded", "A-written"));
+      ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B-written"));
+      auto cachedContextB = luaB->createContext("/root-isolation.lua");
+      ASSERT_TRUE(cachedContextB) << cachedContextB.error().what();
+      ASSERT_TRUE(expectIsolationConsumers(*rootB, *cachedContextB, "B", "B", "B-written"));
     }
 
     // Destroy all A script borrowers before A. B remains live throughout.
@@ -287,104 +380,138 @@ const GameTestRegistration simultaneousRoots("RootTest", "SimultaneousRoots", []
     subscriptionA.disconnect();
     rootA.reset();
     EXPECT_FALSE(listenerB->pullTriggered());
-    expectIsolationConsumers(*rootB, contextB, "B", "B", "B-written");
-    contextB.eval("root.setConfiguration('rootIsolationOwner', 'B-survives')");
-    expectIsolationConsumers(*rootB, contextB, "B", "B", "B-survives");
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B-written"));
+    ASSERT_TRUE(contextB->eval("root.setConfiguration('rootIsolationOwner', 'B-survives')"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B", "B", "B-survives"));
     EXPECT_EQ(rootB->logMap().getValue("root-isolation"), "B");
-    contextB.eval("sb.logInfo('root-isolation-log-B-survives'); sb.setLogMap('root-isolation', 'B-survives')");
+    ASSERT_TRUE(contextB->eval("sb.logInfo('root-isolation-log-B-survives'); sb.setLogMap('root-isolation', 'B-survives')"));
     EXPECT_EQ(rootB->logMap().getValue("root-isolation"), "B-survives");
-    EXPECT_TRUE(File::readFileString(logPathB).contains("root-isolation-log-B-survives"));
-    EXPECT_FALSE(File::readFileString(logPathA).contains("root-isolation-log-B-survives"));
+    EXPECT_EQ(isolationLogContains(logPathB, "root-isolation-log-B-survives"), true);
+    EXPECT_EQ(isolationLogContains(logPathA, "root-isolation-log-B-survives"), false);
 
-    rootB->reload();
+    ASSERT_TRUE(rootB->reload());
     EXPECT_TRUE(listenerB->pullTriggered());
-    EXPECT_FALSE(luaB.scriptLoaded("/root-isolation.lua"));
-    expectIsolationConsumers(*rootB, contextB, "B-reloaded", "B", "B-survives");
-    auto reloadedContextB = luaB.createContext("/root-isolation.lua");
-    expectIsolationConsumers(*rootB, reloadedContextB, "B-reloaded", "B-reloaded", "B-survives");
+    EXPECT_FALSE(luaB->scriptLoaded("/root-isolation.lua"));
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *contextB, "B-reloaded", "B", "B-survives"));
+    auto reloadedContextB = luaB->createContext("/root-isolation.lua");
+    ASSERT_TRUE(reloadedContextB) << reloadedContextB.error().what();
+    ASSERT_TRUE(expectIsolationConsumers(*rootB, *reloadedContextB, "B-reloaded", "B-reloaded", "B-survives"));
   }
   rootB.reset();
-  EXPECT_EQ(Json::parseJson(File::readFileString(File::relativeTo(settingsA.storageDirectory,
-      "root-isolation.config"))).getString("rootIsolationOwner"), "A-written");
-  EXPECT_EQ(Json::parseJson(File::readFileString(File::relativeTo(settingsB.storageDirectory,
-      "root-isolation.config"))).getString("rootIsolationOwner"), "B-survives");
+  EXPECT_EQ(isolationStoredOwner(settingsA.storageDirectory), "A-written");
+  EXPECT_EQ(isolationStoredOwner(settingsB.storageDirectory), "B-survives");
 });
 
-void writeIsolationMaterial(String const& overlay, MaterialId material, String const& collisionKind) {
+[[nodiscard]] std::expected<void, StarException> writeIsolationMaterial(
+    String const& overlay, MaterialId material, String const& collisionKind) {
   // These are the required MaterialDatabase parser fields. Omit the optional
   // render profile: the consumer is the real headless world's collision path.
-  File::writeFile(Json(JsonObject{
+  auto content = Json(JsonObject{
       {"materialId", material},
       {"materialName", "root-isolation"},
       {"category", "materials"},
       {"collisionKind", collisionKind}
-    }).repr(), File::relativeTo(overlay, "root-isolation.material"));
+    }).repr();
+  if (!content) return std::unexpected(std::move(content.error()));
+  return File::writeFile(*content, File::relativeTo(overlay, "root-isolation.material"));
 }
 
-void placeIsolationMaterial(WorldServer& world, Vec2I const& position, MaterialId material, bool collides) {
-  world.generateRegion(RectI::withSize(position - Vec2I(4, 4), Vec2I(9, 9)));
+[[nodiscard]] std::expected<void, StarException> placeIsolationMaterial(
+    WorldServer& world, Vec2I const& position, MaterialId material, bool collides) {
+  auto generated = world.generateRegion(RectI::withSize(position - Vec2I(4, 4), Vec2I(9, 9)));
+  if (!generated) return std::unexpected(std::move(generated.error()));
   world.setTileProtectionEnabled(false);
   auto tile = world.modifyServerTile(position, true);
-  ASSERT_NE(tile, nullptr);
-  ASSERT_EQ(tile->foreground, EmptyMaterialId);
+  if (!tile) return std::unexpected(std::move(tile.error()));
+  if (!*tile) return std::unexpected(StarException("Isolation material tile is unavailable"));
+  EXPECT_EQ((*tile)->foreground, EmptyMaterialId);
+  if ((*tile)->foreground != EmptyMaterialId)
+    return std::unexpected(StarException("Isolation material tile is not empty"));
   auto center = Vec2F(position) + Vec2F(0.5f, 0.5f);
-  EXPECT_FALSE(world.pointTileCollision(center));
+  EXPECT_EQ(world.pointTileCollision(center), false);
   // Supply a legitimate attachment surface, then let WorldServer perform the
   // placement and derive its collision from this world's MaterialDatabase.
-  tile->background = StructureMaterialId;
-  ASSERT_TRUE(world.forceModifyTile(position, PlaceMaterial{TileLayer::Foreground, material, MaterialHue(0)}, true));
+  (*tile)->background = StructureMaterialId;
+  auto placed = world.forceModifyTile(
+      position, PlaceMaterial{TileLayer::Foreground, material, MaterialHue(0)}, true);
+  if (!placed) return std::unexpected(std::move(placed.error()));
+  if (!*placed) return std::unexpected(StarException("Isolation material placement was rejected"));
   EXPECT_EQ(world.material(position, TileLayer::Foreground), material);
   EXPECT_EQ(world.pointTileCollision(center), collides);
   EXPECT_EQ(world.lineTileCollision(center - Vec2F(0.25f, 0), center + Vec2F(0.25f, 0)), collides);
+  return {};
 }
 
 const GameTestRegistration simultaneousWorldMaterials("RootTest", "SimultaneousWorldMaterials", [](GameTest& fixture) {
   // Select a genuinely unused real ID, rather than assuming a mod collection
   // leaves a hard-coded material slot free.
   auto materials = fixture.root().materialDatabase();
+  ASSERT_TRUE(materials) << materials.error().what();
   MaterialId material = 0;
-  while (material < FirstMetaMaterialId && materials->isValidMaterialId(material))
+  while (material < FirstMetaMaterialId && (*materials)->isValidMaterialId(material))
     ++material;
   ASSERT_LT(material, FirstMetaMaterialId);
 
   auto directoryA = File::temporaryDirectory(fixture.root().random());
-  auto cleanupA = finally([&] { File::removeDirectoryRecursive(directoryA); });
+  ASSERT_TRUE(directoryA) << directoryA.error().what();
+  auto cleanupA = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directoryA)); });
   auto directoryB = File::temporaryDirectory(fixture.root().random());
-  auto cleanupB = finally([&] { File::removeDirectoryRecursive(directoryB); });
-  auto settingsA = isolationSettings(fixture.rootSettings(), directoryA, "A");
-  auto settingsB = isolationSettings(fixture.rootSettings(), directoryB, "B");
-  auto overlayA = File::relativeTo(directoryA, "assets");
-  auto overlayB = File::relativeTo(directoryB, "assets");
-  writeIsolationMaterial(overlayA, material, "block");
-  writeIsolationMaterial(overlayB, material, "none");
+  ASSERT_TRUE(directoryB) << directoryB.error().what();
+  auto cleanupB = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(*directoryB)); });
+  auto settingsA = isolationSettings(fixture.rootSettings(), *directoryA, "A");
+  ASSERT_TRUE(settingsA) << settingsA.error().what();
+  auto settingsB = isolationSettings(fixture.rootSettings(), *directoryB, "B");
+  ASSERT_TRUE(settingsB) << settingsB.error().what();
+  auto overlayA = File::relativeTo(*directoryA, "assets");
+  auto overlayB = File::relativeTo(*directoryB, "assets");
+  ASSERT_TRUE(writeIsolationMaterial(overlayA, material, "block"));
+  ASSERT_TRUE(writeIsolationMaterial(overlayB, material, "none"));
 
-  auto rootA = std::make_unique<Root>(settingsA);
+  auto createdA = Root::create(*settingsA);
+  ASSERT_TRUE(createdA) << createdA.error().what();
+  auto rootA = std::move(*createdA);
   rootA->logger().addSink(std::make_shared<RootIsolationErrorSink>());
-  auto rootB = std::make_unique<Root>(settingsB);
+  auto createdB = Root::create(*settingsB);
+  ASSERT_TRUE(createdB) << createdB.error().what();
+  auto rootB = std::move(*createdB);
   rootB->logger().addSink(std::make_shared<RootIsolationErrorSink>());
-  auto worldA = std::make_unique<WorldServer>(*rootA, Vec2U(2048, 2048), File::ephemeralFile(rootA->random()));
-  auto closeWorldA = finally([&] { if (worldA) worldA->close(); });
-  auto worldB = std::make_unique<WorldServer>(*rootB, Vec2U(2048, 2048), File::ephemeralFile(rootB->random()));
-  auto closeWorldB = finally([&] { worldB->close(); });
-  EXPECT_EQ(rootA->materialDatabase()->materialId("root-isolation"), material);
-  EXPECT_EQ(rootB->materialDatabase()->materialId("root-isolation"), material);
+  auto storageA = File::ephemeralFile(rootA->random());
+  ASSERT_TRUE(storageA) << storageA.error().what();
+  auto createdWorldA = WorldServer::create(*rootA, Vec2U(2048, 2048), *storageA);
+  ASSERT_TRUE(createdWorldA) << createdWorldA.error().what();
+  auto worldA = std::move(*createdWorldA);
+  auto closeWorldA = finally([&] { if (worldA) EXPECT_TRUE(worldA->close()); });
+  auto storageB = File::ephemeralFile(rootB->random());
+  ASSERT_TRUE(storageB) << storageB.error().what();
+  auto createdWorldB = WorldServer::create(*rootB, Vec2U(2048, 2048), *storageB);
+  ASSERT_TRUE(createdWorldB) << createdWorldB.error().what();
+  auto worldB = std::move(*createdWorldB);
+  auto closeWorldB = finally([&] { EXPECT_TRUE(worldB->close()); });
+  {
+    auto materialsA = rootA->materialDatabase();
+    ASSERT_TRUE(materialsA) << materialsA.error().what();
+    auto materialsB = rootB->materialDatabase();
+    ASSERT_TRUE(materialsB) << materialsB.error().what();
+    EXPECT_EQ((*materialsA)->materialId("root-isolation"), material);
+    EXPECT_EQ((*materialsB)->materialId("root-isolation"), material);
+  }
 
   // Identical material IDs and placement requests produce different actual
   // world collision behavior, not merely different catalog properties.
-  placeIsolationMaterial(*worldA, Vec2I(1024, 1024), material, true);
-  placeIsolationMaterial(*worldB, Vec2I(1024, 1024), material, false);
-  writeIsolationMaterial(overlayA, material, "none");
-  writeIsolationMaterial(overlayB, material, "block");
-  rootA->reload();
-  placeIsolationMaterial(*worldA, Vec2I(1032, 1024), material, false);
-  placeIsolationMaterial(*worldB, Vec2I(1032, 1024), material, false);
+  ASSERT_TRUE(placeIsolationMaterial(*worldA, Vec2I(1024, 1024), material, true));
+  ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1024, 1024), material, false));
+  ASSERT_TRUE(writeIsolationMaterial(overlayA, material, "none"));
+  ASSERT_TRUE(writeIsolationMaterial(overlayB, material, "block"));
+  ASSERT_TRUE(rootA->reload());
+  ASSERT_TRUE(placeIsolationMaterial(*worldA, Vec2I(1032, 1024), material, false));
+  ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1032, 1024), material, false));
 
-  worldA->close();
+  ASSERT_TRUE(worldA->close());
   worldA.reset();
   rootA.reset();
-  placeIsolationMaterial(*worldB, Vec2I(1040, 1024), material, false);
-  rootB->reload();
-  placeIsolationMaterial(*worldB, Vec2I(1048, 1024), material, true);
+  ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1040, 1024), material, false));
+  ASSERT_TRUE(rootB->reload());
+  ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1048, 1024), material, true));
 });
 
 }

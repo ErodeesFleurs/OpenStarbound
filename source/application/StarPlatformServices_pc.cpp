@@ -6,6 +6,7 @@
 #include "discord/discord.h"
 #endif
 import std;
+import star.format;
 import star.logging;
 import star.thread;
 import star.string;
@@ -47,6 +48,17 @@ PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
   , callbackGameOverlayActivated(steamDispatch, this, &PcPlatformServicesState::onGameOverlayActivated)
 #endif
 {
+}
+
+std::expected<std::shared_ptr<PcPlatformServicesState>, StarException> PcPlatformServicesState::create(Logger& logger) {
+  auto state = std::shared_ptr<PcPlatformServicesState>(new PcPlatformServicesState(logger));
+  auto initialized = state->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return state;
+}
+
+std::expected<void, StarException> PcPlatformServicesState::initialize() {
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   bool shouldLoadSteam = true;
@@ -64,17 +76,28 @@ PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
 
   bool steamFlatpakInstalled = false;
 
-  if (File::isDirectory("/var/lib/flatpak/app/com.valvesoftware.Steam")) {
-    logger.info("Steam flatpak is installed");
+  auto flatpakDirectory = File::isDirectory("/var/lib/flatpak/app/com.valvesoftware.Steam");
+  if (!flatpakDirectory)
+    return std::unexpected(std::move(flatpakDirectory.error()));
+  if (*flatpakDirectory) {
+    if (auto logged = logger.info("Steam flatpak is installed"); !logged)
+      return std::unexpected(std::move(logged.error()));
     steamFlatpakInstalled = true;
   }
 
-  String steamRootPath = String::joinWith("", std::getenv("HOME"), "/.steam");
-  if (!File::isDirectory(steamRootPath)) {
+  auto steamRoot = String::joinWith("", std::getenv("HOME"), "/.steam");
+  if (!steamRoot)
+    return std::unexpected(std::move(steamRoot.error()));
+  String steamRootPath = std::move(*steamRoot);
+  auto steamDirectory = File::isDirectory(steamRootPath);
+  if (!steamDirectory)
+    return std::unexpected(std::move(steamDirectory.error()));
+  if (!*steamDirectory) {
     if (steamFlatpakInstalled) {
       steamIsFlatpak = true;
     } else {
-      logger.info("Could not find ~/.steam; Steam platform services will be unavailable!");
+      if (auto logged = logger.info("Could not find ~/.steam; Steam platform services will be unavailable!"); !logged)
+        return std::unexpected(std::move(logged.error()));
       shouldLoadSteam = false;
     }
   } else {
@@ -82,13 +105,20 @@ PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
     // and normal.
     if (steamFlatpakInstalled) {
       // Check if ~/.steam points to a flatpak installation
-      String steamAbsRootPath = File::fullPath(steamRootPath);
-      if (steamAbsRootPath.contains("com.valvesoftware.Steam")) {
-        logger.info("~/.steam points towards the installed flatpak");
+      auto steamAbsRootPath = File::fullPath(steamRootPath);
+      if (!steamAbsRootPath)
+        return std::unexpected(std::move(steamAbsRootPath.error()));
+      auto isFlatpak = steamAbsRootPath->contains("com.valvesoftware.Steam");
+      if (!isFlatpak)
+        return std::unexpected(std::move(isFlatpak.error()));
+      if (*isFlatpak) {
+        if (auto logged = logger.info("~/.steam points towards the installed flatpak"); !logged)
+          return std::unexpected(std::move(logged.error()));
         steamIsFlatpak = true;
         shouldLoadSteam = false;
       } else {
-        logger.info("~/.steam does not point towards the installed flatpak");
+        if (auto logged = logger.info("~/.steam does not point towards the installed flatpak"); !logged)
+          return std::unexpected(std::move(logged.error()));
       }
     }
   }
@@ -98,13 +128,25 @@ PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
     SteamErrMsg errMsg;
     if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
       steamAvailable = true;
-      steamDispatch.initialize();
-      logger.info("Initialized Steam platform services");
+      auto initialized = steamDispatch.initialize();
+      if (!initialized) {
+        steamError = std::move(initialized.error());
+        SteamAPI_Shutdown();
+        steamAvailable = false;
+        if (auto logged = logger.error("Failed to initialize Steam dispatch: {}", steamError->what()); !logged)
+          return std::unexpected(std::move(logged.error()));
+      } else {
+        if (auto logged = logger.info("Initialized Steam platform services"); !logged)
+          return std::unexpected(std::move(logged.error()));
+      }
     } else {
-      logger.info("Failed to initialize Steam platform services: {}", errMsg);
+      if (auto logged = logger.info("Failed to initialize Steam platform services: {}", errMsg); !logged)
+        return std::unexpected(std::move(logged.error()));
+      steamError = ApplicationException::format("Failed to initialize Steam platform services: {}", errMsg);
     }
   } else {
-    logger.info("Skipping Steam platform initialization");
+    if (auto logged = logger.info("Skipping Steam platform initialization"); !logged)
+      return std::unexpected(std::move(logged.error()));
   }
 #endif
 
@@ -120,53 +162,86 @@ PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
     discordCore->UserManager().OnCurrentUserUpdate.Connect([this](){
         discord::User user;
         auto res = discordCore->UserManager().GetCurrentUser(&user);
-        if (res != discord::Result::Ok)
-          this->logger.error("Could not get current Discord user. (err {})", (int)res);
-        else
+        if (res != discord::Result::Ok) {
+          discordError = ApplicationException::format("Could not get current Discord user (err {})", (int)res);
+          if (auto logged = this->logger.error("{}", discordError->what()); !logged)
+            discordError = std::move(logged.error());
+        } else {
           discordCurrentUser = user;
+        }
       });
 
   } else {
-    logger.error("Failed to instantiate Discord core (err {})", (int)res);
+    if (auto logged = logger.error("Failed to instantiate Discord core (err {})", (int)res); !logged)
+      return std::unexpected(std::move(logged.error()));
+    discordError = ApplicationException::format("Failed to instantiate Discord core (err {})", (int)res);
   }
 
   if (discordAvailable) {
     MutexLocker locker(discordMutex);
     discordCore->SetLogHook(discord::LogLevel::Info, [this](discord::LogLevel level, char const* msg) {
+      std::expected<void, StarException> logged;
       if (level == discord::LogLevel::Debug)
-        this->logger.debug("[Discord]: {}", msg);
+        logged = this->logger.debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Error)
-        this->logger.debug("[Discord]: {}", msg);
+        logged = this->logger.error("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Info)
-        this->logger.info("[Discord]: {}", msg);
+        logged = this->logger.info("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Warn)
-        this->logger.warn("[Discord]: {}", msg);
+        logged = this->logger.warn("[Discord]: {}", msg);
+      if (!logged)
+        discordError = std::move(logged.error());
     });
     discordEventShutdown = false;
-    discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
+    auto eventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() -> std::expected<void, StarException> {
         while (!discordEventShutdown) {
           {
             MutexLocker locker(discordMutex);
-            discordCore->RunCallbacks();
-            discordCore->LobbyManager().FlushNetwork();
+            auto result = discordCore->RunCallbacks();
+            if (result != discord::Result::Ok) {
+              discordError = ApplicationException::format("Discord callback dispatch failed (err {})", (int)result);
+              if (auto logged = this->logger.error("{}", discordError->what()); !logged) {
+                discordError = logged.error();
+                return std::unexpected(std::move(logged.error()));
+              }
+            }
+            result = discordCore->LobbyManager().FlushNetwork();
+            if (result != discord::Result::Ok) {
+              discordError = ApplicationException::format("Discord network flush failed (err {})", (int)result);
+              if (auto logged = this->logger.error("{}", discordError->what()); !logged) {
+                discordError = logged.error();
+                return std::unexpected(std::move(logged.error()));
+              }
+            }
           }
           Thread::sleep(DiscordEventSleep);
         }
+        return {};
       });
+    if (!eventThread)
+      return std::unexpected(std::move(eventThread.error()));
+    discordEventThread = std::move(*eventThread);
 
-    logger.info("Initialized Discord platform services");
+    if (auto logged = logger.info("Initialized Discord platform services"); !logged)
+      return std::unexpected(std::move(logged.error()));
   } else {
-    logger.info("Was not able to authenticate with Discord and create all components, Discord services will be unavailable");
+    if (auto logged = logger.info("Was not able to authenticate with Discord and create all components, Discord services will be unavailable"); !logged)
+      return std::unexpected(std::move(logged.error()));
   }
 #endif
+  return {};
 }
 
 PcPlatformServicesState::~PcPlatformServicesState() {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  if (discordAvailable) {
+  if (discordEventThread) {
     discordEventShutdown = true;
-    discordEventThread.finish();
+    auto finished = discordEventThread.finish();
+    if (!finished)
+      EmergencyLog::error("Could not finish Discord event thread: {}", finished.error().what());
   }
+  if (discordAvailable && discordError)
+    EmergencyLog::error("Unobserved Discord failure during shutdown: {}", discordError->what());
 #endif
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   if (steamAvailable)
@@ -175,15 +250,19 @@ PcPlatformServicesState::~PcPlatformServicesState() {
 }
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* callback) {
+std::expected<void, StarException> PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* callback) {
   overlayActive = callback->m_bActive;
+  return {};
 }
 #endif
 
-std::unique_ptr<PcPlatformServices> PcPlatformServices::create(Logger& logger, [[maybe_unused]] String const& path, StringList platformArguments) {
+std::expected<std::unique_ptr<PcPlatformServices>, StarException> PcPlatformServices::create(Logger& logger, [[maybe_unused]] String const& path, StringList platformArguments) {
   auto services = std::unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
-  services->m_state = std::make_shared<PcPlatformServicesState>(logger);
+  auto state = PcPlatformServicesState::create(logger);
+  if (!state)
+    return std::unexpected(std::move(state.error()));
+  services->m_state = std::move(*state);
 
   bool provideP2PNetworking = false;
 
@@ -198,11 +277,17 @@ std::unique_ptr<PcPlatformServices> PcPlatformServices::create(Logger& logger, [
   if (provideP2PNetworking) {
     auto p2pNetworkingService = std::make_shared<PcP2PNetworkingService>(services->m_state);
     for (auto& argument : platformArguments) {
-      if (argument.beginsWith("+platform:connect:")) {
-        logger.info("PC platform services joining from command line argument '{}'", argument);
-        p2pNetworkingService->addPendingJoin(std::move(argument));
+      auto connectArgument = argument.beginsWith("+platform:connect:");
+      if (!connectArgument)
+        return std::unexpected(std::move(connectArgument.error()));
+      if (*connectArgument) {
+        if (auto logged = logger.info("PC platform services joining from command line argument '{}'", argument); !logged)
+          return std::unexpected(std::move(logged.error()));
+        auto joined = p2pNetworkingService->addPendingJoin(std::move(argument));
+        if (!joined)
+          return std::unexpected(std::move(joined.error()));
       } else {
-        throw ApplicationException::format("Unrecognized PC platform services command line argument '{}'", argument);
+        return std::unexpected(ApplicationException::format("Unrecognized PC platform services command line argument '{}'", argument));
       }
     }
 
@@ -211,7 +296,10 @@ std::unique_ptr<PcPlatformServices> PcPlatformServices::create(Logger& logger, [
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   if (services->m_state->steamAvailable) {
-    services->m_statisticsService = std::make_shared<SteamStatisticsService>(services->m_state);
+    auto statistics = SteamStatisticsService::create(services->m_state);
+    if (!statistics)
+      return std::unexpected(std::move(statistics.error()));
+    services->m_statisticsService = std::move(*statistics);
     services->m_userGeneratedContentService = std::make_shared<SteamUserGeneratedContentService>(services->m_state);
     services->m_desktopService = std::make_shared<SteamDesktopService>(services->m_state);
   }
@@ -220,8 +308,11 @@ std::unique_ptr<PcPlatformServices> PcPlatformServices::create(Logger& logger, [
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(services->m_state->discordMutex);
   if (services->m_state->discordAvailable) {
-    logger.debug("Registering Starbound to Discord at path: {}", path);
-    services->m_state->discordCore->ActivityManager().RegisterCommand(path.utf8Ptr());
+    if (auto logged = logger.debug("Registering Starbound to Discord at path: {}", path); !logged)
+      return std::unexpected(std::move(logged.error()));
+    auto registered = services->m_state->discordCore->ActivityManager().RegisterCommand(path.utf8Ptr());
+    if (registered != discord::Result::Ok)
+      return std::unexpected(ApplicationException::format("Could not register Discord launch command (err {})", (int)registered));
   }
 #endif
 
@@ -252,11 +343,20 @@ bool PcPlatformServices::overlayActive() const {
   return m_state->overlayActive;
 }
 
-void PcPlatformServices::update() {
+std::expected<void, StarException> PcPlatformServices::update() {
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  if (m_state->steamAvailable)
-    m_state->steamDispatch.runCallbacks();
+  if (m_state->steamAvailable) {
+    auto dispatched = m_state->steamDispatch.runCallbacks();
+    if (!dispatched)
+      return std::unexpected(std::move(dispatched.error()));
+  }
 #endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+  MutexLocker discordLocker(m_state->discordMutex);
+  if (m_state->discordAvailable && m_state->discordError)
+    return std::unexpected(std::move(*std::exchange(m_state->discordError, {})));
+#endif
+  return {};
 }
 
 }

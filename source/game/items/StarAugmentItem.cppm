@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.set;
@@ -34,17 +35,22 @@ public:
     return Star::typeName<AugmentItem>();
   }
 
-  AugmentItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
-  AugmentItem(AugmentItem const& rhs);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<AugmentItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  StringList augmentScripts() const;
+  [[nodiscard]]
+  std::expected<StringList, StarException> augmentScripts() const;
 
   // Makes no change to the given item if the augment can't be applied.
   // Consumes itself and returns true if the augment is applied.
   // Has no effect if augmentation fails.
-  std::shared_ptr<Item> applyTo(std::shared_ptr<Item> const item);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> applyTo(std::shared_ptr<Item> const item);
+private:
+  explicit AugmentItem(Root& root) : Item(root) {}
 };
 
 }

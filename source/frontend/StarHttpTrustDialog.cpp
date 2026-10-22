@@ -64,82 +64,122 @@ module star.http_trust_dialog;
 
 namespace Star {
 
-HttpTrustDialog::HttpTrustDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(false) {}
+HttpTrustDialog::HttpTrustDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(true) {}
 
 HttpTrustDialog::~HttpTrustDialog() = default;
 
-void HttpTrustDialog::displayRequest(String const& domain, std::function<void(HttpTrustReply, bool)> callback) {
-  const auto assets = context()->root().assets();
-
-  removeAllChildren();
-
-  GuiReader reader(*context());
-
-  m_domain = domain;
-  m_callback = std::move(callback);
-
-  reader.registerCallback("yes", [this](Widget*) { reply(HttpTrustReply::Allow); });
-  reader.registerCallback("no", [this](Widget*) { reply(HttpTrustReply::Deny); });
-  // reader.registerCallback("rememberCheckbox", [this](Widget*) {
-  //   // just to capture it
-  // });
-
-  m_confirmed = false;
-
-  const Json config = assets->json("/interface/httpwarning/warning.config");
-
-  reader.construct(config.get("paneLayout"), this);
-
-  // Update message with domain
-  const String message = strf("^green;{}^reset;", domain);
-  fetchChild<LabelWidget>("domain")->setText(message);
-  // fetchChild<ButtonWidget>("yes")->setText("Allow");
-  // fetchChild<ButtonWidget>("no")->setText("Deny"); // I did it cuz of: if some smart guy will swap yes/no buttons texts in the config file
-  fetchChild<ButtonWidget>("yes")->setText("✅");
-  fetchChild<ButtonWidget>("no")->setText("❌"); // Emoji buttons dont need to be translated
-
-  show();
+std::expected<std::shared_ptr<HttpTrustDialog>, StarException> HttpTrustDialog::create(GuiContext& guiContext) {
+  auto pane = std::shared_ptr<HttpTrustDialog>(new HttpTrustDialog(guiContext));
+  auto initialized = pane->initializePane();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return pane;
 }
 
-void HttpTrustDialog::reply(const HttpTrustReply replyType) {
-  m_confirmed = true;
+std::expected<void, StarException> HttpTrustDialog::displayRequest(String const& domain, std::function<std::expected<void, StarException>(HttpTrustReply, bool)> callback) {
+  if (!callback)
+    return std::unexpected(StarException("HTTP trust request has no reply callback"));
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  removeAllChildren();
+  GuiReader reader(*context());
+  m_domain = domain;
+  m_callback = std::move(callback);
+  reader.registerCallback("yes", [this](Widget*) { return reply(HttpTrustReply::Allow); });
+  reader.registerCallback("no", [this](Widget*) { return reply(HttpTrustReply::Deny); });
+  m_confirmed = false;
+  auto config = (*assets)->json("/interface/httpwarning/warning.config");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto layout = config->get("paneLayout");
+  if (!layout)
+    return std::unexpected(std::move(layout.error()));
+  auto constructed = reader.construct(*layout, this);
+  if (!constructed)
+    return std::unexpected(std::move(constructed.error()));
+  auto domainLabel = fetchChild<LabelWidget>("domain");
+  if (!domainLabel)
+    return std::unexpected(std::move(domainLabel.error()));
+  if (!*domainLabel)
+    return std::unexpected(GUIBuilderException("Missing HTTP trust domain label"));
+  auto text = (*domainLabel)->setText(strf("^green;{}^reset;", domain));
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto yes = fetchChild<ButtonWidget>("yes");
+  if (!yes)
+    return std::unexpected(std::move(yes.error()));
+  if (!*yes)
+    return std::unexpected(GUIBuilderException("Missing HTTP trust allow button"));
+  (*yes)->setText("✅");
+  auto no = fetchChild<ButtonWidget>("no");
+  if (!no)
+    return std::unexpected(std::move(no.error()));
+  if (!*no)
+    return std::unexpected(GUIBuilderException("Missing HTTP trust deny button"));
+  (*no)->setText("❌");
+  return show();
+}
 
-  // Check if "remember" checkbox is checked
-  const bool remember = fetchChild<ButtonWidget>("rememberCheckbox")->isChecked();
-
-  // If allowing and remember is checked, add to trusted list
+std::expected<void, StarException> HttpTrustDialog::reply(HttpTrustReply replyType) {
+  auto checkbox = fetchChild<ButtonWidget>("rememberCheckbox");
+  if (!checkbox)
+    return std::unexpected(std::move(checkbox.error()));
+  if (!*checkbox)
+    return std::unexpected(GUIBuilderException("Missing HTTP trust remember checkbox"));
+  bool remember = (*checkbox)->isChecked();
   if (replyType == HttpTrustReply::Allow && remember) {
-    auto& root = context()->root();
-    const auto config = root.configuration();
-
-    JsonArray trustedSites;
-    if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
-      trustedSites = *existing;
-
-    // Check if already exists
+    auto config = context()->root().configuration();
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto sites = (*config)->getPath("safe.luaHttp.trustedSites");
+    if (!sites)
+      return std::unexpected(std::move(sites.error()));
+    auto existing = sites->optArray();
+    if (!existing)
+      return std::unexpected(std::move(existing.error()));
+    auto trustedSites = existing->value_or(JsonArray{});
     bool exists = false;
     for (auto const& site : trustedSites) {
-      if (site.toString() == m_domain) {
+      auto name = site.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (*name == m_domain) {
         exists = true;
         break;
       }
     }
-
     if (!exists) {
       trustedSites.append(m_domain);
-      config->setPath("safe.luaHttp.trustedSites", trustedSites);
+      auto saved = (*config)->setPath("safe.luaHttp.trustedSites", trustedSites);
+      if (!saved)
+        return std::unexpected(std::move(saved.error()));
     }
   }
-
-  m_callback(replyType, remember);
+  if (!m_callback)
+    return std::unexpected(StarException("HTTP trust request has no reply callback"));
+  auto replied = m_callback(replyType, remember);
+  if (!replied)
+    return std::unexpected(std::move(replied.error()));
+  m_confirmed = true;
   dismiss();
+  return {};
 }
 
-void HttpTrustDialog::dismissed() {
-  if (!m_confirmed)
-    m_callback(HttpTrustReply::Deny, false);
-
-  Pane::dismissed();
+std::expected<void, StarException> HttpTrustDialog::dismissed() {
+  std::expected<void, StarException> replied;
+  if (!m_confirmed) {
+    if (!m_callback)
+      replied = std::unexpected(StarException("HTTP trust request has no reply callback"));
+    else
+      replied = m_callback(HttpTrustReply::Deny, false);
+    if (replied)
+      m_confirmed = true;
+  }
+  auto dismissed = Pane::dismissed();
+  if (!replied)
+    return std::unexpected(std::move(replied.error()));
+  return dismissed;
 }
 
 }

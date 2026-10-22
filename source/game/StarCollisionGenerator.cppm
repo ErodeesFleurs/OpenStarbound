@@ -1,6 +1,7 @@
 module;
 
 import star.list;
+import star.format;
 import star.bi_map;
 import star.collision_block;
 import star.multi_array;
@@ -26,18 +27,18 @@ public:
   // Callback function to tell what kind of collision geometry is in a cell.
   // Will be called up to BlockInfluenceRadius outside of the given query
   // region.
-  typedef std::function<CollisionKind(int, int)> CollisionKindAccessor;
+  typedef std::function<std::expected<CollisionKind, StarException>(int, int)> CollisionKindAccessor;
 
   void init(CollisionKindAccessor accessor);
 
   // Get collision geometry for the given block region.
-  List<CollisionBlock> getBlocks(RectI const& region) const;
+  [[nodiscard]] std::expected<List<CollisionBlock>, StarException> getBlocks(RectI const& region) const;
 
 private:
   void getBlocksPlatforms(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
   void getBlocksMarchingSquares(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
 
-  void populateCollisionBuffer(RectI const& region) const;
+  [[nodiscard]] std::expected<void, StarException> populateCollisionBuffer(RectI const& region) const;
   CollisionKind collisionKind(int x, int y) const;
 
   CollisionKindAccessor m_accessor;

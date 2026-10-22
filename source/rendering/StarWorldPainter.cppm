@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -94,9 +95,9 @@ namespace Star {
 class WorldPainter {
 public:
   // Root outlives this painter; resource providers are refreshed for each frame.
-  explicit WorldPainter(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<WorldPainter>, StarException> create(Root& root);
 
-  void renderInit(std::shared_ptr<Renderer> renderer);
+  [[nodiscard]] std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer);
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
@@ -105,17 +106,19 @@ public:
   TileDrawer* tileDrawer() const;
 
   void update(float dt);
-  void render(WorldRenderData& renderData, std::function<bool()> lightWaiter);
-  void adjustLighting(WorldRenderData& renderData);
+  [[nodiscard]] std::expected<void, StarException> render(WorldRenderData& renderData, std::function<std::expected<bool, StarException>()> lightWaiter);
+  [[nodiscard]] std::expected<void, StarException> adjustLighting(WorldRenderData& renderData);
 
 private:
-  void renderParticles(WorldRenderData& renderData, Particle::Layer layer);
-  void renderBars(WorldRenderData& renderData);
+  explicit WorldPainter(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<void, StarException> renderParticles(WorldRenderData& renderData, Particle::Layer layer);
+  [[nodiscard]] std::expected<void, StarException> renderBars(WorldRenderData& renderData);
 
-  void drawEntityLayer(List<Drawable> drawables, EntityHighlightEffect highlightEffect = EntityHighlightEffect());
+  [[nodiscard]] std::expected<void, StarException> drawEntityLayer(List<Drawable> drawables, EntityHighlightEffect highlightEffect = EntityHighlightEffect());
 
-  void drawDrawable(Drawable drawable);
-  void drawDrawableSet(List<Drawable>& drawable);
+  [[nodiscard]] std::expected<void, StarException> drawDrawable(Drawable drawable);
+  [[nodiscard]] std::expected<void, StarException> drawDrawableSet(List<Drawable>& drawable);
 
   Root& m_root;
   WorldCamera m_camera;

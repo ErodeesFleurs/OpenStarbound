@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.list;
 import star.json;
@@ -21,7 +22,8 @@ public:
   }
 
   virtual ~StatusEffectItem() {}
-  virtual List<PersistentStatusEffect> statusEffects() const = 0;
+  [[nodiscard]]
+  virtual std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const = 0;
 };
 
 }

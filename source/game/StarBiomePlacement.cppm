@@ -128,12 +128,14 @@ struct MicroDungeonNamesWrapper : BaseType {
 typedef MicroDungeonNamesWrapper<StringSet> MicroDungeonNames;
 
 typedef std::variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
-BiomeItem variantToBiomeItem(Assets const& assets, Json const& store);
-Json variantFromBiomeItem(BiomeItem const& biomeItem);
+[[nodiscard]]
+std::expected<BiomeItem, StarException> variantToBiomeItem(Assets const& assets, Json const& store);
+[[nodiscard]]
+std::expected<Json, StarException> variantFromBiomeItem(BiomeItem const& biomeItem);
 
 enum class BiomePlacementArea { Surface, Underground };
 enum class BiomePlacementMode { Floor, Ceiling, Background, Ocean };
-extern EnumMap<BiomePlacementMode> const BiomePlacementModeNames;
+extern std::expected<EnumMap<BiomePlacementMode>, StarException> const BiomePlacementModeNames;
 
 struct BiomeItemPlacement {
   BiomeItemPlacement(BiomeItem item, Vec2I position, float priority);
@@ -153,20 +155,25 @@ public:
     PerlinF weight;
   };
 
-  static std::optional<BiomeItem> createItem(Root& root, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  [[nodiscard]]
+  static std::expected<std::optional<BiomeItem>, StarException> createItem(Root& root, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
-  BiomeItemDistribution(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
-  BiomeItemDistribution(Assets const& assets, Json const& store);
+  [[nodiscard]]
+  static std::expected<BiomeItemDistribution, StarException> create(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
+  [[nodiscard]]
+  static std::expected<BiomeItemDistribution, StarException> create(Assets const& assets, Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
 
   BiomePlacementMode mode() const;
   List<BiomeItem> allItems() const;
 
   // Returns the best BiomeItem for this position out of the weighted item set,
   // if the density function specifies that an item should go in this position.
-  std::optional<BiomeItemPlacement> itemToPlace(int x, int y) const;
+  [[nodiscard]]
+  std::expected<std::optional<BiomeItemPlacement>, StarException> itemToPlace(int x, int y) const;
 
 private:
   enum class DistributionType {
@@ -176,7 +183,7 @@ private:
     // periodic clumpy noise.
     Periodic
   };
-  static EnumMap<DistributionType> const DistributionTypeNames;
+  static std::expected<EnumMap<DistributionType>, StarException> const DistributionTypeNames;
 
   BiomePlacementMode m_mode;
   DistributionType m_distribution;

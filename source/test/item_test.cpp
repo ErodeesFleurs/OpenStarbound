@@ -50,17 +50,54 @@ import star.file;
 import star.random;
 import star.collection_database;
 
+namespace Star {
+
+void PrintTo(ItemDescriptor const& descriptor, std::ostream* stream) {
+  auto printed = *stream << descriptor;
+  if (!printed)
+    *stream << "<ItemDescriptor rendering failed: " << printed.error().what() << ">";
+}
+
+}
+
 using namespace Star;
+
+namespace {
+
+[[nodiscard]] std::expected<List<ItemDescriptor>, StarException> itemTestDescriptors(List<Json> const& values) {
+  List<ItemDescriptor> descriptors;
+  for (auto const& value : values) {
+    auto descriptor = ItemDescriptor::create(value);
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    descriptors.append(std::move(*descriptor));
+  }
+  return descriptors;
+}
+
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> inventoryTestItem(
+    ItemDatabase const& database, String const& name, std::uint64_t count = 1, Json parameters = Json()) {
+  auto descriptor = ItemDescriptor::create(name, count, std::move(parameters));
+  if (!descriptor)
+    return std::unexpected(std::move(descriptor.error()));
+  return database.item(*descriptor);
+}
+
+}
 
 const GameTestRegistration itemDescriptorConstruction("ItemTest", "ItemDescriptorConstruction", [](GameTest&) {
   ItemDescriptor testItemDescriptor;
 
   testItemDescriptor = ItemDescriptor();
 
-  testItemDescriptor = ItemDescriptor(Json());
+  auto nullDescriptor = ItemDescriptor::create(Json());
+  ASSERT_TRUE(nullDescriptor);
+  testItemDescriptor = std::move(*nullDescriptor);
 
   String nameOnly = "perfectlygenericitem";
-  testItemDescriptor = ItemDescriptor(nameOnly);
+  auto namedDescriptor = ItemDescriptor::create(nameOnly, 1);
+  ASSERT_TRUE(namedDescriptor);
+  testItemDescriptor = std::move(*namedDescriptor);
 
   List<JsonArray> arrayFormats = List<JsonArray>{
       JsonArray{"perfectlygenericitem"},
@@ -69,8 +106,11 @@ const GameTestRegistration itemDescriptorConstruction("ItemTest", "ItemDescripto
       JsonArray{"perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}}
     };
 
-  for (auto arrayFormat : arrayFormats)
-    testItemDescriptor = ItemDescriptor(arrayFormat);
+  for (auto const& arrayFormat : arrayFormats) {
+    auto descriptor = ItemDescriptor::create(arrayFormat);
+    ASSERT_TRUE(descriptor);
+    testItemDescriptor = std::move(*descriptor);
+  }
 
   List<JsonObject> objectFormats = List<JsonObject>{
       JsonObject{{"name", "perfectlygenericitem"}},
@@ -80,33 +120,53 @@ const GameTestRegistration itemDescriptorConstruction("ItemTest", "ItemDescripto
       JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}}
     };
 
-  for (auto objectFormat : objectFormats)
-    testItemDescriptor = ItemDescriptor(objectFormat);
+  for (auto const& objectFormat : objectFormats) {
+    auto descriptor = ItemDescriptor::create(objectFormat);
+    ASSERT_TRUE(descriptor);
+    testItemDescriptor = std::move(*descriptor);
+  }
 
-  testItemDescriptor = ItemDescriptor("perfectlygenericitem", 1);
-  testItemDescriptor = ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}});
+  auto countedDescriptor = ItemDescriptor::create("perfectlygenericitem", 1);
+  ASSERT_TRUE(countedDescriptor);
+  testItemDescriptor = std::move(*countedDescriptor);
+  auto parameterizedDescriptor = ItemDescriptor::create("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}});
+  ASSERT_TRUE(parameterizedDescriptor);
+  testItemDescriptor = std::move(*parameterizedDescriptor);
 });
 
 const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameTest& fixture) {
-  auto itemDatabase = fixture.root().itemDatabase();
-  std::shared_ptr<::Star::Item> testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
-  std::shared_ptr<::Star::Item> testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
+  auto database = fixture.root().itemDatabase();
+  ASSERT_TRUE(database);
+  auto& itemDatabase = **database;
+  auto plainItem = inventoryTestItem(itemDatabase, "perfectlygenericitem");
+  ASSERT_TRUE(plainItem);
+  auto testItem = std::move(*plainItem);
+  ASSERT_TRUE(testItem);
+  auto parameterizedItem = inventoryTestItem(itemDatabase, "perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}});
+  ASSERT_TRUE(parameterizedItem);
+  auto testItemParams = std::move(*parameterizedItem);
+  ASSERT_TRUE(testItemParams);
 
-  List<ItemDescriptor> testItemDescriptors = List<ItemDescriptor>{
-    ItemDescriptor("perfectlygenericitem", 1),
-    ItemDescriptor(JsonArray{"perfectlygenericitem"}),
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1}),
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, JsonObject()}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}}),
-    ItemDescriptor(JsonObject{{"item", "perfectlygenericitem"}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject()}})
-  };
-
-  List<ItemDescriptor> testItemDescriptorsParams = List<ItemDescriptor>{
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}})
-  };
+  auto descriptors = itemTestDescriptors({
+    JsonArray{"perfectlygenericitem"},
+    JsonArray{"perfectlygenericitem", 1},
+    JsonArray{"perfectlygenericitem", 1, JsonObject()},
+    JsonObject{{"name", "perfectlygenericitem"}},
+    JsonObject{{"item", "perfectlygenericitem"}},
+    JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}},
+    JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject()}}
+  });
+  ASSERT_TRUE(descriptors);
+  auto namedComparison = ItemDescriptor::create("perfectlygenericitem", 1);
+  ASSERT_TRUE(namedComparison);
+  descriptors->insertAt(0, std::move(*namedComparison));
+  auto const& testItemDescriptors = *descriptors;
+  auto parameterizedDescriptors = itemTestDescriptors({
+    JsonArray{"perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}},
+    JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}}
+  });
+  ASSERT_TRUE(parameterizedDescriptors);
+  auto const& testItemDescriptorsParams = *parameterizedDescriptors;
 
   // Creating an item can add parameters to it: the perfectly generic item is an
   // object item, and objects that retain their placement parameters start with
@@ -119,16 +179,20 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
       JsonObject({{"testParameter", "testValue"}, {"scriptStorage", JsonObject()}}));
 
   // The same descriptor spellings again, carrying the items' own parameters.
-  List<ItemDescriptor> testItemExactDescriptors = List<ItemDescriptor>{
-    testItemExact,
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, testItemExact.parameters()}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemExact.parameters()}})
-  };
-  List<ItemDescriptor> testItemParamsExactDescriptors = List<ItemDescriptor>{
-    testItemParamsExact,
-    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, testItemParamsExact.parameters()}),
-    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemParamsExact.parameters()}})
-  };
+  auto exactDescriptors = itemTestDescriptors({
+    JsonArray{"perfectlygenericitem", 1, testItemExact.parameters()},
+    JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemExact.parameters()}}
+  });
+  ASSERT_TRUE(exactDescriptors);
+  exactDescriptors->insertAt(0, testItemExact);
+  auto const& testItemExactDescriptors = *exactDescriptors;
+  auto exactParameterizedDescriptors = itemTestDescriptors({
+    JsonArray{"perfectlygenericitem", 1, testItemParamsExact.parameters()},
+    JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemParamsExact.parameters()}}
+  });
+  ASSERT_TRUE(exactParameterizedDescriptors);
+  exactParameterizedDescriptors->insertAt(0, testItemParamsExact);
+  auto const& testItemParamsExactDescriptors = *exactParameterizedDescriptors;
 
   // comparisons WITHOUT exactMatch
   for (ItemDescriptor const& id : testItemDescriptors) {
@@ -198,39 +262,64 @@ const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameT
 
 const GameTestRegistration constructItems("ItemTest", "ConstructItems", [](GameTest& fixture) {
   auto itemDatabase = fixture.root().itemDatabase();
-
-  for (auto itemName : itemDatabase->allItems())
-    std::shared_ptr<::Star::Item> item = itemDatabase->item(ItemDescriptor(itemName, 1));
+  ASSERT_TRUE(itemDatabase);
+  for (auto const& itemName : (*itemDatabase)->allItems()) {
+    auto item = inventoryTestItem(**itemDatabase, itemName);
+    ASSERT_TRUE(item);
+  }
 });
 
 const GameTestRegistration constBagObservesEmptyStacksWithoutReleasingThem("ItemTest", "ConstBagObservesEmptyStacksWithoutReleasingThem", [](GameTest& fixture) {
   auto itemDatabase = fixture.root().itemDatabase();
-  auto makeEmptyBag = [&] {
+  ASSERT_TRUE(itemDatabase);
+  auto makeEmptyBag = [&]() -> std::expected<ItemBag, StarException> {
     ItemBag bag(fixture.root(), 2);
-    bag.setItem(0, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
-    bag.setItem(1, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
+    for (std::size_t slot = 0; slot != 2; ++slot) {
+      auto item = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      auto set = bag.setItem(slot, std::move(*item));
+      if (!set)
+        return std::unexpected(std::move(set.error()));
+    }
     return bag;
   };
 
-  ItemBag const indexedBag = makeEmptyBag();
-  auto first = indexedBag.at(0);
-  auto second = indexedBag.at(1);
+  auto indexedResult = makeEmptyBag();
+  ASSERT_TRUE(indexedResult);
+  ItemBag const indexedBag = std::move(*indexedResult);
+  auto firstResult = indexedBag.at(0);
+  ASSERT_TRUE(firstResult);
+  auto first = std::move(*firstResult);
+  ASSERT_TRUE(first);
+  auto secondResult = indexedBag.at(1);
+  ASSERT_TRUE(secondResult);
+  auto second = std::move(*secondResult);
+  ASSERT_TRUE(second);
   first->setCount(0);
   second->setCount(0);
   auto firstOwners = first.use_count();
-  EXPECT_FALSE(indexedBag.at(0));
+  EXPECT_EQ(indexedBag.at(0), nullptr);
   EXPECT_EQ(first.use_count(), firstOwners);
   first->setCount(1);
   EXPECT_EQ(indexedBag.at(0), first);
   first->setCount(0);
   EXPECT_EQ(indexedBag.size(), 2u);
   EXPECT_TRUE(indexedBag.cleanup());
-  EXPECT_FALSE(indexedBag.at(1));
+  EXPECT_EQ(indexedBag.at(1), nullptr);
   EXPECT_FALSE(indexedBag.cleanup());
 
-  ItemBag const listedBag = makeEmptyBag();
-  auto emptyItem = listedBag.at(0);
-  auto liveItem = listedBag.at(1);
+  auto listedResult = makeEmptyBag();
+  ASSERT_TRUE(listedResult);
+  ItemBag const listedBag = std::move(*listedResult);
+  auto emptyResult = listedBag.at(0);
+  ASSERT_TRUE(emptyResult);
+  auto emptyItem = std::move(*emptyResult);
+  ASSERT_TRUE(emptyItem);
+  auto liveResult = listedBag.at(1);
+  ASSERT_TRUE(liveResult);
+  auto liveItem = std::move(*liveResult);
+  ASSERT_TRUE(liveItem);
   emptyItem->setCount(0);
   auto const& slots = listedBag.items();
   ASSERT_EQ(slots.size(), 2u);
@@ -241,66 +330,113 @@ const GameTestRegistration constBagObservesEmptyStacksWithoutReleasingThem("Item
 
 namespace {
 
-std::shared_ptr<Item> inventoryTestHeadArmor(Root& root) {
+[[nodiscard]] std::expected<std::shared_ptr<Item>, StarException> inventoryTestHeadArmor(Root& root) {
   auto itemDatabase = root.itemDatabase();
-  for (auto const& name : itemDatabase->allItems()) {
-    if (itemDatabase->itemType(name) == ItemType::HeadArmor)
-      return itemDatabase->item(ItemDescriptor(name, 1));
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  for (auto const& name : (*itemDatabase)->allItems()) {
+    auto type = (*itemDatabase)->itemType(name);
+    if (!type)
+      return std::unexpected(std::move(type.error()));
+    if (*type == ItemType::HeadArmor)
+      return inventoryTestItem(**itemDatabase, name);
   }
-  throw ItemException("Inventory tests require a head armor item");
+  return std::unexpected(ItemException("Inventory tests require a head armor item"));
 }
 
-BagSlot inventoryTestBagSlot(Root& root, PlayerInventory const& inventory, std::shared_ptr<Item> const& item) {
+[[nodiscard]] std::expected<BagSlot, StarException> inventoryTestBagSlot(
+    Root& root, PlayerInventory const& inventory, std::shared_ptr<Item> const& item) {
   // The perfectly generic item is an ObjectItem, not a main-bag generic item.
   // Use the real configured filters rather than forcing it into a fixed bag.
-  auto bags = root.assets()->json("/player.config:inventory").get("itemBags");
-  for (auto const& name : bags.toObject().keys()) {
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/player.config:inventory");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto bags = config->get("itemBags");
+  if (!bags)
+    return std::unexpected(std::move(bags.error()));
+  auto object = bags->toObject();
+  if (!object)
+    return std::unexpected(std::move(object.error()));
+  for (auto const& name : object->keys()) {
     auto bag = inventory.bagContents(name);
-    if (bag && bag->size() != 0 && inventory.itemAllowedInBag(item, name))
-      return BagSlot(name, 0);
+    if (bag && bag->size() != 0) {
+      auto allowed = inventory.itemAllowedInBag(item, name);
+      if (!allowed)
+        return std::unexpected(std::move(allowed.error()));
+      if (*allowed)
+        return BagSlot(name, 0);
+    }
   }
-  throw ItemException("Inventory tests require a bag accepting the fixture item");
+  return std::unexpected(ItemException("Inventory tests require a bag accepting the fixture item"));
 }
 
 }
 
 const GameTestRegistration constInventoryObservesExternallyConsumedItemsWithoutMutation("ItemTest", "ConstInventoryObservesExternallyConsumedItemsWithoutMutation", [](GameTest& fixture) {
   auto itemDatabase = fixture.root().itemDatabase();
-  PlayerInventory inventory(fixture.root());
+  ASSERT_TRUE(itemDatabase);
+  auto createdInventory = PlayerInventory::create(fixture.root());
+  ASSERT_TRUE(createdInventory);
+  auto& inventory = **createdInventory;
   auto const& view = std::as_const(inventory);
-  auto bagItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
-  auto bagSlot = inventoryTestBagSlot(fixture.root(), view, bagItem);
-
+  auto bagItemResult = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+  ASSERT_TRUE(bagItemResult);
+  auto bagItem = std::move(*bagItemResult);
+  auto slotResult = inventoryTestBagSlot(fixture.root(), view, bagItem);
+  ASSERT_TRUE(slotResult);
+  auto bagSlot = *slotResult;
+  auto head = inventoryTestHeadArmor(fixture.root());
+  ASSERT_TRUE(head);
+  auto swap = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+  ASSERT_TRUE(swap);
+  auto trash = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+  ASSERT_TRUE(trash);
   List<std::pair<InventorySlot, std::shared_ptr<Item>>> items{
-    {EquipmentSlot::Head, inventoryTestHeadArmor(fixture.root())},
+    {EquipmentSlot::Head, std::move(*head)},
     {bagSlot, bagItem},
-    {SwapSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))},
-    {TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))}
+    {SwapSlot(), std::move(*swap)},
+    {TrashSlot(), std::move(*trash)}
   };
   for (auto const& entry : items)
-    ASSERT_TRUE(inventory.setItem(entry.first, entry.second));
-  inventory.setCustomBarPrimarySlot(0, InventorySlot(bagSlot));
+    ASSERT_EQ(inventory.setItem(entry.first, entry.second), true);
+  ASSERT_TRUE(inventory.setCustomBarPrimarySlot(0, InventorySlot(bagSlot)));
   inventory.selectActionBarLocation(CustomBarIndex(0));
 
   List<long> owners;
   for (auto const& entry : items) {
     ASSERT_TRUE(entry.second->consume(1));
     owners.append(entry.second.use_count());
-    EXPECT_FALSE(view.itemsAt(entry.first));
+    EXPECT_EQ(view.itemsAt(entry.first), nullptr);
   }
 
   EXPECT_FALSE(view.headArmor());
   EXPECT_FALSE(view.equipment(EquipmentSlot::Head));
-  EXPECT_FALSE(view.bagContents(bagSlot.first)->at(bagSlot.second));
+  auto bag = view.bagContents(bagSlot.first);
+  ASSERT_TRUE(bag);
+  EXPECT_EQ(bag->at(bagSlot.second), nullptr);
   EXPECT_FALSE(view.swapSlotItem());
-  EXPECT_FALSE(view.primaryHeldItem());
-  EXPECT_FALSE(view.secondaryHeldItem());
-  EXPECT_EQ(view.primaryHeldSlot(), std::optional<InventorySlot>(InventorySlot(bagSlot)));
-  EXPECT_TRUE(view.allItems().empty());
-  EXPECT_TRUE(view.itemSummary().empty());
-  EXPECT_TRUE(view.availableItems().empty());
+  EXPECT_EQ(view.primaryHeldItem(), nullptr);
+  EXPECT_EQ(view.secondaryHeldItem(), nullptr);
+  auto primaryHeldSlot = view.primaryHeldSlot();
+  ASSERT_TRUE(primaryHeldSlot);
+  EXPECT_EQ(*primaryHeldSlot, std::optional<InventorySlot>(InventorySlot(bagSlot)));
+  auto all = view.allItems();
+  ASSERT_TRUE(all);
+  EXPECT_TRUE(all->empty());
+  auto summary = view.itemSummary();
+  ASSERT_TRUE(summary);
+  EXPECT_TRUE(summary->empty());
+  auto available = view.availableItems();
+  ASSERT_TRUE(available);
+  EXPECT_TRUE(available->empty());
   std::size_t visited = 0;
-  view.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item> const&) { ++visited; });
+  ASSERT_TRUE(view.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item> const&) -> std::expected<void, StarException> {
+    ++visited;
+    return {};
+  }));
   EXPECT_EQ(visited, 0u);
 
   // Restoring a shared alias makes the same slots visible again: no getter
@@ -311,64 +447,107 @@ const GameTestRegistration constInventoryObservesExternallyConsumedItemsWithoutM
     entry.second->setCount(1);
     EXPECT_EQ(view.itemsAt(entry.first), entry.second);
   }
-  EXPECT_EQ(view.allItems().size(), items.size());
+  {
+    auto restoredItems = view.allItems();
+    ASSERT_TRUE(restoredItems);
+    EXPECT_EQ(restoredItems->size(), items.size());
+  }
 
   for (auto const& entry : items)
     ASSERT_TRUE(entry.second->consume(1));
-  inventory.cleanup();
+  ASSERT_TRUE(inventory.cleanup());
   for (std::size_t i = 0; i < items.size(); ++i)
     EXPECT_EQ(items[i].second.use_count(), owners[i] - 1);
-  EXPECT_FALSE(view.customBarPrimarySlot(0));
+  auto customBarPrimarySlot = view.customBarPrimarySlot(0);
+  ASSERT_TRUE(customBarPrimarySlot);
+  EXPECT_FALSE(*customBarPrimarySlot);
 });
 
 const GameTestRegistration inventoryMutationNormalizesEmptySlots("ItemTest", "InventoryMutationNormalizesEmptySlots", [](GameTest& fixture) {
   auto itemDatabase = fixture.root().itemDatabase();
-  PlayerInventory inventory(fixture.root());
+  ASSERT_TRUE(itemDatabase);
+  auto createdInventory = PlayerInventory::create(fixture.root());
+  ASSERT_TRUE(createdInventory);
+  auto& inventory = **createdInventory;
   auto makeItems = [&](std::uint64_t count) {
-    return itemDatabase->item(ItemDescriptor("perfectlygenericitem", count));
+    return inventoryTestItem(**itemDatabase, "perfectlygenericitem", count);
   };
 
-  auto items = makeItems(2);
-  auto bagSlot = inventoryTestBagSlot(fixture.root(), inventory, items);
-  ASSERT_TRUE(inventory.setItem(bagSlot, items));
-  EXPECT_TRUE(inventory.consumeSlot(bagSlot, 2));
-  EXPECT_FALSE(inventory.itemsAt(bagSlot));
+  auto itemResult = makeItems(2);
+  ASSERT_TRUE(itemResult);
+  auto items = std::move(*itemResult);
+  auto slotResult = inventoryTestBagSlot(fixture.root(), inventory, items);
+  ASSERT_TRUE(slotResult);
+  auto bagSlot = *slotResult;
+  ASSERT_EQ(inventory.setItem(bagSlot, items), true);
+  EXPECT_EQ(inventory.consumeSlot(bagSlot, 2), true);
+  EXPECT_EQ(inventory.itemsAt(bagSlot), nullptr);
   EXPECT_EQ(items.use_count(), 1);
-  EXPECT_FALSE(inventory.consumeSlot(bagSlot));
-  EXPECT_TRUE(inventory.consumeSlot(bagSlot, 0));
+  EXPECT_EQ(inventory.consumeSlot(bagSlot), false);
+  EXPECT_EQ(inventory.consumeSlot(bagSlot, 0), true);
 
-  auto externallyConsumed = makeItems(1);
-  ASSERT_TRUE(inventory.setItem(bagSlot, externallyConsumed));
+  auto consumedResult = makeItems(1);
+  ASSERT_TRUE(consumedResult);
+  auto externallyConsumed = std::move(*consumedResult);
+  ASSERT_EQ(inventory.setItem(bagSlot, externallyConsumed), true);
   ASSERT_TRUE(externallyConsumed->consume(1));
-  EXPECT_FALSE(inventory.stackWith(bagSlot, makeItems(3)));
-  ASSERT_TRUE(inventory.itemsAt(bagSlot));
-  EXPECT_EQ(inventory.itemsAt(bagSlot)->count(), 3u);
+  {
+    auto addition = makeItems(3);
+    ASSERT_TRUE(addition);
+    EXPECT_EQ(inventory.stackWith(bagSlot, std::move(*addition)), nullptr);
+    auto current = inventory.itemsAt(bagSlot);
+    ASSERT_TRUE(current);
+    ASSERT_TRUE(*current);
+    EXPECT_EQ((*current)->count(), 3u);
+  }
   EXPECT_EQ(externallyConsumed.use_count(), 1);
-  EXPECT_FALSE(inventory.stackWith(bagSlot, makeItems(2)));
-  EXPECT_EQ(inventory.itemsAt(bagSlot)->count(), 5u);
-  EXPECT_TRUE(inventory.consumeItems(ItemDescriptor("perfectlygenericitem", 5)));
-  EXPECT_FALSE(inventory.itemsAt(bagSlot));
+  {
+    auto addition = makeItems(2);
+    ASSERT_TRUE(addition);
+    EXPECT_EQ(inventory.stackWith(bagSlot, std::move(*addition)), nullptr);
+    auto current = inventory.itemsAt(bagSlot);
+    ASSERT_TRUE(current);
+    ASSERT_TRUE(*current);
+    EXPECT_EQ((*current)->count(), 5u);
+  }
+  auto fiveItems = ItemDescriptor::create("perfectlygenericitem", 5);
+  ASSERT_TRUE(fiveItems);
+  EXPECT_TRUE(inventory.consumeItems(*fiveItems));
+  EXPECT_EQ(inventory.itemsAt(bagSlot), nullptr);
 
-  auto armor = inventoryTestHeadArmor(fixture.root());
+  auto armorResult = inventoryTestHeadArmor(fixture.root());
+  ASSERT_TRUE(armorResult);
+  auto armor = std::move(*armorResult);
+  ASSERT_TRUE(armor);
   auto armorDescriptor = armor->descriptor();
-  ASSERT_TRUE(inventory.setItem(EquipmentSlot::Head, armor));
-  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
-  EXPECT_FALSE(inventory.itemsAt(EquipmentSlot::Head));
+  ASSERT_EQ(inventory.setItem(EquipmentSlot::Head, armor), true);
+  EXPECT_EQ(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()), true);
+  EXPECT_EQ(inventory.itemsAt(EquipmentSlot::Head), nullptr);
   EXPECT_EQ(inventory.itemsAt(TrashSlot()), armor);
-  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  EXPECT_EQ(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()), true);
   EXPECT_EQ(inventory.itemsAt(EquipmentSlot::Head), armor);
-  ASSERT_TRUE(inventory.setItem(TrashSlot(), makeItems(1)));
-  EXPECT_FALSE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  {
+    auto trash = makeItems(1);
+    ASSERT_TRUE(trash);
+    ASSERT_EQ(inventory.setItem(TrashSlot(), std::move(*trash)), true);
+  }
+  EXPECT_EQ(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()), false);
   EXPECT_EQ(inventory.itemsAt(EquipmentSlot::Head), armor);
 
-  ASSERT_TRUE(inventory.setItem(SwapSlot(), makeItems(1)));
-  ASSERT_TRUE(inventory.consumeSlot(SwapSlot()));
+  {
+    auto swap = makeItems(1);
+    ASSERT_TRUE(swap);
+    ASSERT_EQ(inventory.setItem(SwapSlot(), std::move(*swap)), true);
+  }
+  ASSERT_EQ(inventory.consumeSlot(SwapSlot()), true);
   EXPECT_FALSE(inventory.swapSlotItem());
-  inventory.shiftSwap(EquipmentSlot::Head);
+  ASSERT_TRUE(inventory.shiftSwap(EquipmentSlot::Head));
   EXPECT_EQ(inventory.swapSlotItem(), armor);
   EXPECT_FALSE(inventory.headArmor());
-  EXPECT_TRUE(inventory.clearSwap());
-  auto equippedArmor = inventory.itemsAt(EquipmentSlot::Head);
+  EXPECT_EQ(inventory.clearSwap(), true);
+  auto equippedResult = inventory.itemsAt(EquipmentSlot::Head);
+  ASSERT_TRUE(equippedResult);
+  auto equippedArmor = std::move(*equippedResult);
   ASSERT_TRUE(equippedArmor);
   EXPECT_EQ(equippedArmor->descriptor(), armorDescriptor);
   EXPECT_TRUE(armor->empty());
@@ -378,76 +557,135 @@ const GameTestRegistration inventoryMutationNormalizesEmptySlots("ItemTest", "In
   EXPECT_TRUE(equippedArmor->empty());
   EXPECT_EQ(equippedArmor.use_count(), 1);
   EXPECT_EQ(armor.use_count(), 1);
-  ASSERT_TRUE(inventory.consumeItems(ItemDescriptor("perfectlygenericitem", 1)));
-  EXPECT_FALSE(inventory.itemsAt(TrashSlot()));
-  auto takenEmpty = makeItems(1);
-  ASSERT_TRUE(inventory.setItem(TrashSlot(), takenEmpty));
+  auto oneItem = ItemDescriptor::create("perfectlygenericitem", 1);
+  ASSERT_TRUE(oneItem);
+  ASSERT_TRUE(inventory.consumeItems(*oneItem));
+  EXPECT_EQ(inventory.itemsAt(TrashSlot()), nullptr);
+  auto takenResult = makeItems(1);
+  ASSERT_TRUE(takenResult);
+  auto takenEmpty = std::move(*takenResult);
+  ASSERT_EQ(inventory.setItem(TrashSlot(), takenEmpty), true);
   ASSERT_TRUE(takenEmpty->consume(1));
-  EXPECT_FALSE(inventory.takeSlot(TrashSlot()));
+  EXPECT_EQ(inventory.takeSlot(TrashSlot()), nullptr);
   EXPECT_EQ(takenEmpty.use_count(), 1);
 
-  auto empty = makeItems(1);
+  auto emptyResult = makeItems(1);
+  ASSERT_TRUE(emptyResult);
+  auto empty = std::move(*emptyResult);
   ASSERT_TRUE(empty->consume(1));
-  EXPECT_TRUE(inventory.setItem(EquipmentSlot::Head, empty));
-  EXPECT_TRUE(inventory.setItem(bagSlot, empty));
-  EXPECT_TRUE(inventory.setItem(TrashSlot(), empty));
-  inventory.setSwapSlotItem(empty);
+  EXPECT_EQ(inventory.setItem(EquipmentSlot::Head, empty), true);
+  EXPECT_EQ(inventory.setItem(bagSlot, empty), true);
+  EXPECT_EQ(inventory.setItem(TrashSlot(), empty), true);
+  ASSERT_TRUE(inventory.setSwapSlotItem(empty));
   EXPECT_EQ(empty.use_count(), 1);
-  EXPECT_TRUE(inventory.allItems().empty());
-  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  auto all = inventory.allItems();
+  ASSERT_TRUE(all);
+  EXPECT_TRUE(all->empty());
+  EXPECT_EQ(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()), true);
 
-  EXPECT_THROW(std::as_const(inventory).itemsAt(BagSlot("missingInventoryTestBag", 0)), ItemException);
-  EXPECT_THROW(inventory.takeSlot(BagSlot("missingInventoryTestBag", 0)), ItemException);
-  auto bagSize = inventory.bagContents(bagSlot.first)->size();
+  auto missingRead = std::as_const(inventory).itemsAt(BagSlot("missingInventoryTestBag", 0));
+  ASSERT_FALSE(missingRead);
+  EXPECT_TRUE(missingRead.error().is<ItemException>());
+  auto missingTake = inventory.takeSlot(BagSlot("missingInventoryTestBag", 0));
+  ASSERT_FALSE(missingTake);
+  EXPECT_TRUE(missingTake.error().is<ItemException>());
+  auto bag = inventory.bagContents(bagSlot.first);
+  ASSERT_TRUE(bag);
+  auto bagSize = bag->size();
   ASSERT_LE(bagSize, std::numeric_limits<std::uint8_t>::max());
   BagSlot pastEnd(bagSlot.first, static_cast<std::uint8_t>(bagSize));
-  EXPECT_THROW(std::as_const(inventory).itemsAt(pastEnd), OutOfRangeException);
-  EXPECT_THROW(inventory.takeSlot(pastEnd), OutOfRangeException);
+  auto pastEndRead = std::as_const(inventory).itemsAt(pastEnd);
+  ASSERT_FALSE(pastEndRead);
+  EXPECT_TRUE(pastEndRead.error().is<OutOfRangeException>());
+  auto pastEndTake = inventory.takeSlot(pastEnd);
+  ASSERT_FALSE(pastEndTake);
+  EXPECT_TRUE(pastEndTake.error().is<OutOfRangeException>());
 });
 
 const GameTestRegistration inventoryMutableTraversalAndNetworkNormalizeConsumption("ItemTest", "InventoryMutableTraversalAndNetworkNormalizeConsumption", [](GameTest& fixture) {
   auto itemDatabase = fixture.root().itemDatabase();
-  NetElementTop<PlayerInventory> master(fixture.root());
-  NetElementTop<PlayerInventory> slave(fixture.root());
-  auto item = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 2));
-  auto bagSlot = inventoryTestBagSlot(fixture.root(), master, item);
-  ASSERT_TRUE(master.setItem(bagSlot, item));
-  ASSERT_TRUE(master.setItem(TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))));
-  master.setCustomBarPrimarySlot(0, InventorySlot(bagSlot));
+  ASSERT_TRUE(itemDatabase);
+  auto masterResult = NetElementTop<PlayerInventory>::create(fixture.root());
+  ASSERT_TRUE(masterResult);
+  auto& master = **masterResult;
+  auto slaveResult = NetElementTop<PlayerInventory>::create(fixture.root());
+  ASSERT_TRUE(slaveResult);
+  auto& slave = **slaveResult;
+  auto itemResult = inventoryTestItem(**itemDatabase, "perfectlygenericitem", 2);
+  ASSERT_TRUE(itemResult);
+  auto item = std::move(*itemResult);
+  auto slotResult = inventoryTestBagSlot(fixture.root(), master, item);
+  ASSERT_TRUE(slotResult);
+  auto bagSlot = *slotResult;
+  ASSERT_EQ(master.setItem(bagSlot, item), true);
+  {
+    auto trash = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+    ASSERT_TRUE(trash);
+    ASSERT_EQ(master.setItem(TrashSlot(), std::move(*trash)), true);
+  }
+  ASSERT_TRUE(master.setCustomBarPrimarySlot(0, InventorySlot(bagSlot)));
 
   auto initial = master.writeNetState();
-  slave.readNetState(initial.first);
-  ASSERT_TRUE(slave.itemsAt(bagSlot));
-  EXPECT_EQ(slave.itemsAt(bagSlot)->count(), 2u);
-  EXPECT_TRUE(slave.itemsAt(TrashSlot()));
+  ASSERT_TRUE(initial);
+  ASSERT_TRUE(slave.readNetState(initial->first));
+  {
+    auto current = slave.itemsAt(bagSlot);
+    ASSERT_TRUE(current);
+    ASSERT_TRUE(*current);
+    EXPECT_EQ((*current)->count(), 2u);
+    auto trash = slave.itemsAt(TrashSlot());
+    ASSERT_TRUE(trash);
+    EXPECT_TRUE(*trash);
+  }
 
   std::size_t visited = 0;
-  master.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& current) {
+  ASSERT_TRUE(master.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& current) -> std::expected<void, StarException> {
     ++visited;
     EXPECT_TRUE(current->consume(current->count()));
-  });
+    return {};
+  }));
   EXPECT_EQ(visited, 2u);
   EXPECT_EQ(item.use_count(), 1);
-  EXPECT_TRUE(master.allItems().empty());
-  auto delta = master.writeNetState(initial.second);
-  slave.readNetState(delta.first);
-  EXPECT_TRUE(slave.allItems().empty());
-  EXPECT_FALSE(slave.customBarPrimarySlot(0));
+  auto masterItems = master.allItems();
+  ASSERT_TRUE(masterItems);
+  EXPECT_TRUE(masterItems->empty());
+  auto delta = master.writeNetState(initial->second);
+  ASSERT_TRUE(delta);
+  ASSERT_TRUE(slave.readNetState(delta->first));
+  auto slaveItems = slave.allItems();
+  ASSERT_TRUE(slaveItems);
+  EXPECT_TRUE(slaveItems->empty());
+  auto slaveCustomBarPrimarySlot = slave.customBarPrimarySlot(0);
+  ASSERT_TRUE(slaveCustomBarPrimarySlot);
+  EXPECT_FALSE(*slaveCustomBarPrimarySlot);
 
-  ASSERT_TRUE(master.setItem(SwapSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))));
-  auto liveSwap = master.writeNetState(delta.second);
-  slave.readNetState(liveSwap.first);
+  {
+    auto swap = inventoryTestItem(**itemDatabase, "perfectlygenericitem");
+    ASSERT_TRUE(swap);
+    ASSERT_EQ(master.setItem(SwapSlot(), std::move(*swap)), true);
+  }
+  auto liveSwap = master.writeNetState(delta->second);
+  ASSERT_TRUE(liveSwap);
+  ASSERT_TRUE(slave.readNetState(liveSwap->first));
   EXPECT_TRUE(slave.swapSlotItem());
   auto swapAlias = master.swapSlotItem();
+  ASSERT_TRUE(swapAlias);
   ASSERT_TRUE(swapAlias->consume(1));
-  auto emptySwap = master.writeNetState(liveSwap.second);
-  slave.readNetState(emptySwap.first);
+  auto emptySwap = master.writeNetState(liveSwap->second);
+  ASSERT_TRUE(emptySwap);
+  ASSERT_TRUE(slave.readNetState(emptySwap->first));
   EXPECT_FALSE(slave.swapSlotItem());
   EXPECT_EQ(swapAlias.use_count(), 1);
 
-  PlayerInventory restored(fixture.root());
-  restored.load(master.store());
-  EXPECT_TRUE(restored.allItems().empty());
+  auto restoredResult = PlayerInventory::create(fixture.root());
+  ASSERT_TRUE(restoredResult);
+  auto& restored = **restoredResult;
+  auto stored = master.store();
+  ASSERT_TRUE(stored);
+  ASSERT_TRUE(restored.load(*stored));
+  auto restoredItems = restored.allItems();
+  ASSERT_TRUE(restoredItems);
+  EXPECT_TRUE(restoredItems->empty());
 });
 
 namespace {
@@ -455,61 +693,106 @@ namespace {
 class ReadyCatalogErrorSink : public LogSink {
 public:
   ReadyCatalogErrorSink() { setLevel(LogLevel::Error); }
-  void log(char const* message, LogLevel) override {
+  [[nodiscard]] std::expected<void, StarException> log(char const* message, LogLevel) override {
     ADD_FAILURE() << "Ready-catalog fixture logged an error: " << message;
+    return {};
   }
 };
 
 }
 
 const GameTestRegistration nestedReadyCatalog("ItemTest", "BuildersAndRebuildersKeepReadyCatalogAcrossNestedServices", [](GameTest& fixture) {
-  auto directory = File::temporaryDirectory(fixture.root().random());
-  auto cleanup = finally([&] { File::removeDirectoryRecursive(directory); });
+  auto temporaryDirectory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(temporaryDirectory);
+  auto directory = std::move(*temporaryDirectory);
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(directory)); });
   auto overlay = File::relativeTo(directory, "assets");
-  auto writeAsset = [&](String const& path, String const& contents) {
-    auto destination = File::relativeTo(overlay, path.beginsWith("/") ? path.substr(1) : path);
-    File::makeDirectoryRecursive(File::dirName(destination));
-    File::writeFile(contents, destination);
+  auto writeAsset = [&](String const& path, String const& contents) -> std::expected<void, StarException> {
+    auto absolute = path.beginsWith("/");
+    if (!absolute)
+      return std::unexpected(std::move(absolute.error()));
+    String relative = path;
+    if (*absolute) {
+      auto suffix = path.substr(1);
+      if (!suffix)
+        return std::unexpected(std::move(suffix.error()));
+      relative = std::move(*suffix);
+    }
+    auto destination = File::relativeTo(overlay, relative);
+    auto makeDirectory = File::makeDirectoryRecursive(File::dirName(destination));
+    if (!makeDirectory)
+      return std::unexpected(std::move(makeDirectory.error()));
+    return File::writeFile(contents, destination);
   };
 
   // Reuse the actual fixture's legal species/NPC assets, including their real
   // creation/build scripts. The wrappers add observable nested item consumers.
-  auto baseAssets = fixture.root().assets();
+  auto assetResult = fixture.root().assets();
+  ASSERT_TRUE(assetResult);
+  auto const& baseAssets = *assetResult;
   String humanPath;
   Json humanConfig;
-  for (auto const& path : baseAssets->scanExtension("species")) {
+  auto speciesPaths = baseAssets->scanExtension("species");
+  ASSERT_TRUE(speciesPaths);
+  for (auto const& assetPath : **speciesPaths) {
+    auto const& path = assetPath.string();
     auto config = baseAssets->json(path);
-    if (config.getString("kind") == "human") {
+    ASSERT_TRUE(config);
+    auto kind = config->getString("kind");
+    ASSERT_TRUE(kind);
+    if (*kind == "human") {
       humanPath = path;
-      humanConfig = config;
+      humanConfig = std::move(*config);
       break;
     }
   }
   ASSERT_FALSE(humanPath.empty());
   Json npcConfig;
-  for (auto const& path : baseAssets->scanExtension("npctype")) {
+  auto npcPaths = baseAssets->scanExtension("npctype");
+  ASSERT_TRUE(npcPaths);
+  for (auto const& assetPath : **npcPaths) {
+    auto const& path = assetPath.string();
     auto config = baseAssets->json(path);
-    if (config.getString("type") == "villager") {
-      npcConfig = config;
+    ASSERT_TRUE(config);
+    auto type = config->getString("type");
+    ASSERT_TRUE(type);
+    if (*type == "villager") {
+      npcConfig = std::move(*config);
       break;
     }
   }
   ASSERT_FALSE(npcConfig.isNull());
   auto creationScripts = humanConfig.getArray("createScripts", {});
-  if (creationScripts.empty())
-    creationScripts.append("/humanoid/opensb/create.lua");
-  creationScripts.append("/readycatalog/create.lua");
+  ASSERT_TRUE(creationScripts);
+  if (creationScripts->empty())
+    creationScripts->append("/humanoid/opensb/create.lua");
+  creationScripts->append("/readycatalog/create.lua");
   auto buildScripts = humanConfig.getArray("buildScripts", {});
-  if (buildScripts.empty())
-    buildScripts.append("/humanoid/opensb/build.lua");
-  buildScripts.append("/readycatalog/humanoid.lua");
-  humanConfig = humanConfig.set("createScripts", creationScripts).set("buildScripts", buildScripts);
-  writeAsset(humanPath, humanConfig.repr());
-  npcConfig = npcConfig.set("type", "readycatalognpc")
-      .set("humanoidConfig", "/humanoid.config")
-      .set("items", Json::parse(R"({"override":[[0,[{}]]]})"));
-  writeAsset("/readycatalog/probe.npctype", npcConfig.repr());
-  writeAsset("/readycatalog/create.lua", R"(
+  ASSERT_TRUE(buildScripts);
+  if (buildScripts->empty())
+    buildScripts->append("/humanoid/opensb/build.lua");
+  buildScripts->append("/readycatalog/humanoid.lua");
+  auto humanWithCreation = humanConfig.set("createScripts", *creationScripts);
+  ASSERT_TRUE(humanWithCreation);
+  auto humanWithBuild = humanWithCreation->set("buildScripts", *buildScripts);
+  ASSERT_TRUE(humanWithBuild);
+  humanConfig = std::move(*humanWithBuild);
+  auto humanContents = humanConfig.repr();
+  ASSERT_TRUE(humanContents);
+  ASSERT_TRUE(writeAsset(humanPath, *humanContents));
+  auto npcType = npcConfig.set("type", "readycatalognpc");
+  ASSERT_TRUE(npcType);
+  auto npcHumanoid = npcType->set("humanoidConfig", "/humanoid.config");
+  ASSERT_TRUE(npcHumanoid);
+  auto npcItems = Json::parse(R"({"override":[[0,[{}]]]})");
+  ASSERT_TRUE(npcItems);
+  auto npcWithItems = npcHumanoid->set("items", *npcItems);
+  ASSERT_TRUE(npcWithItems);
+  npcConfig = std::move(*npcWithItems);
+  auto npcContents = npcConfig.repr();
+  ASSERT_TRUE(npcContents);
+  ASSERT_TRUE(writeAsset("/readycatalog/probe.npctype", *npcContents));
+  ASSERT_TRUE(writeAsset("/readycatalog/create.lua", R"(
 local originalCreate = create
 function create(...)
   local identity, parameters, armor = originalCreate(...)
@@ -518,8 +801,8 @@ function create(...)
   parameters.readyCreateMarker = root.itemConfig("readycatalogleaf").config.shortdescription
   return identity, parameters, armor
 end
-)");
-  writeAsset("/readycatalog/humanoid.lua", R"(
+)"));
+  ASSERT_TRUE(writeAsset("/readycatalog/humanoid.lua", R"(
 local originalBuild = build
 function build(...)
   local config = originalBuild(...)
@@ -528,45 +811,51 @@ function build(...)
   root.setConfiguration("readySpeciesBuild", root.itemConfig("readycatalogleaf").config.shortdescription)
   return config
 end
-)");
+)"));
 
-  writeAsset("/_metadata", R"({
+  ASSERT_TRUE(writeAsset("/_metadata", R"({
     "name":"ready_catalog_fixture",
     "errorHandlers":{"item":["/readycatalog/rebuild.lua"]}
-  })");
-  writeAsset("/readycatalog/leaf.item", R"({
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/leaf.item", R"({
     "itemName":"readycatalogleaf","rarity":"common",
     "shortdescription":"LeafOwner","description":"Ready catalog leaf"
-  })");
-  writeAsset("/readycatalog/built.item", R"({
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/built.item", R"({
     "itemName":"readycatalogbuilt","rarity":"common",
     "shortdescription":"Unbuilt","builder":"/readycatalog/build.lua"
-  })");
-  writeAsset("/readycatalog/broken.item", R"({
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/broken.item", R"({
     "itemName":"readycatalogbroken","rarity":"common",
     "shortdescription":"Unrebuilt","builder":"/readycatalog/broken.lua"
-  })");
-  writeAsset("/readycatalog/broken.lua", R"(
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/broken.lua", R"(
 function build()
   error("intentional ready-catalog rebuild")
 end
-)");
-  writeAsset("/readycatalog/probe.treasurepools", R"({
+)"));
+  ASSERT_TRUE(writeAsset("/readycatalog/probe.treasurepools", R"({
     "readycatalogpool":[[0,{"fill":[{"item":"readycatalogleaf"}],"poolRounds":0}]]
-  })");
-  writeAsset("/readycatalog/probe.collection", R"({
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/probe.collection", R"({
     "name":"readycatalogcollection","type":"item",
     "collectables":{"leaf":{"item":"readycatalogleaf","icon":"/assetmissing.png"}}
-  })");
-  writeAsset("/versioning.config", baseAssets->json("/versioning.config").set("ReadyCatalog", 1).repr());
-  writeAsset("/versioning/ReadyCatalog_0_1.lua", R"(
+  })"));
+  auto versioningConfig = baseAssets->json("/versioning.config");
+  ASSERT_TRUE(versioningConfig);
+  auto updatedVersioning = versioningConfig->set("ReadyCatalog", 1);
+  ASSERT_TRUE(updatedVersioning);
+  auto versioningContents = updatedVersioning->repr();
+  ASSERT_TRUE(versioningContents);
+  ASSERT_TRUE(writeAsset("/versioning.config", *versioningContents));
+  ASSERT_TRUE(writeAsset("/versioning/ReadyCatalog_0_1.lua", R"(
 function update(data)
   return {
     name = root.createItem("readycatalogleaf").name,
     marker = root.itemConfig("readycatalogleaf").config.shortdescription
   }
 end
-)");
+)"));
 
   String checkNestedServices = R"(
 local function checkNestedServices()
@@ -589,14 +878,14 @@ local function checkNestedServices()
   return leaf
 end
 )";
-  writeAsset("/readycatalog/build.lua", checkNestedServices + R"(
+  ASSERT_TRUE(writeAsset("/readycatalog/build.lua", checkNestedServices + R"(
 function build(directory, config, parameters)
   config.shortdescription = "NestedReady_" .. checkNestedServices()
   parameters.nestedCatalog = "builder"
   return config, parameters
 end
-)");
-  writeAsset("/readycatalog/rebuild.lua", checkNestedServices + R"(
+)"));
+  ASSERT_TRUE(writeAsset("/readycatalog/rebuild.lua", checkNestedServices + R"(
 function error(descriptor, message)
   if descriptor.name ~= "readycatalogbroken" then return descriptor end
   assert(string.find(message, "intentional ready%-catalog rebuild"))
@@ -609,15 +898,15 @@ function error(descriptor, message)
     }
   })
 end
-)");
-  writeAsset("/readycatalog/built.recipe", R"({
+)"));
+  ASSERT_TRUE(writeAsset("/readycatalog/built.recipe", R"({
     "input":[],"output":{"name":"readycatalogbuilt","count":1},
     "groups":[],"collectables":{}
-  })");
-  writeAsset("/readycatalog/broken.recipe", R"({
+  })"));
+  ASSERT_TRUE(writeAsset("/readycatalog/broken.recipe", R"({
     "input":[],"output":{"name":"readycatalogbroken","count":1},
     "groups":[],"collectables":{}
-  })");
+  })"));
 
   auto settings = fixture.rootSettings();
   settings.assetSources.append(overlay);
@@ -626,29 +915,45 @@ end
   settings.logDirectory = {};
   settings.logFile = {};
   settings.includeUGC = false;
-  Root root(settings);
+  auto createdRoot = Root::create(settings);
+  ASSERT_TRUE(createdRoot);
+  auto& root = **createdRoot;
   root.logger().addSink(std::make_shared<ReadyCatalogErrorSink>());
 
   // These strings are recorded by the INITIAL recipe scan while the Root has
   // not published ItemDatabase. A later db.item() alone could hide a fallback.
-  auto database = root.itemDatabase();
+  auto databaseResult = root.itemDatabase();
+  ASSERT_TRUE(databaseResult);
+  auto const& database = *databaseResult;
   auto builtRecipes = database->recipesForOutputItem("readycatalogbuilt");
   ASSERT_EQ(builtRecipes.size(), 1u);
-  EXPECT_TRUE(builtRecipes.begin()->guiFilterString.contains("nestedready_leafowner"));
+  EXPECT_EQ(builtRecipes.begin()->guiFilterString.contains("nestedready_leafowner"), true);
   auto rebuiltRecipes = database->recipesForOutputItem("readycatalogbroken");
   ASSERT_EQ(rebuiltRecipes.size(), 1u);
-  EXPECT_TRUE(rebuiltRecipes.begin()->guiFilterString.contains("rebuiltready_leafowner"));
-  auto built = database->item(ItemDescriptor("readycatalogbuilt"));
+  EXPECT_EQ(rebuiltRecipes.begin()->guiFilterString.contains("rebuiltready_leafowner"), true);
+  auto builtResult = inventoryTestItem(*database, "readycatalogbuilt");
+  ASSERT_TRUE(builtResult);
+  auto const& built = *builtResult;
   ASSERT_TRUE(built);
   EXPECT_EQ(built->name(), "readycatalogbuilt");
   EXPECT_EQ(built->friendlyName(), "NestedReady_LeafOwner");
   EXPECT_EQ(built->parameters().getString("nestedCatalog"), "builder");
-  auto rebuilt = database->item(ItemDescriptor("readycatalogbroken", 3));
+  auto rebuiltResult = inventoryTestItem(*database, "readycatalogbroken", 3);
+  ASSERT_TRUE(rebuiltResult);
+  auto const& rebuilt = *rebuiltResult;
   ASSERT_TRUE(rebuilt);
   EXPECT_EQ(rebuilt->name(), "readycatalogleaf");
   EXPECT_EQ(rebuilt->count(), 3u);
   EXPECT_EQ(rebuilt->friendlyName(), "RebuiltReady_LeafOwner");
   EXPECT_EQ(rebuilt->parameters().getString("nestedCatalog"), "rebuilder");
-  EXPECT_EQ(root.collectionDatabase()->collectable("readycatalogcollection", "leaf").title, "LeafOwner");
-  EXPECT_EQ(root.configuration()->get("readySpeciesBuild").toString(), "LeafOwner");
+  auto collections = root.collectionDatabase();
+  ASSERT_TRUE(collections);
+  auto leaf = (*collections)->collectable("readycatalogcollection", "leaf");
+  ASSERT_TRUE(leaf);
+  EXPECT_EQ(leaf->title, "LeafOwner");
+  auto configuration = root.configuration();
+  ASSERT_TRUE(configuration);
+  auto marker = (*configuration)->get("readySpeciesBuild");
+  ASSERT_TRUE(marker);
+  EXPECT_EQ(marker->toString(), "LeafOwner");
 });

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.net_compatibility;
 import star.version;
@@ -31,23 +32,23 @@ public:
   NetElementGroup& operator=(NetElementGroup const&) = delete;
 
   // Add an element to the group.
-  void addNetElement(NetElement* element, bool propagateInterpolation = true);
+  [[nodiscard]] std::expected<void, StarException> addNetElement(NetElement* element, bool propagateInterpolation = true);
 
   // Removes all previously added elements
   void clearNetElements();
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  void blankNetDelta(float interpolationTime) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
   NetElementVersion const* netVersion() const;
   bool netInterpolationEnabled() const;

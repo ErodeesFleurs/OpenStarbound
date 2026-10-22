@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -140,63 +141,64 @@ public:
     ReturnToTitle
   };
 
-  MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
+  [[nodiscard]] static std::expected<std::shared_ptr<MainInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
 
   ~MainInterface();
+  [[nodiscard]] std::expected<void, StarException> close();
 
   RunningState currentState() const;
 
   MainInterfacePaneManager* paneManager();
   GuiContext& context() const;
 
-  bool escapeDialogOpen() const;
+  [[nodiscard]] std::expected<bool, StarException> escapeDialogOpen() const;
 
-  void openCraftingWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
-  void openMerchantWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
-  void togglePlainCraftingWindow();
+  [[nodiscard]] std::expected<void, StarException> openCraftingWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
+  [[nodiscard]] std::expected<void, StarException> openMerchantWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
+  [[nodiscard]] std::expected<void, StarException> togglePlainCraftingWindow();
 
   bool windowsOpen() const;
 
   std::shared_ptr<MerchantPane> activeMerchantPane() const;
 
   // Return true if this event was consumed or should be handled elsewhere.
-  bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<bool, StarException> handleInputEvent(InputEvent const& event);
   // Return true if mouse / keyboard events are currently locked here
-  bool inputFocus() const;
+  [[nodiscard]] std::expected<bool, StarException> inputFocus() const;
   // If input is focused, should MainInterface also accept text input events?
-  bool textInputActive() const;
-  void handleInteractAction(InteractAction interactAction);
+  [[nodiscard]] std::expected<bool, StarException> textInputActive() const;
+  [[nodiscard]] std::expected<void, StarException> handleInteractAction(InteractAction interactAction);
 
-  void preUpdate(float dt);
+  [[nodiscard]] std::expected<void, StarException> preUpdate(float dt);
   // Handles incoming client messages, aims main player, etc.
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
   // Render things e.g. quest indicators that should be drawn in the world
   // behind interface e.g. chat bubbles
-  void renderInWorldElements();
-  void render();
+  [[nodiscard]] std::expected<void, StarException> renderInWorldElements();
+  [[nodiscard]] std::expected<void, StarException> render();
 
   Vec2F cursorWorldPosition() const;
 
   bool isDebugDisplayed();
 
-  void doChat(String const& chat, bool addToHistory);
+  [[nodiscard]] std::expected<void, StarException> doChat(String const& chat, bool addToHistory);
 
-  void queueMessage(String const& message, std::optional<float> cooldown, float spring);
-  void queueMessage(String const& message);
+  [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message, std::optional<float> cooldown, float spring);
+  [[nodiscard]] std::expected<void, StarException> queueMessage(String const& message);
 
-  void queueItemPickupText(std::shared_ptr<Item> const& item);
-  void queueJoinRequest(std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request);
+  [[nodiscard]] std::expected<void, StarException> queueItemPickupText(std::shared_ptr<Item> const& item);
+  [[nodiscard]] std::expected<void, StarException> queueJoinRequest(std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request);
 
   bool fixedCamera() const;
   bool hudVisible() const;
   void setHudVisible(bool visible = true);
 
-  void warpToOrbitedWorld(bool deploy = false);
-  void warpToOwnShip();
-  void warpTo(WarpAction const& warpAction);
+  [[nodiscard]] std::expected<void, StarException> warpToOrbitedWorld(bool deploy = false);
+  [[nodiscard]] std::expected<void, StarException> warpToOwnShip();
+  [[nodiscard]] std::expected<void, StarException> warpTo(WarpAction const& warpAction);
 
-  std::shared_ptr<CanvasWidget> fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
+  [[nodiscard]] std::expected<std::shared_ptr<CanvasWidget>, StarException> fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
 
   std::shared_ptr<ClientCommandProcessor> commandProcessor() const;
 
@@ -208,38 +210,40 @@ public:
     Vec2I position;
   };
 
-  void takeScriptPanes(List<ScriptPaneInfo>& out);
-  void reviveScriptPanes(List<ScriptPaneInfo>& panes);
-  void displayDefaultPanes();
+  [[nodiscard]] std::expected<void, StarException> takeScriptPanes(List<ScriptPaneInfo>& out);
+  [[nodiscard]] std::expected<void, StarException> reviveScriptPanes(List<ScriptPaneInfo>& panes);
+  [[nodiscard]] std::expected<void, StarException> displayDefaultPanes();
 private:
-  std::shared_ptr<Pane> createEscapeDialog();
-  void initHttpTrustDialog();
+  MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createEscapeDialog();
+  [[nodiscard]] std::expected<void, StarException> initHttpTrustDialog();
 
   float interfaceScale() const;
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
-  Vec2F mainBarPosition() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
+  [[nodiscard]] std::expected<Vec2F, StarException> mainBarPosition() const;
 
-  void renderBreath();
-  void renderMessages();
-  void renderMonsterHealthBar();
-  void renderSpecialDamageBar();
-  void renderMainBar();
-  void renderWindows();
-  void renderDebug();
+  [[nodiscard]] std::expected<void, StarException> renderBreath();
+  [[nodiscard]] std::expected<void, StarException> renderMessages();
+  [[nodiscard]] std::expected<void, StarException> renderMonsterHealthBar();
+  [[nodiscard]] std::expected<void, StarException> renderSpecialDamageBar();
+  [[nodiscard]] std::expected<void, StarException> renderMainBar();
+  [[nodiscard]] std::expected<void, StarException> renderWindows();
+  [[nodiscard]] std::expected<void, StarException> renderDebug();
 
-  void updateCursor();
-  void renderCursor();
+  [[nodiscard]] std::expected<void, StarException> updateCursor();
+  [[nodiscard]] std::expected<void, StarException> renderCursor();
 
-  bool overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
+  [[nodiscard]] std::expected<bool, StarException> overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
 
-  bool overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
+  [[nodiscard]] std::expected<bool, StarException> overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
 
-  void displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, EntityId sourceEntity);
+  [[nodiscard]] std::expected<void, StarException> displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, EntityId sourceEntity);
 
   GuiContext* m_guiContext{nullptr};
   std::shared_ptr<MainInterfaceConfig const> m_config;
-  InterfaceCursor m_cursor;
+  std::shared_ptr<InterfaceCursor> m_cursor;
 
   RunningState m_state{Running};
 

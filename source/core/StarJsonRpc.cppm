@@ -16,7 +16,7 @@ struct JsonRpcExceptionTag {
 };
 using JsonRpcException = StarError<JsonRpcExceptionTag, StarException>;
 
-typedef std::function<Json(Json const&)> JsonRpcRemoteFunction;
+typedef std::function<std::expected<Json, StarException>(Json const&)> JsonRpcRemoteFunction;
 
 typedef StringMap<JsonRpcRemoteFunction> JsonRpcHandlers;
 
@@ -24,7 +24,7 @@ typedef StringMap<JsonRpcRemoteFunction> JsonRpcHandlers;
 class JsonRpcInterface {
 public:
   virtual ~JsonRpcInterface();
-  virtual RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<Json>, StarException> invokeRemote(String const& handler, Json const& arguments) = 0;
 };
 
 // Simple class to handle remote methods based on Json types.  Does not
@@ -34,17 +34,17 @@ class JsonRpc : public JsonRpcInterface {
 public:
   explicit JsonRpc(Logger& logger);
 
-  void registerHandler(String const& handler, JsonRpcRemoteFunction func);
-  void registerHandlers(JsonRpcHandlers const& handlers);
+  [[nodiscard]] std::expected<void, StarException> registerHandler(String const& handler, JsonRpcRemoteFunction func);
+  [[nodiscard]] std::expected<void, StarException> registerHandlers(JsonRpcHandlers const& handlers);
 
-  void removeHandler(String const& handler);
+  [[nodiscard]] std::expected<void, StarException> removeHandler(String const& handler);
   void clearHandlers();
 
-  RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) override;
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> invokeRemote(String const& handler, Json const& arguments) override;
 
   bool sendPending() const;
-  ByteArray send();
-  void receive(ByteArray const& inbuffer);
+  [[nodiscard]] std::expected<ByteArray, StarException> send();
+  [[nodiscard]] std::expected<void, StarException> receive(ByteArray const& inbuffer);
 
 private:
   Logger& m_logger;

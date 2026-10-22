@@ -16,7 +16,7 @@ using TerrainException = StarError<TerrainExceptionTag, StarException>;
 
 struct TerrainSelectorParameters {
   explicit TerrainSelectorParameters(RandomService& random);
-  explicit TerrainSelectorParameters(Json const& v);
+  [[nodiscard]] static std::expected<TerrainSelectorParameters, StarException> create(Json const& v);
 
   Json toJson() const;
 
@@ -27,6 +27,8 @@ struct TerrainSelectorParameters {
   float baseHeight;
   std::uint64_t seed;
   float commonality;
+private:
+  TerrainSelectorParameters() = default;
 };
 
 struct TerrainSelector {
@@ -35,7 +37,7 @@ struct TerrainSelector {
 
   // Returns a float signifying the "solid-ness" of a block, >= 0.0 should be
   // considered solid, < 0.0 should be considered open space.
-  virtual float get(int x, int y) const = 0;
+  [[nodiscard]] virtual std::expected<float, StarException> get(int x, int y) const = 0;
 
   String type;
   Json config;
@@ -49,16 +51,20 @@ public:
     Json parameters;
   };
 
-  Config selectorConfig(String const& name) const;
-  std::shared_ptr<TerrainSelector const> createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
+  [[nodiscard]] std::expected<Config, StarException> selectorConfig(String const& name) const;
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const>, StarException> createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
 
-  TerrainDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random);
+  [[nodiscard]] static std::expected<std::shared_ptr<TerrainDatabase>, StarException> create(std::shared_ptr<Assets const> const& assets, RandomService& random);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  TerrainDatabase(ConstructionKey, RandomService& random);
 
-  std::shared_ptr<TerrainSelector const> createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
-  std::shared_ptr<TerrainSelector const> constantSelector(float value);
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const>, StarException> createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const>, StarException> constantSelector(float value);
 
   Json storeSelector(std::shared_ptr<TerrainSelector const> const& selector) const;
-  std::shared_ptr<TerrainSelector const> loadSelector(Json const& store) const;
+  [[nodiscard]] std::expected<std::shared_ptr<TerrainSelector const>, StarException> loadSelector(Json const& store) const;
 
 private:
   RandomService& m_random;

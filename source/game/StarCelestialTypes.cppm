@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.map;
 import star.json;
@@ -42,30 +43,30 @@ struct CelestialOrbitRegion {
 };
 
 struct CelestialPlanet {
-  friend DataStream& operator>>(DataStream& ds, CelestialPlanet& value);
-  friend DataStream& operator<<(DataStream& ds, CelestialPlanet const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialPlanet& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialPlanet const& value);
   CelestialParameters planetParameters;
   HashMap<int, CelestialParameters> satelliteParameters;
 };
-DataStream& operator>>(DataStream& ds, CelestialPlanet& planet);
-DataStream& operator<<(DataStream& ds, CelestialPlanet const& planet);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialPlanet& planet);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialPlanet const& planet);
 
 struct CelestialSystemObjects {
-  friend DataStream& operator>>(DataStream& ds, CelestialSystemObjects& value);
-  friend DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialSystemObjects& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialSystemObjects const& value);
   Vec3I systemLocation;
   HashMap<int, CelestialPlanet> planets;
 };
-DataStream& operator>>(DataStream& ds, CelestialSystemObjects& systemObjects);
-DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialSystemObjects& systemObjects);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects);
 
 struct CelestialChunk {
-  friend DataStream& operator>>(DataStream& ds, CelestialChunk& value);
-  friend DataStream& operator<<(DataStream& ds, CelestialChunk const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialChunk& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialChunk const& value);
   CelestialChunk();
-  CelestialChunk(Json const& store);
+  [[nodiscard]] static std::expected<CelestialChunk, StarException> create(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   Vec2I chunkIndex;
   List<CelestialConstellation> constellations;
@@ -79,15 +80,15 @@ struct CelestialChunk {
   // only persistent chunks are saved to storage
   bool persistent = false;
 };
-DataStream& operator>>(DataStream& ds, CelestialChunk& chunk);
-DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialChunk& chunk);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialChunk const& chunk);
 
 typedef Either<Vec2I, Vec3I> CelestialRequest;
 typedef Either<CelestialChunk, CelestialSystemObjects> CelestialResponse;
 
 struct CelestialBaseInformation {
-  friend DataStream& operator>>(DataStream& ds, CelestialBaseInformation& value);
-  friend DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialBaseInformation& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialBaseInformation const& value);
   int planetOrbitalLevels;
   int satelliteOrbitalLevels;
   int chunkSize;
@@ -95,8 +96,8 @@ struct CelestialBaseInformation {
   Vec2I zCoordRange;
   bool enforceCoordRange;
 };
-DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation);
-DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation);
 }
 
 export module star.celestial_types;

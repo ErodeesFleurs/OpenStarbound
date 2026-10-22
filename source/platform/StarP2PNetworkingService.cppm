@@ -1,9 +1,9 @@
 module;
 
 import std;
+import star.format;
 
 import star.byte_array;
-import star.either;
 import star.list;
 import star.string;
 import star.strong_typedef;
@@ -29,8 +29,8 @@ public:
   virtual ~P2PSocket() = default;
 
   virtual bool isOpen() = 0;
-  virtual bool sendMessage(ByteArray const& message) = 0;
-  virtual std::optional<ByteArray> receiveMessage() = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendMessage(ByteArray const& message) = 0;
+  [[nodiscard]] virtual std::expected<std::optional<ByteArray>, StarException> receiveMessage() = 0;
 };
 
 template <typename BaseType>
@@ -75,13 +75,13 @@ public:
   virtual ~P2PNetworkingService() = default;
 
   // P2P friends cannot join this player
-  virtual void setJoinUnavailable() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setJoinUnavailable() = 0;
   // P2P friends can join this player's local game
-  virtual void setJoinLocal(std::uint32_t capacity) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setJoinLocal(std::uint32_t capacity) = 0;
   // P2P friends can join this player at the given remote server
-  virtual void setJoinRemote(HostAddressWithPort location) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setJoinRemote(HostAddressWithPort location) = 0;
   // Updates rich presence activity info
-  virtual void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) = 0;
 
   // If this player joins another peer's game using the P2P UI, this will return
   // a pending join location
@@ -91,9 +91,9 @@ public:
 
   virtual void setAcceptingP2PConnections(bool acceptingP2PConnections) = 0;
   virtual List<std::unique_ptr<P2PSocket>> acceptP2PConnections() = 0;
-  virtual void update() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> update() = 0;
 
-  virtual Either<String, std::unique_ptr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) = 0;
+  [[nodiscard]] virtual std::expected<std::unique_ptr<P2PSocket>, StarException> connectToPeer(P2PNetworkingPeerId peerId) = 0;
 };
 
 };

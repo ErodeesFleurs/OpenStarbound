@@ -21,6 +21,9 @@ import star.io_device;
 import star.byte_array;
 import star.data_stream_devices;
 
+#if defined STAR_SYSTEM_WINDOWS
+import star.string_windows;
+#endif
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
@@ -145,97 +148,190 @@ import star.server_rcon;
 
 using namespace Star;
 
-Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
-    {
-      "configurationVersion" : {
-        "server" : 4
-      },
+Json const AdditionalDefaultConfiguration = JsonObject{
+    {"configurationVersion", JsonObject{{"server", 4}}},
+    {"runQueryServer", false},
+    {"queryServerPort", 21025},
+    {"queryServerBind", "::"},
+    {"runRconServer", false},
+    {"rconServerPort", 21026},
+    {"rconServerBind", "::"},
+    {"rconServerPassword", ""},
+    {"rconServerTimeout", 1000},
+    {"allowAssetsMismatch", true},
+    {"serverOverrideAssetsDigest", Json()}};
 
-      "runQueryServer" : false,
-      "queryServerPort" : 21025,
-      "queryServerBind" : "::",
+static std::expected<void, StarException> runServer(int argc, char** argv) {
+  #if defined STAR_SYSTEM_WINDOWS
+  unsigned long exceptionStackSize = 131072;
+  SetThreadStackGuarantee(&exceptionStackSize);
+  #endif
+  auto rootLoader = RootLoader::create({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
+  if (!rootLoader)
+    return std::unexpected(std::move(rootLoader.error()));
+  rootLoader->setVersionName("Server");
+  auto initialized = rootLoader->commandInitOrDie(argc, argv);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto root = std::move(initialized->first);
+  auto loaded = root->fullyLoad();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
 
-      "runRconServer" : false,
-      "rconServerPort" : 21026,
-      "rconServerBind" : "::",
-      "rconServerPassword" : "",
-      "rconServerTimeout" : 1000,
+  SignalHandler signalHandler;
+  auto fatalSignals = signalHandler.setHandleFatal(true);
+  if (!fatalSignals)
+    return std::unexpected(std::move(fatalSignals.error()));
+  auto interrupts = signalHandler.setHandleInterrupt(true);
+  if (!interrupts)
+    return std::unexpected(std::move(interrupts.error()));
 
-      "allowAssetsMismatch" : true,
-      "serverOverrideAssetsDigest" : null
+  auto configuration = root->configuration();
+  if (!configuration)
+    return std::unexpected(std::move(configuration.error()));
+  {
+    auto versionLogged = root->logger().info("{}", rootLoader->getVersionString());
+    if (!versionLogged)
+      return std::unexpected(std::move(versionLogged.error()));
+    auto rateSetting = (*configuration)->get("updateRate");
+    if (!rateSetting)
+      return std::unexpected(std::move(rateSetting.error()));
+    if (*rateSetting) {
+      auto updateRate = rateSetting->toFloat();
+      if (!updateRate)
+        return std::unexpected(std::move(updateRate.error()));
+      root->timing().serverTimestep = root->timing().timestep = 1.0f / *updateRate;
+      auto rateLogged = root->logger().info("Configured tick rate is {:4.2f}hz", *updateRate);
+      if (!rateLogged)
+        return std::unexpected(std::move(rateLogged.error()));
     }
-  )JSON");
+
+    auto created = UniverseServer::create(*root, root->toStoragePath("universe"));
+    if (!created)
+      return std::unexpected(std::move(created.error()));
+    auto server = std::move(*created);
+    server->setListeningTcp(true);
+    auto started = server->start();
+    if (!started) {
+      auto closed = server->close();
+      if (!closed)
+        EmergencyLog::error("Server cleanup after failed start also failed: {}", closed.error().what());
+      return std::unexpected(std::move(started.error()));
+    }
+
+    std::unique_ptr<ServerQueryThread> queryServer;
+    std::unique_ptr<ServerRconThread> rconServer;
+    auto session = [&]() -> std::expected<void, StarException> {
+    auto bindAddress = [&configuration](String const& bindKey, String const& portKey) -> std::expected<HostAddressWithPort, StarException> {
+      auto bind = (*configuration)->get(bindKey);
+      if (!bind)
+        return std::unexpected(std::move(bind.error()));
+      auto host = bind->toString();
+      if (!host)
+        return std::unexpected(std::move(host.error()));
+      auto port = (*configuration)->get(portKey);
+      if (!port)
+        return std::unexpected(std::move(port.error()));
+      auto number = port->toInt();
+      if (!number)
+        return std::unexpected(std::move(number.error()));
+      return HostAddressWithPort::create(*host, *number);
+    };
+
+    auto querySetting = (*configuration)->get("runQueryServer");
+    if (!querySetting)
+      return std::unexpected(std::move(querySetting.error()));
+    auto queryEnabled = querySetting->toBool();
+    if (!queryEnabled)
+      return std::unexpected(std::move(queryEnabled.error()));
+    if (*queryEnabled) {
+      auto address = bindAddress("queryServerBind", "queryServerPort");
+      if (!address)
+        return std::unexpected(std::move(address.error()));
+      auto query = ServerQueryThread::create(server.get(), *address);
+      if (!query)
+        return std::unexpected(std::move(query.error()));
+      queryServer = std::move(*query);
+      auto queryStarted = queryServer->start();
+      if (!queryStarted)
+        return std::unexpected(std::move(queryStarted.error()));
+    }
+
+    auto rconSetting = (*configuration)->get("runRconServer");
+    if (!rconSetting)
+      return std::unexpected(std::move(rconSetting.error()));
+    auto rconEnabled = rconSetting->toBool();
+    if (!rconEnabled)
+      return std::unexpected(std::move(rconEnabled.error()));
+    if (*rconEnabled) {
+      auto address = bindAddress("rconServerBind", "rconServerPort");
+      if (!address)
+        return std::unexpected(std::move(address.error()));
+      auto rcon = ServerRconThread::create(server.get(), *address);
+      if (!rcon)
+        return std::unexpected(std::move(rcon.error()));
+      rconServer = std::move(*rcon);
+      auto rconStarted = rconServer->start();
+      if (!rconStarted)
+        return std::unexpected(std::move(rconStarted.error()));
+    }
+
+    while (server->isRunning()) {
+      if (signalHandler.interruptCaught()) {
+        auto interruptLogged = root->logger().info("Interrupt caught!");
+        if (!interruptLogged)
+          return std::unexpected(std::move(interruptLogged.error()));
+        auto stopped = server->stop();
+        if (!stopped)
+          return std::unexpected(std::move(stopped.error()));
+        break;
+      }
+      Thread::sleep(100);
+    }
+    return {};
+    }();
+
+    std::optional<StarException> shutdownError;
+    auto collect = [&shutdownError](auto result) {
+      if (!result) {
+        if (!shutdownError)
+          shutdownError = std::move(result.error());
+        else
+          EmergencyLog::error("Additional server shutdown error: {}", result.error().what());
+      }
+    };
+    if (!session) {
+      collect(std::move(session));
+      collect(server->stop());
+    }
+    collect(server->join());
+    if (queryServer) {
+      queryServer->stop();
+      collect(queryServer->join());
+    }
+    if (rconServer) {
+      collect(rconServer->stop());
+      collect(rconServer->join());
+    }
+    collect(server->close());
+    if (shutdownError)
+      return std::unexpected(std::move(*shutdownError));
+  }
+  return root->logger().info("Server shutdown gracefully");
+}
 
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
+  auto nativeRuntime = NativeRuntime::create();
+  auto result = nativeRuntime ? runServer(argc, argv) : std::expected<void, StarException>(std::unexpected(std::move(nativeRuntime.error())));
+  if (!result) {
+    auto text = printException(ExceptionDiagnostic(result.error()), true);
+    EmergencyLog::error("Fatal server error: {}", text);
     #if defined STAR_SYSTEM_WINDOWS
-    unsigned long exceptionStackSize = 131072;
-    SetThreadStackGuarantee(&exceptionStackSize);
+    auto wideText = stringToUtf16(text);
+    MessageBoxW(nullptr, wideText ? wideText->get() : L"Server startup failed; diagnostic conversion failed. See the log.",
+        L"OpenStarbound server error", MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
     #endif
-    RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
-    rootLoader.setVersionName("Server");
-    std::unique_ptr<::Star::Root> root = rootLoader.commandInitOrDie(argc, argv).first;
-    root->fullyLoad();
-
-    SignalHandler signalHandler;
-    signalHandler.setHandleFatal(true);
-    signalHandler.setHandleInterrupt(true);
-
-    auto configuration = root->configuration();
-    {
-      root->logger().info("{}", rootLoader.getVersionString());
-
-      float updateRate = 1.0f / root->timing().timestep;
-      if (auto jUpdateRate = configuration->get("updateRate")) {
-        updateRate = jUpdateRate.toFloat();
-        root->timing().serverTimestep = root->timing().timestep = 1.0f / updateRate;
-        root->logger().info("Configured tick rate is {:4.2f}hz", updateRate);
-      }
-
-      std::unique_ptr<::Star::UniverseServer> server = std::make_unique<UniverseServer>(*root, root->toStoragePath("universe"));
-      server->setListeningTcp(true);
-      server->start();
-
-      std::unique_ptr<::Star::ServerQueryThread> queryServer;
-      if (configuration->get("runQueryServer").toBool()) {
-        queryServer = std::make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
-        queryServer->start();
-      }
-
-      std::unique_ptr<::Star::ServerRconThread> rconServer;
-      if (configuration->get("runRconServer").toBool()) {
-        rconServer = std::make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
-        rconServer->start();
-      }
-
-      while (server->isRunning()) {
-        if (signalHandler.interruptCaught()) {
-          root->logger().info("Interrupt caught!");
-          server->stop();
-          break;
-        }
-        Thread::sleep(100);
-      }
-
-      server->join();
-
-      if (queryServer) {
-        queryServer->stop();
-        queryServer->join();
-      }
-
-      if (rconServer) {
-        rconServer->stop();
-        rconServer->join();
-      }
-    }
-
-    root->logger().info("Server shutdown gracefully");
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    fatalException(e, true);
+    return 1;
   }
-
   return 0;
 }

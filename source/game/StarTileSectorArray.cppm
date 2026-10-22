@@ -48,7 +48,7 @@ public:
 
   // Return all valid sectors within a given range, regardless of loaded /
   // unloaded status.
-  List<Sector> validSectorsFor(RectI const& region) const;
+  [[nodiscard]] std::expected<List<Sector>, StarException> validSectorsFor(RectI const& region) const;
 
   // Returns the region for this sector, which is SectorSize x SectorSize
   // large.
@@ -82,15 +82,16 @@ public:
   Tile* modifyTile(Vec2I const& pos);
 
   // Function signature here is (Vec2I const&, Tile const&).  Will be called
-  // for the entire region, valid or not.  If tile positions are not valid,
+  // The callback returns expected<void, StarException>; errors stop traversal.
+  // Called for the entire region, valid or not. If tile positions are not valid,
   // they will be called with the defaultTile.
   template <typename Function>
-  void tileEach(RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<void, StarException> tileEach(RectI const& region, Function&& function) const;
 
   // Behaves like tileEach, but gathers the results of calling the function into
-  // a MultiArray
+  // a MultiArray. The callback returns expected<T, StarException>.
   template <typename Function>
-  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<MultiArray<typename std::invoke_result_t<Function, Vec2I, Tile>::value_type, 2>, StarException> tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const;
 
   // Fastest way to copy data from the tile array to a given target array.
   // Takes a multi-array and a region and a function, resizes the multi-array
@@ -99,32 +100,32 @@ public:
   // function(MultiArray::Element& target, Vec2I const& position, Tile const& source);
   // Called with the defaultTile for out of range positions.
   template <typename MultiArray, typename Function>
-  void tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<void, StarException> tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const;
 
   // Function signature here is (Vec2I const&, Tile&).  If a tile position
   // within this range is not valid, the function *will not* be called for that
   // position.
   template <typename Function>
-  void tileEval(RectI const& region, Function&& function);
+  [[nodiscard]] std::expected<void, StarException> tileEval(RectI const& region, Function&& function);
 
   // Will not be called for parts of the region that are not valid positions.
   template <typename Function>
-  void tileEachColumns(RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<void, StarException> tileEachColumns(RectI const& region, Function&& function) const;
   template <typename Function>
-  void tileEvalColumns(RectI const& region, Function&& function);
+  [[nodiscard]] std::expected<void, StarException> tileEvalColumns(RectI const& region, Function&& function);
   template <typename Function>
-  void tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function);
+  [[nodiscard]] std::expected<void, StarException> tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function);
 
   // Searches for a tile that satisfies a given condition in a block-area.
   // Returns true on the first instance found.  Passed in function must accept
   // (Vec2I const&, Tile const&).
   template <typename Function>
-  bool tileSatisfies(RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<bool, StarException> tileSatisfies(RectI const& region, Function&& function) const;
   // Same, but uses a radius of 'distance', which is inclusive on all sides.
   // In other words, calling tileSatisfies({0, 0}, 1, <func>) should be
   // equivalent to calling tileSatisfies({-1, -1}, {3, 3}, <func>).
   template <typename Function>
-  bool tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const;
+  [[nodiscard]] std::expected<bool, StarException> tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const;
 
 private:
   struct SplitRect {
@@ -132,14 +133,14 @@ private:
     int xOffset;
   };
 
-  // function must return bool to continue iteration
+  // The callback returns expected<bool, StarException>; false stops iteration.
   template <typename Function>
-  bool tileEachAbortable(RectI const& region, Function&& function) const;
+  [[nodiscard]] std::expected<bool, StarException> tileEachAbortable(RectI const& region, Function&& function) const;
 
   // Splits rects along the world wrap line and wraps the x coordinate for each
   // rect into world space.  Also returns the integral x offset to transform
   // back into the input rect range.
-  StaticList<SplitRect, 2> splitRect(RectI rect) const;
+  [[nodiscard]] std::expected<StaticList<SplitRect, 2>, StarException> splitRect(RectI rect) const;
 
   // Clamp the rect to entirely within valid tile spaces in y dimension
   RectI yClampRect(RectI const& r) const;
@@ -189,9 +190,11 @@ bool TileSectorArray<Tile, SectorSize>::sectorValid(Sector const& sector) const 
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) const -> List<Sector> {
+[[nodiscard]] auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) const -> std::expected<List<Sector>, StarException> {
   List<Sector> sectors;
-  for (auto const& split : splitRect(yClampRect(region))) {
+  auto splits = splitRect(yClampRect(region));
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto sectorRange = m_tileSectors.sectorRange(split.rect.xMin(), split.rect.yMin(), split.rect.width(), split.rect.height());
     sectors.reserve(sectors.size() + (sectorRange.max[0] - sectorRange.min[0]) * (sectorRange.max[1] - sectorRange.min[1]));
     for (std::size_t x = sectorRange.min[0]; x < sectorRange.max[0]; ++x) {
@@ -319,134 +322,163 @@ Tile* TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) {
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEach(RectI const& region, Function&& function) const {
-  tileEachAbortable(region,
-      [&](Vec2I const& pos, Tile const& tile) {
-        function(pos, tile);
-        return true;
-      });
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEach(RectI const& region, Function&& function) const {
+  auto result = tileEachAbortable(region, [&](Vec2I const& pos, Tile const& tile) -> std::expected<bool, StarException> {
+    auto r = function(pos, tile);
+    if (!r) return std::unexpected(std::move(r.error()));
+    return true;
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
+  return {};
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const {
-  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> res;
-  tileEachTo(workers, res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) { res = function(pos, tile); });
+[[nodiscard]] std::expected<MultiArray<typename std::invoke_result_t<Function, Vec2I, Tile>::value_type, 2>, StarException> TileSectorArray<Tile, SectorSize>::tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const {
+  MultiArray<typename std::invoke_result_t<Function, Vec2I, Tile>::value_type, 2> res;
+  auto result = tileEachTo(workers, res, region, [&](auto& target, Vec2I const& pos, Tile const& tile) -> std::expected<void, StarException> {
+    auto value = function(pos, tile);
+    if (!value) return std::unexpected(std::move(value.error()));
+    target = std::move(*value);
+    return {};
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
   return res;
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename MultiArray, typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const {
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const {
   if (region.isEmpty()) {
     results.setSize({0, 0});
-    return;
+    return {};
   }
 
   int xArrayOffset = -region.xMin();
   int yArrayOffset = -region.yMin();
   results.setSize(Vec2S(region.size()));
 
-  for (auto const& split : splitRect(region)) {
+  auto splits = splitRect(region);
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) {
+      auto evaluated = m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) -> std::expected<bool, StarException> {
           std::size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (std::size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]);
+              if (auto r = function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]); !r) return std::unexpected(std::move(r.error()));
           } else {
             for (std::size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default);
+              if (auto r = function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default); !r) return std::unexpected(std::move(r.error()));
             }
           return true;
         }, true);
+      if (!evaluated) return std::unexpected(std::move(evaluated.error()));
     }
 
     // Call with default tile for tiles outside of the y-range (to ensure that
     // every index in the rect gets called)
     for (int x = split.rect.xMin(); x < split.rect.xMax(); ++x) {
       for (int y = split.rect.yMin(); y < std::min<int>(split.rect.yMax(), 0); ++y)
-        function(results(x + split.xOffset + xArrayOffset, y + yArrayOffset), Vec2I(x + split.xOffset, y), m_default);
+        if (auto r = function(results(x + split.xOffset + xArrayOffset, y + yArrayOffset), Vec2I(x + split.xOffset, y), m_default); !r) return std::unexpected(std::move(r.error()));
     }
 
     for (int x = split.rect.xMin(); x < split.rect.xMax(); ++x) {
       for (int y = std::max<int>(split.rect.yMin(), m_worldSize[1]); y < split.rect.yMax(); ++y)
-        function(results(x + split.xOffset + xArrayOffset, y + yArrayOffset), Vec2I(x + split.xOffset, y), m_default);
+        if (auto r = function(results(x + split.xOffset + xArrayOffset, y + yArrayOffset), Vec2I(x + split.xOffset, y), m_default); !r) return std::unexpected(std::move(r.error()));
     }
   }
+  return {};
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEval(RectI const& region, Function&& function) {
-  for (auto const& split : splitRect(region)) {
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEval(RectI const& region, Function&& function) {
+  auto splits = splitRect(region);
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       // If non-const variant, do not call function if tile not loaded (pass
       // false to evalEmpty in sector array)
-      auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) {
-        function(Vec2I((int)x + split.xOffset, (int)y), *tile);
+      auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), *tile); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
-      m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
+      if (auto r = m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
     }
   }
+  return {};
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEachColumns(RectI const& region, Function&& function) const {
-  const_cast<TileSectorArray*>(this)->tileEvalColumns(
-      region, [&](Vec2I const& pos, Tile* tiles, std::size_t size) { function(pos, (Tile const*)tiles, size); });
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEachColumns(RectI const& region, Function&& function) const {
+  return const_cast<TileSectorArray*>(this)->tileEvalColumns(
+      region, [&](Vec2I const& pos, Tile* tiles, std::size_t size) { return function(pos, (Tile const*)tiles, size); });
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Function&& function) {
-  for (auto const& split : splitRect(region)) {
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Function&& function) {
+  auto splits = splitRect(region);
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) {
-        function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
+      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
-      m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
+      if (auto r = m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
     }
   }
+  return {};
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function) {
-  for (auto const& split : splitRect(region)) {
+[[nodiscard]] std::expected<void, StarException> TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function) {
+  auto splits = splitRect(region);
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) {
-        function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
+      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) -> std::expected<bool, StarException> {
+        if (auto r = function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize); !r) return std::unexpected(std::move(r.error()));
         return true;
       };
-      m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
+      if (auto r = m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false); !r) return std::unexpected(std::move(r.error()));
     }
   }
+  return {};
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const {
+[[nodiscard]] std::expected<bool, StarException> TileSectorArray<Tile, SectorSize>::tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const {
   return tileSatisfies(RectI::withSize(pos - Vec2I::filled(distance), Vec2I::filled(distance * 2 + 1)), function);
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileSatisfies(RectI const& region, Function&& function) const {
-  return !tileEachAbortable(region, [&](Vec2I const& pos, Tile const& tile) { return !function(pos, tile); });
+[[nodiscard]] std::expected<bool, StarException> TileSectorArray<Tile, SectorSize>::tileSatisfies(RectI const& region, Function&& function) const {
+  auto result = tileEachAbortable(region, [&](Vec2I const& pos, Tile const& tile) -> std::expected<bool, StarException> {
+    auto r = function(pos, tile);
+    if (!r) return std::unexpected(std::move(r.error()));
+    return !*r;
+  });
+  if (!result) return std::unexpected(std::move(result.error()));
+  return !*result;
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, Function&& function) const {
-  for (auto const& split : splitRect(region)) {
+[[nodiscard]] std::expected<bool, StarException> TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, Function&& function) const {
+  auto splits = splitRect(region);
+  if (!splits) return std::unexpected(std::move(splits.error()));
+  for (auto const& split : *splits) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       // If const variant, call function with default tile if not loaded.
@@ -455,30 +487,34 @@ bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, F
           tile = &m_default;
         return function(Vec2I((int)x + split.xOffset, y), *tile);
       };
-      if (!m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, true))
-        return false;
+      auto result = m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, true);
+      if (!result) return std::unexpected(std::move(result.error()));
+      if (!*result) return false;
     }
 
     // Call with default tile for tiles outside of the y-range (to ensure
     // that every index in the rect gets called)
     for (int x = split.rect.xMin(); x < split.rect.xMax(); ++x) {
       for (int y = split.rect.yMin(); y < std::min<int>(split.rect.yMax(), 0); ++y) {
-        if (!function(Vec2I(x + split.xOffset, y), m_default))
-          return false;
+        auto result = function(Vec2I(x + split.xOffset, y), m_default);
+        if (!result) return std::unexpected(std::move(result.error()));
+        if (!*result) return false;
       }
     }
 
     for (int x = split.rect.xMin(); x < split.rect.xMax(); ++x) {
-      for (int y = std::max<int>(split.rect.yMin(), m_worldSize[1]); y < split.rect.yMax(); ++y)
-        if (!function(Vec2I(x + split.xOffset, y), m_default))
-          return false;
+      for (int y = std::max<int>(split.rect.yMin(), m_worldSize[1]); y < split.rect.yMax(); ++y) {
+        auto result = function(Vec2I(x + split.xOffset, y), m_default);
+        if (!result) return std::unexpected(std::move(result.error()));
+        if (!*result) return false;
+      }
     }
   }
   return true;
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticList<SplitRect, 2> {
+[[nodiscard]] auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> std::expected<StaticList<SplitRect, 2>, StarException> {
   // TODO: Offset here does not support rects outside of -m_worldSize[0] to 2 * m_worldSize[0]!
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((rect.xMin() >= -(int)m_worldSize[0] && rect.xMax() <= 2 * (int)m_worldSize[0]));
@@ -486,10 +522,10 @@ auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticLis
 
   // any rect at least the width of the world is equivalent to a rect that spans the width of the world exactly
   if (rect.width() >= (int)m_worldSize[0])
-    return{SplitRect{RectI(0, rect.yMin(), m_worldSize[0], rect.yMax()), 0}};
+    return StaticList<SplitRect, 2>::create({SplitRect{RectI(0, rect.yMin(), m_worldSize[0], rect.yMax()), 0}});
 
   if (rect.isEmpty())
-    return {};
+    return StaticList<SplitRect, 2>();
 
   int width = rect.width();
   int xMin = pmod<int>(rect.xMin(), m_worldSize[0]);
@@ -498,12 +534,12 @@ auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticLis
   rect.setXMax(xMin + width);
 
   if (rect.xMin() < (int)m_worldSize[0] && rect.xMax() > (int)m_worldSize[0]) {
-    return {
+    return StaticList<SplitRect, 2>::create({
       SplitRect{RectI(rect.xMin(), rect.yMin(), m_worldSize[0], rect.yMax()), xOffset},
       SplitRect{RectI(0, rect.yMin(), rect.xMax() - m_worldSize[0], rect.yMax()), xOffset + (int)m_worldSize[0]}
-    };
+    });
   } else {
-    return {SplitRect{rect, xOffset}};
+    return StaticList<SplitRect, 2>::create({SplitRect{rect, xOffset}});
   }
 }
 

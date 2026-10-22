@@ -2,6 +2,7 @@ module;
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
 import std;
+import star.format;
 
 
 namespace Star {
@@ -23,7 +24,7 @@ public:
   void cancel();
 
 protected:
-  using Deliver = void (*)(SteamRegistration&, void const*, HSteamPipe);
+  using Deliver = std::expected<void, StarException> (*)(SteamRegistration&, void const*, HSteamPipe);
   SteamRegistration(int callback, Deliver deliver) : m_callback(callback), m_deliver(deliver) {}
   void attach(SteamDispatch& dispatch, SteamAPICall_t call = k_uAPICallInvalid);
 
@@ -45,14 +46,19 @@ public:
   SteamDispatch(SteamDispatch const&) = delete;
   SteamDispatch& operator=(SteamDispatch const&) = delete;
 
-  void initialize() {
+  [[nodiscard]] std::expected<void, StarException> initialize() {
     SteamAPI_ManualDispatch_Init();
     m_pipe = SteamAPI_GetHSteamPipe();
+    if (!m_pipe)
+      return std::unexpected(StarException("Steam manual dispatch has no active pipe"));
+    return {};
   }
 
-  void runCallbacks() {
-    if (!m_pipe || m_pumping)
-      return;
+  [[nodiscard]] std::expected<void, StarException> runCallbacks() {
+    if (!m_pipe)
+      return std::unexpected(StarException("Steam manual dispatch is not initialized"));
+    if (m_pumping)
+      return {};
     m_pumping = true;
     struct PumpGuard {
       SteamDispatch& dispatch;
@@ -74,7 +80,7 @@ public:
       bool callResult = callback.m_iCallback == SteamAPICallCompleted_t::k_iCallback;
       if (callResult) {
         if (callback.m_cubParam != sizeof(completed))
-          continue;
+          return std::unexpected(StarException("Invalid Steam asynchronous completion payload size"));
         std::memcpy(&completed, callback.m_pubParam, sizeof(completed));
       }
 
@@ -84,16 +90,20 @@ public:
       while (m_cursor) {
         auto registration = m_cursor;
         m_cursor = registration->m_next;
+        std::expected<void, StarException> delivered;
         if (callResult) {
           if (registration->m_call == completed.m_hAsyncCall
               && registration->m_callback == completed.m_iCallback)
-            registration->m_deliver(*registration, &completed, m_pipe);
+            delivered = registration->m_deliver(*registration, &completed, m_pipe);
         } else if (registration->m_call == k_uAPICallInvalid
                    && registration->m_callback == callback.m_iCallback) {
-          registration->m_deliver(*registration, &callback, m_pipe);
+          delivered = registration->m_deliver(*registration, &callback, m_pipe);
         }
+        if (!delivered)
+          return std::unexpected(std::move(delivered.error()));
       }
     }
+    return {};
   }
 
 private:
@@ -138,7 +148,7 @@ inline void SteamRegistration::attach(SteamDispatch& dispatch, SteamAPICall_t ca
 template <typename Object, typename Event>
 class SteamCallback : public SteamRegistration {
 public:
-  using Method = void (Object::*)(Event*);
+  using Method = std::expected<void, StarException> (Object::*)(Event*);
   SteamCallback(SteamDispatch& dispatch, Object* object, Method method)
       : SteamRegistration(Event::k_iCallback, &deliver), m_object(object), m_method(method) {
     static_assert(std::is_trivially_copyable_v<Event>);
@@ -146,14 +156,14 @@ public:
   }
 
 private:
-  static void deliver(SteamRegistration& registration, void const* payload, HSteamPipe) {
+  [[nodiscard]] static std::expected<void, StarException> deliver(SteamRegistration& registration, void const* payload, HSteamPipe) {
     auto& self = static_cast<SteamCallback&>(registration);
     auto const& callback = *static_cast<CallbackMsg_t const*>(payload);
     if (callback.m_cubParam != sizeof(Event))
-      return;
+      return std::unexpected(StarException("Invalid Steam callback payload size"));
     Event event;
     std::memcpy(&event, callback.m_pubParam, sizeof(event));
-    (self.m_object->*self.m_method)(&event);
+    return (self.m_object->*self.m_method)(&event);
   }
   Object* m_object;
   Method m_method;
@@ -162,7 +172,7 @@ private:
 template <typename Object, typename Event>
 class SteamCallResult : public SteamRegistration {
 public:
-  using Method = void (Object::*)(Event*, bool);
+  using Method = std::expected<void, StarException> (Object::*)(Event*, bool);
   SteamCallResult(SteamDispatch& dispatch, SteamAPICall_t call, Object* object, Method method)
       : SteamRegistration(Event::k_iCallback, &deliver), m_object(object), m_method(method) {
     static_assert(std::is_trivially_copyable_v<Event>);
@@ -171,20 +181,20 @@ public:
   }
 
 private:
-  static void deliver(SteamRegistration& registration, void const* payload, HSteamPipe pipe) {
+  [[nodiscard]] static std::expected<void, StarException> deliver(SteamRegistration& registration, void const* payload, HSteamPipe pipe) {
     auto& self = static_cast<SteamCallResult&>(registration);
     auto const& completed = *static_cast<SteamAPICallCompleted_t const*>(payload);
+    auto object = self.m_object;
+    auto method = self.m_method;
     if (completed.m_cubParam != sizeof(Event))
-      return;
+      return std::unexpected(StarException("Invalid Steam call result payload size"));
     Event event{};
     bool failed = false;
     if (!SteamAPI_ManualDispatch_GetAPICallResult(pipe, completed.m_hAsyncCall,
                                                   &event, sizeof(event), Event::k_iCallback, &failed))
-      return;
-    auto object = self.m_object;
-    auto method = self.m_method;
-    self.cancel();// One-shot, including if the handler starts another call.
-    (object->*method)(&event, failed);
+      failed = true;
+    self.cancel();// One-shot only after receiving a correctly sized completion.
+    return (object->*method)(&event, failed);
   }
   Object* m_object;
   Method m_method;

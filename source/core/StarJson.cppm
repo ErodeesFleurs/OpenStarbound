@@ -1,6 +1,5 @@
 module;
 import std;
-import star.stream_formatter;
 import star.hash;
 import star.xx_hash;
 
@@ -53,19 +52,19 @@ public:
   };
 
   static String typeName(Type t);
-  static Type typeFromName(String const& t);
+  static std::expected<Type, StarException> typeFromName(String const& t);
 
   static Json ofType(Type t);
 
   // Parses JSON or JSON sub-type
-  static Json parse(String const& string);
+  static std::expected<Json, StarException> parse(String const& string);
 
   // Parses JSON sequence
-  static Json parseSequence(String const& sequence);
+  static std::expected<Json, StarException> parseSequence(String const& sequence);
 
   // Parses JSON object or array only (the only top level types allowed by
   // JSON)
-  static Json parseJson(String const& json);
+  static std::expected<Json, StarException> parseJson(String const& json);
 
   // Constructs type Null
   Json();
@@ -79,173 +78,173 @@ public:
   Json(unsigned long);
   Json(unsigned long long);
   Json(char const*);
-  Json(String::Char const*);
-  Json(String::Char const*, std::size_t);
+  static std::expected<Json, StarException> create(String::Char const*);
+  static std::expected<Json, StarException> create(String::Char const*, std::size_t);
   Json(String);
   Json(std::string);
   Json(JsonArray);
   Json(JsonObject);
 
   // Float and Int types are convertible between each other.  toDouble,
-  // toFloat, toInt, toUInt may be called on either an Int or a Float.  For a
-  // Float this is simply a C style cast from double, and for an Int it is
-  // simply a C style cast from int64_t.
+  // toFloat, toInt, toUInt may be called on either an Int or a Float.
+  // Float-to-integer conversion truncates toward zero and reports non-finite
+  // or out-of-range values rather than performing an undefined conversion.
+  // Int conversions retain the original C-style numeric conversion semantics.
   //
   // Bools, Strings, Arrays, Objects, and Null are not automatically
   // convertible to any other type.
 
-  double toDouble() const;
-  float toFloat() const;
-  bool toBool() const;
-  std::int64_t toInt() const;
-  std::uint64_t toUInt() const;
-  String toString() const;
-  JsonArray toArray() const;
-  JsonObject toObject() const;
+  std::expected<double, StarException> toDouble() const;
+  std::expected<float, StarException> toFloat() const;
+  std::expected<bool, StarException> toBool() const;
+  std::expected<std::int64_t, StarException> toInt() const;
+  std::expected<std::uint64_t, StarException> toUInt() const;
+  std::expected<String, StarException> toString() const;
+  std::expected<JsonArray, StarException> toArray() const;
+  std::expected<JsonObject, StarException> toObject() const;
 
   // Internally, String, JsonArray, and JsonObject are shared via shared_ptr
   // since this class is immutable.  Use these methods to get at this pointer
   // without causing a copy.
-  std::shared_ptr<String const> stringPtr() const;
-  std::shared_ptr<JsonArray const> arrayPtr() const;
-  std::shared_ptr<JsonObject const> objectPtr() const;
+  std::expected<std::shared_ptr<String const>, StarException> stringPtr() const;
+  std::expected<std::shared_ptr<JsonArray const>, StarException> arrayPtr() const;
+  std::expected<std::shared_ptr<JsonObject const>, StarException> objectPtr() const;
 
   // As a convenience, make it easy to safely and quickly iterate over a
   // JsonArray or JsonObject contents by holding the container pointer.
-  IteratorWrapper<JsonArray> iterateArray() const;
-  IteratorWrapper<JsonObject> iterateObject() const;
+  std::expected<IteratorWrapper<JsonArray>, StarException> iterateArray() const;
+  std::expected<IteratorWrapper<JsonObject>, StarException> iterateObject() const;
 
   // opt* methods work like this, if the json is null, it returns none.  If the
-  // json is convertible, it returns the converted type, otherwise an exception
-  // occurrs.
+  // json is convertible, it returns the converted type, otherwise an error.
   std::optional<Json> opt() const;
-  std::optional<double> optDouble() const;
-  std::optional<float> optFloat() const;
-  std::optional<bool> optBool() const;
-  std::optional<std::int64_t> optInt() const;
-  std::optional<std::uint64_t> optUInt() const;
-  std::optional<String> optString() const;
-  std::optional<JsonArray> optArray() const;
-  std::optional<JsonObject> optObject() const;
+  std::expected<std::optional<double>, StarException> optDouble() const;
+  std::expected<std::optional<float>, StarException> optFloat() const;
+  std::expected<std::optional<bool>, StarException> optBool() const;
+  std::expected<std::optional<std::int64_t>, StarException> optInt() const;
+  std::expected<std::optional<std::uint64_t>, StarException> optUInt() const;
+  std::expected<std::optional<String>, StarException> optString() const;
+  std::expected<std::optional<JsonArray>, StarException> optArray() const;
+  std::expected<std::optional<JsonObject>, StarException> optObject() const;
 
   // Size of array / object type json
-  std::size_t size() const;
+  std::expected<std::size_t, StarException> size() const;
 
   // If this json is array type, get the value at the given index
-  Json get(std::size_t index) const;
-  double getDouble(std::size_t index) const;
-  float getFloat(std::size_t index) const;
-  bool getBool(std::size_t index) const;
-  std::int64_t getInt(std::size_t index) const;
-  std::uint64_t getUInt(std::size_t index) const;
-  String getString(std::size_t index) const;
-  JsonArray getArray(std::size_t index) const;
-  JsonObject getObject(std::size_t index) const;
+  std::expected<Json, StarException> get(std::size_t index) const;
+  std::expected<double, StarException> getDouble(std::size_t index) const;
+  std::expected<float, StarException> getFloat(std::size_t index) const;
+  std::expected<bool, StarException> getBool(std::size_t index) const;
+  std::expected<std::int64_t, StarException> getInt(std::size_t index) const;
+  std::expected<std::uint64_t, StarException> getUInt(std::size_t index) const;
+  std::expected<String, StarException> getString(std::size_t index) const;
+  std::expected<JsonArray, StarException> getArray(std::size_t index) const;
+  std::expected<JsonObject, StarException> getObject(std::size_t index) const;
 
   // These versions of get* return default value if the index is out of range,
   // or if the value pointed to is null.
-  Json get(std::size_t index, Json def) const;
-  double getDouble(std::size_t index, double def) const;
-  float getFloat(std::size_t index, float def) const;
-  bool getBool(std::size_t index, bool def) const;
-  std::int64_t getInt(std::size_t index, std::int64_t def) const;
-  std::uint64_t getUInt(std::size_t index, std::int64_t def) const;
-  String getString(std::size_t index, String def) const;
-  JsonArray getArray(std::size_t index, JsonArray def) const;
-  JsonObject getObject(std::size_t index, JsonObject def) const;
+  std::expected<Json, StarException> get(std::size_t index, Json def) const;
+  std::expected<double, StarException> getDouble(std::size_t index, double def) const;
+  std::expected<float, StarException> getFloat(std::size_t index, float def) const;
+  std::expected<bool, StarException> getBool(std::size_t index, bool def) const;
+  std::expected<std::int64_t, StarException> getInt(std::size_t index, std::int64_t def) const;
+  std::expected<std::uint64_t, StarException> getUInt(std::size_t index, std::int64_t def) const;
+  std::expected<String, StarException> getString(std::size_t index, String def) const;
+  std::expected<JsonArray, StarException> getArray(std::size_t index, JsonArray def) const;
+  std::expected<JsonObject, StarException> getObject(std::size_t index, JsonObject def) const;
 
   // If object type, whether object contains key
-  bool contains(String const& key) const;
+  std::expected<bool, StarException> contains(String const& key) const;
 
   // If this json is object type, get the value for the given key
-  Json get(String const& key) const;
-  double getDouble(String const& key) const;
-  float getFloat(String const& key) const;
-  bool getBool(String const& key) const;
-  std::int64_t getInt(String const& key) const;
-  std::uint64_t getUInt(String const& key) const;
-  String getString(String const& key) const;
-  JsonArray getArray(String const& key) const;
-  JsonObject getObject(String const& key) const;
+  std::expected<Json, StarException> get(String const& key) const;
+  std::expected<double, StarException> getDouble(String const& key) const;
+  std::expected<float, StarException> getFloat(String const& key) const;
+  std::expected<bool, StarException> getBool(String const& key) const;
+  std::expected<std::int64_t, StarException> getInt(String const& key) const;
+  std::expected<std::uint64_t, StarException> getUInt(String const& key) const;
+  std::expected<String, StarException> getString(String const& key) const;
+  std::expected<JsonArray, StarException> getArray(String const& key) const;
+  std::expected<JsonObject, StarException> getObject(String const& key) const;
 
   // These versions of get* return the default if the key is missing or the
   // value is null.
-  Json get(String const& key, Json def) const;
-  double getDouble(String const& key, double def) const;
-  float getFloat(String const& key, float def) const;
-  bool getBool(String const& key, bool def) const;
-  std::int64_t getInt(String const& key, std::int64_t def) const;
-  std::uint64_t getUInt(String const& key, std::int64_t def) const;
-  String getString(String const& key, String def) const;
-  JsonArray getArray(String const& key, JsonArray def) const;
-  JsonObject getObject(String const& key, JsonObject def) const;
+  std::expected<Json, StarException> get(String const& key, Json def) const;
+  std::expected<double, StarException> getDouble(String const& key, double def) const;
+  std::expected<float, StarException> getFloat(String const& key, float def) const;
+  std::expected<bool, StarException> getBool(String const& key, bool def) const;
+  std::expected<std::int64_t, StarException> getInt(String const& key, std::int64_t def) const;
+  std::expected<std::uint64_t, StarException> getUInt(String const& key, std::int64_t def) const;
+  std::expected<String, StarException> getString(String const& key, String def) const;
+  std::expected<JsonArray, StarException> getArray(String const& key, JsonArray def) const;
+  std::expected<JsonObject, StarException> getObject(String const& key, JsonObject def) const;
 
   // Works the same way as opt methods above.  Will never return a null value,
   // if there is a null entry it will just return an empty std::optional.
-  std::optional<Json> opt(String const& key) const;
-  std::optional<double> optDouble(String const& key) const;
-  std::optional<float> optFloat(String const& key) const;
-  std::optional<bool> optBool(String const& key) const;
-  std::optional<std::int64_t> optInt(String const& key) const;
-  std::optional<std::uint64_t> optUInt(String const& key) const;
-  std::optional<String> optString(String const& key) const;
-  std::optional<JsonArray> optArray(String const& key) const;
-  std::optional<JsonObject> optObject(String const& key) const;
+  std::expected<std::optional<Json>, StarException> opt(String const& key) const;
+  std::expected<std::optional<double>, StarException> optDouble(String const& key) const;
+  std::expected<std::optional<float>, StarException> optFloat(String const& key) const;
+  std::expected<std::optional<bool>, StarException> optBool(String const& key) const;
+  std::expected<std::optional<std::int64_t>, StarException> optInt(String const& key) const;
+  std::expected<std::optional<std::uint64_t>, StarException> optUInt(String const& key) const;
+  std::expected<std::optional<String>, StarException> optString(String const& key) const;
+  std::expected<std::optional<JsonArray>, StarException> optArray(String const& key) const;
+  std::expected<std::optional<JsonObject>, StarException> optObject(String const& key) const;
 
   // Combines gets recursively in friendly expressions.  For
   // example, call like this: json.query("path.to.array[3][4]")
-  Json query(String const& path) const;
-  double queryDouble(String const& path) const;
-  float queryFloat(String const& path) const;
-  bool queryBool(String const& path) const;
-  std::int64_t queryInt(String const& path) const;
-  std::uint64_t queryUInt(String const& path) const;
-  String queryString(String const& path) const;
-  JsonArray queryArray(String const& path) const;
-  JsonObject queryObject(String const& path) const;
+  std::expected<Json, StarException> query(String const& path) const;
+  std::expected<double, StarException> queryDouble(String const& path) const;
+  std::expected<float, StarException> queryFloat(String const& path) const;
+  std::expected<bool, StarException> queryBool(String const& path) const;
+  std::expected<std::int64_t, StarException> queryInt(String const& path) const;
+  std::expected<std::uint64_t, StarException> queryUInt(String const& path) const;
+  std::expected<String, StarException> queryString(String const& path) const;
+  std::expected<JsonArray, StarException> queryArray(String const& path) const;
+  std::expected<JsonObject, StarException> queryObject(String const& path) const;
 
-  // These versions of get* do not throw on missing / null keys anywhere in the
+  // These versions of get* return defaults on missing / null keys anywhere in the
   // query path.
-  Json query(String const& path, Json def) const;
-  double queryDouble(String const& path, double def) const;
-  float queryFloat(String const& path, float def) const;
-  bool queryBool(String const& path, bool def) const;
-  std::int64_t queryInt(String const& path, std::int64_t def) const;
-  std::uint64_t queryUInt(String const& path, std::uint64_t def) const;
-  String queryString(String const& path, String const& def) const;
-  JsonArray queryArray(String const& path, JsonArray def) const;
-  JsonObject queryObject(String const& path, JsonObject def) const;
+  std::expected<Json, StarException> query(String const& path, Json def) const;
+  std::expected<double, StarException> queryDouble(String const& path, double def) const;
+  std::expected<float, StarException> queryFloat(String const& path, float def) const;
+  std::expected<bool, StarException> queryBool(String const& path, bool def) const;
+  std::expected<std::int64_t, StarException> queryInt(String const& path, std::int64_t def) const;
+  std::expected<std::uint64_t, StarException> queryUInt(String const& path, std::uint64_t def) const;
+  std::expected<String, StarException> queryString(String const& path, String const& def) const;
+  std::expected<JsonArray, StarException> queryArray(String const& path, JsonArray def) const;
+  std::expected<JsonObject, StarException> queryObject(String const& path, JsonObject def) const;
 
   // Returns none on on missing / null keys anywhere in the query path.  Will
   // never return a null value, just an empty std::optional.
-  std::optional<Json> optQuery(String const& path) const;
-  std::optional<double> optQueryDouble(String const& path) const;
-  std::optional<float> optQueryFloat(String const& path) const;
-  std::optional<bool> optQueryBool(String const& path) const;
-  std::optional<std::int64_t> optQueryInt(String const& path) const;
-  std::optional<std::uint64_t> optQueryUInt(String const& path) const;
-  std::optional<String> optQueryString(String const& path) const;
-  std::optional<JsonArray> optQueryArray(String const& path) const;
-  std::optional<JsonObject> optQueryObject(String const& path) const;
+  std::expected<std::optional<Json>, StarException> optQuery(String const& path) const;
+  std::expected<std::optional<double>, StarException> optQueryDouble(String const& path) const;
+  std::expected<std::optional<float>, StarException> optQueryFloat(String const& path) const;
+  std::expected<std::optional<bool>, StarException> optQueryBool(String const& path) const;
+  std::expected<std::optional<std::int64_t>, StarException> optQueryInt(String const& path) const;
+  std::expected<std::optional<std::uint64_t>, StarException> optQueryUInt(String const& path) const;
+  std::expected<std::optional<String>, StarException> optQueryString(String const& path) const;
+  std::expected<std::optional<JsonArray>, StarException> optQueryArray(String const& path) const;
+  std::expected<std::optional<JsonObject>, StarException> optQueryObject(String const& path) const;
 
-  // Returns a *new* object with the given values set/erased.  Throws if not an
+  // Returns a *new* object with the given values set/erased.  Errors if not an
   // object.
-  Json set(String key, Json value) const;
-  Json setPath(String path, Json value) const;
-  Json setAll(JsonObject values) const;
-  Json eraseKey(String key) const;
-  Json erasePath(String path) const;
+  std::expected<Json, StarException> set(String key, Json value) const;
+  std::expected<Json, StarException> setPath(String path, Json value) const;
+  std::expected<Json, StarException> setAll(JsonObject values) const;
+  std::expected<Json, StarException> eraseKey(String key) const;
+  std::expected<Json, StarException> erasePath(String path) const;
 
   // Returns a *new* array with the given values set/inserted/appended/erased.
-  // Throws if not an array.
-  Json set(std::size_t index, Json value) const;
-  Json insert(std::size_t index, Json value) const;
-  Json append(Json value) const;
-  Json eraseIndex(std::size_t index) const;
+  // Errors if not an array.
+  std::expected<Json, StarException> set(std::size_t index, Json value) const;
+  std::expected<Json, StarException> insert(std::size_t index, Json value) const;
+  std::expected<Json, StarException> append(Json value) const;
+  std::expected<Json, StarException> eraseIndex(std::size_t index) const;
 
   Type type() const;
   String typeName() const;
-  Json convert(Type u) const;
+  std::expected<Json, StarException> convert(Type u) const;
 
   bool isType(Type type) const;
   bool canConvert(Type type) const;
@@ -259,11 +258,11 @@ public:
   // inside this value will be sorted alphanumerically before being written,
   // resulting in a known *unique* textual representation of the Json that is
   // cross-platform.
-  String repr(int pretty = 0, bool sort = false) const;
+  std::expected<String, StarException> repr(int pretty = 0, bool sort = false) const;
   // Prints JSON object or array only (only top level types allowed by JSON)
-  String printJson(int pretty = 0, bool sort = false) const;
+  std::expected<String, StarException> printJson(int pretty = 0, bool sort = false) const;
   // Same but avoids quotation marks if this is a string
-  String printString() const;
+  std::expected<String, StarException> printString() const;
 
   // operator== and operator!= compare for exact equality with all types, and
   // additionally equality with numeric conversion with Int <-> Float
@@ -276,27 +275,31 @@ public:
   void getHash(XXHash3& hasher) const;
 
 private:
-  Json const* ptr(std::size_t index) const;
-  Json const* ptr(String const& key) const;
+  friend Json jsonMerge(Json const& base, Json const& merger);
+  friend Json jsonMergeNulling(Json const& base, Json const& merger);
+  friend bool jsonPartialMatch(Json const& base, Json const& compare);
+
+  std::expected<Json const*, StarException> ptr(std::size_t index) const;
+  std::expected<Json const*, StarException> ptr(String const& key) const;
 
   std::variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
 };
 
-std::ostream& operator<<(std::ostream& os, Json const& v);
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Json const& v);
 
 // Fixes ambiguity with OrderedHashMap operator<<
-std::ostream& operator<<(std::ostream& os, JsonObject const& v);
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, JsonObject const& v);
 
 // Serialize json to DataStream.  Strings are stored as UTF-8, ints are stored
 // as VLQ, doubles as 64 bit.
-DataStream& operator<<(DataStream& ds, Json const& v);
-DataStream& operator>>(DataStream& ds, Json& v);
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, Json const& v);
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Json& v);
 
 // Convenience methods for Json containers
-DataStream& operator<<(DataStream& ds, JsonArray const& l);
-DataStream& operator>>(DataStream& ds, JsonArray& l);
-DataStream& operator<<(DataStream& ds, JsonObject const& m);
-DataStream& operator>>(DataStream& ds, JsonObject& m);
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonArray const& l);
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonArray& l);
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, JsonObject const& m);
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, JsonObject& m);
 
 // Merges the two given json values and returns the result, by the following
 // rules (applied in order):  If the base value is null, returns the merger.
@@ -315,11 +318,11 @@ Json jsonMerge(Json const& base, Json const& merger, T const&... rest);
 // to jsonMerge(jsons...).query(key, Json()), but much faster than doing an
 // entire merge operation.
 template <typename... T>
-Json jsonMergeQuery(String const& key, Json const& first, T const&... rest);
+std::expected<Json, StarException> jsonMergeQuery(String const& key, Json const& first, T const&... rest);
 
 // jsonMergeQuery with a default.
 template <typename... T>
-Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest);
+std::expected<Json, StarException> jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest);
 
 template <>
 struct hash<Json> {
@@ -342,32 +345,40 @@ Json jsonMerge(Json const& base, Json const& merger, T const&... rest) {
 }
 
 template <typename... T>
-Json jsonMergeQuery(String const&, Json def) {
+std::expected<Json, StarException> jsonMergeQuery(String const&, Json def) {
   return def;
 }
 
 template <typename... T>
-Json jsonMergeQueryImpl(String const& key, Json const& json) {
+std::expected<Json, StarException> jsonMergeQueryImpl(String const& key, Json const& json) {
   return json.query(key, {});
 }
 
 template <typename... T>
-Json jsonMergeQueryImpl(String const& key, Json const& base, Json const& first, T const&... rest) {
-  Json value = jsonMergeQueryImpl(key, first, rest...);
-  if (value && !value.isType(Json::Type::Object))
-    return value;
-  return jsonMerge(base.query(key, {}), value);
+std::expected<Json, StarException> jsonMergeQueryImpl(String const& key, Json const& base, Json const& first, T const&... rest) {
+  auto value = jsonMergeQueryImpl(key, first, rest...);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value && !value->isType(Json::Type::Object))
+    return std::move(*value);
+  auto baseValue = base.query(key, {});
+  if (!baseValue)
+    return std::unexpected(std::move(baseValue.error()));
+  return jsonMerge(*baseValue, *value);
 }
 
 template <typename... T>
-Json jsonMergeQuery(String const& key, Json const& first, T const&... rest) {
+std::expected<Json, StarException> jsonMergeQuery(String const& key, Json const& first, T const&... rest) {
   return jsonMergeQueryImpl(key, first, rest...);
 }
 
 template <typename... T>
-Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest) {
-  if (auto v = jsonMergeQueryImpl(key, first, rest...))
-    return v;
+std::expected<Json, StarException> jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest) {
+  auto value = jsonMergeQueryImpl(key, first, rest...);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (*value)
+    return std::move(*value);
   return def;
 }
 
@@ -408,5 +419,3 @@ export namespace Star {
   using ::Star::operator>>;
 }
 
-export template <> struct std::formatter<Star::Json> : Star::StreamFormatter {};
-export template <> struct std::formatter<Star::JsonObject> : Star::StreamFormatter {};

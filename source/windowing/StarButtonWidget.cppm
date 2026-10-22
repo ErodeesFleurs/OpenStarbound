@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -60,19 +61,17 @@ public:
     return Star::typeName<ButtonWidget>();
   }
 
-  ButtonWidget(GuiContext& context);
-  ButtonWidget(GuiContext& context, WidgetCallbackFunc callback,
-      String const& baseImage,
-      String const& hoverImage = "",
-      String const& pressedImage = "",
-      String const& disabledImage = "");
+  [[nodiscard]] static std::expected<std::shared_ptr<ButtonWidget>, StarException> create(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<ButtonWidget>, StarException> create(GuiContext& context, WidgetCallbackFunc callback,
+      String const& baseImage, String const& hoverImage = "",
+      String const& pressedImage = "", String const& disabledImage = "");
   virtual ~ButtonWidget();
 
-  virtual bool sendEvent(InputEvent const& event) override;
-  virtual void mouseOver() override;
-  virtual void mouseOut() override;
-  virtual void mouseReturnStillDown() override;
-  virtual void hide() override;
+  [[nodiscard]] virtual std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOver() override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseOut() override;
+  [[nodiscard]] virtual std::expected<void, StarException> mouseReturnStillDown() override;
+  [[nodiscard]] virtual std::expected<void, StarException> hide() override;
 
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
@@ -87,7 +86,7 @@ public:
   bool isHovered() const;
 
   bool isPressed() const;
-  void setPressed(bool pressed);
+  [[nodiscard]] std::expected<void, StarException> setPressed(bool pressed);
 
   bool isCheckable() const;
   void setCheckable(bool checkable);
@@ -99,16 +98,16 @@ public:
   void setChecked(bool checked);
   // Either checks a button, or toggles the state, depending on whether the
   // button is part of an exclusive group or not.
-  void check();
+  [[nodiscard]] std::expected<void, StarException> check();
 
   bool sustainCallbackOnDownHold();
   void setSustainCallbackOnDownHold(bool sustain);
 
-  void setImages(String const& baseImage,
+  [[nodiscard]] std::expected<void, StarException> setImages(String const& baseImage,
       String const& hoverImage = "",
       String const& pressedImage = "",
       String const& disabledImage = "");
-  void setCheckedImages(String const& baseImage,
+  [[nodiscard]] std::expected<void, StarException> setCheckedImages(String const& baseImage,
       String const& hoverImage = "",
       String const& pressedImage = "",
       String const& disabledImage = "");
@@ -139,10 +138,10 @@ public:
 
 protected:
   virtual RectI getScissorRect() const override;
-  virtual void renderImpl() override;
+  [[nodiscard]] virtual std::expected<void, StarException> renderImpl() override;
 
-  void drawButtonPart(String const& image, Vec2F const& position);
-  void updateSize();
+  [[nodiscard]] std::expected<void, StarException> drawButtonPart(String const& image, Vec2F const& position);
+  [[nodiscard]] std::expected<void, StarException> updateSize();
 
   WidgetCallbackFunc m_callback;
   std::weak_ptr<ButtonGroup> m_buttonGroup;
@@ -183,6 +182,10 @@ protected:
   StringList m_hoverOffSounds;
 
   bool m_sustain;
+
+protected:
+  explicit ButtonWidget(GuiContext& context);
+  [[nodiscard]] std::expected<void, StarException> initialize();
 
 private:
   HorizontalAnchor m_hTextAnchor;

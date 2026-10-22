@@ -47,14 +47,12 @@ HostAddress HostAddress::localhost(NetworkMode mode) {
   return HostAddress();
 }
 
-Either<String, HostAddress> HostAddress::lookup(String const& address) {
-  try {
-    HostAddress ha;
-    ha.set(address);
-    return makeRight(std::move(ha));
-  } catch (NetworkException const& e) {
-    return makeLeft(String(e.what()));
-  }
+std::expected<HostAddress, StarException> HostAddress::lookup(String const& address) {
+  HostAddress result;
+  auto status = result.set(address);
+  if (!status)
+    return std::unexpected(std::move(status.error()));
+  return result;
 }
 
 HostAddress::HostAddress() : HostAddress(NetworkMode::IPv4, nullptr) {}
@@ -63,12 +61,8 @@ HostAddress::HostAddress(NetworkMode mode, std::uint8_t* address) {
   set(mode, address);
 }
 
-HostAddress::HostAddress(String const& address) {
-  auto a = lookup(address);
-  if (a.isLeft())
-    throw NetworkException(a.left().takeUtf8());
-  else
-    *this = std::move(a.right());
+std::expected<HostAddress, StarException> HostAddress::create(String const& address) {
+  return lookup(address);
 }
 
 NetworkMode HostAddress::mode() const {
@@ -136,15 +130,15 @@ bool HostAddress::operator==(HostAddress const& a) const {
   return true;
 }
 
-void HostAddress::set(String const& address) {
+std::expected<void, StarException> HostAddress::set(String const& address) {
   if (address.empty())
-    return;
+    return {};
 
-  if (address.compare("*") == 0 || address.compare("0.0.0.0") == 0) {
+  if (address == "*" || address == "0.0.0.0") {
     std::uint8_t inaddr_any[4];
     std::memset(inaddr_any, 0, sizeof(inaddr_any));
     set(NetworkMode::IPv4, inaddr_any);
-  } else if (address.compare("::") == 0) {
+  } else if (address == "::") {
     // NOTE: This will likely bind to both IPv6 and IPv4, but it does depending
     // on the OS settings
     std::uint8_t inaddr_any[16];
@@ -165,8 +159,9 @@ void HostAddress::set(String const& address) {
     // Request only usable addresses e.g. IPv6 only if IPv6 is available
     hints.ai_flags = AI_ADDRCONFIG;
 
-    if (::getaddrinfo(address.utf8Ptr(), NULL, &hints, &result) != 0)
-      throw NetworkException(strf("Failed to determine address for '{}' ({})", address, netErrorString()));
+    int status = ::getaddrinfo(address.utf8Ptr(), NULL, &hints, &result);
+    if (status != 0)
+      return std::unexpected(NetworkException::format("Failed to determine address for '{}' (getaddrinfo status {})", address, status));
 
     for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
       NetworkMode mode;
@@ -190,7 +185,10 @@ void HostAddress::set(String const& address) {
       break;
     }
     freeaddrinfo(result);
+    if (!ptr)
+      return std::unexpected(NetworkException::format("No usable address for '{}'", address));
   }
+  return {};
 }
 
 void HostAddress::set(NetworkMode mode, std::uint8_t const* addr) {
@@ -229,7 +227,7 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
       break;
 
     default:
-      throw NetworkException(strf("Unknown address mode ({})", (int)address.mode()));
+      std::unreachable(); // NetworkMode is established by construction/native conversion.
   }
   return os;
 }
@@ -241,29 +239,25 @@ std::size_t hash<HostAddress>::operator()(HostAddress const& address) const {
   return hash.hash();
 }
 
-Either<String, HostAddressWithPort> HostAddressWithPort::lookup(String const& address, std::uint16_t port) {
+std::expected<HostAddressWithPort, StarException> HostAddressWithPort::lookup(String const& address, std::uint16_t port) {
   auto hostAddress = HostAddress::lookup(address);
-  if (hostAddress.isLeft())
-    return makeLeft(std::move(hostAddress.left()));
-  else
-    return makeRight(HostAddressWithPort(std::move(hostAddress.right()), port));
+  if (!hostAddress)
+    return std::unexpected(std::move(hostAddress.error()));
+  return HostAddressWithPort(*hostAddress, port);
 }
 
-Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String const& address) {
-  String host = address;
-  String port = host.rextract(":");
-  if (host.beginsWith("[") && host.endsWith("]"))
-    host = host.substr(1, host.size() - 2);
-
+std::expected<HostAddressWithPort, StarException> HostAddressWithPort::lookupWithPort(String const& address) {
+  auto const& text = address.utf8();
+  auto separator = text.rfind(':');
+  auto hostBytes = separator == std::string::npos ? text : text.substr(0, separator);
+  String port(separator == std::string::npos ? std::string{} : text.substr(separator + 1));
+  if (hostBytes.size() >= 2 && hostBytes.front() == '[' && hostBytes.back() == ']')
+    hostBytes = hostBytes.substr(1, hostBytes.size() - 2);
+  String host(std::move(hostBytes));
   auto portNum = maybeLexicalCast<std::uint16_t>(port);
   if (!portNum)
-    return makeLeft(strf("Could not parse port portion of HostAddressWithPort '{}'", port));
-
-  auto hostAddress = HostAddress::lookup(host);
-  if (hostAddress.isLeft())
-    return makeLeft(std::move(hostAddress.left()));
-
-  return makeRight(HostAddressWithPort(std::move(hostAddress.right()), *portNum));
+    return std::unexpected(NetworkException::format("Could not parse port portion of HostAddressWithPort '{}'", port));
+  return lookup(host, *portNum);
 }
 
 HostAddressWithPort::HostAddressWithPort() : m_port(0) {}
@@ -276,18 +270,12 @@ HostAddressWithPort::HostAddressWithPort(NetworkMode mode, std::uint8_t* address
   m_port = port;
 }
 
-HostAddressWithPort::HostAddressWithPort(String const& address, std::uint16_t port) {
-  auto a = lookup(address, port);
-  if (a.isLeft())
-    throw NetworkException(a.left().takeUtf8());
-  *this = std::move(a.right());
+std::expected<HostAddressWithPort, StarException> HostAddressWithPort::create(String const& address, std::uint16_t port) {
+  return lookup(address, port);
 }
 
-HostAddressWithPort::HostAddressWithPort(String const& address) {
-  auto a = lookupWithPort(address);
-  if (a.isLeft())
-    throw NetworkException(a.left().takeUtf8());
-  *this = std::move(a.right());
+std::expected<HostAddressWithPort, StarException> HostAddressWithPort::create(String const& address) {
+  return lookupWithPort(address);
 }
 
 HostAddress HostAddressWithPort::address() const {

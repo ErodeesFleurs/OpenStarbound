@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.set;
 import star.json;
 import star.id_map;
@@ -43,12 +44,14 @@ import star.world;
 
 namespace Star {
 
-extern EnumMap<LoungeOrientation> const LoungeOrientationNames{{LoungeOrientation::None, "none"},
+extern std::expected<EnumMap<LoungeOrientation>, StarException> const LoungeOrientationNames = EnumMap<LoungeOrientation>::create({
+    {LoungeOrientation::None, "none"},
     {LoungeOrientation::Sit, "sit"},
     {LoungeOrientation::Lay, "lay"},
-    {LoungeOrientation::Stand, "stand"}};
+    {LoungeOrientation::Stand, "stand"}});
 
-extern EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Left"},
+extern std::expected<EnumMap<LoungeControl>, StarException> const LoungeControlNames = EnumMap<LoungeControl>::create({
+    {LoungeControl::Left, "Left"},
     {LoungeControl::Right, "Right"},
     {LoungeControl::Down, "Down"},
     {LoungeControl::Up, "Up"},
@@ -59,44 +62,61 @@ extern EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Le
     {LoungeControl::Special2, "Special2"},
     {LoungeControl::Special3, "Special3"},
     {LoungeControl::Walk, "Walk"},
-};
+});
 
-std::shared_ptr<EntityAnchor const> LoungeableEntity::anchor(std::size_t anchorPositionIndex) const {
-  return loungeAnchor(anchorPositionIndex);
+std::expected<std::shared_ptr<EntityAnchor const>, StarException> LoungeableEntity::anchor(std::size_t anchorPositionIndex) const {
+  auto result = loungeAnchor(anchorPositionIndex);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return std::shared_ptr<EntityAnchor const>(std::move(*result));
 }
 
-void LoungeableEntity::loungeControl(std::size_t, LoungeControl) {}
+std::expected<void, StarException> LoungeableEntity::loungeControl(std::size_t, LoungeControl) { return {}; }
 
-void LoungeableEntity::loungeAim(std::size_t, Vec2F const&) {}
+std::expected<void, StarException> LoungeableEntity::loungeAim(std::size_t, Vec2F const&) { return {}; }
 
-Set<EntityId> LoungeableEntity::entitiesLoungingIn(std::size_t positionIndex) const {
+std::expected<Set<EntityId>, StarException> LoungeableEntity::entitiesLoungingIn(std::size_t positionIndex) const {
+  auto lounging = entitiesLounging();
+  if (!lounging)
+    return std::unexpected(std::move(lounging.error()));
   Set<EntityId> loungingInEntities;
-  for (auto const& p : entitiesLounging()) {
+  for (auto const& p : *lounging) {
     if (p.second == positionIndex)
       loungingInEntities.add(p.first);
   }
   return loungingInEntities;
 }
 
-Set<std::pair<EntityId, std::size_t>> LoungeableEntity::entitiesLounging() const {
+std::expected<Set<std::pair<EntityId, std::size_t>>, StarException> LoungeableEntity::entitiesLounging() const {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
   Set<std::pair<EntityId, std::size_t>> loungingInEntities;
-  world()->forEachEntity(metaBoundBox().translated(position()),
-      [&](std::shared_ptr<Entity> const& entity) {
+  auto scanned = (*currentWorld)->forEachEntity(metaBoundBox().translated(position()),
+      [&](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
         if (auto lounger = as<LoungingEntity>(entity)) {
           if (auto anchorStatus = lounger->loungingIn()) {
             if (anchorStatus->entityId == entityId())
               loungingInEntities.add({entity->entityId(), anchorStatus->positionIndex});
           }
         }
+        return {};
       });
+  if (!scanned)
+    return std::unexpected(std::move(scanned.error()));
   return loungingInEntities;
 }
 
-bool LoungingEntity::inConflictingLoungeAnchor() const {
+std::expected<bool, StarException> LoungingEntity::inConflictingLoungeAnchor() const {
   if (auto loungeAnchorState = loungingIn()) {
-    if (auto loungeableEntity = world()->get<LoungeableEntity>(loungeAnchorState->entityId)) {
+    auto currentWorld = world();
+    if (!currentWorld)
+      return std::unexpected(std::move(currentWorld.error()));
+    if (auto loungeableEntity = (*currentWorld)->get<LoungeableEntity>(loungeAnchorState->entityId)) {
       auto entitiesLoungingIn = loungeableEntity->entitiesLoungingIn(loungeAnchorState->positionIndex);
-      return entitiesLoungingIn.size() > 1 || !entitiesLoungingIn.contains(entityId());
+      if (!entitiesLoungingIn)
+        return std::unexpected(std::move(entitiesLoungingIn.error()));
+      return entitiesLoungingIn->size() > 1 || !entitiesLoungingIn->contains(entityId());
     }
   }
   return false;

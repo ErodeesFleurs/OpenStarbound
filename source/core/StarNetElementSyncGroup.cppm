@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.net_compatibility;
 import star.data_stream;
@@ -20,23 +21,23 @@ public:
     return Star::typeName<NetElementSyncGroup>();
   }
 
-  void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-  void disableNetInterpolation() override;
-  void tickNetInterpolation(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-  void blankNetDelta(float interpolationTime = 0.0f) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime = 0.0f) override;
 
 protected:
   // Notifies when data needs to be pulled from NetElements, load is true if
   // this is due to a netLoad call
-  virtual void netElementsNeedLoad(bool load);
+  [[nodiscard]] virtual std::expected<void, StarException> netElementsNeedLoad(bool load);
   // Notifies when data needs to be pushed to NetElements
-  virtual void netElementsNeedStore();
+  [[nodiscard]] virtual std::expected<void, StarException> netElementsNeedStore();
 
 private:
   bool m_hasRecentChanges = false;
@@ -55,15 +56,15 @@ public:
     return Star::typeName<NetElementCallbackGroup>();
   }
 
-  void setNeedsLoadCallback(std::function<void(bool)> needsLoadCallback);
-  void setNeedsStoreCallback(std::function<void()> needsStoreCallback);
+  void setNeedsLoadCallback(std::function<std::expected<void, StarException>(bool)> needsLoadCallback);
+  void setNeedsStoreCallback(std::function<std::expected<void, StarException>()> needsStoreCallback);
 
 private:
-  void netElementsNeedLoad(bool load) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool load) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
-  std::function<void(bool)> m_netElementsNeedLoad;
-  std::function<void()> m_netElementsNeedStore;
+  std::function<std::expected<void, StarException>(bool)> m_netElementsNeedLoad;
+  std::function<std::expected<void, StarException>()> m_netElementsNeedStore;
 };
 
 }

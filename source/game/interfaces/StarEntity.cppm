@@ -50,7 +50,7 @@ enum class ClientEntityMode {
   // presence.
   ClientPresenceMaster
 };
-extern EnumMap<ClientEntityMode> const ClientEntityModeNames;
+extern std::expected<EnumMap<ClientEntityMode>, StarException> const ClientEntityModeNames;
 
 // The top-level entity type.  The enum order is intended to be in the order in
 // which entities should be updated every tick
@@ -66,7 +66,7 @@ enum class EntityType : std::uint8_t {
   Npc,
   Player
 };
-extern EnumMap<EntityType> const EntityTypeNames;
+extern std::expected<EnumMap<EntityType>, StarException> const EntityTypeNames;
 
 class Entity {
 public:
@@ -85,25 +85,25 @@ public:
 
   // Called when an entity is first inserted into a World.  Calling base class
   // init sets the world pointer, entityId, and entityMode.
-  virtual void init(World* world, EntityId entityId, EntityMode mode);
+  [[nodiscard]] virtual std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode);
 
   // Should do whatever steps necessary to take an entity out of a world,
   // default implementation clears the world pointer, entityMode, and entityId.
-  virtual void uninit();
+  [[nodiscard]] virtual std::expected<void, StarException> uninit();
 
   // Write state data that changes over time, and is used to keep slaves in
   // sync.  Can return empty and this is the default.  May be called
   // uninitalized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] virtual std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.
-  virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
+  [[nodiscard]] virtual std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
 
-  virtual void enableInterpolation(float extrapolationHint);
-  virtual void disableInterpolation();
+  [[nodiscard]] virtual std::expected<void, StarException> enableInterpolation(float extrapolationHint);
+  [[nodiscard]] virtual std::expected<void, StarException> disableInterpolation();
 
   // Base position of this entity, bound boxes, drawables, and other entity
   // positions are relative to this.
@@ -129,64 +129,64 @@ public:
   // Should this entity only exist on the master side?
   virtual bool masterOnly() const;
 
-  virtual String name() const;
-  virtual String description() const;
+  [[nodiscard]] virtual std::expected<String, StarException> name() const;
+  [[nodiscard]] virtual std::expected<String, StarException> description() const;
 
   // Gameplay affecting light sources (separate from light sources added during
   // rendering)
-  virtual List<LightSource> lightSources() const;
+  [[nodiscard]] virtual std::expected<List<LightSource>, StarException> lightSources() const;
 
   // All damage sources for this frame.
-  virtual List<DamageSource> damageSources() const;
+  [[nodiscard]] virtual std::expected<List<DamageSource>, StarException> damageSources() const;
 
   // Return the damage that would result from being hit by the given damage
   // source.  Will be called on master and slave entities.  Culling based on
   // team damage and self damage will be done outside of this query.
-  virtual std::optional<HitType> queryHit(DamageSource const& source) const;
+  [[nodiscard]] virtual std::expected<std::optional<HitType>, StarException> queryHit(DamageSource const& source) const;
 
   // Return the polygonal area in which the entity can be hit. Not used for
   // actual hit computation, only for determining more precisely where a
   // hit intersection occurred (e.g. by projectiles)
-  virtual std::optional<PolyF> hitPoly() const;
+  [[nodiscard]] virtual std::expected<std::optional<PolyF>, StarException> hitPoly() const;
 
   // Apply a request to damage this entity. Will only be called on Master
   // entities. DamageRequest might be adjusted based on protection and other
   // effects
-  virtual List<DamageNotification> applyDamage(DamageRequest const& damage);
+  [[nodiscard]] virtual std::expected<List<DamageNotification>, StarException> applyDamage(DamageRequest const& damage);
 
   // Pull any pending damage notifications applied internally, only called on
   // Master entities.
-  virtual List<DamageNotification> selfDamageNotifications();
+  [[nodiscard]] virtual std::expected<List<DamageNotification>, StarException> selfDamageNotifications();
 
   // Called on master entities when a DamageRequest has been generated due to a
   // DamageSource from this entity being applied to another entity.  Will be
   // called on the *causing* entity of the damage.
-  virtual void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest);
+  [[nodiscard]] virtual std::expected<void, StarException> hitOther(EntityId targetEntityId, DamageRequest const& damageRequest);
 
   // Called on master entities when this entity has damaged another entity.
   // Only called on the *source entity* of the damage, which may be different
   // than the causing entity.
-  virtual void damagedOther(DamageNotification const& damage);
+  [[nodiscard]] virtual std::expected<void, StarException> damagedOther(DamageNotification const& damage);
 
   // Returning true here indicates that this entity should be removed from the
   // world, default returns false.
-  virtual bool shouldDestroy() const;
+  [[nodiscard]] virtual std::expected<bool, StarException> shouldDestroy() const;
   // Will be called once before removing the entity from the World on both
   // master and slave entities.
-  virtual void destroy(RenderCallback* renderCallback);
+  [[nodiscard]] virtual std::expected<void, StarException> destroy(RenderCallback* renderCallback);
 
   // Entities can send other entities potentially remote messages and get
   // responses back from them, and should implement this to receive and respond
   // to messages.  If the message is NOT handled, should return Nothing,
   // otherwise should return some Json value.
   // This will only ever be called on master entities.
-  virtual std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  [[nodiscard]] virtual std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
-  virtual void update(float dt, std::uint64_t currentStep);
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt, std::uint64_t currentStep);
 
-  virtual void render(RenderCallback* renderer);
+  [[nodiscard]] virtual std::expected<void, StarException> render(RenderCallback* renderer);
 
-  virtual void renderLightSources(RenderCallback* renderer);
+  [[nodiscard]] virtual std::expected<void, StarException> renderLightSources(RenderCallback* renderer);
 
   EntityId entityId() const;
 
@@ -196,8 +196,8 @@ public:
   // world pointer, entity id, and entity mode.
   bool inWorld() const;
 
-  // Throws an exception if not currently in a world.
-  World* world() const;
+  // Reports an error if not currently in a world.
+  [[nodiscard]] std::expected<World*, StarException> world() const;
   // Returns nullptr if not currently in a world.
   World* worldPtr() const;
 
@@ -240,10 +240,10 @@ private:
 };
 
 template <typename EntityT>
-using EntityCallbackOf = std::function<void(std::shared_ptr<EntityT> const&)>;
+using EntityCallbackOf = std::function<std::expected<void, StarException>(std::shared_ptr<EntityT> const&)>;
 
 template <typename EntityT>
-using EntityFilterOf = std::function<bool(std::shared_ptr<EntityT> const&)>;
+using EntityFilterOf = std::function<std::expected<bool, StarException>(std::shared_ptr<EntityT> const&)>;
 
 typedef EntityCallbackOf<Entity> EntityCallback;
 typedef EntityFilterOf<Entity> EntityFilter;
@@ -251,10 +251,12 @@ typedef EntityFilterOf<Entity> EntityFilter;
 // Filters based first on dynamic casting to the given type, then optionally on
 // the given derived type filter.
 template <typename EntityT>
-EntityFilter entityTypeFilter(std::function<bool(std::shared_ptr<EntityT> const&)> filter = {}) {
-  return [filter](std::shared_ptr<Entity> const& e) -> bool {
+EntityFilter entityTypeFilter(EntityFilterOf<EntityT> filter = {}) {
+  return [filter](std::shared_ptr<Entity> const& e) -> std::expected<bool, StarException> {
     if (auto entity = as<EntityT>(e)) {
-      return !filter || filter(entity);
+      if (!filter)
+        return true;
+      return filter(entity);
     } else {
       return false;
     }

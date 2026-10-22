@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.vector;
 import star.casting;
@@ -73,8 +74,20 @@ ScrollThumb::ScrollThumb(GuiContext& context, GuiDirection direction) : Widget(c
   m_hovered = false;
   m_pressed = false;
   m_direction = direction;
-  auto assets = this->context()->root().assets();
-  setImages(assets->json("/interface.config:scrollArea.thumbs"));
+}
+
+std::expected<std::shared_ptr<ScrollThumb>, StarException> ScrollThumb::create(GuiContext& context, GuiDirection direction) {
+  auto thumb = std::shared_ptr<ScrollThumb>(new ScrollThumb(context, direction));
+  auto assets = context.root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto images = (*assets)->json("/interface.config:scrollArea.thumbs");
+  if (!images)
+    return std::unexpected(std::move(images.error()));
+  auto configured = thumb->setImages(*images);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
+  return thumb;
 }
 
 void ScrollThumb::setImages(ImageStretchSet const& base, ImageStretchSet const& hover, ImageStretchSet const& pressed) {
@@ -83,25 +96,30 @@ void ScrollThumb::setImages(ImageStretchSet const& base, ImageStretchSet const& 
   m_pressedThumb = pressed;
 }
 
-void ScrollThumb::setImages(Json const& images) {
-  String directionString;
-  if (m_direction == GuiDirection::Vertical) {
-    directionString = "vertical";
-  } else {
-    directionString = "horizontal";
+std::expected<void, StarException> ScrollThumb::setImages(Json const& images) {
+  auto direction = images.get(m_direction == GuiDirection::Vertical ? "vertical" : "horizontal");
+  if (!direction)
+    return std::unexpected(std::move(direction.error()));
+  ImageStretchSet base{}, hover{}, pressed{};
+  for (auto entry : {std::pair{"base", &base}, std::pair{"hover", &hover}, std::pair{"pressed", &pressed}}) {
+    auto state = direction->get(entry.first);
+    if (!state)
+      return std::unexpected(std::move(state.error()));
+    auto begin = state->getString("begin");
+    if (!begin)
+      return std::unexpected(std::move(begin.error()));
+    auto end = state->getString("end");
+    if (!end)
+      return std::unexpected(std::move(end.error()));
+    auto inner = state->getString("inner");
+    if (!inner)
+      return std::unexpected(std::move(inner.error()));
+    entry.second->begin = std::move(*begin);
+    entry.second->end = std::move(*end);
+    entry.second->inner = std::move(*inner);
   }
-
-  m_baseThumb.begin = images.get(directionString).get("base").getString("begin");
-  m_baseThumb.end = images.get(directionString).get("base").getString("end");
-  m_baseThumb.inner = images.get(directionString).get("base").getString("inner");
-
-  m_hoverThumb.begin = images.get(directionString).get("hover").getString("begin");
-  m_hoverThumb.end = images.get(directionString).get("hover").getString("end");
-  m_hoverThumb.inner = images.get(directionString).get("hover").getString("inner");
-
-  m_pressedThumb.begin = images.get(directionString).get("pressed").getString("begin");
-  m_pressedThumb.end = images.get(directionString).get("pressed").getString("end");
-  m_pressedThumb.inner = images.get(directionString).get("pressed").getString("inner");
+  setImages(base, hover, pressed);
+  return {};
 }
 
 bool ScrollThumb::isHovered() const {
@@ -120,15 +138,17 @@ void ScrollThumb::setPressed(bool pressed) {
   m_pressed = pressed;
 }
 
-void ScrollThumb::mouseOver() {
+std::expected<void, StarException> ScrollThumb::mouseOver() {
   setHovered(true);
+  return {};
 }
 
-void ScrollThumb::mouseOut() {
+std::expected<void, StarException> ScrollThumb::mouseOut() {
   setHovered(false);
+  return {};
 }
 
-void ScrollThumb::renderImpl() {
+std::expected<void, StarException> ScrollThumb::renderImpl() {
   ImageStretchSet workingSet = m_baseThumb;
   if (isHovered())
     workingSet = m_hoverThumb;
@@ -136,53 +156,86 @@ void ScrollThumb::renderImpl() {
     workingSet = m_pressedThumb;
 
   if (workingSet.fullyPopulated()) {
-    context()->drawImageStretchSet(workingSet,
+    return context()->drawImageStretchSet(workingSet,
         RectF::withSize(Vec2F(m_parent->screenPosition() + position()), Vec2F(size())),
         m_direction);
   }
+  return {};
 }
 
-Vec2U ScrollThumb::baseSize() const {
+std::expected<Vec2U, StarException> ScrollThumb::baseSize() const {
   return context()->textureSize(m_baseThumb.begin);
 }
 
-ScrollBar::ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
-  : Widget(context), m_direction(direction) {
-  m_forward = std::make_shared<ButtonWidget>(*this->context());
-  m_forward->setCallback(forwardFunc);
-  m_forward->setSustainCallbackOnDownHold(true);
-  m_forward->setPressedOffset({0, 0});
+ScrollBar::ScrollBar(GuiContext& context, GuiDirection direction) : Widget(context), m_direction(direction) {}
 
-  m_backward = std::make_shared<ButtonWidget>(*this->context());
-  m_backward->setCallback(backwardFunc);
-  m_backward->setSustainCallbackOnDownHold(true);
-  m_backward->setPressedOffset({0, 0});
-
-  m_thumb = std::make_shared<ScrollThumb>(*this->context(), m_direction);
-
-  auto assets = this->context()->root().assets();
-  setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
-
-  addChild("thumb", m_thumb);
-  addChild("forward", m_forward);
-  addChild("backward", m_backward);
+std::expected<std::shared_ptr<ScrollBar>, StarException> ScrollBar::create(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forward, WidgetCallbackFunc backward) {
+  auto bar = std::shared_ptr<ScrollBar>(new ScrollBar(context, direction));
+  auto initialized = bar->initialize(std::move(forward), std::move(backward));
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return bar;
 }
 
-void ScrollBar::setButtonImages(Json const& images) {
-  String directionString;
-  if (m_direction == GuiDirection::Vertical) {
-    directionString = "vertical";
-  } else {
-    directionString = "horizontal";
+std::expected<void, StarException> ScrollBar::initialize(WidgetCallbackFunc forward, WidgetCallbackFunc backward) {
+  auto forwardButton = ButtonWidget::create(*context());
+  if (!forwardButton)
+    return std::unexpected(std::move(forwardButton.error()));
+  m_forward = *forwardButton;
+  m_forward->setCallback(std::move(forward));
+  m_forward->setSustainCallbackOnDownHold(true);
+  m_forward->setPressedOffset({0, 0});
+  auto backwardButton = ButtonWidget::create(*context());
+  if (!backwardButton)
+    return std::unexpected(std::move(backwardButton.error()));
+  m_backward = *backwardButton;
+  m_backward->setCallback(std::move(backward));
+  m_backward->setSustainCallbackOnDownHold(true);
+  m_backward->setPressedOffset({0, 0});
+  auto thumb = ScrollThumb::create(*context(), m_direction);
+  if (!thumb)
+    return std::unexpected(std::move(thumb.error()));
+  m_thumb = *thumb;
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto images = (*assets)->json("/interface.config:scrollArea.buttons");
+  if (!images)
+    return std::unexpected(std::move(images.error()));
+  auto configured = setButtonImages(*images);
+  if (!configured)
+    return std::unexpected(std::move(configured.error()));
+  auto addedThumb = addChild("thumb", m_thumb);
+  if (!addedThumb)
+    return std::unexpected(std::move(addedThumb.error()));
+  auto addedForward = addChild("forward", m_forward);
+  if (!addedForward)
+    return std::unexpected(std::move(addedForward.error()));
+  return addChild("backward", m_backward);
+}
+
+std::expected<void, StarException> ScrollBar::setButtonImages(Json const& images) {
+  auto direction = images.get(m_direction == GuiDirection::Vertical ? "vertical" : "horizontal");
+  if (!direction)
+    return std::unexpected(std::move(direction.error()));
+  for (auto entry : {std::pair{"forward", m_forward.get()}, std::pair{"backward", m_backward.get()}}) {
+    auto state = direction->get(entry.first);
+    if (!state)
+      return std::unexpected(std::move(state.error()));
+    auto base = state->getString("base");
+    if (!base)
+      return std::unexpected(std::move(base.error()));
+    auto hover = state->getString("hover");
+    if (!hover)
+      return std::unexpected(std::move(hover.error()));
+    auto pressed = state->getString("pressed");
+    if (!pressed)
+      return std::unexpected(std::move(pressed.error()));
+    auto configured = entry.second->setImages(*base, *hover, *pressed);
+    if (!configured)
+      return std::unexpected(std::move(configured.error()));
   }
-
-  m_forward->setImages(images.get(directionString).get("forward").getString("base"),
-      images.get(directionString).get("forward").getString("hover"),
-      images.get(directionString).get("forward").getString("pressed"));
-
-  m_backward->setImages(images.get(directionString).get("backward").getString("base"),
-      images.get(directionString).get("backward").getString("hover"),
-      images.get(directionString).get("backward").getString("pressed"));
+  return {};
 }
 
 Vec2I ScrollBar::size() const {
@@ -191,9 +244,11 @@ Vec2I ScrollBar::size() const {
   return {};
 }
 
-int ScrollBar::trackSize() const {
+std::expected<int, StarException> ScrollBar::trackSize() const {
   if (m_parent) {
-    auto scrollArea = convert<ScrollArea>(m_parent);
+    auto scrollArea = as<ScrollArea>(m_parent);
+    if (!scrollArea)
+      return std::unexpected(GuiException("Scroll bar has a non-scroll-area parent"));
     auto size = scrollArea->size();
     if (m_direction == GuiDirection::Vertical) {
       if (scrollArea->horizontalScroll()) {
@@ -206,12 +261,14 @@ int ScrollBar::trackSize() const {
     }
   }
 
-  throw GuiException("Somehow have a Scroll Bar without a parent.");
+  return std::unexpected(GuiException("Somehow have a Scroll Bar without a parent."));
 }
 
-float ScrollBar::sizeRatio() const {
+std::expected<float, StarException> ScrollBar::sizeRatio() const {
   if (m_parent) {
-    auto scrollArea = convert<ScrollArea>(m_parent);
+    auto scrollArea = as<ScrollArea>(m_parent);
+    if (!scrollArea)
+      return std::unexpected(GuiException("Scroll bar has a non-scroll-area parent"));
     if (m_direction == GuiDirection::Vertical) {
       return scrollArea->contentSize()[1] / (float)(scrollArea->areaSize()[1]);
     } else {
@@ -219,12 +276,14 @@ float ScrollBar::sizeRatio() const {
     }
   }
 
-  throw GuiException("Somehow have a Scroll Bar without a parent.");
+  return std::unexpected(GuiException("Somehow have a Scroll Bar without a parent."));
 }
 
-float ScrollBar::scrollRatio() const {
+std::expected<float, StarException> ScrollBar::scrollRatio() const {
   if (m_parent) {
-    auto scrollArea = convert<ScrollArea>(m_parent);
+    auto scrollArea = as<ScrollArea>(m_parent);
+    if (!scrollArea)
+      return std::unexpected(GuiException("Scroll bar has a non-scroll-area parent"));
     if (m_direction == GuiDirection::Vertical) {
       if (scrollArea->maxScrollPosition()[1] == 0)
         return 0;
@@ -250,16 +309,29 @@ std::shared_ptr<ScrollThumb> ScrollBar::thumb() const {
   return m_thumb;
 }
 
-void ScrollBar::drawChildren() {
+std::expected<void, StarException> ScrollBar::drawChildren() {
   if (m_parent) {
-    auto scrollArea = convert<ScrollArea>(m_parent);
-
-    float ratio = sizeRatio();
+    auto scrollArea = as<ScrollArea>(m_parent);
+    if (!scrollArea)
+      return std::unexpected(GuiException("Scroll bar has a non-scroll-area parent"));
+    auto sizeRatioResult = sizeRatio();
+    if (!sizeRatioResult)
+      return std::unexpected(std::move(sizeRatioResult.error()));
+    auto track = trackSize();
+    if (!track)
+      return std::unexpected(std::move(track.error()));
+    auto thumbSize = m_thumb->baseSize();
+    if (!thumbSize)
+      return std::unexpected(std::move(thumbSize.error()));
+    float ratio = *sizeRatioResult;
     if (ratio < 1)
       ratio = 1;
 
-    int innerSize = (int)std::max(0.0f, std::ceil(trackSize() / ratio));
-    int offsetBegin = (int)std::ceil((trackSize() - innerSize) * scrollRatio());
+    int innerSize = static_cast<int>(std::max(0.0f, std::ceil(*track / ratio)));
+    auto offsetRatio = scrollRatio();
+    if (!offsetRatio)
+      return std::unexpected(std::move(offsetRatio.error()));
+    int offsetBegin = static_cast<int>(std::ceil((*track - innerSize) * *offsetRatio));
     innerSize += ScrollThumbOverhead;
 
     if (m_direction == GuiDirection::Vertical) {
@@ -272,65 +344,96 @@ void ScrollBar::drawChildren() {
         m_backward->setPosition({m_parent->size()[0] - ScrollAreaBorder, 0});
         m_thumb->setPosition({m_parent->size()[0] - ScrollAreaBorder, ScrollButtonStackSize + offsetBegin});
       }
-      m_thumb->setSize(Vec2I(m_thumb->baseSize()[0], innerSize));
+      m_thumb->setSize(Vec2I((*thumbSize)[0], innerSize));
     } else {
       m_forward->setPosition({m_parent->size()[0] - ScrollButtonStackSize, 0});
       m_backward->setPosition({0, 0});
       m_thumb->setPosition({ScrollButtonStackSize + offsetBegin, 0});
-      m_thumb->setSize(Vec2I(innerSize, m_thumb->baseSize()[1]));
+      m_thumb->setSize(Vec2I(innerSize, (*thumbSize)[1]));
     }
 
     for (auto child : m_members) {
-      child->render(m_drawingArea);
+      auto rendered = child->render(m_drawingArea);
+      if (!rendered)
+        return std::unexpected(std::move(rendered.error()));
     }
   }
+  return {};
 }
 
-Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
-  auto scrollArea = convert<ScrollArea>(m_parent);
+std::expected<Vec2I, StarException> ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
+  auto scrollArea = as<ScrollArea>(m_parent);
+  if (!scrollArea)
+    return std::unexpected(GuiException("Scroll bar has no scroll-area parent"));
+  auto track = trackSize();
+  if (!track)
+    return std::unexpected(std::move(track.error()));
   if (m_direction == GuiDirection::Vertical) {
-    int scrollSpan = trackSize() - m_thumb->size()[1];
+    int scrollSpan = *track - m_thumb->size()[1];
     int scrollOffset = clamp((thumbPosition[1] - ScrollButtonStackSize), 0, scrollSpan);
     float scrollRatio = (float)scrollOffset / (float)scrollSpan;
-    return {scrollArea->scrollOffset()[0], std::ceil(scrollArea->maxScrollPosition()[1] * scrollRatio)};
+    return Vec2I{scrollArea->scrollOffset()[0], static_cast<int>(std::ceil(scrollArea->maxScrollPosition()[1] * scrollRatio))};
   } else {
-    int scrollSpan = trackSize() - m_thumb->size()[0];
+    int scrollSpan = *track - m_thumb->size()[0];
     int scrollOffset = clamp((thumbPosition[0] - ScrollButtonStackSize), 0, scrollSpan);
     float scrollRatio = (float)scrollOffset / (float)scrollSpan;
-    return {(int)std::ceil(scrollArea->maxScrollPosition()[0] * scrollRatio), scrollArea->scrollOffset()[1]};
+    return Vec2I{static_cast<int>(std::ceil(scrollArea->maxScrollPosition()[0] * scrollRatio)), scrollArea->scrollOffset()[1]};
   }
 }
 
-ScrollArea::ScrollArea(GuiContext& context) : Widget(context) {
-  auto assets = this->context()->root().assets();
-  m_buttonAdvance = assets->json("/interface.config:scrollArea.buttonAdvance").toInt();
-  m_advanceLimiter = Time::monotonicMilliseconds();
+ScrollArea::ScrollArea(GuiContext& context) : Widget(context), m_buttonAdvance(0),
+    m_advanceLimiter(Time::monotonicMilliseconds()), m_dragActive(false),
+    m_horizontalScroll(false), m_verticalScroll(true), m_updatesChildren(false) {}
 
-  WidgetCallbackFunc vAdvance = [this](Widget*) { scrollAreaBy({0, advanceFactorHelper()}); };
-  WidgetCallbackFunc vRetreat = [this](Widget*) { scrollAreaBy({0, -advanceFactorHelper()}); };
-  WidgetCallbackFunc hAdvance = [this](Widget*) { scrollAreaBy({advanceFactorHelper(), 0}); };
-  WidgetCallbackFunc hRetreat = [this](Widget*) { scrollAreaBy({-advanceFactorHelper(), 0}); };
-
-  m_vBar = std::make_shared<ScrollBar>(*this->context(), GuiDirection::Vertical, vAdvance, vRetreat);
-  m_hBar = std::make_shared<ScrollBar>(*this->context(), GuiDirection::Horizontal, hAdvance, hRetreat);
-
-  m_dragActive = false;
-
-  addChild("vScrollBar", m_vBar);
-  addChild("hScrollBar", m_hBar);
-
-  m_horizontalScroll = false;
-  m_verticalScroll = true;
+std::expected<std::shared_ptr<ScrollArea>, StarException> ScrollArea::create(GuiContext& context) {
+  auto area = std::shared_ptr<ScrollArea>(new ScrollArea(context));
+  auto initialized = area->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return area;
 }
 
-void ScrollArea::setButtonImages(Json const& images) {
-  m_vBar->setButtonImages(images);
-  m_hBar->setButtonImages(images);
+std::expected<void, StarException> ScrollArea::initialize() {
+  auto assets = context()->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto json = (*assets)->json("/interface.config:scrollArea.buttonAdvance");
+  if (!json)
+    return std::unexpected(std::move(json.error()));
+  auto advance = json->toInt();
+  if (!advance)
+    return std::unexpected(std::move(advance.error()));
+  m_buttonAdvance = *advance;
+  auto vertical = ScrollBar::create(*context(), GuiDirection::Vertical,
+      [this](Widget*) -> std::expected<void, StarException> { scrollAreaBy({0, advanceFactorHelper()}); return {}; },
+      [this](Widget*) -> std::expected<void, StarException> { scrollAreaBy({0, -advanceFactorHelper()}); return {}; });
+  if (!vertical)
+    return std::unexpected(std::move(vertical.error()));
+  m_vBar = *vertical;
+  auto horizontal = ScrollBar::create(*context(), GuiDirection::Horizontal,
+      [this](Widget*) -> std::expected<void, StarException> { scrollAreaBy({advanceFactorHelper(), 0}); return {}; },
+      [this](Widget*) -> std::expected<void, StarException> { scrollAreaBy({-advanceFactorHelper(), 0}); return {}; });
+  if (!horizontal)
+    return std::unexpected(std::move(horizontal.error()));
+  m_hBar = *horizontal;
+  auto addedVertical = addChild("vScrollBar", m_vBar);
+  if (!addedVertical)
+    return std::unexpected(std::move(addedVertical.error()));
+  return addChild("hScrollBar", m_hBar);
 }
 
-void ScrollArea::setThumbImages(Json const& images) {
-  m_vBar->thumb()->setImages(images);
-  m_hBar->thumb()->setImages(images);
+std::expected<void, StarException> ScrollArea::setButtonImages(Json const& images) {
+  auto vertical = m_vBar->setButtonImages(images);
+  if (!vertical)
+    return std::unexpected(std::move(vertical.error()));
+  return m_hBar->setButtonImages(images);
+}
+
+std::expected<void, StarException> ScrollArea::setThumbImages(Json const& images) {
+  auto vertical = m_vBar->thumb()->setImages(images);
+  if (!vertical)
+    return std::unexpected(std::move(vertical.error()));
+  return m_hBar->thumb()->setImages(images);
 }
 
 RectI ScrollArea::contentBoundRect() const {
@@ -383,24 +486,25 @@ void ScrollArea::setVerticalScroll(bool vertical) {
   m_verticalScroll = vertical;
 }
 
-bool ScrollArea::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> ScrollArea::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
   if (m_dragActive) {
     if (std::holds_alternative<MouseButtonUpEvent>(event)) {
-      blur();
+      auto blurred = blur();
+      if (!blurred)
+        return std::unexpected(std::move(blurred.error()));
       m_dragActive = false;
       m_vBar->thumb()->setPressed(false);
       m_hBar->thumb()->setPressed(false);
       return true;
     } else if (std::holds_alternative<MouseMoveEvent>(event)) {
       auto thumbDragPosition = *context()->mousePosition(event) - screenPosition() - m_dragOffset;
-      if (m_dragDirection == GuiDirection::Vertical) {
-        m_scrollOffset = m_vBar->offsetFromThumbPosition(thumbDragPosition);
-      } else {
-        m_scrollOffset = m_hBar->offsetFromThumbPosition(thumbDragPosition);
-      }
+      auto offset = (m_dragDirection == GuiDirection::Vertical ? m_vBar : m_hBar)->offsetFromThumbPosition(thumbDragPosition);
+      if (!offset)
+        return std::unexpected(std::move(offset.error()));
+      m_scrollOffset = *offset;
       return true;
     }
   }
@@ -411,14 +515,18 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
 
   if (std::holds_alternative<MouseButtonDownEvent>(event)) {
     if (m_vBar->thumb()->inMember(*mousePos)) {
-      focus();
+      auto focused = focus();
+      if (!focused)
+        return std::unexpected(std::move(focused.error()));
       m_dragOffset = *mousePos - screenPosition() - m_vBar->thumb()->position();
       m_dragDirection = GuiDirection::Vertical;
       m_dragActive = true;
       m_vBar->thumb()->setPressed(true);
       return true;
     } else if (m_hBar->thumb()->inMember(*mousePos)) {
-      focus();
+      auto focused = focus();
+      if (!focused)
+        return std::unexpected(std::move(focused.error()));
       m_dragOffset = *mousePos - screenPosition() - m_hBar->thumb()->position();
       m_dragDirection = GuiDirection::Horizontal;
       m_dragActive = true;
@@ -427,7 +535,10 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
     }
   }
 
-  if (Widget::sendEvent(event))
+  auto handled = Widget::sendEvent(event);
+  if (!handled)
+    return std::unexpected(std::move(handled.error()));
+  if (*handled)
     return true;
 
   if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
@@ -441,12 +552,14 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
   return true;
 }
 
-void ScrollArea::update(float dt) {
-  if (m_updatesChildren)
-    Widget::update(dt);
-
+std::expected<void, StarException> ScrollArea::update(float dt) {
+  if (m_updatesChildren) {
+    auto updated = Widget::update(dt);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+  }
   if (!m_visible)
-    return;
+    return {};
   
   auto maxScroll = maxScrollPosition();
 
@@ -456,13 +569,14 @@ void ScrollArea::update(float dt) {
 
   m_scrollOffset = m_scrollOffset.piecewiseClamp(Vec2I(), maxScroll);
   m_lastMaxScroll = maxScroll;
+  return {};
 }
 
 Vec2I ScrollArea::maxScrollPosition() const {
   return Vec2I().piecewiseMax(contentSize() - size());
 }
 
-void ScrollArea::drawChildren() {
+std::expected<void, StarException> ScrollArea::drawChildren() {
   RectI innerDrawingArea = m_drawingArea;
 
   if (horizontalScroll())
@@ -485,13 +599,19 @@ void ScrollArea::drawChildren() {
     if (child == m_vBar || child == m_hBar)
       continue;
     child->setDrawingOffset(-offset);
-    child->render(innerDrawingArea);
+    auto rendered = child->render(innerDrawingArea);
+    if (!rendered)
+      return std::unexpected(std::move(rendered.error()));
   }
 
-  if (m_horizontalScroll)
-    m_hBar->render(m_drawingArea);
+  if (m_horizontalScroll) {
+    auto rendered = m_hBar->render(m_drawingArea);
+    if (!rendered)
+      return std::unexpected(std::move(rendered.error()));
+  }
   if (m_verticalScroll)
-    m_vBar->render(m_drawingArea);
+    return m_vBar->render(m_drawingArea);
+  return {};
 }
 
 int ScrollArea::advanceFactorHelper() {

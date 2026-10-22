@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.net_compatibility;
 import star.data_stream;
 
@@ -10,16 +11,16 @@ namespace Star {
 template <typename BaseNetElement>
 class NetElementOverride : public BaseNetElement {
 public:
-  void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+  [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-  void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  typedef std::function<void(DataStream&, NetCompatibilityRules)> NetStorer;
-  typedef std::function<void(DataStream&, NetCompatibilityRules)> NetLoader;
-  typedef std::function<bool(DataStream&, std::uint64_t, NetCompatibilityRules)> NetDeltaWriter;
-  typedef std::function<void(DataStream&, float, NetCompatibilityRules)> NetDeltaReader;
+  typedef std::function<std::expected<void, StarException>(DataStream&, NetCompatibilityRules)> NetStorer;
+  typedef std::function<std::expected<void, StarException>(DataStream&, NetCompatibilityRules)> NetLoader;
+  typedef std::function<std::expected<bool, StarException>(DataStream&, std::uint64_t, NetCompatibilityRules)> NetDeltaWriter;
+  typedef std::function<std::expected<void, StarException>(DataStream&, float, NetCompatibilityRules)> NetDeltaReader;
 
   void setNetStorer(NetStorer);
   void setNetLoader(NetLoader);
@@ -37,23 +38,23 @@ private:
 };
 
 template <typename BaseNetElement>
-void NetElementOverride<BaseNetElement>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+[[nodiscard]] std::expected<void, StarException> NetElementOverride<BaseNetElement>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (m_netStorer)
-    m_netStorer(ds, rules);
+    return m_netStorer(ds, rules);
   else
-    BaseNetElement::netStore(ds, rules);
+    return BaseNetElement::netStore(ds, rules);
 }
 
 template <typename BaseNetElement>
-void NetElementOverride<BaseNetElement>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+[[nodiscard]] std::expected<void, StarException> NetElementOverride<BaseNetElement>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (m_netLoader)
-    m_netLoader(ds, rules);
+    return m_netLoader(ds, rules);
   else
-    BaseNetElement::netLoad(ds, rules);
+    return BaseNetElement::netLoad(ds, rules);
 }
 
 template <typename BaseNetElement>
-bool NetElementOverride<BaseNetElement>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+[[nodiscard]] std::expected<bool, StarException> NetElementOverride<BaseNetElement>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (m_netDeltaWriter)
     return m_netDeltaWriter(ds, fromVersion, rules);
   else
@@ -61,11 +62,11 @@ bool NetElementOverride<BaseNetElement>::writeNetDelta(DataStream& ds, std::uint
 }
 
 template <typename BaseNetElement>
-void NetElementOverride<BaseNetElement>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+[[nodiscard]] std::expected<void, StarException> NetElementOverride<BaseNetElement>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (m_netDeltaReader)
-    m_netDeltaReader(ds, interpolationTime, rules);
+    return m_netDeltaReader(ds, interpolationTime, rules);
   else
-    BaseNetElement::readNetDelta(ds, interpolationTime, rules);
+    return BaseNetElement::readNetDelta(ds, interpolationTime, rules);
 }
 
 template <typename BaseNetElement>

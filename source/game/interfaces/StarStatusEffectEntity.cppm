@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.list;
 import star.json;
@@ -31,7 +32,7 @@ public:
     return Star::typeName<StatusEffectEntity>();
   }
 
-  virtual List<PersistentStatusEffect> statusEffects() const = 0;
+  [[nodiscard]] virtual std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const = 0;
   virtual PolyF statusEffectArea() const = 0;
 };
 

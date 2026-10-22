@@ -47,10 +47,12 @@ import star.particle_database;
 import star.algorithm;
 namespace Star {
 
-EffectEmitter::EffectEmitter(Root& root) : m_root(root) {
-  m_renders = false;
-  m_direction = Direction::Right;
-  addNetElement(&m_activeSources);
+std::expected<std::shared_ptr<EffectEmitter>, StarException> EffectEmitter::create(Root& root) {
+  auto emitter = std::shared_ptr<EffectEmitter>(new EffectEmitter(root));
+  auto registered = emitter->addNetElement(&emitter->m_activeSources);
+  if (!registered)
+    return std::unexpected(std::move(registered.error()));
+  return emitter;
 }
 
 void EffectEmitter::addEffectSources(String const& position, StringSet effectSources) {
@@ -70,13 +72,13 @@ void EffectEmitter::setBaseVelocity(Vec2F const& velocity) {
   m_baseVelocity = velocity;
 }
 
-void EffectEmitter::tick(float dt, EntityMode mode) {
+std::expected<void, StarException> EffectEmitter::tick(float dt, EntityMode mode) {
   if (mode == EntityMode::Master) {
     m_activeSources.set(std::move(m_newSources));
     m_newSources.clear();
   } else {
     if (!m_newSources.empty())
-      throw StarException("EffectEmitters can only be added to the master entity.");
+      return std::unexpected(StarException("EffectEmitters can only be added to the master entity."));
   }
   if (m_renders) {
     m_sources.erase(std::remove_if(m_sources.begin(), m_sources.end(),
@@ -95,10 +97,20 @@ void EffectEmitter::tick(float dt, EntityMode mode) {
     }
     for (auto& c : m_activeSources.get()) {
       if (!current.contains(c)) {
-        m_sources.append(m_root.effectSourceDatabase()->effectSourceConfig(c.second)->instance(c.first));
+        auto database = m_root.effectSourceDatabase();
+        if (!database)
+          return std::unexpected(std::move(database.error()));
+        auto config = (*database)->effectSourceConfig(c.second);
+        if (!config)
+          return std::unexpected(std::move(config.error()));
+        auto source = (*config)->instance(c.first);
+        if (!source)
+          return std::unexpected(std::move(source.error()));
+        m_sources.append(std::move(*source));
       }
     }
   }
+  return {};
 }
 
 void EffectEmitter::reset() {
@@ -107,45 +119,79 @@ void EffectEmitter::reset() {
   m_activeSources.set({});
 }
 
-void EffectEmitter::render(RenderCallback* renderCallback) {
+std::expected<void, StarException> EffectEmitter::render(RenderCallback* renderCallback) {
   m_renders = true;
   if (m_sources.empty())
-    return;
-  for (auto& ps : m_sources) {
-    Vec2F position = m_positions.get(ps->effectSpawnLocation());
-    for (auto& p : ps->particles()) {
-      Particle particle = m_root.particleDatabase()->particle(p);
+    return {};
+  for (auto& source : m_sources) {
+    auto position = m_positions.get(source->effectSpawnLocation());
+    if (!position)
+      return std::unexpected(std::move(position.error()));
+    auto particles = source->particles();
+    if (!particles)
+      return std::unexpected(std::move(particles.error()));
+    for (auto const& definition : *particles) {
+      auto database = m_root.particleDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto particle = (*database)->particle(definition);
+      if (!particle)
+        return std::unexpected(std::move(particle.error()));
       if (m_direction == Direction::Left) {
-        particle.flip = true;
-        particle.position[0] = -particle.position[0];
-        particle.velocity[0] = -particle.velocity[0];
-        particle.finalVelocity[0] = -particle.finalVelocity[0];
+        particle->flip = true;
+        particle->position[0] = -particle->position[0];
+        particle->velocity[0] = -particle->velocity[0];
+        particle->finalVelocity[0] = -particle->finalVelocity[0];
       }
-      particle.velocity += m_baseVelocity;
-      particle.finalVelocity += m_baseVelocity;
-      particle.position += position;
-      renderCallback->addParticle(particle);
+      particle->velocity += m_baseVelocity;
+      particle->finalVelocity += m_baseVelocity;
+      particle->position += **position;
+      auto added = renderCallback->addParticle(*particle);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
     }
-    for (auto& s : ps->sounds(position))
-      renderCallback->addAudio(s);
+    auto sounds = source->sounds(**position);
+    if (!sounds)
+      return std::unexpected(std::move(sounds.error()));
+    for (auto& sound : *sounds) {
+      auto added = renderCallback->addAudio(sound);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+    }
   }
-  for (auto& ps : m_sources)
-    ps->postRender();
+  for (auto& source : m_sources)
+    source->postRender();
+  return {};
 }
 
-Json EffectEmitter::toJson() const {
-  return JsonObject{{"activeSources",
-      jsonFromSet<Set<std::pair<String, String>>>(m_activeSources.get(),
-                         [](std::pair<String, String> const& entry) {
-                           return JsonObject{{"position", entry.first}, {"source", entry.second}};
-                         })}};
+std::expected<Json, StarException> EffectEmitter::toJson() const {
+  auto sources = jsonFromSet<Set<std::pair<String, String>>>(m_activeSources.get(),
+      [](std::pair<String, String> const& entry) {
+        return JsonObject{{"position", entry.first}, {"source", entry.second}};
+      });
+  if (!sources)
+    return std::unexpected(std::move(sources.error()));
+  return JsonObject{{"activeSources", std::move(*sources)}};
 }
 
-void EffectEmitter::fromJson(Json const& diskStore) {
-  m_activeSources.set(jsonToSet<Set<std::pair<String, String>>>(diskStore.get("activeSources"),
-      [](Json const& v) {
-        return std::pair<String, String>{v.getString("position"), v.getString("source")};
-      }));
+std::expected<void, StarException> EffectEmitter::fromJson(Json const& diskStore) {
+  auto config = diskStore.get("activeSources");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto sources = jsonToSet<Set<std::pair<String, String>>>(*config,
+      [](Json const& value) -> std::expected<std::pair<String, String>, StarException> {
+        auto position = value.getString("position");
+        if (!position)
+          return std::unexpected(std::move(position.error()));
+        auto source = value.getString("source");
+        if (!source)
+          return std::unexpected(std::move(source.error()));
+        return std::pair{std::move(*position), std::move(*source)};
+      });
+  if (!sources)
+    return std::unexpected(std::move(sources.error()));
+  m_activeSources.set(std::move(*sources));
+  return {};
 }
 
 }

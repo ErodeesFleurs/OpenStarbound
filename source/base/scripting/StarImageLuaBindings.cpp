@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.json_extra;
@@ -24,35 +25,51 @@ import star.image_lua_bindings;
 import star.vector;
 namespace Star {
 
-LuaMethods<Image> LuaUserDataMethods<Image>::make() {
+std::expected<LuaMethods<Image>, StarException> LuaUserDataMethods<Image>::make() {
   LuaMethods<Image> methods;
 
-  methods.registerMethodWithSignature<Vec2U, Image&>("size", std::mem_fn(&Image::size));
-  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("drawInto", std::mem_fn(&Image::drawInto));
-  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("copyInto", std::mem_fn(&Image::copyInto));
-  methods.registerMethod("set", [](Image& image, unsigned x, unsigned y, Color const& color) {
-    image.set(x, y, color.toRgba()); 
-  });
+  if (auto result = methods.registerMethodWithSignature<Vec2U, Image&>("size", std::mem_fn(&Image::size)); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = methods.registerMethod("drawInto", [](Image& image, Vec2U position, Image const& source) {
+    return image.drawInto(position, source);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = methods.registerMethod("copyInto", [](Image& image, Vec2U position, Image const& source) {
+    return image.copyInto(position, source);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = methods.registerMethod("set", [](Image& image, unsigned x, unsigned y, Color const& color) {
+    return image.set(x, y, color.toRgba());
+  }); !result)
+    return std::unexpected(std::move(result.error()));
 
-  methods.registerMethod("get", [](Image& image, unsigned x, unsigned y) {
-    return Color::rgba(image.get(x, y));
-  });
+  if (auto result = methods.registerMethod("get", [](Image& image, unsigned x, unsigned y) -> std::expected<Color, StarException> {
+    auto pixel = image.get(x, y);
+    if (!pixel)
+      return std::unexpected(std::move(pixel.error()));
+    return Color::rgba(*pixel);
+  }); !result)
+    return std::unexpected(std::move(result.error()));
 
-  methods.registerMethod("subImage", [](Image& image, Vec2U const& min, Vec2U const& size) {
+  if (auto result = methods.registerMethod("subImage", [](Image& image, Vec2U const& min, Vec2U const& size) {
     return image.subImage(min, size);
-  });
+  }); !result)
+    return std::unexpected(std::move(result.error()));
 
-  methods.registerMethod("process", [](Image& image, LuaEngine& engine, String const& directives) {
+  if (auto result = methods.registerMethod("process", [](Image& image, LuaEngine& engine, String const& directives) -> std::expected<Image, StarException> {
     List<std::shared_ptr<Image const>> resolvedImages;
-    return processImageOperations(parseImageOperations(directives), image, [&](String const& path) -> Image const* {
+    return processImageOperations(parseImageOperations(directives), image, [&](String const& path) -> std::expected<Image const*, StarException> {
       if (!engine.imageResolver())
         return nullptr;
       auto resolved = engine.imageResolver()(path);
-      auto ptr = resolved.get();
-      resolvedImages.append(std::move(resolved));
+      if (!resolved)
+        return std::unexpected(std::move(resolved.error()));
+      auto ptr = resolved->get();
+      resolvedImages.append(std::move(*resolved));
       return ptr;
     });
-  });
+  }); !result)
+    return std::unexpected(std::move(result.error()));
 
   return methods;
 }

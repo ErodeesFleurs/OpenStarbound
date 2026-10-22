@@ -1,3 +1,4 @@
+import star.net_element;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -134,71 +135,132 @@ ServerClientContext::ServerClientContext(Root& root, ConnectionId clientId, std:
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
     m_playerUuid(playerUuid),
-    m_playerName(playerName),
-    m_account(account),
-    m_shipSpecies(shipSpecies),
+    m_playerName(std::move(playerName)),
+    m_account(std::move(account)),
+    m_shipSpecies(std::move(shipSpecies)),
     m_validShipSpecies(std::move(validShipSpecies)),
     m_canBecomeAdmin(canBecomeAdmin),
     m_shipChunks(std::move(initialShipChunks)),
     m_rpc(root.logger()) {
-  m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
-      RecursiveMutexLocker locker(m_mutex);
-      setShipUpgrades(shipUpgrades().apply(args));
-      return true;
-    });
+}
 
-  m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> Json {
-      RecursiveMutexLocker locker(m_mutex);
-      String newSpecies = species.toString();
-      // The species decides which ship world structure the server builds, and
-      // any client is free to send this rpc, so it cannot be trusted.
-      if (!m_validShipSpecies.contains(newSpecies)) {
-        m_root.logger().warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, newSpecies);
-        return false;
-      }
-      setShipSpecies(std::move(newSpecies));
-      return true;
-    });
+std::expected<std::shared_ptr<ServerClientContext>, StarException> ServerClientContext::create(
+    Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account) {
+  auto context = std::shared_ptr<ServerClientContext>(new ServerClientContext(root, clientId, std::move(remoteAddress), netRules, std::move(playerUuid),
+      std::move(playerName), std::move(shipSpecies), canBecomeAdmin, std::move(initialShipChunks), std::move(validShipSpecies), std::move(account)));
+  auto initialized = context->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return context;
+}
 
-  m_rpc.registerHandler("world.containerPutItems", [this](Json const& args) -> Json {
-      List<ItemDescriptor> overflow = args.getArray("items").transformed(construct<ItemDescriptor>());
-      RecursiveMutexLocker locker(m_mutex);
-      if (m_worldThread) {
-        m_worldThread->executeAction([args, &overflow](WorldServerThread*, WorldServer* server) {
-          EntityId entityId = args.getInt("entityId");
-          Json items = args.get("items");
-          auto itemDatabase = server->root().itemDatabase();
-          if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
-            overflow.clear();
-            for (auto const& itemDescriptor : items.iterateArray()) {
-              if (auto left = containerEntity->addItems(itemDatabase->item(ItemDescriptor(itemDescriptor))).result().value_or(std::shared_ptr<Item>{}))
-                overflow.append(left->descriptor());
-            }
+std::expected<void, StarException> ServerClientContext::initialize() {
+  auto upgradeHandler = m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> std::expected<Json, StarException> {
+    RecursiveMutexLocker locker(m_mutex);
+    auto upgrades = shipUpgrades();
+    auto applied = upgrades.apply(args);
+    if (!applied)
+      return std::unexpected(std::move(applied.error()));
+    setShipUpgrades(std::move(upgrades));
+    return Json(true);
+  });
+  if (!upgradeHandler)
+    return std::unexpected(std::move(upgradeHandler.error()));
+
+  auto speciesHandler = m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> std::expected<Json, StarException> {
+    RecursiveMutexLocker locker(m_mutex);
+    auto newSpecies = species.toString();
+    if (!newSpecies)
+      return std::unexpected(std::move(newSpecies.error()));
+    if (!m_validShipSpecies.contains(*newSpecies)) {
+      auto logged = m_root.logger().warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, *newSpecies);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      return Json(false);
+    }
+    setShipSpecies(std::move(*newSpecies));
+    return Json(true);
+  });
+  if (!speciesHandler)
+    return std::unexpected(std::move(speciesHandler.error()));
+
+  auto containerHandler = m_rpc.registerHandler("world.containerPutItems", [this](Json const& args) -> std::expected<Json, StarException> {
+    auto items = args.getArray("items");
+    if (!items)
+      return std::unexpected(std::move(items.error()));
+    List<ItemDescriptor> overflow;
+    overflow.reserve(items->size());
+    for (auto const& item : *items) {
+      auto descriptor = ItemDescriptor::create(item);
+      if (!descriptor)
+        return std::unexpected(std::move(descriptor.error()));
+      overflow.append(std::move(*descriptor));
+    }
+    RecursiveMutexLocker locker(m_mutex);
+    if (m_worldThread) {
+      auto executed = m_worldThread->executeAction([args, items = std::move(*items), &overflow](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
+        auto entityId = args.getInt("entityId");
+        if (!entityId)
+          return std::unexpected(std::move(entityId.error()));
+        auto itemDatabase = server->root().itemDatabase();
+        if (!itemDatabase)
+          return std::unexpected(std::move(itemDatabase.error()));
+        if (auto containerEntity = as<ContainerEntity>(server->entity(*entityId))) {
+          overflow.clear();
+          for (auto const& itemData : items) {
+            auto descriptor = ItemDescriptor::create(itemData);
+            if (!descriptor)
+              return std::unexpected(std::move(descriptor.error()));
+            auto item = (*itemDatabase)->item(*descriptor);
+            if (!item)
+              return std::unexpected(std::move(item.error()));
+            auto added = containerEntity->addItems(std::move(*item));
+            if (!added)
+              return std::unexpected(std::move(added.error()));
+            auto result = added->result();
+            if (!result)
+              return std::unexpected(std::move(result.error()));
+            if (*result && **result)
+              overflow.append((**result)->descriptor());
           }
-        });
-      }
-      return overflow.transformed(std::mem_fn(&ItemDescriptor::toJson));
-    });
+        }
+        return {};
+      });
+      if (!executed)
+        return std::unexpected(std::move(executed.error()));
+    }
+    return Json(overflow.transformed(std::mem_fn(&ItemDescriptor::toJson)));
+  });
+  if (!containerHandler)
+    return std::unexpected(std::move(containerHandler.error()));
 
-  m_rpc.registerHandler("universe.setFlag", [this](Json const& args) -> Json {
-      auto flagName = args.toString();
-      RecursiveMutexLocker locker(m_mutex);
-      if (m_worldThread) {
-        m_worldThread->executeAction([flagName](WorldServerThread*, WorldServer* server) {
-          server->universeSettings()->setFlag(flagName);
-        });
-      }
-      return Json();
-    });
+  auto flagHandler = m_rpc.registerHandler("universe.setFlag", [this](Json const& args) -> std::expected<Json, StarException> {
+    auto flagName = args.toString();
+    if (!flagName)
+      return std::unexpected(std::move(flagName.error()));
+    RecursiveMutexLocker locker(m_mutex);
+    if (m_worldThread) {
+      auto executed = m_worldThread->executeAction([flagName = std::move(*flagName)](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
+        return server->universeSettings()->setFlag(flagName);
+      });
+      if (!executed)
+        return std::unexpected(std::move(executed.error()));
+    }
+    return Json();
+  });
+  if (!flagHandler)
+    return std::unexpected(std::move(flagHandler.error()));
 
-  m_netGroup.addNetElement(&m_orbitWarpActionNetState);
-  m_netGroup.addNetElement(&m_playerWorldIdNetState);
-  m_netGroup.addNetElement(&m_isAdminNetState);
-  m_netGroup.addNetElement(&m_teamNetState);
-  m_netGroup.addNetElement(&m_shipUpgrades);
-  m_netGroup.addNetElement(&m_shipCoordinate);
-
+  for (auto* element : std::initializer_list<NetElement*>{
+      &m_orbitWarpActionNetState, &m_playerWorldIdNetState, &m_isAdminNetState,
+      &m_teamNetState, &m_shipUpgrades, &m_shipCoordinate}) {
+    auto added = m_netGroup.addNetElement(element);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+  }
   m_creationTime = Time::monotonicMilliseconds();
+  return {};
 }
 
 ConnectionId ServerClientContext::clientId() const {
@@ -239,8 +301,8 @@ String ServerClientContext::descriptiveName() const {
   return strf("'{}' <{}> ({})", m_playerName, m_clientId, hostName);
 }
 
-void ServerClientContext::registerRpcHandlers(JsonRpcHandlers const& rpcHandlers) {
-  m_rpc.registerHandlers(rpcHandlers);
+std::expected<void, StarException> ServerClientContext::registerRpcHandlers(JsonRpcHandlers const& rpcHandlers) {
+  return m_rpc.registerHandlers(rpcHandlers);
 }
 
 CelestialCoordinate ServerClientContext::shipCoordinate() const {
@@ -328,40 +390,54 @@ void ServerClientContext::updateShipChunks(WorldChunks newShipChunks) {
   m_shipChunks = std::move(newShipChunks);
 }
 
-void ServerClientContext::readUpdate(ByteArray data) {
+std::expected<void, StarException> ServerClientContext::readUpdate(ByteArray data) {
   RecursiveMutexLocker locker(m_mutex);
-  m_rpc.receive(data);
+  return m_rpc.receive(data);
 }
 
-ByteArray ServerClientContext::writeUpdate() {
+std::expected<ByteArray, StarException> ServerClientContext::writeUpdate() {
   RecursiveMutexLocker locker(m_mutex);
-
-  ByteArray rpcUpdate = m_rpc.send();
-
+  auto rpcUpdate = m_rpc.send();
+  if (!rpcUpdate)
+    return std::unexpected(std::move(rpcUpdate.error()));
   ByteArray shipChunksUpdate;
-  if (!m_shipChunksUpdate.empty())
-    shipChunksUpdate = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
-
-  ByteArray netGroupUpdate;
-  std::tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
-  
+  if (!m_shipChunksUpdate.empty()) {
+    auto serialized = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
+    if (!serialized)
+      return std::unexpected(std::move(serialized.error()));
+    shipChunksUpdate = std::move(*serialized);
+  }
+  auto netState = m_netGroup.writeNetState(m_netVersion, m_netRules);
+  if (!netState)
+    return std::unexpected(std::move(netState.error()));
+  auto& [netGroupUpdate, version] = *netState;
+  m_netVersion = version;
   StringMap<ByteArray> customWorldChunksUpdate;
   for (auto& p : m_customWorlds) {
-    if (!p.second.chunksUpdate.empty())
-      customWorldChunksUpdate[p.first] = DataStreamBuffer::serialize(take(p.second.chunksUpdate));
+    if (!p.second.chunksUpdate.empty()) {
+      auto serialized = DataStreamBuffer::serialize(take(p.second.chunksUpdate));
+      if (!serialized)
+        return std::unexpected(std::move(serialized.error()));
+      customWorldChunksUpdate[p.first] = std::move(*serialized);
+    }
   }
-
-  if (rpcUpdate.empty() && shipChunksUpdate.empty() && netGroupUpdate.empty() && (m_netRules.version() < 15 || customWorldChunksUpdate.empty()))
-    return {};
-
+  if (rpcUpdate->empty() && shipChunksUpdate.empty() && netGroupUpdate.empty() && (m_netRules.version() < 15 || customWorldChunksUpdate.empty()))
+    return ByteArray{};
   DataStreamBuffer ds;
-  ds.write(rpcUpdate);
-  ds.write(shipChunksUpdate);
+  auto rpcWritten = ds.write(*rpcUpdate);
+  if (!rpcWritten)
+    return std::unexpected(std::move(rpcWritten.error()));
+  auto shipWritten = ds.write(shipChunksUpdate);
+  if (!shipWritten)
+    return std::unexpected(std::move(shipWritten.error()));
   if (m_netRules.version() >= 15) {
-    ds.write(customWorldChunksUpdate);
+    auto customWritten = ds.write(customWorldChunksUpdate);
+    if (!customWritten)
+      return std::unexpected(std::move(customWritten.error()));
   }
-  ds.write(netGroupUpdate);
-
+  auto stateWritten = ds.write(netGroupUpdate);
+  if (!stateWritten)
+    return std::unexpected(std::move(stateWritten.error()));
   return ds.takeData();
 }
 
@@ -419,11 +495,7 @@ void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, std::shared_p
 
 std::shared_ptr<WorldServerThread> ServerClientContext::subWorld(ClientSubWorldId subWorldId) const {
   RecursiveMutexLocker locker(m_mutex);
-  if (m_subWorldThreads.contains(subWorldId)) {
-    return m_subWorldThreads.get(subWorldId);
-  } else {
-    return {};
-  }
+  return m_subWorldThreads.value(subWorldId);
 }
 
 bool ServerClientContext::hasSubWorld(ClientSubWorldId subWorldId) const {
@@ -461,53 +533,61 @@ void ServerClientContext::setPlayerReviveWarp(WarpToWorld warp) {
 }
 
 ServerClientContext::CustomWorld::CustomWorld() : chunks(WorldChunks()), chunksUpdate(WorldChunks()), active(false) {}
-ServerClientContext::CustomWorld::CustomWorld(WorldChunks initialChunks) : chunks(initialChunks), chunksUpdate(WorldChunks()), active(false) {}
+ServerClientContext::CustomWorld::CustomWorld(WorldChunks initialChunks) : chunks(std::move(initialChunks)), chunksUpdate(WorldChunks()), active(false) {}
 
-void ServerClientContext::customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise) {
+std::expected<void, StarException> ServerClientContext::customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise) {
   RecursiveMutexLocker locker(m_mutex);
-  m_worldRequests.add(name,promise);
+  auto added = m_worldRequests.add(std::move(name), std::move(promise));
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return {};
 }
 
-void ServerClientContext::customWorldReceived(String name, WorldChunks chunks) {
+std::expected<void, StarException> ServerClientContext::customWorldReceived(String name, WorldChunks chunks) {
   RecursiveMutexLocker locker(m_mutex);
   if (auto promise = m_worldRequests.maybeTake(name)) {
-    (*promise).fulfill(chunks);
+    auto fulfilled = promise->fulfill(chunks);
+    if (!fulfilled)
+      return std::unexpected(std::move(fulfilled.error()));
   }
-  m_customWorlds.add(name,CustomWorld(std::move(chunks)));
+  auto added = m_customWorlds.add(std::move(name), CustomWorld(std::move(chunks)));
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return {};
 }
 
-void ServerClientContext::failWorldRequests() {
+std::expected<void, StarException> ServerClientContext::failWorldRequests() {
   RecursiveMutexLocker locker(m_mutex);
+  std::optional<StarException> firstError;
   for (auto& p : m_worldRequests) {
-    p.second.fail("Client disconnected");
+    auto failed = p.second.fail("Client disconnected");
+    if (!failed && !firstError)
+      firstError = std::move(failed.error());
   }
-  m_worldRequests = {};
+  m_worldRequests.clear();
+  if (firstError)
+    return std::unexpected(std::move(*firstError));
+  return {};
 }
 
 std::optional<WorldChunks> ServerClientContext::customWorldChunks(String name) const {
   RecursiveMutexLocker locker(m_mutex);
-  if (m_customWorlds.contains(name)) {
-    return m_customWorlds.get(name).chunks;
-  } else {
-    return {};
-  }
+  if (auto world = m_customWorlds.ptr(name))
+    return world->chunks;
+  return {};
 }
 
 void ServerClientContext::updateCustomWorldChunks(String name, WorldChunks newWorldChunks) {
   RecursiveMutexLocker locker(m_mutex);
-  if (!m_customWorlds.contains(name)) {
-    m_customWorlds.add(name,CustomWorld());
-  }
-  auto &world = m_customWorlds.get(name);
+  auto& world = m_customWorlds[std::move(name)];
   world.chunksUpdate.merge(WorldStorage::getWorldChunksUpdate(world.chunks, newWorldChunks), true);
   world.chunks = std::move(newWorldChunks);
 }
 
 void ServerClientContext::setCustomWorldActive(String name, bool active) {
   RecursiveMutexLocker locker(m_mutex);
-  if (m_customWorlds.contains(name)) {
-    m_customWorlds.get(name).active = active;
-  }
+  if (auto world = m_customWorlds.ptr(name))
+    world->active = active;
 }
 
 List<String> ServerClientContext::customWorlds() const {
@@ -515,40 +595,85 @@ List<String> ServerClientContext::customWorlds() const {
   return m_customWorlds.keys();
 }
 
-void ServerClientContext::cleanInactiveCustomWorlds() {
+std::expected<void, StarException> ServerClientContext::cleanInactiveCustomWorlds() {
   RecursiveMutexLocker locker(m_mutex);
-  for (auto worldName : m_customWorlds.keys()) {
-    if (m_customWorlds.contains(worldName)) {
-      auto &world = m_customWorlds.get(worldName);
-      if (!world.active && world.chunksUpdate.empty()) {
-        m_root.logger().info("Removing inactive custom world '{}' for client '{}'",worldName,m_playerUuid.hex());
+  for (auto const& worldName : m_customWorlds.keys()) {
+    if (auto world = m_customWorlds.ptr(worldName)) {
+      if (!world->active && world->chunksUpdate.empty()) {
+        auto logged = m_root.logger().info("Removing inactive custom world '{}' for client '{}'", worldName, m_playerUuid.hex());
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
         m_customWorlds.remove(worldName);
       }
     }
   }
+  return {};
 }
 
-void ServerClientContext::loadServerData(Json const& store) {
+std::expected<void, StarException> ServerClientContext::loadServerData(Json const& store) {
   RecursiveMutexLocker locker(m_mutex);
-  m_shipCoordinate.set(CelestialCoordinate(store.get("shipCoordinate")));
-  m_shipSystemLocation = jsonToSystemLocation(store.get("systemLocation"));
-  setAdmin(store.getBool("isAdmin"));
-  setTeam(EntityDamageTeam(store.get("team")));
-  m_reviveWarp = WarpToWorld(store.get("reviveWarp"));
-  m_returnWarp = WarpToWorld(store.get("returnWarp"));
+  auto coordinateData = store.get("shipCoordinate");
+  if (!coordinateData)
+    return std::unexpected(std::move(coordinateData.error()));
+  auto coordinate = CelestialCoordinate::create(*coordinateData);
+  if (!coordinate)
+    return std::unexpected(std::move(coordinate.error()));
+  m_shipCoordinate.set(std::move(*coordinate));
+  auto locationData = store.get("systemLocation");
+  if (!locationData)
+    return std::unexpected(std::move(locationData.error()));
+  auto location = jsonToSystemLocation(*locationData);
+  if (!location)
+    return std::unexpected(std::move(location.error()));
+  m_shipSystemLocation = std::move(*location);
+  auto admin = store.getBool("isAdmin");
+  if (!admin)
+    return std::unexpected(std::move(admin.error()));
+  setAdmin(*admin);
+  auto teamData = store.get("team");
+  if (!teamData)
+    return std::unexpected(std::move(teamData.error()));
+  auto team = EntityDamageTeam::create(*teamData);
+  if (!team)
+    return std::unexpected(std::move(team.error()));
+  setTeam(std::move(*team));
+  auto reviveData = store.get("reviveWarp");
+  if (!reviveData)
+    return std::unexpected(std::move(reviveData.error()));
+  auto revive = WarpToWorld::create(*reviveData);
+  if (!revive)
+    return std::unexpected(std::move(revive.error()));
+  m_reviveWarp = std::move(*revive);
+  auto returnData = store.get("returnWarp");
+  if (!returnData)
+    return std::unexpected(std::move(returnData.error()));
+  auto returnWarp = WarpToWorld::create(*returnData);
+  if (!returnWarp)
+    return std::unexpected(std::move(returnWarp.error()));
+  m_returnWarp = std::move(*returnWarp);
+  return {};
 }
 
-Json ServerClientContext::storeServerData() {
+std::expected<Json, StarException> ServerClientContext::storeServerData() {
   RecursiveMutexLocker locker(m_mutex);
-  auto store = JsonObject{
+  auto location = jsonFromSystemLocation(m_shipSystemLocation);
+  auto teamData = team().toJson();
+  if (!teamData)
+    return std::unexpected(std::move(teamData.error()));
+  auto revive = m_reviveWarp.toJson();
+  if (!revive)
+    return std::unexpected(std::move(revive.error()));
+  auto returnWarp = m_returnWarp.toJson();
+  if (!returnWarp)
+    return std::unexpected(std::move(returnWarp.error()));
+  return JsonObject{
     {"shipCoordinate", m_shipCoordinate.get().toJson()},
-    {"systemLocation", jsonFromSystemLocation(m_shipSystemLocation)},
+    {"systemLocation", std::move(location)},
     {"isAdmin", m_isAdminNetState.get()},
-    {"team", team().toJson()},
-    {"reviveWarp", m_reviveWarp.toJson()},
-    {"returnWarp", m_returnWarp.toJson()}
+    {"team", std::move(*teamData)},
+    {"reviveWarp", std::move(*revive)},
+    {"returnWarp", std::move(*returnWarp)}
   };
-  return store;
 }
 
 std::int64_t ServerClientContext::creationTime() const {

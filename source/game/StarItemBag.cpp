@@ -47,52 +47,81 @@ ItemBag::ItemBag(Root& root, std::size_t size) : m_root(&root) {
   m_items.resize(size);
 }
 
-ItemBag ItemBag::fromJson(Root& root, Json const& store) {
+std::expected<ItemBag, StarException> ItemBag::fromJson(Root& root, Json const& store) {
   auto itemDatabase = root.itemDatabase();
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  auto entries = store.iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
   ItemBag res(root, 0);
-  auto entries = store.arrayPtr();
-  res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
-
+  for (auto const& entry : *entries) {
+    auto item = (*itemDatabase)->fromJson(entry);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    res.m_items.append(std::move(*item));
+  }
   return res;
 }
 
-ItemBag ItemBag::loadStore(Root& root, Json const& store) {
+std::expected<ItemBag, StarException> ItemBag::loadStore(Root& root, Json const& store) {
   auto itemDatabase = root.itemDatabase();
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  auto entries = store.iterateArray();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
   ItemBag res(root, 0);
-  auto entries = store.arrayPtr();
-  res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
-
+  for (auto const& entry : *entries) {
+    auto item = (*itemDatabase)->diskLoad(entry);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    res.m_items.append(std::move(*item));
+  }
   return res;
 }
 
-Json ItemBag::toJson() const {
-  return m_items.transformed([](std::shared_ptr<Item const> const& item) {
-    return item ? item->descriptor().toJson() : Json();
-  });
+std::expected<Json, StarException> ItemBag::toJson() const {
+  JsonArray entries;
+  for (auto const& item : m_items)
+    entries.append(item ? item->descriptor().toJson() : Json());
+  return Json(std::move(entries));
 }
 
-Json ItemBag::diskStore() const {
+std::expected<Json, StarException> ItemBag::diskStore() const {
   auto versioningDatabase = m_root->versioningDatabase();
-  return m_items.transformed([&versioningDatabase](std::shared_ptr<Item const> const& item) {
-    return item ? item->descriptor().diskStore(*versioningDatabase) : Json();
-  });
+  if (!versioningDatabase)
+    return std::unexpected(std::move(versioningDatabase.error()));
+  JsonArray entries;
+  for (auto const& item : m_items) {
+    if (!item) {
+      entries.append(Json());
+      continue;
+    }
+    auto stored = item->descriptor().diskStore(**versioningDatabase);
+    if (!stored)
+      return std::unexpected(std::move(stored.error()));
+    entries.append(std::move(*stored));
+  }
+  return Json(std::move(entries));
 }
 
 std::size_t ItemBag::size() const {
   return m_items.size();
 }
 
-List<std::shared_ptr<Item>> ItemBag::resize(std::size_t size) {
+std::expected<List<std::shared_ptr<Item>>, StarException> ItemBag::resize(std::size_t size) {
   List<std::shared_ptr<Item>> lost;
   while (m_items.size() > size) {
-    auto lastItem = m_items.takeLast();
-    lastItem = addItems(lastItem);
-    if (lastItem && !lastItem->empty())
-      lost.append(lastItem);
+    auto lastItem = std::move(m_items[m_items.size() - 1]);
+    m_items.resize(m_items.size() - 1);
+    auto remaining = addItems(std::move(lastItem));
+    if (!remaining)
+      return std::unexpected(std::move(remaining.error()));
+    if (*remaining && !(*remaining)->empty())
+      lost.append(std::move(*remaining));
   }
-
   m_items.resize(size);
-
   return lost;
 }
 
@@ -127,68 +156,77 @@ List<std::shared_ptr<Item>> const& ItemBag::items() const {
   return m_items;
 }
 
-std::shared_ptr<Item> ItemBag::at(std::size_t i) const {
-  auto const& item = m_items.at(i);
-  return item && !item->empty() ? item : std::shared_ptr<Item>();
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::at(std::size_t i) const {
+  auto item = m_items.at(i);
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  return **item && !(**item)->empty() ? **item : std::shared_ptr<Item>();
 }
 
-std::shared_ptr<Item>& ItemBag::at(std::size_t i) {
-  auto& item = m_items.at(i);
-  if (item && item->empty())
-    item = {};
-  return item;
+std::expected<std::shared_ptr<Item>*, StarException> ItemBag::at(std::size_t i) {
+  auto item = m_items.at(i);
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  if (**item && (**item)->empty())
+    **item = {};
+  return *item;
 }
 
 List<std::shared_ptr<Item>> ItemBag::takeAll() {
+  cleanup();
   List<std::shared_ptr<Item>> taken;
-  for (std::size_t i = 0; i < size(); ++i) {
-    if (auto& item = at(i))
+  for (auto& item : m_items) {
+    if (item)
       taken.append(std::move(item));
   }
   return taken;
 }
 
-void ItemBag::setItem(std::size_t pos, std::shared_ptr<Item> item) {
-  auto& storedItem = at(pos);
-
-  storedItem = item;
+std::expected<void, StarException> ItemBag::setItem(std::size_t pos, std::shared_ptr<Item> item) {
+  auto storedItem = at(pos);
+  if (!storedItem)
+    return std::unexpected(std::move(storedItem.error()));
+  **storedItem = std::move(item);
+  return {};
 }
 
-std::shared_ptr<Item> ItemBag::putItems(std::size_t pos, std::shared_ptr<Item> items) {
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::putItems(std::size_t pos, std::shared_ptr<Item> items) {
   if (!items || items->empty())
-    return {};
-
-  auto& storedItem = at(pos);
-
+    return std::shared_ptr<Item>();
+  auto slot = at(pos);
+  if (!slot)
+    return std::unexpected(std::move(slot.error()));
+  auto& storedItem = **slot;
   if (storedItem) {
-    // Try to stack with an item that is already there
     storedItem->stackWith(items);
     if (!items->empty())
       return items;
-    else
-      return {};
   } else {
-    // Otherwise just put the items there and return nothing.
-    storedItem = items;
-
-    return {};
+    storedItem = std::move(items);
   }
+  return std::shared_ptr<Item>();
 }
 
-std::shared_ptr<Item> ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
-  if (auto& storedItem = at(pos)) {
-    auto taken = storedItem->take(count);
-    if (storedItem->empty())
-      storedItem = {};
-
-    return taken;
-  } else {
-    return {};
-  }
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
+  auto slot = at(pos);
+  if (!slot)
+    return std::unexpected(std::move(slot.error()));
+  auto& storedItem = **slot;
+  if (!storedItem)
+    return std::shared_ptr<Item>();
+  auto taken = storedItem->take(count);
+  if (!taken)
+    return std::unexpected(std::move(taken.error()));
+  if (storedItem->empty())
+    storedItem.reset();
+  return taken;
 }
 
-std::shared_ptr<Item> ItemBag::swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine) {
-  auto& storedItem = at(pos);
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine) {
+  auto slot = at(pos);
+  if (!slot)
+    return std::unexpected(std::move(slot.error()));
+  auto& storedItem = **slot;
 
   auto swapItems = items;
   if (!swapItems || swapItems->empty()) {
@@ -209,14 +247,17 @@ std::shared_ptr<Item> ItemBag::swapItems(std::size_t pos, std::shared_ptr<Item> 
   return swapItems;
 }
 
-bool ItemBag::consumeItems(std::size_t pos, std::uint64_t count) {
+std::expected<bool, StarException> ItemBag::consumeItems(std::size_t pos, std::uint64_t count) {
+  auto slot = at(pos);
+  if (!slot)
+    return std::unexpected(std::move(slot.error()));
+  auto& storedItem = **slot;
   bool consumed = false;
-  if (auto& storedItem = at(pos)) {
+  if (storedItem) {
     consumed = storedItem->consume(count);
     if (storedItem->empty())
-      storedItem = {};
+      storedItem.reset();
   }
-
   return consumed;
 }
 
@@ -224,7 +265,9 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   std::uint64_t countLeft = descriptor.count();
   List<std::pair<std::size_t, std::uint64_t>> consumeLocations;
   for (std::size_t i = 0; i < m_items.size(); ++i) {
-    auto& storedItem = at(i);
+    auto& storedItem = m_items[i];
+    if (storedItem && storedItem->empty())
+      storedItem.reset();
     if (storedItem && storedItem->matches(descriptor, exactMatch)) {
       std::uint64_t count = storedItem->count();
       std::uint64_t take = std::min(count, countLeft);
@@ -239,12 +282,11 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   if (countLeft > 0)
     return false;
 
-  for (auto loc : consumeLocations) {
-    bool res = consumeItems(loc.first, loc.second);
-    ((void)(res));
-    if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((res));
-    }
+  for (auto const& loc : consumeLocations) {
+    auto& storedItem = m_items[loc.first];
+    storedItem->consume(loc.second);
+    if (storedItem->empty())
+      storedItem.reset();
   }
 
   return true;
@@ -270,7 +312,7 @@ std::uint64_t ItemBag::itemsCanStack(std::shared_ptr<Item const> const& items) c
   std::uint64_t stackable = 0;
   for (auto slot : itemsFit.slots)
     if (m_items[slot])
-      stackable += stackTransfer(at(slot), items);
+      stackable += stackTransfer(m_items[slot] && !m_items[slot]->empty() ? m_items[slot] : std::shared_ptr<Item>(), items);
   return stackable;
 }
 
@@ -296,7 +338,7 @@ auto ItemBag::itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint6
       taken.insert(slot);
     }
 
-    std::uint64_t available = stackTransfer(at(slot), items);
+    std::uint64_t available = stackTransfer(m_items[slot] && !m_items[slot]->empty() ? m_items[slot] : std::shared_ptr<Item>(), items);
     if (available != 0)
       count -= std::min(available, count);
     else
@@ -306,87 +348,113 @@ auto ItemBag::itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint6
   return ItemsFitWhereResult{count, slots};
 }
 
-std::shared_ptr<Item> ItemBag::addItems(std::shared_ptr<Item> items) {
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::addItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
-    return {};
+    return std::shared_ptr<Item>();
 
   while (true) {
     std::size_t slot = bestSlotAvailable(items, false);
     if (slot == NPos)
       return items;
 
-    auto& storedItem = at(slot);
+    auto& storedItem = m_items[slot];
+    if (storedItem && storedItem->empty())
+      storedItem.reset();
     if (storedItem) {
       storedItem->stackWith(items);
       if (items->empty())
-        return {};
+        return std::shared_ptr<Item>();
     } else {
       storedItem = std::move(items);
-      return {};
+      return std::shared_ptr<Item>();
     }
   }
 }
 
-std::shared_ptr<Item> ItemBag::stackItems(std::shared_ptr<Item> items) {
+std::expected<std::shared_ptr<Item>, StarException> ItemBag::stackItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
-    return {};
+    return std::shared_ptr<Item>();
 
   while (true) {
     std::size_t slot = bestSlotAvailable(items, true);
     if (slot == NPos)
       return items;
 
-    auto& storedItem = at(slot);
+    auto& storedItem = m_items[slot];
+    if (storedItem && storedItem->empty())
+      storedItem.reset();
     if (storedItem) {
       storedItem->stackWith(items);
       if (items->empty())
-        return {};
+        return std::shared_ptr<Item>();
     } else {
       storedItem = std::move(items);
-      return {};
+      return std::shared_ptr<Item>();
     }
   }
 }
 
-void ItemBag::condenseStacks() {
-  for (std::size_t i = size() - 1; i > 0; --i) {
-    if (auto& item = at(i)) {
-      for (std::size_t j = 0; j < i; j++) {
-        if (auto& stackWithItem = at(j))
+std::expected<void, StarException> ItemBag::condenseStacks() {
+  cleanup();
+  for (std::size_t i = size(); i > 1;) {
+    --i;
+    if (auto& item = m_items[i]) {
+      for (std::size_t j = 0; j < i; ++j) {
+        if (auto& stackWithItem = m_items[j])
           item->stackWith(stackWithItem);
         if (item->empty())
           break;
       }
     }
   }
+  return {};
 }
 
-void ItemBag::read(DataStream& ds) {
+std::expected<void, StarException> ItemBag::read(DataStream& ds) {
   auto itemDatabase = m_root->itemDatabase();
-
+  if (!itemDatabase)
+    return std::unexpected(std::move(itemDatabase.error()));
+  auto size = ds.readVlqU();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
   m_items.clear();
-  m_items.resize(ds.readVlqU());
-
-  std::size_t setItemsSize = ds.readVlqU();
-  for (std::size_t i = 0; i < setItemsSize; ++i)
-    itemDatabase->loadItem(ds.read<ItemDescriptor>(), at(i));
+  m_items.resize(*size);
+  auto setItemsSize = ds.readVlqU();
+  if (!setItemsSize)
+    return std::unexpected(std::move(setItemsSize.error()));
+  for (std::size_t i = 0; i < *setItemsSize; ++i) {
+    auto descriptor = ds.read<ItemDescriptor>();
+    if (!descriptor)
+      return std::unexpected(std::move(descriptor.error()));
+    auto slot = at(i);
+    if (!slot)
+      return std::unexpected(std::move(slot.error()));
+    auto loaded = (*itemDatabase)->loadItem(*descriptor, **slot);
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
+  }
+  return {};
 }
 
-void ItemBag::write(DataStream& ds) const {
-  // Try not to write the whole bag if a large part of the end of the bag is
-  // empty.
-
-  ds.writeVlqU(m_items.size());
-
+std::expected<void, StarException> ItemBag::write(DataStream& ds) const {
+  auto size = ds.writeVlqU(m_items.size());
+  if (!size)
+    return std::unexpected(std::move(size.error()));
   std::size_t setItemsSize = 0;
   for (std::size_t i = 0; i < m_items.size(); ++i) {
-    if (at(i))
+    if (m_items[i] && !m_items[i]->empty())
       setItemsSize = i + 1;
   }
-
-  ds.writeVlqU(setItemsSize);
-  for (std::size_t i = 0; i < setItemsSize; ++i)
-    ds.write(itemSafeDescriptor(at(i)));
+  auto writtenSize = ds.writeVlqU(setItemsSize);
+  if (!writtenSize)
+    return std::unexpected(std::move(writtenSize.error()));
+  for (std::size_t i = 0; i < setItemsSize; ++i) {
+    auto const& item = m_items[i];
+    auto written = ds.write(itemSafeDescriptor(item && !item->empty() ? item : std::shared_ptr<Item>()));
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+  }
+  return {};
 }
 
 std::uint64_t ItemBag::stackTransfer(std::shared_ptr<Item const> const& to, std::shared_ptr<Item const> const& from) {
@@ -405,15 +473,15 @@ std::size_t ItemBag::bestSlotAvailable(std::shared_ptr<Item const> const& item, 
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     if (!test(i))
       continue;
-    auto const& storedItem = at(i);
-    if (storedItem && stackTransfer(storedItem, item) != 0)
+    auto const& storedItem = m_items[i];
+    if (storedItem && !storedItem->empty() && stackTransfer(storedItem, item) != 0)
       return i;
   }
 
   if (!stacksOnly) {
     // Then, look for any empty slots.
     for (std::size_t i = 0; i < m_items.size(); ++i) {
-      if (!at(i))
+      if (!m_items[i] || m_items[i]->empty())
         return i;
     }
   }

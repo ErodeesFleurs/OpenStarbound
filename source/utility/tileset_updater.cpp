@@ -22,7 +22,15 @@ String const TileImagesDirectory = "../../../../tiled";
 int const Indentation = 2;
 
 String unixFileJoin(String const& dirname, String const& filename) {
-  return (dirname.trimEnd("\\/") + '/' + filename.trimBeg("\\/")).replace("\\", "/");
+  std::string dir = dirname.utf8(), file = filename.utf8();
+  while (!dir.empty() && (dir.back() == '\\' || dir.back() == '/'))
+    dir.pop_back();
+  auto start = file.find_first_not_of("\\/");
+  file = start == std::string::npos ? std::string{} : file.substr(start);
+  dir += '/';
+  dir += file;
+  std::replace(dir.begin(), dir.end(), '\\', '/');
+  return String(std::move(dir));
 }
 
 TileDatabase::TileDatabase(String const& name) : m_name(name) {}
@@ -64,55 +72,62 @@ void Tileset::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   m_tiles.append(tile);
 }
 
-std::optional<std::pair<String, String>> parseAssetSource(String const& source) {
-  if (!File::isDirectory(source))
-    return {};
+[[nodiscard]]
+std::expected<std::optional<std::pair<String, String>>, StarException> parseAssetSource(String const& source) {
+  auto directory = File::isDirectory(source);
+  if (!directory)
+    return std::unexpected(std::move(directory.error()));
+  if (!*directory)
+    return std::optional<std::pair<String, String>>{};
 
-  String sourcePath = source.trimEnd("/\\");
-  String sourceName = sourcePath.splitAny("/\\").last();
+  std::string path = source.utf8();
+  while (!path.empty() && (path.back() == '/' || path.back() == '\\'))
+    path.pop_back();
+  String sourcePath(path);
+  auto separator = path.find_last_of("/\\");
+  String sourceName(separator == std::string::npos ? path : path.substr(separator + 1));
 
-  return std::make_pair(sourceName, sourcePath);
+  return std::make_optional(std::make_pair(sourceName, sourcePath));
 }
 
 String tilesetExportDir(String const& sourcePath, String const& sourceName) {
   return StringList{sourcePath, AssetsTilesetDirectory, sourceName}.join("/");
 }
 
-void Tileset::exportTileset() const {
+std::expected<void, StarException> Tileset::exportTileset() const {
   auto parsedSource = parseAssetSource(m_source);
   if (!parsedSource)
-    // Don't export tilesets into packed assets
-    return;
-
-  String sourceName, sourcePath;
-  std::tie(sourceName, sourcePath) = *parsedSource;
+    return std::unexpected(std::move(parsedSource.error()));
+  if (!*parsedSource)
+    return {};
+  auto const& [sourceName, sourcePath] = **parsedSource;
   String exportDir = tilesetExportDir(sourcePath, sourceName);
   String tilesetPath = unixFileJoin(exportDir, m_name + ".json");
-  File::makeDirectoryRecursive(File::dirName(tilesetPath));
-  m_logger.info("Updating tileset at {}", tilesetPath);
-
-  exportTilesetImages(exportDir);
-
-  Json root = getTilesetJson(tilesetPath);
-  JsonObject tileImages = JsonObject{};
-  JsonObject tileProperties = root.getObject("tileproperties", JsonObject{});
-
-  // Scan the tiles already in the tileset
-  StringMap<std::size_t> existingTiles;
-  std::size_t nextId = 0;
-  std::tie(existingTiles, nextId) = indexExistingTiles(root);
-
-  // Add new tiles and update existing ones
-  StringSet updatedTiles = updateTiles(tileProperties, tileImages, existingTiles, nextId, tilesetPath);
-
-  // Mark all tiles that (a) already existed and (b) were not updated as invalid
-  // as they are no longer in the assets database.
-  StringSet invalidTiles = StringSet::from(existingTiles.keys()).difference(updatedTiles);
-  invalidateTiles(invalidTiles, existingTiles, tileProperties, tileImages, tilesetPath);
-
-  // We have some broken tile indices because of something strange happening
-  // in the old .tsx files (manual editing? faulty merges?).
-  // Cover up the holes so that Tiled doesn't barf on them.
+  auto directory = File::makeDirectoryRecursive(File::dirName(tilesetPath));
+  if (!directory)
+    return std::unexpected(std::move(directory.error()));
+  auto logged = m_logger.info("Updating tileset at {}", tilesetPath);
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  auto loaded = getTilesetJson(tilesetPath);
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  Json root = std::move(*loaded);
+  auto properties = root.getObject("tileproperties", JsonObject{});
+  if (!properties)
+    return std::unexpected(std::move(properties.error()));
+  JsonObject tileProperties = std::move(*properties), tileImages;
+  auto indexed = indexExistingTiles(root);
+  if (!indexed)
+    return std::unexpected(std::move(indexed.error()));
+  auto& [existingTiles, nextId] = *indexed;
+  auto updated = updateTiles(tileProperties, tileImages, existingTiles, nextId, tilesetPath);
+  if (!updated)
+    return std::unexpected(std::move(updated.error()));
+  auto invalidTiles = StringSet::from(existingTiles.keys()).difference(*updated);
+  auto invalidated = invalidateTiles(invalidTiles, existingTiles, tileProperties, tileImages, tilesetPath);
+  if (!invalidated)
+    return std::unexpected(std::move(invalidated.error()));
   for (std::size_t id = 0; id < nextId; ++id) {
     String idKey = toString(id);
     if (!tileProperties.contains(idKey))
@@ -120,10 +135,22 @@ void Tileset::exportTileset() const {
     if (!tileImages.contains(idKey))
       tileImages[idKey] = imageFileReference(InvalidTileImage);
   }
-
-  root = root.set("tiles", tileImages).set("tileproperties", tileProperties);
-  root = root.set("tilecount", nextId);
-  File::writeFile(root.printJson(Indentation, true), tilesetPath);
+  auto withImages = root.set("tiles", tileImages);
+  if (!withImages)
+    return std::unexpected(std::move(withImages.error()));
+  auto withProperties = withImages->set("tileproperties", tileProperties);
+  if (!withProperties)
+    return std::unexpected(std::move(withProperties.error()));
+  auto complete = withProperties->set("tilecount", nextId);
+  if (!complete)
+    return std::unexpected(std::move(complete.error()));
+  auto text = complete->printJson(Indentation, true);
+  if (!text)
+    return std::unexpected(std::move(text.error()));
+  auto images = exportTilesetImages(exportDir);
+  if (!images)
+    return std::unexpected(std::move(images.error()));
+  return File::overwriteFileWithRename(*text, tilesetPath);
 }
 
 String Tileset::name() const {
@@ -140,12 +167,25 @@ String imageExportDirName(String const& baseExportDir, String const& assetSource
 }
 
 String Tileset::imageDirName(String const& baseExportDir) const {
-  String sourceName = parseAssetSource(m_source)->first;
+  std::string path = m_source.utf8();
+  while (!path.empty() && (path.back() == '/' || path.back() == '\\'))
+    path.pop_back();
+  auto separator = path.find_last_of("/\\");
+  String sourceName(separator == std::string::npos ? path : path.substr(separator + 1));
   return imageExportDirName(baseExportDir, sourceName);
 }
 
 String Tileset::relativePathBase() const {
-  int subdirs = m_name.splitAny("\\/").size() - 1;
+  int subdirs = -1;
+  bool inComponent = false;
+  for (char c : m_name.utf8()) {
+    if (c == '/' || c == '\\') {
+      inComponent = false;
+    } else if (!inComponent) {
+      ++subdirs;
+      inComponent = true;
+    }
+  }
   String relativePathBase;
   if (subdirs == 0) {
     relativePathBase = ".";
@@ -168,26 +208,45 @@ Json Tileset::tileImageReference(String const& tileName, String const& database)
   return imageFileReference(tileImageName);
 }
 
-void Tileset::exportTilesetImages(String const& exportDir) const {
+std::expected<void, StarException> Tileset::exportTilesetImages(String const& exportDir) const {
   for (auto const& tile : m_tiles) {
     String imageDir = unixFileJoin(imageDirName(exportDir), tile->database);
-    File::makeDirectoryRecursive(imageDir);
+    auto directory = File::makeDirectoryRecursive(imageDir);
+    if (!directory)
+      return std::unexpected(std::move(directory.error()));
     String imageName = unixFileJoin(imageDir, tile->name + ".png");
-    m_logger.info("Updating image {}", imageName);
+    auto logged = m_logger.info("Updating image {}", imageName);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
     auto outputFile = File::open(imageName, IOMode::Write);
-    tile->image->writePng(m_logger, outputFile);
-    outputFile->close();
+    if (!outputFile)
+      return std::unexpected(std::move(outputFile.error()));
+    auto written = tile->image->writePng(m_logger, *outputFile);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+    auto closed = (*outputFile)->close();
+    if (!closed)
+      return std::unexpected(std::move(closed.error()));
   }
+  return {};
 }
 
-Json Tileset::getTilesetJson(String const& tilesetPath) const {
-  if (File::exists(tilesetPath)) {
-    return Json::parseJson(File::readFileString(tilesetPath));
+std::expected<Json, StarException> Tileset::getTilesetJson(String const& tilesetPath) const {
+  auto exists = File::exists(tilesetPath);
+  if (!exists)
+    return std::unexpected(std::move(exists.error()));
+  if (*exists) {
+    auto text = File::readFileString(tilesetPath);
+    if (!text)
+      return std::unexpected(std::move(text.error()));
+    return Json::parseJson(*text);
   } else {
-    m_logger.warn(
+    auto logged = m_logger.warn(
         "Tileset {} wasn't already present. Creating it from scratch. Any maps already using this tileset may be "
         "broken.",
         tilesetPath);
+    if (!logged)
+      return std::unexpected(std::move(logged.error()));
     return JsonObject{{"margin", 0},
         {"name", m_name},
         {"properties", JsonObject{}},
@@ -200,38 +259,48 @@ Json Tileset::getTilesetJson(String const& tilesetPath) const {
   }
 }
 
-std::pair<StringMap<std::size_t>, std::size_t> Tileset::indexExistingTiles(Json tileset) const {
+std::expected<std::pair<StringMap<std::size_t>, std::size_t>, StarException> Tileset::indexExistingTiles(Json tileset) const {
   StringMap<std::size_t> existingTiles;
   std::size_t nextId = 0;
-  for (auto const& entry : tileset.getObject("tileproperties")) {
-    std::size_t id = lexicalCast<std::size_t>(entry.first);
-    Tiled::Properties properties = entry.second;
-    if (properties.contains("//name")) {
-      existingTiles[properties.get<String>("//name")] = id;
-      nextId = std::max(id + 1, nextId);
+  auto properties = tileset.getObject("tileproperties");
+  if (!properties)
+    return std::unexpected(std::move(properties.error()));
+  for (auto const& entry : *properties) {
+    auto id = lexicalCast<std::size_t>(entry.first);
+    if (!id)
+      return std::unexpected(std::move(id.error()));
+    auto containsName = entry.second.contains("//name");
+    if (!containsName)
+      return std::unexpected(std::move(containsName.error()));
+    if (*containsName) {
+      auto name = entry.second.getString("//name");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      existingTiles[*name] = *id;
+      nextId = std::max(*id + 1, nextId);
     }
   }
   return std::make_pair(existingTiles, nextId);
 }
 
-StringSet Tileset::updateTiles(JsonObject& tileProperties,
+std::expected<StringSet, StarException> Tileset::updateTiles(JsonObject& tileProperties,
     JsonObject& tileImages,
     StringMap<std::size_t> const& existingTiles,
     std::size_t& nextId,
     String const& tilesetPath) const {
   StringSet updatedTiles;
   for (std::shared_ptr<::Star::Tile> const& tile : m_tiles) {
-    Tiled::Properties properties = tile->properties;
+    Json properties = tile->properties;
     std::size_t id = 0;
 
-    if (existingTiles.contains(tile->name)) {
-      id = existingTiles.get(tile->name);
+    if (auto existing = existingTiles.ptr(tile->name)) {
+      id = *existing;
     } else {
       coutf("Adding '{}' to {}\n", tile->name, tilesetPath);
       id = nextId++;
     }
 
-    tileProperties[toString(id)] = properties.toJson();
+    tileProperties[toString(id)] = std::move(properties);
     tileImages[toString(id)] = tileImageReference(tile->name, tile->database);
 
     updatedTiles.add(tile->name);
@@ -239,70 +308,93 @@ StringSet Tileset::updateTiles(JsonObject& tileProperties,
   return updatedTiles;
 }
 
-void Tileset::invalidateTiles(StringSet const& invalidTiles,
+std::expected<void, StarException> Tileset::invalidateTiles(StringSet const& invalidTiles,
     StringMap<std::size_t> const& existingTiles,
     JsonObject& tileProperties,
     JsonObject& tileImages,
     String const& tilesetPath) const {
   for (String tileName : invalidTiles) {
-    std::size_t id = existingTiles.get(tileName);
+    auto indexed = existingTiles.get(tileName);
+    if (!indexed)
+      return std::unexpected(std::move(indexed.error()));
+    std::size_t id = **indexed;
 
     if (std::shared_ptr<::Star::Tile> const& tile = m_database->getTile(tileName)) {
       // Tile has moved category, but we're leaving it in this tileset to avoid
       // breaking existing maps.
-      tileProperties[toString(id)] = tile->properties.toJson();
+      tileProperties[toString(id)] = tile->properties;
       tileImages[toString(id)] = tileImageReference(tile->name, tile->database);
     } else {
-      if (!tileProperties[toString(id)].contains("invalid"))
+      auto invalid = tileProperties[toString(id)].contains("invalid");
+      if (!invalid)
+        return std::unexpected(std::move(invalid.error()));
+      if (!*invalid)
         coutf("Removing '{}' from {}\n", tileName, tilesetPath);
       tileProperties[toString(id)] = JsonObject{{"//name", tileName}, {"invalid", "true"}};
       tileImages[toString(id)] = imageFileReference(InvalidTileImage);
     }
   }
+  return {};
 }
 
 TilesetUpdater::TilesetUpdater(Logger& logger) : m_logger(logger) {}
 
-void TilesetUpdater::defineAssetSource(String const& source) {
+std::expected<void, StarException> TilesetUpdater::defineAssetSource(String const& source) {
   auto parsedSource = parseAssetSource(source);
   if (!parsedSource)
-    // Don't change anything about images in packed assets
-    return;
+    return std::unexpected(std::move(parsedSource.error()));
+  if (!*parsedSource)
+    return {};
 
   String sourceName;
   String sourcePath;
-  std::tie(sourceName, sourcePath) = *parsedSource;
+  std::tie(sourceName, sourcePath) = **parsedSource;
   String tilesetDir = tilesetExportDir(sourcePath, sourceName);
   String imageDir = imageExportDirName(tilesetDir, sourceName);
 
-  m_logger.info("Scanning {} for images...", imageDir);
-  if (!File::isDirectory(imageDir))
-    return;
+  auto logged = m_logger.info("Scanning {} for images...", imageDir);
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
+  auto directory = File::isDirectory(imageDir);
+  if (!directory)
+    return std::unexpected(std::move(directory.error()));
+  if (!*directory)
+    return {};
 
-  for (std::pair<String, bool> entry : File::dirList(imageDir)) {
+  auto entries = File::dirList(imageDir);
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (std::pair<String, bool> entry : *entries) {
     // Never follow a symlinked directory: it can point outside of the asset
     // source, or at one of its own parents.
-    if (File::isSymlink(unixFileJoin(imageDir, entry.first))) {
-      m_logger.warn("TilesetUpdater: Not scanning '{}' because it is a symlink", entry.first);
+    auto symlink = File::isSymlink(unixFileJoin(imageDir, entry.first));
+    if (!symlink)
+      return std::unexpected(std::move(symlink.error()));
+    if (*symlink) {
+      auto warning = m_logger.warn("TilesetUpdater: Not scanning '{}' because it is a symlink", entry.first);
+      if (!warning)
+        return std::unexpected(std::move(warning.error()));
       continue;
     }
 
     if (entry.second) {
       String databaseName = entry.first;
       String databasePath = unixFileJoin(imageDir, databaseName);
-      m_logger.info("Scanning database {}...", databaseName);
-      for (std::pair<String, bool> image : File::dirList(databasePath)) {
-        if constexpr (Star::DebugEnabled) {
-          Star::starAssertFailed((!image.second));
-        }
-        if constexpr (Star::DebugEnabled) {
-          Star::starAssertFailed((image.first.endsWith(".png")));
-        }
-        String tileName = image.first.substr(0, image.first.findLast(".png"));
+      auto loggedDatabase = m_logger.info("Scanning database {}...", databaseName);
+      if (!loggedDatabase)
+        return std::unexpected(std::move(loggedDatabase.error()));
+      auto images = File::dirList(databasePath);
+      if (!images)
+        return std::unexpected(std::move(images.error()));
+      for (std::pair<String, bool> image : *images) {
+        if (image.second || !image.first.utf8().ends_with(".png"))
+          return std::unexpected(StarException::format("Unexpected entry in tile image database: {}", image.first));
+        String tileName(image.first.utf8().substr(0, image.first.utf8().size() - 4));
         m_preexistingImages[sourceName][databaseName].add(tileName);
       }
     }
   }
+  return {};
 }
 
 void TilesetUpdater::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
@@ -310,22 +402,28 @@ void TilesetUpdater::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   getTileset(tile)->defineTile(tile);
 }
 
-void TilesetUpdater::exportTilesets() {
+std::expected<void, StarException> TilesetUpdater::exportTilesets() {
   for (auto const& tilesets : m_tilesets) {
     auto parsedAssetSource = parseAssetSource(tilesets.first);
-    if (!parsedAssetSource) {
-      m_logger.info("Not updating tilesets in {} because it is packed", tilesets.first);
+    if (!parsedAssetSource)
+      return std::unexpected(std::move(parsedAssetSource.error()));
+    if (!*parsedAssetSource) {
+      auto logged = m_logger.info("Not updating tilesets in {} because it is packed", tilesets.first);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
       continue;
     }
     String sourceName;
     String sourcePath;
-    std::tie(sourceName, sourcePath) = *parsedAssetSource;
+    std::tie(sourceName, sourcePath) = **parsedAssetSource;
 
     String tilesetDir = tilesetExportDir(sourcePath, sourceName);
     String imageDir = imageExportDirName(tilesetDir, sourceName);
 
     for (auto const& tileset : tilesets.second.values()) {
-      tileset->exportTileset();
+      auto exported = tileset->exportTileset();
+      if (!exported)
+        return std::unexpected(std::move(exported.error()));
     }
 
     for (auto const& database : m_databases[tilesets.first].values()) {
@@ -333,15 +431,20 @@ void TilesetUpdater::exportTilesets() {
       StringSet unusedImages = m_preexistingImages[sourceName][database->name()].difference(database->tileNames());
       for (String tileName : unusedImages) {
         String tileImagePath = unixFileJoin(databaseImagePath, tileName + ".png");
-        if constexpr (Star::DebugEnabled) {
-          Star::starAssertFailed((File::isFile(tileImagePath)));
-        }
+        auto file = File::isFile(tileImagePath);
+        if (!file)
+          return std::unexpected(std::move(file.error()));
+        if (!*file)
+          return std::unexpected(StarException::format("Expected unused tile image file: {}", tileImagePath));
         coutf("Removing unused tile image tiled/{}/{}/{}.png\n", sourceName, database->name(), tileName);
-        File::remove(tileImagePath);
+        auto removed = File::remove(tileImagePath);
+        if (!removed)
+          return std::unexpected(std::move(removed.error()));
       }
       m_preexistingImages[sourceName][database->name()] = database->tileNames();
     }
   }
+  return {};
 }
 
 std::shared_ptr<::Star::TileDatabase> const& TilesetUpdater::getDatabase(std::shared_ptr<::Star::Tile> const& tile) {

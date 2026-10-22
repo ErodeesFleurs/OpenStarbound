@@ -204,11 +204,13 @@ void MainMixer::setWorldPainter(std::shared_ptr<WorldPainter> worldPainter) {
 void MainMixer::setVoice(Voice* voice) {
   m_voice = voice;
 }
-
-void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
+std::expected<void, StarException> MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
   auto assets = m_root->assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto configuration = m_root->configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
 
-  auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) {
+  auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) -> std::expected<void, StarException> {
       if (m_mutedGroups.contains(group) != muted) {
         if (muted) {
           m_mutedGroups.add(group);
@@ -218,19 +220,24 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
           m_mixer->setGroupVolume(group, m_groupVolumes[group], 1.0f);
         }
       } else if (!m_mutedGroups.contains(group)) {
-        float volumeSetting = m_root->configuration()->get(settingName).toFloat() / 100.0f;
+        auto setting = (*configuration)->get(settingName);
+        if (!setting) return std::unexpected(std::move(setting.error()));
+        auto volume = setting->toFloat();
+        if (!volume) return std::unexpected(std::move(volume.error()));
+        float volumeSetting = *volume / 100.0f;
         volumeSetting = perceptualToAmplitude(volumeSetting);
         if (!m_groupVolumes.contains(group) || volumeSetting != m_groupVolumes[group]) {
           m_mixer->setGroupVolume(group, volumeSetting);
           m_groupVolumes[group] = volumeSetting;
         }
       }
+      return {};
     };
 
-  updateGroupVolume(MixerGroup::Effects, muteSfx, "sfxVol");
-  updateGroupVolume(MixerGroup::Music, muteMusic, "musicVol");
-  updateGroupVolume(MixerGroup::Cinematic, false, "sfxVol");
-  updateGroupVolume(MixerGroup::Instruments, muteSfx, "instrumentVol");
+  { auto updated = updateGroupVolume(MixerGroup::Effects, muteSfx, "sfxVol"); if (!updated) return std::unexpected(std::move(updated.error())); }
+  { auto updated = updateGroupVolume(MixerGroup::Music, muteMusic, "musicVol"); if (!updated) return std::unexpected(std::move(updated.error())); }
+  { auto updated = updateGroupVolume(MixerGroup::Cinematic, false, "sfxVol"); if (!updated) return std::unexpected(std::move(updated.error())); }
+  { auto updated = updateGroupVolume(MixerGroup::Instruments, muteSfx, "instrumentVol"); if (!updated) return std::unexpected(std::move(updated.error())); }
 
   std::shared_ptr<WorldClient> currentWorld;
   if (m_universeClient)
@@ -238,18 +245,18 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
 
   if (currentWorld) {
     for (auto audioInstance : currentWorld->pullPendingAudio())
-      m_mixer->play(audioInstance);
+      { auto played = m_mixer->play(audioInstance); if (!played) return std::unexpected(std::move(played.error())); }
 
     for (auto audioInstance : currentWorld->pullPendingMusic()) {
       audioInstance->setMixerGroup(MixerGroup::Music);
-      m_mixer->play(audioInstance);
+      { auto played = m_mixer->play(audioInstance); if (!played) return std::unexpected(std::move(played.error())); }
     }
 
     if (m_universeClient && m_universeClient->mainPlayer()->underwater()) {
       if (!m_mixer->hasEffect("lowpass"))
-        m_mixer->addEffect("lowpass", m_mixer->lowpass(32), 0.50f);
+        { auto effect = m_mixer->addEffect("lowpass", m_mixer->lowpass(32), 0.50f); if (!effect) return std::unexpected(std::move(effect.error())); }
       if (!m_mixer->hasEffect("echo"))
-        m_mixer->addEffect("echo", m_mixer->echo(0.2f, 0.6f, 0.4f), 0.50f);
+        { auto effect = m_mixer->addEffect("echo", m_mixer->echo(0.2f, 0.6f, 0.4f), 0.50f); if (!effect) return std::unexpected(std::move(effect.error())); }
     } else {
       if (m_mixer->hasEffect("lowpass"))
         m_mixer->removeEffect("lowpass", 0.5f);
@@ -257,14 +264,26 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
         m_mixer->removeEffect("echo", 0.5f);
     }
 
-    float baseMaxDistance = assets->json("/sfx.config:baseMaxDistance").toFloat();
-    Vec2F stereoAdjustmentRange = jsonToVec2F(assets->json("/sfx.config:stereoAdjustmentRange"));
-    float attenuationGamma = assets->json("/sfx.config:attenuationGamma").toFloat();
+    auto distanceJson = (*assets)->json("/sfx.config:baseMaxDistance");
+    if (!distanceJson) return std::unexpected(std::move(distanceJson.error()));
+    auto distance = distanceJson->toFloat();
+    if (!distance) return std::unexpected(std::move(distance.error()));
+    float baseMaxDistance = *distance;
+    auto stereoJson = (*assets)->json("/sfx.config:stereoAdjustmentRange");
+    if (!stereoJson) return std::unexpected(std::move(stereoJson.error()));
+    auto stereo = jsonToVec2F(*stereoJson);
+    if (!stereo) return std::unexpected(std::move(stereo.error()));
+    Vec2F stereoAdjustmentRange = *stereo;
+    auto gammaJson = (*assets)->json("/sfx.config:attenuationGamma");
+    if (!gammaJson) return std::unexpected(std::move(gammaJson.error()));
+    auto gamma = gammaJson->toFloat();
+    if (!gamma) return std::unexpected(std::move(gamma.error()));
+    float attenuationGamma = *gamma;
     auto playerPos = m_universeClient->mainPlayer()->position();
     auto cameraPos = m_worldPainter->camera().centerWorldPosition();
     auto worldGeometry = currentWorld->geometry();
 
-    Mixer::PositionalAttenuationFunction attenuationFunction = [&](unsigned channel, Vec2F pos, float rangeMultiplier) {
+    Mixer::PositionalAttenuationFunction attenuationFunction = [&](unsigned channel, Vec2F pos, float rangeMultiplier) -> std::expected<float, StarException> {
       Vec2F playerDiff = worldGeometry.diff(pos, playerPos);
       Vec2F cameraDiff = worldGeometry.diff(pos, cameraPos);
       float playerMagSq = playerDiff.magnitudeSquared();
@@ -294,9 +313,9 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
     };
 
     if (m_voice)
-      m_voice->update(dt, attenuationFunction);
+      { auto voice = m_voice->update(dt, attenuationFunction); if (!voice) return std::unexpected(std::move(voice.error())); }
 
-    m_mixer->update(dt, attenuationFunction);
+    { auto mixer = m_mixer->update(dt, attenuationFunction); if (!mixer) return std::unexpected(std::move(mixer.error())); }
 
   } else {
     if (m_mixer->hasEffect("lowpass"))
@@ -305,10 +324,11 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
       m_mixer->removeEffect("echo", 0);
 
     if (m_voice)
-      m_voice->update(dt);
+      { auto voice = m_voice->update(dt); if (!voice) return std::unexpected(std::move(voice.error())); }
 
-    m_mixer->update(dt);
+    { auto mixer = m_mixer->update(dt); if (!mixer) return std::unexpected(std::move(mixer.error())); }
   }
+  return {};
 }
 
 std::shared_ptr<Mixer> MainMixer::mixer() const {
@@ -323,8 +343,8 @@ void MainMixer::setVolume(float volume, float rampTime) {
   m_mixer->setVolume(volume, rampTime);
 }
 
-void MainMixer::read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
-  m_mixer->read(sampleData, frameCount, extraMixFunction);
+std::expected<void, StarException> MainMixer::read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
+  return m_mixer->read(sampleData, frameCount, std::move(extraMixFunction));
 }
 
 }

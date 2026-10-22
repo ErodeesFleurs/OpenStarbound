@@ -1,3 +1,4 @@
+import star.format;
 import star.json_extra;
 import std;
 import star.string;
@@ -11,24 +12,24 @@ import star.data_stream_extra;
 import star.vector;
 namespace Star {
 
-extern EnumMap<SkyType> const SkyTypeNames{
+extern std::expected<EnumMap<SkyType>, StarException> const SkyTypeNames = EnumMap<SkyType>::create({
     {SkyType::Barren, "barren"},
     {SkyType::Atmospheric, "atmospheric"},
     {SkyType::Atmosphereless, "atmosphereless"},
     {SkyType::Orbital, "orbital"},
     {SkyType::Warp, "warp"},
-    {SkyType::Space, "space"}};
+    {SkyType::Space, "space"}});
 
-extern EnumMap<FlyingType> const FlyingTypeNames{
+extern std::expected<EnumMap<FlyingType>, StarException> const FlyingTypeNames = EnumMap<FlyingType>::create({
     {FlyingType::None, "none"},
     {FlyingType::Disembarking, "disembarking"},
     {FlyingType::Warp, "warp"},
-    {FlyingType::Arriving, "arriving"}};
+    {FlyingType::Arriving, "arriving"}});
 
-extern EnumMap<WarpPhase> const WarpPhaseNames{
+extern std::expected<EnumMap<WarpPhase>, StarException> const WarpPhaseNames = EnumMap<WarpPhase>::create({
     {WarpPhase::SlowingDown, "slowingdown"},
     {WarpPhase::Maintain, "maintain"},
-    {WarpPhase::SpeedingUp, "speedingup"}};
+    {WarpPhase::SpeedingUp, "speedingup"}});
 
 SkyColoring::SkyColoring() {
   mainColor = Color::Clear;
@@ -44,20 +45,54 @@ SkyColoring::SkyColoring() {
   nightLightColor = Color::Clear;
 }
 
-SkyColoring::SkyColoring(Json const& variant) {
-  auto getColorPair = [](Json const& pair) { return std::make_pair(jsonToColor(pair.get(0)), jsonToColor(pair.get(1))); };
-
-  mainColor = jsonToColor(variant.get("mainColor"));
-
-  morningColors = getColorPair(variant.get("morningColors"));
-  dayColors = getColorPair(variant.get("dayColors"));
-  eveningColors = getColorPair(variant.get("eveningColors"));
-  nightColors = getColorPair(variant.get("nightColors"));
-
-  morningLightColor = jsonToColor(variant.get("morningLightColor"));
-  dayLightColor = jsonToColor(variant.get("dayLightColor"));
-  eveningLightColor = jsonToColor(variant.get("eveningLightColor"));
-  nightLightColor = jsonToColor(variant.get("nightLightColor"));
+std::expected<SkyColoring, StarException> SkyColoring::create(Json const& variant) {
+  SkyColoring coloring;
+  auto getColor = [&](char const* key) -> std::expected<Color, StarException> {
+    auto value = variant.get(key);
+    if (!value) return std::unexpected(std::move(value.error()));
+    return jsonToColor(*value);
+  };
+  auto getColorPair = [&](char const* key) -> std::expected<std::pair<Color, Color>, StarException> {
+    auto pair = variant.get(key);
+    if (!pair) return std::unexpected(std::move(pair.error()));
+    auto first = pair->get(0);
+    if (!first) return std::unexpected(std::move(first.error()));
+    auto second = pair->get(1);
+    if (!second) return std::unexpected(std::move(second.error()));
+    auto firstColor = jsonToColor(*first);
+    if (!firstColor) return std::unexpected(std::move(firstColor.error()));
+    auto secondColor = jsonToColor(*second);
+    if (!secondColor) return std::unexpected(std::move(secondColor.error()));
+    return std::pair{*firstColor, *secondColor};
+  };
+  auto mainColor = getColor("mainColor");
+  if (!mainColor) return std::unexpected(std::move(mainColor.error()));
+  coloring.mainColor = *mainColor;
+  auto morningColors = getColorPair("morningColors");
+  if (!morningColors) return std::unexpected(std::move(morningColors.error()));
+  coloring.morningColors = *morningColors;
+  auto dayColors = getColorPair("dayColors");
+  if (!dayColors) return std::unexpected(std::move(dayColors.error()));
+  coloring.dayColors = *dayColors;
+  auto eveningColors = getColorPair("eveningColors");
+  if (!eveningColors) return std::unexpected(std::move(eveningColors.error()));
+  coloring.eveningColors = *eveningColors;
+  auto nightColors = getColorPair("nightColors");
+  if (!nightColors) return std::unexpected(std::move(nightColors.error()));
+  coloring.nightColors = *nightColors;
+  auto morningLightColor = getColor("morningLightColor");
+  if (!morningLightColor) return std::unexpected(std::move(morningLightColor.error()));
+  coloring.morningLightColor = *morningLightColor;
+  auto dayLightColor = getColor("dayLightColor");
+  if (!dayLightColor) return std::unexpected(std::move(dayLightColor.error()));
+  coloring.dayLightColor = *dayLightColor;
+  auto eveningLightColor = getColor("eveningLightColor");
+  if (!eveningLightColor) return std::unexpected(std::move(eveningLightColor.error()));
+  coloring.eveningLightColor = *eveningLightColor;
+  auto nightLightColor = getColor("nightLightColor");
+  if (!nightLightColor) return std::unexpected(std::move(nightLightColor.error()));
+  coloring.nightLightColor = *nightLightColor;
+  return coloring;
 }
 
 Json SkyColoring::toJson() const {
@@ -76,32 +111,20 @@ Json SkyColoring::toJson() const {
       {"nightLightColor", jsonFromColor(nightLightColor)}};
 }
 
-DataStream& operator>>(DataStream& ds, SkyColoring& skyColoring) {
-  ds.read(skyColoring.mainColor);
-  ds.read(skyColoring.morningColors);
-  ds.read(skyColoring.dayColors);
-  ds.read(skyColoring.eveningColors);
-  ds.read(skyColoring.nightColors);
-  ds.read(skyColoring.morningLightColor);
-  ds.read(skyColoring.dayLightColor);
-  ds.read(skyColoring.eveningLightColor);
-  ds.read(skyColoring.nightLightColor);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyColoring& skyColoring) {
+  SkyColoring value;
+  auto result = ds >> value.mainColor >> value.morningColors >> value.dayColors >> value.eveningColors
+      >> value.nightColors >> value.morningLightColor >> value.dayLightColor >> value.eveningLightColor >> value.nightLightColor;
+  if (!result) return std::unexpected(std::move(result.error()));
+  skyColoring = std::move(value);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring) {
-  ds.write(skyColoring.mainColor);
-  ds.write(skyColoring.morningColors);
-  ds.write(skyColoring.dayColors);
-  ds.write(skyColoring.eveningColors);
-  ds.write(skyColoring.nightColors);
-  ds.write(skyColoring.morningLightColor);
-  ds.write(skyColoring.dayLightColor);
-  ds.write(skyColoring.eveningLightColor);
-  ds.write(skyColoring.nightLightColor);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyColoring const& skyColoring) {
+  auto result = ds << skyColoring.mainColor << skyColoring.morningColors << skyColoring.dayColors << skyColoring.eveningColors
+      << skyColoring.nightColors << skyColoring.morningLightColor << skyColoring.dayLightColor << skyColoring.eveningLightColor << skyColoring.nightLightColor;
+  if (!result) return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
 SkyOrbiter::SkyOrbiter() : type(), scale(), angle() {}

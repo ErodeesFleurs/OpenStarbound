@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -81,49 +82,76 @@ import star.object_database;
 
 namespace Star {
 
-LoungeableObject::LoungeableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
-  m_interactive.set(true);
+LoungeableObject::LoungeableObject(Root& rootContext) : Entity(rootContext), Object(rootContext), m_sitFlipDirection(false), m_sitOrientation{}, m_sitAngle(0), m_flipImages(false) {}
+
+std::expected<std::shared_ptr<LoungeableObject>, StarException> LoungeableObject::create(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) {
+  auto object = std::shared_ptr<LoungeableObject>(new LoungeableObject(rootContext));
+  auto operation1 = object->initialize(std::move(config), parameters);
+  if (!operation1)
+    return std::unexpected(std::move(operation1.error()));
+  object->m_interactive.set(true);
+  return object;
 }
 
-void LoungeableObject::render(RenderCallback* renderCallback) {
-  Object::render(renderCallback);
-
+std::expected<void, StarException> LoungeableObject::render(RenderCallback* renderCallback) {
+  auto operation2 = Object::render(renderCallback);
+  if (!operation2)
+    return std::unexpected(std::move(operation2.error()));
   if (!m_sitCoverImage.empty()) {
-    if (!entitiesLounging().empty()) {
+    auto loungingResult = entitiesLounging();
+    if (!loungingResult)
+      return std::unexpected(std::move(loungingResult.error()));
+    auto lounging = std::move(*loungingResult);
+    if (!lounging.empty()) {
       if (auto orientation = currentOrientation()) {
-        Drawable drawable =
-            Drawable::makeImage(*root().imageMetadataDatabase(), m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
-        if (m_flipImages)
-          drawable.scale(Vec2F(-1, 1), drawable.boundBox(*root().imageMetadataDatabase(), false).center());
-        renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
+        auto metadataResult = root().imageMetadataDatabase();
+        if (!metadataResult)
+          return std::unexpected(std::move(metadataResult.error()));
+        auto metadata = std::move(*metadataResult);
+        auto drawableResult = Drawable::makeImage(*metadata, m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
+        if (!drawableResult)
+          return std::unexpected(std::move(drawableResult.error()));
+        auto drawable = std::move(*drawableResult);
+        if (m_flipImages) {
+          auto boundsResult = drawable.boundBox(*metadata, false);
+          if (!boundsResult)
+            return std::unexpected(std::move(boundsResult.error()));
+          auto bounds = std::move(*boundsResult);
+          drawable.scale(Vec2F(-1, 1), bounds.center());
+        }
+        auto operation3 = renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
+        if (!operation3)
+          return std::unexpected(std::move(operation3.error()));
       }
     }
   }
+  return {};
 }
 
-InteractAction LoungeableObject::interact(InteractRequest const& request) {
-  auto res = Object::interact(request);
-  if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
+std::expected<InteractAction, StarException> LoungeableObject::interact(InteractRequest const& request) {
+  auto resultResult = Object::interact(request);
+  if (!resultResult)
+    return std::unexpected(std::move(resultResult.error()));
+  auto result = std::move(*resultResult);
+  if (result.type == InteractActionType::None && !m_sitPositions.empty()) {
     std::optional<std::size_t> index;
-    Vec2F interactOffset =
-        direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
+    Vec2F offset = direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
     for (std::size_t i = 0; i < m_sitPositions.size(); ++i) {
-      if (!index || vmag(m_sitPositions[i] + interactOffset) < vmag(m_sitPositions[*index] + interactOffset))
+      if (!index || vmag(m_sitPositions[i] + offset) < vmag(m_sitPositions[*index] + offset))
         index = i;
     }
     return InteractAction(InteractActionType::SitDown, entityId(), *index);
-  } else {
-    return res;
   }
+  return result;
 }
 
 std::size_t LoungeableObject::anchorCount() const {
   return m_sitPositions.size();
 }
 
-std::shared_ptr<LoungeAnchor const> LoungeableObject::loungeAnchor(std::size_t positionIndex) const {
+std::expected<std::shared_ptr<LoungeAnchor const>, StarException> LoungeableObject::loungeAnchor(std::size_t positionIndex) const {
   if (positionIndex >= m_sitPositions.size())
-    return {};
+    return std::shared_ptr<LoungeAnchor const>();
 
   auto loungeAnchor = std::make_shared<LoungeAnchor>();
 
@@ -131,7 +159,7 @@ std::shared_ptr<LoungeAnchor const> LoungeableObject::loungeAnchor(std::size_t p
   loungeAnchor->controllable = false;
   loungeAnchor->direction = m_sitFlipDirection ? -direction() : direction();
 
-  loungeAnchor->position = m_sitPositions.at(positionIndex);
+  loungeAnchor->position = m_sitPositions[positionIndex];
   if (loungeAnchor->direction == Direction::Left)
     loungeAnchor->position[0] *= -1;
   loungeAnchor->position += position();
@@ -157,28 +185,156 @@ std::shared_ptr<LoungeAnchor const> LoungeableObject::loungeAnchor(std::size_t p
   return loungeAnchor;
 }
 
-void LoungeableObject::setOrientationIndex(std::size_t orientationIndex) {
-  Object::setOrientationIndex(orientationIndex);
+std::expected<void, StarException> LoungeableObject::setOrientationIndex(std::size_t orientationIndex) {
+  auto operation1 = Object::setOrientationIndex(orientationIndex);
+  if (!operation1)
+    return std::unexpected(std::move(operation1.error()));
   if (orientationIndex != NPos) {
-    if (auto sp = configValue("sitPosition")) {
-      m_sitPositions = {jsonToVec2F(configValue("sitPosition")) / TilePixels};
-    } else if (auto sps = configValue("sitPositions")) {
-      m_sitPositions.clear();
-      for (auto const& sp : sps.toArray())
-        m_sitPositions.append(jsonToVec2F(sp) / TilePixels);
+    auto positionConfigResult = configValue("sitPosition");
+    if (!positionConfigResult)
+      return std::unexpected(std::move(positionConfigResult.error()));
+    auto positionConfig = std::move(*positionConfigResult);
+    if (positionConfig) {
+      auto positionResult = jsonToVec2F(positionConfig);
+      if (!positionResult)
+        return std::unexpected(std::move(positionResult.error()));
+      auto position = std::move(*positionResult);
+      m_sitPositions = {position / TilePixels};
+    } else {
+      auto positionsConfigResult = configValue("sitPositions");
+      if (!positionsConfigResult)
+        return std::unexpected(std::move(positionsConfigResult.error()));
+      auto positionsConfig = std::move(*positionsConfigResult);
+      if (positionsConfig) {
+        auto positionsResult = positionsConfig.toArray();
+        if (!positionsResult)
+          return std::unexpected(std::move(positionsResult.error()));
+        auto positions = std::move(*positionsResult);
+        m_sitPositions.clear();
+        for (auto const& value : positions) {
+          auto positionResult = jsonToVec2F(value);
+          if (!positionResult)
+            return std::unexpected(std::move(positionResult.error()));
+          auto position = std::move(*positionResult);
+          m_sitPositions.append(position / TilePixels);
+        }
+      }
     }
-    m_sitFlipDirection = configValue("sitFlipDirection", false).toBool();
-    m_sitOrientation = LoungeOrientationNames.getLeft(configValue("sitOrientation", "sit").toString());
-    m_sitAngle = configValue("sitAngle", 0).toFloat() * std::numbers::pi / 180.0f;
-    m_sitCoverImage = configValue("sitCoverImage", "").toString();
-    m_flipImages = configValue("flipImages", false).toBool();
-    m_sitStatusEffects = configValue("sitStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-    m_sitEffectEmitters = jsonToStringSet(configValue("sitEffectEmitters", JsonArray()));
-    m_sitEmote = configValue("sitEmote").optString();
-    m_sitDance = configValue("sitDance").optString();
-    m_sitArmorCosmeticOverrides = configValue("sitArmorCosmeticOverrides", JsonObject()).toObject();
-    m_sitCursorOverride = configValue("sitCursorOverride").optString();
+    auto sitFlipDirectionConfigResult = configValue("sitFlipDirection", false);
+    if (!sitFlipDirectionConfigResult)
+      return std::unexpected(std::move(sitFlipDirectionConfigResult.error()));
+    auto sitFlipDirectionConfig = std::move(*sitFlipDirectionConfigResult);
+    auto sitFlipDirectionResult = sitFlipDirectionConfig.toBool();
+    if (!sitFlipDirectionResult)
+      return std::unexpected(std::move(sitFlipDirectionResult.error()));
+    auto sitFlipDirection = std::move(*sitFlipDirectionResult);
+    m_sitFlipDirection = std::move(sitFlipDirection);
+    auto sitAngleConfigResult = configValue("sitAngle", 0);
+    if (!sitAngleConfigResult)
+      return std::unexpected(std::move(sitAngleConfigResult.error()));
+    auto sitAngleConfig = std::move(*sitAngleConfigResult);
+    auto sitAngleResult = sitAngleConfig.toFloat();
+    if (!sitAngleResult)
+      return std::unexpected(std::move(sitAngleResult.error()));
+    auto sitAngle = std::move(*sitAngleResult);
+    m_sitAngle = sitAngle * std::numbers::pi / 180.0f;
+    auto sitCoverImageConfigResult = configValue("sitCoverImage", "");
+    if (!sitCoverImageConfigResult)
+      return std::unexpected(std::move(sitCoverImageConfigResult.error()));
+    auto sitCoverImageConfig = std::move(*sitCoverImageConfigResult);
+    auto sitCoverImageResult = sitCoverImageConfig.toString();
+    if (!sitCoverImageResult)
+      return std::unexpected(std::move(sitCoverImageResult.error()));
+    auto sitCoverImage = std::move(*sitCoverImageResult);
+    m_sitCoverImage = std::move(sitCoverImage);
+    auto flipImagesConfigResult = configValue("flipImages", false);
+    if (!flipImagesConfigResult)
+      return std::unexpected(std::move(flipImagesConfigResult.error()));
+    auto flipImagesConfig = std::move(*flipImagesConfigResult);
+    auto flipImagesResult = flipImagesConfig.toBool();
+    if (!flipImagesResult)
+      return std::unexpected(std::move(flipImagesResult.error()));
+    auto flipImages = std::move(*flipImagesResult);
+    m_flipImages = std::move(flipImages);
+    auto sitEmoteConfigResult = configValue("sitEmote");
+    if (!sitEmoteConfigResult)
+      return std::unexpected(std::move(sitEmoteConfigResult.error()));
+    auto sitEmoteConfig = std::move(*sitEmoteConfigResult);
+    auto sitEmoteResult = sitEmoteConfig.optString();
+    if (!sitEmoteResult)
+      return std::unexpected(std::move(sitEmoteResult.error()));
+    auto sitEmote = std::move(*sitEmoteResult);
+    m_sitEmote = std::move(sitEmote);
+    auto sitDanceConfigResult = configValue("sitDance");
+    if (!sitDanceConfigResult)
+      return std::unexpected(std::move(sitDanceConfigResult.error()));
+    auto sitDanceConfig = std::move(*sitDanceConfigResult);
+    auto sitDanceResult = sitDanceConfig.optString();
+    if (!sitDanceResult)
+      return std::unexpected(std::move(sitDanceResult.error()));
+    auto sitDance = std::move(*sitDanceResult);
+    m_sitDance = std::move(sitDance);
+    auto sitArmorCosmeticOverridesConfigResult = configValue("sitArmorCosmeticOverrides", JsonObject());
+    if (!sitArmorCosmeticOverridesConfigResult)
+      return std::unexpected(std::move(sitArmorCosmeticOverridesConfigResult.error()));
+    auto sitArmorCosmeticOverridesConfig = std::move(*sitArmorCosmeticOverridesConfigResult);
+    auto sitArmorCosmeticOverridesResult = sitArmorCosmeticOverridesConfig.toObject();
+    if (!sitArmorCosmeticOverridesResult)
+      return std::unexpected(std::move(sitArmorCosmeticOverridesResult.error()));
+    auto sitArmorCosmeticOverrides = std::move(*sitArmorCosmeticOverridesResult);
+    m_sitArmorCosmeticOverrides = std::move(sitArmorCosmeticOverrides);
+    auto sitCursorOverrideConfigResult = configValue("sitCursorOverride");
+    if (!sitCursorOverrideConfigResult)
+      return std::unexpected(std::move(sitCursorOverrideConfigResult.error()));
+    auto sitCursorOverrideConfig = std::move(*sitCursorOverrideConfigResult);
+    auto sitCursorOverrideResult = sitCursorOverrideConfig.optString();
+    if (!sitCursorOverrideResult)
+      return std::unexpected(std::move(sitCursorOverrideResult.error()));
+    auto sitCursorOverride = std::move(*sitCursorOverrideResult);
+    m_sitCursorOverride = std::move(sitCursorOverride);
+    auto orientationConfigResult = configValue("sitOrientation", "sit");
+    if (!orientationConfigResult)
+      return std::unexpected(std::move(orientationConfigResult.error()));
+    auto orientationConfig = std::move(*orientationConfigResult);
+    auto orientationNameResult = orientationConfig.toString();
+    if (!orientationNameResult)
+      return std::unexpected(std::move(orientationNameResult.error()));
+    auto orientationName = std::move(*orientationNameResult);
+    if (!LoungeOrientationNames)
+      return std::unexpected(LoungeOrientationNames.error());
+    auto orientationResult = LoungeOrientationNames->getLeft(orientationName);
+    if (!orientationResult)
+      return std::unexpected(std::move(orientationResult.error()));
+    auto orientation = std::move(*orientationResult);
+    m_sitOrientation = *orientation;
+    auto effectsConfigResult = configValue("sitStatusEffects", JsonArray());
+    if (!effectsConfigResult)
+      return std::unexpected(std::move(effectsConfigResult.error()));
+    auto effectsConfig = std::move(*effectsConfigResult);
+    auto effectsResult = effectsConfig.toArray();
+    if (!effectsResult)
+      return std::unexpected(std::move(effectsResult.error()));
+    auto effects = std::move(*effectsResult);
+    List<PersistentStatusEffect> parsedEffects;
+    for (auto const& effect : effects) {
+      auto parsedResult = jsonToPersistentStatusEffect(effect);
+      if (!parsedResult)
+        return std::unexpected(std::move(parsedResult.error()));
+      auto parsed = std::move(*parsedResult);
+      parsedEffects.append(std::move(parsed));
+    }
+    m_sitStatusEffects = std::move(parsedEffects);
+    auto emittersConfigResult = configValue("sitEffectEmitters", JsonArray());
+    if (!emittersConfigResult)
+      return std::unexpected(std::move(emittersConfigResult.error()));
+    auto emittersConfig = std::move(*emittersConfigResult);
+    auto emittersResult = jsonToStringSet(emittersConfig);
+    if (!emittersResult)
+      return std::unexpected(std::move(emittersResult.error()));
+    auto emitters = std::move(*emittersResult);
+    m_sitEffectEmitters = std::move(emitters);
   }
+  return {};
 }
 
 }

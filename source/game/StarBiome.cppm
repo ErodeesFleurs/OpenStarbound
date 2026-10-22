@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.bi_map;
@@ -52,9 +53,11 @@ class Root;
 
 struct BiomePlaceables {
   BiomePlaceables();
-  BiomePlaceables(Assets const& assets, Json const& json);
+  [[nodiscard]]
+  static std::expected<BiomePlaceables, StarException> create(Assets const& assets, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
 
   // If any of the item distributions contain trees, this returns the first
   // tree type.
@@ -70,9 +73,11 @@ struct BiomePlaceables {
 
 struct Biome {
   Biome();
-  Biome(Root& root, Json const& store);
+  [[nodiscard]]
+  static std::expected<Biome, StarException> create(Root& root, Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]]
+  std::expected<Json, StarException> toJson() const;
 
   String baseName;
   String description;

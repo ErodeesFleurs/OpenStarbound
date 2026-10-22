@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.either;
 import star.rect;
@@ -65,9 +66,9 @@ CellularLightingCalculator::CellularLightingCalculator(bool monochrome)
         m_lightArray.setLeft(ColoredCellularLightArray());
 }
 
-void CellularLightingCalculator::setMonochrome(bool monochrome) {
+std::expected<void, StarException> CellularLightingCalculator::setMonochrome(bool monochrome) {
   if (monochrome == m_monochrome)
-    return;
+    return {};
 
   m_monochrome = monochrome;
   if (monochrome)
@@ -76,41 +77,41 @@ void CellularLightingCalculator::setMonochrome(bool monochrome) {
     m_lightArray.setLeft(ColoredCellularLightArray());
 
   if (m_config)
-    setParameters(m_config);
+    return setParameters(m_config);
+  return {};
 }
 
-void CellularLightingCalculator::setParameters(Json const& config) {
+std::expected<void, StarException> CellularLightingCalculator::setParameters(Json const& config) {
+  auto passes = config.getInt("spreadPasses");
+  if (!passes) return std::unexpected(std::move(passes.error()));
+  auto spreadAir = config.getFloat("spreadMaxAir");
+  if (!spreadAir) return std::unexpected(std::move(spreadAir.error()));
+  auto spreadObstacle = config.getFloat("spreadMaxObstacle");
+  if (!spreadObstacle) return std::unexpected(std::move(spreadObstacle.error()));
+  auto pointAir = config.getFloat("pointMaxAir");
+  if (!pointAir) return std::unexpected(std::move(pointAir.error()));
+  auto pointObstacle = config.getFloat("pointMaxObstacle");
+  if (!pointObstacle) return std::unexpected(std::move(pointObstacle.error()));
+  auto boost = config.getFloat("pointObstacleBoost");
+  if (!boost) return std::unexpected(std::move(boost.error()));
+  auto additive = config.getBool("pointAdditive", false);
+  if (!additive) return std::unexpected(std::move(additive.error()));
   m_config = config;
   if (m_monochrome)
-    m_lightArray.right().setParameters(
-        config.getInt("spreadPasses"),
-        config.getFloat("spreadMaxAir"),
-        config.getFloat("spreadMaxObstacle"),
-        config.getFloat("pointMaxAir"),
-        config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
-      );
+    m_lightArray.rightPtr()->setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
   else
-    m_lightArray.left().setParameters(
-        config.getInt("spreadPasses"),
-        config.getFloat("spreadMaxAir"),
-        config.getFloat("spreadMaxObstacle"),
-        config.getFloat("pointMaxAir"),
-        config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
-      );
+    m_lightArray.leftPtr()->setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
+  return {};
 }
 
 void CellularLightingCalculator::begin(RectI const& queryRegion) {
   m_queryRegion = queryRegion;
   if (m_monochrome) {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.right().borderCells());
-    m_lightArray.right().begin(m_calculationRegion.width(), m_calculationRegion.height());
+    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.rightPtr()->borderCells());
+    m_lightArray.rightPtr()->begin(m_calculationRegion.width(), m_calculationRegion.height());
   } else {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.left().borderCells());
-    m_lightArray.left().begin(m_calculationRegion.width(), m_calculationRegion.height());
+    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.leftPtr()->borderCells());
+    m_lightArray.leftPtr()->begin(m_calculationRegion.width(), m_calculationRegion.height());
   }
 }
 
@@ -121,17 +122,17 @@ RectI CellularLightingCalculator::calculationRegion() const {
 void CellularLightingCalculator::addSpreadLight(Vec2F const& position, Vec3F const& light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addSpreadLight({arrayPosition, light.max()});
+    m_lightArray.rightPtr()->addSpreadLight({arrayPosition, light.max()});
   else
-    m_lightArray.left().addSpreadLight({arrayPosition, light});
+    m_lightArray.leftPtr()->addSpreadLight({arrayPosition, light});
 }
 
 void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.rightPtr()->addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
   else
-    m_lightArray.left().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.leftPtr()->addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
 }
 
 void CellularLightingCalculator::calculate(Image& output) {
@@ -139,58 +140,62 @@ void CellularLightingCalculator::calculate(Image& output) {
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 
   if (m_monochrome)
-    m_lightArray.right().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.rightPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
   else
-    m_lightArray.left().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.leftPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
 
   output.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], PixelFormat::RGB24);
 
   if (m_monochrome) {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.right().getLight(x, y)).toRgb());
+        output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.rightPtr()->getLight(x, y)).toRgb());
       }
     }
   } else {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
+        output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.leftPtr()->getLight(x, y)));
       }
     }
   }
 }
 
-void CellularLightingCalculator::calculate(Lightmap& output) {
+std::expected<void, StarException> CellularLightingCalculator::calculate(Lightmap& output) {
   Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 
   if (m_monochrome)
-    m_lightArray.right().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.rightPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
   else
-    m_lightArray.left().calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
+    m_lightArray.leftPtr()->calculate(arrayMin[0], arrayMin[1], arrayMax[0], arrayMax[1]);
 
   output = Lightmap(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1]);
 
-  float brightnessLimit = m_config.getFloat("brightnessLimit");
+  auto brightnessLimit = m_config.getFloat("brightnessLimit");
+  if (!brightnessLimit) return std::unexpected(std::move(brightnessLimit.error()));
 
   if (m_monochrome) {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = std::min(m_lightArray.right().getLight(x, y), brightnessLimit);
-        output.set(x - arrayMin[0], y - arrayMin[1], light);
+        auto light = std::min(m_lightArray.rightPtr()->getLight(x, y), *brightnessLimit);
+        auto set = output.set(x - arrayMin[0], y - arrayMin[1], light);
+        if (!set) return std::unexpected(std::move(set.error()));
       }
     }
   } else {
     for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
       for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = m_lightArray.left().getLight(x, y);
+        auto light = m_lightArray.leftPtr()->getLight(x, y);
         float intensity = ColoredLightTraits::maxIntensity(light);
-        if (intensity > brightnessLimit)
-          light *= brightnessLimit / intensity;
-        output.set(x - arrayMin[0], y - arrayMin[1], light);
+        if (intensity > *brightnessLimit)
+          light *= *brightnessLimit / intensity;
+        auto set = output.set(x - arrayMin[0], y - arrayMin[1], light);
+        if (!set) return std::unexpected(std::move(set.error()));
       }
     }
   }
+  return {};
 }
 
 void CellularLightingCalculator::setupImage(Image& image, PixelFormat format) const {
@@ -200,16 +205,23 @@ void CellularLightingCalculator::setupImage(Image& image, PixelFormat format) co
   image.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], format);
 }
 
-void CellularLightIntensityCalculator::setParameters(Json const& config) {
-  m_lightArray.setParameters(
-      config.getInt("spreadPasses"),
-      config.getFloat("spreadMaxAir"),
-      config.getFloat("spreadMaxObstacle"),
-      config.getFloat("pointMaxAir"),
-      config.getFloat("pointMaxObstacle"),
-      config.getFloat("pointObstacleBoost"),
-      config.getBool("pointAdditive", false)
-    );
+std::expected<void, StarException> CellularLightIntensityCalculator::setParameters(Json const& config) {
+  auto passes = config.getInt("spreadPasses");
+  if (!passes) return std::unexpected(std::move(passes.error()));
+  auto spreadAir = config.getFloat("spreadMaxAir");
+  if (!spreadAir) return std::unexpected(std::move(spreadAir.error()));
+  auto spreadObstacle = config.getFloat("spreadMaxObstacle");
+  if (!spreadObstacle) return std::unexpected(std::move(spreadObstacle.error()));
+  auto pointAir = config.getFloat("pointMaxAir");
+  if (!pointAir) return std::unexpected(std::move(pointAir.error()));
+  auto pointObstacle = config.getFloat("pointMaxObstacle");
+  if (!pointObstacle) return std::unexpected(std::move(pointObstacle.error()));
+  auto boost = config.getFloat("pointObstacleBoost");
+  if (!boost) return std::unexpected(std::move(boost.error()));
+  auto additive = config.getBool("pointAdditive", false);
+  if (!additive) return std::unexpected(std::move(additive.error()));
+  m_lightArray.setParameters(*passes, *spreadAir, *spreadObstacle, *pointAir, *pointObstacle, *boost, *additive);
+  return {};
 }
 
 void CellularLightIntensityCalculator::begin(Vec2F const& queryPosition) {

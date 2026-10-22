@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.map;
 import star.json;
 import star.json_extra;
@@ -32,151 +33,285 @@ import star.data_stream_extra;
 import star.byte_array;
 namespace Star {
 
-DataStream& operator>>(DataStream& ds, CelestialPlanet& planet) {
-  planet.planetParameters = CelestialParameters(ds.read<ByteArray>());
-  ds.readMapContainer(planet.satelliteParameters,
-      [](DataStream& ds, int& orbit, CelestialParameters& parameters) {
-        ds.read(orbit);
-        parameters = CelestialParameters(ds.read<ByteArray>());
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialPlanet& planet) {
+  CelestialPlanet decoded;
+  auto bytes = ds.read<ByteArray>();
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  auto parameters = CelestialParameters::create(std::move(*bytes));
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  decoded.planetParameters = std::move(*parameters);
+  auto satellites = ds.readMapContainer(decoded.satelliteParameters,
+      [](DataStream& stream, int& orbit, CelestialParameters& parameters) -> std::expected<void, StarException> {
+        auto readOrbit = stream.read(orbit);
+        if (!readOrbit)
+          return std::unexpected(std::move(readOrbit.error()));
+        auto bytes = stream.read<ByteArray>();
+        if (!bytes)
+          return std::unexpected(std::move(bytes.error()));
+        auto decoded = CelestialParameters::create(std::move(*bytes));
+        if (!decoded)
+          return std::unexpected(std::move(decoded.error()));
+        parameters = std::move(*decoded);
+        return {};
       });
-
-  return ds;
+  if (!satellites)
+    return std::unexpected(std::move(satellites.error()));
+  planet = std::move(decoded);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialPlanet const& planet) {
-  ds.write(planet.planetParameters.netStore());
-  ds.writeMapContainer(planet.satelliteParameters,
-      [](DataStream& ds, int orbit, CelestialParameters const& parameters) {
-        ds.write(orbit);
-        ds.write(parameters.netStore());
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialPlanet const& planet) {
+  auto bytes = planet.planetParameters.netStore();
+  if (!bytes)
+    return std::unexpected(std::move(bytes.error()));
+  auto parameters = ds.write(*bytes);
+  if (!parameters)
+    return std::unexpected(std::move(parameters.error()));
+  auto satellites = ds.writeMapContainer(planet.satelliteParameters,
+      [](DataStream& stream, int orbit, CelestialParameters const& parameters) -> std::expected<void, StarException> {
+        auto writtenOrbit = stream.write(orbit);
+        if (!writtenOrbit)
+          return std::unexpected(std::move(writtenOrbit.error()));
+        auto bytes = parameters.netStore();
+        if (!bytes)
+          return std::unexpected(std::move(bytes.error()));
+        return stream.write(*bytes);
       });
-
-  return ds;
+  if (!satellites)
+    return std::unexpected(std::move(satellites.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) {
-  ds.read(systemObjects.systemLocation);
-  ds.read(systemObjects.planets);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) {
+  CelestialSystemObjects decoded;
+  auto fields = ds >> decoded.systemLocation >> decoded.planets;
+  if (!fields)
+    return std::unexpected(std::move(fields.error()));
+  systemObjects = std::move(decoded);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) {
-  ds.write(systemObjects.systemLocation);
-  ds.write(systemObjects.planets);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) {
+  return ds << systemObjects.systemLocation << systemObjects.planets;
 }
 
 CelestialChunk::CelestialChunk() {}
 
-CelestialChunk::CelestialChunk(Json const& store) {
-  persistent = true;
-  
-  chunkIndex = jsonToVec2I(store.get("chunkIndex"));
-
-  for (auto const& lines : store.getArray("constellations")) {
+std::expected<CelestialChunk, StarException> CelestialChunk::create(Json const& store) {
+  CelestialChunk chunk;
+  chunk.persistent = true;
+  auto indexJson = store.get("chunkIndex");
+  if (!indexJson)
+    return std::unexpected(std::move(indexJson.error()));
+  auto index = jsonToVec2I(*indexJson);
+  if (!index)
+    return std::unexpected(std::move(index.error()));
+  chunk.chunkIndex = *index;
+  auto constellations = store.getArray("constellations");
+  if (!constellations)
+    return std::unexpected(std::move(constellations.error()));
+  for (auto const& linesJson : *constellations) {
+    auto lines = linesJson.toArray();
+    if (!lines)
+      return std::unexpected(std::move(lines.error()));
     CelestialConstellation constellation;
-    for (auto const& l : lines.toArray())
-      constellation.append({jsonToVec2I(l.get(0)), jsonToVec2I(l.get(1))});
-    constellations.append(std::move(constellation));
-  }
-
-  for (auto const& p : store.getArray("systemParameters"))
-    systemParameters[jsonToVec3I(p.get(0))] = CelestialParameters(p.get(1));
-
-  for (auto const& p : store.getArray("systemObjects")) {
-    HashMap<int, CelestialPlanet> celestialSystemObjects;
-    for (auto const& planetPair : p.getArray(1)) {
-      CelestialPlanet planet;
-      planet.planetParameters = CelestialParameters(planetPair.get(1).get("parameters"));
-      for (auto const& satellitePair : planetPair.get(1).getArray("satellites"))
-        planet.satelliteParameters.add(satellitePair.getInt(0), CelestialParameters(satellitePair.get(1)));
-      celestialSystemObjects.add(planetPair.getInt(0), std::move(planet));
+    for (auto const& line : *lines) {
+      auto startJson = line.get(0);
+      if (!startJson)
+        return std::unexpected(std::move(startJson.error()));
+      auto start = jsonToVec2I(*startJson);
+      if (!start)
+        return std::unexpected(std::move(start.error()));
+      auto endJson = line.get(1);
+      if (!endJson)
+        return std::unexpected(std::move(endJson.error()));
+      auto end = jsonToVec2I(*endJson);
+      if (!end)
+        return std::unexpected(std::move(end.error()));
+      constellation.append({*start, *end});
     }
-
-    systemObjects[jsonToVec3I(p.get(0))] = std::move(celestialSystemObjects);
+    chunk.constellations.append(std::move(constellation));
   }
+  auto systems = store.getArray("systemParameters");
+  if (!systems)
+    return std::unexpected(std::move(systems.error()));
+  for (auto const& system : *systems) {
+    auto locationJson = system.get(0);
+    if (!locationJson)
+      return std::unexpected(std::move(locationJson.error()));
+    auto location = jsonToVec3I(*locationJson);
+    if (!location)
+      return std::unexpected(std::move(location.error()));
+    auto parametersJson = system.get(1);
+    if (!parametersJson)
+      return std::unexpected(std::move(parametersJson.error()));
+    auto parameters = CelestialParameters::create(*parametersJson);
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    chunk.systemParameters[*location] = std::move(*parameters);
+  }
+  auto objects = store.getArray("systemObjects");
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  for (auto const& system : *objects) {
+    auto locationJson = system.get(0);
+    if (!locationJson)
+      return std::unexpected(std::move(locationJson.error()));
+    auto location = jsonToVec3I(*locationJson);
+    if (!location)
+      return std::unexpected(std::move(location.error()));
+    auto planets = system.getArray(1);
+    if (!planets)
+      return std::unexpected(std::move(planets.error()));
+    HashMap<int, CelestialPlanet> systemObjects;
+    for (auto const& pair : *planets) {
+      auto orbit = pair.getInt(0);
+      if (!orbit)
+        return std::unexpected(std::move(orbit.error()));
+      auto planetJson = pair.get(1);
+      if (!planetJson)
+        return std::unexpected(std::move(planetJson.error()));
+      auto parametersJson = planetJson->get("parameters");
+      if (!parametersJson)
+        return std::unexpected(std::move(parametersJson.error()));
+      auto parameters = CelestialParameters::create(*parametersJson);
+      if (!parameters)
+        return std::unexpected(std::move(parameters.error()));
+      CelestialPlanet planet;
+      planet.planetParameters = std::move(*parameters);
+      auto satellites = planetJson->getArray("satellites");
+      if (!satellites)
+        return std::unexpected(std::move(satellites.error()));
+      for (auto const& satellite : *satellites) {
+        auto satelliteOrbit = satellite.getInt(0);
+        if (!satelliteOrbit)
+          return std::unexpected(std::move(satelliteOrbit.error()));
+        auto satelliteJson = satellite.get(1);
+        if (!satelliteJson)
+          return std::unexpected(std::move(satelliteJson.error()));
+        auto satelliteParameters = CelestialParameters::create(*satelliteJson);
+        if (!satelliteParameters)
+          return std::unexpected(std::move(satelliteParameters.error()));
+        auto added = planet.satelliteParameters.add(*satelliteOrbit, std::move(*satelliteParameters));
+        if (!added)
+          return std::unexpected(std::move(added.error()));
+      }
+      auto added = systemObjects.add(*orbit, std::move(planet));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+    }
+    chunk.systemObjects[*location] = std::move(systemObjects);
+  }
+  return chunk;
 }
 
-Json CelestialChunk::toJson() const {
+std::expected<Json, StarException> CelestialChunk::toJson() const {
   JsonArray constellationStore;
   for (auto const& constellation : constellations) {
     JsonArray lines;
-    for (auto const& p : constellation)
-      lines.append(JsonArray{jsonFromVec2I(p.first), jsonFromVec2I(p.second)});
-    constellationStore.append(lines);
+    for (auto const& pair : constellation)
+      lines.append(JsonArray{jsonFromVec2I(pair.first), jsonFromVec2I(pair.second)});
+    constellationStore.append(std::move(lines));
   }
-
   JsonArray systemParametersStore;
-  for (auto const& p : systemParameters)
-    systemParametersStore.append(JsonArray{jsonFromVec3I(p.first), p.second.diskStore()});
-
-  JsonArray systemObjectsStore;
-  for (auto const& systemObjectPair : systemObjects) {
-    JsonArray planetsStore;
-    for (auto const& planetPair : systemObjectPair.second) {
-      JsonArray satellitesStore;
-      for (auto const& satellitePair : planetPair.second.satelliteParameters)
-        satellitesStore.append(JsonArray{satellitePair.first, satellitePair.second.diskStore()});
-
-      planetsStore.append(JsonArray{planetPair.first,
-          JsonObject{
-              {"parameters", planetPair.second.planetParameters.diskStore()}, {"satellites", std::move(satellitesStore)}}});
-    }
-    systemObjectsStore.append(JsonArray{jsonFromVec3I(systemObjectPair.first), std::move(planetsStore)});
+  for (auto const& pair : systemParameters) {
+    auto parameters = pair.second.diskStore();
+    if (!parameters)
+      return std::unexpected(std::move(parameters.error()));
+    systemParametersStore.append(JsonArray{jsonFromVec3I(pair.first), std::move(*parameters)});
   }
-
+  JsonArray systemObjectsStore;
+  for (auto const& system : systemObjects) {
+    JsonArray planetsStore;
+    for (auto const& planet : system.second) {
+      JsonArray satellitesStore;
+      for (auto const& satellite : planet.second.satelliteParameters) {
+        auto parameters = satellite.second.diskStore();
+        if (!parameters)
+          return std::unexpected(std::move(parameters.error()));
+        satellitesStore.append(JsonArray{satellite.first, std::move(*parameters)});
+      }
+      auto parameters = planet.second.planetParameters.diskStore();
+      if (!parameters)
+        return std::unexpected(std::move(parameters.error()));
+      planetsStore.append(JsonArray{planet.first, JsonObject{{"parameters", std::move(*parameters)},
+          {"satellites", std::move(satellitesStore)}}});
+    }
+    systemObjectsStore.append(JsonArray{jsonFromVec3I(system.first), std::move(planetsStore)});
+  }
   return JsonObject{{"chunkIndex", jsonFromVec2I(chunkIndex)},
-      {"constellations", constellationStore},
-      {"systemParameters", systemParametersStore},
-      {"systemObjects", systemObjectsStore}};
+      {"constellations", std::move(constellationStore)},
+      {"systemParameters", std::move(systemParametersStore)},
+      {"systemObjects", std::move(systemObjectsStore)}};
 }
 
-DataStream& operator>>(DataStream& ds, CelestialChunk& chunk) {
-  ds.read(chunk.chunkIndex);
-  ds.read(chunk.constellations);
-  ds.readMapContainer(chunk.systemParameters,
-      [](DataStream& ds, Vec3I& location, CelestialParameters& parameters) {
-        ds.read(location);
-        parameters = CelestialParameters(ds.read<ByteArray>());
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialChunk& chunk) {
+  CelestialChunk decoded;
+  decoded.persistent = chunk.persistent;
+  auto prefix = ds >> decoded.chunkIndex >> decoded.constellations;
+  if (!prefix)
+    return std::unexpected(std::move(prefix.error()));
+  auto systems = ds.readMapContainer(decoded.systemParameters,
+      [](DataStream& stream, Vec3I& location, CelestialParameters& parameters) -> std::expected<void, StarException> {
+        auto readLocation = stream.read(location);
+        if (!readLocation)
+          return std::unexpected(std::move(readLocation.error()));
+        auto bytes = stream.read<ByteArray>();
+        if (!bytes)
+          return std::unexpected(std::move(bytes.error()));
+        auto decoded = CelestialParameters::create(std::move(*bytes));
+        if (!decoded)
+          return std::unexpected(std::move(decoded.error()));
+        parameters = std::move(*decoded);
+        return {};
       });
-  ds.read(chunk.systemObjects);
-
-  return ds;
+  if (!systems)
+    return std::unexpected(std::move(systems.error()));
+  auto objects = ds.read(decoded.systemObjects);
+  if (!objects)
+    return std::unexpected(std::move(objects.error()));
+  chunk = std::move(decoded);
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk) {
-  ds.write(chunk.chunkIndex);
-  ds.write(chunk.constellations);
-  ds.writeMapContainer(chunk.systemParameters,
-      [](DataStream& ds, Vec3I const& location, CelestialParameters const& parameters) {
-        ds.write(location);
-        ds.write(parameters.netStore());
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialChunk const& chunk) {
+  auto prefix = ds << chunk.chunkIndex << chunk.constellations;
+  if (!prefix)
+    return std::unexpected(std::move(prefix.error()));
+  auto systems = ds.writeMapContainer(chunk.systemParameters,
+      [](DataStream& stream, Vec3I const& location, CelestialParameters const& parameters) -> std::expected<void, StarException> {
+        auto writtenLocation = stream.write(location);
+        if (!writtenLocation)
+          return std::unexpected(std::move(writtenLocation.error()));
+        auto bytes = parameters.netStore();
+        if (!bytes)
+          return std::unexpected(std::move(bytes.error()));
+        return stream.write(*bytes);
       });
-  ds.write(chunk.systemObjects);
-
-  return ds;
+  if (!systems)
+    return std::unexpected(std::move(systems.error()));
+  return ds << chunk.systemObjects;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) {
-  ds.read(celestialInformation.planetOrbitalLevels);
-  ds.read(celestialInformation.satelliteOrbitalLevels);
-  ds.read(celestialInformation.chunkSize);
-  ds.read(celestialInformation.xyCoordRange);
-  ds.read(celestialInformation.zCoordRange);
-
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) {
+  CelestialBaseInformation decoded{};
+  auto fields = ds >> decoded.planetOrbitalLevels >> decoded.satelliteOrbitalLevels
+      >> decoded.chunkSize >> decoded.xyCoordRange >> decoded.zCoordRange;
+  if (!fields)
+    return std::unexpected(std::move(fields.error()));
+  celestialInformation.planetOrbitalLevels = decoded.planetOrbitalLevels;
+  celestialInformation.satelliteOrbitalLevels = decoded.satelliteOrbitalLevels;
+  celestialInformation.chunkSize = decoded.chunkSize;
+  celestialInformation.xyCoordRange = decoded.xyCoordRange;
+  celestialInformation.zCoordRange = decoded.zCoordRange;
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) {
-  ds.write(celestialInformation.planetOrbitalLevels);
-  ds.write(celestialInformation.satelliteOrbitalLevels);
-  ds.write(celestialInformation.chunkSize);
-  ds.write(celestialInformation.xyCoordRange);
-  ds.write(celestialInformation.zCoordRange);
-
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) {
+  return ds << celestialInformation.planetOrbitalLevels << celestialInformation.satelliteOrbitalLevels
+      << celestialInformation.chunkSize << celestialInformation.xyCoordRange << celestialInformation.zCoordRange;
 }
 
 }

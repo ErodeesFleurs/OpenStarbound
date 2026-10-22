@@ -70,22 +70,24 @@ public:
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).
-  CharCreationPane(GuiContext& guiContext, std::function<void(std::shared_ptr<Player>)> requestCloseFunc);
+  [[nodiscard]] static std::expected<std::shared_ptr<CharCreationPane>, StarException> create(GuiContext& guiContext, std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc);
 
-  void randomize();
-  void randomizeName();
+  [[nodiscard]] std::expected<void, StarException> randomize();
+  [[nodiscard]] std::expected<void, StarException> randomizeName();
 
-  virtual void tick(float dt) override;
-  virtual bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> tick(float dt) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  virtual std::shared_ptr<Pane> createTooltip(Vec2I const&) override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const&) override;
 
 private:
-  void nameBoxCallback(Widget* object);
+  explicit CharCreationPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> init(std::function<std::expected<void, StarException>(std::shared_ptr<Player>)> requestCloseFunc);
+  [[nodiscard]] std::expected<void, StarException> nameBoxCallback(Widget* object);
 
-  void changed();
+  [[nodiscard]] std::expected<void, StarException> changed();
 
-  void createPlayer();
+  [[nodiscard]] std::expected<void, StarException> createPlayer();
 
   std::shared_ptr<Player> m_previewPlayer;
 

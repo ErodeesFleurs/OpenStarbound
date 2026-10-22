@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.list;
 import star.json;
@@ -33,8 +34,8 @@ public:
     return Star::typeName<ChattyEntity>();
   }
 
-  virtual Vec2F mouthPosition() const = 0;
-  virtual Vec2F mouthPosition(bool) const = 0;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> mouthPosition() const = 0;
+  [[nodiscard]] virtual std::expected<Vec2F, StarException> mouthPosition(bool) const = 0;
   virtual List<ChatAction> pullPendingChatActions() = 0;
 };
 

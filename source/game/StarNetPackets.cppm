@@ -203,13 +203,13 @@ enum class PacketType : std::uint8_t {
   UniverseMessage,
   UniverseMessageResponse
 };
-extern EnumMap<PacketType> const PacketTypeNames;
+extern std::expected<EnumMap<PacketType>, StarException> const PacketTypeNames;
 
 enum class NetCompressionMode : std::uint8_t {
   None,
   Zstd
 };
-extern EnumMap<NetCompressionMode> const NetCompressionModeNames;
+extern std::expected<EnumMap<NetCompressionMode>, StarException> const NetCompressionModeNames;
 
 enum class PacketCompressionMode : std::uint8_t {
   Disabled,
@@ -225,13 +225,13 @@ struct Packet {
 
   virtual PacketType type() const = 0;
 
-  virtual void read(DataStream& ds, NetCompatibilityRules netRules);
-  virtual void read(DataStream& ds);
-  virtual void write(DataStream& ds, NetCompatibilityRules netRules) const;
-  virtual void write(DataStream& ds) const;
+  [[nodiscard]] virtual std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules);
+  [[nodiscard]] virtual std::expected<void, StarException> read(DataStream& ds);
+  [[nodiscard]] virtual std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const;
+  [[nodiscard]] virtual std::expected<void, StarException> write(DataStream& ds) const;
 
-  virtual void readJson(Json const& json);
-  virtual Json writeJson() const;
+  [[nodiscard]] virtual std::expected<void, StarException> readJson(Json const& json);
+  [[nodiscard]] virtual std::expected<Json, StarException> writeJson() const;
 
   PacketCompressionMode compressionMode() const;
   void setCompressionMode(PacketCompressionMode compressionMode);
@@ -240,9 +240,9 @@ struct Packet {
 };
 
 // Stages a packet for wire decoding; identity fields are initially unfilled.
-std::shared_ptr<Packet> createPacket(PacketType type);
+[[nodiscard]] std::expected<std::shared_ptr<Packet>, StarException> createPacket(PacketType type);
 // Constructs a raw outgoing packet, generating identity fields before JSON load.
-std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args);
+[[nodiscard]] std::expected<std::shared_ptr<Packet>, StarException> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
@@ -261,8 +261,8 @@ struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
   ProtocolRequestPacket();
   ProtocolRequestPacket(VersionNumber requestProtocolVersion);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   VersionNumber requestProtocolVersion;
 };
@@ -274,8 +274,8 @@ struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
   ProtocolResponsePacket();
   ProtocolResponsePacket(bool allowed, Json info = {});
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   bool allowed;
   Json info;
@@ -288,8 +288,8 @@ struct ServerDisconnectPacket : PacketBase<PacketType::ServerDisconnect> {
   ServerDisconnectPacket();
   ServerDisconnectPacket(String reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String reason;
 };
@@ -301,8 +301,8 @@ struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
   ConnectSuccessPacket();
   ConnectSuccessPacket(ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ConnectionId clientId;
   Uuid serverUuid;
@@ -316,8 +316,8 @@ struct ConnectFailurePacket : PacketBase<PacketType::ConnectFailure> {
   ConnectFailurePacket();
   ConnectFailurePacket(String reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String reason;
 };
@@ -329,8 +329,8 @@ struct HandshakeChallengePacket : PacketBase<PacketType::HandshakeChallenge> {
   HandshakeChallengePacket();
   HandshakeChallengePacket(ByteArray const& passwordSalt);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray passwordSalt;
 };
@@ -342,11 +342,11 @@ struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
   ChatReceivePacket();
   ChatReceivePacket(ChatReceivedMessage receivedMessage);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   ChatReceivedMessage receivedMessage;
 };
@@ -358,8 +358,8 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
   UniverseTimeUpdatePacket();
   UniverseTimeUpdatePacket(double universeTime);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   double universeTime;
   float timescale;
@@ -372,8 +372,8 @@ struct CelestialResponsePacket : PacketBase<PacketType::CelestialResponse> {
   CelestialResponsePacket();
   CelestialResponsePacket(List<CelestialResponse> responses);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   List<CelestialResponse> responses;
 };
@@ -385,8 +385,8 @@ struct PlayerWarpResultPacket : PacketBase<PacketType::PlayerWarpResult> {
   PlayerWarpResultPacket();
   PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   bool success;
   WarpAction warpAction;
@@ -400,8 +400,8 @@ struct PlanetTypeUpdatePacket : PacketBase<PacketType::PlanetTypeUpdate> {
   PlanetTypeUpdatePacket();
   PlanetTypeUpdatePacket(CelestialCoordinate coordinate);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   CelestialCoordinate coordinate;
 };
@@ -413,11 +413,11 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   PausePacket();
   PausePacket(bool pause, float timescale = 1.0f);
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   bool pause = false;
   float timescale = 1.0f;
@@ -430,11 +430,11 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
   ServerInfoPacket();
   ServerInfoPacket(std::uint16_t players, std::uint16_t maxPlayers);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   std::uint16_t players;
   std::uint16_t maxPlayers;
@@ -449,8 +449,8 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
       String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account, Json info = {});
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   ByteArray assetsDigest;
   bool allowAssetsMismatch;
@@ -470,8 +470,8 @@ struct ClientDisconnectRequestPacket : PacketBase<PacketType::ClientDisconnectRe
 
   ClientDisconnectRequestPacket();
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 };
 
 struct HandshakeResponsePacket : PacketBase<PacketType::HandshakeResponse> {
@@ -481,8 +481,8 @@ struct HandshakeResponsePacket : PacketBase<PacketType::HandshakeResponse> {
   HandshakeResponsePacket();
   HandshakeResponsePacket(ByteArray const& passHash);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray passHash;
 };
@@ -494,8 +494,8 @@ struct PlayerWarpPacket : PacketBase<PacketType::PlayerWarp> {
   PlayerWarpPacket();
   PlayerWarpPacket(WarpAction action, bool deploy);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   WarpAction action;
   bool deploy;
@@ -508,8 +508,8 @@ struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
   FlyShipPacket();
   FlyShipPacket(Vec3I system, SystemLocation location, Json settings = {});
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   Vec3I system;
   SystemLocation location;
@@ -524,8 +524,8 @@ struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
   ChatSendPacket(String text, ChatSendMode sendMode);
   ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String text;
   ChatSendMode sendMode;
@@ -539,8 +539,8 @@ struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {
   CelestialRequestPacket();
   CelestialRequestPacket(List<CelestialRequest> requests);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   List<CelestialRequest> requests;
 };
@@ -552,8 +552,8 @@ struct ClientContextUpdatePacket : PacketBase<PacketType::ClientContextUpdate> {
   ClientContextUpdatePacket();
   ClientContextUpdatePacket(ByteArray updateData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray updateData;
 };
@@ -565,8 +565,8 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
 
   WorldStartPacket();
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Json templateData;
   ByteArray skyData;
@@ -590,8 +590,8 @@ struct WorldStopPacket : PacketBase<PacketType::WorldStop> {
   WorldStopPacket();
   WorldStopPacket(String const& reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String reason;
 };
@@ -604,8 +604,8 @@ struct WorldLayoutUpdatePacket : PacketBase<PacketType::WorldLayoutUpdate> {
   WorldLayoutUpdatePacket();
   WorldLayoutUpdatePacket(Json const& layoutData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Json layoutData;
 };
@@ -618,8 +618,8 @@ struct WorldParametersUpdatePacket : PacketBase<PacketType::WorldParametersUpdat
   WorldParametersUpdatePacket();
   WorldParametersUpdatePacket(ByteArray const& parametersData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray parametersData;
 };
@@ -631,8 +631,8 @@ struct CentralStructureUpdatePacket : PacketBase<PacketType::CentralStructureUpd
   CentralStructureUpdatePacket();
   CentralStructureUpdatePacket(Json structureData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Json structureData;
 };
@@ -645,8 +645,8 @@ struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
 
   TileArrayUpdatePacket();
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec2I min;
   TileArray array;
@@ -657,8 +657,8 @@ struct TileUpdatePacket : PacketBase<PacketType::TileUpdate> {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<TileUpdatePacket>(); }
 
   TileUpdatePacket() {}
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec2I position;
   NetTile tile;
@@ -671,8 +671,8 @@ struct TileLiquidUpdatePacket : PacketBase<PacketType::TileLiquidUpdate> {
   TileLiquidUpdatePacket();
   TileLiquidUpdatePacket(Vec2I const& position, LiquidNetUpdate liquidUpdate);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec2I position;
   LiquidNetUpdate liquidUpdate;
@@ -685,8 +685,8 @@ struct TileDamageUpdatePacket : PacketBase<PacketType::TileDamageUpdate> {
   TileDamageUpdatePacket();
   TileDamageUpdatePacket(Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec2I position;
   TileLayer layer;
@@ -701,8 +701,8 @@ struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFa
   TileModificationFailurePacket();
   TileModificationFailurePacket(TileModificationList modifications);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   TileModificationList modifications;
 };
@@ -714,11 +714,11 @@ struct GiveItemPacket : PacketBase<PacketType::GiveItem> {
   GiveItemPacket();
   GiveItemPacket(ItemDescriptor const& item);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   ItemDescriptor item;
 };
@@ -730,8 +730,8 @@ struct EnvironmentUpdatePacket : PacketBase<PacketType::EnvironmentUpdate> {
   EnvironmentUpdatePacket();
   EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray skyDelta;
   ByteArray weatherDelta;
@@ -744,11 +744,11 @@ struct UpdateTileProtectionPacket : PacketBase<PacketType::UpdateTileProtection>
   UpdateTileProtectionPacket();
   UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   DungeonId dungeonId;
   bool isProtected;
@@ -761,11 +761,11 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   SetDungeonGravityPacket();
   SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   DungeonId dungeonId;
   std::optional<float> gravity;
@@ -778,11 +778,11 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   SetDungeonBreathablePacket();
   SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   DungeonId dungeonId;
   std::optional<bool> breathable;
@@ -795,11 +795,11 @@ struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
   SetPlayerStartPacket();
   SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   Vec2F playerStart;
   bool respawnInWorld;
@@ -812,8 +812,8 @@ struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityR
   FindUniqueEntityResponsePacket();
   FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String uniqueEntityId;
   std::optional<Vec2F> entityPosition;
@@ -826,8 +826,8 @@ struct PongPacket : PacketBase<PacketType::Pong> {
   PongPacket();
   PongPacket(std::int64_t time);
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   std::int64_t time = 0;
 };
@@ -839,8 +839,8 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
   ModifyTileListPacket();
   ModifyTileListPacket(TileModificationList modifications, bool allowEntityOverlap);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   TileModificationList modifications;
   bool allowEntityOverlap;
@@ -853,8 +853,8 @@ struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
   ReplaceTileListPacket();
   ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   TileModificationList modifications;
   TileDamage tileDamage;
@@ -868,8 +868,8 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   DamageTileGroupPacket();
   DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   List<Vec2I> tilePositions;
   TileLayer layer;
@@ -885,8 +885,8 @@ struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
   CollectLiquidPacket();
   CollectLiquidPacket(List<Vec2I> tilePositions, LiquidId liquidId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   List<Vec2I> tilePositions;
   LiquidId liquidId;
@@ -899,8 +899,8 @@ struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
   RequestDropPacket();
   RequestDropPacket(EntityId dropEntityId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   EntityId dropEntityId;
 };
@@ -912,8 +912,8 @@ struct SpawnEntityPacket : PacketBase<PacketType::SpawnEntity> {
   SpawnEntityPacket();
   SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   EntityType entityType;
   ByteArray storeData;
@@ -927,8 +927,8 @@ struct ConnectWirePacket : PacketBase<PacketType::ConnectWire> {
   ConnectWirePacket();
   ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   WireConnection outputConnection;
   WireConnection inputConnection;
@@ -941,8 +941,8 @@ struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
   DisconnectAllWiresPacket();
   DisconnectAllWiresPacket(Vec2I entityPosition, WireNode wireNode);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec2I entityPosition;
   WireNode wireNode;
@@ -955,8 +955,8 @@ struct WorldClientStateUpdatePacket : PacketBase<PacketType::WorldClientStateUpd
   WorldClientStateUpdatePacket();
   WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray worldClientStateDelta;
 };
@@ -968,8 +968,8 @@ struct FindUniqueEntityPacket : PacketBase<PacketType::FindUniqueEntity> {
   FindUniqueEntityPacket();
   FindUniqueEntityPacket(String uniqueEntityId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String uniqueEntityId;
 };
@@ -980,8 +980,8 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
 
   WorldStartAcknowledgePacket();
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 };
 
 struct PingPacket : PacketBase<PacketType::Ping> {
@@ -991,8 +991,8 @@ struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
   PingPacket(std::int64_t time);
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   std::int64_t time = 0;
 };
@@ -1004,8 +1004,8 @@ struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
   EntityCreatePacket();
   EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   EntityType entityType;
   ByteArray storeData;
@@ -1023,8 +1023,8 @@ struct EntityUpdateSetPacket : PacketBase<PacketType::EntityUpdateSet> {
   EntityUpdateSetPacket();
   EntityUpdateSetPacket(ConnectionId forConnection);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ConnectionId forConnection;
   HashMap<EntityId, ByteArray> deltas;
@@ -1037,8 +1037,8 @@ struct EntityDestroyPacket : PacketBase<PacketType::EntityDestroy> {
   EntityDestroyPacket();
   EntityDestroyPacket(EntityId entityId, ByteArray finalNetState, bool death);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   EntityId entityId;
   ByteArray finalNetState;
@@ -1054,8 +1054,8 @@ struct EntityInteractPacket : PacketBase<PacketType::EntityInteract> {
   EntityInteractPacket();
   EntityInteractPacket(InteractRequest interactRequest, Uuid requestId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   InteractRequest interactRequest;
   Uuid requestId;
@@ -1068,8 +1068,8 @@ struct EntityInteractResultPacket : PacketBase<PacketType::EntityInteractResult>
   EntityInteractResultPacket();
   EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   InteractAction action;
   Uuid requestId;
@@ -1083,8 +1083,8 @@ struct HitRequestPacket : PacketBase<PacketType::HitRequest> {
   HitRequestPacket();
   HitRequestPacket(RemoteHitRequest remoteHitRequest);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   RemoteHitRequest remoteHitRequest;
 };
@@ -1096,8 +1096,8 @@ struct DamageRequestPacket : PacketBase<PacketType::DamageRequest> {
   DamageRequestPacket();
   DamageRequestPacket(RemoteDamageRequest remoteDamageRequest);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   RemoteDamageRequest remoteDamageRequest;
 };
@@ -1109,8 +1109,8 @@ struct DamageNotificationPacket : PacketBase<PacketType::DamageNotification> {
   DamageNotificationPacket();
   DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   RemoteDamageNotification remoteDamageNotification;
 };
@@ -1122,11 +1122,11 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   EntityMessagePacket();
   EntityMessagePacket(std::variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   std::variant<EntityId, String> entityId;
   String message;
@@ -1142,8 +1142,8 @@ struct EntityMessageResponsePacket : PacketBase<PacketType::EntityMessageRespons
   EntityMessageResponsePacket();
   EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Either<String, Json> response;
   Uuid uuid;
@@ -1156,11 +1156,11 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
   UpdateWorldPropertiesPacket();
   UpdateWorldPropertiesPacket(JsonObject const& updatedProperties);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   JsonObject updatedProperties;
 };
@@ -1172,8 +1172,8 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   StepUpdatePacket();
   StepUpdatePacket(double remoteTime);
 
-  void read(DataStream& ds, NetCompatibilityRules netRules) override;
-  void write(DataStream& ds, NetCompatibilityRules netRules) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds, NetCompatibilityRules netRules) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   double remoteTime;
 };
@@ -1185,8 +1185,8 @@ struct SystemWorldStartPacket : PacketBase<PacketType::SystemWorldStart> {
   SystemWorldStartPacket();
   SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Vec3I location;
   List<ByteArray> objectStores;
@@ -1201,8 +1201,8 @@ struct SystemWorldUpdatePacket : PacketBase<PacketType::SystemWorldUpdate> {
   SystemWorldUpdatePacket();
   SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   HashMap<Uuid, ByteArray> objectUpdates;
   HashMap<Uuid, ByteArray> shipUpdates;
@@ -1215,8 +1215,8 @@ struct SystemObjectCreatePacket : PacketBase<PacketType::SystemObjectCreate> {
   SystemObjectCreatePacket();
   SystemObjectCreatePacket(ByteArray objectStore);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray objectStore;
 };
@@ -1228,8 +1228,8 @@ struct SystemObjectDestroyPacket : PacketBase<PacketType::SystemObjectDestroy> {
   SystemObjectDestroyPacket();
   SystemObjectDestroyPacket(Uuid objectUuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Uuid objectUuid;
 };
@@ -1241,8 +1241,8 @@ struct SystemShipCreatePacket : PacketBase<PacketType::SystemShipCreate> {
   SystemShipCreatePacket();
   SystemShipCreatePacket(ByteArray shipStore);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ByteArray shipStore;
 };
@@ -1254,8 +1254,8 @@ struct SystemShipDestroyPacket : PacketBase<PacketType::SystemShipDestroy> {
   SystemShipDestroyPacket();
   SystemShipDestroyPacket(Uuid shipUuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Uuid shipUuid;
 };
@@ -1267,8 +1267,8 @@ struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
   SystemObjectSpawnPacket();
   SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String typeName;
   Uuid uuid;
@@ -1283,8 +1283,8 @@ struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
   UpdateWorldTemplatePacket();
   UpdateWorldTemplatePacket(Json templateData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Json templateData;
 };
@@ -1296,8 +1296,8 @@ struct ClientCustomWorldRequest : PacketBase<PacketType::ClientCustomWorldReques
   ClientCustomWorldRequest();
   ClientCustomWorldRequest(String name);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String name;
 };
@@ -1309,8 +1309,8 @@ struct ClientCustomWorldResponse : PacketBase<PacketType::ClientCustomWorldRespo
   ClientCustomWorldResponse();
   ClientCustomWorldResponse(String name, WorldChunks chunks);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String name;
   WorldChunks chunks;
@@ -1323,8 +1323,8 @@ struct ClientCustomWorldCreate : PacketBase<PacketType::ClientCustomWorldCreate>
   ClientCustomWorldCreate();
   ClientCustomWorldCreate(String name, Json templateData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   String name;
   Json templateData;
@@ -1338,8 +1338,8 @@ struct ClientSubWorldPackets : PacketBase<PacketType::ClientSubWorldPackets> {
   ClientSubWorldPackets();
   ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<std::shared_ptr<Packet>> packets);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ClientSubWorldId subWorldId;
   List<std::shared_ptr<Packet>> packets;
@@ -1352,8 +1352,8 @@ struct ClientSubWorldRequest : PacketBase<PacketType::ClientSubWorldRequest> {
   ClientSubWorldRequest();
   ClientSubWorldRequest(ClientSubWorldId const& subWorldId, WorldId worldId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ClientSubWorldId subWorldId;
   WorldId worldId;
@@ -1366,8 +1366,8 @@ struct ClientSubWorldReject : PacketBase<PacketType::ClientSubWorldReject> {
   ClientSubWorldReject();
   ClientSubWorldReject(ClientSubWorldId const& subWorldId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   ClientSubWorldId subWorldId;
 };
@@ -1379,8 +1379,8 @@ struct NotifyWorldLoad : PacketBase<PacketType::NotifyWorldLoad> {
   NotifyWorldLoad();
   NotifyWorldLoad(WorldId worldId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   WorldId worldId;
 };
@@ -1392,8 +1392,8 @@ struct LogMapUpdate : PacketBase<PacketType::LogMapUpdate> {
   LogMapUpdate();
   LogMapUpdate(Map<String,String> map);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Map<String,String> map;
 };
@@ -1405,11 +1405,11 @@ struct UniverseMessage : PacketBase<PacketType::UniverseMessage> {
   UniverseMessage();
   UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
-  void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] std::expected<void, StarException> readJson(Json const& json) override;
+  [[nodiscard]] std::expected<Json, StarException> writeJson() const override;
 
   ConnectionId connection;
   String message;
@@ -1425,8 +1425,8 @@ struct UniverseMessageResponse : PacketBase<PacketType::UniverseMessageResponse>
   UniverseMessageResponse();
   UniverseMessageResponse(Either<String,Json> response, Uuid uuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
+  [[nodiscard]] std::expected<void, StarException> read(DataStream& ds) override;
+  [[nodiscard]] std::expected<void, StarException> write(DataStream& ds) const override;
 
   Either<String, Json> response;
   Uuid uuid;

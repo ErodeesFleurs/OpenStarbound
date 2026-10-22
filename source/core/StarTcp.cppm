@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.io_device;
 import star.string;
 import star.either;
@@ -13,16 +14,16 @@ class Logger;
 
 class TcpSocket : public Socket {
 public:
-  static std::shared_ptr<TcpSocket> connectTo(HostAddressWithPort const& address);
-  static std::shared_ptr<TcpSocket> listen(Logger& logger, HostAddressWithPort const& address);
+  [[nodiscard]] static std::expected<std::shared_ptr<TcpSocket>, StarException> connectTo(HostAddressWithPort const& address);
+  [[nodiscard]] static std::expected<std::shared_ptr<TcpSocket>, StarException> listen(Logger& logger, HostAddressWithPort const& address);
 
-  std::shared_ptr<TcpSocket> accept(Logger& logger);
+  [[nodiscard]] std::expected<std::shared_ptr<TcpSocket>, StarException> accept(Logger& logger);
 
   // Must be called after connect.  Sets TCP_NODELAY option.
-  void setNoDelay(bool noDelay);
+  [[nodiscard]] std::expected<void, StarException> setNoDelay(bool noDelay);
 
-  std::size_t receive(char* data, std::size_t len);
-  std::size_t send(char const* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> receive(char* data, std::size_t len);
+  [[nodiscard]] std::expected<std::size_t, StarException> send(char const* data, std::size_t len);
 
   HostAddressWithPort localAddress() const;
   HostAddressWithPort remoteAddress() const;
@@ -31,7 +32,7 @@ private:
   TcpSocket(NetworkMode networkMode);
   TcpSocket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl);
 
-  void connect(HostAddressWithPort const& address);
+  [[nodiscard]] std::expected<void, StarException> connect(HostAddressWithPort const& address);
 
   HostAddressWithPort m_remoteAddress;
 };
@@ -39,30 +40,27 @@ private:
 // Simple class to listen for and open TcpSocket instances.
 class TcpServer {
 public:
-  typedef std::function<void(std::shared_ptr<TcpSocket> socket)> AcceptCallback;
+  typedef std::function<std::expected<void, StarException>(std::shared_ptr<TcpSocket> socket)> AcceptCallback;
 
-  TcpServer(Logger& logger, HostAddressWithPort const& address);
-  // Listens to all interfaces.
-  TcpServer(Logger& logger, std::uint16_t port);
+  [[nodiscard]] static std::expected<std::unique_ptr<TcpServer>, StarException> create(Logger& logger, HostAddressWithPort const& address);
+  [[nodiscard]] static std::expected<std::unique_ptr<TcpServer>, StarException> create(Logger& logger, std::uint16_t port);
   ~TcpServer();
 
-  void stop();
+  [[nodiscard]] std::expected<void, StarException> stop();
   bool isListening() const;
 
-  // Blocks until next connection available for the given timeout.  Throws
-  // ServerClosed if close() is called.  Cannot be called if AcceptCallback is
-  // set.
-  std::shared_ptr<TcpSocket> accept(unsigned timeout);
+  // True only after the listener is closed and the callback thread is joined.
+  // A failed stop() may still satisfy this when it reports a callback error.
+  bool isClosed() const;
 
-  // Rather than calling and blocking on accept(), if an AcceptCallback is set
-  // here, it will be called whenever a new connection is available.
-  // Exceptions thrown from the callback function will be caught and logged,
-  // and will cause the server to close.  The timeout here is the timeout that
-  // is passed to accept in the loop, the longer the timeout the slower it will
-  // shutdown on a call to close.
-  void setAcceptCallback(AcceptCallback callback, unsigned timeout = 20);
+  // Blocks until a connection or timeout; a closed listener yields a null socket.
+  [[nodiscard]] std::expected<std::shared_ptr<TcpSocket>, StarException> accept(unsigned timeout);
+
+  // Callback failures are logged and close the listener.
+  [[nodiscard]] std::expected<void, StarException> setAcceptCallback(AcceptCallback callback, unsigned timeout = 20);
 
 private:
+  TcpServer(Logger& logger, HostAddressWithPort const& address);
   Logger& m_logger;
   mutable Mutex m_mutex;
 

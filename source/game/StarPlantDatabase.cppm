@@ -22,9 +22,9 @@ using PlantDatabaseException = StarError<PlantDatabaseExceptionTag, StarExceptio
 // Configuration for a specific tree variant
 struct TreeVariant {
   TreeVariant();
-  TreeVariant(Assets const& assets, Json const& json);
+  [[nodiscard]] static std::expected<TreeVariant, StarException> create(Assets const& assets, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   String stemName;
   String foliageName;
@@ -51,9 +51,9 @@ struct TreeVariant {
 // Configuration for a specific grass variant
 struct GrassVariant {
   GrassVariant();
-  GrassVariant(Assets const& assets, Json const& json);
+  [[nodiscard]] static std::expected<GrassVariant, StarException> create(Assets const& assets, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   String name;
 
@@ -77,9 +77,9 @@ struct BushVariant {
   };
 
   BushVariant();
-  BushVariant(Assets const& assets, Json const& json);
+  [[nodiscard]] static std::expected<BushVariant, StarException> create(Assets const& assets, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   String bushName;
   String modName;
@@ -100,35 +100,36 @@ struct BushVariant {
 
 class PlantDatabase {
 public:
-  explicit PlantDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlantDatabase>, StarException> create(Root& root);
 
-  StringList treeStemNames(bool ceiling = false) const;
+  [[nodiscard]] std::expected<StringList, StarException> treeStemNames(bool ceiling = false) const;
   StringList treeFoliageNames() const;
   // Each stem / foliage set has its own patterns of shapes that must match up
-  String treeStemShape(String const& stemName) const;
-  String treeFoliageShape(String const& foliageName) const;
+  [[nodiscard]] std::expected<String, StarException> treeStemShape(String const& stemName) const;
+  [[nodiscard]] std::expected<String, StarException> treeFoliageShape(String const& foliageName) const;
   std::optional<String> treeStemDirectory(String const& stemName) const;
   std::optional<String> treeFoliageDirectory(String const& foliageName) const;
-  // Throws an exception if stem shape and foliage shape do not match
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
+  // Returns an error if stem shape and foliage shape do not match
+  [[nodiscard]] std::expected<TreeVariant, StarException> buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
   // Build a foliage-less tree
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift) const;
+  [[nodiscard]] std::expected<TreeVariant, StarException> buildTreeVariant(String const& stemName, float stemHueShift) const;
 
-  StringList grassNames(bool ceiling = false) const;
-  GrassVariant buildGrassVariant(String const& grassName, float hueShift) const;
+  [[nodiscard]] std::expected<StringList, StarException> grassNames(bool ceiling = false) const;
+  [[nodiscard]] std::expected<GrassVariant, StarException> buildGrassVariant(String const& grassName, float hueShift) const;
 
-  StringList bushNames(bool ceiling = false) const;
-  StringList bushMods(String const& bushName) const;
-  BushVariant buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
+  [[nodiscard]] std::expected<StringList, StarException> bushNames(bool ceiling = false) const;
+  [[nodiscard]] std::expected<StringList, StarException> bushMods(String const& bushName) const;
+  [[nodiscard]] std::expected<BushVariant, StarException> buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
 
-  std::shared_ptr<Plant> createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const;
-  std::shared_ptr<Plant> createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const;
-  std::shared_ptr<Plant> createPlant(BushVariant const& bushVariant, std::uint64_t seed) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Plant>, StarException> createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Plant>, StarException> createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Plant>, StarException> createPlant(BushVariant const& bushVariant, std::uint64_t seed) const;
 
-  Json treeFoliageConfig(String const& foliageName) const;
-  Json treeStemConfig(String const& stemName) const;
+  [[nodiscard]] std::expected<Json, StarException> treeFoliageConfig(String const& foliageName) const;
+  [[nodiscard]] std::expected<Json, StarException> treeStemConfig(String const& stemName) const;
 
 private:
+  explicit PlantDatabase(Root& root) : m_root(root) {}
   struct Config {
     String directory;
     Json settings;

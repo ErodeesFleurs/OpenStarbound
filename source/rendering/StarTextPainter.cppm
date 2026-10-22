@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.color;
 import star.font;
@@ -55,8 +56,8 @@ struct TextPositioning {
       std::optional<unsigned> wrapWidth = {},
       std::optional<unsigned> charLimit = {});
 
-  TextPositioning(Json const& v);
-  Json toJson() const;
+  [[nodiscard]] static std::expected<TextPositioning, StarException> create(Json const& v);
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
   TextPositioning translated(Vec2F translation) const;
 
@@ -72,49 +73,49 @@ struct TextPositioning {
 class TextPainter {
 public:
   // Root must outlive this painter and its scoped reload subscription.
-  TextPainter(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
+  [[nodiscard]] static std::expected<std::shared_ptr<TextPainter>, StarException> create(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
 
-  RectF renderText(StringView s, TextPositioning const& position);
-  RectF renderLine(StringView s, TextPositioning const& position);
-  RectF renderGlyph(String::Char c, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> renderText(StringView s, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> renderLine(StringView s, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> renderGlyph(String::Char c, TextPositioning const& position);
 
-  RectF determineTextSize(StringView s, TextPositioning const& position);
-  RectF determineLineSize(StringView s, TextPositioning const& position);
-  RectF determineGlyphSize(String::Char c, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> determineTextSize(StringView s, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> determineLineSize(StringView s, TextPositioning const& position);
+  [[nodiscard]] std::expected<RectF, StarException> determineGlyphSize(String::Char c, TextPositioning const& position);
 
-  int glyphWidth(String::Char c);
-  int stringWidth(StringView s, unsigned charLimit = 0);
+  [[nodiscard]] std::expected<int, StarException> glyphWidth(String::Char c);
+  [[nodiscard]] std::expected<int, StarException> stringWidth(StringView s, unsigned charLimit = 0);
 
-    
-  typedef std::function<bool(StringView, unsigned)> WrapTextCallback;
-  bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
+  typedef std::function<std::expected<bool, StarException>(StringView, unsigned)> WrapTextCallback;
+  [[nodiscard]] std::expected<bool, StarException> processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
-  List<StringView> wrapTextViews(StringView s, std::optional<unsigned> wrapWidth);
-  StringList wrapText(StringView s, std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<List<StringView>, StarException> wrapTextViews(StringView s, std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<StringList, StarException> wrapText(StringView s, std::optional<unsigned> wrapWidth);
 
   unsigned fontSize() const;
   void setFontSize(unsigned size);
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
   void setFontColor(Vec4B color);
-  void setProcessingDirectives(StringView directives, bool back = false);
-  void setFont(String const& font);
-  TextStyle& setTextStyle(TextStyle const& textStyle);
-  void clearTextStyle();
-  void addFont(std::shared_ptr<Font> const& font, String const& name);
-  void reloadFonts();
+  [[nodiscard]] std::expected<void, StarException> setProcessingDirectives(StringView directives, bool back = false);
+  [[nodiscard]] std::expected<void, StarException> setFont(String const& font);
+  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle);
+  [[nodiscard]] std::expected<void, StarException> clearTextStyle();
+  [[nodiscard]] std::expected<void, StarException> addFont(std::shared_ptr<Font> const& font, String const& name);
+  [[nodiscard]] std::expected<void, StarException> reloadFonts();
 
   void cleanup(std::int64_t textureTimeout);
-  void applyCommands(StringView unsplitCommands);
+  [[nodiscard]] std::expected<void, StarException> applyCommands(StringView unsplitCommands);
 private:
-  void modifyDirectives(Directives& directives);
-  RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
+  TextPainter(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
+  [[nodiscard]] std::expected<void, StarException> modifyDirectives(Directives& directives);
+  [[nodiscard]] std::expected<RectF, StarException> doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  [[nodiscard]] std::expected<RectF, StarException> doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  [[nodiscard]] std::expected<RectF, StarException> doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
   void renderPrimitives();
-  void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  std::shared_ptr<Font> loadFont(String const& fontPath, std::optional<String> fontName = {});
+  [[nodiscard]] std::expected<void, StarException> renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] std::expected<std::shared_ptr<Font>, StarException> loadFont(String const& fontPath, std::optional<String> fontName = {});
 
   Root& m_root;
   std::shared_ptr<Renderer> m_renderer;

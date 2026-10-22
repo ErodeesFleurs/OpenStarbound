@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.string;
@@ -27,7 +28,8 @@ public:
   }
 
   virtual ~NonRotatedDrawablesItem() {}
-  virtual List<Drawable> nonRotatedDrawables() const = 0;
+  [[nodiscard]]
+  virtual std::expected<List<Drawable>, StarException> nonRotatedDrawables() const = 0;
 };
 
 }

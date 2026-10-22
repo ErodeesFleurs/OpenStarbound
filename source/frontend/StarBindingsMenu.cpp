@@ -1,5 +1,6 @@
 import star.lua_root;
 import std;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -68,21 +69,38 @@ import star.input_lua_bindings;
 
 namespace Star {
 
-BindingsMenu::BindingsMenu(GuiContext& guiContext, Json const& config) : BaseScriptPane(guiContext, config) {
-  m_script.setLuaRoot(std::make_shared<LuaRoot>(context()->root()));
-  m_script.addCallbacks("input", LuaBindings::makeInputCallbacks(context()->input()));
+BindingsMenu::BindingsMenu(GuiContext& guiContext) : BaseScriptPane(guiContext) {}
+
+std::expected<std::shared_ptr<BindingsMenu>, StarException> BindingsMenu::create(GuiContext& guiContext, Json const& config) {
+  auto menu = std::shared_ptr<BindingsMenu>(new BindingsMenu(guiContext));
+  if (auto result = menu->init(config); !result)
+    return std::unexpected(std::move(result.error()));
+  auto luaRoot = LuaRoot::create(guiContext.root());
+  if (!luaRoot)
+    return std::unexpected(std::move(luaRoot.error()));
+  if (auto result = menu->m_script.setLuaRoot(std::move(*luaRoot)); !result)
+    return std::unexpected(std::move(result.error()));
+  auto input = guiContext.input();
+  if (!input)
+    return std::unexpected(std::move(input.error()));
+  auto callbacks = LuaBindings::makeInputCallbacks(**input);
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  if (auto result = menu->m_script.addCallbacks("input", std::move(*callbacks)); !result)
+    return std::unexpected(std::move(result.error()));
+  return menu;
 }
 
-void BindingsMenu::show() {
-  BaseScriptPane::show();
+std::expected<void, StarException> BindingsMenu::show() {
+  return BaseScriptPane::show();
 }
 
-void BindingsMenu::displayed() {
-  BaseScriptPane::displayed();
+std::expected<void, StarException> BindingsMenu::displayed() {
+  return BaseScriptPane::displayed();
 }
 
-void BindingsMenu::dismissed() {
-  BaseScriptPane::dismissed();
+std::expected<void, StarException> BindingsMenu::dismissed() {
+  return BaseScriptPane::dismissed();
 }
 
 }

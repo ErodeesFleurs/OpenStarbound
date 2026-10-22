@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.string;
 import star.json;
 import star.net_compatibility;
@@ -38,11 +39,12 @@ class Root;
 // the given tile location.  Other checks that enable / disable weather such as
 // whether or not the region is below the underground level are performed
 // separately of this, this is just to check the actual tile data.
-typedef std::function<bool(Vec2I)> WeatherEffectsActiveQuery;
+typedef std::function<std::expected<bool, StarException>(Vec2I)> WeatherEffectsActiveQuery;
 
 class ServerWeather {
 public:
-  explicit ServerWeather(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ServerWeather>, StarException> create(Root& root);
 
   void setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
       WeatherEffectsActiveQuery weatherEffectsActiveQuery);
@@ -51,17 +53,21 @@ public:
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  std::pair<ByteArray, std::uint64_t> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]]
+  std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
 
-  void update(double dt);
+  [[nodiscard]]
+  std::expected<void, StarException> update(double dt);
 
   // Immediately sets the active weather index. If the index is NPos or out of
   // range, weather is cleared.  If force is true, weather will not automatically
   // change until setWeatherIndex/SetWeather is called again.
-  void setWeatherIndex(std::size_t weatherIndex, bool force = false);
+  [[nodiscard]]
+  std::expected<void, StarException> setWeatherIndex(std::size_t weatherIndex, bool force = false);
   // Immediately sets the active weather type by name. If not found, weather is
   // cleared.  Behavior of |force| is the same as above.
-  void setWeather(String const& weatherName, bool force = false);
+  [[nodiscard]]
+  std::expected<void, StarException> setWeather(String const& weatherName, bool force = false);
 
   StringList weatherList() const;
 
@@ -76,12 +82,16 @@ public:
 
   List<std::shared_ptr<Projectile>> pullNewProjectiles();
   
-  std::optional<String> activeWeather() const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> activeWeather() const;
 
 private:
-  void setNetStates();
+  explicit ServerWeather(Root& root);
+  [[nodiscard]]
+  std::expected<void, StarException> setNetStates();
 
-  void spawnWeatherProjectiles(float dt);
+  [[nodiscard]]
+  std::expected<void, StarException> spawnWeatherProjectiles(float dt);
 
   Root* m_root;
   WeatherPool m_weatherPool;
@@ -117,17 +127,21 @@ private:
 
 class ClientWeather {
 public:
-  explicit ClientWeather(Root& root);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ClientWeather>, StarException> create(Root& root);
 
   void setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
-  void readUpdate(ByteArray data, NetCompatibilityRules rules);
+  [[nodiscard]]
+  std::expected<void, StarException> readUpdate(ByteArray data, NetCompatibilityRules rules);
 
-  void clear();
+  [[nodiscard]]
+  std::expected<void, StarException> clear();
 
   void setVisibleRegion(RectI visibleRegion);
 
-  void update(double dt);
+  [[nodiscard]]
+  std::expected<void, StarException> update(double dt);
 
   float wind() const;
   float weatherIntensity() const;
@@ -138,12 +152,16 @@ public:
   StringList weatherTrackOptions() const;
   std::optional<String> weatherParallax() const;
   
-  std::optional<String> activeWeather() const;
+  [[nodiscard]]
+  std::expected<std::optional<String>, StarException> activeWeather() const;
 
 private:
-  void getNetStates();
+  explicit ClientWeather(Root& root);
+  [[nodiscard]]
+  std::expected<void, StarException> getNetStates();
 
-  void spawnWeatherParticles(RectF newClientRegion, float dt);
+  [[nodiscard]]
+  std::expected<void, StarException> spawnWeatherParticles(RectF newClientRegion, float dt);
 
   Root* m_root;
   WeatherPool m_weatherPool;

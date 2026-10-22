@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.poly;
@@ -72,12 +73,12 @@ enum class MainInterfacePanes {
   CharacterSwap
 };
 
-extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
+extern std::expected<EnumMap<MainInterfacePanes>, StarException> const MainInterfacePanesNames;
 
 typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 
 struct MainInterfaceConfig {
-  static std::shared_ptr<MainInterfaceConfig> loadFromAssets(GuiContext& context);
+  [[nodiscard]] static std::expected<std::shared_ptr<MainInterfaceConfig>, StarException> loadFromAssets(GuiContext& context);
 
   TextStyle textStyle;
 

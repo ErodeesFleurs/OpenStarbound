@@ -28,6 +28,7 @@ import star.map;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.version;
 import star.parametric_function;
 import star.multi_array_interpolator;
@@ -106,58 +107,122 @@ import star.stored_functions;
 import star.math_common;
 namespace Star {
 
-extern EnumMap<ArmorType> const ArmorTypeNames{
+extern std::expected<EnumMap<ArmorType>, StarException> const ArmorTypeNames = EnumMap<ArmorType>::create({
   {ArmorType::Head, "Head"},
   {ArmorType::Chest, "Chest"},
   {ArmorType::Legs, "Legs"},
   {ArmorType::Back, "Back"}
-};
+});
 
-ArmorItem::ArmorItem(Root& root, Json const& config, String const& directory, Json const& data) : Item(root, config, directory, data), SwingableItem(config) {
-  refreshStatusEffects();
-  m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));
-  m_techModule = instanceValue("techModule", "").toString();
+std::expected<void, StarException> ArmorItem::initializeArmor(Json const& config, String const& directory, Json const& data) {
+  auto initialized = initialize(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  auto effects = refreshStatusEffects();
+  if (!effects)
+    return std::unexpected(std::move(effects.error()));
+  auto sources = instanceValue("effectSources", JsonArray()).and_then(jsonToStringSet);
+  if (!sources)
+    return std::unexpected(std::move(sources.error()));
+  m_effectSources = std::move(*sources);
+  auto module = instanceValue("techModule", "").and_then([](Json const& value) { return value.toString(); });
+  if (!module)
+    return std::unexpected(std::move(module.error()));
+  m_techModule = std::move(*module);
   if (m_techModule->empty())
     m_techModule = {};
   else
     m_techModule = AssetPath::relativeTo(directory, *m_techModule);
-
-  auto directives = instanceValue("directives", "").toString();
-  m_directives = directives;
-  m_fullbright = instanceValue("fullbright",false).toBool();
-
-  m_colorOptions = colorDirectivesFromConfig(config.getArray("colorOptions", JsonArray{""}));
-  if (!m_directives)
-    m_directives = "?" + m_colorOptions.wrap(instanceValue("colorIndex", 0).toUInt());
-  refreshIconDrawables();
-
-  if (auto jFlipDirectives = instanceValueOfType("flipDirectives", Json::Type::String)) {
-    auto flipDirectives = jFlipDirectives.toString();
-    auto directivesStr = m_directives.stringPtr();
-    if (flipDirectives.beginsWith('+') && directivesStr)
-      m_flipDirectives = Directives(*directivesStr + flipDirectives.substr(1));
-    else
-      m_flipDirectives = Directives(std::move(flipDirectives));
+  auto directives = instanceValue("directives", "").and_then([](Json const& value) { return value.toString(); });
+  if (!directives)
+    return std::unexpected(std::move(directives.error()));
+  m_directives = *directives;
+  auto fullbright = instanceValue("fullbright", false).and_then([](Json const& value) { return value.toBool(); });
+  if (!fullbright)
+    return std::unexpected(std::move(fullbright.error()));
+  m_fullbright = *fullbright;
+  auto options = config.getArray("colorOptions", JsonArray{""}).and_then(colorDirectivesFromConfig);
+  if (!options)
+    return std::unexpected(std::move(options.error()));
+  m_colorOptions = std::move(*options);
+  if (!m_directives) {
+    auto index = instanceValue("colorIndex", 0).and_then([](Json const& value) { return value.toUInt(); });
+    if (!index)
+      return std::unexpected(std::move(index.error()));
+    auto option = m_colorOptions.wrap(*index);
+    if (!option)
+      return std::unexpected(std::move(option.error()));
+    m_directives = "?" + **option;
   }
-
-  m_bypassNude = instanceValueOfType("bypassNude", Json::Type::Bool, false).toBool();
-  m_hideInVanillaSlots = instanceValueOfType("hideInVanillaSlots", Json::Type::Bool, false).toBool();
-
-  if (auto armorTypesToHide = instanceValueOfType("armorTypesToHide", Json::Type::Array)) {
-    m_armorTypesToHide.emplace();
-    for (auto& str : armorTypesToHide.toArray()) {
-      if (!str.isType(Json::Type::String))
-        continue;
-      if (auto armorType = ArmorTypeNames.leftPtr(str.toString()))
-        m_armorTypesToHide->add(*armorType);
+  auto icons = refreshIconDrawables();
+  if (!icons)
+    return std::unexpected(std::move(icons.error()));
+  auto flipValue = instanceValueOfType("flipDirectives", Json::Type::String);
+  if (!flipValue)
+    return std::unexpected(std::move(flipValue.error()));
+  if (*flipValue) {
+    auto flipDirectives = flipValue->toString();
+    if (!flipDirectives)
+      return std::unexpected(std::move(flipDirectives.error()));
+    auto directivesStr = m_directives.stringPtr();
+    auto append = flipDirectives->beginsWith('+');
+    if (!append)
+      return std::unexpected(std::move(append.error()));
+    if (*append && directivesStr) {
+      auto suffix = flipDirectives->substr(1);
+      if (!suffix)
+        return std::unexpected(std::move(suffix.error()));
+      m_flipDirectives = Directives(*directivesStr + *suffix);
+    } else {
+      m_flipDirectives = Directives(std::move(*flipDirectives));
     }
   }
-
-  m_hideBody = config.getBool("hideBody", false);
-  m_statusEffectsInCosmeticSlot = config.getBool("statusEffectsInCosmeticSlots", false);
+  auto bypass = instanceValueOfType("bypassNude", Json::Type::Bool, false).and_then([](Json const& value) { return value.toBool(); });
+  if (!bypass)
+    return std::unexpected(std::move(bypass.error()));
+  m_bypassNude = *bypass;
+  auto hideSlots = instanceValueOfType("hideInVanillaSlots", Json::Type::Bool, false).and_then([](Json const& value) { return value.toBool(); });
+  if (!hideSlots)
+    return std::unexpected(std::move(hideSlots.error()));
+  m_hideInVanillaSlots = *hideSlots;
+  auto hiddenTypes = instanceValueOfType("armorTypesToHide", Json::Type::Array);
+  if (!hiddenTypes)
+    return std::unexpected(std::move(hiddenTypes.error()));
+  if (*hiddenTypes) {
+    auto types = hiddenTypes->toArray();
+    if (!types)
+      return std::unexpected(std::move(types.error()));
+    m_armorTypesToHide.emplace();
+    for (auto const& value : *types) {
+      if (!value.isType(Json::Type::String))
+        continue;
+      auto name = value.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (!ArmorTypeNames)
+        return std::unexpected(ArmorTypeNames.error());
+      auto type = ArmorTypeNames->leftPtr(*name);
+      if (!type)
+        return std::unexpected(std::move(type.error()));
+      if (*type)
+        m_armorTypesToHide->add(**type);
+    }
+  }
+  auto hideBody = config.getBool("hideBody", false);
+  if (!hideBody)
+    return std::unexpected(std::move(hideBody.error()));
+  m_hideBody = *hideBody;
+  auto cosmeticEffects = config.getBool("statusEffectsInCosmeticSlots", false);
+  if (!cosmeticEffects)
+    return std::unexpected(std::move(cosmeticEffects.error()));
+  m_statusEffectsInCosmeticSlot = *cosmeticEffects;
+  return {};
 }
 
-List<PersistentStatusEffect> ArmorItem::statusEffects() const {
+std::expected<List<PersistentStatusEffect>, StarException> ArmorItem::statusEffects() const {
   return m_statusEffects;
 }
 
@@ -169,23 +234,25 @@ List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() const {
   return m_cosmeticStatusEffects;
 }
 
-StringSet ArmorItem::effectSources() const {
+std::expected<StringSet, StarException> ArmorItem::effectSources() const {
   return m_effectSources;
 }
 
-List<Drawable> ArmorItem::drawables() const {
+std::expected<List<Drawable>, StarException> ArmorItem::drawables() const {
   auto drawables = iconDrawables();
-  Drawable::scaleAll(drawables, 1.0f / TilePixels);
-  Drawable::translateAll(drawables, -handPosition() / TilePixels);
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  Drawable::scaleAll(*drawables, 1.0f / TilePixels);
+  Drawable::translateAll(*drawables, -handPosition() / TilePixels);
   return drawables;
 }
 
-float ArmorItem::getAngle(float) {
+std::expected<float, StarException> ArmorItem::getAngle(float) {
   return -25.0f * Constants::deg2rad;
 }
 
-void ArmorItem::fire(FireMode, bool, bool) {}
-void ArmorItem::fireTriggered() {}
+std::expected<void, StarException> ArmorItem::fire(FireMode, bool, bool) { return {}; }
+std::expected<void, StarException> ArmorItem::fireTriggered() { return {}; }
 
 List<String> const& ArmorItem::colorOptions() {
   return m_colorOptions;
@@ -229,52 +296,122 @@ std::optional<String> const& ArmorItem::techModule() const {
 }
 
 
-void ArmorItem::refreshIconDrawables() {
+std::expected<void, StarException> ArmorItem::refreshIconDrawables() {
   auto drawables = iconDrawables();
-  for (auto& drawable : drawables) {
+  if (!drawables)
+    return std::unexpected(std::move(drawables.error()));
+  for (auto& drawable : *drawables) {
     if (drawable.isImage()) {
-      drawable.imagePart().removeDirectives(*root().imageMetadataDatabase(), true);
-      drawable.imagePart().addDirectives(*root().imageMetadataDatabase(), m_directives, true);
+      auto metadata = root().imageMetadataDatabase();
+      if (!metadata)
+        return std::unexpected(std::move(metadata.error()));
+      auto removed = drawable.imagePart().removeDirectives(**metadata, true);
+      if (!removed)
+        return std::unexpected(std::move(removed.error()));
+      auto added = drawable.imagePart().addDirectives(**metadata, m_directives, true);
+      if (!added)
+        return std::unexpected(std::move(added.error()));
     }
   }
-  setIconDrawables(std::move(drawables));
+  return setIconDrawables(std::move(*drawables));
 }
 
-void ArmorItem::refreshStatusEffects() {
-  m_statusEffects = instanceValue("statusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-  m_cosmeticStatusEffects = instanceValue("cosmeticStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-  if (auto leveledStatusEffects = instanceValue("leveledStatusEffects", Json())) {
-    auto functionDatabase = root().functionDatabase();
-    float level = instanceValue("level", 1).toFloat();
-    for (auto effectConfig : leveledStatusEffects.iterateArray()) {
-      float levelFunctionFactor = functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
+std::expected<void, StarException> ArmorItem::refreshStatusEffects() {
+  for (auto const& [key, target] : {std::pair{"statusEffects", &m_statusEffects}, std::pair{"cosmeticStatusEffects", &m_cosmeticStatusEffects}}) {
+    auto values = instanceValue(key, JsonArray()).and_then([](Json const& value) { return value.toArray(); });
+    if (!values)
+      return std::unexpected(std::move(values.error()));
+    target->clear();
+    for (auto const& value : *values) {
+      auto effect = jsonToPersistentStatusEffect(value);
+      if (!effect)
+        return std::unexpected(std::move(effect.error()));
+      target->append(std::move(*effect));
+    }
+  }
+  auto leveled = instanceValue("leveledStatusEffects", Json());
+  if (!leveled)
+    return std::unexpected(std::move(leveled.error()));
+  if (*leveled) {
+    auto database = root().functionDatabase();
+    if (!database)
+      return std::unexpected(std::move(database.error()));
+    auto level = instanceValue("level", 1).and_then([](Json const& value) { return value.toFloat(); });
+    if (!level)
+      return std::unexpected(std::move(level.error()));
+    auto values = leveled->iterateArray();
+    if (!values)
+      return std::unexpected(std::move(values.error()));
+    for (auto const& effectConfig : *values) {
+      auto name = effectConfig.getString("levelFunction");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      auto function = (*database)->function(*name);
+      if (!function)
+        return std::unexpected(std::move(function.error()));
+      auto factor = (*function)->evaluate(*level);
+      if (!factor)
+        return std::unexpected(std::move(factor.error()));
       auto statModifier = jsonToStatModifier(effectConfig);
-      if (auto p = std::get_if<StatBaseMultiplier>(&statModifier))
-        p->baseMultiplier = 1 + (p->baseMultiplier - 1) * levelFunctionFactor;
-      else if (auto p = std::get_if<StatValueModifier>(&statModifier))
-        p->value *= levelFunctionFactor;
-      else if (auto p = std::get_if<StatEffectiveMultiplier>(&statModifier))
-        p->effectiveMultiplier = 1 + (p->effectiveMultiplier - 1) * levelFunctionFactor;
-      m_statusEffects.append(statModifier);
+      if (!statModifier)
+        return std::unexpected(std::move(statModifier.error()));
+      if (auto p = std::get_if<StatBaseMultiplier>(&*statModifier))
+        p->baseMultiplier = 1 + (p->baseMultiplier - 1) * *factor;
+      else if (auto p = std::get_if<StatValueModifier>(&*statModifier))
+        p->value *= *factor;
+      else if (auto p = std::get_if<StatEffectiveMultiplier>(&*statModifier))
+        p->effectiveMultiplier = 1 + (p->effectiveMultiplier - 1) * *factor;
+      m_statusEffects.append(std::move(*statModifier));
     }
   }
-  if (auto augmentConfig = instanceValue("currentAugment", Json()))
-    m_statusEffects.appendAll(augmentConfig.getArray("effects", JsonArray()).transformed(jsonToPersistentStatusEffect));
+  auto augment = instanceValue("currentAugment", Json());
+  if (!augment)
+    return std::unexpected(std::move(augment.error()));
+  if (*augment) {
+    auto values = augment->getArray("effects", JsonArray());
+    if (!values)
+      return std::unexpected(std::move(values.error()));
+    for (auto const& value : *values) {
+      auto effect = jsonToPersistentStatusEffect(value);
+      if (!effect)
+        return std::unexpected(std::move(effect.error()));
+      m_statusEffects.append(std::move(*effect));
+    }
+  }
+  return {};
 }
 
-HeadArmor::HeadArmor(Root& root, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(root, config, directory, data) {
-  m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
-  m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
-
-  String maskDirectivesStr = instanceValue("mask").toString();
-  if (!maskDirectivesStr.empty() && !maskDirectivesStr.contains("?"))
-    m_maskDirectives = "?addmask=" + AssetPath::relativeTo(directory, maskDirectivesStr) + ";0;0";
-  else
-    m_maskDirectives = maskDirectivesStr;
+std::expected<std::shared_ptr<HeadArmor>, StarException> HeadArmor::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<HeadArmor>(new HeadArmor(root));
+  auto initialized = item->initializeArmor(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto male = config.getString("maleFrames");
+  if (!male)
+    return std::unexpected(std::move(male.error()));
+  item->m_maleImage = AssetPath::relativeTo(directory, *male);
+  auto female = config.getString("femaleFrames");
+  if (!female)
+    return std::unexpected(std::move(female.error()));
+  item->m_femaleImage = AssetPath::relativeTo(directory, *female);
+  auto mask = item->instanceValue("mask").and_then([](Json const& value) { return value.toString(); });
+  if (!mask)
+    return std::unexpected(std::move(mask.error()));
+  if (!mask->empty()) {
+    auto contains = mask->contains("?");
+    if (!contains)
+      return std::unexpected(std::move(contains.error()));
+    if (!*contains)
+      item->m_maskDirectives = "?addmask=" + AssetPath::relativeTo(directory, *mask) + ";0;0";
+    else
+      item->m_maskDirectives = *mask;
+  } else {
+    item->m_maskDirectives = *mask;
+  }
+  return item;
 }
 
-std::shared_ptr<Item> HeadArmor::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> HeadArmor::clone() const {
   return std::make_shared<HeadArmor>(*this);
 }
 
@@ -293,26 +430,47 @@ Directives const& HeadArmor::maskDirectives() const {
   return m_maskDirectives;
 }
 
-List<Drawable> HeadArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
+std::expected<List<Drawable>, StarException> HeadArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(root(), gender);
-  return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
+  auto humanoid = viewer ? std::expected<std::shared_ptr<Humanoid>, StarException>(viewer->humanoid()) : Humanoid::makeDummy(root(), gender);
+  if (!humanoid)
+    return std::unexpected(std::move(humanoid.error()));
+  return (*humanoid)->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
-ChestArmor::ChestArmor(Root& root, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(root, config, directory, data) {
-  Json maleImages = config.get("maleFrames");
-  m_maleBodyImage = AssetPath::relativeTo(directory, maleImages.getString("body"));
-  m_maleFrontSleeveImage = AssetPath::relativeTo(directory, maleImages.getString("frontSleeve"));
-  m_maleBackSleeveImage = AssetPath::relativeTo(directory, maleImages.getString("backSleeve"));
-
-  Json femaleImages = config.get("femaleFrames");
-  m_femaleBodyImage = AssetPath::relativeTo(directory, femaleImages.getString("body"));
-  m_femaleFrontSleeveImage = AssetPath::relativeTo(directory, femaleImages.getString("frontSleeve"));
-  m_femaleBackSleeveImage = AssetPath::relativeTo(directory, femaleImages.getString("backSleeve"));
+std::expected<std::shared_ptr<ChestArmor>, StarException> ChestArmor::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<ChestArmor>(new ChestArmor(root));
+  auto initialized = item->initializeArmor(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto male = config.get("maleFrames");
+  if (!male)
+    return std::unexpected(std::move(male.error()));
+  for (auto const& [key, target] : {
+      std::pair{"body", &item->m_maleBodyImage},
+      std::pair{"frontSleeve", &item->m_maleFrontSleeveImage},
+      std::pair{"backSleeve", &item->m_maleBackSleeveImage}}) {
+    auto path = male->getString(key);
+    if (!path)
+      return std::unexpected(std::move(path.error()));
+    *target = AssetPath::relativeTo(directory, *path);
+  }
+  auto female = config.get("femaleFrames");
+  if (!female)
+    return std::unexpected(std::move(female.error()));
+  for (auto const& [key, target] : {
+      std::pair{"body", &item->m_femaleBodyImage},
+      std::pair{"frontSleeve", &item->m_femaleFrontSleeveImage},
+      std::pair{"backSleeve", &item->m_femaleBackSleeveImage}}) {
+    auto path = female->getString(key);
+    if (!path)
+      return std::unexpected(std::move(path.error()));
+    *target = AssetPath::relativeTo(directory, *path);
+  }
+  return item;
 }
 
-std::shared_ptr<Item> ChestArmor::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> ChestArmor::clone() const {
   return std::make_shared<ChestArmor>(*this);
 }
 
@@ -341,19 +499,31 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
     return m_femaleBackSleeveImage;
 }
 
-List<Drawable> ChestArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
+std::expected<List<Drawable>, StarException> ChestArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(root(), gender);
-  return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
+  auto humanoid = viewer ? std::expected<std::shared_ptr<Humanoid>, StarException>(viewer->humanoid()) : Humanoid::makeDummy(root(), gender);
+  if (!humanoid)
+    return std::unexpected(std::move(humanoid.error()));
+  return (*humanoid)->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
-LegsArmor::LegsArmor(Root& root, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(root, config, directory, data) {
-  m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
-  m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
+std::expected<std::shared_ptr<LegsArmor>, StarException> LegsArmor::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<LegsArmor>(new LegsArmor(root));
+  auto initialized = item->initializeArmor(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto male = config.getString("maleFrames");
+  if (!male)
+    return std::unexpected(std::move(male.error()));
+  item->m_maleImage = AssetPath::relativeTo(directory, *male);
+  auto female = config.getString("femaleFrames");
+  if (!female)
+    return std::unexpected(std::move(female.error()));
+  item->m_femaleImage = AssetPath::relativeTo(directory, *female);
+  return item;
 }
 
-std::shared_ptr<Item> LegsArmor::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> LegsArmor::clone() const {
   return std::make_shared<LegsArmor>(*this);
 }
 
@@ -368,19 +538,31 @@ String const& LegsArmor::frameset(Gender gender) const {
     return m_femaleImage;
 }
 
-List<Drawable> LegsArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
+std::expected<List<Drawable>, StarException> LegsArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(root(), gender);
-  return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
+  auto humanoid = viewer ? std::expected<std::shared_ptr<Humanoid>, StarException>(viewer->humanoid()) : Humanoid::makeDummy(root(), gender);
+  if (!humanoid)
+    return std::unexpected(std::move(humanoid.error()));
+  return (*humanoid)->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
-BackArmor::BackArmor(Root& root, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(root, config, directory, data) {
-  m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
-  m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
+std::expected<std::shared_ptr<BackArmor>, StarException> BackArmor::create(Root& root, Json const& config, String const& directory, Json const& data) {
+  auto item = std::shared_ptr<BackArmor>(new BackArmor(root));
+  auto initialized = item->initializeArmor(config, directory, data);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto male = config.getString("maleFrames");
+  if (!male)
+    return std::unexpected(std::move(male.error()));
+  item->m_maleImage = AssetPath::relativeTo(directory, *male);
+  auto female = config.getString("femaleFrames");
+  if (!female)
+    return std::unexpected(std::move(female.error()));
+  item->m_femaleImage = AssetPath::relativeTo(directory, *female);
+  return item;
 }
 
-std::shared_ptr<Item> BackArmor::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> BackArmor::clone() const {
   return std::make_shared<BackArmor>(*this);
 }
 
@@ -395,10 +577,12 @@ String const& BackArmor::frameset(Gender gender) const {
     return m_femaleImage;
 }
 
-List<Drawable> BackArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
+std::expected<List<Drawable>, StarException> BackArmor::preview(TileDrawer*, std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(root(), gender);
-  return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);
+  auto humanoid = viewer ? std::expected<std::shared_ptr<Humanoid>, StarException>(viewer->humanoid()) : Humanoid::makeDummy(root(), gender);
+  if (!humanoid)
+    return std::unexpected(std::move(humanoid.error()));
+  return (*humanoid)->renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 
 }

@@ -37,6 +37,7 @@ import star.set;
 import star.worker_pool;
 
 import std;
+import star.format;
 import star.sector_array_2d;
 import star.net_compatibility;
 import star.perlin;
@@ -132,10 +133,14 @@ namespace {
   // Hashes one tile together with its position.  The per sample hashes are
   // combined order independently, so that two worlds can be compared without
   // serialising all of them.
-  std::uint64_t tileHash(Vec2I position, ServerTile const& tile) {
+  [[nodiscard]] std::expected<std::uint64_t, StarException> tileHash(Vec2I position, ServerTile const& tile) {
     DataStreamBuffer buffer;
-    buffer.write(position);
-    tile.write(buffer);
+    auto positionWritten = buffer.write(position);
+    if (!positionWritten)
+      return std::unexpected(std::move(positionWritten.error()));
+    auto tileWritten = tile.write(buffer);
+    if (!tileWritten)
+      return std::unexpected(std::move(tileWritten.error()));
 
     std::uint64_t hash = 14695981039346656037ull;
     for (auto byte : buffer.data())
@@ -145,11 +150,18 @@ namespace {
 
   // Samples a fixed grid around the surface of a world.  Reading a tile
   // generates the sector it is in, so only the sampled sectors are generated.
-  std::uint64_t sampleWorld(WorldServer& world, float surfaceLevel) {
+  [[nodiscard]] std::expected<std::uint64_t, StarException> sampleWorld(WorldServer& world, float surfaceLevel) {
     std::uint64_t hash = 0;
     for (int x : {0, 128, 256, 384, 512, 640, 768, 896}) {
-      for (int y = (int)surfaceLevel - 1280; y <= (int)surfaceLevel + 512; y += 128)
-        hash ^= tileHash(Vec2I(x, y), world.getServerTile(Vec2I(x, y)));
+      for (int y = (int)surfaceLevel - 1280; y <= (int)surfaceLevel + 512; y += 128) {
+        auto tile = world.getServerTile(Vec2I(x, y));
+        if (!tile)
+          return std::unexpected(std::move(tile.error()));
+        auto sample = tileHash(Vec2I(x, y), **tile);
+        if (!sample)
+          return std::unexpected(std::move(sample.error()));
+        hash ^= *sample;
+      }
     }
     return hash;
   }
@@ -163,17 +175,25 @@ namespace {
 // is printed to stderr.
 const GameTestRegistration fixedCoordinateGenerationIsDeterministic("WorldSnapshot", "FixedCoordinateGenerationIsDeterministic", [](GameTest& fixture) {
   auto storagePath = File::temporaryDirectory(fixture.root().random());
-  auto finallyGuard = finally([&storagePath]() { File::removeDirectoryRecursive(storagePath); });
-  auto celestialDatabase = std::make_shared<CelestialMasterDatabase>(fixture.root(), File::relativeTo(storagePath, "universe.chunks"));
+  ASSERT_TRUE(storagePath) << storagePath.error().what();
+  auto finallyGuard = finally([&storagePath]() { EXPECT_TRUE(File::removeDirectoryRecursive(*storagePath)); });
+  auto celestialDatabase = CelestialMasterDatabase::create(fixture.root(), File::relativeTo(*storagePath, "universe.chunks"));
+  ASSERT_TRUE(celestialDatabase) << celestialDatabase.error().what();
+  auto closeDatabase = finally([&]() { EXPECT_TRUE((*celestialDatabase)->close()); });
 
   // Find a real planet: the celestial generator places systems sparsely, and a
   // hand picked coordinate is most likely empty.
-  auto systems = celestialDatabase->scanSystems(RectI::withSize(Vec2I(0, 0), Vec2I(32, 32)));
-  ASSERT_FALSE(systems.empty());
+  auto systems = (*celestialDatabase)->scanSystems(RectI::withSize(Vec2I(0, 0), Vec2I(32, 32)));
+  ASSERT_TRUE(systems) << systems.error().what();
+  ASSERT_FALSE(systems->empty());
   std::optional<CelestialCoordinate> coordinate;
-  for (auto const& system : systems) {
-    for (auto const& child : celestialDatabase->children(system)) {
-      if (child.isPlanetaryBody() && celestialDatabase->parameters(child)) {
+  for (auto const& system : *systems) {
+    auto children = (*celestialDatabase)->children(system);
+    ASSERT_TRUE(children) << children.error().what();
+    for (auto const& child : *children) {
+      auto parameters = (*celestialDatabase)->parameters(child);
+      ASSERT_TRUE(parameters) << parameters.error().what();
+      if (child.isPlanetaryBody() && *parameters) {
         coordinate = child;
         break;
       }
@@ -184,42 +204,77 @@ const GameTestRegistration fixedCoordinateGenerationIsDeterministic("WorldSnapsh
   ASSERT_TRUE(coordinate.has_value()) << "no planetary body found in the scanned region";
   // A separate template for the surface level: a template handed to a WorldServer
   // is modified by world generation.
-  float surfaceLevel = std::make_shared<WorldTemplate>(fixture.root(), *coordinate, celestialDatabase)->surfaceLevel();
+  auto surfaceTemplate = WorldTemplate::create(fixture.root(), *coordinate, *celestialDatabase);
+  ASSERT_TRUE(surfaceTemplate) << surfaceTemplate.error().what();
+  auto surfaceLevel = (*surfaceTemplate)->surfaceLevel();
 
-  auto makeWorld = [&]() {
-    auto worldTemplate = std::make_shared<WorldTemplate>(fixture.root(), *coordinate, celestialDatabase);
-    return std::make_shared<WorldServer>(fixture.root(), worldTemplate, File::ephemeralFile(fixture.root().random()));
+  auto makeWorld = [&]() -> std::expected<std::shared_ptr<WorldServer>, StarException> {
+    auto worldTemplate = WorldTemplate::create(fixture.root(), *coordinate, *celestialDatabase);
+    if (!worldTemplate)
+      return std::unexpected(std::move(worldTemplate.error()));
+    auto storage = File::ephemeralFile(fixture.root().random());
+    if (!storage)
+      return std::unexpected(std::move(storage.error()));
+    return WorldServer::create(fixture.root(), *worldTemplate, *storage);
   };
   auto firstWorld = makeWorld();
+  ASSERT_TRUE(firstWorld) << firstWorld.error().what();
+  auto closeFirst = finally([&]() { EXPECT_TRUE((*firstWorld)->close()); });
   auto secondWorld = makeWorld();
+  ASSERT_TRUE(secondWorld) << secondWorld.error().what();
+  auto closeSecond = finally([&]() { EXPECT_TRUE((*secondWorld)->close()); });
 
-  std::uint64_t firstHash = sampleWorld(*firstWorld, surfaceLevel);
-  std::uint64_t secondHash = sampleWorld(*secondWorld, surfaceLevel);
-  std::cerr << "WorldSnapshot: " << coordinate->id() << " hashes to 0x" << std::hex << firstHash << std::dec << std::endl;
+  auto firstHash = sampleWorld(**firstWorld, surfaceLevel);
+  ASSERT_TRUE(firstHash) << firstHash.error().what();
+  auto secondHash = sampleWorld(**secondWorld, surfaceLevel);
+  ASSERT_TRUE(secondHash) << secondHash.error().what();
+  std::cerr << "WorldSnapshot: " << coordinate->id() << " hashes to 0x" << std::hex << *firstHash << std::dec << std::endl;
 
-  EXPECT_EQ(firstHash, secondHash);
-  EXPECT_EQ(firstHash, 0x801745d507acfcaaull) << "update the expected hash (printed above)";
-  firstWorld->close();
-  secondWorld->close();
-  celestialDatabase->close();
+  EXPECT_EQ(*firstHash, *secondHash);
+  EXPECT_EQ(*firstHash, 0x801745d507acfcaaull) << "update the expected hash (printed above)";
 });
 
 const GameTestRegistration shipWorldIsDeterministic("WorldSnapshot", "ShipWorldIsDeterministic", [](GameTest& fixture) {
   // The ship world does not depend on celestial parameters, so it has its own
   // stable hash.
-  auto speciesShips = fixture.root().assets()->json("/universe_server.config:speciesShips");
-  auto shipStructure = WorldStructure(fixture.root(), jsonToStringList(speciesShips.get("human"))[0]);
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto speciesShips = (*assets)->json("/universe_server.config:speciesShips");
+  ASSERT_TRUE(speciesShips) << speciesShips.error().what();
+  auto humanShips = speciesShips->get("human");
+  ASSERT_TRUE(humanShips) << humanShips.error().what();
+  auto shipPaths = jsonToStringList(*humanShips);
+  ASSERT_TRUE(shipPaths) << shipPaths.error().what();
+  ASSERT_FALSE(shipPaths->empty());
+  auto shipStructure = WorldStructure::create(fixture.root(), (*shipPaths)[0]);
+  ASSERT_TRUE(shipStructure) << shipStructure.error().what();
   Vec2U worldSize(2048, 2048);
-  if (auto jWorldSize = shipStructure.configValue("worldSize"))
-    worldSize = jsonToVec2U(jWorldSize);
+  auto jWorldSize = shipStructure->configValue("worldSize");
+  ASSERT_TRUE(jWorldSize) << jWorldSize.error().what();
+  if (*jWorldSize) {
+    auto size = jsonToVec2U(*jWorldSize);
+    ASSERT_TRUE(size) << size.error().what();
+    worldSize = *size;
+  }
 
-  auto makeWorld = [&]() {
-    auto world = std::make_shared<WorldServer>(fixture.root(), worldSize, File::ephemeralFile(fixture.root().random()));
-    world->setCentralStructure(shipStructure);
-    return world;
+  auto makeWorld = [&]() -> std::expected<std::shared_ptr<WorldServer>, StarException> {
+    auto storage = File::ephemeralFile(fixture.root().random());
+    if (!storage)
+      return std::unexpected(std::move(storage.error()));
+    auto world = WorldServer::create(fixture.root(), worldSize, *storage);
+    if (!world)
+      return std::unexpected(std::move(world.error()));
+    auto structureSet = (*world)->setCentralStructure(*shipStructure);
+    if (!structureSet)
+      return std::unexpected(std::move(structureSet.error()));
+    return *world;
   };
   auto firstWorld = makeWorld();
+  ASSERT_TRUE(firstWorld) << firstWorld.error().what();
+  auto closeFirst = finally([&]() { EXPECT_TRUE((*firstWorld)->close()); });
   auto secondWorld = makeWorld();
+  ASSERT_TRUE(secondWorld) << secondWorld.error().what();
+  auto closeSecond = finally([&]() { EXPECT_TRUE((*secondWorld)->close()); });
 
   // The ship structure is placed around the middle of the world.
   Vec2I center((int)worldSize[0] / 2, (int)worldSize[1] / 2);
@@ -229,10 +284,17 @@ const GameTestRegistration shipWorldIsDeterministic("WorldSnapshot", "ShipWorldI
   for (int x = -160; x <= 160; x += 16) {
     for (int y = -160; y <= 160; y += 16) {
       Vec2I position = center + Vec2I(x, y);
-      auto const& firstTile = firstWorld->getServerTile(position);
-      firstHash ^= tileHash(position, firstTile);
-      secondHash ^= tileHash(position, secondWorld->getServerTile(position));
-      if (firstTile.foreground != EmptyMaterialId)
+      auto firstTile = (*firstWorld)->getServerTile(position);
+      ASSERT_TRUE(firstTile) << firstTile.error().what();
+      auto firstSample = tileHash(position, **firstTile);
+      ASSERT_TRUE(firstSample) << firstSample.error().what();
+      firstHash ^= *firstSample;
+      auto secondTile = (*secondWorld)->getServerTile(position);
+      ASSERT_TRUE(secondTile) << secondTile.error().what();
+      auto secondSample = tileHash(position, **secondTile);
+      ASSERT_TRUE(secondSample) << secondSample.error().what();
+      secondHash ^= *secondSample;
+      if ((*firstTile)->foreground != EmptyMaterialId)
         ++nonEmptyTiles;
     }
   }
@@ -241,98 +303,147 @@ const GameTestRegistration shipWorldIsDeterministic("WorldSnapshot", "ShipWorldI
   EXPECT_GT(nonEmptyTiles, 0u) << "the sampled region does not contain any ship structure";
   EXPECT_EQ(firstHash, secondHash);
   EXPECT_EQ(firstHash, 0x96a3df5c62832b0bull) << "update the expected hash (printed above)";
-  firstWorld->close();
-  secondWorld->close();
 });
 
 const GameTestRegistration stoppedWorldRetainsClientsAndExportsRecoverableChunks("WorldSnapshot", "StoppedWorldRetainsClientsAndExportsRecoverableChunks", [](GameTest& fixture) {
-  auto storage = File::temporaryFile(fixture.root().random());
+  auto storageResult = File::temporaryFile(fixture.root().random());
+  ASSERT_TRUE(storageResult) << storageResult.error().what();
+  auto storage = *storageResult;
   auto path = storage->fileName();
-  auto cleanup = finally([&]() { storage->close(); File::remove(path); });
-  auto world = std::make_shared<WorldServer>(fixture.root(), Vec2U(2048, 2048), storage);
-  auto speciesShips = fixture.root().assets()->json("/universe_server.config:speciesShips");
-  world->setCentralStructure(WorldStructure(fixture.root(), jsonToStringList(speciesShips.get("human"))[0]));
-  world->setProperty("stopSaveRegression", Json(42));
+  auto cleanup = finally([&]() {
+    EXPECT_TRUE(storage->close());
+    EXPECT_TRUE(File::remove(path));
+  });
+  auto worldResult = WorldServer::create(fixture.root(), Vec2U(2048, 2048), storage);
+  ASSERT_TRUE(worldResult) << worldResult.error().what();
+  auto world = *worldResult;
+  auto closeWorld = finally([&]() { EXPECT_TRUE(world->close()); });
+  auto assets = fixture.root().assets();
+  ASSERT_TRUE(assets) << assets.error().what();
+  auto speciesShips = (*assets)->json("/universe_server.config:speciesShips");
+  ASSERT_TRUE(speciesShips) << speciesShips.error().what();
+  auto humanShips = speciesShips->get("human");
+  ASSERT_TRUE(humanShips) << humanShips.error().what();
+  auto shipPaths = jsonToStringList(*humanShips);
+  ASSERT_TRUE(shipPaths) << shipPaths.error().what();
+  ASSERT_FALSE(shipPaths->empty());
+  auto structure = WorldStructure::create(fixture.root(), (*shipPaths)[0]);
+  ASSERT_TRUE(structure) << structure.error().what();
+  ASSERT_TRUE(world->setCentralStructure(*structure));
+  ASSERT_TRUE(world->setProperty("stopSaveRegression", Json(42)));
 
-  WorldServerThread thread(world, ClientShipWorldId(Uuid(fixture.root().random())));
-  ASSERT_TRUE(thread.addClient(MinClientConnectionId, SpawnTargetPosition(Vec2F(1024, 1024)),
-      true, false, NetCompatibilityRules{}, MainClientWorldId));
-  thread.start();
-  thread.stop();
+  auto threadResult = WorldServerThread::create(world, ClientShipWorldId(Uuid(fixture.root().random())));
+  ASSERT_TRUE(threadResult) << threadResult.error().what();
+  auto& thread = **threadResult;
+  auto added = thread.addClient(MinClientConnectionId, SpawnTargetPosition(Vec2F(1024, 1024)),
+      true, false, NetCompatibilityRules{}, MainClientWorldId);
+  ASSERT_TRUE(added) << added.error().what();
+  ASSERT_TRUE(*added);
+  ASSERT_TRUE(thread.start());
+  ASSERT_TRUE(thread.stop());
 
   // UniverseServer still needs this list to migrate players after joining.
   ASSERT_TRUE(thread.hasClient(MinClientConnectionId));
   EXPECT_EQ(thread.clients().size(), 1u);
   EXPECT_FALSE(thread.serverErrorOccurred());
-  auto finalItem = std::make_shared<GiveItemPacket>(ItemDescriptor("money", 7, Json()));
-  ASSERT_TRUE(world->sendPacket(MinClientConnectionId, finalItem));
+  auto descriptor = ItemDescriptor::create("money", 7, Json());
+  ASSERT_TRUE(descriptor) << descriptor.error().what();
+  auto finalItem = std::make_shared<GiveItemPacket>(std::move(*descriptor));
+  auto sent = world->sendPacket(MinClientConnectionId, finalItem);
+  ASSERT_TRUE(sent);
 
   // An asynchronous warp may wait for its destination.  Merely queueing it
   // must leave the stopped source alive, with its final outgoing queue intact.
   auto waitingChunks = thread.readChunks();
-  ASSERT_FALSE(waitingChunks.empty());
+  ASSERT_TRUE(waitingChunks) << waitingChunks.error().what();
+  ASSERT_FALSE(waitingChunks->empty());
   ASSERT_TRUE(thread.hasClient(MinClientConnectionId));
   ASSERT_TRUE(storage->isOpen());
 
   // Ship/custom-world snapshots are exported after stop, before final close.
-  thread.unloadAll(true);
+  ASSERT_TRUE(thread.unloadAll(true));
   auto chunks = thread.readChunks();
-  ASSERT_FALSE(chunks.empty());
+  ASSERT_TRUE(chunks) << chunks.error().what();
+  ASSERT_FALSE(chunks->empty());
   ASSERT_FALSE(thread.serverErrorOccurred());
   auto finalPackets = thread.removeClient(MinClientConnectionId);
-  ASSERT_FALSE(finalPackets.empty());
+  ASSERT_TRUE(finalPackets) << finalPackets.error().what();
+  ASSERT_FALSE(finalPackets->empty());
   auto transport = LocalPacketSocket::openPair();
-  transport.first->sendPackets(std::move(finalPackets));
+  ASSERT_TRUE(transport.first->sendPackets(std::move(*finalPackets)));
   auto delivered = transport.second->receivePackets();
-  EXPECT_TRUE(delivered.contains(finalItem));
-  ASSERT_FALSE(delivered.empty());
-  EXPECT_EQ(delivered.back()->type(), PacketType::WorldStop);
+  ASSERT_TRUE(delivered) << delivered.error().what();
+  EXPECT_TRUE(delivered->contains(finalItem));
+  ASSERT_FALSE(delivered->empty());
+  EXPECT_EQ(delivered->back()->type(), PacketType::WorldStop);
   EXPECT_TRUE(thread.noClients());
-  thread.close();
-  thread.close();
+  ASSERT_TRUE(thread.close());
+  ASSERT_TRUE(thread.close());
   EXPECT_FALSE(thread.serverErrorOccurred());
 
-  WorldServer fromChunks(fixture.root(), chunks);
-  EXPECT_EQ(fromChunks.getProperty("stopSaveRegression", Json()), Json(42));
-  fromChunks.close();
+  auto fromChunks = WorldServer::create(fixture.root(), *chunks);
+  ASSERT_TRUE(fromChunks) << fromChunks.error().what();
+  EXPECT_EQ((*fromChunks)->getProperty("stopSaveRegression", Json()), Json(42));
+  EXPECT_TRUE((*fromChunks)->close());
 
-  WorldServer fromFile(fixture.root(), File::open(path, IOMode::ReadWrite));
-  EXPECT_EQ(fromFile.getProperty("stopSaveRegression", Json()), Json(42));
-  fromFile.close();
+  auto reopened = File::open(path, IOMode::ReadWrite);
+  ASSERT_TRUE(reopened) << reopened.error().what();
+  auto fromFile = WorldServer::create(fixture.root(), *reopened);
+  ASSERT_TRUE(fromFile) << fromFile.error().what();
+  EXPECT_EQ((*fromFile)->getProperty("stopSaveRegression", Json()), Json(42));
+  EXPECT_TRUE((*fromFile)->close());
 });
 
 const GameTestRegistration delayedExplosionOutlivesProjectile("ProjectileActions", "DelayedExplosionOutlivesProjectile", [](GameTest& fixture) {
   auto& root = fixture.root();
-  auto world = std::make_shared<WorldServer>(root, Vec2U(2048, 2048), File::ephemeralFile(root.random()));
-  auto closeWorld = finally([&]() { world->close(); });
+  auto storage = File::ephemeralFile(root.random());
+  ASSERT_TRUE(storage) << storage.error().what();
+  auto worldResult = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+  ASSERT_TRUE(worldResult) << worldResult.error().what();
+  auto world = *worldResult;
+  auto closeWorld = finally([&]() { EXPECT_TRUE(world->close()); });
   Vec2I tilePosition(1024, 1024);
-  world->generateRegion(RectI::withSize(tilePosition - Vec2I(4, 4), Vec2I(9, 9)));
+  ASSERT_TRUE(world->generateRegion(RectI::withSize(tilePosition - Vec2I(4, 4), Vec2I(9, 9))));
   world->setTileProtectionEnabled(false);
-  auto dirt = root.materialDatabase()->materialId("dirt");
-  auto tile = world->modifyServerTile(tilePosition, true);
+  auto materialDatabase = root.materialDatabase();
+  ASSERT_TRUE(materialDatabase) << materialDatabase.error().what();
+  auto dirt = (*materialDatabase)->materialId("dirt");
+  ASSERT_TRUE(dirt) << dirt.error().what();
+  auto modified = world->modifyServerTile(tilePosition, true);
+  ASSERT_TRUE(modified) << modified.error().what();
+  auto tile = *modified;
   ASSERT_NE(tile, nullptr);
-  tile->foreground = dirt;
+  tile->foreground = *dirt;
 
-  auto projectile = root.projectileDatabase()->createProjectile("grenade", Json::parse(R"({
+  auto projectileDatabase = root.projectileDatabase();
+  ASSERT_TRUE(projectileDatabase) << projectileDatabase.error().what();
+  auto config = Json::parse(R"({
     "actionOnReap": [{"action":"explosion","delaySteps":6,"foregroundRadius":2,
       "backgroundRadius":0,"explosiveDamageAmount":10000,"harvestLevel":99}],
     "actionOnHit": [], "actionOnTimeout": []
-  })"));
+  })");
+  ASSERT_TRUE(config) << config.error().what();
+  auto projectileResult = (*projectileDatabase)->createProjectile("grenade", *config);
+  ASSERT_TRUE(projectileResult) << projectileResult.error().what();
+  auto projectile = *projectileResult;
   projectile->setInitialPosition(Vec2F(tilePosition) + Vec2F(0.5f, 0.5f));
   projectile->setInitialVelocity(Vec2F());
   projectile->setSourceEntity(4242, false);
-  world->addEntity(projectile);
+  ASSERT_TRUE(world->addEntity(projectile));
   auto projectileId = projectile->entityId();
   std::weak_ptr<Projectile> retired = projectile;
-  world->removeEntity(projectileId, true);
+  ASSERT_TRUE(world->removeEntity(projectileId, true));
   projectile.reset();
+  projectileResult->reset();
   ASSERT_TRUE(retired.expired());
   EXPECT_FALSE(world->entity(projectileId));
 
-  world->update(0.025f);
-  EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), dirt);
-  EXPECT_FALSE(world->getServerTile(tilePosition).foregroundDamage.dead());
+  ASSERT_TRUE(world->update(0.025f));
+  EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), *dirt);
+  auto damagedTile = world->getServerTile(tilePosition);
+  ASSERT_TRUE(damagedTile) << damagedTile.error().what();
+  EXPECT_FALSE((*damagedTile)->foregroundDamage.dead());
   for (unsigned step = 0; step < 10 && world->material(tilePosition, TileLayer::Foreground) != EmptyMaterialId; ++step)
-    world->update(0.2f);
+    ASSERT_TRUE(world->update(0.2f));
   EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), EmptyMaterialId);
 });

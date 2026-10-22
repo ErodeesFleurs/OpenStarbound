@@ -1,7 +1,7 @@
 module;
 import std;
+import star.format;
 import star.string;
-import star.stream_formatter;
 import star.hash;
 import star.json;
 
@@ -17,10 +17,12 @@ class VersioningDatabase;
 class ItemDescriptor {
 public:
   // Loads ItemDescriptor from store format.
-  static ItemDescriptor loadStore(VersioningDatabase const& versioningDatabase, Json const& store);
+  [[nodiscard]]
+  static std::expected<ItemDescriptor, StarException> loadStore(VersioningDatabase const& versioningDatabase, Json const& store);
 
   ItemDescriptor();
-  ItemDescriptor(String name, std::uint64_t count, Json parameters = Json());
+  [[nodiscard]]
+  static std::expected<ItemDescriptor, StarException> create(String name, std::uint64_t count, Json parameters = Json());
   ItemDescriptor(ItemDescriptor const&) = default;
   ItemDescriptor& operator=(ItemDescriptor const&) = default;
   ItemDescriptor(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_constructible_v<String> && std::is_nothrow_move_constructible_v<Json>);
@@ -29,7 +31,8 @@ public:
   // Populate from a configuration JsonArray containing up to 3 elements, the
   // name, count, and then any item parameters.  If the json is a map, looks
   // for keys 'name', 'parameters', and 'count'.
-  explicit ItemDescriptor(Json const& spec);
+  [[nodiscard]]
+  static std::expected<ItemDescriptor, StarException> create(Json const& spec);
 
   String const& name() const;
   std::uint64_t count() const;
@@ -38,7 +41,8 @@ public:
   ItemDescriptor singular() const;
   ItemDescriptor withCount(std::uint64_t count) const;
   ItemDescriptor multiply(std::uint64_t count) const;
-  ItemDescriptor applyParameters(JsonObject const& parameters) const;
+  [[nodiscard]]
+  std::expected<ItemDescriptor, StarException> applyParameters(JsonObject const& parameters) const;
 
   // Descriptor is the default constructed ItemDescriptor()
   bool isNull() const;
@@ -56,19 +60,22 @@ public:
   bool matches(std::shared_ptr<Item const> const& other, bool exactMatch = false) const;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
-  Json diskStore(VersioningDatabase const& versioningDatabase) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> diskStore(VersioningDatabase const& versioningDatabase) const;
 
   // Converts ItemDescriptor to spec format
   Json toJson() const;
 
-  friend DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
-  friend DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
 
-  friend std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor);
+  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
 
   friend struct hash<ItemDescriptor>;
 
 private:
+  friend class Item;
+  friend class ItemDatabase;
   ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<std::size_t> parametersHash);
 
   std::size_t parametersHash() const;
@@ -78,6 +85,10 @@ private:
   Json m_parameters;
   mutable std::optional<std::size_t> m_parametersHash;
 };
+
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
+[[nodiscard]] std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ItemDescriptor const& descriptor);
 
 template <>
 struct hash<ItemDescriptor> {
@@ -94,7 +105,6 @@ export namespace Star {
 }
 
 
-export template <> struct std::formatter<Star::ItemDescriptor> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::ItemDescriptor;

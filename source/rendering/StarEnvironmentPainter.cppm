@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -76,22 +77,23 @@ class Root;
 
 class EnvironmentPainter {
 public:
-  EnvironmentPainter(Root& root, std::shared_ptr<Renderer> renderer);
+  [[nodiscard]] static std::expected<std::shared_ptr<EnvironmentPainter>, StarException> create(Root& root, std::shared_ptr<Renderer> renderer);
 
   void update(float dt);
 
-  void renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
-  void renderDebrisFields(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
-  void renderBackOrbiters(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
-  void renderPlanetHorizon(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
-  void renderFrontOrbiters(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
-  void renderSky(Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderDebrisFields(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderBackOrbiters(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderPlanetHorizon(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderFrontOrbiters(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderSky(Vec2F const& screenSize, SkyRenderData const& sky);
 
-  void renderParallaxLayers(Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> renderParallaxLayers(Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky);
 
   void cleanup(std::int64_t textureTimeout);
 
 private:
+  EnvironmentPainter(Root& root, std::shared_ptr<Renderer> renderer);
   static float const SunriseTime;
   static float const SunsetTime;
   static float const SunFadeRate;
@@ -109,8 +111,8 @@ private:
   static float const RayMinUnscaledAlpha;
   static Vec3B const RayColor;
 
-  void drawRays(float pixelRatio, SkyRenderData const& sky, Vec2F start, float length, double time, float alpha);
-  void drawRay(float pixelRatio,
+  [[nodiscard]] std::expected<void, StarException> drawRays(float pixelRatio, SkyRenderData const& sky, Vec2F start, float length, double time, float alpha);
+  [[nodiscard]] std::expected<void, StarException> drawRay(float pixelRatio,
       SkyRenderData const& sky,
       Vec2F start,
       float width,
@@ -119,10 +121,10 @@ private:
       double time,
       Vec3B color,
       float alpha);
-  void drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter);
+  [[nodiscard]] std::expected<void, StarException> drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter);
 
   std::uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
-  void setupStars(SkyRenderData const& sky);
+  [[nodiscard]] std::expected<void, StarException> setupStars(SkyRenderData const& sky);
 
   Root& m_root;
   std::shared_ptr<Renderer> m_renderer;

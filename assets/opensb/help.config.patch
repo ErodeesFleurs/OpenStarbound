@@ -1,9 +1,9 @@
 {
-  "basicHelpText": "Basic commands are: {}",
-  "adminHelpText": "Admin commands are: {}",
-  "debugHelpText": "Debug commands are: {}",
-  "openSbHelpText": "OpenSB commands are: {}",
-  "openSbDebugHelpText": "OpenSB Debug commands are: {}",
+  "basicHelpText": "Basic commands are: <commands>",
+  "adminHelpText": "Admin commands are: <commands>",
+  "debugHelpText": "Debug commands are: <commands>",
+  "openSbHelpText": "OpenSB commands are: <commands>",
+  "openSbDebugHelpText": "OpenSB Debug commands are: <commands>",
 
   "basicCommands": {
     "admin" : "Usage /admin [playerSpecifier]. Enables or disables admin mode for yourself or the specified player, which enables all crafting recipes, prevents damage or energy loss, and allows access to admin-only commands."

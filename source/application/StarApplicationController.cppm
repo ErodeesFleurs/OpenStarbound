@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.byte_array;
 
 import star.string;
@@ -40,18 +41,18 @@ public:
   virtual void setMaxFrameSkip(unsigned maxFrameSkip) = 0;
 
   virtual void setApplicationTitle(String title) = 0;
-  virtual void setFullscreenWindow(Vec2U fullScreenResolution) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setFullscreenWindow(Vec2U fullScreenResolution) = 0;
   virtual void setNormalWindow(Vec2U windowSize) = 0;
   virtual void setMaximizedWindow() = 0;
-  virtual void setBorderlessWindow() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setBorderlessWindow() = 0;
   #ifdef STAR_SYSTEM_WINDOWS
   virtual void setBorderlessWorkaround(bool active) = 0;
   #endif
-  virtual void setVSyncEnabled(bool vSync) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setVSyncEnabled(bool vSync) = 0;
   virtual void setCursorVisible(bool cursorVisible) = 0;
   virtual void setCursorPosition(Vec2I cursorPosition) = 0;
   virtual void setCursorHardware(bool cursorHardware) = 0;
-  virtual bool setCursorImage(const String& id, const std::shared_ptr<Image const>& image, unsigned scale, const Vec2I& offset) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> setCursorImage(const String& id, const std::shared_ptr<Image const>& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
   virtual void setTextArea(std::optional<std::pair<RectI, int>> area = {}) = 0;
 
@@ -60,14 +61,14 @@ public:
   virtual void disableAudio() = 0;
 
   typedef std::function<void(std::uint8_t*, int)> AudioCallback;
-  virtual bool openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
 
   virtual bool hasClipboard() = 0;
   virtual bool setClipboard(String text) = 0;
   virtual bool setClipboardData(StringMap<ByteArray>) = 0;
-  virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
-  virtual bool setClipboardFile(String const& path) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> setClipboardFile(String const& path) = 0;
   virtual std::optional<String> getClipboard() = 0;
 
   virtual bool isFocused() const = 0;

@@ -1,6 +1,7 @@
 #include "steam/steam_api.h"
 import std;
 import star.format;
+import star.output_proxy;
 
 #include <QApplication>
 #include <QMessageBox>
@@ -8,6 +9,7 @@ import star.format;
 
 import star.mod_uploader;
 import star.string_conversion;
+import star.string;
 import star.logging;
 import star.random;
 import star.native_runtime;
@@ -15,8 +17,17 @@ import star.native_runtime;
 using namespace Star;
 
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
+  auto nativeRuntime = NativeRuntime::create();
   QApplication app(argc, argv);
+  auto reportError = [](StarException const& error) {
+    auto diagnostic = strf("{}", outputException(ExceptionDiagnostic(error), true));
+    QMessageBox::critical(nullptr, "Error", toQString(String(diagnostic)));
+    coutf("{}\n", diagnostic);
+  };
+  if (!nativeRuntime) {
+    reportError(nativeRuntime.error());
+    return 1;
+  }
 
   if (!SteamAPI_Init()) {
     QMessageBox::critical(nullptr, "Error", "Could not initialize Steam API");
@@ -27,16 +38,16 @@ int main(int argc, char** argv) {
   } steamShutdown;
 
   Logger logger;
-  RandomService random;
-  ModUploader modUploader(logger, random);
-  modUploader.show();
-
-  try {
-    return app.exec();
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    QMessageBox::critical(nullptr, "Error", toQString(strf("Exception caught: {}\n", outputException(e, true))));
-    coutf("Exception caught: {}\n", outputException(e, true));
+  auto random = RandomService::create();
+  if (!random) {
+    reportError(random.error());
     return 1;
   }
+  auto modUploader = ModUploader::create(logger, **random);
+  if (!modUploader) {
+    reportError(modUploader.error());
+    return 1;
+  }
+  (*modUploader)->show();
+  return app.exec();
 }

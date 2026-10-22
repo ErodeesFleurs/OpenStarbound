@@ -60,13 +60,17 @@ public:
   void setLeft(Left left);
   void setRight(Right left);
 
-  // left() and right() throw EitherException on invalid access
+  // Checked side access returns a diagnostic on the inactive alternative.
 
-  Left const& left() const;
-  Right const& right() const;
+  [[nodiscard]]
+  std::expected<Left const*, StarException> left() const;
+  [[nodiscard]]
+  std::expected<Right const*, StarException> right() const;
 
-  Left& left();
-  Right& right();
+  [[nodiscard]]
+  std::expected<Left*, StarException> left();
+  [[nodiscard]]
+  std::expected<Right*, StarException> right();
 
   std::optional<Left> maybeLeft() const;
   std::optional<Right> maybeRight() const;
@@ -183,31 +187,31 @@ void Either<Left, Right>::setRight(Right right) {
 }
 
 template <typename Left, typename Right>
-Left const& Either<Left, Right>::left() const {
+std::expected<Left const*, StarException> Either<Left, Right>::left() const {
   if (auto l = leftPtr())
-    return *l;
-  throw EitherException("Improper access of left side of Either");
+    return l;
+  return std::unexpected(EitherException("Improper access of left side of Either"));
 }
 
 template <typename Left, typename Right>
-Right const& Either<Left, Right>::right() const {
+std::expected<Right const*, StarException> Either<Left, Right>::right() const {
   if (auto r = rightPtr())
-    return *r;
-  throw EitherException("Improper access of right side of Either");
+    return r;
+  return std::unexpected(EitherException("Improper access of right side of Either"));
 }
 
 template <typename Left, typename Right>
-Left& Either<Left, Right>::left() {
+std::expected<Left*, StarException> Either<Left, Right>::left() {
   if (auto l = leftPtr())
-    return *l;
-  throw EitherException("Improper access of left side of Either");
+    return l;
+  return std::unexpected(EitherException("Improper access of left side of Either"));
 }
 
 template <typename Left, typename Right>
-Right& Either<Left, Right>::right() {
+std::expected<Right*, StarException> Either<Left, Right>::right() {
   if (auto r = rightPtr())
-    return *r;
-  throw EitherException("Improper access of right side of Either");
+    return r;
+  return std::unexpected(EitherException("Improper access of right side of Either"));
 }
 
 template <typename Left, typename Right>

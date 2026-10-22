@@ -204,168 +204,420 @@ import star.player_inventory;
 import star.algorithm;
 namespace Star {
 
-CraftingPane::CraftingPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) : Pane(guiContext) {
+CraftingPane::CraftingPane(GuiContext& guiContext) : Pane(guiContext) {}
+
+std::expected<std::shared_ptr<CraftingPane>, StarException> CraftingPane::create(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
+  auto pane = std::shared_ptr<CraftingPane>(new CraftingPane(guiContext));
+  auto base = pane->initializePane();
+  if (!base)
+    return std::unexpected(std::move(base.error()));
+  auto initialized = pane->initialize(worldClient, std::move(player), settings, sourceEntityId);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return pane;
+}
+
+std::expected<void, StarException> CraftingPane::initialize(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_blueprints = m_player->blueprints();
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;
 
-  auto assets = context()->root().assets();
+  auto assetsResult332 = context()->root().assets();
+  if (!assetsResult332)
+    return std::unexpected(std::move(assetsResult332.error()));
+  auto assets = std::move(*assetsResult332);
   // get the config data for this crafting pane, default to "bare hands" crafting
-  auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
-  m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"), 
-               jsonMerge(assets->fetchJson(baseConfig), settings));
+  auto getResult333 = settings.get("config", "/interface/windowconfig/crafting.config");
+  if (!getResult333)
+    return std::unexpected(std::move(getResult333.error()));
+  auto baseConfig = std::move(*getResult333);
+  auto jsonResult334 = assets->json("/interface/windowconfig/crafting.config:default");
+  if (!jsonResult334)
+    return std::unexpected(std::move(jsonResult334.error()));
+  auto fetchJsonResult335 = assets->fetchJson(baseConfig);
+  if (!fetchJsonResult335)
+    return std::unexpected(std::move(fetchJsonResult335.error()));
+  m_settings = jsonMerge(std::move(*jsonResult334), 
+               jsonMerge(std::move(*fetchJsonResult335), settings));
 
-  m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
-  m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
+  auto getResult336 = m_settings.get("filter", JsonArray());
+  if (!getResult336)
+    return std::unexpected(std::move(getResult336.error()));
+  auto jsonToStringListResult337 = jsonToStringList(std::move(*getResult336));
+  if (!jsonToStringListResult337)
+    return std::unexpected(std::move(jsonToStringListResult337.error()));
+  m_filter = StringSet::from(std::move(*jsonToStringListResult337));
+  auto getUIntResult338 = m_settings.getUInt("maxSpinCount", 1000);
+  if (!getUIntResult338)
+    return std::unexpected(std::move(getUIntResult338.error()));
+  m_maxSpinCount = std::move(*getUIntResult338);
 
   GuiReader reader(*context());
-  reader.registerCallback("spinCount.up", [this](Widget*) {
-      if (m_count < maxCraft())
-        m_count++;
-      else
-        m_count = 1;
-      countChanged();
-    });
+  reader.registerCallback("spinCount.up", [this](Widget*)  -> std::expected<void, StarException> {
+      {
+        auto maxCraftResult339 = maxCraft();
+        if (!maxCraftResult339)
+          return std::unexpected(std::move(maxCraftResult339.error()));
+        if (m_count < std::move(*maxCraftResult339))
+          m_count++;
+        else
+          m_count = 1;
+      }
+      auto countChangedResult340 = countChanged();
+      if (!countChangedResult340)
+        return std::unexpected(std::move(countChangedResult340.error()));
+    
+  return {};
+});
 
-  reader.registerCallback("spinCount.down", [this](Widget*) {
+  reader.registerCallback("spinCount.down", [this](Widget*)  -> std::expected<void, StarException> {
       if (m_count > 1)
         m_count--;
       else
-        m_count = std::max(maxCraft(), 1);
-      countChanged();
-    });
+        {
+          auto maxCraftResult341 = maxCraft();
+          if (!maxCraftResult341)
+            return std::unexpected(std::move(maxCraftResult341.error()));
+          m_count = std::max(std::move(*maxCraftResult341), 1);
+        }
+      auto countChangedResult342 = countChanged();
+      if (!countChangedResult342)
+        return std::unexpected(std::move(countChangedResult342.error()));
+    
+  return {};
+});
 
-  reader.registerCallback("tbSpinCount", [this](Widget*) { countTextChanged(); });
+  reader.registerCallback("tbSpinCount", [this](Widget*)  -> std::expected<void, StarException> { auto countTextChangedResult343 = countTextChanged();
+                                                           if (!countTextChangedResult343)
+                                                             return std::unexpected(std::move(countTextChangedResult343.error())); 
+  return {};
+});
 
-  reader.registerCallback("close", [this](Widget*) { dismiss(); });
+  reader.registerCallback("close", [this](Widget*)  -> std::expected<void, StarException> { dismiss(); 
+  return {};
+});
 
-  reader.registerCallback("btnCraft", [this](Widget*) { toggleCraft(); });
-  reader.registerCallback("btnStopCraft", [this](Widget*) { toggleCraft(); });
+  reader.registerCallback("btnCraft", [this](Widget*)  -> std::expected<void, StarException> { auto toggleCraftResult344 = toggleCraft();
+                                                        if (!toggleCraftResult344)
+                                                          return std::unexpected(std::move(toggleCraftResult344.error())); 
+  return {};
+});
+  reader.registerCallback("btnStopCraft", [this](Widget*)  -> std::expected<void, StarException> { auto toggleCraftResult345 = toggleCraft();
+                                                            if (!toggleCraftResult345)
+                                                              return std::unexpected(std::move(toggleCraftResult345.error())); 
+  return {};
+});
 
-  reader.registerCallback("btnFilterHaveMaterials", [this](Widget*) {
-      context()->root().configuration()->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
-      updateAvailableRecipes();
-    });
+  reader.registerCallback("btnFilterHaveMaterials", [this](Widget*)  -> std::expected<void, StarException> {
+      auto configurationResult346 = context()->root().configuration();
+      if (!configurationResult346)
+        return std::unexpected(std::move(configurationResult346.error()));
+      auto setPathResult347 = std::move(*configurationResult346)->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
+      if (!setPathResult347)
+        return std::unexpected(std::move(setPathResult347.error()));
+      auto updateAvailableRecipesResult348 = updateAvailableRecipes();
+      if (!updateAvailableRecipesResult348)
+        return std::unexpected(std::move(updateAvailableRecipesResult348.error()));
+    
+  return {};
+});
 
-  reader.registerCallback("filter", [this](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("filter", [this](Widget*)  -> std::expected<void, StarException> { auto updateAvailableRecipesResult349 = updateAvailableRecipes();
+                                                      if (!updateAvailableRecipesResult349)
+                                                        return std::unexpected(std::move(updateAvailableRecipesResult349.error())); 
+  return {};
+});
 
-  reader.registerCallback("categories", [this](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("categories", [this](Widget*)  -> std::expected<void, StarException> { auto updateAvailableRecipesResult350 = updateAvailableRecipes();
+                                                          if (!updateAvailableRecipesResult350)
+                                                            return std::unexpected(std::move(updateAvailableRecipesResult350.error())); 
+  return {};
+});
 
-  reader.registerCallback("rarities", [this](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("rarities", [this](Widget*)  -> std::expected<void, StarException> { auto updateAvailableRecipesResult351 = updateAvailableRecipes();
+                                                        if (!updateAvailableRecipesResult351)
+                                                          return std::unexpected(std::move(updateAvailableRecipesResult351.error())); 
+  return {};
+});
 
-  reader.registerCallback("btnUpgrade", [this](Widget*) { upgradeTable(); });
+  reader.registerCallback("btnUpgrade", [this](Widget*)  -> std::expected<void, StarException> { auto upgradeTableResult352 = upgradeTable();
+                                                          if (!upgradeTableResult352)
+                                                            return std::unexpected(std::move(upgradeTableResult352.error())); 
+  return {};
+});
 
   // this is where the GUI gets built and the buttons begin to have existence.
   // all possible callbacks must exist by this point
 
-  Json paneLayout = m_settings.get("paneLayout");
-  paneLayout = jsonMerge(paneLayout, m_settings.get("paneLayoutOverride", {}));
-  reader.construct(paneLayout, this);
+  auto getResult353 = m_settings.get("paneLayout");
+  if (!getResult353)
+    return std::unexpected(std::move(getResult353.error()));
+  Json paneLayout = std::move(*getResult353);
+  auto getResult354 = m_settings.get("paneLayoutOverride", {});
+  if (!getResult354)
+    return std::unexpected(std::move(getResult354.error()));
+  paneLayout = jsonMerge(paneLayout, std::move(*getResult354));
+  auto constructResult355 = reader.construct(paneLayout, this);
+  if (!constructResult355)
+    return std::unexpected(std::move(constructResult355.error()));
 
-  if (auto upgradeButton = fetchChild<ButtonWidget>("btnUpgrade")) {
-    upgradeButton->disable();
-    std::optional<JsonArray> recipeData = m_settings.optArray("upgradeMaterials");
-
-    // create a recipe out of the listed upgrade materials.
-    // for ease of creating a tooltip later.
-    if (recipeData) {
-      m_upgradeRecipe = ItemRecipe();
-      for (auto ingredient : *recipeData)
-        m_upgradeRecipe->inputs.append(ItemDescriptor(ingredient.getString("item"), ingredient.getUInt("count"), {}));
-      upgradeButton->setVisibility(true);
-    } else {
-      upgradeButton->setVisibility(false);
+  {
+    auto fetchChildResult356 = fetchChild<ButtonWidget>("btnUpgrade");
+    if (!fetchChildResult356)
+      return std::unexpected(std::move(fetchChildResult356.error()));
+    if (auto upgradeButton = std::move(*fetchChildResult356)) {
+      upgradeButton->disable();
+      auto optArrayResult357 = m_settings.optArray("upgradeMaterials");
+      if (!optArrayResult357)
+        return std::unexpected(std::move(optArrayResult357.error()));
+      std::optional<JsonArray> recipeData = std::move(*optArrayResult357);
+  
+      // create a recipe out of the listed upgrade materials.
+      // for ease of creating a tooltip later.
+      if (recipeData) {
+        m_upgradeRecipe = ItemRecipe();
+        for (auto ingredient : *recipeData)
+          {
+            auto getStringResult358 = ingredient.getString("item");
+            if (!getStringResult358)
+              return std::unexpected(std::move(getStringResult358.error()));
+            auto getUIntResult359 = ingredient.getUInt("count");
+            if (!getUIntResult359)
+              return std::unexpected(std::move(getUIntResult359.error()));
+            auto createResult360 = ItemDescriptor::create(std::move(*getStringResult358), std::move(*getUIntResult359), {});
+            if (!createResult360)
+              return std::unexpected(std::move(createResult360.error()));
+            m_upgradeRecipe->inputs.append(std::move(*createResult360));
+          }
+        auto setVisibilityResult361 = upgradeButton->setVisibility(true);
+        if (!setVisibilityResult361)
+          return std::unexpected(std::move(setVisibilityResult361.error()));
+      } else {
+        auto setVisibilityResult362 = upgradeButton->setVisibility(false);
+        if (!setVisibilityResult362)
+          return std::unexpected(std::move(setVisibilityResult362.error()));
+      }
     }
   }
 
-  m_guiList = fetchChild<ListWidget>("scrollArea.itemList");
-  m_textBox = fetchChild<TextBoxWidget>("tbSpinCount");
+  auto fetchChildResult363 = fetchChild<ListWidget>("scrollArea.itemList");
+  if (!fetchChildResult363)
+    return std::unexpected(std::move(fetchChildResult363.error()));
+  m_guiList = std::move(*fetchChildResult363);
+  auto fetchChildResult364 = fetchChild<TextBoxWidget>("tbSpinCount");
+  if (!fetchChildResult364)
+    return std::unexpected(std::move(fetchChildResult364.error()));
+  m_textBox = std::move(*fetchChildResult364);
 
-  m_filterHaveMaterials = fetchChild<ButtonWidget>("btnFilterHaveMaterials");
+  auto fetchChildResult365 = fetchChild<ButtonWidget>("btnFilterHaveMaterials");
+  if (!fetchChildResult365)
+    return std::unexpected(std::move(fetchChildResult365.error()));
+  m_filterHaveMaterials = std::move(*fetchChildResult365);
   if (m_filterHaveMaterials)
-    m_filterHaveMaterials->setChecked(context()->root().configuration()->getPath("crafting.filterHaveMaterials").toBool());
+    {
+      auto configurationResult366 = context()->root().configuration();
+      if (!configurationResult366)
+        return std::unexpected(std::move(configurationResult366.error()));
+      auto getPathResult367 = std::move(*configurationResult366)->getPath("crafting.filterHaveMaterials");
+      if (!getPathResult367)
+        return std::unexpected(std::move(getPathResult367.error()));
+      auto toBoolResult368 = std::move(*getPathResult367).toBool();
+      if (!toBoolResult368)
+        return std::unexpected(std::move(toBoolResult368.error()));
+      m_filterHaveMaterials->setChecked(std::move(*toBoolResult368));
+    }
 
-  fetchChild<ButtonWidget>("btnCraft")->disable();
-  if (auto spinCountUp = fetchChild<ButtonWidget>("spinCount.up"))
-    spinCountUp->disable();
-  if (auto spinCountDown = fetchChild<ButtonWidget>("spinCount.down"))
-    spinCountDown->disable();
+  auto fetchChildResult369 = fetchChild<ButtonWidget>("btnCraft");
+  if (!fetchChildResult369)
+    return std::unexpected(std::move(fetchChildResult369.error()));
+  std::move(*fetchChildResult369)->disable();
+  {
+    auto fetchChildResult370 = fetchChild<ButtonWidget>("spinCount.up");
+    if (!fetchChildResult370)
+      return std::unexpected(std::move(fetchChildResult370.error()));
+    if (auto spinCountUp = std::move(*fetchChildResult370))
+      spinCountUp->disable();
+  }
+  {
+    auto fetchChildResult371 = fetchChild<ButtonWidget>("spinCount.down");
+    if (!fetchChildResult371)
+      return std::unexpected(std::move(fetchChildResult371.error()));
+    if (auto spinCountDown = std::move(*fetchChildResult371))
+      spinCountDown->disable();
+  }
 
   m_displayedRecipe = NPos;
-  updateAvailableRecipes();
+  auto updateAvailableRecipesResult372 = updateAvailableRecipes();
+  if (!updateAvailableRecipesResult372)
+    return std::unexpected(std::move(updateAvailableRecipesResult372.error()));
 
   m_crafting = false;
   m_count = 1;
-  countChanged();
+  auto countChangedResult373 = countChanged();
+  if (!countChangedResult373)
+    return std::unexpected(std::move(countChangedResult373.error()));
 
-  if (m_settings.getBool("titleFromEntity", false) && sourceEntityId != NullEntityId) {
-    auto entity = m_worldClient->entity(sourceEntityId);
-
-    if (auto container = as<ContainerEntity>(entity)) {
-      if (container->iconItem()) {
-        auto itemDatabase = context()->root().itemDatabase();
-        auto iconItem = itemDatabase->itemShared(container->iconItem());
-        auto icon = std::make_shared<ItemSlotWidget>(*context(), iconItem, "/interface/inventory/portrait.png");
+  {
+    auto getBoolResult374 = m_settings.getBool("titleFromEntity", false);
+    if (!getBoolResult374)
+      return std::unexpected(std::move(getBoolResult374.error()));
+    if (std::move(*getBoolResult374) && sourceEntityId != NullEntityId) {
+      auto entity = m_worldClient->entity(sourceEntityId);
+  
+      if (auto container = as<ContainerEntity>(entity)) {
+        {
+          auto iconItemResult375 = container->iconItem();
+          if (!iconItemResult375)
+            return std::unexpected(std::move(iconItemResult375.error()));
+          if (std::move(*iconItemResult375)) {
+            auto itemDatabaseResult376 = context()->root().itemDatabase();
+            if (!itemDatabaseResult376)
+              return std::unexpected(std::move(itemDatabaseResult376.error()));
+            auto itemDatabase = std::move(*itemDatabaseResult376);
+            auto iconItemResult377 = container->iconItem();
+            if (!iconItemResult377)
+              return std::unexpected(std::move(iconItemResult377.error()));
+            auto itemSharedResult378 = itemDatabase->itemShared(std::move(*iconItemResult377));
+            if (!itemSharedResult378)
+              return std::unexpected(std::move(itemSharedResult378.error()));
+            auto iconItem = std::move(*itemSharedResult378);
+            auto createResult379 = ItemSlotWidget::create(*context(), iconItem, "/interface/inventory/portrait.png");
+            if (!createResult379)
+              return std::unexpected(std::move(createResult379.error()));
+            auto icon = std::move(*createResult379);
+            String title = this->title();
+            if (title.empty())
+              {
+                auto containerDescriptionResult380 = container->containerDescription();
+                if (!containerDescriptionResult380)
+                  return std::unexpected(std::move(containerDescriptionResult380.error()));
+                title = std::move(*containerDescriptionResult380);
+              }
+            String subTitle = this->subTitle();
+            if (subTitle.empty())
+              {
+                auto containerSubTitleResult381 = container->containerSubTitle();
+                if (!containerSubTitleResult381)
+                  return std::unexpected(std::move(containerSubTitleResult381.error()));
+                subTitle = std::move(*containerSubTitleResult381);
+              }
+            icon->showRarity(false);
+            auto setTitleResult382 = setTitle(icon, title, subTitle);
+            if (!setTitleResult382)
+              return std::unexpected(std::move(setTitleResult382.error()));
+          }
+        }
+      }
+      if (auto portaitEntity = as<PortraitEntity>(entity)) {
+        auto createResult383 = PortraitWidget::create(*context(), portaitEntity, PortraitMode::Bust);
+        if (!createResult383)
+          return std::unexpected(std::move(createResult383.error()));
+        auto portrait = std::move(*createResult383);
+        auto setIconModeResult384 = portrait->setIconMode();
+        if (!setIconModeResult384)
+          return std::unexpected(std::move(setIconModeResult384.error()));
         String title = this->title();
         if (title.empty())
-          title = container->containerDescription();
+          {
+            auto nameResult385 = portaitEntity->name();
+            if (!nameResult385)
+              return std::unexpected(std::move(nameResult385.error()));
+            title = std::move(*nameResult385);
+          }
         String subTitle = this->subTitle();
-        if (subTitle.empty())
-          subTitle = container->containerSubTitle();
-        icon->showRarity(false);
-        setTitle(icon, title, subTitle);
+        auto setTitleResult386 = setTitle(portrait, title, subTitle);
+        if (!setTitleResult386)
+          return std::unexpected(std::move(setTitleResult386.error()));
       }
     }
-    if (auto portaitEntity = as<PortraitEntity>(entity)) {
-      auto portrait = std::make_shared<PortraitWidget>(*context(), portaitEntity, PortraitMode::Bust);
-      portrait->setIconMode();
-      String title = this->title();
-      if (title.empty())
-        title = portaitEntity->name();
-      String subTitle = this->subTitle();
-      setTitle(portrait, title, subTitle);
+  }
+  return {};
+}
+
+std::expected<void, StarException> CraftingPane::displayed() {
+  auto displayedResult387 = Pane::displayed();
+  if (!displayedResult387)
+    return std::unexpected(std::move(displayedResult387.error()));
+
+  {
+    auto fetchChildResult388 = fetchChild<TextBoxWidget>("filter");
+    if (!fetchChildResult388)
+      return std::unexpected(std::move(fetchChildResult388.error()));
+    if (auto filterWidget = std::move(*fetchChildResult388)) {
+      auto setTextResult389 = filterWidget->setText("");
+      if (!setTextResult389)
+        return std::unexpected(std::move(setTextResult389.error()));
+      auto blurResult390 = filterWidget->blur();
+      if (!blurResult390)
+        return std::unexpected(std::move(blurResult390.error()));
     }
   }
-}
 
-void CraftingPane::displayed() {
-  Pane::displayed();
-
-  if (auto filterWidget = fetchChild<TextBoxWidget>("filter")) {
-    filterWidget->setText("");
-    filterWidget->blur();
-  }
-
-  updateAvailableRecipes();
+  auto updateAvailableRecipesResult391 = updateAvailableRecipes();
+  if (!updateAvailableRecipesResult391)
+    return std::unexpected(std::move(updateAvailableRecipesResult391.error()));
 
   // unlock any recipes specified
-  if (auto recipeUnlocks = m_settings.opt("initialRecipeUnlocks")) {
-    for (String itemName : jsonToStringList(*recipeUnlocks))
-      m_player->addBlueprint(ItemDescriptor(itemName));
+  {
+    auto optResult392 = m_settings.opt("initialRecipeUnlocks");
+    if (!optResult392)
+      return std::unexpected(std::move(optResult392.error()));
+    if (auto recipeUnlocks = std::move(*optResult392)) {
+      {
+        auto jsonToStringListResult393 = jsonToStringList(*recipeUnlocks);
+        if (!jsonToStringListResult393)
+          return std::unexpected(std::move(jsonToStringListResult393.error()));
+        for (String itemName : std::move(*jsonToStringListResult393))
+          {
+            auto createResult394 = ItemDescriptor::create(itemName);
+            if (!createResult394)
+              return std::unexpected(std::move(createResult394.error()));
+            auto addBlueprintResult395 = m_player->addBlueprint(std::move(*createResult394));
+            if (!addBlueprintResult395)
+              return std::unexpected(std::move(addBlueprintResult395.error()));
+            
+          }
+      }
+    }
   }
+  return {};
 }
 
-void CraftingPane::dismissed() {
+std::expected<void, StarException> CraftingPane::dismissed() {
   stopCrafting();
-  Pane::dismissed();
+  auto dismissedResult396 = Pane::dismissed();
+  if (!dismissedResult396)
+    return std::unexpected(std::move(dismissedResult396.error()));
   m_itemCache.clear();
+  return {};
 }
 
-std::shared_ptr<Pane> CraftingPane::createTooltip(Vec2I const& screenPosition) {
+std::expected<std::shared_ptr<Pane>, StarException> CraftingPane::createTooltip(Vec2I const& screenPosition) {
   for (std::size_t i = 0; i < m_guiList->numChildren(); ++i) {
     auto entry = m_guiList->itemAt(i);
     if (entry->getChildAt(screenPosition)) {
-      auto& recipe = m_recipesWidgetMap.getLeft(entry);
-      return setupTooltip(recipe);
+      auto getLeftResult397 = m_recipesWidgetMap.getLeft(entry);
+      if (!getLeftResult397)
+        return std::unexpected(std::move(getLeftResult397.error()));
+      auto& recipe = (**getLeftResult397);
+      auto setupTooltipResult398 = setupTooltip(recipe);
+      if (!setupTooltipResult398)
+        return std::unexpected(std::move(setupTooltipResult398.error()));
+      return std::move(*setupTooltipResult398);
     }
   }
 
   if (std::shared_ptr<Widget> child = getChildAt(screenPosition)) {
     if (child->name() == "btnUpgrade") {
       if (m_upgradeRecipe)
-        return setupTooltip(*m_upgradeRecipe);
+        {
+          auto setupTooltipResult399 = setupTooltip(*m_upgradeRecipe);
+          if (!setupTooltipResult399)
+            return std::unexpected(std::move(setupTooltipResult399.error()));
+          return std::move(*setupTooltipResult399);
+        }
     }
   }
 
@@ -376,49 +628,96 @@ EntityId CraftingPane::sourceEntityId() const {
   return m_sourceEntityId;
 }
 
-void CraftingPane::upgradeTable() {
+std::expected<void, StarException> CraftingPane::upgradeTable() {
   if (m_sourceEntityId != NullEntityId) {
     // Checks that the upgrade path exists
     if (m_upgradeRecipe) {
-      if (m_player->isAdmin() || ItemDatabase::canMakeRecipe(*m_upgradeRecipe, m_player->inventory()->availableItems(), m_player->inventory()->availableCurrencies())) {
-        if (!m_player->isAdmin())
-          consumeIngredients(*m_upgradeRecipe, 1);
-
-        // upgrade the old table
-        m_worldClient->sendEntityMessage(m_sourceEntityId, "requestUpgrade");
-
-        // unlock any recipes specified
-        if (auto recipeUnlocks = m_settings.opt("upgradeRecipeUnlocks")) {
-          for (String itemName : jsonToStringList(*recipeUnlocks))
-            m_player->addBlueprint(ItemDescriptor(itemName));
+      {
+        bool condition401 = static_cast<bool>(m_player->isAdmin());
+        if (!condition401) {
+          auto availableItemsResult400 = m_player->inventory()->availableItems();
+          if (!availableItemsResult400)
+            return std::unexpected(std::move(availableItemsResult400.error()));
+          condition401 = static_cast<bool>(ItemDatabase::canMakeRecipe(*m_upgradeRecipe, std::move(*availableItemsResult400), m_player->inventory()->availableCurrencies()));
         }
-
-        // this closes the interface window
-        dismiss();
+        if (condition401) {
+          if (!m_player->isAdmin())
+            {
+              auto consumeIngredientsResult402 = consumeIngredients(*m_upgradeRecipe, 1);
+              if (!consumeIngredientsResult402)
+                return std::unexpected(std::move(consumeIngredientsResult402.error()));
+              
+            }
+  
+          // upgrade the old table
+          auto sendEntityMessageResult403 = m_worldClient->sendEntityMessage(m_sourceEntityId, "requestUpgrade");
+          if (!sendEntityMessageResult403)
+            return std::unexpected(std::move(sendEntityMessageResult403.error()));
+  
+          // unlock any recipes specified
+          {
+            auto optResult404 = m_settings.opt("upgradeRecipeUnlocks");
+            if (!optResult404)
+              return std::unexpected(std::move(optResult404.error()));
+            if (auto recipeUnlocks = std::move(*optResult404)) {
+              {
+                auto jsonToStringListResult405 = jsonToStringList(*recipeUnlocks);
+                if (!jsonToStringListResult405)
+                  return std::unexpected(std::move(jsonToStringListResult405.error()));
+                for (String itemName : std::move(*jsonToStringListResult405))
+                  {
+                    auto createResult406 = ItemDescriptor::create(itemName);
+                    if (!createResult406)
+                      return std::unexpected(std::move(createResult406.error()));
+                    auto addBlueprintResult407 = m_player->addBlueprint(std::move(*createResult406));
+                    if (!addBlueprintResult407)
+                      return std::unexpected(std::move(addBlueprintResult407.error()));
+                    
+                  }
+              }
+            }
+          }
+  
+          // this closes the interface window
+          dismiss();
+        }
       }
     }
   }
+  return {};
 }
 
-std::size_t CraftingPane::itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item) {
-  auto itemDb = context()->root().itemDatabase();
+std::expected<std::size_t, StarException> CraftingPane::itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item) {
+  auto itemDatabaseResult408 = context()->root().itemDatabase();
+  if (!itemDatabaseResult408)
+    return std::unexpected(std::move(itemDatabaseResult408.error()));
+  auto itemDb = std::move(*itemDatabaseResult408);
   return itemDb->getCountOfItem(store, item);
 }
 
-void CraftingPane::update(float dt) {
+std::expected<void, StarException> CraftingPane::update(float dt) {
   // shut down if we can't reach the table anymore.
   if (m_sourceEntityId != NullEntityId) {
     auto sourceEntity = as<TileEntity>(m_worldClient->entity(m_sourceEntityId));
-    if (!sourceEntity || !m_worldClient->playerCanReachEntity(m_sourceEntityId) || !sourceEntity->isInteractive()) {
-      dismiss();
-      return;
+    {
+      bool condition410 = static_cast<bool>(!sourceEntity);
+      if (!condition410) {
+        auto playerCanReachEntityResult409 = m_worldClient->playerCanReachEntity(m_sourceEntityId);
+        if (!playerCanReachEntityResult409)
+          return std::unexpected(std::move(playerCanReachEntityResult409.error()));
+        condition410 = static_cast<bool>(!std::move(*playerCanReachEntityResult409));
+      }
+      if (condition410 || !sourceEntity->isInteractive()) {
+        dismiss();
+        return {};
+      }
     }
   }
 
   // similarly if the player is dead
   if (m_player->isDead()) {
     dismiss();
-    return;
+    return {};
   }
 
   // has the selected recipe changed ?
@@ -428,40 +727,72 @@ void CraftingPane::update(float dt) {
     stopCrafting(); // TODO: allow viewing other recipes without interrupting crafting
 
     m_displayedRecipe = m_guiList->selectedItem();
-    countTextChanged();
+    auto countTextChangedResult411 = countTextChanged();
+    if (!countTextChangedResult411)
+      return std::unexpected(std::move(countTextChangedResult411.error()));
 
-    auto recipe = recipeFromSelectedWidget();
+    auto recipeFromSelectedWidgetResult412 = recipeFromSelectedWidget();
+    if (!recipeFromSelectedWidgetResult412)
+      return std::unexpected(std::move(recipeFromSelectedWidgetResult412.error()));
+    auto recipe = std::move(*recipeFromSelectedWidgetResult412);
 
     if (recipe.isNull()) {
-      fetchChild<Widget>("description")->removeAllChildren();
+      auto fetchChildResult413 = fetchChild<Widget>("description");
+      if (!fetchChildResult413)
+        return std::unexpected(std::move(fetchChildResult413.error()));
+      std::move(*fetchChildResult413)->removeAllChildren();
     } else {
-      auto description = fetchChild<Widget>("description");
+      auto fetchChildResult414 = fetchChild<Widget>("description");
+      if (!fetchChildResult414)
+        return std::unexpected(std::move(fetchChildResult414.error()));
+      auto description = std::move(*fetchChildResult414);
       description->removeAllChildren();
 
-      auto item = context()->root().itemDatabase()->itemShared(recipe.output);
-      ItemTooltipBuilder::buildItemDescription(*context(), description, item);
+      auto itemDatabaseResult415 = context()->root().itemDatabase();
+      if (!itemDatabaseResult415)
+        return std::unexpected(std::move(itemDatabaseResult415.error()));
+      auto itemSharedResult416 = std::move(*itemDatabaseResult415)->itemShared(recipe.output);
+      if (!itemSharedResult416)
+        return std::unexpected(std::move(itemSharedResult416.error()));
+      auto item = std::move(*itemSharedResult416);
+      auto buildItemDescriptionResult417 = ItemTooltipBuilder::buildItemDescription(*context(), description, item);
+      if (!buildItemDescriptionResult417)
+        return std::unexpected(std::move(buildItemDescriptionResult417.error()));
     }
   }
 
   // crafters gonna craft
   while (m_crafting && m_craftTimer.wrapTick(context()->root().timing().timestep)) {
-    craft(std::min(m_count, (int)m_settings.getInt("craftCount", 1)));
+    auto getIntResult418 = m_settings.getInt("craftCount", 1);
+    if (!getIntResult418)
+      return std::unexpected(std::move(getIntResult418.error()));
+    auto craftResult419 = craft(std::min(m_count, (int)std::move(*getIntResult418)));
+    if (!craftResult419)
+      return std::unexpected(std::move(craftResult419.error()));
   }
 
   // update crafting icon, progress and buttons
-  if (auto currentRecipeIcon = fetchChild<ItemSlotWidget>("currentRecipeIcon")) {
-    auto recipe = recipeFromSelectedWidget();
-    if (recipe.isNull()) {
-      currentRecipeIcon->setItem(nullptr);
-    } else {
-      auto single = recipe.output.singular();
-      std::shared_ptr<Item> item = m_itemCache[single];
-      currentRecipeIcon->setItem(item);
-
-      if (m_crafting)
-        currentRecipeIcon->setProgress(1.0f - m_craftTimer.percent());
-      else
-        currentRecipeIcon->setProgress(1.0f);
+  {
+    auto fetchChildResult420 = fetchChild<ItemSlotWidget>("currentRecipeIcon");
+    if (!fetchChildResult420)
+      return std::unexpected(std::move(fetchChildResult420.error()));
+    if (auto currentRecipeIcon = std::move(*fetchChildResult420)) {
+      auto recipeFromSelectedWidgetResult421 = recipeFromSelectedWidget();
+      if (!recipeFromSelectedWidgetResult421)
+        return std::unexpected(std::move(recipeFromSelectedWidgetResult421.error()));
+      auto recipe = std::move(*recipeFromSelectedWidgetResult421);
+      if (recipe.isNull()) {
+        currentRecipeIcon->setItem(nullptr);
+      } else {
+        auto single = recipe.output.singular();
+        std::shared_ptr<Item> item = m_itemCache[single];
+        currentRecipeIcon->setItem(item);
+  
+        if (m_crafting)
+          currentRecipeIcon->setProgress(1.0f - m_craftTimer.percent());
+        else
+          currentRecipeIcon->setProgress(1.0f);
+      }
     }
   }
 
@@ -469,100 +800,219 @@ void CraftingPane::update(float dt) {
 
   // changed recipe or auto update time
   if (changedHighlight || (m_recipeAutorefreshCooldown <= 0)) {
-    updateAvailableRecipes();
-    updateCraftButtons();
+    auto updateAvailableRecipesResult422 = updateAvailableRecipes();
+    if (!updateAvailableRecipesResult422)
+      return std::unexpected(std::move(updateAvailableRecipesResult422.error()));
+    auto updateCraftButtonsResult423 = updateCraftButtons();
+    if (!updateCraftButtonsResult423)
+      return std::unexpected(std::move(updateCraftButtonsResult423.error()));
   }
 
-  setLabel("lblPlayerMoney", toString((int)m_player->currency("money")));
+  auto setLabelResult424 = setLabel("lblPlayerMoney", toString((int)m_player->currency("money")));
+  if (!setLabelResult424)
+    return std::unexpected(std::move(setLabelResult424.error()));
 
-  Pane::update(dt);
+  auto updateResult425 = Pane::update(dt);
+  if (!updateResult425)
+    return std::unexpected(std::move(updateResult425.error()));
+
+return {};
 }
 
-void CraftingPane::updateCraftButtons() {
-  auto normalizedBag = m_player->inventory()->availableItems();
+std::expected<void, StarException> CraftingPane::updateCraftButtons() {
+  auto availableItemsResult426 = m_player->inventory()->availableItems();
+  if (!availableItemsResult426)
+    return std::unexpected(std::move(availableItemsResult426.error()));
+  auto normalizedBag = std::move(*availableItemsResult426);
   auto availableCurrencies = m_player->inventory()->availableCurrencies();
 
-  auto recipe = recipeFromSelectedWidget();
+  auto recipeFromSelectedWidgetResult427 = recipeFromSelectedWidget();
+  if (!recipeFromSelectedWidgetResult427)
+    return std::unexpected(std::move(recipeFromSelectedWidgetResult427.error()));
+  auto recipe = std::move(*recipeFromSelectedWidgetResult427);
   bool recipeAvailable = !recipe.isNull() && (m_player->isAdmin() || ItemDatabase::canMakeRecipe(recipe, normalizedBag, availableCurrencies));
 
-  fetchChild<ButtonWidget>("btnCraft")->setEnabled(recipeAvailable);
-  if (auto spinCountUp = fetchChild<ButtonWidget>("spinCount.up"))
-    spinCountUp->setEnabled(recipeAvailable);
-  if (auto spinCountDown = fetchChild<ButtonWidget>("spinCount.down"))
-    spinCountDown->setEnabled(recipeAvailable);
-
-  if (auto stopCraftButton = fetchChild<ButtonWidget>("btnStopCraft")) {
-    stopCraftButton->setVisibility(m_crafting);
-    fetchChild<ButtonWidget>("btnCraft")->setVisibility(!m_crafting);
+  auto fetchChildResult428 = fetchChild<ButtonWidget>("btnCraft");
+  if (!fetchChildResult428)
+    return std::unexpected(std::move(fetchChildResult428.error()));
+  std::move(*fetchChildResult428)->setEnabled(recipeAvailable);
+  {
+    auto fetchChildResult429 = fetchChild<ButtonWidget>("spinCount.up");
+    if (!fetchChildResult429)
+      return std::unexpected(std::move(fetchChildResult429.error()));
+    if (auto spinCountUp = std::move(*fetchChildResult429))
+      spinCountUp->setEnabled(recipeAvailable);
+  }
+  {
+    auto fetchChildResult430 = fetchChild<ButtonWidget>("spinCount.down");
+    if (!fetchChildResult430)
+      return std::unexpected(std::move(fetchChildResult430.error()));
+    if (auto spinCountDown = std::move(*fetchChildResult430))
+      spinCountDown->setEnabled(recipeAvailable);
   }
 
-  if (auto upgradeButton = fetchChild<ButtonWidget>("btnUpgrade")) {
-    bool canUpgrade = (m_upgradeRecipe && (m_player->isAdmin() || ItemDatabase::canMakeRecipe(*m_upgradeRecipe, normalizedBag, availableCurrencies)));
-    upgradeButton->setEnabled(canUpgrade);
+  {
+    auto fetchChildResult431 = fetchChild<ButtonWidget>("btnStopCraft");
+    if (!fetchChildResult431)
+      return std::unexpected(std::move(fetchChildResult431.error()));
+    if (auto stopCraftButton = std::move(*fetchChildResult431)) {
+      auto setVisibilityResult432 = stopCraftButton->setVisibility(m_crafting);
+      if (!setVisibilityResult432)
+        return std::unexpected(std::move(setVisibilityResult432.error()));
+      auto fetchChildResult433 = fetchChild<ButtonWidget>("btnCraft");
+      if (!fetchChildResult433)
+        return std::unexpected(std::move(fetchChildResult433.error()));
+      auto setVisibilityResult434 = std::move(*fetchChildResult433)->setVisibility(!m_crafting);
+      if (!setVisibilityResult434)
+        return std::unexpected(std::move(setVisibilityResult434.error()));
+    }
   }
+
+  {
+    auto fetchChildResult435 = fetchChild<ButtonWidget>("btnUpgrade");
+    if (!fetchChildResult435)
+      return std::unexpected(std::move(fetchChildResult435.error()));
+    if (auto upgradeButton = std::move(*fetchChildResult435)) {
+      bool canUpgrade = (m_upgradeRecipe && (m_player->isAdmin() || ItemDatabase::canMakeRecipe(*m_upgradeRecipe, normalizedBag, availableCurrencies)));
+      upgradeButton->setEnabled(canUpgrade);
+    }
+  }
+  return {};
 }
 
-void CraftingPane::updateAvailableRecipes() {
+std::expected<void, StarException> CraftingPane::updateAvailableRecipes() {
   m_recipeAutorefreshCooldown = 30;
 
   StringSet categoryFilter;
-  if (auto categoriesGroup = fetchChild<ButtonGroupWidget>("categories")) {
-    if (auto selectedCategories = categoriesGroup->checkedButton()) {
-      for (auto group : selectedCategories->data().getArray("filter"))
-        categoryFilter.add(group.toString());
+  {
+    auto fetchChildResult436 = fetchChild<ButtonGroupWidget>("categories");
+    if (!fetchChildResult436)
+      return std::unexpected(std::move(fetchChildResult436.error()));
+    if (auto categoriesGroup = std::move(*fetchChildResult436)) {
+      if (auto selectedCategories = categoriesGroup->checkedButton()) {
+        {
+          auto getArrayResult437 = selectedCategories->data().getArray("filter");
+          if (!getArrayResult437)
+            return std::unexpected(std::move(getArrayResult437.error()));
+          for (auto group : std::move(*getArrayResult437))
+            {
+              auto toStringResult438 = group.toString();
+              if (!toStringResult438)
+                return std::unexpected(std::move(toStringResult438.error()));
+              categoryFilter.add(std::move(*toStringResult438));
+            }
+        }
+      }
     }
   }
 
   HashSet<Rarity> rarityFilter;
-  if (auto raritiesGroup = fetchChild<ButtonGroupWidget>("rarities")) {
-    if (auto selectedRarities = raritiesGroup->checkedButton()) {
-      for (auto entry : jsonToStringSet(selectedRarities->data().getArray("rarity")))
-        rarityFilter.add(RarityNames.getLeft(entry));
+  {
+    auto fetchChildResult439 = fetchChild<ButtonGroupWidget>("rarities");
+    if (!fetchChildResult439)
+      return std::unexpected(std::move(fetchChildResult439.error()));
+    if (auto raritiesGroup = std::move(*fetchChildResult439)) {
+      if (auto selectedRarities = raritiesGroup->checkedButton()) {
+        {
+          auto getArrayResult440 = selectedRarities->data().getArray("rarity");
+          if (!getArrayResult440)
+            return std::unexpected(std::move(getArrayResult440.error()));
+          auto jsonToStringSetResult441 = jsonToStringSet(std::move(*getArrayResult440));
+          if (!jsonToStringSetResult441)
+            return std::unexpected(std::move(jsonToStringSetResult441.error()));
+          for (auto entry : std::move(*jsonToStringSetResult441))
+            {
+              auto const& enumResult442 = RarityNames;
+              if (!enumResult442)
+                return std::unexpected(enumResult442.error());
+              auto getLeftResult443 = (*enumResult442).getLeft(entry);
+              if (!getLeftResult443)
+                return std::unexpected(std::move(getLeftResult443.error()));
+              rarityFilter.add((**getLeftResult443));
+            }
+        }
+      }
     }
   }
 
   String filterText;
-  if (auto filterWidget = fetchChild<TextBoxWidget>("filter"))
-    filterText = filterWidget->getText();
+  {
+    auto fetchChildResult444 = fetchChild<TextBoxWidget>("filter");
+    if (!fetchChildResult444)
+      return std::unexpected(std::move(fetchChildResult444.error()));
+    if (auto filterWidget = std::move(*fetchChildResult444))
+      filterText = filterWidget->getText();
+  }
 
-  m_recipes = determineRecipes();
+  auto determineRecipesResult445 = determineRecipes();
+  if (!determineRecipesResult445)
+    return std::unexpected(std::move(determineRecipesResult445.error()));
+  m_recipes = std::move(*determineRecipesResult445);
 
   std::size_t currentOffset = 0;
 
   ItemRecipe selectedRecipe;
   if (m_guiList->selectedWidget())
-    selectedRecipe = m_recipesWidgetMap.getLeft(m_guiList->selectedWidget());
+    {
+      auto getLeftResult446 = m_recipesWidgetMap.getLeft(m_guiList->selectedWidget());
+      if (!getLeftResult446)
+        return std::unexpected(std::move(getLeftResult446.error()));
+      selectedRecipe = (**getLeftResult446);
+    }
 
-  HashMap<ItemDescriptor, std::uint64_t> normalizedBag = m_player->inventory()->availableItems();
+  auto availableItemsResult447 = m_player->inventory()->availableItems();
+  if (!availableItemsResult447)
+    return std::unexpected(std::move(availableItemsResult447.error()));
+  HashMap<ItemDescriptor, std::uint64_t> normalizedBag = std::move(*availableItemsResult447);
 
-  m_guiList->clear();
+  auto clearResult448 = m_guiList->clear();
+  if (!clearResult448)
+    return std::unexpected(std::move(clearResult448.error()));
 
   for (auto const& recipe : m_recipes) {
     auto widget = m_recipesWidgetMap.valueRight(recipe);
     if (widget) {
-      m_guiList->addItem(widget);
+      auto addItemResult449 = m_guiList->addItem(widget);
+      if (!addItemResult449)
+        return std::unexpected(std::move(addItemResult449.error()));
     } else {
-      widget = m_guiList->addItem();
-      m_recipesWidgetMap.add(recipe, widget);
+      auto addItemResult450 = m_guiList->addItem();
+      if (!addItemResult450)
+        return std::unexpected(std::move(addItemResult450.error()));
+      widget = std::move(*addItemResult450);
+      auto addResult451 = m_recipesWidgetMap.add(recipe, widget);
+      if (!addResult451)
+        return std::unexpected(std::move(addResult451.error()));
     }
 
-    setupWidget(widget, recipe, normalizedBag);
+    auto setupWidgetResult452 = setupWidget(widget, recipe, normalizedBag);
+    if (!setupWidgetResult452)
+      return std::unexpected(std::move(setupWidgetResult452.error()));
 
     if (selectedRecipe == recipe) {
-      m_guiList->setSelected(currentOffset);
+      auto setSelectedResult453 = m_guiList->setSelected(currentOffset);
+      if (!setSelectedResult453)
+        return std::unexpected(std::move(setSelectedResult453.error()));
     }
 
     currentOffset++;
   }
+  return {};
 }
 
-void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
+std::expected<void, StarException> CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
   auto& root = context()->root();
 
   auto single = recipe.output.singular();
   std::shared_ptr<Item> item = m_itemCache[single];
   if (!item) {
-    item = root.itemDatabase()->itemShared(single);
+    auto itemDatabaseResult454 = root.itemDatabase();
+    if (!itemDatabaseResult454)
+      return std::unexpected(std::move(itemDatabaseResult454.error()));
+    auto itemSharedResult455 = std::move(*itemDatabaseResult454)->itemShared(single);
+    if (!itemSharedResult455)
+      return std::unexpected(std::move(itemSharedResult455.error()));
+    item = std::move(*itemSharedResult455);
     m_itemCache[single] = item;
   }
 
@@ -575,7 +1025,10 @@ void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe
         unavailable = true;
     }
 
-    auto itemDb = context()->root().itemDatabase();
+    auto itemDatabaseResult456 = context()->root().itemDatabase();
+    if (!itemDatabaseResult456)
+      return std::unexpected(std::move(itemDatabaseResult456.error()));
+    auto itemDb = std::move(*itemDatabaseResult456);
     for (auto const& input : recipe.inputs) {
       if (itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters) < input.count())
         unavailable = true;
@@ -586,89 +1039,228 @@ void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe
   if (recipe.output.count() > 1)
     name = strf("{} (x{})", name, recipe.output.count());
 
-  auto itemName = widget->fetchChild<LabelWidget>("itemName");
-  auto notcraftableoverlay = widget->fetchChild<ImageWidget>("notcraftableoverlay");
+  auto fetchChildResult457 = widget->fetchChild<LabelWidget>("itemName");
+  if (!fetchChildResult457)
+    return std::unexpected(std::move(fetchChildResult457.error()));
+  auto itemName = std::move(*fetchChildResult457);
+  auto fetchChildResult458 = widget->fetchChild<ImageWidget>("notcraftableoverlay");
+  if (!fetchChildResult458)
+    return std::unexpected(std::move(fetchChildResult458.error()));
+  auto notcraftableoverlay = std::move(*fetchChildResult458);
 
-  itemName->setText(name);
+  auto setTextResult459 = itemName->setText(name);
+  if (!setTextResult459)
+    return std::unexpected(std::move(setTextResult459.error()));
 
   if (unavailable) {
     itemName->setColor(Color::Gray);
-    notcraftableoverlay->show();
+    auto showResult460 = notcraftableoverlay->show();
+    if (!showResult460)
+      return std::unexpected(std::move(showResult460.error()));
   } else {
     itemName->setColor(Color::White);
-    notcraftableoverlay->hide();
+    auto hideResult461 = notcraftableoverlay->hide();
+    if (!hideResult461)
+      return std::unexpected(std::move(hideResult461.error()));
   }
 
   if (price > 0) {
-    widget->setLabel("priceLabel", toString(price));
-    if (auto icon = widget->fetchChild<ImageWidget>("moneyIcon"))
-      icon->setVisibility(true);
+    auto setLabelResult462 = widget->setLabel("priceLabel", toString(price));
+    if (!setLabelResult462)
+      return std::unexpected(std::move(setLabelResult462.error()));
+    {
+      auto fetchChildResult463 = widget->fetchChild<ImageWidget>("moneyIcon");
+      if (!fetchChildResult463)
+        return std::unexpected(std::move(fetchChildResult463.error()));
+      if (auto icon = std::move(*fetchChildResult463))
+        {
+          auto setVisibilityResult464 = icon->setVisibility(true);
+          if (!setVisibilityResult464)
+            return std::unexpected(std::move(setVisibilityResult464.error()));
+          
+        }
+    }
   } else {
-    widget->setLabel("priceLabel", "");
-    if (auto icon = widget->fetchChild<ImageWidget>("moneyIcon"))
-      icon->setVisibility(false);
-  }
-
-  if (auto newIndicator = widget->fetchChild<ImageWidget>("newIcon")) {
-    if (m_blueprints->isNew(recipe.output.singular())) {
-      newIndicator->show();
-      widget->setLabel("priceLabel", "");
-      if (auto icon = widget->fetchChild<ImageWidget>("moneyIcon"))
-        icon->setVisibility(false);
-    } else {
-      newIndicator->hide();
+    auto setLabelResult465 = widget->setLabel("priceLabel", "");
+    if (!setLabelResult465)
+      return std::unexpected(std::move(setLabelResult465.error()));
+    {
+      auto fetchChildResult466 = widget->fetchChild<ImageWidget>("moneyIcon");
+      if (!fetchChildResult466)
+        return std::unexpected(std::move(fetchChildResult466.error()));
+      if (auto icon = std::move(*fetchChildResult466))
+        {
+          auto setVisibilityResult467 = icon->setVisibility(false);
+          if (!setVisibilityResult467)
+            return std::unexpected(std::move(setVisibilityResult467.error()));
+          
+        }
     }
   }
 
-  widget->fetchChild<ItemSlotWidget>("itemIcon")->setItem(item);
-  widget->show();
+  {
+    auto fetchChildResult468 = widget->fetchChild<ImageWidget>("newIcon");
+    if (!fetchChildResult468)
+      return std::unexpected(std::move(fetchChildResult468.error()));
+    if (auto newIndicator = std::move(*fetchChildResult468)) {
+      if (m_blueprints->isNew(recipe.output.singular())) {
+        auto showResult469 = newIndicator->show();
+        if (!showResult469)
+          return std::unexpected(std::move(showResult469.error()));
+        auto setLabelResult470 = widget->setLabel("priceLabel", "");
+        if (!setLabelResult470)
+          return std::unexpected(std::move(setLabelResult470.error()));
+        {
+          auto fetchChildResult471 = widget->fetchChild<ImageWidget>("moneyIcon");
+          if (!fetchChildResult471)
+            return std::unexpected(std::move(fetchChildResult471.error()));
+          if (auto icon = std::move(*fetchChildResult471))
+            {
+              auto setVisibilityResult472 = icon->setVisibility(false);
+              if (!setVisibilityResult472)
+                return std::unexpected(std::move(setVisibilityResult472.error()));
+              
+            }
+        }
+      } else {
+        auto hideResult473 = newIndicator->hide();
+        if (!hideResult473)
+          return std::unexpected(std::move(hideResult473.error()));
+      }
+    }
+  }
+
+  auto fetchChildResult474 = widget->fetchChild<ItemSlotWidget>("itemIcon");
+  if (!fetchChildResult474)
+    return std::unexpected(std::move(fetchChildResult474.error()));
+  std::move(*fetchChildResult474)->setItem(item);
+  auto showResult475 = widget->show();
+  if (!showResult475)
+    return std::unexpected(std::move(showResult475.error()));
+
+return {};
 }
 
-std::shared_ptr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
+std::expected<std::shared_ptr<Pane>, StarException> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   auto& root = context()->root();
 
-  auto tooltip = std::make_shared<Pane>(*context());
+  auto createResult476 = Pane::create(*context());
+  if (!createResult476)
+    return std::unexpected(std::move(createResult476.error()));
+  auto tooltip = std::move(*createResult476);
   GuiReader reader(*context());
-  reader.construct(root.assets()->json("/interface/craftingtooltip/craftingtooltip.config"), tooltip.get());
+  auto assetsResult477 = root.assets();
+  if (!assetsResult477)
+    return std::unexpected(std::move(assetsResult477.error()));
+  auto jsonResult478 = std::move(*assetsResult477)->json("/interface/craftingtooltip/craftingtooltip.config");
+  if (!jsonResult478)
+    return std::unexpected(std::move(jsonResult478.error()));
+  auto constructResult479 = reader.construct(std::move(*jsonResult478), tooltip.get());
+  if (!constructResult479)
+    return std::unexpected(std::move(constructResult479.error()));
 
-  auto guiList = tooltip->fetchChild<ListWidget>("itemList");
-  guiList->clear();
+  auto fetchChildResult480 = tooltip->fetchChild<ListWidget>("itemList");
+  if (!fetchChildResult480)
+    return std::unexpected(std::move(fetchChildResult480.error()));
+  auto guiList = std::move(*fetchChildResult480);
+  auto clearResult481 = guiList->clear();
+  if (!clearResult481)
+    return std::unexpected(std::move(clearResult481.error()));
 
-  auto normalizedBag = m_player->inventory()->availableItems();
+  auto availableItemsResult482 = m_player->inventory()->availableItems();
+  if (!availableItemsResult482)
+    return std::unexpected(std::move(availableItemsResult482.error()));
+  auto normalizedBag = std::move(*availableItemsResult482);
 
-  auto itemDb = root.itemDatabase();
+  auto itemDatabaseResult483 = root.itemDatabase();
+  if (!itemDatabaseResult483)
+    return std::unexpected(std::move(itemDatabaseResult483.error()));
+  auto itemDb = std::move(*itemDatabaseResult483);
 
-  auto addIngredient = [guiList](std::shared_ptr<Item> const& item, std::size_t availableCount, std::size_t requiredCount) {
-      auto widget = guiList->addItem();
-      widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
-      auto countWidget = widget->fetchChild<LabelWidget>("count");
-      countWidget->setText(strf("{}/{}", availableCount, requiredCount));
+  auto addIngredient = [guiList](std::shared_ptr<Item> const& item, std::size_t availableCount, std::size_t requiredCount)  -> std::expected<void, StarException> {
+      auto addItemResult484 = guiList->addItem();
+      if (!addItemResult484)
+        return std::unexpected(std::move(addItemResult484.error()));
+      auto widget = std::move(*addItemResult484);
+      auto fetchChildResult485 = widget->fetchChild<LabelWidget>("itemName");
+      if (!fetchChildResult485)
+        return std::unexpected(std::move(fetchChildResult485.error()));
+      auto setTextResult486 = std::move(*fetchChildResult485)->setText(item->friendlyName());
+      if (!setTextResult486)
+        return std::unexpected(std::move(setTextResult486.error()));
+      auto fetchChildResult487 = widget->fetchChild<LabelWidget>("count");
+      if (!fetchChildResult487)
+        return std::unexpected(std::move(fetchChildResult487.error()));
+      auto countWidget = std::move(*fetchChildResult487);
+      auto setTextResult488 = countWidget->setText(strf("{}/{}", availableCount, requiredCount));
+      if (!setTextResult488)
+        return std::unexpected(std::move(setTextResult488.error()));
       if (availableCount < requiredCount)
         countWidget->setColor(Color::Red);
       else
         countWidget->setColor(Color::Green);
-      widget->fetchChild<ItemSlotWidget>("itemIcon")->setItem(item);
-      widget->show();
-    };
+      auto fetchChildResult489 = widget->fetchChild<ItemSlotWidget>("itemIcon");
+      if (!fetchChildResult489)
+        return std::unexpected(std::move(fetchChildResult489.error()));
+      std::move(*fetchChildResult489)->setItem(item);
+      auto showResult490 = widget->show();
+      if (!showResult490)
+        return std::unexpected(std::move(showResult490.error()));
+    
+  return {};
+};
 
-  auto currenciesConfig = root.assets()->json("/currencies.config");
+  auto assetsResult491 = root.assets();
+  if (!assetsResult491)
+    return std::unexpected(std::move(assetsResult491.error()));
+  auto jsonResult492 = std::move(*assetsResult491)->json("/currencies.config");
+  if (!jsonResult492)
+    return std::unexpected(std::move(jsonResult492.error()));
+  auto currenciesConfig = std::move(*jsonResult492);
   for (auto const& p : recipe.currencyInputs) {
     if (p.second > 0) {
-      auto currencyItem = root.itemDatabase()->itemShared(ItemDescriptor(currenciesConfig.get(p.first).getString("representativeItem")));
+      auto itemDatabaseResult493 = root.itemDatabase();
+      if (!itemDatabaseResult493)
+        return std::unexpected(std::move(itemDatabaseResult493.error()));
+      auto getResult494 = currenciesConfig.get(p.first);
+      if (!getResult494)
+        return std::unexpected(std::move(getResult494.error()));
+      auto getStringResult495 = std::move(*getResult494).getString("representativeItem");
+      if (!getStringResult495)
+        return std::unexpected(std::move(getStringResult495.error()));
+      auto createResult496 = ItemDescriptor::create(std::move(*getStringResult495));
+      if (!createResult496)
+        return std::unexpected(std::move(createResult496.error()));
+      auto itemSharedResult497 = std::move(*itemDatabaseResult493)->itemShared(std::move(*createResult496));
+      if (!itemSharedResult497)
+        return std::unexpected(std::move(itemSharedResult497.error()));
+      auto currencyItem = std::move(*itemSharedResult497);
       addIngredient(currencyItem, m_player->currency(p.first), p.second);
     }
   }
 
   for (auto const& input : recipe.inputs) {
-    auto item = root.itemDatabase()->itemShared(input.singular());
+    auto itemDatabaseResult498 = root.itemDatabase();
+    if (!itemDatabaseResult498)
+      return std::unexpected(std::move(itemDatabaseResult498.error()));
+    auto itemSharedResult499 = std::move(*itemDatabaseResult498)->itemShared(input.singular());
+    if (!itemSharedResult499)
+      return std::unexpected(std::move(itemSharedResult499.error()));
+    auto item = std::move(*itemSharedResult499);
     std::size_t itemCount = itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters);
     addIngredient(item, itemCount, input.count());
   }
 
-  auto background = tooltip->fetchChild<ImageStretchWidget>("background");
+  auto fetchChildResult500 = tooltip->fetchChild<ImageStretchWidget>("background");
+  if (!fetchChildResult500)
+    return std::unexpected(std::move(fetchChildResult500.error()));
+  auto background = std::move(*fetchChildResult500);
   background->setSize(background->size() + Vec2I(0, guiList->size()[1]));
 
-  auto title = tooltip->fetchChild<LabelWidget>("title");
+  auto fetchChildResult501 = tooltip->fetchChild<LabelWidget>("title");
+  if (!fetchChildResult501)
+    return std::unexpected(std::move(fetchChildResult501.error()));
+  auto title = std::move(*fetchChildResult501);
   title->setPosition(title->position() + Vec2I(0, guiList->size()[1]));
 
   tooltip->setSize(background->size());
@@ -676,24 +1268,34 @@ std::shared_ptr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   return tooltip;
 }
 
-bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
-  auto itemDb = context()->root().itemDatabase();
+std::expected<bool, StarException> CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
+  auto itemDatabaseResult502 = context()->root().itemDatabase();
+  if (!itemDatabaseResult502)
+    return std::unexpected(std::move(itemDatabaseResult502.error()));
+  auto itemDb = std::move(*itemDatabaseResult502);
 
-  auto normalizedBag = m_player->inventory()->availableItems();
+  auto availableItemsResult503 = m_player->inventory()->availableItems();
+  if (!availableItemsResult503)
+    return std::unexpected(std::move(availableItemsResult503.error()));
+  auto normalizedBag = std::move(*availableItemsResult503);
   auto availableCurrencies = m_player->inventory()->availableCurrencies();
 
   // make sure we still have the currencies and items avaialable
   for (auto const& p : recipe.currencyInputs) {
     std::uint64_t countRequired = p.second * count;
     if (availableCurrencies.value(p.first) < countRequired) {
-      updateAvailableRecipes();
+      auto updateAvailableRecipesResult504 = updateAvailableRecipes();
+      if (!updateAvailableRecipesResult504)
+        return std::unexpected(std::move(updateAvailableRecipesResult504.error()));
       return false;
     }
   }
   for (auto input : recipe.inputs) {
     std::size_t countRequired = input.count() * count;
     if (itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters) < countRequired) {
-      updateAvailableRecipes();
+      auto updateAvailableRecipesResult505 = updateAvailableRecipes();
+      if (!updateAvailableRecipesResult505)
+        return std::unexpected(std::move(updateAvailableRecipesResult505.error()));
       return false;
     }
   }
@@ -705,7 +1307,12 @@ bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
   }
   for (auto input : recipe.inputs) {
     if (count > 0)
-      m_player->inventory()->consumeItems(ItemDescriptor(input.name(), input.count() * count, input.parameters()), recipe.matchInputParameters);
+      {
+        auto createResult506 = ItemDescriptor::create(input.name(), input.count() * count, input.parameters());
+        if (!createResult506)
+          return std::unexpected(std::move(createResult506.error()));
+        m_player->inventory()->consumeItems(std::move(*createResult506), recipe.matchInputParameters);
+      }
   }
   return true;
 }
@@ -716,169 +1323,369 @@ void CraftingPane::stopCrafting() {
   m_crafting = false;
 }
 
-void CraftingPane::toggleCraft() {
+std::expected<void, StarException> CraftingPane::toggleCraft() {
   if (m_crafting) {
     stopCrafting();
   } else {
-    auto recipe = recipeFromSelectedWidget();
-    if (recipe.duration > 0 && !m_settings.getBool("disableTimer", false)) {
-      m_crafting = true;
-      m_craftTimer = GameTimer(recipe.duration);
-
-      if (auto craftingSound = m_settings.optString("craftingSound")) {
-        auto assets = context()->root().assets();
-        m_craftingSound = std::make_shared<AudioInstance>(*assets->audio(*craftingSound));
-        m_craftingSound->setLoops(-1);
-        context()->playAudio(m_craftingSound);
+    auto recipeFromSelectedWidgetResult507 = recipeFromSelectedWidget();
+    if (!recipeFromSelectedWidgetResult507)
+      return std::unexpected(std::move(recipeFromSelectedWidgetResult507.error()));
+    auto recipe = std::move(*recipeFromSelectedWidgetResult507);
+    {
+      bool condition509 = static_cast<bool>(recipe.duration > 0);
+      if (condition509) {
+        auto getBoolResult508 = m_settings.getBool("disableTimer", false);
+        if (!getBoolResult508)
+          return std::unexpected(std::move(getBoolResult508.error()));
+        condition509 = static_cast<bool>(!std::move(*getBoolResult508));
       }
-    } else {
-      craft(m_count);
+      if (condition509) {
+        m_crafting = true;
+        m_craftTimer = GameTimer(recipe.duration);
+  
+        {
+          auto optStringResult510 = m_settings.optString("craftingSound");
+          if (!optStringResult510)
+            return std::unexpected(std::move(optStringResult510.error()));
+          if (auto craftingSound = std::move(*optStringResult510)) {
+            auto assetsResult511 = context()->root().assets();
+            if (!assetsResult511)
+              return std::unexpected(std::move(assetsResult511.error()));
+            auto assets = std::move(*assetsResult511);
+            auto audio = assets->audio(*craftingSound);
+            if (!audio)
+              return std::unexpected(std::move(audio.error()));
+            auto createResult512 = AudioInstance::create(**audio);
+            if (!createResult512)
+              return std::unexpected(std::move(createResult512.error()));
+            m_craftingSound = std::move(*createResult512);
+            m_craftingSound->setLoops(-1);
+            auto playAudioResult513 = context()->playAudio(m_craftingSound);
+            if (!playAudioResult513)
+              return std::unexpected(std::move(playAudioResult513.error()));
+          }
+        }
+      } else {
+        auto craftResult514 = craft(m_count);
+        if (!craftResult514)
+          return std::unexpected(std::move(craftResult514.error()));
+      }
     }
   }
+  return {};
 }
 
-void CraftingPane::craft(int count) {
+std::expected<void, StarException> CraftingPane::craft(int count) {
   auto& root = context()->root();
 
   if (m_guiList->selectedItem() != NPos) {
-    auto recipe = recipeFromSelectedWidget();
+    auto recipeFromSelectedWidgetResult515 = recipeFromSelectedWidget();
+    if (!recipeFromSelectedWidgetResult515)
+      return std::unexpected(std::move(recipeFromSelectedWidgetResult515.error()));
+    auto recipe = std::move(*recipeFromSelectedWidgetResult515);
 
-    if (!m_player->isAdmin() && !consumeIngredients(recipe, count)) {
-      stopCrafting();
-      return;
+    {
+      bool condition517 = static_cast<bool>(!m_player->isAdmin());
+      if (condition517) {
+        auto consumeIngredientsResult516 = consumeIngredients(recipe, count);
+        if (!consumeIngredientsResult516)
+          return std::unexpected(std::move(consumeIngredientsResult516.error()));
+        condition517 = static_cast<bool>(!std::move(*consumeIngredientsResult516));
+      }
+      if (condition517) {
+        stopCrafting();
+        return {};
+      }
     }
 
     ItemDescriptor itemDescriptor = recipe.output;
     int remainingItemCount = itemDescriptor.count() * count;
     while (remainingItemCount > 0) {
-      auto craftedItem = root.itemDatabase()->item(itemDescriptor.singular().multiply(remainingItemCount));
+      auto itemDatabaseResult518 = root.itemDatabase();
+      if (!itemDatabaseResult518)
+        return std::unexpected(std::move(itemDatabaseResult518.error()));
+      auto itemResult519 = std::move(*itemDatabaseResult518)->item(itemDescriptor.singular().multiply(remainingItemCount));
+      if (!itemResult519)
+        return std::unexpected(std::move(itemResult519.error()));
+      auto craftedItem = std::move(*itemResult519);
       remainingItemCount -= craftedItem->count();
-      m_player->giveItem(craftedItem);
+      auto giveItemResult520 = m_player->giveItem(craftedItem);
+      if (!giveItemResult520)
+        return std::unexpected(std::move(giveItemResult520.error()));
 
       for (auto& collectable : recipe.collectables)
-        m_player->addCollectable(collectable.first, collectable.second);
+        {
+          auto addCollectableResult521 = m_player->addCollectable(collectable.first, collectable.second);
+          if (!addCollectableResult521)
+            return std::unexpected(std::move(addCollectableResult521.error()));
+          
+        }
     }
 
     m_blueprints->markAsRead(recipe.output.singular());
   }
 
-  updateAvailableRecipes();
+  auto updateAvailableRecipesResult522 = updateAvailableRecipes();
+  if (!updateAvailableRecipesResult522)
+    return std::unexpected(std::move(updateAvailableRecipesResult522.error()));
 
   m_count -= count;
   if (m_count <= 0) {
     m_count = 1;
     stopCrafting();
   }
-  countChanged();
+  auto countChangedResult523 = countChanged();
+  if (!countChangedResult523)
+    return std::unexpected(std::move(countChangedResult523.error()));
 
-  updateCraftButtons();
+  auto updateCraftButtonsResult524 = updateCraftButtons();
+  if (!updateCraftButtonsResult524)
+    return std::unexpected(std::move(updateCraftButtonsResult524.error()));
+
+return {};
 }
 
-void CraftingPane::countTextChanged() {
+std::expected<void, StarException> CraftingPane::countTextChanged() {
   if (m_textBox) {
     int appropriateDefaultCount = 1;
-    try {
-      if (!m_textBox->getText().replace("x", "").size()) {
+    auto replaceResult525 = m_textBox->getText().replace("x", "");
+    if (!replaceResult525)
+      return std::unexpected(std::move(replaceResult525.error()));
+    auto countText = std::move(*replaceResult525);
+    if (countText.empty()) {
+      m_count = appropriateDefaultCount;
+    } else {
+      auto parsed = lexicalCast<int>(countText);
+      if (!parsed) {
+        if (!parsed.error().is<BadLexicalCast>())
+          return std::unexpected(std::move(parsed.error()));
         m_count = appropriateDefaultCount;
       } else {
-        m_count = clamp<int>(lexicalCast<int>(m_textBox->getText().replace("x", "")), appropriateDefaultCount, maxCraft());
-        countChanged();
+        auto maxCraftResult526 = maxCraft();
+        if (!maxCraftResult526)
+          return std::unexpected(std::move(maxCraftResult526.error()));
+        m_count = clamp<int>(*parsed, appropriateDefaultCount, std::move(*maxCraftResult526));
       }
-    } catch (BadLexicalCast const&) {
-      m_count = appropriateDefaultCount;
-      countChanged();
+      auto countChangedResult527 = countChanged();
+      if (!countChangedResult527)
+        return std::unexpected(std::move(countChangedResult527.error()));
     }
   } else {
     m_count = 1;
   }
+  return {};
 }
 
-void CraftingPane::countChanged() {
+std::expected<void, StarException> CraftingPane::countChanged() {
   if (m_textBox)
-    m_textBox->setText(strf("x{}", m_count), false);
+    {
+      auto setTextResult528 = m_textBox->setText(strf("x{}", m_count), false);
+      if (!setTextResult528)
+        return std::unexpected(std::move(setTextResult528.error()));
+      
+    }
+
+return {};
 }
 
-List<ItemRecipe> CraftingPane::determineRecipes() {
+std::expected<List<ItemRecipe>, StarException> CraftingPane::determineRecipes() {
   HashSet<ItemRecipe> recipes;
-  auto itemDb = context()->root().itemDatabase();
+  auto itemDatabaseResult529 = context()->root().itemDatabase();
+  if (!itemDatabaseResult529)
+    return std::unexpected(std::move(itemDatabaseResult529.error()));
+  auto itemDb = std::move(*itemDatabaseResult529);
 
   StringSet categoryFilter;
-  if (auto categoriesGroup = fetchChild<ButtonGroupWidget>("categories")) {
-    if (auto selectedCategories = categoriesGroup->checkedButton()) {
-      for (auto group : selectedCategories->data().getArray("filter"))
-        categoryFilter.add(group.toString());
+  {
+    auto fetchChildResult530 = fetchChild<ButtonGroupWidget>("categories");
+    if (!fetchChildResult530)
+      return std::unexpected(std::move(fetchChildResult530.error()));
+    if (auto categoriesGroup = std::move(*fetchChildResult530)) {
+      if (auto selectedCategories = categoriesGroup->checkedButton()) {
+        {
+          auto getArrayResult531 = selectedCategories->data().getArray("filter");
+          if (!getArrayResult531)
+            return std::unexpected(std::move(getArrayResult531.error()));
+          for (auto group : std::move(*getArrayResult531))
+            {
+              auto toStringResult532 = group.toString();
+              if (!toStringResult532)
+                return std::unexpected(std::move(toStringResult532.error()));
+              categoryFilter.add(std::move(*toStringResult532));
+            }
+        }
+      }
     }
   }
 
   HashSet<Rarity> rarityFilter;
-  if (auto raritiesGroup = fetchChild<ButtonGroupWidget>("rarities")) {
-    if (auto selectedRarities = raritiesGroup->checkedButton()) {
-      for (auto entry : jsonToStringSet(selectedRarities->data().getArray("rarity")))
-        rarityFilter.add(RarityNames.getLeft(entry));
+  {
+    auto fetchChildResult533 = fetchChild<ButtonGroupWidget>("rarities");
+    if (!fetchChildResult533)
+      return std::unexpected(std::move(fetchChildResult533.error()));
+    if (auto raritiesGroup = std::move(*fetchChildResult533)) {
+      if (auto selectedRarities = raritiesGroup->checkedButton()) {
+        {
+          auto getArrayResult534 = selectedRarities->data().getArray("rarity");
+          if (!getArrayResult534)
+            return std::unexpected(std::move(getArrayResult534.error()));
+          auto jsonToStringSetResult535 = jsonToStringSet(std::move(*getArrayResult534));
+          if (!jsonToStringSetResult535)
+            return std::unexpected(std::move(jsonToStringSetResult535.error()));
+          for (auto entry : std::move(*jsonToStringSetResult535))
+            {
+              auto const& enumResult536 = RarityNames;
+              if (!enumResult536)
+                return std::unexpected(enumResult536.error());
+              auto getLeftResult537 = (*enumResult536).getLeft(entry);
+              if (!getLeftResult537)
+                return std::unexpected(std::move(getLeftResult537.error()));
+              rarityFilter.add((**getLeftResult537));
+            }
+        }
+      }
     }
   }
 
   String filterText;
-  if (auto filterWidget = fetchChild<TextBoxWidget>("filter"))
-    filterText = filterWidget->getText();
+  {
+    auto fetchChildResult538 = fetchChild<TextBoxWidget>("filter");
+    if (!fetchChildResult538)
+      return std::unexpected(std::move(fetchChildResult538.error()));
+    if (auto filterWidget = std::move(*fetchChildResult538))
+      filterText = filterWidget->getText();
+  }
 
   bool filterHaveMaterials = false;
   if (m_filterHaveMaterials)
     filterHaveMaterials = m_filterHaveMaterials->isChecked();
 
-  if (m_settings.getBool("printer", false)) {
-    auto objectDatabase = context()->root().objectDatabase();
-
-    StringList itemList;
-    if (m_player->isAdmin())
-      itemList = objectDatabase->allObjects();
-    else
-      itemList = StringList::from(m_player->log()->scannedObjects());
-
-    filter(itemList, [objectDatabase, itemDb](String const& itemName) {
-        if (objectDatabase->isObject(itemName)) {
-          if (auto objectConfig = objectDatabase->getConfig(itemName))
-            return objectConfig->printable && itemDb->hasItem(itemName);
-        }
-        return false;
-      });
-
-    float printTime = m_settings.getFloat("printTime", 0);
-    float printFactor = m_settings.getFloat("printCostFactor", 1.0);
-    for (auto& itemName : itemList) {
-      ItemRecipe recipe;
-      recipe.output = ItemDescriptor(itemName, 1);
-      auto recipeItem = itemDb->itemShared(recipe.output);
-      int itemPrice = int(recipeItem->price() * printFactor);
-      recipe.currencyInputs["money"] = itemPrice;
-      recipe.outputRarity = recipeItem->rarity();
-      recipe.duration = printTime;
-      recipe.guiFilterString = ItemDatabase::guiFilterString(recipeItem);
-      recipe.groups = StringSet{objectDatabase->getConfig(itemName)->category};
-      recipes.add(recipe);
-    }
-  } else if (m_settings.contains("recipes")) {
-    for (auto& entry : m_settings.getArray("recipes")) {
-      if (entry.type() == Json::Type::String)
-        recipes.addAll(itemDb->recipesForOutputItem(entry.toString()));
+  {
+    auto getBoolResult539 = m_settings.getBool("printer", false);
+    if (!getBoolResult539)
+      return std::unexpected(std::move(getBoolResult539.error()));
+    if (std::move(*getBoolResult539)) {
+      auto objectDatabaseResult540 = context()->root().objectDatabase();
+      if (!objectDatabaseResult540)
+        return std::unexpected(std::move(objectDatabaseResult540.error()));
+      auto objectDatabase = std::move(*objectDatabaseResult540);
+  
+      StringList itemList;
+      if (m_player->isAdmin())
+        itemList = objectDatabase->allObjects();
       else
-        recipes.add(itemDb->parseRecipe(entry));
-    }
-
-    if (filterHaveMaterials)
-      recipes.addAll(itemDb->recipesFromSubset(m_player->inventory()->availableItems(), m_player->inventory()->availableCurrencies(), take(recipes), m_filter));
-  } else {
-    if (filterHaveMaterials)
-      recipes.addAll(itemDb->recipesFromBagContents(m_player->inventory()->availableItems(), m_player->inventory()->availableCurrencies(), m_filter));
-    else
-      recipes.addAll(itemDb->allRecipes(m_filter));
+        itemList = StringList::from(m_player->log()->scannedObjects());
+  
+      StringList printableItems;
+      for (auto const& itemName : itemList) {
+        if (objectDatabase->isObject(itemName)) {
+          {
+            auto getConfigResult541 = objectDatabase->getConfig(itemName);
+            if (!getConfigResult541)
+              return std::unexpected(std::move(getConfigResult541.error()));
+            if (auto objectConfig = std::move(*getConfigResult541)) {
+              if (objectConfig->printable && itemDb->hasItem(itemName))
+                printableItems.append(itemName);
+            }
+          }
+        }
+      }
+      itemList = std::move(printableItems);
+  
+      auto getFloatResult542 = m_settings.getFloat("printTime", 0);
+      if (!getFloatResult542)
+        return std::unexpected(std::move(getFloatResult542.error()));
+      float printTime = std::move(*getFloatResult542);
+      auto getFloatResult543 = m_settings.getFloat("printCostFactor", 1.0);
+      if (!getFloatResult543)
+        return std::unexpected(std::move(getFloatResult543.error()));
+      float printFactor = std::move(*getFloatResult543);
+      for (auto& itemName : itemList) {
+        ItemRecipe recipe;
+        auto createResult544 = ItemDescriptor::create(itemName, 1);
+        if (!createResult544)
+          return std::unexpected(std::move(createResult544.error()));
+        recipe.output = std::move(*createResult544);
+        auto itemSharedResult545 = itemDb->itemShared(recipe.output);
+        if (!itemSharedResult545)
+          return std::unexpected(std::move(itemSharedResult545.error()));
+        auto recipeItem = std::move(*itemSharedResult545);
+        int itemPrice = int(recipeItem->price() * printFactor);
+        recipe.currencyInputs["money"] = itemPrice;
+        recipe.outputRarity = recipeItem->rarity();
+        recipe.duration = printTime;
+        auto guiFilterStringResult546 = ItemDatabase::guiFilterString(recipeItem);
+        if (!guiFilterStringResult546)
+          return std::unexpected(std::move(guiFilterStringResult546.error()));
+        recipe.guiFilterString = std::move(*guiFilterStringResult546);
+        auto getConfigResult547 = objectDatabase->getConfig(itemName);
+        if (!getConfigResult547)
+          return std::unexpected(std::move(getConfigResult547.error()));
+        recipe.groups = StringSet{std::move(*getConfigResult547)->category};
+        recipes.add(recipe);
+      }
+    } else {
+             auto containsResult548 = m_settings.contains("recipes");
+             if (!containsResult548)
+               return std::unexpected(std::move(containsResult548.error()));
+             if (std::move(*containsResult548)) {
+        {
+          auto getArrayResult549 = m_settings.getArray("recipes");
+          if (!getArrayResult549)
+            return std::unexpected(std::move(getArrayResult549.error()));
+          for (auto& entry : std::move(*getArrayResult549)) {
+            if (entry.type() == Json::Type::String)
+              {
+                auto toStringResult550 = entry.toString();
+                if (!toStringResult550)
+                  return std::unexpected(std::move(toStringResult550.error()));
+                recipes.addAll(itemDb->recipesForOutputItem(std::move(*toStringResult550)));
+              }
+            else
+              {
+                auto parseRecipeResult551 = itemDb->parseRecipe(entry);
+                if (!parseRecipeResult551)
+                  return std::unexpected(std::move(parseRecipeResult551.error()));
+                recipes.add(std::move(*parseRecipeResult551));
+              }
+          }
+        }
+    
+        if (filterHaveMaterials)
+          {
+            auto availableItemsResult552 = m_player->inventory()->availableItems();
+            if (!availableItemsResult552)
+              return std::unexpected(std::move(availableItemsResult552.error()));
+            recipes.addAll(itemDb->recipesFromSubset(std::move(*availableItemsResult552), m_player->inventory()->availableCurrencies(), take(recipes), m_filter));
+          }
+      } else {
+        if (filterHaveMaterials)
+          {
+            auto availableItemsResult553 = m_player->inventory()->availableItems();
+            if (!availableItemsResult553)
+              return std::unexpected(std::move(availableItemsResult553.error()));
+            recipes.addAll(itemDb->recipesFromBagContents(std::move(*availableItemsResult553), m_player->inventory()->availableCurrencies(), m_filter));
+          }
+        else
+          recipes.addAll(itemDb->allRecipes(m_filter));
+      }
+           }
   }
 
-  if (!m_player->isAdmin() && m_settings.getBool("requiresBlueprint", true)) {
-    auto tempRecipes = take(recipes);
-    for (auto const& recipe : tempRecipes) {
-      if (m_blueprints->isKnown(recipe.output))
-        recipes.add(recipe);
+  {
+    bool condition555 = static_cast<bool>(!m_player->isAdmin());
+    if (condition555) {
+      auto getBoolResult554 = m_settings.getBool("requiresBlueprint", true);
+      if (!getBoolResult554)
+        return std::unexpected(std::move(getBoolResult554.error()));
+      condition555 = static_cast<bool>(std::move(*getBoolResult554));
+    }
+    if (condition555) {
+      auto tempRecipes = take(recipes);
+      for (auto const& recipe : tempRecipes) {
+        if (m_blueprints->isKnown(recipe.output))
+          recipes.add(recipe);
+      }
     }
   }
 
@@ -901,14 +1708,23 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
   }
 
   if (!filterText.empty()) {
-    auto bits = filterText.toLower().splitAny(" ,.?*\\+/|\t");
+    auto toLowerResult556 = filterText.toLower();
+    if (!toLowerResult556)
+      return std::unexpected(std::move(toLowerResult556.error()));
+    auto splitAnyResult557 = std::move(*toLowerResult556).splitAny(" ,.?*\\+/|\t");
+    if (!splitAnyResult557)
+      return std::unexpected(std::move(splitAnyResult557.error()));
+    auto bits = std::move(*splitAnyResult557);
     auto temprecipes = take(recipes);
     for (auto const& recipe : temprecipes) {
       if (recipe.output) {
         bool match = true;
         auto guiFilterString = recipe.guiFilterString;
         for (auto const& bit : bits) {
-          match &= guiFilterString.contains(bit);
+          auto containsResult558 = guiFilterString.contains(bit);
+          if (!containsResult558)
+            return std::unexpected(std::move(containsResult558.error()));
+          match &= std::move(*containsResult558);
           if (!match)
             break;
         }
@@ -919,32 +1735,58 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
   }
 
   List<ItemRecipe> sortedRecipes = recipes.values();
-  auto itemDatabase = context()->root().itemDatabase();
-  sortByComputedValue(sortedRecipes, [itemDatabase](ItemRecipe const& recipe) {
-      return std::make_tuple(itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name());
+  auto itemDatabaseResult559 = context()->root().itemDatabase();
+  if (!itemDatabaseResult559)
+    return std::unexpected(std::move(itemDatabaseResult559.error()));
+  auto itemDatabase = std::move(*itemDatabaseResult559);
+  auto sortByComputedValueResult563 = sortByComputedValue(sortedRecipes, [itemDatabase](ItemRecipe const& recipe) -> std::expected<std::tuple<String, String>, StarException> {
+      auto itemFriendlyNameResult560 = itemDatabase->itemFriendlyName(recipe.output.name());
+      if (!itemFriendlyNameResult560)
+        return std::unexpected(std::move(itemFriendlyNameResult560.error()));
+      auto trimResult561 = std::move(*itemFriendlyNameResult560).trim();
+      if (!trimResult561)
+        return std::unexpected(std::move(trimResult561.error()));
+      auto toLowerResult562 = std::move(*trimResult561).toLower();
+      if (!toLowerResult562)
+        return std::unexpected(std::move(toLowerResult562.error()));
+      return std::make_tuple(std::move(*toLowerResult562), recipe.output.name());
     });
+  if (!sortByComputedValueResult563)
+    return std::unexpected(std::move(sortByComputedValueResult563.error()));
 
   return sortedRecipes;
 }
 
-int CraftingPane::maxCraft() {
+std::expected<int, StarException> CraftingPane::maxCraft() {
   if (m_player->isAdmin())
     return m_maxSpinCount;
-  auto itemDb = context()->root().itemDatabase();
+  auto itemDatabaseResult564 = context()->root().itemDatabase();
+  if (!itemDatabaseResult564)
+    return std::unexpected(std::move(itemDatabaseResult564.error()));
+  auto itemDb = std::move(*itemDatabaseResult564);
   int res = 0;
   if (m_guiList->selectedItem() != NPos && m_guiList->selectedItem() < m_recipes.size()) {
-    HashMap<ItemDescriptor, std::uint64_t> normalizedBag = m_player->inventory()->availableItems();
-    auto selectedRecipe = recipeFromSelectedWidget();
+    auto availableItemsResult565 = m_player->inventory()->availableItems();
+    if (!availableItemsResult565)
+      return std::unexpected(std::move(availableItemsResult565.error()));
+    HashMap<ItemDescriptor, std::uint64_t> normalizedBag = std::move(*availableItemsResult565);
+    auto recipeFromSelectedWidgetResult566 = recipeFromSelectedWidget();
+    if (!recipeFromSelectedWidgetResult566)
+      return std::unexpected(std::move(recipeFromSelectedWidgetResult566.error()));
+    auto selectedRecipe = std::move(*recipeFromSelectedWidgetResult566);
     res = itemDb->maxCraftableInBag(normalizedBag, m_player->inventory()->availableCurrencies(), selectedRecipe);
     res = std::min(res, m_maxSpinCount);
   }
   return res;
 }
 
-ItemRecipe CraftingPane::recipeFromSelectedWidget() const {
+std::expected<ItemRecipe, StarException> CraftingPane::recipeFromSelectedWidget() const {
   auto pane = m_guiList->selectedWidget();
   if (pane && m_recipesWidgetMap.hasRightValue(pane)) {
-    return m_recipesWidgetMap.getLeft(pane);
+    auto getLeftResult567 = m_recipesWidgetMap.getLeft(pane);
+    if (!getLeftResult567)
+      return std::unexpected(std::move(getLeftResult567.error()));
+    return (**getLeftResult567);
   }
   return ItemRecipe();
 }

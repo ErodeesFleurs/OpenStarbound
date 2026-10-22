@@ -1,6 +1,7 @@
 module;
 
 import star.poly;
+import star.format;
 import std;
 import star.list;
 import star.bi_map;
@@ -62,9 +63,9 @@ extern CollisionSet const DefaultCollisionSet;
 // Defines what can be "blocks" e.g. for tile rendering: Block and Slippery
 extern CollisionSet const BlockCollisionSet;
 
-extern EnumMap<TileCollisionOverride> const TileCollisionOverrideNames;
+extern std::expected<EnumMap<TileCollisionOverride>, StarException> const TileCollisionOverrideNames;
 
-extern EnumMap<CollisionKind> const CollisionKindNames;
+extern std::expected<EnumMap<CollisionKind>, StarException> const CollisionKindNames;
 
 bool isColliding(CollisionKind kind, CollisionSet const& collisionSet);
 bool isSolidColliding(CollisionKind kind);

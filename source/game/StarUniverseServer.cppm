@@ -150,7 +150,8 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<UniverseServer, Universe, Thread>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<UniverseServer>(); }
 
-  UniverseServer(Root& root, String const& storageDir, bool const& isLocal = false);
+  [[nodiscard]] static std::expected<std::shared_ptr<UniverseServer>, StarException> create(Root& root, String const& storageDir, bool const& isLocal = false);
+  [[nodiscard]] std::expected<void, StarException> close();
   ~UniverseServer() override;
 
   Root& root() const;
@@ -160,60 +161,60 @@ public:
   void setListeningTcp(bool listenTcp);
 
   // Connects an arbitrary UniverseConnection to this server
-  void addClient(UniverseConnection remoteConnection);
+  [[nodiscard]] std::expected<void, StarException> addClient(UniverseConnection remoteConnection);
   // Constructs an in-process connection to a UniverseServer for a
   // UniverseClient, and returns the other side of the connection.
-  UniverseConnection addLocalClient();
+  [[nodiscard]] std::expected<UniverseConnection, StarException> addLocalClient();
 
   // Signals the UniverseServer to stop and then joins the thread.
-  void stop();
+  [[nodiscard]] std::expected<void, StarException> stop();
 
-  void setPause(bool pause);
-  void setTimescale(float timescale);
+  [[nodiscard]] std::expected<void, StarException> setPause(bool pause);
+  [[nodiscard]] std::expected<void, StarException> setTimescale(float timescale);
   void setTickRate(float tickRate);
 
-  List<WorldId> activeWorlds() const;
+  [[nodiscard]] std::expected<List<WorldId>, StarException> activeWorlds() const;
   bool isWorldActive(WorldId const& worldId) const;
 
   List<ConnectionId> clientIds() const;
-  List<std::pair<ConnectionId, std::int64_t>> clientIdsAndCreationTime() const;
+  [[nodiscard]] std::expected<List<std::pair<ConnectionId, std::int64_t>>, StarException> clientIdsAndCreationTime() const;
   std::size_t numberOfClients() const;
   std::uint32_t maxClients() const;
   bool isConnectedClient(ConnectionId clientId) const;
 
-  String clientDescriptor(ConnectionId clientId) const;
-  unsigned clientConnectionVersion(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<String, StarException> clientDescriptor(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<unsigned, StarException> clientConnectionVersion(ConnectionId clientId) const;
 
-  String clientNick(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<String, StarException> clientNick(ConnectionId clientId) const;
   std::optional<ConnectionId> findNick(String const& nick) const;
 
-  String clientAccount(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<String, StarException> clientAccount(ConnectionId clientId) const;
 
   std::optional<Uuid> uuidForClient(ConnectionId clientId) const;
   std::optional<ConnectionId> clientForUuid(Uuid const& uuid) const;
 
-  void adminBroadcast(String const& text);
-  void adminWhisper(ConnectionId clientId, String const& text);
-  ServerCommandResult adminCommand(String text);
+  [[nodiscard]] std::expected<void, StarException> adminBroadcast(String const& text);
+  [[nodiscard]] std::expected<void, StarException> adminWhisper(ConnectionId clientId, String const& text);
+  [[nodiscard]] std::expected<ServerCommandResult, StarException> adminCommand(String text);
 
-  bool isAdmin(ConnectionId clientId) const;
-  bool canBecomeAdmin(ConnectionId clientId) const;
-  void setAdmin(ConnectionId clientId, bool admin);
+  [[nodiscard]] std::expected<bool, StarException> isAdmin(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<bool, StarException> canBecomeAdmin(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<void, StarException> setAdmin(ConnectionId clientId, bool admin);
 
-  bool serverDebug(ConnectionId clientId) const;
-  void setServerDebug(ConnectionId clientId, bool serverDebug);
+  [[nodiscard]] std::expected<bool, StarException> serverDebug(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<void, StarException> setServerDebug(ConnectionId clientId, bool serverDebug);
 
-  bool isLocal(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<bool, StarException> isLocal(ConnectionId clientId) const;
 
-  bool isPvp(ConnectionId clientId) const;
-  void setPvp(ConnectionId clientId, bool pvp);
+  [[nodiscard]] std::expected<bool, StarException> isPvp(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<void, StarException> setPvp(ConnectionId clientId, bool pvp);
 
-  RpcPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
 
-  void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
-  void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
-  WorldId clientWorld(ConnectionId clientId) const;
-  CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<void, StarException> clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
+  [[nodiscard]] std::expected<void, StarException> clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
+  [[nodiscard]] std::expected<WorldId, StarException> clientWorld(ConnectionId clientId) const;
+  [[nodiscard]] std::expected<CelestialCoordinate, StarException> clientShipCoordinate(ConnectionId clientId) const;
 
   std::shared_ptr<Clock> universeClock() const;
   std::shared_ptr<UniverseSettings> universeSettings() const;
@@ -224,32 +225,40 @@ public:
   // given function on the client world and player object in a thread safe way.
   // Returns true if function was called, false if client was not found or in
   // an invalid connection state.
-  bool executeForClient(ConnectionId clientId, std::function<void(WorldServer*, std::shared_ptr<Player>)> action);
-  void disconnectClient(ConnectionId clientId, String const& reason);
-  void banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, std::optional<int> timeout);
-  bool unbanIp(String const& addressString);
-  bool unbanUuid(String const& uuidString);
+  [[nodiscard]] std::expected<bool, StarException> executeForClient(ConnectionId clientId, std::function<std::expected<void, StarException>(WorldServer*, std::shared_ptr<Player>)> action);
+  [[nodiscard]] std::expected<void, StarException> disconnectClient(ConnectionId clientId, String const& reason);
+  [[nodiscard]] std::expected<void, StarException> banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, std::optional<int> timeout);
+  [[nodiscard]] std::expected<bool, StarException> unbanIp(String const& addressString);
+  [[nodiscard]] std::expected<bool, StarException> unbanUuid(String const& uuidString);
 
-  bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
+  [[nodiscard]] std::expected<bool, StarException> updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
 
-  bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
+  [[nodiscard]] std::expected<bool, StarException> setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
 
-  StringList weatherList(CelestialCoordinate const& coordinate);
+  [[nodiscard]] std::expected<StringList, StarException> weatherList(CelestialCoordinate const& coordinate);
   
-  void createCustomWorld(CustomWorldId const& customWorld, std::shared_ptr<WorldTemplate> worldTemplate);
+  [[nodiscard]] std::expected<void, StarException> createCustomWorld(CustomWorldId const& customWorld, std::shared_ptr<WorldTemplate> worldTemplate);
 
-  bool sendPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
+  [[nodiscard]] std::expected<bool, StarException> sendPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
   
-  void passMessage(Universe::Message&& message) override;
+  [[nodiscard]] std::expected<void, StarException> passMessage(Universe::Message&& message) override;
   
-  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] std::expected<RpcPromise<Json>, StarException> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
   
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
 
 protected:
-  virtual void run() override;
+  [[nodiscard]] virtual std::expected<void, StarException> run() override;
 
 private:
+  explicit UniverseServer(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize(String const& storageDir, bool const& isLocal);
+  [[nodiscard]] std::expected<void, StarException> runLoop();
+  [[nodiscard]] std::expected<void, StarException> shutdown();
+  bool m_closed = false;
+  bool m_initialized = false;
+  bool shutdownThreadsJoined() const;
+
   struct TimeoutBan {
     std::int64_t banExpiry;
     String reason;
@@ -260,117 +269,114 @@ private:
   struct WorldServerPromise {
     std::variant<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>, RpcPromise<WorldChunks>> currentPromise;
     std::optional<std::function<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>(WorldChunks)>> producer;
-    
-    double startTime;
-    
     WorldServerPromise(std::function<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
     WorldServerPromise(WorkerPoolPromise<std::shared_ptr<WorldServerThread>> promise);
     
-    bool done() const;
-    bool poll();
+    [[nodiscard]] std::expected<bool, StarException> done() const;
+    [[nodiscard]] std::expected<bool, StarException> poll();
     
-    std::shared_ptr<WorldServerThread> get();
+    [[nodiscard]] std::expected<std::shared_ptr<WorldServerThread>, StarException> get();
   };
 
   enum class TcpState : std::uint8_t { No, Yes, Fuck };
 
-  void processUniverseFlags();
-  void sendPendingChat();
-  void updateTeams();
-  void updateShips();
-  void sendClockUpdates();
-  void sendClientContextUpdate(std::shared_ptr<ServerClientContext> clientContext);
-  void sendClientContextUpdates();
-  void kickErroredPlayers();
-  void reapConnections();
-  void processPlanetTypeChanges();
-  void warpPlayers();
-  void flyShips();
-  void arriveShips();
-  void respondToCelestialRequests();
-  void processChat();
-  void clearBrokenWorlds();
-  void handleWorldMessages();
-  void handleUniverseMessages();
-  void shutdownInactiveWorlds();
-  void doTriggeredStorage();
+  [[nodiscard]] std::expected<void, StarException> processUniverseFlags();
+  [[nodiscard]] std::expected<void, StarException> sendPendingChat();
+  [[nodiscard]] std::expected<void, StarException> updateTeams();
+  [[nodiscard]] std::expected<void, StarException> updateShips();
+  [[nodiscard]] std::expected<void, StarException> sendClockUpdates();
+  [[nodiscard]] std::expected<void, StarException> sendClientContextUpdate(std::shared_ptr<ServerClientContext> clientContext);
+  [[nodiscard]] std::expected<void, StarException> sendClientContextUpdates();
+  [[nodiscard]] std::expected<void, StarException> kickErroredPlayers();
+  [[nodiscard]] std::expected<void, StarException> reapConnections();
+  [[nodiscard]] std::expected<void, StarException> processPlanetTypeChanges();
+  [[nodiscard]] std::expected<void, StarException> warpPlayers();
+  [[nodiscard]] std::expected<void, StarException> flyShips();
+  [[nodiscard]] std::expected<void, StarException> arriveShips();
+  [[nodiscard]] std::expected<void, StarException> respondToCelestialRequests();
+  [[nodiscard]] std::expected<void, StarException> processChat();
+  [[nodiscard]] std::expected<void, StarException> clearBrokenWorlds();
+  [[nodiscard]] std::expected<void, StarException> handleWorldMessages();
+  [[nodiscard]] std::expected<void, StarException> handleUniverseMessages();
+  [[nodiscard]] std::expected<void, StarException> shutdownInactiveWorlds();
+  [[nodiscard]] std::expected<void, StarException> doTriggeredStorage();
 
-  void saveSettings();
-  void loadSettings();
+  [[nodiscard]] std::expected<void, StarException> saveSettings();
+  [[nodiscard]] std::expected<void, StarException> loadSettings();
 
-  void startLuaScripts();
-  void updateLua();
-  void stopLua();
+  [[nodiscard]] std::expected<void, StarException> startLuaScripts();
+  [[nodiscard]] std::expected<void, StarException> updateLua();
+  [[nodiscard]] std::expected<void, StarException> stopLua();
 
   // Either returns the default configured starter world, or a new randomized
   // starter world, or if a randomized world is not yet available, starts a job
   // to find a randomized starter world and returns nothing until it is ready.
-  std::optional<CelestialCoordinate> nextStarterWorld();
+  [[nodiscard]] std::expected<std::optional<CelestialCoordinate>, StarException> nextStarterWorld();
 
-  void loadTempWorldIndex();
-  void saveTempWorldIndex();
+  [[nodiscard]] std::expected<void, StarException> loadTempWorldIndex();
+  [[nodiscard]] std::expected<void, StarException> saveTempWorldIndex();
   String tempWorldFile(InstanceWorldId const& worldId) const;
 
-  std::optional<String> isBannedUser(std::optional<HostAddress> hostAddress, Uuid playerUuid) const;
-  void doTempBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, int timeout);
-  void doPermBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType);
-  void removeTimedBan();
+  [[nodiscard]] std::expected<std::optional<String>, StarException> isBannedUser(std::optional<HostAddress> hostAddress, Uuid playerUuid) const;
+  [[nodiscard]] std::expected<void, StarException> doTempBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, int timeout);
+  [[nodiscard]] std::expected<void, StarException> doPermBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType);
+  [[nodiscard]] std::expected<void, StarException> removeTimedBan();
 
-  void addCelestialRequests(ConnectionId clientId, List<CelestialRequest> requests);
+  [[nodiscard]] std::expected<void, StarException> addCelestialRequests(ConnectionId clientId, List<CelestialRequest> requests);
 
-  void worldUpdated(WorldServerThread* worldServer);
-  void systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
-  void packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
+  [[nodiscard]] std::expected<void, StarException> worldUpdated(WorldServerThread* worldServer);
+  [[nodiscard]] std::expected<void, StarException> systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
+  [[nodiscard]] std::expected<void, StarException> packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
 
-  void acceptConnection(UniverseConnection connection, std::optional<HostAddress> remoteAddress);
+  [[nodiscard]] std::expected<void, StarException> acceptConnection(UniverseConnection connection, std::optional<HostAddress> remoteAddress);
 
   // Main lock and clients read lock must be held when calling
-  WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
-  bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
+  [[nodiscard]] std::expected<WarpToWorld, StarException> resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
+  [[nodiscard]] std::expected<bool, StarException> canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
 
-  void doDisconnection(ConnectionId clientId, String const& reason);
+  [[nodiscard]] std::expected<void, StarException> doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
   std::optional<ConnectionId> getClientForUuid(Uuid const& uuid) const;
 
   // Get the world only if it is already loaded, Main lock must be held when
   // calling.
-  std::shared_ptr<WorldServerThread> getWorld(WorldId const& worldId);
+  [[nodiscard]] std::expected<std::shared_ptr<WorldServerThread>, StarException> getWorld(WorldId const& worldId);
 
   // If the world is not created, block and load it, otherwise just return the
   // loaded world.  Main lock and Clients read lock must be held when calling.
-  std::shared_ptr<WorldServerThread> createWorld(WorldId const& worldId);
+  [[nodiscard]] std::expected<std::shared_ptr<WorldServerThread>, StarException> createWorld(WorldId const& worldId);
 
   // Trigger off-thread world creation, returns a value when the creation is
   // finished, either successfully or with an error.  Main lock and Clients
   // read lock must be held when calling.
-  std::optional<std::shared_ptr<WorldServerThread>> triggerWorldCreation(WorldId const& worldId);
+  [[nodiscard]] std::expected<std::optional<std::shared_ptr<WorldServerThread>>, StarException> triggerWorldCreation(WorldId const& worldId);
 
   // Main lock and clients read lock must be held when calling world promise
   // generators
-  std::optional<WorldServerPromise> makeWorldPromise(WorldId const& worldId);
-  std::optional<WorldServerPromise> shipWorldPromise(ClientShipWorldId const& uuid);
-  std::optional<WorldServerPromise> celestialWorldPromise(CelestialWorldId const& coordinate);
-  std::optional<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
-  std::optional<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
-  std::optional<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> makeWorldPromise(WorldId const& worldId);
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> shipWorldPromise(ClientShipWorldId const& uuid);
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> celestialWorldPromise(CelestialWorldId const& coordinate);
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> customWorldPromise(CustomWorldId const& customWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
+  [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
   
-  void notifyWorldCreated(WorldId const& worldId);
+  [[nodiscard]] std::expected<void, StarException> notifyWorldCreated(WorldId const& worldId);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
-  std::shared_ptr<SystemWorldServerThread> createSystemWorld(Vec3I const& location);
+  [[nodiscard]] std::expected<std::shared_ptr<SystemWorldServerThread>, StarException> createSystemWorld(Vec3I const& location);
 
-  bool instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
+  [[nodiscard]] std::expected<bool, StarException> instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
 
   // Signal that a world either failed to load, or died due to an exception,
   // kicks clients if that world is a ship world.  Main lock and clients read
   // lock must be held when calling.
-  void worldDiedWithError(WorldId world);
+  [[nodiscard]] std::expected<void, StarException> worldDiedWithError(WorldId world);
 
   // Get SkyParameters if the coordinate is a valid world, and empty
   // SkyParameters otherwise.
-  SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
+  [[nodiscard]] std::expected<SkyParameters, StarException> celestialSkyParameters(CelestialCoordinate const& coordinate) const;
 
   Root& m_root;
 
@@ -396,6 +402,9 @@ private:
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
   IdMap<ConnectionId, std::shared_ptr<ServerClientContext>> m_clients;
+  // Retain context/save/removal ownership after a disconnect error without
+  // re-running disconnect scripts or treating it as an active service client.
+  Set<ConnectionId> m_disconnectingClients;
 
   std::shared_ptr<std::atomic<bool>> m_pause;
   bool m_secureWarps;
@@ -406,6 +415,7 @@ private:
   Map<InstanceWorldId, std::pair<std::int64_t, std::int64_t>> m_tempWorldIndex;
   Map<Vec3I, std::shared_ptr<SystemWorldServerThread>> m_systemWorlds;
   std::shared_ptr<UniverseConnectionServer> m_connectionServer;
+  std::unique_ptr<TcpServer> m_tcpServer;
 
   RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;

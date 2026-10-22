@@ -91,16 +91,19 @@ public:
     return Star::typeName<AiInterface>();
   }
 
-  AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
+  [[nodiscard]] static std::expected<std::shared_ptr<AiInterface>, StarException> create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
 
-  void update(float dt) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
-  void displayed() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
   void setSourceEntityId(EntityId sourceEntityId);
 
 private:
+  AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager, Animation staticAnimation, Animation scanlineAnimation, Animation faceAnimation);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+
   enum class AiPages : std::uint8_t {
     StatusPage,
     MissionList,
@@ -109,25 +112,23 @@ private:
     CrewPage
   };
 
-  void updateBreadcrumbs();
-  void showStatus();
+  [[nodiscard]] std::expected<void, StarException> updateBreadcrumbs();
+  [[nodiscard]] std::expected<void, StarException> showStatus();
 
-  void populateMissions();
-  void showMissions();
-  void selectMission();
-  void startMission();
+  [[nodiscard]] std::expected<void, StarException> populateMissions();
+  [[nodiscard]] std::expected<void, StarException> showMissions();
+  [[nodiscard]] std::expected<void, StarException> selectMission();
+  [[nodiscard]] std::expected<void, StarException> startMission();
 
-  void populateCrew();
-  void showCrew();
-  void selectRecruit();
-  void dismissRecruit();
+  [[nodiscard]] std::expected<void, StarException> populateCrew();
+  [[nodiscard]] std::expected<void, StarException> showCrew();
+  [[nodiscard]] std::expected<void, StarException> selectRecruit();
+  [[nodiscard]] std::expected<void, StarException> dismissRecruit();
 
-  void goBack();
+  [[nodiscard]] std::expected<void, StarException> goBack();
 
-  void setFaceAnimation(String const& name);
-  void setCurrentSpeech(String const& textWidget, AiSpeech speech);
-
-  void giveBlueprint(String const& blueprintName);
+  [[nodiscard]] std::expected<void, StarException> setFaceAnimation(String const& name);
+  [[nodiscard]] std::expected<void, StarException> setCurrentSpeech(String const& textWidget, AiSpeech speech);
 
   AiPages m_currentPage;
 

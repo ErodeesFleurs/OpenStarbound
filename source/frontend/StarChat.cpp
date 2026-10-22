@@ -205,274 +205,466 @@ import star.team_client;
 
 import star.algorithm;
 namespace Star {
+Chat::Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client) : BaseScriptPane(guiContext), m_client(std::move(client)) {}
 
-Chat::Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const& baseConfig) : BaseScriptPane(guiContext, baseConfig, false) {
-  m_client = client;
-  m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
-  m_script.setLuaRoot(m_client->luaRoot());
-  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(context()->root(), (World*)m_client->worldClient().get()));
+std::expected<std::shared_ptr<Chat>, StarException> Chat::create(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const& baseConfig) {
+  auto chat = std::shared_ptr<Chat>(new Chat(guiContext, std::move(client)));
+  auto initialized = chat->initialize(baseConfig);
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return chat;
+}
+
+std::expected<void, StarException> Chat::initialize(Json const& baseConfig) {
+  auto base = BaseScriptPane::init(baseConfig, false);
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto scripts = baseConfig.get("scripts", Json());
+  if (!scripts) return std::unexpected(std::move(scripts.error()));
+  m_scripted = scripts->isType(Json::Type::Array);
+  auto luaRoot = m_script.setLuaRoot(m_client->luaRoot());
+  if (!luaRoot) return std::unexpected(std::move(luaRoot.error()));
+  auto worldCallbacks = LuaBindings::makeWorldCallbacks(context()->root(), (World*)m_client->worldClient().get());
+  if (!worldCallbacks) return std::unexpected(std::move(worldCallbacks.error()));
+  auto addedWorld = m_script.addCallbacks("world", std::move(*worldCallbacks));
+  if (!addedWorld) return std::unexpected(std::move(addedWorld.error()));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
-  
-  auto assets = context()->root().assets();
   auto config = baseConfig.get("config");
+  if (!config) return std::unexpected(std::move(config.error()));
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  m_chatTextStyle = config.get("textStyle");
-  m_chatTextStyle.lineSpacing = config.get("lineHeight").toFloat();
-  m_chatVisTime = config.get("visTime").toFloat();
-  m_fadeRate = config.get("fadeRate").toDouble();
-  m_chatHistoryLimit = config.get("chatHistoryLimit").toInt();
-  m_chatFormatString = config.getString("chatFormatString");
-
-  m_portraitTextOffset = jsonToVec2I(config.get("portraitTextOffset"));
-  m_portraitImageOffset = jsonToVec2I(config.get("portraitImageOffset"));
-  m_portraitScale = config.get("portraitScale").toFloat();
-  m_portraitVerticalMargin = config.get("portraitVerticalMargin").toFloat();
-  m_portraitBackground = config.get("portraitBackground").toString();
-
-  m_bodyHeight = config.get("bodyHeight").toInt();
-  m_expandedBodyHeight = config.get("expandedBodyHeight").toInt();
-
-  m_colorCodes[MessageContext::Local] = config.query("colors.local").toString();
-  m_colorCodes[MessageContext::Party] = config.query("colors.party").toString();
-  m_colorCodes[MessageContext::Broadcast] = config.query("colors.broadcast").toString();
-  m_colorCodes[MessageContext::Whisper] = config.query("colors.whisper").toString();
-  m_colorCodes[MessageContext::CommandResult] = config.query("colors.commandResult").toString();
-  m_colorCodes[MessageContext::RadioMessage] = config.query("colors.radioMessage").toString();
-  m_colorCodes[MessageContext::World] = config.query("colors.world").toString();
+  auto textJson = config->get("textStyle");
+  if (!textJson) return std::unexpected(std::move(textJson.error()));
+  auto textStyle = TextStyle::create(*textJson);
+  if (!textStyle) return std::unexpected(std::move(textStyle.error()));
+  m_chatTextStyle = std::move(*textStyle);
+  {
+    auto value = config->getFloat("lineHeight");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_chatTextStyle.lineSpacing = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("visTime");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_chatVisTime = std::move(*value);
+  }
+  {
+    auto value = config->getDouble("fadeRate");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_fadeRate = std::move(*value);
+  }
+  {
+    auto value = config->getInt("chatHistoryLimit");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_chatHistoryLimit = std::move(*value);
+  }
+  {
+    auto value = config->getString("chatFormatString");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_chatFormatString = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("portraitScale");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitScale = std::move(*value);
+  }
+  {
+    auto value = config->getFloat("portraitVerticalMargin");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitVerticalMargin = std::move(*value);
+  }
+  {
+    auto value = config->getString("portraitBackground");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitBackground = std::move(*value);
+  }
+  {
+    auto value = config->getInt("bodyHeight");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_bodyHeight = std::move(*value);
+  }
+  {
+    auto value = config->getInt("expandedBodyHeight");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_expandedBodyHeight = std::move(*value);
+  }
+  {
+    auto json = config->get("portraitTextOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitTextOffset = *value;
+  }
+  {
+    auto json = config->get("portraitImageOffset");
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto value = jsonToVec2I(*json);
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_portraitImageOffset = *value;
+  }
+  {
+    auto value = config->queryString("colors.local");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::Local] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.party");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::Party] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.broadcast");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::Broadcast] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.whisper");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::Whisper] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.commandResult");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::CommandResult] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.radioMessage");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::RadioMessage] = std::move(*value);
+  }
+  {
+    auto value = config->queryString("colors.world");
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_colorCodes[MessageContext::World] = std::move(*value);
+  }
   if (!m_scripted) {
-    m_reader->registerCallback("textBox", [this](Widget*) { startChat(); });
-    m_reader->registerCallback("upButton", [this](Widget*) { scrollUp(); });
-    m_reader->registerCallback("downButton", [this](Widget*) { scrollDown(); });
-    m_reader->registerCallback("bottomButton", [this](Widget*) { scrollBottom(); });
-
-    m_reader->registerCallback("filterGroup", [this](Widget* widget) {
+    m_reader->registerCallback("textBox", [this](Widget*) { return startChat(); });
+    m_reader->registerCallback("upButton", [this](Widget*) { return scrollUp(); });
+    m_reader->registerCallback("downButton", [this](Widget*) { return scrollDown(); });
+    m_reader->registerCallback("bottomButton", [this](Widget*) { return scrollBottom(); });
+    m_reader->registerCallback("filterGroup", [this](Widget* widget) -> std::expected<void, StarException> {
       Json data = as<ButtonWidget>(widget)->data();
       auto filter = data.getArray("filter", {});
+      if (!filter) return std::unexpected(std::move(filter.error()));
       m_modeFilter.clear();
-      for (auto mode : filter)
-        m_modeFilter.insert(MessageContextModeNames.getLeft(mode.toString()));
-      m_sendMode = ChatSendModeNames.getLeft(data.getString("sendMode", "Broadcast"));
+      if (!MessageContextModeNames) return std::unexpected(MessageContextModeNames.error());
+      for (auto const& mode : *filter) {
+        auto name = mode.toString();
+        if (!name) return std::unexpected(std::move(name.error()));
+        auto value = MessageContextModeNames->getLeft(*name);
+        if (!value) return std::unexpected(std::move(value.error()));
+        m_modeFilter.insert(**value);
+      }
+      auto mode = data.getString("sendMode", "Broadcast");
+      if (!mode) return std::unexpected(std::move(mode.error()));
+      if (!ChatSendModeNames) return std::unexpected(ChatSendModeNames.error());
+      auto value = ChatSendModeNames->getLeft(*mode);
+      if (!value) return std::unexpected(std::move(value.error()));
+      m_sendMode = **value;
       m_historyOffset = 0;
+      return {};
     });
   }
-
-  construct(baseConfig.get("gui"));
-
+  auto gui = baseConfig.get("gui");
+  if (!gui) return std::unexpected(std::move(gui.error()));
+  auto constructed = construct(*gui);
+  if (!constructed) return std::unexpected(std::move(constructed.error()));
   m_sendMode = ChatSendMode::Broadcast;
-  m_chatLog = fetchChild<CanvasWidget>("chatLog");
-  m_bottomButton = fetchChild<ButtonWidget>("bottomButton");
-  m_upButton = fetchChild<ButtonWidget>("upButton");
-  m_textBox = fetchChild<TextBoxWidget>("textBox");
-  m_say = fetchChild<LabelWidget>("say");
+  {
+    auto child = fetchChild<CanvasWidget>("chatLog");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_chatLog = std::move(*child);
+  }
+  {
+    auto child = fetchChild<ButtonWidget>("bottomButton");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_bottomButton = std::move(*child);
+  }
+  {
+    auto child = fetchChild<ButtonWidget>("upButton");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_upButton = std::move(*child);
+  }
+  {
+    auto child = fetchChild<TextBoxWidget>("textBox");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_textBox = std::move(*child);
+  }
+  {
+    auto child = fetchChild<LabelWidget>("say");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_say = std::move(*child);
+  }
+  {
+    auto child = fetchChild<ImageStretchWidget>("background");
+    if (!child) return std::unexpected(std::move(child.error()));
+    m_background = std::move(*child);
+  }
   if (!m_scripted) {
-    if (auto logPadding = config.optQuery("padding")) {
-      m_chatLogPadding = jsonToVec2I(logPadding.value());
+    auto padding = config->optQuery("padding");
+    if (!padding) return std::unexpected(std::move(padding.error()));
+    if (*padding) {
+      auto value = jsonToVec2I(**padding);
+      if (!value) return std::unexpected(std::move(value.error()));
+      m_chatLogPadding = *value;
       m_chatLog->setSize(m_chatLog->size() + m_chatLogPadding * 2);
       m_chatLog->setPosition(m_chatLog->position() - m_chatLogPadding);
-    } else
-      m_chatLogPadding = Vec2I();
-
-    m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().transform(jsonToStringList).value_or(StringList{}));
+    } else m_chatLogPadding = Vec2I();
+    auto history = m_client->playerStorage()->getMetadata("chatHistory");
+    if (!history) return std::unexpected(std::move(history.error()));
+    if (auto value = history->opt()) {
+      auto lines = jsonToStringList(*value);
+      if (!lines) return std::unexpected(std::move(lines.error()));
+      m_chatHistory.appendAll(*lines);
+    }
   } else {
-    m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get()));
-    m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(context()->root(), m_client.get()));
+    {
+      auto callbacks = LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get());
+      if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+      auto added = m_script.addCallbacks("player", std::move(*callbacks));
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto callbacks = LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController());
+      if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+      auto added = m_script.addCallbacks("status", std::move(*callbacks));
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+    {
+      auto callbacks = LuaBindings::makeCelestialCallbacks(context()->root(), m_client.get());
+      if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+      auto added = m_script.addCallbacks("celestial", std::move(*callbacks));
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
   }
-
-  show();
-
-  //if (!m_scripted) {
-    //updateBottomButton();
-
-    m_background = fetchChild<ImageStretchWidget>("background");
-    m_defaultHeight = m_background->size()[1];
-    m_expanded = false;
-    updateSize();
-  //}
+  auto shown = show();
+  if (!shown) return std::unexpected(std::move(shown.error()));
+  m_defaultHeight = m_background->size()[1];
+  m_expanded = false;
+  return updateSize();
 }
 
-void Chat::update(float dt) {
-  Pane::update(dt);
-
-  if (m_scripted)
-    return;
-
+std::expected<void, StarException> Chat::update(float dt) {
+  auto updated = Pane::update(dt);
+  if (!updated) return std::unexpected(std::move(updated.error()));
+  if (m_scripted) return {};
   auto team = m_client->teamClient()->currentTeam();
-  for (auto button : fetchChild<ButtonGroup>("filterGroup")->buttons()) {
-    auto mode = ChatSendModeNames.getLeft(button->data().getString("sendMode", "Broadcast"));
-    if (!team.has_value() && m_sendMode == ChatSendMode::Party && mode == ChatSendMode::Broadcast)
-      button->check();
-    if (mode == ChatSendMode::Party)
-      button->setEnabled(team.has_value());
+  auto group = fetchChild<ButtonGroup>("filterGroup");
+  if (!group) return std::unexpected(std::move(group.error()));
+  if (!ChatSendModeNames) return std::unexpected(ChatSendModeNames.error());
+  for (auto const& button : (*group)->buttons()) {
+    auto name = button->data().getString("sendMode", "Broadcast");
+    if (!name) return std::unexpected(std::move(name.error()));
+    auto mode = ChatSendModeNames->getLeft(*name);
+    if (!mode) return std::unexpected(std::move(mode.error()));
+    if (!team && m_sendMode == ChatSendMode::Party && **mode == ChatSendMode::Broadcast) {
+      auto selected = button->check();
+      if (!selected) return std::unexpected(std::move(selected.error()));
+    }
+    if (**mode == ChatSendMode::Party) button->setEnabled(team.has_value());
   }
+  return {};
 }
 
-void Chat::startChat() {
-  if (m_scripted)
-    m_script.invoke("startChat");
-  else {
-    show();
-    m_textBox->focus();
+std::expected<void, StarException> Chat::startChat() {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("startChat");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+  } else {
+    auto shown = show();
+    if (!shown) return std::unexpected(std::move(shown.error()));
+    return m_textBox->focus();
   }
+  return {};
 }
 
-void Chat::startCommand() {
-  if (m_scripted)
-    m_script.invoke("startCommand");
-  else {
-    show();
-    m_textBox->setText("/");
-    m_textBox->focus();
+std::expected<void, StarException> Chat::startCommand() {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("startCommand");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+  } else {
+    auto shown = show();
+    if (!shown) return std::unexpected(std::move(shown.error()));
+    auto text = m_textBox->setText("/");
+    if (!text) return std::unexpected(std::move(text.error()));
+    return m_textBox->focus();
   }
+  return {};
 }
 
-bool Chat::hasFocus() const {
-  if (m_scripted)
-    return m_script.invoke<bool>("hasFocus").value_or(false);
+std::expected<void, StarException> Chat::stopChat() {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("stopChat");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+  } else {
+    auto text = m_textBox->setText("");
+    if (!text) return std::unexpected(std::move(text.error()));
+    auto blurred = m_textBox->blur();
+    if (!blurred) return std::unexpected(std::move(blurred.error()));
+    m_timeChatLastActive = Time::monotonicMilliseconds();
+  }
+  return {};
+}
+
+std::expected<void, StarException> Chat::clearCurrentChat() {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("clearCurrentChat");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+  } else {
+    auto text = m_textBox->setText("");
+    if (!text) return std::unexpected(std::move(text.error()));
+    m_chatPrevIndex = 0;
+  }
+  return {};
+}
+
+std::expected<bool, StarException> Chat::hasFocus() const {
+  if (m_scripted) {
+    auto invoked = m_script.invoke<bool>("hasFocus");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return invoked->value_or(false);
+  }
   return m_textBox->hasFocus();
 }
 
-void Chat::stopChat() {
-  if (m_scripted)
-    m_script.invoke("stopChat");
-  else {
-    m_textBox->setText("");
-    m_textBox->blur();
-    m_timeChatLastActive = Time::monotonicMilliseconds();
+std::expected<String, StarException> Chat::currentChat() const {
+  if (m_scripted) {
+    auto invoked = m_script.invoke<String>("currentChat");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return invoked->value_or(String{});
   }
-}
-
-String Chat::currentChat() const {
-  if (m_scripted)
-    return m_script.invoke<String>("currentChat").value_or(String{});
   return m_textBox->getText();
 }
 
-bool Chat::setCurrentChat(String const& chat, bool moveCursor) {
-  if (m_scripted)
-    return m_script.invoke<bool>("setCurrentChat").value_or(false);
+std::expected<bool, StarException> Chat::setCurrentChat(String const& chat, bool moveCursor) {
+  if (m_scripted) {
+    auto invoked = m_script.invoke<bool>("setCurrentChat");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return invoked->value_or(false);
+  }
   return m_textBox->setText(chat, true, moveCursor);
 }
 
-void Chat::clearCurrentChat() {
-  if (m_scripted)
-    m_script.invoke("clearCurrentChat");
-  else {
-    m_textBox->setText("");
-    m_chatPrevIndex = 0;
-  }
+std::expected<ChatSendMode, StarException> Chat::sendMode() const {
+  if (!m_scripted) return m_sendMode;
+  auto invoked = m_script.invoke<String>("sendMode");
+  if (!invoked) return std::unexpected(std::move(invoked.error()));
+  if (!ChatSendModeNames) return std::unexpected(ChatSendModeNames.error());
+  auto mode = ChatSendModeNames->getLeft(invoked->value_or(String{}));
+  if (!mode) return std::unexpected(std::move(mode.error()));
+  return **mode;
 }
 
-ChatSendMode Chat::sendMode() const {
-  if (m_scripted)
-    return ChatSendModeNames.getLeft(m_script.invoke<String>("sendMode").value_or(String{}));
-  return m_sendMode;
-}
-
-void Chat::incrementIndex() {
+std::expected<void, StarException> Chat::incrementIndex() {
   if (!m_chatHistory.empty()) {
     m_chatPrevIndex = std::min(m_chatPrevIndex + 1, (unsigned)m_chatHistory.size());
-    m_textBox->setText(m_chatHistory.at(m_chatPrevIndex - 1));
+    auto text = m_textBox->setText(m_chatHistory[m_chatPrevIndex - 1]);
+    if (!text) return std::unexpected(std::move(text.error()));
   }
+  return {};
 }
 
-void Chat::decrementIndex() {
+std::expected<void, StarException> Chat::decrementIndex() {
   if (m_chatPrevIndex > 1 && !m_chatHistory.empty()) {
     --m_chatPrevIndex;
-    m_textBox->setText(m_chatHistory.at(m_chatPrevIndex - 1));
+    auto text = m_textBox->setText(m_chatHistory[m_chatPrevIndex - 1]);
+    if (!text) return std::unexpected(std::move(text.error()));
   } else {
     m_chatPrevIndex = 0;
-    m_textBox->setText("");
+    auto text = m_textBox->setText("");
+    if (!text) return std::unexpected(std::move(text.error()));
   }
+  return {};
 }
 
-void Chat::addLine(String const& text, bool showPane) {
+std::expected<void, StarException> Chat::addLine(String const& text, bool showPane) {
   ChatReceivedMessage message = {{MessageContext::CommandResult}, ServerConnectionId, "", text};
-  addMessages({message}, showPane);
+  return addMessages({message}, showPane);
 }
 
-void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane) {
-  if (messages.empty())
-    return;
-
+std::expected<void, StarException> Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane) {
+  if (messages.empty()) return {};
   if (m_scripted) {
-    m_script.invoke("addMessages", messages.transformed([](ChatReceivedMessage const& message) {
-      return message.toJson();
-    }), showPane);
-    return;
+    JsonArray jsonMessages;
+    for (auto const& message : messages) {
+      auto json = message.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      jsonMessages.append(std::move(*json));
+    }
+    auto invoked = m_script.invoke("addMessages", jsonMessages, showPane);
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return {};
   }
-
-  GuiContext& guiContext = *context();
-
+  auto& guiContext = *context();
   for (auto const& message : messages) {
     std::optional<unsigned> wrapWidth;
-    if (message.portrait.empty())
-      wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
-
-    guiContext.setTextStyle(m_chatTextStyle);
-    StringList lines;
-    if (message.fromNick != "" && message.portrait == "")
-      lines = guiContext.wrapInterfaceText(strf(m_chatFormatString.utf8Ptr(), message.fromNick, message.text), wrapWidth);
-    else
-      lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
-
-    for (std::size_t i = 0; i < lines.size(); ++i) {
-      m_receivedMessages.prepend({
-          message.context.mode,
-          message.portrait,
-          std::move(lines[i])
-        });
+    if (message.portrait.empty()) wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
+    auto styled = guiContext.setTextStyle(m_chatTextStyle);
+    if (!styled) return std::unexpected(std::move(styled.error()));
+    String text = message.text;
+    if (!message.fromNick.empty() && message.portrait.empty()) {
+      std::array<std::pair<std::string_view, std::string_view>, 2> tags{{{"fromNick", message.fromNick.utf8()}, {"text", message.text.utf8()}}};
+      auto formatted = formatTags(m_chatFormatString.utf8(), tags);
+      if (!formatted) return std::unexpected(std::move(formatted.error()));
+      text = String(std::move(*formatted));
     }
-
-    if (message.fromNick != "")
-      context()->root().logger().info("Chat: <{}> {}", message.fromNick, message.text);
-    else
-      context()->root().logger().info("Chat: {}", message.text);
+    auto lines = guiContext.wrapInterfaceText(text, wrapWidth);
+    if (!lines) return std::unexpected(std::move(lines.error()));
+    for (auto& line : *lines) m_receivedMessages.prepend({message.context.mode, message.portrait, std::move(line)});
+    if (!message.fromNick.empty()) {
+      auto logged = context()->root().logger().info("Chat: <{}> {}", message.fromNick, message.text);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+    } else {
+      auto logged = context()->root().logger().info("Chat: {}", message.text);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+    }
   }
-
   if (showPane) {
     m_timeChatLastActive = Time::monotonicMilliseconds();
-    show();
+    auto shown = show();
+    if (!shown) return std::unexpected(std::move(shown.error()));
   }
-
-  if ((unsigned)m_receivedMessages.size() > m_chatHistoryLimit)
-    m_receivedMessages.resize(m_chatHistoryLimit);
+  if ((unsigned)m_receivedMessages.size() > m_chatHistoryLimit) m_receivedMessages.resize(m_chatHistoryLimit);
+  return {};
 }
 
-void Chat::addHistory(String const& chat) {
-  if (m_scripted)
-    m_script.invoke("addHistory", chat);
-  else if (m_chatHistory.size() > 0 && m_chatHistory.get(0).equals(chat))
-    return;
-  else {
-    m_chatHistory.prepend(chat);
-    m_chatHistory.resize(std::min((unsigned)m_chatHistory.size(), m_chatHistoryLimit));
-    m_timeChatLastActive = Time::monotonicMilliseconds();
-    m_client->playerStorage()->setMetadata("chatHistory", JsonArray::from(m_chatHistory));
+std::expected<void, StarException> Chat::addHistory(String const& chat) {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("addHistory", chat);
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return {};
   }
+  if (!m_chatHistory.empty() && m_chatHistory[0] == chat) return {};
+  m_chatHistory.prepend(chat);
+  m_chatHistory.resize(std::min((unsigned)m_chatHistory.size(), m_chatHistoryLimit));
+  m_timeChatLastActive = Time::monotonicMilliseconds();
+  return m_client->playerStorage()->setMetadata("chatHistory", JsonArray::from(m_chatHistory));
 }
 
-void Chat::clear(std::size_t count) {
-  if (m_scripted)
-    m_script.invoke("clear", count);
-  else if (count > m_receivedMessages.size())
-    m_receivedMessages.clear();
-  else
-    m_receivedMessages.erase(m_receivedMessages.begin(), m_receivedMessages.begin() + count);
+std::expected<void, StarException> Chat::clear(std::size_t count) {
+  if (m_scripted) {
+    auto invoked = m_script.invoke("clear", count);
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+  } else if (count > m_receivedMessages.size()) m_receivedMessages.clear();
+  else m_receivedMessages.erase(m_receivedMessages.begin(), m_receivedMessages.begin() + count);
+  return {};
 }
 
-void Chat::renderImpl() {
-  Pane::renderImpl();
+std::expected<void, StarException> Chat::renderImpl() {
+  auto rendered = Pane::renderImpl();
+  if (!rendered) return std::unexpected(std::move(rendered.error()));
   if (m_scripted)
-    return;
-  if (m_textBox->hasFocus())
+    return {};
+  auto focused = m_textBox->hasFocus();
+  if (!focused) return std::unexpected(std::move(focused.error()));
+  if (*focused)
     m_timeChatLastActive = Time::monotonicMilliseconds();
   Vec4B fade = {255, 255, 255, 255};
-  fade[3] = (std::uint8_t)(visible() * 255);
-  if (!visible()) {
-    hide();
-    return;
+  auto visibility = visible();
+  if (!visibility) return std::unexpected(std::move(visibility.error()));
+  fade[3] = (std::uint8_t)(*visibility * 255);
+  if (!*visibility) {
+    auto hidden = hide();
+    if (!hidden) return std::unexpected(std::move(hidden.error()));
+    return {};
   }
 
   Color fadeGreen = Color::Green;
@@ -486,7 +678,8 @@ void Chat::renderImpl() {
   GuiContext& guiContext = *context();
   float lineHeight = m_chatTextStyle.lineSpacing;
   float fontSize = m_chatTextStyle.fontSize;
-  guiContext.setTextStyle(m_chatTextStyle);
+  auto styled = guiContext.setTextStyle(m_chatTextStyle);
+  if (!styled) return std::unexpected(std::move(styled.error()));
   for (auto& message : m_receivedMessages) {
     if (!m_modeFilter.empty() && !m_modeFilter.contains(message.mode))
       continue;
@@ -510,8 +703,12 @@ void Chat::renderImpl() {
 
     if (message.portrait != "") {
       TextPositioning tp = {Vec2F(chatMin +  m_portraitTextOffset), HorizontalAnchor::LeftAnchor, VerticalAnchor::VMidAnchor, (wrapWidth - m_portraitTextOffset[0])};
-      Vec2F textSize = guiContext.determineInterfaceTextSize(messageString, tp).size().floor();
-      Vec2F portraitSize = Vec2F(guiContext.textureSize(m_portraitBackground));
+      auto textBounds = guiContext.determineInterfaceTextSize(messageString, tp);
+      if (!textBounds) return std::unexpected(std::move(textBounds.error()));
+      auto portraitBounds = guiContext.textureSize(m_portraitBackground);
+      if (!portraitBounds) return std::unexpected(std::move(portraitBounds.error()));
+      Vec2F textSize = textBounds->size().floor();
+      Vec2F portraitSize = Vec2F(*portraitBounds);
       messageHeight = std::max(portraitSize[1] + m_portraitVerticalMargin, textSize[1] + lineHeightMargin);
 
       // Draw both image and text anchored left and centered vertically
@@ -524,7 +721,9 @@ void Chat::renderImpl() {
 
     } else {
       TextPositioning tp = {Vec2F(chatMin), HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, wrapWidth};
-      messageHeight = guiContext.determineInterfaceTextSize(messageString, tp).size()[1] + lineHeightMargin;
+      auto bounds = guiContext.determineInterfaceTextSize(messageString, tp);
+      if (!bounds) return std::unexpected(std::move(bounds.error()));
+      messageHeight = bounds->size()[1] + lineHeightMargin;
       m_chatTextStyle.color = fade;
       m_chatLog->drawText(messageString, tp, m_chatTextStyle);
     }
@@ -532,111 +731,117 @@ void Chat::renderImpl() {
     chatMin[1] += std::ceil(messageHeight);
   }
 
-  guiContext.setDefaultLineSpacing();
-  guiContext.setDefaultFont();
+  auto spacing = guiContext.setDefaultLineSpacing();
+  if (!spacing) return std::unexpected(std::move(spacing.error()));
+  return guiContext.setDefaultFont();
+}
+std::expected<void, StarException> Chat::hide() {
+  auto stopped = stopChat();
+  if (!stopped) return std::unexpected(std::move(stopped.error()));
+  return Pane::hide();
 }
 
-void Chat::hide() {
-  stopChat();
-  Pane::hide();
-}
-
-float Chat::visible() const {
-  if (m_scripted)
-    return m_script.invoke<float>("visible").value_or(1.0f);
-
+std::expected<float, StarException> Chat::visible() const {
+  if (m_scripted) {
+    auto invoked = m_script.invoke<float>("visible");
+    if (!invoked) return std::unexpected(std::move(invoked.error()));
+    return invoked->value_or(1.0f);
+  }
   double difference = (Time::monotonicMilliseconds() - m_timeChatLastActive) / 1000.0;
-  if (difference < m_chatVisTime)
-    return 1;
+  if (difference < m_chatVisTime) return 1.0f;
   return clamp<float>(1 - (difference - m_chatVisTime) / m_fadeRate, 0, 1);
 }
 
-bool Chat::sendEvent(InputEvent const& event) {
+std::expected<bool, StarException> Chat::sendEvent(InputEvent const& event) {
   if (!m_scripted && active()) {
-    if (hasFocus()) {
-      if (std::holds_alternative<KeyDownEvent>(event)) {
-        auto actions = context()->actions(event);
-        if (actions.contains(InterfaceAction::ChatStop)) {
-          stopChat();
-          return true;
-        } else if (actions.contains(InterfaceAction::ChatPreviousLine)) {
-          incrementIndex();
-          return true;
-        } else if (actions.contains(InterfaceAction::ChatNextLine)) {
-          decrementIndex();
-          return true;
-        } else if (actions.contains(InterfaceAction::ChatPageDown)) {
-          scrollDown();
-          return true;
-        } else if (actions.contains(InterfaceAction::ChatPageUp)) {
-          scrollUp();
-          return true;
-        }
+    auto focused = hasFocus();
+    if (!focused) return std::unexpected(std::move(focused.error()));
+    if (*focused && std::holds_alternative<KeyDownEvent>(event)) {
+      auto actions = context()->actions(event);
+      if (actions.contains(InterfaceAction::ChatStop)) {
+        auto handled = stopChat();
+        if (!handled) return std::unexpected(std::move(handled.error()));
+        return true;
+      }
+      if (actions.contains(InterfaceAction::ChatPreviousLine)) {
+        auto handled = incrementIndex();
+        if (!handled) return std::unexpected(std::move(handled.error()));
+        return true;
+      }
+      if (actions.contains(InterfaceAction::ChatNextLine)) {
+        auto handled = decrementIndex();
+        if (!handled) return std::unexpected(std::move(handled.error()));
+        return true;
+      }
+      if (actions.contains(InterfaceAction::ChatPageDown)) {
+        auto handled = scrollDown();
+        if (!handled) return std::unexpected(std::move(handled.error()));
+        return true;
+      }
+      if (actions.contains(InterfaceAction::ChatPageUp)) {
+        auto handled = scrollUp();
+        if (!handled) return std::unexpected(std::move(handled.error()));
+        return true;
       }
     }
-
-    if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
+    if (auto wheel = std::get_if<MouseWheelEvent>(&event)) {
       if (inMember(*context()->mousePosition(event))) {
-        if (mouseWheel->mouseWheel == MouseWheel::Down)
-          scrollDown();
-        else
-          scrollUp();
+        auto scrolled = wheel->mouseWheel == MouseWheel::Down ? scrollDown() : scrollUp();
+        if (!scrolled) return std::unexpected(std::move(scrolled.error()));
         return true;
       }
     }
-
-    if (std::holds_alternative<MouseMoveEvent>(event) && inMember(*context()->mousePosition(event)))
-      m_timeChatLastActive = Time::monotonicMilliseconds();
-
-    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
-      if (m_chatLog->inMember(*context()->mousePosition(event))) {
-        m_expanded = !m_expanded;
-        updateSize();
-        return true;
-      }
+    if (std::holds_alternative<MouseMoveEvent>(event) && inMember(*context()->mousePosition(event))) m_timeChatLastActive = Time::monotonicMilliseconds();
+    if (std::holds_alternative<MouseButtonDownEvent>(event) && m_chatLog->inMember(*context()->mousePosition(event))) {
+      m_expanded = !m_expanded;
+      auto resized = updateSize();
+      if (!resized) return std::unexpected(std::move(resized.error()));
+      return true;
     }
   }
-
   return Pane::sendEvent(event);
 }
 
-void Chat::scrollUp() {
-  auto shownMessageCount = std::ranges::count_if(m_receivedMessages, [this](LogMessage const& msg) {
-      return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
-    });
-
-  m_historyOffset = std::max(0, std::min((int)shownMessageCount - 1, m_historyOffset + 1));
+std::expected<void, StarException> Chat::scrollUp() {
+  auto shown = std::ranges::count_if(m_receivedMessages, [this](LogMessage const& msg) { return m_modeFilter.empty() || m_modeFilter.contains(msg.mode); });
+  m_historyOffset = std::max(0, std::min((int)shown - 1, m_historyOffset + 1));
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  updateBottomButton();
+  return updateBottomButton();
 }
 
-void Chat::scrollDown() {
+std::expected<void, StarException> Chat::scrollDown() {
   m_historyOffset = std::max(0, m_historyOffset - 1);
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  updateBottomButton();
+  return updateBottomButton();
 }
 
-void Chat::scrollBottom() {
+std::expected<void, StarException> Chat::scrollBottom() {
   m_historyOffset = 0;
   m_timeChatLastActive = Time::monotonicMilliseconds();
-  updateBottomButton();
+  return updateBottomButton();
 }
 
-void Chat::updateSize() {
+std::expected<void, StarException> Chat::updateSize() {
   auto height = m_expanded ? m_expandedBodyHeight : m_bodyHeight;
   m_background->setSize(Vec2I(m_background->size()[0], m_defaultHeight + height));
   m_chatLog->setSize(Vec2I(m_chatLog->size()[0], height));
   m_upButton->setPosition(Vec2I(m_upButton->position()[0], m_chatLog->position()[1] + m_chatLog->size()[1] - m_upButton->size()[1]));
   determineSizeFromChildren();
+  return {};
 }
 
-void Chat::updateBottomButton() {
+std::expected<void, StarException> Chat::updateBottomButton() {
   auto assets = context()->root().assets();
-  auto bottomConfig = assets->json("/interface/chat/chat.config:bottom");
-  if (m_historyOffset == 0)
-    m_bottomButton->setImages(bottomConfig.get("atbottom").getString("base"), bottomConfig.get("atbottom").getString("hover"));
-  else
-    m_bottomButton->setImages(bottomConfig.get("scrolling").getString("base"), bottomConfig.get("scrolling").getString("hover"));
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface/chat/chat.config:bottom");
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto images = config->get(m_historyOffset == 0 ? "atbottom" : "scrolling");
+  if (!images) return std::unexpected(std::move(images.error()));
+  auto base = images->getString("base");
+  if (!base) return std::unexpected(std::move(base.error()));
+  auto hover = images->getString("hover");
+  if (!hover) return std::unexpected(std::move(hover.error()));
+  return m_bottomButton->setImages(*base, *hover);
 }
 
 }

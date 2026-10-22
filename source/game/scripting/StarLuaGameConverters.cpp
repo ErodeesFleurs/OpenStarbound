@@ -41,115 +41,228 @@ import star.rect;
 import star.poly;
 namespace Star {
 
-LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
-  if (auto equipment = std::get_if<EquipmentSlot>(&k))
-    return engine.createString(EquipmentSlotNames.getRight(*equipment));
-  else if (auto bag = std::get_if<BagSlot>(&k)) {
-    auto table = engine.createTable(2, 0);
-    table.set(1, bag->first);
-    table.set(2, bag->second);
-    return table;
-  }
-  else if (std::holds_alternative<SwapSlot>(k))
-    return engine.createString("swap");
-  else if (std::holds_alternative<TrashSlot>(k))
-    return engine.createString("trash");
-  else return {}; // avoid UB if every accounted-for case fails
-}
+namespace {
 
-std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
-  if (auto str = std::get_if<LuaString>(&v)) {
-    auto string = str->toString();
-    if (string.equalsIgnoreCase("swap"))
-      return {SwapSlot()};
-    else if (string.equalsIgnoreCase("trash"))
-      return {TrashSlot()};
-    else if (auto equipment = EquipmentSlotNames.leftPtr(str->toString()))
-      return {*equipment};
-    else
-      return {};
-  }
-  else if (auto table = std::get_if<LuaTable>(&v))
-    return {BagSlot(table->get<LuaString>(1).toString(), (std::uint8_t)table->get<unsigned>(2))};
-  else
-    return {};
-}
-
-LuaValue LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
-  return engine.createString(CollisionKindNames.getRight(k));
-}
-
-std::optional<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
-  if (auto str = std::get_if<LuaString>(&v))
-    return CollisionKindNames.maybeLeft(str->ptr());
+[[nodiscard]] std::expected<void, StarException> setFields(LuaTable&) {
   return {};
 }
 
-LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) {
-  auto collisionTable = engine.createTable();
-  int i = 1;
-  for (auto const& v : CollisionKindNames) {
-    if (s.contains(v.first)) {
-      collisionTable.set(i++, v.second);
-    }
-  }
-  return collisionTable;
+template <typename Key, typename Value, typename... Rest>
+[[nodiscard]] std::expected<void, StarException> setFields(LuaTable& table, Key&& key, Value&& value, Rest&&... rest) {
+  auto result = table.set(std::forward<Key>(key), std::forward<Value>(value));
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return setFields(table, std::forward<Rest>(rest)...);
 }
 
-std::optional<CollisionSet> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
+template <typename... Fields>
+[[nodiscard]] std::expected<LuaValue, StarException> makeTable(LuaEngine& engine, Fields&&... fields) {
+  auto created = engine.createTable();
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto table = std::move(*created);
+  auto result = setFields(table, std::forward<Fields>(fields)...);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return table;
+}
+
+template <typename T, typename Key>
+[[nodiscard]] std::expected<std::optional<T>, StarException> maybeField(LuaEngine& engine, LuaTable const& table, Key&& key) {
+  auto value = table.get<LuaValue>(std::forward<Key>(key));
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  return engine.luaMaybeTo<T>(*value);
+}
+
+[[nodiscard]] std::expected<bool, StarException> readFields(LuaEngine&, LuaTable const&) {
+  return true;
+}
+
+// A failed probe is distinct from a failed table operation or converter.
+template <typename Key, typename Value, typename... Rest>
+[[nodiscard]] std::expected<bool, StarException> readFields(LuaEngine& engine, LuaTable const& table, Key&& key, Value& value, Rest&&... rest) {
+  auto converted = maybeField<Value>(engine, table, std::forward<Key>(key));
+  if (!converted)
+    return std::unexpected(std::move(converted.error()));
+  if (!*converted)
+    return false;
+  value = std::move(**converted);
+  return readFields(engine, table, std::forward<Rest>(rest)...);
+}
+
+template <typename Enum>
+[[nodiscard]] std::expected<String const*, StarException> enumName(std::expected<EnumMap<Enum>, StarException> const& names, Enum value) {
+  if (!names)
+    return std::unexpected(names.error());
+  return names->getRight(value);
+}
+
+template <typename Enum>
+[[nodiscard]] std::expected<std::optional<Enum>, StarException> enumValue(std::expected<EnumMap<Enum>, StarException> const& names, String const& value) {
+  if (!names)
+    return std::unexpected(names.error());
+  return names->maybeLeft(value);
+}
+
+template <typename Enum>
+[[nodiscard]] std::expected<Enum, StarException> requiredEnum(std::expected<EnumMap<Enum>, StarException> const& names, String const& value) {
+  if (!names)
+    return std::unexpected(names.error());
+  auto result = names->getLeft(value);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
+  return **result;
+}
+
+}
+
+std::expected<LuaValue, StarException> LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
+  if (auto equipment = std::get_if<EquipmentSlot>(&k)) {
+    auto name = enumName(EquipmentSlotNames, *equipment);
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return engine.createString(**name);
+  } else if (auto bag = std::get_if<BagSlot>(&k)) {
+    return makeTable(engine, 1, bag->first, 2, bag->second);
+  } else if (std::holds_alternative<SwapSlot>(k)) {
+    return engine.createString("swap");
+  } else if (std::holds_alternative<TrashSlot>(k)) {
+    return engine.createString("trash");
+  }
+  return LuaNil;
+}
+
+std::expected<std::optional<InventorySlot>, StarException> LuaConverter<InventorySlot>::to(LuaEngine& engine, LuaValue const& v) {
+  if (auto str = std::get_if<LuaString>(&v)) {
+    auto string = str->toString();
+    auto swap = string.equalsIgnoreCase("swap");
+    if (!swap)
+      return std::unexpected(std::move(swap.error()));
+    if (*swap)
+      return InventorySlot(SwapSlot());
+    auto trash = string.equalsIgnoreCase("trash");
+    if (!trash)
+      return std::unexpected(std::move(trash.error()));
+    if (*trash)
+      return InventorySlot(TrashSlot());
+    auto equipment = enumValue(EquipmentSlotNames, string);
+    if (!equipment)
+      return std::unexpected(std::move(equipment.error()));
+    if (*equipment)
+      return InventorySlot(**equipment);
+  } else if (auto table = std::get_if<LuaTable>(&v)) {
+    String name;
+    unsigned index;
+    auto read = readFields(engine, *table, 1, name, 2, index);
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    if (!*read)
+      return std::nullopt;
+    return InventorySlot(BagSlot(std::move(name), (std::uint8_t)index));
+  }
+  return std::nullopt;
+}
+
+std::expected<LuaValue, StarException> LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
+  auto name = enumName(CollisionKindNames, k);
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  return engine.createString(**name);
+}
+
+std::expected<std::optional<CollisionKind>, StarException> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
+  if (auto str = std::get_if<LuaString>(&v))
+    return enumValue(CollisionKindNames, str->toString());
+  return std::nullopt;
+}
+
+std::expected<LuaValue, StarException> LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) {
+  if (!CollisionKindNames)
+    return std::unexpected(CollisionKindNames.error());
+  auto created = engine.createTable();
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto table = std::move(*created);
+  int i = 1;
+  for (auto const& value : *CollisionKindNames) {
+    if (s.contains(value.first)) {
+      auto result = table.set(i++, value.second);
+      if (!result)
+        return std::unexpected(std::move(result.error()));
+    }
+  }
+  return table;
+}
+
+std::expected<std::optional<CollisionSet>, StarException> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
+    return std::nullopt;
   CollisionSet result;
-  bool failed = false;
-  table->iterate([&result, &failed, &engine](LuaValue, LuaValue value) {
-      if (auto k = engine.luaMaybeTo<CollisionKind>(std::move(value))) {
-        result.insert(*k);
-        return true;
-      } else {
-        failed = true;
-        return false;
-      }
-    });
-
-  if (failed)
-    return {};
+  bool compatible = true;
+  auto iterated = table->iterate([&](LuaValue, LuaValue value) -> std::expected<bool, StarException> {
+    auto kind = engine.luaMaybeTo<CollisionKind>(std::move(value));
+    if (!kind)
+      return std::unexpected(std::move(kind.error()));
+    if (!*kind) {
+      compatible = false;
+      return false;
+    }
+    result.insert(**kind);
+    return true;
+  });
+  if (!iterated)
+    return std::unexpected(std::move(iterated.error()));
+  if (!compatible)
+    return std::nullopt;
   return result;
 }
 
-LuaValue LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, PlatformerAStar::Path const& path) {
+std::expected<LuaValue, StarException> LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, PlatformerAStar::Path const& path) {
   auto convertNode = [&engine](PlatformerAStar::Node const& node) {
-    auto table = engine.createTable();
-    table.set("position", node.position);
-    table.set("velocity", node.velocity);
-    return table;
+    return makeTable(engine, "position", node.position, "velocity", node.velocity);
   };
-
-  LuaTable pathTable = engine.createTable();
-  int pathTableIndex = 1;
+  auto created = engine.createTable();
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto pathTable = std::move(*created);
+  int index = 1;
   for (auto const& edge : path) {
-    auto edgeTable = engine.createTable();
-    edgeTable.set("cost", edge.cost);
-    edgeTable.set("action", PlatformerAStar::ActionNames.getRight(edge.action));
-    edgeTable.set("jumpVelocity", edge.jumpVelocity);
-    edgeTable.set("source", convertNode(edge.source));
-    edgeTable.set("target", convertNode(edge.target));
-    pathTable.set(pathTableIndex++, std::move(edgeTable));
+    auto action = PlatformerAStar::actionName(edge.action);
+    if (!action)
+      return std::unexpected(std::move(action.error()));
+    auto source = convertNode(edge.source);
+    if (!source)
+      return std::unexpected(std::move(source.error()));
+    auto target = convertNode(edge.target);
+    if (!target)
+      return std::unexpected(std::move(target.error()));
+    auto converted = makeTable(engine, "cost", edge.cost, "action", **action,
+        "jumpVelocity", edge.jumpVelocity, "source", std::move(*source), "target", std::move(*target));
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    auto inserted = pathTable.set(index++, std::move(*converted));
+    if (!inserted)
+      return std::unexpected(std::move(inserted.error()));
   }
   return pathTable;
 }
 
-LuaMethods<PlatformerAStar::PathFinder> LuaUserDataMethods<PlatformerAStar::PathFinder>::make() {
-  LuaMethods<PlatformerAStar::PathFinder> methods;
-  methods.registerMethodWithSignature<std::optional<bool>, PlatformerAStar::PathFinder&, std::optional<unsigned>>(
+std::expected<LuaMethods<std::shared_ptr<PlatformerAStar::PathFinder>>, StarException> LuaUserDataMethods<std::shared_ptr<PlatformerAStar::PathFinder>>::make() {
+  LuaMethods<std::shared_ptr<PlatformerAStar::PathFinder>> methods;
+  auto explore = methods.registerMethodWithSignature<std::optional<bool>, std::shared_ptr<PlatformerAStar::PathFinder> const&, std::optional<unsigned>>(
       "explore", std::mem_fn(&PlatformerAStar::PathFinder::explore));
-  methods.registerMethodWithSignature<std::optional<PlatformerAStar::Path>, PlatformerAStar::PathFinder&>(
+  if (!explore)
+    return std::unexpected(std::move(explore.error()));
+  auto result = methods.registerMethodWithSignature<std::optional<PlatformerAStar::Path>, std::shared_ptr<PlatformerAStar::PathFinder> const&>(
       "result", std::mem_fn(&PlatformerAStar::PathFinder::result));
+  if (!result)
+    return std::unexpected(std::move(result.error()));
   return methods;
 }
 
-std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<PlatformerAStar::Parameters>, StarException> LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine& engine, LuaValue const& v) {
   PlatformerAStar::Parameters p;
   p.returnBest = false;
   p.mustEndOnGround = false;
@@ -157,690 +270,696 @@ std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Paramet
   p.enableVerticalJumpAirControl = false;
   if (std::holds_alternative<LuaNilType>(v))
     return p;
-
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
-  try {
-    p.maxDistance = table->get<std::optional<float>>("maxDistance");
-    p.returnBest = table->get<std::optional<bool>>("returnBest").value_or(false);
-    p.mustEndOnGround = table->get<std::optional<bool>>("mustEndOnGround").value_or(false);
-    p.enableWalkSpeedJumps = table->get<std::optional<bool>>("enableWalkSpeedJumps").value_or(false);
-    p.enableVerticalJumpAirControl = table->get<std::optional<bool>>("enableVerticalJumpAirControl").value_or(false);
-    p.swimCost = table->get<std::optional<float>>("swimCost");
-    p.jumpCost = table->get<std::optional<float>>("jumpCost");
-    p.liquidJumpCost = table->get<std::optional<float>>("liquidJumpCost");
-    p.dropCost = table->get<std::optional<float>>("dropCost");
-    p.boundBox = table->get<RectF>("boundBox");
-    p.standingBoundBox = table->get<RectF>("standingBoundBox");
-    p.droppingBoundBox = table->get<RectF>("droppingBoundBox");
-    p.smallJumpMultiplier = table->get<std::optional<float>>("smallJumpMultiplier");
-    p.jumpDropXMultiplier = table->get<std::optional<float>>("jumpDropXMultiplier");
-    p.maxFScore = table->get<double>("maxFScore");
-    p.maxNodesToSearch = table->get<unsigned>("maxNodesToSearch");
-    p.maxLandingVelocity = table->get<std::optional<float>>("maxLandingVelocity");
-  } catch (LuaConversionException const&) {
-    return {};
-  }
-
+    return std::nullopt;
+  std::optional<bool> returnBest, mustEndOnGround, enableWalkSpeedJumps, enableVerticalJumpAirControl;
+  auto read = readFields(engine, *table,
+      "maxDistance", p.maxDistance, "returnBest", returnBest, "mustEndOnGround", mustEndOnGround,
+      "enableWalkSpeedJumps", enableWalkSpeedJumps, "enableVerticalJumpAirControl", enableVerticalJumpAirControl,
+      "swimCost", p.swimCost, "jumpCost", p.jumpCost, "liquidJumpCost", p.liquidJumpCost,
+      "dropCost", p.dropCost, "boundBox", p.boundBox, "standingBoundBox", p.standingBoundBox,
+      "droppingBoundBox", p.droppingBoundBox, "smallJumpMultiplier", p.smallJumpMultiplier,
+      "jumpDropXMultiplier", p.jumpDropXMultiplier, "maxFScore", p.maxFScore,
+      "maxNodesToSearch", p.maxNodesToSearch, "maxLandingVelocity", p.maxLandingVelocity);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  p.returnBest = returnBest.value_or(false);
+  p.mustEndOnGround = mustEndOnGround.value_or(false);
+  p.enableWalkSpeedJumps = enableWalkSpeedJumps.value_or(false);
+  p.enableVerticalJumpAirControl = enableVerticalJumpAirControl.value_or(false);
   return p;
 }
 
-LuaValue LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfile const& v) {
-  auto table = engine.createTable();
-  table.set("jumpSpeed", v.jumpSpeed);
-  table.set("jumpControlForce", v.jumpControlForce);
-  table.set("jumpInitialPercentage", v.jumpInitialPercentage);
-  table.set("jumpHoldTime", v.jumpHoldTime);
-  table.set("jumpTotalHoldTime", v.jumpTotalHoldTime);
-  table.set("multiJump", v.multiJump);
-  table.set("reJumpDelay", v.reJumpDelay);
-  table.set("autoJump", v.autoJump);
-  table.set("collisionCancelled", v.collisionCancelled);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfile const& v) {
+  return makeTable(engine, "jumpSpeed", v.jumpSpeed, "jumpControlForce", v.jumpControlForce,
+      "jumpInitialPercentage", v.jumpInitialPercentage, "jumpHoldTime", v.jumpHoldTime,
+      "jumpTotalHoldTime", v.jumpTotalHoldTime, "multiJump", v.multiJump, "reJumpDelay", v.reJumpDelay,
+      "autoJump", v.autoJump, "collisionCancelled", v.collisionCancelled);
 }
 
-std::optional<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<ActorJumpProfile>, StarException> LuaConverter<ActorJumpProfile>::to(LuaEngine& engine, LuaValue const& v) {
   if (std::holds_alternative<LuaNilType>(v))
     return ActorJumpProfile();
-
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
-  try {
-    ActorJumpProfile ajp;
-    ajp.jumpSpeed = table->get<std::optional<float>>("jumpSpeed");
-    ajp.jumpControlForce = table->get<std::optional<float>>("jumpControlForce");
-    ajp.jumpInitialPercentage = table->get<std::optional<float>>("jumpInitialPercentage");
-    ajp.jumpHoldTime = table->get<std::optional<float>>("jumpHoldTime");
-    ajp.jumpTotalHoldTime = table->get<std::optional<float>>("jumpTotalHoldTime");
-    ajp.multiJump = table->get<std::optional<bool>>("multiJump");
-    ajp.reJumpDelay = table->get<std::optional<float>>("reJumpDelay");
-    ajp.autoJump = table->get<std::optional<bool>>("autoJump");
-    ajp.collisionCancelled = table->get<std::optional<bool>>("collisionCancelled");
-    return ajp;
-  } catch (LuaConversionException const&) {
-    return {};
-  }
+    return std::nullopt;
+  ActorJumpProfile result;
+  auto read = readFields(engine, *table, "jumpSpeed", result.jumpSpeed, "jumpControlForce", result.jumpControlForce,
+      "jumpInitialPercentage", result.jumpInitialPercentage, "jumpHoldTime", result.jumpHoldTime,
+      "jumpTotalHoldTime", result.jumpTotalHoldTime, "multiJump", result.multiJump, "reJumpDelay", result.reJumpDelay,
+      "autoJump", result.autoJump, "collisionCancelled", result.collisionCancelled);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  return result;
 }
 
-LuaValue LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMovementParameters const& v) {
-  auto table = engine.createTable();
-  table.set("mass", v.mass);
-  table.set("gravityMultiplier", v.gravityMultiplier);
-  table.set("liquidBuoyancy", v.liquidBuoyancy);
-  table.set("airBuoyancy", v.airBuoyancy);
-  table.set("bounceFactor", v.bounceFactor);
-  table.set("slopeSlidingFactor", v.slopeSlidingFactor);
-  table.set("maxMovementPerStep", v.maxMovementPerStep);
-  table.set("maximumCorrection", v.maximumCorrection);
-  table.set("speedLimit", v.speedLimit);
-  table.set("standingPoly", v.standingPoly);
-  table.set("crouchingPoly", v.crouchingPoly);
-  table.set("stickyCollision", v.stickyCollision);
-  table.set("stickyForce", v.stickyForce);
-  table.set("walkSpeed", v.walkSpeed);
-  table.set("runSpeed", v.runSpeed);
-  table.set("flySpeed", v.flySpeed);
-  table.set("airFriction", v.airFriction);
-  table.set("liquidFriction", v.liquidFriction);
-  table.set("minimumLiquidPercentage", v.minimumLiquidPercentage);
-  table.set("liquidImpedance", v.liquidImpedance);
-  table.set("normalGroundFriction", v.normalGroundFriction);
-  table.set("ambulatingGroundFriction", v.ambulatingGroundFriction);
-  table.set("groundForce", v.groundForce);
-  table.set("airForce", v.airForce);
-  table.set("liquidForce", v.liquidForce);
-  table.set("airJumpProfile", v.airJumpProfile);
-  table.set("liquidJumpProfile", v.liquidJumpProfile);
-  table.set("fallStatusSpeedMin", v.fallStatusSpeedMin);
-  table.set("fallThroughSustainFrames", v.fallThroughSustainFrames);
-  table.set("maximumPlatformCorrection", v.maximumPlatformCorrection);
-  table.set("maximumPlatformCorrectionVelocityFactor", v.maximumPlatformCorrectionVelocityFactor);
-  table.set("physicsEffectCategories", v.physicsEffectCategories);
-  table.set("groundMovementMinimumSustain", v.groundMovementMinimumSustain);
-  table.set("groundMovementMaximumSustain", v.groundMovementMaximumSustain);
-  table.set("groundMovementCheckDistance", v.groundMovementCheckDistance);
-  table.set("collisionEnabled", v.collisionEnabled);
-  table.set("frictionEnabled", v.frictionEnabled);
-  table.set("gravityEnabled", v.gravityEnabled);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMovementParameters const& v) {
+  return makeTable(engine, "mass", v.mass, "gravityMultiplier", v.gravityMultiplier,
+      "liquidBuoyancy", v.liquidBuoyancy, "airBuoyancy", v.airBuoyancy, "bounceFactor", v.bounceFactor,
+      "slopeSlidingFactor", v.slopeSlidingFactor, "maxMovementPerStep", v.maxMovementPerStep,
+      "maximumCorrection", v.maximumCorrection, "speedLimit", v.speedLimit, "standingPoly", v.standingPoly,
+      "crouchingPoly", v.crouchingPoly, "stickyCollision", v.stickyCollision, "stickyForce", v.stickyForce,
+      "walkSpeed", v.walkSpeed, "runSpeed", v.runSpeed, "flySpeed", v.flySpeed,
+      "airFriction", v.airFriction, "liquidFriction", v.liquidFriction,
+      "minimumLiquidPercentage", v.minimumLiquidPercentage, "liquidImpedance", v.liquidImpedance,
+      "normalGroundFriction", v.normalGroundFriction, "ambulatingGroundFriction", v.ambulatingGroundFriction,
+      "groundForce", v.groundForce, "airForce", v.airForce, "liquidForce", v.liquidForce,
+      "airJumpProfile", v.airJumpProfile, "liquidJumpProfile", v.liquidJumpProfile,
+      "fallStatusSpeedMin", v.fallStatusSpeedMin, "fallThroughSustainFrames", v.fallThroughSustainFrames,
+      "maximumPlatformCorrection", v.maximumPlatformCorrection,
+      "maximumPlatformCorrectionVelocityFactor", v.maximumPlatformCorrectionVelocityFactor,
+      "physicsEffectCategories", v.physicsEffectCategories, "groundMovementMinimumSustain", v.groundMovementMinimumSustain,
+      "groundMovementMaximumSustain", v.groundMovementMaximumSustain, "groundMovementCheckDistance", v.groundMovementCheckDistance,
+      "collisionEnabled", v.collisionEnabled, "frictionEnabled", v.frictionEnabled, "gravityEnabled", v.gravityEnabled);
 }
 
-std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<ActorMovementParameters>, StarException> LuaConverter<ActorMovementParameters>::to(LuaEngine& engine, LuaValue const& v) {
   if (std::holds_alternative<LuaNilType>(v))
     return ActorMovementParameters();
-
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
-  try {
-    ActorMovementParameters amp;
-    amp.mass = table->get<std::optional<float>>("mass");
-    amp.gravityMultiplier = table->get<std::optional<float>>("gravityMultiplier");
-    amp.liquidBuoyancy = table->get<std::optional<float>>("liquidBuoyancy");
-    amp.airBuoyancy = table->get<std::optional<float>>("airBuoyancy");
-    amp.bounceFactor = table->get<std::optional<float>>("bounceFactor");
-    amp.slopeSlidingFactor = table->get<std::optional<float>>("slopeSlidingFactor");
-    amp.maxMovementPerStep = table->get<std::optional<float>>("maxMovementPerStep");
-    amp.maximumCorrection = table->get<std::optional<float>>("maximumCorrection");
-    amp.speedLimit = table->get<std::optional<float>>("speedLimit");
-    auto standingPoly = table->get<std::optional<PolyF>>("standingPoly");
-    auto standingPolyFallback = table->get<std::optional<PolyF>>("collisionPoly");
-    amp.standingPoly = standingPoly ? std::move(standingPoly) : std::move(standingPolyFallback);
-    auto crouchingPoly = table->get<std::optional<PolyF>>("crouchingPoly");
-    auto crouchingPolyFallback = table->get<std::optional<PolyF>>("collisionPoly");
-    amp.crouchingPoly = crouchingPoly ? std::move(crouchingPoly) : std::move(crouchingPolyFallback);
-    amp.stickyCollision = table->get<std::optional<bool>>("stickyCollision");
-    amp.stickyForce = table->get<std::optional<float>>("stickyForce");
-    amp.walkSpeed = table->get<std::optional<float>>("walkSpeed");
-    amp.runSpeed = table->get<std::optional<float>>("runSpeed");
-    amp.flySpeed = table->get<std::optional<float>>("flySpeed");
-    amp.airFriction = table->get<std::optional<float>>("airFriction");
-    amp.liquidFriction = table->get<std::optional<float>>("liquidFriction");
-    amp.minimumLiquidPercentage = table->get<std::optional<float>>("minimumLiquidPercentage");
-    amp.liquidImpedance = table->get<std::optional<float>>("liquidImpedance");
-    amp.normalGroundFriction = table->get<std::optional<float>>("normalGroundFriction");
-    amp.ambulatingGroundFriction = table->get<std::optional<float>>("ambulatingGroundFriction");
-    amp.groundForce = table->get<std::optional<float>>("groundForce");
-    amp.airForce = table->get<std::optional<float>>("airForce");
-    amp.liquidForce = table->get<std::optional<float>>("liquidForce");
-    amp.airJumpProfile = table->get<ActorJumpProfile>("airJumpProfile");
-    amp.liquidJumpProfile = table->get<ActorJumpProfile>("liquidJumpProfile");
-    amp.fallStatusSpeedMin = table->get<std::optional<float>>("fallStatusSpeedMin");
-    amp.fallThroughSustainFrames = table->get<std::optional<int>>("fallThroughSustainFrames");
-    amp.maximumPlatformCorrection = table->get<std::optional<float>>("maximumPlatformCorrection");
-    amp.maximumPlatformCorrectionVelocityFactor = table->get<std::optional<float>>("maximumPlatformCorrectionVelocityFactor");
-    amp.physicsEffectCategories = table->get<std::optional<StringSet>>("physicsEffectCategories");
-    amp.groundMovementMinimumSustain = table->get<std::optional<float>>("groundMovementMinimumSustain");
-    amp.groundMovementMaximumSustain = table->get<std::optional<float>>("groundMovementMaximumSustain");
-    amp.groundMovementCheckDistance = table->get<std::optional<float>>("groundMovementCheckDistance");
-    amp.collisionEnabled = table->get<std::optional<bool>>("collisionEnabled");
-    amp.frictionEnabled = table->get<std::optional<bool>>("frictionEnabled");
-    amp.gravityEnabled = table->get<std::optional<bool>>("gravityEnabled");
-    return amp;
-  } catch (LuaConversionException const&) {
-    return {};
-  }
+    return std::nullopt;
+  ActorMovementParameters result;
+  std::optional<PolyF> standingFallback, crouchingFallback;
+  auto read = readFields(engine, *table,
+      "mass", result.mass, "gravityMultiplier", result.gravityMultiplier,
+      "liquidBuoyancy", result.liquidBuoyancy, "airBuoyancy", result.airBuoyancy, "bounceFactor", result.bounceFactor,
+      "slopeSlidingFactor", result.slopeSlidingFactor, "maxMovementPerStep", result.maxMovementPerStep,
+      "maximumCorrection", result.maximumCorrection, "speedLimit", result.speedLimit,
+      "standingPoly", result.standingPoly, "collisionPoly", standingFallback,
+      "crouchingPoly", result.crouchingPoly, "collisionPoly", crouchingFallback,
+      "stickyCollision", result.stickyCollision, "stickyForce", result.stickyForce,
+      "walkSpeed", result.walkSpeed, "runSpeed", result.runSpeed, "flySpeed", result.flySpeed,
+      "airFriction", result.airFriction, "liquidFriction", result.liquidFriction,
+      "minimumLiquidPercentage", result.minimumLiquidPercentage, "liquidImpedance", result.liquidImpedance,
+      "normalGroundFriction", result.normalGroundFriction, "ambulatingGroundFriction", result.ambulatingGroundFriction,
+      "groundForce", result.groundForce, "airForce", result.airForce, "liquidForce", result.liquidForce,
+      "airJumpProfile", result.airJumpProfile, "liquidJumpProfile", result.liquidJumpProfile,
+      "fallStatusSpeedMin", result.fallStatusSpeedMin, "fallThroughSustainFrames", result.fallThroughSustainFrames,
+      "maximumPlatformCorrection", result.maximumPlatformCorrection,
+      "maximumPlatformCorrectionVelocityFactor", result.maximumPlatformCorrectionVelocityFactor,
+      "physicsEffectCategories", result.physicsEffectCategories, "groundMovementMinimumSustain", result.groundMovementMinimumSustain,
+      "groundMovementMaximumSustain", result.groundMovementMaximumSustain, "groundMovementCheckDistance", result.groundMovementCheckDistance,
+      "collisionEnabled", result.collisionEnabled, "frictionEnabled", result.frictionEnabled, "gravityEnabled", result.gravityEnabled);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  if (!result.standingPoly)
+    result.standingPoly = std::move(standingFallback);
+  if (!result.crouchingPoly)
+    result.crouchingPoly = std::move(crouchingFallback);
+  return result;
 }
 
-LuaValue LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMovementModifiers const& v) {
-  auto table = engine.createTable();
-  table.set("groundMovementModifier", v.groundMovementModifier);
-  table.set("liquidMovementModifier", v.liquidMovementModifier);
-  table.set("speedModifier", v.speedModifier);
-  table.set("airJumpModifier", v.airJumpModifier);
-  table.set("liquidJumpModifier", v.liquidJumpModifier);
-  table.set("runningSuppressed", v.runningSuppressed);
-  table.set("jumpingSuppressed", v.jumpingSuppressed);
-  table.set("facingSuppressed", v.facingSuppressed);
-  table.set("movementSuppressed", v.movementSuppressed);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMovementModifiers const& v) {
+  return makeTable(engine, "groundMovementModifier", v.groundMovementModifier,
+      "liquidMovementModifier", v.liquidMovementModifier, "speedModifier", v.speedModifier,
+      "airJumpModifier", v.airJumpModifier, "liquidJumpModifier", v.liquidJumpModifier,
+      "runningSuppressed", v.runningSuppressed, "jumpingSuppressed", v.jumpingSuppressed,
+      "facingSuppressed", v.facingSuppressed, "movementSuppressed", v.movementSuppressed);
 }
 
-std::optional<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<ActorMovementModifiers>, StarException> LuaConverter<ActorMovementModifiers>::to(LuaEngine& engine, LuaValue const& v) {
   if (std::holds_alternative<LuaNilType>(v))
     return ActorMovementModifiers();
-
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
-  try {
-    ActorMovementModifiers amm;
-    amm.groundMovementModifier = table->get<std::optional<float>>("groundMovementModifier").value_or(1.0f);
-    amm.liquidMovementModifier = table->get<std::optional<float>>("liquidMovementModifier").value_or(1.0f);
-    amm.speedModifier = table->get<std::optional<float>>("speedModifier").value_or(1.0f);
-    amm.airJumpModifier = table->get<std::optional<float>>("airJumpModifier").value_or(1.0f);
-    amm.liquidJumpModifier = table->get<std::optional<float>>("liquidJumpModifier").value_or(1.0f);
-    amm.runningSuppressed = table->get<std::optional<bool>>("runningSuppressed").value_or(false);
-    amm.jumpingSuppressed = table->get<std::optional<bool>>("jumpingSuppressed").value_or(false);
-    amm.facingSuppressed = table->get<std::optional<bool>>("facingSuppressed").value_or(false);
-    amm.movementSuppressed = table->get<std::optional<bool>>("movementSuppressed").value_or(false);
-    return amm;
-  } catch (LuaConversionException const&) {
-    return {};
-  }
+    return std::nullopt;
+  std::optional<float> ground, liquid, speed, airJump, liquidJump;
+  std::optional<bool> running, jumping, facing, movement;
+  auto read = readFields(engine, *table, "groundMovementModifier", ground, "liquidMovementModifier", liquid,
+      "speedModifier", speed, "airJumpModifier", airJump, "liquidJumpModifier", liquidJump,
+      "runningSuppressed", running, "jumpingSuppressed", jumping,
+      "facingSuppressed", facing, "movementSuppressed", movement);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  ActorMovementModifiers result;
+  result.groundMovementModifier = ground.value_or(1.0f);
+  result.liquidMovementModifier = liquid.value_or(1.0f);
+  result.speedModifier = speed.value_or(1.0f);
+  result.airJumpModifier = airJump.value_or(1.0f);
+  result.liquidJumpModifier = liquidJump.value_or(1.0f);
+  result.runningSuppressed = running.value_or(false);
+  result.jumpingSuppressed = jumping.value_or(false);
+  result.facingSuppressed = facing.value_or(false);
+  result.movementSuppressed = movement.value_or(false);
+  return result;
 }
 
-LuaValue LuaConverter<StatModifier>::from(LuaEngine& engine, StatModifier const& v) {
-  return engine.luaFrom(jsonFromStatModifier(v));
+std::expected<LuaValue, StarException> LuaConverter<StatModifier>::from(LuaEngine& engine, StatModifier const& v) {
+  auto json = jsonFromStatModifier(v);
+  if (!json)
+    return std::unexpected(std::move(json.error()));
+  return engine.luaFrom(std::move(*json));
 }
 
-std::optional<StatModifier> LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) {
+std::expected<std::optional<StatModifier>, StarException> LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) {
   auto json = engine.luaMaybeTo<Json>(std::move(v));
   if (!json)
-    return {};
-
-  try {
-    return jsonToStatModifier(takeOptional(json));
-  } catch (JsonException const&) {
-    return {};
+    return std::unexpected(std::move(json.error()));
+  if (!*json)
+    return std::nullopt;
+  auto modifier = jsonToStatModifier(**json);
+  if (!modifier) {
+    if (modifier.error().is<JsonException>())
+      return std::nullopt;
+    return std::unexpected(std::move(modifier.error()));
   }
+  return std::move(*modifier);
 }
 
-LuaValue LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralStatusEffect const& v) {
-  auto table = engine.createTable();
-  table.set("effect", v.uniqueEffect);
-  table.set("duration", v.duration);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralStatusEffect const& v) {
+  return makeTable(engine, "effect", v.uniqueEffect, "duration", v.duration);
 }
 
-std::optional<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto s = std::get_if<LuaString>(&v)) {
-    return EphemeralStatusEffect{UniqueStatusEffect(s->ptr()), {}};
-  } else if (auto table = std::get_if<LuaTable>(&v)) {
-    auto effect = engine.luaMaybeTo<String>(table->get("effect"));
-    auto duration = engine.luaMaybeTo<std::optional<float>>(table->get("duration"));
+std::expected<std::optional<EphemeralStatusEffect>, StarException> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
+  if (auto str = std::get_if<LuaString>(&v))
+    return EphemeralStatusEffect{UniqueStatusEffect(str->ptr()), {}};
+  auto table = std::get_if<LuaTable>(&v);
+  if (!table)
+    return std::nullopt;
+  auto effect = maybeField<String>(engine, *table, "effect");
+  if (!effect)
+    return std::unexpected(std::move(effect.error()));
+  auto duration = maybeField<std::optional<float>>(engine, *table, "duration");
+  if (!duration)
+    return std::unexpected(std::move(duration.error()));
+  if (!*duration) {
+    duration = maybeField<std::optional<float>>(engine, *table, "duratino");
     if (!duration)
-      duration = engine.luaMaybeTo<std::optional<float>>(table->get("duratino"));
-    if (effect && duration)
-      return EphemeralStatusEffect{takeOptional(effect), takeOptional(duration)};
+      return std::unexpected(std::move(duration.error()));
   }
-
-  return {};
+  if (*effect && *duration)
+    return EphemeralStatusEffect{std::move(**effect), std::move(**duration)};
+  return std::nullopt;
 }
 
-LuaValue LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest const& v) {
-  auto table = engine.createTable();
-  table.set("hitType", HitTypeNames.getRight(v.hitType));
-  table.set("damageType", DamageTypeNames.getRight(v.damageType));
-  table.set("damage", v.damage);
-  table.set("knockbackMomentum", v.knockbackMomentum);
-  table.set("sourceEntityId", v.sourceEntityId);
-  table.set("damageSourceKind", v.damageSourceKind);
-  table.set("statusEffects", v.statusEffects);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest const& v) {
+  auto hitType = enumName(HitTypeNames, v.hitType);
+  if (!hitType)
+    return std::unexpected(std::move(hitType.error()));
+  auto damageType = enumName(DamageTypeNames, v.damageType);
+  if (!damageType)
+    return std::unexpected(std::move(damageType.error()));
+  return makeTable(engine, "hitType", **hitType, "damageType", **damageType, "damage", v.damage,
+      "knockbackMomentum", v.knockbackMomentum, "sourceEntityId", v.sourceEntityId,
+      "damageSourceKind", v.damageSourceKind, "statusEffects", v.statusEffects);
 }
 
-std::optional<DamageRequest> LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<DamageRequest>, StarException> LuaConverter<DamageRequest>::to(LuaEngine& engine, LuaValue const& v) {
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-
-  try {
-    DamageRequest dr;
-    if (auto hitType = table->get<std::optional<String>>("hitType"))
-      dr.hitType = HitTypeNames.getLeft(*hitType);
-    if (auto damageType = table->get<std::optional<String>>("damageType"))
-      dr.damageType = DamageTypeNames.getLeft(*damageType);
-    dr.damage = table->get<float>("damage");
-    if (auto knockbackMomentum = table->get<std::optional<Vec2F>>("knockbackMomentum"))
-      dr.knockbackMomentum = *knockbackMomentum;
-    if (auto sourceEntityId = table->get<std::optional<EntityId>>("sourceEntityId"))
-      dr.sourceEntityId = *sourceEntityId;
-    if (auto damageSourceKind = table->get<std::optional<String>>("damageSourceKind"))
-      dr.damageSourceKind = takeOptional(damageSourceKind);
-    if (auto statusEffects = table->get<std::optional<List<EphemeralStatusEffect>>>("statusEffects"))
-      dr.statusEffects = takeOptional(statusEffects);
-    return dr;
-  } catch (LuaConversionException const&) {
-    return {};
-  } catch (MapException const&) {
-    return {};
+    return std::nullopt;
+  DamageRequest result;
+  std::optional<String> hitType, damageType, damageSourceKind;
+  std::optional<Vec2F> knockback;
+  std::optional<EntityId> source;
+  std::optional<List<EphemeralStatusEffect>> effects;
+  auto read = readFields(engine, *table, "hitType", hitType, "damageType", damageType,
+      "damage", result.damage, "knockbackMomentum", knockback, "sourceEntityId", source,
+      "damageSourceKind", damageSourceKind, "statusEffects", effects);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  if (hitType) {
+    auto converted = enumValue(HitTypeNames, *hitType);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    if (!*converted)
+      return std::nullopt;
+    result.hitType = **converted;
   }
+  if (damageType) {
+    auto converted = enumValue(DamageTypeNames, *damageType);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    if (!*converted)
+      return std::nullopt;
+    result.damageType = **converted;
+  }
+  if (knockback)
+    result.knockbackMomentum = *knockback;
+  if (source)
+    result.sourceEntityId = *source;
+  if (damageSourceKind)
+    result.damageSourceKind = std::move(*damageSourceKind);
+  if (effects)
+    result.statusEffects = std::move(*effects);
+  return result;
 }
 
-LuaValue LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotification const& v) {
-  auto table = engine.createTable();
-  table.set("sourceEntityId", v.sourceEntityId);
-  table.set("targetEntityId", v.targetEntityId);
-  table.set("position", v.position);
-  table.set("damageDealt", v.damageDealt);
-  table.set("healthLost", v.healthLost);
-  table.set("hitType", HitTypeNames.getRight(v.hitType));
-  table.set("damageSourceKind", v.damageSourceKind);
-  table.set("targetMaterialKind", v.targetMaterialKind);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotification const& v) {
+  auto hitType = enumName(HitTypeNames, v.hitType);
+  if (!hitType)
+    return std::unexpected(std::move(hitType.error()));
+  return makeTable(engine, "sourceEntityId", v.sourceEntityId, "targetEntityId", v.targetEntityId,
+      "position", v.position, "damageDealt", v.damageDealt, "healthLost", v.healthLost,
+      "hitType", **hitType, "damageSourceKind", v.damageSourceKind, "targetMaterialKind", v.targetMaterialKind);
 }
 
-std::optional<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) {
+std::expected<std::optional<DamageNotification>, StarException> LuaConverter<DamageNotification>::to(LuaEngine& engine, LuaValue const& v) {
   auto table = std::get_if<LuaTable>(&v);
   if (!table)
-    return {};
-  try {
-    DamageNotification dn;
-    dn.sourceEntityId = table->get<EntityId>("sourceEntityId");
-    dn.targetEntityId = table->get<EntityId>("targetEntityId");
-    dn.position = table->get<Vec2F>("position");
-    dn.damageDealt = table->get<float>("damageDealt");
-    dn.healthLost = table->get<float>("healthLost");
-    dn.hitType = HitTypeNames.getLeft(table->get<String>("hitType"));
-    dn.damageSourceKind = table->get<String>("damageSourceKind");
-    dn.targetMaterialKind = table->get<String>("targetMaterialKind");
-    return dn;
-  } catch (LuaConversionException const&) {
-    return {};
-  } catch (MapException const&) {
-    return {};
-  }
+    return std::nullopt;
+  DamageNotification result;
+  String hitType;
+  auto read = readFields(engine, *table, "sourceEntityId", result.sourceEntityId, "targetEntityId", result.targetEntityId,
+      "position", result.position, "damageDealt", result.damageDealt, "healthLost", result.healthLost,
+      "hitType", hitType, "damageSourceKind", result.damageSourceKind, "targetMaterialKind", result.targetMaterialKind);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  auto converted = enumValue(HitTypeNames, hitType);
+  if (!converted)
+    return std::unexpected(std::move(converted.error()));
+  if (!*converted)
+    return std::nullopt;
+  result.hitType = **converted;
+  return result;
 }
 
-LuaValue LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v) {
-  auto table = engine.createTable();
-  table.set(1, v.liquid);
-  table.set(2, v.level);
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v) {
+  return makeTable(engine, 1, v.liquid, 2, v.level);
 }
 
-std::optional<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = std::get_if<LuaTable>(&v)) {
-    auto liquid = engine.luaMaybeTo<LiquidId>(table->get(1));
-    auto level = engine.luaMaybeTo<std::uint8_t>(table->get(2));
-    if (liquid && level)
-      return LiquidLevel(takeOptional(liquid), takeOptional(level));
-  }
-  return {};
+std::expected<std::optional<LiquidLevel>, StarException> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
+  auto table = std::get_if<LuaTable>(&v);
+  if (!table)
+    return std::nullopt;
+  LiquidId liquid;
+  std::uint8_t level;
+  auto read = readFields(engine, *table, 1, liquid, 2, level);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  return LiquidLevel(liquid, level);
 }
 
-LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
-  auto table = engine.createTable();
+std::expected<LuaValue, StarException> LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
+  auto created = engine.createTable();
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto table = std::move(*created);
   if (auto line = std::get_if<Drawable::LinePart>(&v.part)) {
-    table.set("line", line->line);
-    table.set("width", line->width);
+    auto result = setFields(table, "line", line->line, "width", line->width);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   } else if (auto poly = std::get_if<Drawable::PolyPart>(&v.part)) {
-    table.set("poly", poly->poly);
+    auto result = table.set("poly", poly->poly);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   } else if (auto image = std::get_if<Drawable::ImagePart>(&v.part)) {
-    table.set("image", AssetPath::join(image->image));
-    table.set("transformation", image->transformation);
+    auto result = setFields(table, "image", AssetPath::join(image->image), "transformation", image->transformation);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
   }
-
-  table.set("position", v.position);
-  table.set("color", v.color);
-  table.set("fullbright", v.fullbright);
-
+  auto result = setFields(table, "position", v.position, "color", v.color, "fullbright", v.fullbright);
+  if (!result)
+    return std::unexpected(std::move(result.error()));
   return table;
 }
 
-std::optional<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = std::get_if<LuaTable>(&v)) {
-    std::optional<Drawable> result;
-    result.emplace();
-    Drawable& drawable = result.value();
-
-    Color color = table->get<std::optional<Color>>("color").value_or(Color::White);
-
-    if (auto line = table->get<std::optional<Line2F>>("line"))
-      drawable = Drawable::makeLine(takeOptional(line), table->get<float>("width"), color);
-    else if (auto poly = table->get<std::optional<PolyF>>("poly"))
-      drawable = Drawable::makePoly(takeOptional(poly), color);
-    else if (auto image = table->get<std::optional<String>>("image"))
-      drawable = Drawable::makeImage(*luaExecutionRoot(engine).imageMetadataDatabase(), takeOptional(image), 1.0f, table->get<std::optional<bool>>("centered").value_or(true), Vec2F(), color);
-    else
-      return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
-
-    if (auto transformation = table->get<std::optional<Mat3F>>("transformation"))
-      drawable.transform(*transformation);
-    if (auto rotation = table->get<std::optional<float>>("rotation"))
-      drawable.rotate(*rotation);
-    if (table->get<bool>("mirrored"))
-      drawable.scale(Vec2F(-1, 1));
-    if (auto scale = table->get<std::optional<float>>("scale"))
-      drawable.scale(*scale);
-    if (auto position = table->get<std::optional<Vec2F>>("position"))
-      drawable.translate(*position);
-
-    drawable.fullbright = table->get<bool>("fullbright");
-
-    return result;
-  }
-  return {};
-}
-
-LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) {
-  auto table = engine.createTable();
-  table.set("name", c.name);
-  table.set("type", CollectionTypeNames.getRight(c.type));
-  table.set("title", c.title);
-  return table;
-}
-
-std::optional<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = std::get_if<LuaTable>(&v)) {
-    auto name = engine.luaMaybeTo<String>(table->get("name"));
-    auto type = engine.luaMaybeTo<String>(table->get("type"));
-    auto title = engine.luaMaybeTo<String>(table->get("title"));
-    if (name && type && CollectionTypeNames.hasRightValue(*type) && title)
-      return Collection(*name, CollectionTypeNames.getLeft(*type), *title);
-  }
-
-  return {};
-}
-
-LuaValue LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c) {
-  auto table = engine.createTable();
-  table.set("name", c.name);
-  table.set("order", c.order);
-  table.set("title", c.title);
-  table.set("description", c.description);
-  table.set("icon", c.icon);
-  return table;
-}
-
-std::optional<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = std::get_if<LuaTable>(&v)) {
-    auto name = engine.luaMaybeTo<String>(table->get("name"));
-    if (name) {
-      return Collectable(*name,
-        engine.luaMaybeTo<int>(table->get("order")).value_or(0),
-        engine.luaMaybeTo<String>(table->get("title")).value_or(""),
-        engine.luaMaybeTo<String>(table->get("description")).value_or(""),
-        engine.luaMaybeTo<String>(table->get("icon")).value_or(""));
+std::expected<std::optional<Drawable>, StarException> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
+  auto table = std::get_if<LuaTable>(&v);
+  if (!table)
+    return std::nullopt;
+  std::optional<Color> color;
+  std::optional<Line2F> line;
+  auto read = readFields(engine, *table, "color", color, "line", line);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  Drawable drawable;
+  if (line) {
+    float width;
+    auto readWidth = readFields(engine, *table, "width", width);
+    if (!readWidth)
+      return std::unexpected(std::move(readWidth.error()));
+    if (!*readWidth)
+      return std::nullopt;
+    drawable = Drawable::makeLine(std::move(*line), width, color.value_or(Color::White));
+  } else {
+    std::optional<PolyF> poly;
+    auto readPoly = readFields(engine, *table, "poly", poly);
+    if (!readPoly)
+      return std::unexpected(std::move(readPoly.error()));
+    if (!*readPoly)
+      return std::nullopt;
+    if (poly) {
+      drawable = Drawable::makePoly(std::move(*poly), color.value_or(Color::White));
+    } else {
+      std::optional<String> image;
+      auto readImage = readFields(engine, *table, "image", image);
+      if (!readImage)
+        return std::unexpected(std::move(readImage.error()));
+      if (!*readImage || !image)
+        return std::nullopt;
+      std::optional<bool> centered;
+      auto readCentered = readFields(engine, *table, "centered", centered);
+      if (!readCentered)
+        return std::unexpected(std::move(readCentered.error()));
+      if (!*readCentered)
+        return std::nullopt;
+      auto root = luaExecutionRoot(engine);
+      if (!root)
+        return std::unexpected(std::move(root.error()));
+      auto metadata = (*root)->imageMetadataDatabase();
+      if (!metadata)
+        return std::unexpected(std::move(metadata.error()));
+      auto converted = Drawable::makeImage(**metadata, std::move(*image), 1.0f, centered.value_or(true), Vec2F(), color.value_or(Color::White));
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      drawable = std::move(*converted);
     }
   }
-
-  return {};
+  std::optional<Mat3F> transformation;
+  auto readTransformation = readFields(engine, *table, "transformation", transformation);
+  if (!readTransformation)
+    return std::unexpected(std::move(readTransformation.error()));
+  if (!*readTransformation)
+    return std::nullopt;
+  if (transformation)
+    drawable.transform(*transformation);
+  std::optional<float> rotation;
+  auto readRotation = readFields(engine, *table, "rotation", rotation);
+  if (!readRotation)
+    return std::unexpected(std::move(readRotation.error()));
+  if (!*readRotation)
+    return std::nullopt;
+  if (rotation)
+    drawable.rotate(*rotation);
+  bool mirrored;
+  auto readMirrored = readFields(engine, *table, "mirrored", mirrored);
+  if (!readMirrored)
+    return std::unexpected(std::move(readMirrored.error()));
+  if (!*readMirrored)
+    return std::nullopt;
+  if (mirrored)
+    drawable.scale(Vec2F(-1, 1));
+  std::optional<float> scale;
+  auto readScale = readFields(engine, *table, "scale", scale);
+  if (!readScale)
+    return std::unexpected(std::move(readScale.error()));
+  if (!*readScale)
+    return std::nullopt;
+  if (scale)
+    drawable.scale(*scale);
+  std::optional<Vec2F> position;
+  auto readPosition = readFields(engine, *table, "position", position);
+  if (!readPosition)
+    return std::unexpected(std::move(readPosition.error()));
+  if (!*readPosition)
+    return std::nullopt;
+  if (position)
+    drawable.translate(*position);
+  auto readFullbright = readFields(engine, *table, "fullbright", drawable.fullbright);
+  if (!readFullbright)
+    return std::unexpected(std::move(readFullbright.error()));
+  if (!*readFullbright)
+    return std::nullopt;
+  return drawable;
 }
 
-LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) {
-  auto table = engine.createTable();
-  table.set("position", v.position);
-  table.set("collision", v.collision);
-  table.set("collisionKind", v.collisionKind);
-  auto categoryTable = engine.createTable();
-  table.set("categoryFilter", categoryTable);
-  // see jsonToPhysicsCategoryFilter
-  categoryTable.set(
-    v.categoryFilter.type == PhysicsCategoryFilter::Type::Whitelist ? "categoryWhitelist" : "categoryBlacklist",
-    v.categoryFilter.categories
-  );
-  return table;
+std::expected<LuaValue, StarException> LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) {
+  auto type = enumName(CollectionTypeNames, c.type);
+  if (!type)
+    return std::unexpected(std::move(type.error()));
+  return makeTable(engine, "name", c.name, "type", **type, "title", c.title);
 }
 
-LuaMethods<std::weak_ptr<BehaviorState>> LuaUserDataMethods<std::weak_ptr<BehaviorState>>::make() {
+std::expected<std::optional<Collection>, StarException> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
+  auto table = std::get_if<LuaTable>(&v);
+  if (!table)
+    return std::nullopt;
+  String name, type, title;
+  auto read = readFields(engine, *table, "name", name, "type", type, "title", title);
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  if (!*read)
+    return std::nullopt;
+  auto converted = enumValue(CollectionTypeNames, type);
+  if (!converted)
+    return std::unexpected(std::move(converted.error()));
+  if (!*converted)
+    return std::nullopt;
+  return Collection(name, **converted, title);
+}
+
+std::expected<LuaValue, StarException> LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c) {
+  return makeTable(engine, "name", c.name, "order", c.order, "title", c.title, "description", c.description, "icon", c.icon);
+}
+
+std::expected<std::optional<Collectable>, StarException> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
+  auto table = std::get_if<LuaTable>(&v);
+  if (!table)
+    return std::nullopt;
+  auto name = maybeField<String>(engine, *table, "name");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  if (!*name)
+    return std::nullopt;
+  auto order = maybeField<int>(engine, *table, "order");
+  if (!order)
+    return std::unexpected(std::move(order.error()));
+  auto title = maybeField<String>(engine, *table, "title");
+  if (!title)
+    return std::unexpected(std::move(title.error()));
+  auto description = maybeField<String>(engine, *table, "description");
+  if (!description)
+    return std::unexpected(std::move(description.error()));
+  auto icon = maybeField<String>(engine, *table, "icon");
+  if (!icon)
+    return std::unexpected(std::move(icon.error()));
+  return Collectable(std::move(**name), order->value_or(0), title->value_or(""), description->value_or(""), icon->value_or(""));
+}
+
+std::expected<LuaValue, StarException> LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) {
+  auto categoryTable = makeTable(engine,
+      v.categoryFilter.type == PhysicsCategoryFilter::Type::Whitelist ? "categoryWhitelist" : "categoryBlacklist",
+      v.categoryFilter.categories);
+  if (!categoryTable)
+    return std::unexpected(std::move(categoryTable.error()));
+  return makeTable(engine, "position", v.position, "collision", v.collision, "collisionKind", v.collisionKind,
+      "categoryFilter", std::move(*categoryTable));
+}
+
+std::expected<LuaMethods<std::weak_ptr<BehaviorState>>, StarException> LuaUserDataMethods<std::weak_ptr<BehaviorState>>::make() {
   LuaMethods<std::weak_ptr<BehaviorState>> methods;
-  methods.registerMethodWithSignature<NodeStatus, std::weak_ptr<BehaviorState>, float>(
-    "run", [](std::weak_ptr<BehaviorState> const& behavior, float dt) -> NodeStatus {
-      if (behavior.expired())
-        throw StarException("Use of expired blackboard");
-
-      return behavior.lock()->run(dt);
+  auto run = methods.registerMethodWithSignature<NodeStatus, std::weak_ptr<BehaviorState>, float>(
+    "run", [](std::weak_ptr<BehaviorState> const& behavior, float dt) -> std::expected<NodeStatus, StarException> {
+      auto state = behavior.lock();
+      if (!state)
+        return std::unexpected(StarException("Use of expired blackboard"));
+      return state->run(dt);
     });
-  methods.registerMethodWithSignature<void, std::weak_ptr<BehaviorState>>(
-    "clear", [](std::weak_ptr<BehaviorState> const& behavior) {
-      if (behavior.expired())
-        throw StarException("Use of expired blackboard");
-
-      behavior.lock()->clear();
+  if (!run)
+    return std::unexpected(std::move(run.error()));
+  auto clear = methods.registerMethodWithSignature<void, std::weak_ptr<BehaviorState>>(
+    "clear", [](std::weak_ptr<BehaviorState> const& behavior) -> std::expected<void, StarException> {
+      auto state = behavior.lock();
+      if (!state)
+        return std::unexpected(StarException("Use of expired blackboard"));
+      state->clear();
+      return {};
     });
-  methods.registerMethodWithSignature<std::weak_ptr<Blackboard>, std::weak_ptr<BehaviorState>>(
-    "blackboard", [](std::weak_ptr<BehaviorState> const& behavior) -> std::weak_ptr<Blackboard> {
-      if (behavior.expired())
-        throw StarException("Use of expired blackboard");
-
-      return behavior.lock()->blackboardPtr();
+  if (!clear)
+    return std::unexpected(std::move(clear.error()));
+  auto blackboard = methods.registerMethodWithSignature<std::weak_ptr<Blackboard>, std::weak_ptr<BehaviorState>>(
+    "blackboard", [](std::weak_ptr<BehaviorState> const& behavior) -> std::expected<std::weak_ptr<Blackboard>, StarException> {
+      auto state = behavior.lock();
+      if (!state)
+        return std::unexpected(StarException("Use of expired blackboard"));
+      return state->blackboardPtr();
     });
+  if (!blackboard)
+    return std::unexpected(std::move(blackboard.error()));
   return methods;
 }
 
-LuaValue LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) {
+std::expected<LuaValue, StarException> LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) {
   if (status == NodeStatus::Success)
     return true;
   else if (status == NodeStatus::Failure)
     return false;
-  else
-    return {};
+  return LuaNil;
 }
 
-NodeStatus LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) {
-  if (std::holds_alternative<LuaBoolean>(v))
-    return std::get<LuaBoolean>(v) == true ? NodeStatus::Success : NodeStatus::Failure;
-  else
-    return NodeStatus::Running;
+std::expected<NodeStatus, StarException> LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) {
+  if (auto boolean = std::get_if<LuaBoolean>(&v))
+    return *boolean ? NodeStatus::Success : NodeStatus::Failure;
+  return NodeStatus::Running;
 }
 
-LuaMethods<std::weak_ptr<Blackboard>> LuaUserDataMethods<std::weak_ptr<Blackboard>>::make() {
+std::expected<LuaMethods<std::weak_ptr<Blackboard>>, StarException> LuaUserDataMethods<std::weak_ptr<Blackboard>>::make() {
   LuaMethods<std::weak_ptr<Blackboard>> methods;
-
-  auto get =[](std::weak_ptr<Blackboard> const& board, NodeParameterType const& type, String const& key) -> LuaValue {
-    if (board.expired())
-      throw StarException("Use of expired blackboard");
-
-    return board.lock()->get(type, key);
+  auto get = [](std::weak_ptr<Blackboard> const& board, NodeParameterType type, String const& key) -> std::expected<LuaValue, StarException> {
+    auto locked = board.lock();
+    if (!locked)
+      return std::unexpected(StarException("Use of expired blackboard"));
+    return locked->get(type, key);
   };
-  auto set = [](std::weak_ptr<Blackboard> const& board, NodeParameterType const& type, String const& key, LuaValue const& value) {
-    if (board.expired())
-      throw StarException("Use of expired blackboard");
-
-    board.lock()->set(type, key, value);
+  auto set = [](std::weak_ptr<Blackboard> const& board, NodeParameterType type, String const& key, LuaValue const& value) -> std::expected<void, StarException> {
+    auto locked = board.lock();
+    if (!locked)
+      return std::unexpected(StarException("Use of expired blackboard"));
+    return locked->set(type, key, value);
   };
-
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String, String>("get",
-    [&](std::weak_ptr<Blackboard> const& board, String const& type, String const& key) -> LuaValue {
-      return get(board, NodeParameterTypeNames.getLeft(type), key);
+  auto getMethod = methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String, String>("get",
+    [get](std::weak_ptr<Blackboard> const& board, String const& type, String const& key) -> std::expected<LuaValue, StarException> {
+      auto converted = requiredEnum(NodeParameterTypeNames, type);
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      return get(board, *converted, key);
     });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, String, LuaValue>("set",
-    [&](std::weak_ptr<Blackboard> const& board, String const& type, String const& key, LuaValue const& value) {
-      set(board, NodeParameterTypeNames.getLeft(type), key, value);
+  if (!getMethod)
+    return std::unexpected(std::move(getMethod.error()));
+  auto setMethod = methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, String, LuaValue>("set",
+    [set](std::weak_ptr<Blackboard> const& board, String const& type, String const& key, LuaValue const& value) -> std::expected<void, StarException> {
+      auto converted = requiredEnum(NodeParameterTypeNames, type);
+      if (!converted)
+        return std::unexpected(std::move(converted.error()));
+      return set(board, *converted, key, value);
     });
-
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getEntity", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Entity, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getPosition", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Position, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getVec2", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Vec2, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getNumber", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Number, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getBool", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Bool, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getList", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::List, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getTable", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::Table, key);
-    });
-  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
-    "getString", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
-      return get(board, NodeParameterType::String, key);
-    });
-
-
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setEntity", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Entity, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setPosition", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Position, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setVec2", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Vec2, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setNumber", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Number, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setBool", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Bool, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setList", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::List, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setTable", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::Table, key, value);
-    });
-  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
-    "setString", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
-      set(board, NodeParameterType::String, key, value);
-    });
+  if (!setMethod)
+    return std::unexpected(std::move(setMethod.error()));
+  std::array const typedMethods{
+      std::tuple{"getEntity", "setEntity", NodeParameterType::Entity},
+      std::tuple{"getPosition", "setPosition", NodeParameterType::Position},
+      std::tuple{"getVec2", "setVec2", NodeParameterType::Vec2},
+      std::tuple{"getNumber", "setNumber", NodeParameterType::Number},
+      std::tuple{"getBool", "setBool", NodeParameterType::Bool},
+      std::tuple{"getList", "setList", NodeParameterType::List},
+      std::tuple{"getTable", "setTable", NodeParameterType::Table},
+      std::tuple{"getString", "setString", NodeParameterType::String}};
+  for (auto const& [getName, setName, type] : typedMethods) {
+    auto getter = methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+        getName, [get, type](std::weak_ptr<Blackboard> const& board, String const& key) {
+          return get(board, type, key);
+        });
+    if (!getter)
+      return std::unexpected(std::move(getter.error()));
+    auto setter = methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+        setName, [set, type](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
+          return set(board, type, key, value);
+        });
+    if (!setter)
+      return std::unexpected(std::move(setter.error()));
+  }
   return methods;
 }
 
-LuaMethods<std::shared_ptr<AudioInstance>> LuaUserDataMethods<std::shared_ptr<AudioInstance>>::make() {
-    LuaMethods<std::shared_ptr<AudioInstance>> methods;
-
-    methods.registerMethod("position",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> std::optional<Vec2F> {
-        return audio->position();
-    });
-    
-    methods.registerMethod("setPosition",
-    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<Vec2F> const& pos) {
-        audio->setPosition(pos);
-    });
-    
-    methods.registerMethod("translate",
-    [&](std::shared_ptr<AudioInstance> const& audio, Vec2F const& distance) {
-        audio->translate(distance);
-    });
-    
-    methods.registerMethod("rangeMultiplier",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> float {
-        return audio->rangeMultiplier();
-    });
-    
-    methods.registerMethod("setRangeMultiplier",
-    [&](std::shared_ptr<AudioInstance> const& audio, float const& rm) {
-        audio->setRangeMultiplier(rm);
-    });
-    
-    methods.registerMethod("setVolume",
-    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, std::optional<float> const& rampTime) {
-        audio->setVolume(targetValue, rampTime.value_or(0.0f));
-    });
-    
-    methods.registerMethod("setPitchMultiplier",
-    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, std::optional<float> const& rampTime) {
-        audio->setPitchMultiplier(targetValue, rampTime.value_or(0.0f));
-    });
-    
-    methods.registerMethod("loops",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> int {
-        return audio->loops();
-    });
-    
-    methods.registerMethod("setLoops",
-    [&](std::shared_ptr<AudioInstance> const& audio, int const& loops) {
-        audio->setLoops(loops);
-    });
-    
-    methods.registerMethod("currentTime",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> double {
-        return audio->currentTime();
-    });
-    
-    methods.registerMethod("totalTime",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> double {
-        return audio->totalTime();
-    });
-    
-    methods.registerMethod("seekTime",
-    [&](std::shared_ptr<AudioInstance> const& audio, double const& time) {
-        audio->seekTime(time);
-    });
-    
-    methods.registerMethod("mixerGroup",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> String {
-        return MixerGroupNames.getRight(audio->mixerGroup());
-    });
-    
-    methods.registerMethod("setMixerGroup",
-    [&](std::shared_ptr<AudioInstance> const& audio, String const& group) {
-        audio->setMixerGroup(MixerGroupNames.getLeft(group));
-    });
-    
-    methods.registerMethod("setClockStart",
-    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time) {
-        audio->setClockStart(time);
-    });
-    
-    methods.registerMethod("setClockStop",
-    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time, std::optional<std::int64_t> const& fadeOutTime) {
-        audio->setClockStop(time,fadeOutTime.value_or(0));
-    });
-    
-    methods.registerMethod("stop",
-    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<float> const& rampTime) {
-        audio->stop(rampTime.value_or(0.0f));
-    });
-    
-    methods.registerMethod("finished",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> bool {
-        return audio->finished();
-    });
-
-
-    return methods;
-} 
+std::expected<LuaMethods<std::shared_ptr<AudioInstance>>, StarException> LuaUserDataMethods<std::shared_ptr<AudioInstance>>::make() {
+  LuaMethods<std::shared_ptr<AudioInstance>> methods;
+  auto position = methods.registerMethod("position", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->position();
+  });
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  auto setPosition = methods.registerMethod("setPosition", [](std::shared_ptr<AudioInstance> const& audio, std::optional<Vec2F> const& pos) {
+    return audio->setPosition(pos);
+  });
+  if (!setPosition)
+    return std::unexpected(std::move(setPosition.error()));
+  auto translate = methods.registerMethod("translate", [](std::shared_ptr<AudioInstance> const& audio, Vec2F const& distance) {
+    return audio->translate(distance);
+  });
+  if (!translate)
+    return std::unexpected(std::move(translate.error()));
+  auto rangeMultiplier = methods.registerMethod("rangeMultiplier", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->rangeMultiplier();
+  });
+  if (!rangeMultiplier)
+    return std::unexpected(std::move(rangeMultiplier.error()));
+  auto setRangeMultiplier = methods.registerMethod("setRangeMultiplier", [](std::shared_ptr<AudioInstance> const& audio, float const& value) {
+    return audio->setRangeMultiplier(value);
+  });
+  if (!setRangeMultiplier)
+    return std::unexpected(std::move(setRangeMultiplier.error()));
+  auto setVolume = methods.registerMethod("setVolume", [](std::shared_ptr<AudioInstance> const& audio, float const& value, std::optional<float> const& rampTime) {
+    return audio->setVolume(value, rampTime.value_or(0.0f));
+  });
+  if (!setVolume)
+    return std::unexpected(std::move(setVolume.error()));
+  auto setPitch = methods.registerMethod("setPitchMultiplier", [](std::shared_ptr<AudioInstance> const& audio, float const& value, std::optional<float> const& rampTime) {
+    return audio->setPitchMultiplier(value, rampTime.value_or(0.0f));
+  });
+  if (!setPitch)
+    return std::unexpected(std::move(setPitch.error()));
+  auto loops = methods.registerMethod("loops", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->loops();
+  });
+  if (!loops)
+    return std::unexpected(std::move(loops.error()));
+  auto setLoops = methods.registerMethod("setLoops", [](std::shared_ptr<AudioInstance> const& audio, int const& value) {
+    return audio->setLoops(value);
+  });
+  if (!setLoops)
+    return std::unexpected(std::move(setLoops.error()));
+  auto currentTime = methods.registerMethod("currentTime", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->currentTime();
+  });
+  if (!currentTime)
+    return std::unexpected(std::move(currentTime.error()));
+  auto totalTime = methods.registerMethod("totalTime", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->totalTime();
+  });
+  if (!totalTime)
+    return std::unexpected(std::move(totalTime.error()));
+  auto seekTime = methods.registerMethod("seekTime", [](std::shared_ptr<AudioInstance> const& audio, double const& time) {
+    return audio->seekTime(time);
+  });
+  if (!seekTime)
+    return std::unexpected(std::move(seekTime.error()));
+  auto mixerGroup = methods.registerMethod("mixerGroup", [](std::shared_ptr<AudioInstance> const& audio) -> std::expected<String, StarException> {
+    auto name = enumName(MixerGroupNames, audio->mixerGroup());
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    return **name;
+  });
+  if (!mixerGroup)
+    return std::unexpected(std::move(mixerGroup.error()));
+  auto setMixerGroup = methods.registerMethod("setMixerGroup", [](std::shared_ptr<AudioInstance> const& audio, String const& group) -> std::expected<void, StarException> {
+    auto converted = requiredEnum(MixerGroupNames, group);
+    if (!converted)
+      return std::unexpected(std::move(converted.error()));
+    audio->setMixerGroup(*converted);
+    return {};
+  });
+  if (!setMixerGroup)
+    return std::unexpected(std::move(setMixerGroup.error()));
+  auto setClockStart = methods.registerMethod("setClockStart", [](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time) {
+    return audio->setClockStart(time);
+  });
+  if (!setClockStart)
+    return std::unexpected(std::move(setClockStart.error()));
+  auto setClockStop = methods.registerMethod("setClockStop", [](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time, std::optional<std::int64_t> const& fadeOutTime) {
+    return audio->setClockStop(time, fadeOutTime.value_or(0));
+  });
+  if (!setClockStop)
+    return std::unexpected(std::move(setClockStop.error()));
+  auto stop = methods.registerMethod("stop", [](std::shared_ptr<AudioInstance> const& audio, std::optional<float> const& rampTime) {
+    return audio->stop(rampTime.value_or(0.0f));
+  });
+  if (!stop)
+    return std::unexpected(std::move(stop.error()));
+  auto finished = methods.registerMethod("finished", [](std::shared_ptr<AudioInstance> const& audio) {
+    return audio->finished();
+  });
+  if (!finished)
+    return std::unexpected(std::move(finished.error()));
+  return methods;
+}
 
 }

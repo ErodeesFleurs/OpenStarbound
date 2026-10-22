@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -181,15 +182,15 @@ bool TeamClient::isMemberOfTeam() {
   return (bool)m_teamUuid;
 }
 
-void TeamClient::invitePlayer(String const& playerName) {
-  if (playerName.empty())
-    return;
-
+std::expected<void, StarException> TeamClient::invitePlayer(String const& playerName) {
+  if (playerName.empty()) return {};
   JsonObject request;
   request["inviteeName"] = playerName;
   request["inviterUuid"] = m_clientContext->playerUuid().hex();
-  request["inviterName"] = m_mainPlayer->name();
-  invokeRemote("team.invite", request, [=, this](Json response) {
+  auto name = m_mainPlayer->name();
+  if (!name) return std::unexpected(std::move(name.error()));
+  request["inviterName"] = *name;
+  return invokeRemote("team.invite", request, [=, this](Json response) -> std::expected<void, StarException> {
     if (!response)
       m_pendingInviteResults.append(std::make_pair(playerName, true));
     else if (response == "inviteeNotFound")
@@ -197,48 +198,54 @@ void TeamClient::invitePlayer(String const& playerName) {
     else if (response.isType(Json::Type::Array)) {
       m_pendingInviteResults.push_back(StringList());
       StringList& invited = std::get<StringList>(m_pendingInviteResults.back());
-      for (auto& entry : response.toArray()) {
-        if (!entry.isType(Json::Type::Array))
-          continue;
+      auto entries = response.toArray();
+      if (!entries) return std::unexpected(std::move(entries.error()));
+      for (auto& entry : *entries) {
+        if (!entry.isType(Json::Type::Array)) continue;
         auto name = entry.get(0, Json());
-        if (name.isType(Json::Type::String))
-          invited.append(name.toString());
+        if (!name) return std::unexpected(std::move(name.error()));
+        if (name->isType(Json::Type::String)) {
+          auto text = name->toString();
+          if (!text) return std::unexpected(std::move(text.error()));
+          invited.append(std::move(*text));
+        }
       }
     }
+    return {};
   });
 }
 
-void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
+std::expected<void, StarException> TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   JsonObject request;
   request["inviterUuid"] = inviterUuid.hex();
   request["inviteeUuid"] = m_clientContext->playerUuid().hex();
-  invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
+  return invokeRemote("team.acceptInvitation", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
 }
 
 std::optional<Uuid> TeamClient::currentTeam() const {
   return m_teamUuid;
 }
 
-void TeamClient::makeLeader(Uuid const& playerUuid) {
+std::expected<void, StarException> TeamClient::makeLeader(Uuid const& playerUuid) {
   if (!m_teamUuid)
-    return;
+    return {};
   if (!isTeamLeader())
-    return;
+    return {};
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  invokeRemote("team.makeLeader", request, [this](Json) { forceUpdate(); });
+  return invokeRemote("team.makeLeader", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
 }
 
-void TeamClient::removeFromTeam(Uuid const& playerUuid) {
+std::expected<void, StarException> TeamClient::removeFromTeam(Uuid const& playerUuid) {
   if (!m_teamUuid)
-    return;
+    return {};
   if (!isTeamLeader() && playerUuid != m_clientContext->playerUuid())
-    return;
+    return {};
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  invokeRemote("team.removeFromTeam", request, [this](Json) { forceUpdate(); });
+  return invokeRemote("team.removeFromTeam", request, [this](Json) -> std::expected<void, StarException> { forceUpdate(); return {}; });
 }
 
 bool TeamClient::hasInvitationPending() {
@@ -254,92 +261,151 @@ List<std::variant<std::pair<String, bool>, StringList>> TeamClient::pullInviteRe
   return take(m_pendingInviteResults);
 }
 
-void TeamClient::update() {
-  handleRpcResponses();
-
+std::expected<void, StarException> TeamClient::update() {
+  auto responses = handleRpcResponses();
+  if (!responses) return std::unexpected(std::move(responses.error()));
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
   if (!m_hasPendingInvitation) {
-    if (Time::monotonicTime() - m_pollInvitationsTimer > m_root.assets()->json("/interface.config:invitationPollInterval").toFloat()) {
+    auto intervalJson = (*assets)->json("/interface.config:invitationPollInterval");
+    if (!intervalJson) return std::unexpected(std::move(intervalJson.error()));
+    auto interval = intervalJson->toFloat();
+    if (!interval) return std::unexpected(std::move(interval.error()));
+    if (Time::monotonicTime() - m_pollInvitationsTimer > *interval) {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
-      invokeRemote("team.pollInvitation", request, [this](Json response) {
-          if (response.isNull())
-            return;
-          if (m_hasPendingInvitation)
-            return;
-          m_pendingInvitation = {Uuid(response.getString("inviterUuid")), response.getString("inviterName")};
-          m_hasPendingInvitation = true;
-        });
+      auto invoked = invokeRemote("team.pollInvitation", request, [this](Json response) -> std::expected<void, StarException> {
+        if (response.isNull() || m_hasPendingInvitation) return {};
+        auto uuidText = response.getString("inviterUuid");
+        if (!uuidText) return std::unexpected(std::move(uuidText.error()));
+        auto uuid = Uuid::create(*uuidText);
+        if (!uuid) return std::unexpected(std::move(uuid.error()));
+        auto name = response.getString("inviterName");
+        if (!name) return std::unexpected(std::move(name.error()));
+        m_pendingInvitation = {*uuid, std::move(*name)};
+        m_hasPendingInvitation = true;
+        return {};
+      });
+      if (!invoked) return std::unexpected(std::move(invoked.error()));
     }
   }
   if (!m_fullUpdateRunning) {
-    if (Time::monotonicTime() - m_fullUpdateTimer > m_root.assets()->json("/interface.config:fullUpdateInterval").toFloat()) {
+    auto intervalJson = (*assets)->json("/interface.config:fullUpdateInterval");
+    if (!intervalJson) return std::unexpected(std::move(intervalJson.error()));
+    auto interval = intervalJson->toFloat();
+    if (!interval) return std::unexpected(std::move(interval.error()));
+    if (Time::monotonicTime() - m_fullUpdateTimer > *interval) {
       m_fullUpdateTimer = Time::monotonicTime();
-      pullFullUpdate();
+      auto update = pullFullUpdate();
+      if (!update) return std::unexpected(std::move(update.error()));
     }
   }
   if (!m_statusUpdateRunning) {
-    if (Time::monotonicTime() - m_statusUpdateTimer > m_root.assets()->json("/interface.config:statusUpdateInterval").toFloat()) {
+    auto intervalJson = (*assets)->json("/interface.config:statusUpdateInterval");
+    if (!intervalJson) return std::unexpected(std::move(intervalJson.error()));
+    auto interval = intervalJson->toFloat();
+    if (!interval) return std::unexpected(std::move(interval.error()));
+    if (Time::monotonicTime() - m_statusUpdateTimer > *interval) {
       m_statusUpdateTimer = Time::monotonicTime();
-      statusUpdate();
+      auto update = statusUpdate();
+      if (!update) return std::unexpected(std::move(update.error()));
     }
   }
+  return {};
 }
 
-void TeamClient::pullFullUpdate() {
-  if (m_fullUpdateRunning)
-    return;
+std::expected<void, StarException> TeamClient::pullFullUpdate() {
+  if (m_fullUpdateRunning) return {};
   m_fullUpdateRunning = true;
   JsonObject request;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
-
-  invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
-      m_fullUpdateRunning = false;
-
-      m_teamManagerVersion = response.optInt("version").value_or(0);
-      
-      m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
-
-      if (m_teamUuid) {
-        m_teamLeader = Uuid(response.getString("leader"));
-        m_members.clear();
-
-        for (auto m : response.getArray("members")) {
-          Member member{
-              .name = m.getString("name"),
-              .uuid = Uuid(m.getString("uuid")),
-              .entity = static_cast<EntityId>(m.getInt("entity")),
-              .healthPercentage = m.getFloat("health"),
-              .energyPercentage = m.getFloat("energy"),
-              .world = parseWorldId(m.getString("world")),
-              .position = Vec2F(m.getFloat("x"), m.getFloat("y")),
-              .warpMode = WarpModeNames.getLeft(m.getString("warpMode")),
-              .portrait = jsonToList<Drawable>(m.get("portrait"), [this](Json const& value) {
-                return Drawable(*m_root.imageMetadataDatabase(), value);
-              })};
-          m_members.push_back(member);
+  return invokeRemote("team.fetchTeamStatus", request, [this](Json response) -> std::expected<void, StarException> {
+    m_fullUpdateRunning = false;
+    auto version = response.optInt("version");
+    if (!version) return std::unexpected(std::move(version.error()));
+    m_teamManagerVersion = version->value_or(0);
+    auto teamText = response.optString("teamUuid");
+    if (!teamText) return std::unexpected(std::move(teamText.error()));
+    m_teamUuid.reset();
+    if (*teamText) {
+      auto team = Uuid::create(**teamText);
+      if (!team) return std::unexpected(std::move(team.error()));
+      m_teamUuid = *team;
+    }
+    if (m_teamUuid) {
+      auto leaderText = response.getString("leader");
+      if (!leaderText) return std::unexpected(std::move(leaderText.error()));
+      auto leader = Uuid::create(*leaderText);
+      if (!leader) return std::unexpected(std::move(leader.error()));
+      m_teamLeader = *leader;
+      m_members.clear();
+      auto entries = response.getArray("members");
+      if (!entries) return std::unexpected(std::move(entries.error()));
+      for (auto const& m : *entries) {
+        auto name = m.getString("name");
+        if (!name) return std::unexpected(std::move(name.error()));
+        auto uuidText = m.getString("uuid");
+        if (!uuidText) return std::unexpected(std::move(uuidText.error()));
+        auto uuid = Uuid::create(*uuidText);
+        if (!uuid) return std::unexpected(std::move(uuid.error()));
+        auto entity = m.getInt("entity");
+        if (!entity) return std::unexpected(std::move(entity.error()));
+        auto health = m.getFloat("health");
+        if (!health) return std::unexpected(std::move(health.error()));
+        auto energy = m.getFloat("energy");
+        if (!energy) return std::unexpected(std::move(energy.error()));
+        auto worldText = m.getString("world");
+        if (!worldText) return std::unexpected(std::move(worldText.error()));
+        auto world = parseWorldId(*worldText);
+        if (!world) return std::unexpected(std::move(world.error()));
+        auto x = m.getFloat("x");
+        if (!x) return std::unexpected(std::move(x.error()));
+        auto y = m.getFloat("y");
+        if (!y) return std::unexpected(std::move(y.error()));
+        auto warpText = m.getString("warpMode");
+        if (!warpText) return std::unexpected(std::move(warpText.error()));
+        if (!WarpModeNames) return std::unexpected(WarpModeNames.error());
+        auto warp = WarpModeNames->getLeft(*warpText);
+        if (!warp) return std::unexpected(std::move(warp.error()));
+        auto portraitJson = m.get("portrait");
+        if (!portraitJson) return std::unexpected(std::move(portraitJson.error()));
+        auto portraitEntries = portraitJson->toArray();
+        if (!portraitEntries) return std::unexpected(std::move(portraitEntries.error()));
+        auto metadata = m_root.imageMetadataDatabase();
+        if (!metadata) return std::unexpected(std::move(metadata.error()));
+        List<Drawable> portrait;
+        for (auto const& value : *portraitEntries) {
+          auto drawable = Drawable::create(**metadata, value);
+          if (!drawable) return std::unexpected(std::move(drawable.error()));
+          portrait.append(std::move(*drawable));
         }
-        std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
-      } else {
-        clearTeam();
+        m_members.push_back(Member{std::move(*name), *uuid, static_cast<EntityId>(*entity), *health, *energy, std::move(*world), Vec2F(*x, *y), **warp, std::move(portrait)});
       }
-    });
+      std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
+    } else {
+      clearTeam();
+    }
+    return {};
+  });
 }
 
-void TeamClient::statusUpdate() {
+std::expected<void, StarException> TeamClient::statusUpdate() {
   if (m_statusUpdateRunning)
-    return;
+    return {};
   if (!m_teamUuid)
-    return;
+    return {};
   m_statusUpdateRunning = true;
   JsonObject request;
   auto player = m_mainPlayer;
 
   // TODO: write full player data less often?
-  writePlayerData(request, player, true);
+  auto written = writePlayerData(request, player, true);
+  if (!written) return std::unexpected(std::move(written.error()));
 
-  invokeRemote("team.updateStatus", request, [this](Json) {
+  return invokeRemote("team.updateStatus", request, [this](Json) -> std::expected<void, StarException> {
       m_statusUpdateRunning = false;
+      return {};
     });
 }
 
@@ -353,36 +419,53 @@ void TeamClient::forceUpdate() {
   m_pollInvitationsTimer = 0;
 }
 
-void TeamClient::invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction) {
+std::expected<void, StarException> TeamClient::invokeRemote(String const& method, Json const& args, std::function<std::expected<void, StarException>(Json const&)> responseFunction) {
   auto promise = m_clientContext->rpcInterface()->invokeRemote(method, args);
-  m_pendingResponses.append({std::move(promise), std::move(responseFunction)});
+  if (!promise) return std::unexpected(std::move(promise.error()));
+  m_pendingResponses.append({std::move(*promise), std::move(responseFunction)});
+  return {};
 }
 
-void TeamClient::handleRpcResponses() {
+std::expected<void, StarException> TeamClient::handleRpcResponses() {
   List<RpcResponseHandler> stillPendingResponses;
   while (m_pendingResponses.size() > 0) {
-    auto handler = m_pendingResponses.takeLast();
-    if (handler.first.finished()) {
-      if (auto const& res = handler.first.result()) {
-        if (handler.second)
-          handler.second(*res);
+    auto taken = m_pendingResponses.takeLast();
+    if (!taken) return std::unexpected(std::move(taken.error()));
+    auto handler = std::move(*taken);
+    auto finished = handler.first.finished();
+    if (!finished) return std::unexpected(std::move(finished.error()));
+    if (*finished) {
+      auto res = handler.first.result();
+      if (!res) return std::unexpected(std::move(res.error()));
+      if (*res && handler.second) {
+        auto handled = handler.second(**res);
+        if (!handled) return std::unexpected(std::move(handled.error()));
       }
     } else {
       stillPendingResponses.append(std::move(handler));
     }
   }
-  m_pendingResponses = stillPendingResponses;
+  m_pendingResponses = std::move(stillPendingResponses);
+  return {};
 }
 
-void TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite) const {
+std::expected<void, StarException> TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite) const {
   request["version"] = TeamClientVersion;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
   request["entity"] = player->entityId();
-  request["health"] = player->health() / player->maxHealth();
-  request["energy"] = player->energy() / player->maxEnergy();
+  auto maximumHealth = player->maxHealth();
+  if (!maximumHealth) return std::unexpected(std::move(maximumHealth.error()));
+  request["health"] = player->health() / *maximumHealth;
+  auto maximumEnergy = player->maxEnergy();
+  if (!maximumEnergy) return std::unexpected(std::move(maximumEnergy.error()));
+  auto energy = player->energy();
+  if (!energy) return std::unexpected(std::move(energy.error()));
+  request["energy"] = *energy / *maximumEnergy;
   request["x"] = player->position()[0];
   request["y"] = player->position()[1];
-  request["world"] = printWorldId(m_clientContext->playerWorldId());
+  auto world = printWorldId(m_clientContext->playerWorldId());
+  if (!world) return std::unexpected(std::move(world.error()));
+  request["world"] = *world;
 
   WarpMode mode = WarpMode::None;
   if (player->log()->introComplete()) {
@@ -391,12 +474,26 @@ void TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> pl
     else
       mode = player->isDeployed() ? WarpMode::DeployOnly : WarpMode::BeamOnly;
   }
-  request["warpMode"] = WarpModeNames.getRight(mode);
+  if (!WarpModeNames) return std::unexpected(WarpModeNames.error());
+  auto warp = WarpModeNames->getRight(mode);
+  if (!warp) return std::unexpected(std::move(warp.error()));
+  request["warpMode"] = **warp;
 
   if (fullWrite) {
-    request["name"] = player->name();
-    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), std::mem_fn(&Drawable::toJson));
+    auto name = player->name();
+    if (!name) return std::unexpected(std::move(name.error()));
+    request["name"] = *name;
+    auto portrait = player->portrait(PortraitMode::Head);
+    if (!portrait) return std::unexpected(std::move(portrait.error()));
+    JsonArray images;
+    for (auto const& drawable : *portrait) {
+      auto json = drawable.toJson();
+      if (!json) return std::unexpected(std::move(json.error()));
+      images.append(std::move(*json));
+    }
+    request["portrait"] = std::move(images);
   }
+  return {};
 }
 
 void TeamClient::clearTeam() {

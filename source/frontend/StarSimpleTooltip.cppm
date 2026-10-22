@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.ordered_map;
@@ -60,20 +61,39 @@ import star.pane;
 export module star.simple_tooltip;
 
 export namespace Star::SimpleTooltipBuilder {
-  std::shared_ptr<Pane> buildTooltip(GuiContext& context, String const& text);
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> buildTooltip(GuiContext& context, String const& text);
 }
 
 namespace Star {
 
-std::shared_ptr<Pane> SimpleTooltipBuilder::buildTooltip(GuiContext& context, String const& text) {
-  std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(context);
+std::expected<std::shared_ptr<Pane>, StarException> SimpleTooltipBuilder::buildTooltip(GuiContext& context, String const& text) {
+  auto createResult895 = Pane::create(context);
+  if (!createResult895)
+    return std::unexpected(std::move(createResult895.error()));
+  std::shared_ptr<Pane> tooltip = std::move(*createResult895);
   tooltip->removeAllChildren();
   GuiReader reader(context);
-  reader.construct(context.root().assets()->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());
-  tooltip->setLabel("contentLabel", text);
+  auto assetsResult896 = context.root().assets();
+  if (!assetsResult896)
+    return std::unexpected(std::move(assetsResult896.error()));
+  auto jsonResult897 = std::move(*assetsResult896)->json("/interface/tooltips/simpletooltip.tooltip");
+  if (!jsonResult897)
+    return std::unexpected(std::move(jsonResult897.error()));
+  auto constructResult898 = reader.construct(std::move(*jsonResult897), tooltip.get());
+  if (!constructResult898)
+    return std::unexpected(std::move(constructResult898.error()));
+  auto setLabelResult899 = tooltip->setLabel("contentLabel", text);
+  if (!setLabelResult899)
+    return std::unexpected(std::move(setLabelResult899.error()));
 
-  auto stretchBackground = tooltip->fetchChild<Widget>("stretchBackground");
-  stretchBackground->setSize(Vec2I{tooltip->fetchChild<Widget>("contentLabel")->size()[0] + 8, stretchBackground->size()[1]});
+  auto fetchChildResult900 = tooltip->fetchChild<Widget>("stretchBackground");
+  if (!fetchChildResult900)
+    return std::unexpected(std::move(fetchChildResult900.error()));
+  auto stretchBackground = std::move(*fetchChildResult900);
+  auto fetchChildResult901 = tooltip->fetchChild<Widget>("contentLabel");
+  if (!fetchChildResult901)
+    return std::unexpected(std::move(fetchChildResult901.error()));
+  stretchBackground->setSize(Vec2I{std::move(*fetchChildResult901)->size()[0] + 8, stretchBackground->size()[1]});
   tooltip->setSize(stretchBackground->size());
 
   return tooltip;

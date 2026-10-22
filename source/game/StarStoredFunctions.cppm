@@ -37,17 +37,18 @@ public:
 
   static double const DefaultSearchTolerance;
 
-  StoredFunction(ParametricFunction<double, double> data);
+  [[nodiscard]] static std::expected<std::shared_ptr<StoredFunction>, StarException> create(ParametricFunction<double, double> data);
 
   Monotonicity monotonicity() const;
 
-  double evaluate(double input) const;
+  [[nodiscard]] std::expected<double, StarException> evaluate(double input) const;
 
   // Search for the input which would give the target value.  Will only work if
   // the function Monotonicity is Increasing or Decreasing.
-  SearchResult search(double targetValue, double valueTolerance = DefaultSearchTolerance) const;
+  [[nodiscard]] std::expected<SearchResult, StarException> search(double targetValue, double valueTolerance = DefaultSearchTolerance) const;
 
 private:
+  StoredFunction(ParametricFunction<double, double> data, Monotonicity monotonicity);
   Monotonicity m_monotonicity;
   ParametricFunction<double, double> m_function;
 };
@@ -57,7 +58,7 @@ class StoredFunction2 {
 public:
   StoredFunction2(MultiTable2D table);
 
-  double evaluate(double x, double y) const;
+  [[nodiscard]] std::expected<double, StarException> evaluate(double x, double y) const;
 
 private:
   MultiTable2D table;
@@ -68,7 +69,7 @@ class StoredConfigFunction {
 public:
   StoredConfigFunction(ParametricTable<int, Json> data);
 
-  Json get(double input) const;
+  [[nodiscard]] std::expected<Json, StarException> get(double input) const;
 
 private:
   ParametricTable<int, Json> m_data;
@@ -76,7 +77,7 @@ private:
 
 class FunctionDatabase {
 public:
-  explicit FunctionDatabase(std::shared_ptr<Assets const> const& assets);
+  [[nodiscard]] static std::expected<std::shared_ptr<FunctionDatabase>, StarException> create(std::shared_ptr<Assets const> const& assets);
 
   StringList namedFunctions() const;
   StringList namedFunctions2() const;
@@ -84,14 +85,15 @@ public:
 
   // If configOrName is a string, loads the named function.  If it is an inline
   // config, reads the inline config.
-  std::shared_ptr<StoredFunction> function(Json const& configOrName) const;
-  std::shared_ptr<StoredFunction2> function2(Json const& configOrName) const;
-  std::shared_ptr<StoredConfigFunction> configFunction(Json const& configOrName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<StoredFunction>, StarException> function(Json const& configOrName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<StoredFunction2>, StarException> function2(Json const& configOrName) const;
+  [[nodiscard]] std::expected<std::shared_ptr<StoredConfigFunction>, StarException> configFunction(Json const& configOrName) const;
 
 private:
-  static ParametricFunction<double, double> parametricFunctionFromConfig(Json descriptor);
-  static ParametricTable<int, Json> parametricTableFromConfig(Json descriptor);
-  static MultiTable2D multiTable2DFromConfig(Json descriptor);
+  FunctionDatabase() = default;
+  [[nodiscard]] static std::expected<ParametricFunction<double, double>, StarException> parametricFunctionFromConfig(Json descriptor);
+  [[nodiscard]] static std::expected<ParametricTable<int, Json>, StarException> parametricTableFromConfig(Json descriptor);
+  [[nodiscard]] static std::expected<MultiTable2D, StarException> multiTable2DFromConfig(Json descriptor);
 
   StringMap<std::shared_ptr<StoredFunction>> m_functions;
   StringMap<std::shared_ptr<StoredFunction2>> m_functions2;

@@ -2,6 +2,7 @@ import std;
 import star.string;
 import star.list;
 import star.format;
+import star.output_proxy;
 import star.json;
 import star.byte_array;
 import star.rpc_promise;
@@ -13,45 +14,46 @@ namespace Star {
 
 JsonRpcInterface::~JsonRpcInterface() {}
 
-JsonRpc::JsonRpc(Logger& logger) : m_logger(logger) {
-  m_requestId = 0;
-}
+JsonRpc::JsonRpc(Logger& logger) : m_logger(logger), m_requestId(0) {}
 
-void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
+std::expected<void, StarException> JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
+  if (!func)
+    return std::unexpected(JsonRpcException::format("Empty handler '{}'", handler));
   if (m_handlers.contains(handler))
-    throw JsonRpcException(strf("Handler by that name already exists '{}'", handler));
-  m_handlers.add(handler, std::move(func));
+    return std::unexpected(JsonRpcException::format("Handler by that name already exists '{}'", handler));
+  auto added = m_handlers.add(handler, std::move(func));
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return {};
 }
 
-void JsonRpc::registerHandlers(JsonRpcHandlers const& handlers) {
-  for (auto const& pair : handlers)
-    registerHandler(pair.first, pair.second);
+std::expected<void, StarException> JsonRpc::registerHandlers(JsonRpcHandlers const& handlers) {
+  for (auto const& pair : handlers) {
+    if (auto status = registerHandler(pair.first, pair.second); !status)
+      return std::unexpected(std::move(status.error()));
+  }
+  return {};
 }
 
-void JsonRpc::removeHandler(String const& handler) {
+std::expected<void, StarException> JsonRpc::removeHandler(String const& handler) {
   if (!m_handlers.contains(handler))
-    throw JsonRpcException(strf("No such handler by the name '{}'", handler));
-
+    return std::unexpected(JsonRpcException::format("No such handler by the name '{}'", handler));
   m_handlers.remove(handler);
+  return {};
 }
 
 void JsonRpc::clearHandlers() {
   m_handlers.clear();
 }
 
-RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
-  std::uint64_t id = m_requestId++;
-  JsonObject request;
-  m_pending.append(JsonObject{
-      {"command", "request"},
-      {"id", id},
-      {"handler", handler},
-      {"arguments", arguments}
-    });
-
+std::expected<RpcPromise<Json>, StarException> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
+  auto id = m_requestId;
   auto pair = RpcPromise<Json>::createPair();
-  m_pendingResponse.add(id, pair.second);
-
+  auto added = m_pendingResponse.add(id, pair.second);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  ++m_requestId;
+  m_pending.append(JsonObject{{"command", "request"}, {"id", id}, {"handler", handler}, {"arguments", arguments}});
   return pair.first;
 }
 
@@ -59,67 +61,77 @@ bool JsonRpc::sendPending() const {
   return !m_pending.empty();
 }
 
-ByteArray JsonRpc::send() {
+std::expected<ByteArray, StarException> JsonRpc::send() {
   if (m_pending.empty())
-    return {};
-
+    return ByteArray{};
   DataStreamBuffer buffer;
-  buffer.writeContainer(m_pending);
+  if (auto status = buffer.writeContainer(m_pending); !status)
+    return std::unexpected(std::move(status.error()));
   m_pending.clear();
-
   return buffer.takeData();
 }
 
-void JsonRpc::receive(ByteArray const& inbuffer) {
+std::expected<void, StarException> JsonRpc::receive(ByteArray const& inbuffer) {
   if (inbuffer.empty())
-    return;
-
+    return {};
   DataStreamBuffer buffer(inbuffer);
   List<Json> inbound;
-  buffer.readContainer(inbound);
+  if (auto status = buffer.readContainer(inbound); !status)
+    return std::unexpected(std::move(status.error()));
 
-  for (auto request : inbound) {
-    if (request.get("command") == "request") {
-      try {
-        auto handlerName = request.getString("handler");
-        if (!m_handlers.contains(handlerName))
-          throw JsonRpcException(strf("Unknown handler '{}'", handlerName));
-        m_pending.append(JsonObject{
-            {"command", "response"},
-            {"id", request.get("id")},
-            {"result", m_handlers[handlerName](request.get("arguments"))}
-          });
-      } catch (std::exception const&) {
-        ExceptionDiagnostic const e(std::current_exception());
-        m_logger.error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
-        JsonObject response;
-        response["command"] = "fail";
-        response["id"] = request.get("id");
-        m_pending.append(JsonObject{
-            {"command", "fail"},
-            {"id", request.get("id")}
-          });
+  for (auto const& request : inbound) {
+    auto command = request.getString("command");
+    if (!command)
+      return std::unexpected(std::move(command.error()));
+    if (*command == "request") {
+      // A request needs an ID even when its handler fails, so validate that
+      // envelope before entering the existing per-handler recovery boundary.
+      auto id = request.get("id");
+      if (!id)
+        return std::unexpected(std::move(id.error()));
+      auto invoke = [&]() -> std::expected<Json, StarException> {
+        auto name = request.getString("handler");
+        if (!name)
+          return std::unexpected(std::move(name.error()));
+        auto handler = m_handlers.ptr(*name);
+        if (!handler)
+          return std::unexpected(JsonRpcException::format("Unknown handler '{}'", *name));
+        auto arguments = request.get("arguments");
+        if (!arguments)
+          return std::unexpected(std::move(arguments.error()));
+        return (*handler)(*arguments);
+      };
+      auto result = invoke();
+      if (!result) {
+        auto logged = m_logger.error("Error while handling variant rpc request handler call. {}", outputException(ExceptionDiagnostic(result.error()), false));
+        m_pending.append(JsonObject{{"command", "fail"}, {"id", *id}});
+        if (!logged)
+          return std::unexpected(std::move(logged.error()));
+      } else {
+        m_pending.append(JsonObject{{"command", "response"}, {"id", *id}, {"result", std::move(*result)}});
       }
-
-    } else if (request.get("command") == "response") {
-      try {
-        auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
-        responseHandler.fulfill(request.get("result"));
-      } catch (std::exception const&) {
-        ExceptionDiagnostic const e(std::current_exception());
-        m_logger.error("Exception while handling variant rpc response handler call. {}", outputException(e, true));
-      }
-
-    } else if (request.get("command") == "fail") {
-      try {
-        auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
-        responseHandler.fulfill({});
-      } catch (std::exception const&) {
-        ExceptionDiagnostic const e(std::current_exception());
-        m_logger.error("Exception while handling variant rpc failure handler call. {}", outputException(e, true));
+    } else if (*command == "response" || *command == "fail") {
+      auto complete = [&]() -> std::expected<void, StarException> {
+        auto id = request.getUInt("id");
+        if (!id)
+          return std::unexpected(std::move(id.error()));
+        auto keeper = m_pendingResponse.take(*id);
+        if (!keeper)
+          return std::unexpected(std::move(keeper.error()));
+        if (*command == "fail")
+          return keeper->fulfill(Json{});
+        auto result = request.get("result");
+        if (!result)
+          return std::unexpected(std::move(result.error()));
+        return keeper->fulfill(std::move(*result));
+      };
+      if (auto status = complete(); !status) {
+        if (auto logged = m_logger.error("Error while handling variant rpc response handler call. {}", outputException(ExceptionDiagnostic(status.error()), true)); !logged)
+          return std::unexpected(std::move(logged.error()));
       }
     }
   }
+  return {};
 }
 
 }

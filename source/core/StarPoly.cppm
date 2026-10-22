@@ -177,19 +177,19 @@ Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
   VertexList lower;
   for (auto const& point : points) {
     while (lower.size() >= 2 && cross(lower[lower.size() - 2], lower[lower.size() - 1], point) <= 0)
-      lower.removeLast();
+      lower.erase(lower.end() - 1);
     lower.append(point);
   }
 
   VertexList upper;
   for (auto const& point : std::views::reverse(points)) {
     while (upper.size() >= 2 && cross(upper[upper.size() - 2], upper[upper.size() - 1], point) <= 0)
-      upper.removeLast();
+      upper.erase(upper.end() - 1);
     upper.append(point);
   }
 
-  upper.removeLast();
-  lower.removeLast();
+  upper.erase(upper.end() - 1);
+  lower.erase(lower.end() - 1);
   lower.appendAll(take(upper));
   return Polygon<DataType>(std::move(lower));
 }
@@ -210,7 +210,7 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
 
     Line clipEdge = convexClipPoly.sideAt(i);
     VertexList inputVertexes = take(outputVertexes);
-    Vertex s = inputVertexes.last();
+    Vertex s = inputVertexes[inputVertexes.size() - 1];
     for (Vertex e : inputVertexes) {
       if (insideEdge(clipEdge, e)) {
         if (!insideEdge(clipEdge, s))
@@ -301,12 +301,12 @@ void Polygon<DataType>::deduplicateVertexes(float maxDistance) {
   float distSquared = square(maxDistance);
   VertexList newVertexes = {m_vertexes[0]};
   for (std::size_t i = 1; i < m_vertexes.size(); ++i) {
-    if (vmagSquared(m_vertexes[i] - newVertexes.last()) > distSquared)
+    if (vmagSquared(m_vertexes[i] - newVertexes[newVertexes.size() - 1]) > distSquared)
       newVertexes.append(m_vertexes[i]);
   }
 
-  if (vmagSquared(newVertexes.first() - newVertexes.last()) <= distSquared)
-    newVertexes.removeLast();
+  if (vmagSquared(newVertexes[0] - newVertexes[newVertexes.size() - 1]) <= distSquared)
+    newVertexes.erase(newVertexes.end() - 1);
 
   m_vertexes = std::move(newVertexes);
 }

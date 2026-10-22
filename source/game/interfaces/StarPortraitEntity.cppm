@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -40,7 +41,7 @@ public:
     return Star::typeName<PortraitEntity>();
   }
 
-  virtual List<Drawable> portrait(PortraitMode mode) const = 0;
+  [[nodiscard]] virtual std::expected<List<Drawable>, StarException> portrait(PortraitMode mode) const = 0;
 };
 
 }

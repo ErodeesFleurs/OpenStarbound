@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -58,13 +59,14 @@ public:
     return Star::typeName<ShadersMenu>();
   }
 
-  ShadersMenu(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<ShadersMenu>, StarException> create(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client);
 
-  virtual void show() override;
-  void displayed() override;
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> show() override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
+  ShadersMenu(GuiContext& guiContext, std::shared_ptr<UniverseClient> client);
   std::shared_ptr<UniverseClient> m_client;
 };
 

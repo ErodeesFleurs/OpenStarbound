@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -44,27 +45,27 @@ class PlayerDeployment {
 public:
   PlayerDeployment(Root& root, Json const& config);
 
-  void diskLoad(Json const& diskStore);
-  Json diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
 
-  bool canDeploy();
+  [[nodiscard]] std::expected<bool, StarException> canDeploy();
   void setDeploying(bool deploying);
   bool isDeploying() const;
   bool isDeployed() const;
 
-  void init(Entity* player, World* world);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(Entity* player, World* world);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
-  void teleportOut();
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  void update(float dt);
+  [[nodiscard]] std::expected<void, StarException> teleportOut();
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
-  void render(RenderCallback* renderCallback, Vec2F const& position);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback, Vec2F const& position);
 
-  void renderLightSources(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback);
 private:
   Root& m_root;
-  World* m_world;
+  World* m_world = nullptr;
   Json m_config;
 
   bool m_deploying;

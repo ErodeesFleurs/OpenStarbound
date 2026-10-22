@@ -8,6 +8,7 @@ module;
 #endif
 import std;
 import star.format;
+import star.logging;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 import star.string;
@@ -31,12 +32,12 @@ public:
 
   // If enabled, will catch segfault, fpe, and illegal instructions and output
   // error information before dying.
-  void setHandleFatal(bool handleFatal);
+  [[nodiscard]] std::expected<void, StarException> setHandleFatal(bool handleFatal);
   bool handlingFatal() const;
 
   // If enabled, non-fatal interrupt signal will be caught and will not kill
   // the process and will instead set the interrupted flag.
-  void setHandleInterrupt(bool handleInterrupt);
+  [[nodiscard]] std::expected<void, StarException> setHandleInterrupt(bool handleInterrupt);
   bool handlingInterrupt() const;
 
   bool interruptCaught() const;
@@ -96,40 +97,47 @@ struct SignalHandlerImpl {
   PVOID handler = nullptr;
 
   ~SignalHandlerImpl() {
-    setHandleFatal(false);
-    setHandleInterrupt(false);
+    auto fatal = setHandleFatal(false);
+    if (!fatal)
+      EmergencyLog::error("Signal handler teardown: {}", fatal.error().what());
+    auto interrupt = setHandleInterrupt(false);
+    if (!interrupt)
+      EmergencyLog::error("Signal handler teardown: {}", interrupt.error().what());
   }
 
-  void setHandleFatal(bool b) {
+  [[nodiscard]] std::expected<void, StarException> setHandleFatal(bool b) {
     if (handlingFatal == b)
-      return;
+      return {};
 
     if (b) {
       handler = AddVectoredExceptionHandler(1, vectoredExceptionHandler);
-      if (!handler) {
-        throw StarException("Could not register fatal exception handler");
-      }
+      if (!handler)
+        return std::unexpected(StarException("Could not register fatal exception handler"));
       handlingFatal = true;
     } else {
-      RemoveVectoredExceptionHandler(handler);
+      if (!RemoveVectoredExceptionHandler(handler))
+        return std::unexpected(StarException("Could not remove fatal exception handler"));
       handler = nullptr;
       handlingFatal = false;
     }
+    return {};
   }
 
-  void setHandleInterrupt(bool b) {
+  [[nodiscard]] std::expected<void, StarException> setHandleInterrupt(bool b) {
     if (handlingInterrupt == b)
-      return;
+      return {};
     if (b) {
       interruptSignalPending.store(false);
       if (!SetConsoleCtrlHandler(consoleCtrlHandler, true))
-        throw StarException("Could not register console interrupt handler");
+        return std::unexpected(StarException("Could not register console interrupt handler"));
       handlingInterrupt = true;
     } else {
-      SetConsoleCtrlHandler(consoleCtrlHandler, false);
+      if (!SetConsoleCtrlHandler(consoleCtrlHandler, false))
+        return std::unexpected(StarException("Could not remove console interrupt handler"));
       interrupted = interrupted || interruptSignalPending.load();
       handlingInterrupt = false;
     }
+    return {};
   }
 
   static void sehTrampoline() {
@@ -255,53 +263,81 @@ struct SignalHandlerImpl {
   bool handlingInterrupt = false;
   bool interrupted = false;
   struct sigaction previousFatal[4]{};
+  std::array<bool, 4> installedFatal{};
   struct sigaction previousInterrupt{};
 
   static constexpr int FatalSignals[] = {SIGSEGV, SIGILL, SIGFPE, SIGBUS};
 
   ~SignalHandlerImpl() {
-    setHandleFatal(false);
-    setHandleInterrupt(false);
+    auto fatal = setHandleFatal(false);
+    if (!fatal)
+      EmergencyLog::error("Signal handler teardown: {}", fatal.error().what());
+    auto interrupt = setHandleInterrupt(false);
+    if (!interrupt)
+      EmergencyLog::error("Signal handler teardown: {}", interrupt.error().what());
   }
 
-  void setHandleFatal(bool b) {
-    if (handlingFatal == b)
-      return;
+  [[nodiscard]] std::expected<void, StarException> setHandleFatal(bool b) {
     if (b) {
       struct sigaction action{};
       action.sa_handler = handleFatal;
-      sigemptyset(&action.sa_mask);
-      unsigned installed = 0;
-      for (int signal : FatalSignals) {
-        if (sigaction(signal, &action, &previousFatal[installed]) != 0) {
-          for (unsigned i = 0; i < installed; ++i)
-            sigaction(FatalSignals[i], &previousFatal[i], nullptr);
-          throw StarException("Could not register fatal signal handler");
+      if (sigemptyset(&action.sa_mask) != 0)
+        return std::unexpected(StarException("Could not initialize fatal signal handler"));
+      std::array<bool, 4> added{};
+      for (unsigned i = 0; i < std::size(FatalSignals); ++i) {
+        if (installedFatal[i])
+          continue;
+        if (sigaction(FatalSignals[i], &action, &previousFatal[i]) != 0) {
+          for (unsigned j = 0; j < i; ++j) {
+            if (!added[j])
+              continue;
+            if (sigaction(FatalSignals[j], &previousFatal[j], nullptr) == 0)
+              installedFatal[j] = false;
+            else
+              EmergencyLog::error("Could not restore fatal signal handler during registration rollback");
+          }
+          handlingFatal = std::ranges::any_of(installedFatal, [](bool installed) { return installed; });
+          return std::unexpected(StarException("Could not register fatal signal handler"));
         }
-        ++installed;
+        installedFatal[i] = true;
+        added[i] = true;
       }
     } else {
-      for (unsigned i = 0; i < std::size(FatalSignals); ++i)
-        sigaction(FatalSignals[i], &previousFatal[i], nullptr);
+      bool failed = false;
+      for (unsigned i = 0; i < std::size(FatalSignals); ++i) {
+        if (!installedFatal[i])
+          continue;
+        if (sigaction(FatalSignals[i], &previousFatal[i], nullptr) == 0)
+          installedFatal[i] = false;
+        else
+          failed = true;
+      }
+      handlingFatal = std::ranges::any_of(installedFatal, [](bool installed) { return installed; });
+      if (failed)
+        return std::unexpected(StarException("Could not restore fatal signal handler"));
     }
     handlingFatal = b;
+    return {};
   }
 
-  void setHandleInterrupt(bool b) {
+  [[nodiscard]] std::expected<void, StarException> setHandleInterrupt(bool b) {
     if (handlingInterrupt == b)
-      return;
+      return {};
     if (b) {
       struct sigaction action{};
       action.sa_handler = handleInterrupt;
-      sigemptyset(&action.sa_mask);
+      if (sigemptyset(&action.sa_mask) != 0)
+        return std::unexpected(StarException("Could not initialize interrupt signal handler"));
       interruptSignalPending = 0;
       if (sigaction(SIGINT, &action, &previousInterrupt) != 0)
-        throw StarException("Could not register interrupt signal handler");
+        return std::unexpected(StarException("Could not register interrupt signal handler"));
     } else {
-      sigaction(SIGINT, &previousInterrupt, nullptr);
+      if (sigaction(SIGINT, &previousInterrupt, nullptr) != 0)
+        return std::unexpected(StarException("Could not restore interrupt signal handler"));
       interrupted = interrupted || interruptSignalPending != 0;
     }
     handlingInterrupt = b;
+    return {};
   }
 
   static void handleFatal(int signum) {
@@ -336,16 +372,16 @@ SignalHandler::SignalHandler() : m_impl(std::make_unique<SignalHandlerImpl>()) {
 
 SignalHandler::~SignalHandler() = default;
 
-void SignalHandler::setHandleFatal(bool handleFatal) {
-  m_impl->setHandleFatal(handleFatal);
+[[nodiscard]] std::expected<void, StarException> SignalHandler::setHandleFatal(bool handleFatal) {
+  return m_impl->setHandleFatal(handleFatal);
 }
 
 bool SignalHandler::handlingFatal() const {
   return m_impl->handlingFatal;
 }
 
-void SignalHandler::setHandleInterrupt(bool handleInterrupt) {
-  m_impl->setHandleInterrupt(handleInterrupt);
+[[nodiscard]] std::expected<void, StarException> SignalHandler::setHandleInterrupt(bool handleInterrupt) {
+  return m_impl->setHandleInterrupt(handleInterrupt);
 }
 
 bool SignalHandler::handlingInterrupt() const {

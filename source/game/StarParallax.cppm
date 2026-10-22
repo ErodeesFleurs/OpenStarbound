@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -22,16 +23,16 @@ namespace Star {
 class Root;
 
 struct ParallaxLayer {
-  friend DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
-  friend DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 
   ParallaxLayer();
-  ParallaxLayer(Json const& store);
+  [[nodiscard]] static std::expected<ParallaxLayer, StarException> create(Json const& store);
 
   Json store() const;
 
   void addImageDirectives(Directives const& newDirectives);
-  void fadeToSkyColor(Color skyColor);
+  [[nodiscard]] std::expected<void, StarException> fadeToSkyColor(Color skyColor);
 
   List<String> textures;
   Directives directives;
@@ -56,28 +57,29 @@ struct ParallaxLayer {
 };
 typedef List<ParallaxLayer> ParallaxLayers;
 
-DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
-DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 
 // Object managing and rendering the parallax for a World
 class Parallax {
 public:
-  Parallax(Root& root, String const& assetFile,
+  [[nodiscard]] static std::expected<std::shared_ptr<Parallax>, StarException> create(Root& root, String const& assetFile,
       std::uint64_t seed,
       float verticalOrigin,
       float hueShift,
       std::optional<TreeVariant> parallaxTreeVariant = {});
-  Parallax(Root& root, Json const& store);
+  [[nodiscard]] static std::expected<std::shared_ptr<Parallax>, StarException> create(Root& root, Json const& store);
 
-  Json store() const;
+  [[nodiscard]] std::expected<Json, StarException> store() const;
 
-  void fadeToSkyColor(Color const& skyColor);
-  std::shared_ptr<Parallax> createOverlay(String const& assetFile) const;
+  [[nodiscard]] std::expected<void, StarException> fadeToSkyColor(Color const& skyColor);
+  [[nodiscard]] std::expected<std::shared_ptr<Parallax>, StarException> createOverlay(String const& assetFile) const;
 
   ParallaxLayers const& layers() const;
 
 private:
-  void buildLayer(Json const& layerSettings, String const& kind);
+  explicit Parallax(Root& root) : m_root(root) {}
+  [[nodiscard]] std::expected<void, StarException> buildLayer(Json const& layerSettings, String const& kind);
 
   Root& m_root;
   std::uint64_t m_seed;

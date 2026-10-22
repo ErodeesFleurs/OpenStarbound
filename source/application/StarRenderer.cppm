@@ -28,13 +28,13 @@ enum class TextureAddressing {
   Clamp,
   Wrap
 };
-extern EnumMap<TextureAddressing> const TextureAddressingNames;
+extern std::expected<EnumMap<TextureAddressing>, StarException> const TextureAddressingNames;
 
 enum class TextureFiltering {
   Nearest,
   Linear
 };
-extern EnumMap<TextureFiltering> const TextureFilteringNames;
+extern std::expected<EnumMap<TextureFiltering>, StarException> const TextureFilteringNames;
 
 // Medium is the maximum guaranteed texture group size
 // Where a Medium sized texture group is expected to fill a single page Large can be used,
@@ -121,7 +121,7 @@ public:
   virtual ~TextureGroup() = default;
 
   virtual TextureFiltering filtering() const = 0;
-  virtual TexturePtr create(Image const& texture) = 0;
+  [[nodiscard]] virtual std::expected<TexturePtr, StarException> create(Image const& texture) = 0;
 };
 
 class RenderBuffer {
@@ -137,7 +137,7 @@ public:
 
   // Transforms the given primitives into a form suitable for the underlying
   // graphics system and stores it for fast replaying.
-  virtual void set(List<RenderPrimitive>& primitives) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> set(List<RenderPrimitive>& primitives) = 0;
 };
 
 typedef std::variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
@@ -149,43 +149,43 @@ public:
   virtual String rendererId() const = 0;
   virtual Vec2U screenSize() const = 0;
 
-  virtual void loadConfig(Json const& config) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> loadConfig(Json const& config) = 0;
 
   // The actual shaders used by this renderer will be in a default no effects
   // state when constructed, but can be overridden here.  This config will be
   // specific to each type of renderer, so it will be necessary to key the
   // configuration off of the renderId string.  This should not be called every
   // frame, because it will result in a recompile of the underlying shader set.
-  virtual void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) = 0;
 
   // The effect config will specify named parameters and textures which can be
   // set here.
-  virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
-  virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
   virtual std::optional<std::uint8_t> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
-  virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
-  virtual bool switchEffectConfig(String const& name) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setEffectTexture(String const& textureName, ImageView const& image) = 0;
+  [[nodiscard]] virtual std::expected<bool, StarException> switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
   // pixels
-  virtual void setScissorRect(std::optional<RectI> const& scissorRect) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setScissorRect(std::optional<RectI> const& scissorRect) = 0;
 
-  virtual TexturePtr createTexture(Image const& texture,
+  [[nodiscard]] virtual std::expected<TexturePtr, StarException> createTexture(Image const& texture,
       TextureAddressing addressing = TextureAddressing::Clamp,
       TextureFiltering filtering = TextureFiltering::Nearest) = 0;
   virtual void setSizeLimitEnabled(bool enabled) = 0;
   virtual void setMultiTexturingEnabled(bool enabled) = 0;
-  virtual void setMultiSampling(unsigned multiSampling) = 0;
-  virtual void setMainHDR(bool enabled) = 0;
-  virtual std::shared_ptr<TextureGroup> createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
-  virtual std::shared_ptr<RenderBuffer> createRenderBuffer() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setMultiSampling(unsigned multiSampling) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> setMainHDR(bool enabled) = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<TextureGroup>, StarException> createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
+  [[nodiscard]] virtual std::expected<std::shared_ptr<RenderBuffer>, StarException> createRenderBuffer() = 0;
 
   virtual List<RenderPrimitive>& immediatePrimitives() = 0;
   virtual void render(RenderPrimitive primitive) = 0;
-  virtual void renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
 
-  virtual void flush(Mat3F const& transformation = Mat3F::identity()) = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> flush(Mat3F const& transformation = Mat3F::identity()) = 0;
 };
 
 }

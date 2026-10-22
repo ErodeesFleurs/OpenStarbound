@@ -40,24 +40,27 @@ inline constexpr unsigned MaxUdpData = 1460;
 
 class UdpSocket : public Socket {
 public:
-  UdpSocket(NetworkMode networkMode);
+  [[nodiscard]] static std::expected<std::shared_ptr<UdpSocket>, StarException> create(NetworkMode networkMode);
 
-  std::size_t receive(HostAddressWithPort* address, char* data, std::size_t size);
-  std::size_t send(HostAddressWithPort const& address, char const* data, std::size_t size);
+  [[nodiscard]] std::expected<std::size_t, StarException> receive(HostAddressWithPort* address, char* data, std::size_t size);
+  [[nodiscard]] std::expected<std::size_t, StarException> send(HostAddressWithPort const& address, char const* data, std::size_t size);
+private:
+  explicit UdpSocket(NetworkMode networkMode);
 };
 
 class UdpServer {
 public:
-  UdpServer(Logger& logger, HostAddressWithPort const& address);
+  [[nodiscard]] static std::expected<std::unique_ptr<UdpServer>, StarException> create(Logger& logger, HostAddressWithPort const& address);
   ~UdpServer();
 
   void close();
   bool isListening() const;
 
-  std::size_t receive(HostAddressWithPort* address, char* data, std::size_t size, unsigned timeout);
-  std::size_t send(HostAddressWithPort const& address, char const* data, std::size_t size);
+  [[nodiscard]] std::expected<std::size_t, StarException> receive(HostAddressWithPort* address, char* data, std::size_t size, unsigned timeout);
+  [[nodiscard]] std::expected<std::size_t, StarException> send(HostAddressWithPort const& address, char const* data, std::size_t size);
 
 private:
+  explicit UdpServer(HostAddressWithPort const& address);
   HostAddressWithPort const m_hostAddress;
   std::shared_ptr<UdpSocket> m_listenSocket;
 };
@@ -66,11 +69,19 @@ private:
 
 namespace Star {
 
-UdpSocket::UdpSocket(NetworkMode networkMode) : Socket(SocketType::Udp, networkMode) {}
+UdpSocket::UdpSocket(NetworkMode networkMode) : Socket(networkMode) {}
 
-std::size_t UdpSocket::receive(HostAddressWithPort* address, char* data, std::size_t datasize) {
+[[nodiscard]] std::expected<std::shared_ptr<UdpSocket>, StarException> UdpSocket::create(NetworkMode networkMode) {
+  auto socket = std::shared_ptr<UdpSocket>(new UdpSocket(networkMode));
+  if (auto status = socket->initialize(SocketType::Udp); !status)
+    return std::unexpected(std::move(status.error()));
+  return socket;
+}
+
+[[nodiscard]] std::expected<std::size_t, StarException> UdpSocket::receive(HostAddressWithPort* address, char* data, std::size_t datasize) {
   ReadLocker locker(m_mutex);
-  checkOpen("UdpSocket::receive");
+  if (auto status = checkOpen("UdpSocket::receive"); !status)
+    return std::unexpected(std::move(status.error()));
 
   int flags = 0;
   int len;
@@ -81,66 +92,82 @@ std::size_t UdpSocket::receive(HostAddressWithPort* address, char* data, std::si
 
   if (len < 0) {
     if (!isActive())
-      throw SocketClosedException("Connection closed");
+      return std::unexpected(SocketClosedException("Connection closed"));
     else if (netErrorInterrupt())
-      len = 0;
+      return 0;
     else
-      throw NetworkException(strf("udp recv error: {}", netErrorString()));
+      return std::unexpected(NetworkException(strf("udp recv error: {}", netErrorString())));
   }
 
-  if (address)
-    setAddressFromNative(*address, m_localAddress.address().mode(), &sockAddr);
+  if (address) {
+    if (auto status = setAddressFromNative(*address, m_localAddress.address().mode(), &sockAddr); !status)
+      return std::unexpected(std::move(status.error()));
+  }
 
   return len;
 }
 
-std::size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, std::size_t size) {
+[[nodiscard]] std::expected<std::size_t, StarException> UdpSocket::send(HostAddressWithPort const& address, char const* data, std::size_t size) {
   ReadLocker locker(m_mutex);
-  checkOpen("UdpSocket::send");
+  if (auto status = checkOpen("UdpSocket::send"); !status)
+    return std::unexpected(std::move(status.error()));
 
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen;
-  setNativeFromAddress(address, &sockAddr, &sockAddrLen);
+  if (auto status = setNativeFromAddress(address, &sockAddr, &sockAddrLen); !status)
+    return std::unexpected(std::move(status.error()));
 
   int len = ::sendto(m_impl->socketDesc, data, size, 0, (struct sockaddr*)&sockAddr, sockAddrLen);
   if (len < 0) {
     if (!isActive())
-      throw SocketClosedException("Connection closed");
+      return std::unexpected(SocketClosedException("Connection closed"));
     else if (netErrorInterrupt())
       len = 0;
     else
-      throw NetworkException(strf("udp send error: {}", netErrorString()));
+      return std::unexpected(NetworkException(strf("udp send error: {}", netErrorString())));
   }
 
   return len;
 }
 
-UdpServer::UdpServer(Logger& logger, HostAddressWithPort const& address)
-  : m_hostAddress(address), m_listenSocket(std::make_shared<UdpSocket>(m_hostAddress.address().mode())) {
-  m_listenSocket->setNonBlocking(true);
-  m_listenSocket->bind(logger, m_hostAddress);
-  logger.debug("UdpServer listening on: {}", m_hostAddress);
+UdpServer::UdpServer(HostAddressWithPort const& address) : m_hostAddress(address) {}
+
+[[nodiscard]] std::expected<std::unique_ptr<UdpServer>, StarException> UdpServer::create(Logger& logger, HostAddressWithPort const& address) {
+  auto server = std::unique_ptr<UdpServer>(new UdpServer(address));
+  auto socket = UdpSocket::create(address.address().mode());
+  if (!socket)
+    return std::unexpected(std::move(socket.error()));
+  server->m_listenSocket = std::move(*socket);
+  if (auto status = server->m_listenSocket->setNonBlocking(true); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = server->m_listenSocket->bind(logger, address); !status)
+    return std::unexpected(std::move(status.error()));
+  if (auto status = logger.debug("UdpServer listening on: {}", address); !status)
+    return std::unexpected(std::move(status.error()));
+  return server;
 }
 
 UdpServer::~UdpServer() {
   close();
 }
 
-std::size_t UdpServer::receive(HostAddressWithPort* address, char* data, std::size_t bufsize, unsigned timeout) {
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
+[[nodiscard]] std::expected<std::size_t, StarException> UdpServer::receive(HostAddressWithPort* address, char* data, std::size_t bufsize, unsigned timeout) {
+  if (auto status = Socket::poll({{m_listenSocket, {true, false}}}, timeout); !status)
+    return std::unexpected(std::move(status.error()));
   return m_listenSocket->receive(address, data, bufsize);
 }
 
-std::size_t UdpServer::send(HostAddressWithPort const& address, char const* data, std::size_t len) {
+[[nodiscard]] std::expected<std::size_t, StarException> UdpServer::send(HostAddressWithPort const& address, char const* data, std::size_t len) {
   return m_listenSocket->send(address, data, len);
 }
 
 void UdpServer::close() {
-  m_listenSocket->close();
+  if (m_listenSocket)
+    m_listenSocket->close();
 }
 
 bool UdpServer::isListening() const {
-  return m_listenSocket->isActive();
+  return m_listenSocket && m_listenSocket->isActive();
 }
 
 }

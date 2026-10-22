@@ -1,3 +1,4 @@
+import star.format;
 import star.game_timers;
 import star.actor_movement_controller;
 import star.json;
@@ -32,6 +33,7 @@ import star.set;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
+import star.output_proxy;
 import star.listener;
 import std;
 import star.optional;
@@ -89,71 +91,116 @@ import star.net_compatibility;
 import star.algorithm;
 namespace Star {
 
-StatusController::StatusController(Root& root, Json const& config) : m_root(root), m_statCollection(config), m_effectAnimators([&root] { return std::make_shared<EffectAnimator>(root); }), m_primaryScript(root) {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
+StatusController::StatusController(Root& root)
+  : m_root(root), m_uniqueEffectMetadata([] { return UniqueEffectMetadata::create(); }),
+    m_effectAnimators([&root] { return EffectAnimator::create(root); }),
+    m_parentEntity(nullptr), m_movementController(nullptr), m_primaryScript(root),
+    m_primaryAnimatorId(EffectAnimatorGroup::NullElementId) {}
 
-  m_statusProperties.reset(config.getObject("statusProperties", {}));
+std::expected<std::shared_ptr<StatusController>, StarException> StatusController::create(Root& root, Json const& config) {
+  auto controller = std::shared_ptr<StatusController>(new StatusController(root));
+  if (auto result = controller->configure(config); !result) return std::unexpected(std::move(result.error()));
+  return controller;
+}
+
+std::expected<void, StarException> StatusController::configure(Json const& config) {
+  auto stats = StatCollection::create(config);
+  if (!stats) return std::unexpected(std::move(stats.error()));
+  m_statCollection = std::move(*stats);
+  auto properties = config.getObject("statusProperties", {});
+  if (!properties) return std::unexpected(std::move(properties.error()));
+  m_statusProperties.reset(std::move(*properties));
   m_statusProperties.setOverrides(
-    [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) ds << m_statusProperties.baseMap();
-      else m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
+    [&](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+      if (rules.version() <= 1) {
+        auto result = ds << m_statusProperties.baseMap();
+        if (!result) return std::unexpected(std::move(result.error()));
+        return {};
+      }
+      return m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
     },
-    [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
-      else m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
+    [&](DataStream& ds, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+      if (rules.version() <= 1) {
+        auto properties = ds.read<JsonObject>();
+        if (!properties) return std::unexpected(std::move(properties.error()));
+        m_statusProperties.reset(std::move(*properties));
+        return {};
+      }
+      return m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
     },
-    [&](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) {
+    [&](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::expected<bool, StarException> {
       if (rules.version() <= 1) {
         if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
-          ds << m_statusProperties.baseMap();
+          auto result = ds << m_statusProperties.baseMap();
+          if (!result) return std::unexpected(std::move(result.error()));
           return true;
         }
         return false;
       }
       return m_statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
     },
-    [&](DataStream& ds, float interp, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
-      else m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
-    }
-  );
-
-  m_minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
-  m_appliesEnvironmentStatusEffects = config.getBool("appliesEnvironmentStatusEffects");
-  m_appliesWeatherStatusEffects = config.getBool("appliesWeatherStatusEffects");
-  m_environmentStatusEffectUpdateTimer = GameTimer(config.getFloat("environmentStatusEffectUpdateTimer", 0.15f));
-
-  m_primaryAnimationConfig = config.optString("primaryAnimationConfig");
-  m_primaryScript.setScripts(jsonToStringList(config.get("primaryScriptSources", JsonArray())));
-  m_primaryScript.setUpdateDelta(config.getUInt("primaryScriptDelta", 1));
-
-  std::uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
-  m_recentHitsGiven.setHistoryLimit(keepDamageSteps);
-  m_recentDamageGiven.setHistoryLimit(keepDamageSteps);
-  m_recentDamageTaken.setHistoryLimit(keepDamageSteps);
-
-  m_netGroup.addNetElement(&m_statCollection);
-  m_netGroup.addNetElement(&m_statusProperties);
-  m_netGroup.addNetElement(&m_parentDirectives);
-  m_netGroup.addNetElement(&m_uniqueEffectMetadata);
-  m_netGroup.addNetElement(&m_effectAnimators);
-
+    [&](DataStream& ds, float interp, NetCompatibilityRules rules) -> std::expected<void, StarException> {
+      if (rules.version() <= 1) {
+        auto properties = ds.read<JsonObject>();
+        if (!properties) return std::unexpected(std::move(properties.error()));
+        m_statusProperties.reset(std::move(*properties));
+        return {};
+      }
+      return m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
+    });
+  auto minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
+  if (!minimumLiquidStatusEffectPercentage) return std::unexpected(std::move(minimumLiquidStatusEffectPercentage.error()));
+  m_minimumLiquidStatusEffectPercentage = *minimumLiquidStatusEffectPercentage;
+  auto appliesEnvironmentStatusEffects = config.getBool("appliesEnvironmentStatusEffects");
+  if (!appliesEnvironmentStatusEffects) return std::unexpected(std::move(appliesEnvironmentStatusEffects.error()));
+  m_appliesEnvironmentStatusEffects = *appliesEnvironmentStatusEffects;
+  auto appliesWeatherStatusEffects = config.getBool("appliesWeatherStatusEffects");
+  if (!appliesWeatherStatusEffects) return std::unexpected(std::move(appliesWeatherStatusEffects.error()));
+  m_appliesWeatherStatusEffects = *appliesWeatherStatusEffects;
+  auto timer = config.getFloat("environmentStatusEffectUpdateTimer", 0.15f);
+  if (!timer) return std::unexpected(std::move(timer.error()));
+  m_environmentStatusEffectUpdateTimer = GameTimer(*timer);
+  auto animation = config.optString("primaryAnimationConfig");
+  if (!animation) return std::unexpected(std::move(animation.error()));
+  m_primaryAnimationConfig = std::move(*animation);
+  auto scriptsJson = config.get("primaryScriptSources", JsonArray());
+  if (!scriptsJson) return std::unexpected(std::move(scriptsJson.error()));
+  auto scripts = jsonToStringList(*scriptsJson);
+  if (!scripts) return std::unexpected(std::move(scripts.error()));
+  if (auto result = m_primaryScript.setScripts(std::move(*scripts)); !result) return std::unexpected(std::move(result.error()));
+  auto delta = config.getUInt("primaryScriptDelta", 1);
+  if (!delta) return std::unexpected(std::move(delta.error()));
+  m_primaryScript.setUpdateDelta(*delta);
+  auto keepSteps = config.getUInt("keepDamageNotificationSteps", 120);
+  if (!keepSteps) return std::unexpected(std::move(keepSteps.error()));
+  m_recentHitsGiven.setHistoryLimit(*keepSteps);
+  m_recentDamageGiven.setHistoryLimit(*keepSteps);
+  m_recentDamageTaken.setHistoryLimit(*keepSteps);
+  if (auto result = m_netGroup.addNetElement(m_statCollection.get()); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(&m_statusProperties); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(&m_parentDirectives); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(&m_uniqueEffectMetadata); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = m_netGroup.addNetElement(&m_effectAnimators); !result) return std::unexpected(std::move(result.error()));
   m_toolUsageSuppressed.setCompatibilityVersion(12);
-  m_netGroup.addNetElement(&m_toolUsageSuppressed);
-
-  if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(m_root, *m_primaryAnimationConfig));
-  else
-    m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
+  if (auto result = m_netGroup.addNetElement(&m_toolUsageSuppressed); !result) return std::unexpected(std::move(result.error()));
+  if (m_primaryAnimationConfig) {
+    auto animator = EffectAnimator::create(m_root, m_primaryAnimationConfig);
+    if (!animator) return std::unexpected(std::move(animator.error()));
+    auto id = m_effectAnimators.addNetElement(std::move(*animator));
+    if (!id) return std::unexpected(std::move(id.error()));
+    m_primaryAnimatorId = *id;
+  }
+  return {};
 }
 
-Json StatusController::diskStore() const {
+std::expected<Json, StarException> StatusController::diskStore() const {
   JsonObject resourceValues;
   JsonObject resourcesLocked;
   for (auto const& resourceName : resourceNames()) {
     resourceValues[resourceName] = resource(resourceName);
-    resourcesLocked[resourceName] = resourceLocked(resourceName);
+    auto locked = resourceLocked(resourceName);
+    if (!locked) return std::unexpected(std::move(locked.error()));
+    resourcesLocked[resourceName] = *locked;
   }
 
   JsonObject persistentEffectCategories;
@@ -161,7 +208,13 @@ Json StatusController::diskStore() const {
     List<PersistentStatusEffect> persistentEffects;
     persistentEffects.appendAll(pair.second.statModifiers.transformed(construct<PersistentStatusEffect>()));
     persistentEffects.appendAll(pair.second.uniqueEffects.values().transformed(construct<PersistentStatusEffect>()));
-    persistentEffectCategories[pair.first] = persistentEffects.transformed(jsonFromPersistentStatusEffect);
+    JsonArray effects;
+    for (auto const& effect : persistentEffects) {
+      auto json = jsonFromPersistentStatusEffect(effect);
+      if (!json) return std::unexpected(std::move(json.error()));
+      effects.append(std::move(*json));
+    }
+    persistentEffectCategories[pair.first] = std::move(effects);
   }
 
   JsonArray ephemeralEffects;
@@ -170,8 +223,10 @@ Json StatusController::diskStore() const {
     // TODO: Need to store maximum duration as well in the store, otherwise the
     // effect will always appear "full" on reload (but just last less time)
     auto metadata = m_uniqueEffectMetadata.getNetElement(pair.second.metadataId);
-    if (metadata->duration)
-      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{pair.first, *metadata->duration}));
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) {
+      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{pair.first, *(*metadata)->duration}));
+    }
   }
 
   return JsonObject{
@@ -183,26 +238,53 @@ Json StatusController::diskStore() const {
   };
 }
 
-void StatusController::diskLoad(Json const& store) {
-  clearAllPersistentEffects();
-  clearEphemeralEffects();
-
-  m_statusProperties.reset(store.getObject("statusProperties"));
-
-  for (auto const& p : store.getObject("persistentEffectCategories", {}))
-    addPersistentEffects(p.first, p.second.toArray().transformed(jsonToPersistentStatusEffect));
-
-  addEphemeralEffects(store.getArray("ephemeralEffects").transformed(jsonToEphemeralStatusEffect));
-
-  for (auto const& p : store.getObject("resourceValues", {})) {
-    if (isResource(p.first))
-      setResource(p.first, p.second.toFloat());
+std::expected<void, StarException> StatusController::diskLoad(Json const& store) {
+  if (auto result = clearAllPersistentEffects(); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = clearEphemeralEffects(); !result) return std::unexpected(std::move(result.error()));
+  auto properties = store.getObject("statusProperties");
+  if (!properties) return std::unexpected(std::move(properties.error()));
+  m_statusProperties.reset(std::move(*properties));
+  auto categories = store.getObject("persistentEffectCategories", {});
+  if (!categories) return std::unexpected(std::move(categories.error()));
+  for (auto const& category : *categories) {
+    auto values = category.second.toArray();
+    if (!values) return std::unexpected(std::move(values.error()));
+    List<PersistentStatusEffect> effects;
+    for (auto const& value : *values) {
+      auto effect = jsonToPersistentStatusEffect(value);
+      if (!effect) return std::unexpected(std::move(effect.error()));
+      effects.append(std::move(*effect));
+    }
+    if (auto result = addPersistentEffects(category.first, effects); !result) return std::unexpected(std::move(result.error()));
   }
-
-  for (auto const& p : store.getObject("resourcesLocked", {})) {
-    if (isResource(p.first))
-      setResourceLocked(p.first, p.second.toBool());
+  auto ephemeral = store.getArray("ephemeralEffects");
+  if (!ephemeral) return std::unexpected(std::move(ephemeral.error()));
+  List<EphemeralStatusEffect> effects;
+  for (auto const& value : *ephemeral) {
+    auto effect = jsonToEphemeralStatusEffect(value);
+    if (!effect) return std::unexpected(std::move(effect.error()));
+    effects.append(std::move(*effect));
   }
+  if (auto result = addEphemeralEffects(effects); !result) return std::unexpected(std::move(result.error()));
+  auto values = store.getObject("resourceValues", {});
+  if (!values) return std::unexpected(std::move(values.error()));
+  for (auto const& value : *values) {
+    if (isResource(value.first)) {
+      auto amount = value.second.toFloat();
+      if (!amount) return std::unexpected(std::move(amount.error()));
+      if (auto result = setResource(value.first, *amount); !result) return std::unexpected(std::move(result.error()));
+    }
+  }
+  auto locks = store.getObject("resourcesLocked", {});
+  if (!locks) return std::unexpected(std::move(locks.error()));
+  for (auto const& value : *locks) {
+    if (isResource(value.first)) {
+      auto locked = value.second.toBool();
+      if (!locked) return std::unexpected(std::move(locked.error()));
+      if (auto result = setResourceLocked(value.first, *locked); !result) return std::unexpected(std::move(result.error()));
+    }
+  }
+  return {};
 }
 
 Json StatusController::statusProperty(String const& name, Json const& def) const {
@@ -217,91 +299,95 @@ void StatusController::setStatusProperty(String const& name, Json value) {
 }
 
 StringList StatusController::statNames() const {
-  return m_statCollection.statNames();
+  return m_statCollection->statNames();
 }
 
 float StatusController::stat(String const& statName) const {
-  return m_statCollection.stat(statName);
+  return m_statCollection->stat(statName);
 }
 
 bool StatusController::statPositive(String const& statName) const {
-  return m_statCollection.statPositive(statName);
+  return m_statCollection->statPositive(statName);
 }
 
 StringList StatusController::resourceNames() const {
-  return m_statCollection.resourceNames();
+  return m_statCollection->resourceNames();
 }
 
 bool StatusController::isResource(String const& resourceName) const {
-  return m_statCollection.isResource(resourceName);
+  return m_statCollection->isResource(resourceName);
 }
 
 float StatusController::resource(String const& resourceName) const {
-  return m_statCollection.resource(resourceName);
+  return m_statCollection->resource(resourceName);
 }
 
 bool StatusController::resourcePositive(String const& resourceName) const {
-  return m_statCollection.resourcePositive(resourceName);
+  return m_statCollection->resourcePositive(resourceName);
 }
 
-void StatusController::setResource(String const& resourceName, float value) {
-  m_statCollection.setResource(resourceName, value);
+std::expected<void, StarException> StatusController::setResource(String const& resourceName, float value) {
+  return m_statCollection->setResource(resourceName, value);
 }
 
-void StatusController::modifyResource(String const& resourceName, float amount) {
-  m_statCollection.modifyResource(resourceName, amount);
+std::expected<void, StarException> StatusController::modifyResource(String const& resourceName, float amount) {
+  return m_statCollection->modifyResource(resourceName, amount);
 }
 
 float StatusController::giveResource(String const& resourceName, float amount) {
-  return m_statCollection.giveResource(resourceName, amount);
+  return m_statCollection->giveResource(resourceName, amount);
 }
 
-bool StatusController::consumeResource(String const& resourceName, float amount) {
-  if (m_statCollection.consumeResource(resourceName, amount)) {
-    m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
-    return true;
+std::expected<bool, StarException> StatusController::consumeResource(String const& resourceName, float amount) {
+  auto consumed = m_statCollection->consumeResource(resourceName, amount);
+  if (!consumed) return std::unexpected(std::move(consumed.error()));
+  if (*consumed) {
+    auto notified = m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
+    if (!notified && !notified.error().is<LuaException>()) return std::unexpected(std::move(notified.error()));
   }
-  return false;
+  return *consumed;
 }
 
-bool StatusController::overConsumeResource(String const& resourceName, float amount) {
-  if (m_statCollection.overConsumeResource(resourceName, amount)) {
-    m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
-    return true;
+std::expected<bool, StarException> StatusController::overConsumeResource(String const& resourceName, float amount) {
+  auto consumed = m_statCollection->overConsumeResource(resourceName, amount);
+  if (!consumed) return std::unexpected(std::move(consumed.error()));
+  if (*consumed) {
+    auto notified = m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
+    if (!notified && !notified.error().is<LuaException>()) return std::unexpected(std::move(notified.error()));
   }
-  return false;
+  return *consumed;
 }
 
-bool StatusController::resourceLocked(String const& resourceName) const {
-  return m_statCollection.resourceLocked(resourceName);
+std::expected<bool, StarException> StatusController::resourceLocked(String const& resourceName) const {
+  return m_statCollection->resourceLocked(resourceName);
 }
 
-void StatusController::setResourceLocked(String const& resourceName, bool locked) {
-  m_statCollection.setResourceLocked(resourceName, locked);
+std::expected<void, StarException> StatusController::setResourceLocked(String const& resourceName, bool locked) {
+  return m_statCollection->setResourceLocked(resourceName, locked);
 }
 
-void StatusController::resetResource(String const& resourceName) {
-  m_statCollection.resetResource(resourceName);
+std::expected<void, StarException> StatusController::resetResource(String const& resourceName) {
+  return m_statCollection->resetResource(resourceName);
 }
 
-void StatusController::resetAllResources() {
-  m_statCollection.resetAllResources();
+std::expected<void, StarException> StatusController::resetAllResources() {
+  return m_statCollection->resetAllResources();
 }
 
-std::optional<float> StatusController::resourceMax(String const& resourceName) const {
-  return m_statCollection.resourceMax(resourceName);
+std::expected<std::optional<float>, StarException> StatusController::resourceMax(String const& resourceName) const {
+  return m_statCollection->resourceMax(resourceName);
 }
 
-std::optional<float> StatusController::resourcePercentage(String const& resourceName) const {
-  return m_statCollection.resourcePercentage(resourceName);
+std::expected<std::optional<float>, StarException> StatusController::resourcePercentage(String const& resourceName) const {
+  return m_statCollection->resourcePercentage(resourceName);
 }
 
-float StatusController::setResourcePercentage(String const& resourceName, float resourcePercentage) {
-  return m_statCollection.setResourcePercentage(resourceName, resourcePercentage);
+std::expected<float, StarException> StatusController::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+  return m_statCollection->setResourcePercentage(resourceName, resourcePercentage);
 }
 
-float StatusController::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
-  return m_statCollection.modifyResourcePercentage(resourceName, resourcePercentage);
+std::expected<float, StarException> StatusController::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+  return m_statCollection->modifyResourcePercentage(resourceName, resourcePercentage);
 }
 
 List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
@@ -313,16 +399,19 @@ List<PersistentStatusEffect> StatusController::getPersistentEffects(String const
   return persistentEffects;
 }
 
-void StatusController::addPersistentEffect(
+std::expected<void, StarException> StatusController::addPersistentEffect(
     String const& statusEffectCategory, PersistentStatusEffect const& persistentEffect) {
-  addPersistentEffects(statusEffectCategory, {persistentEffect});
+  return addPersistentEffects(statusEffectCategory, {persistentEffect});
 }
 
-void StatusController::addPersistentEffects(
+std::expected<void, StarException> StatusController::addPersistentEffects(
     String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
   auto& persistentEffectCategory = m_persistentEffects[statusEffectCategory];
-  if (!persistentEffectCategory.modifierEffectsGroupId)
-    persistentEffectCategory.modifierEffectsGroupId = m_statCollection.addStatModifierGroup();
+  if (!persistentEffectCategory.modifierEffectsGroupId) {
+    auto id = m_statCollection->addStatModifierGroup();
+    if (!id) return std::unexpected(std::move(id.error()));
+    persistentEffectCategory.modifierEffectsGroupId = *id;
+  }
 
   for (auto const& effect : effectList) {
     if (std::holds_alternative<StatModifier>(effect))
@@ -330,81 +419,84 @@ void StatusController::addPersistentEffects(
     else if (std::holds_alternative<UniqueStatusEffect>(effect))
       persistentEffectCategory.uniqueEffects.add(std::get<UniqueStatusEffect>(effect));
   }
-  m_statCollection.setStatModifierGroup(
-      *persistentEffectCategory.modifierEffectsGroupId, persistentEffectCategory.statModifiers);
+  if (auto result = m_statCollection->setStatModifierGroup(*persistentEffectCategory.modifierEffectsGroupId, persistentEffectCategory.statModifiers); !result) return std::unexpected(std::move(result.error()));
 
-  updatePersistentUniqueEffects();
+  return updatePersistentUniqueEffects();
 }
 
-void StatusController::setPersistentEffects(
+std::expected<void, StarException> StatusController::setPersistentEffects(
     String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
   if (effectList.empty()) {
     if (auto groupId = m_persistentEffects[statusEffectCategory].modifierEffectsGroupId)
-      m_statCollection.removeStatModifierGroup(*groupId);
+      m_statCollection->removeStatModifierGroup(*groupId);
     m_persistentEffects.remove(statusEffectCategory);
 
-    updatePersistentUniqueEffects();
+    return updatePersistentUniqueEffects();
   } else {
     auto& persistentEffectCategory = m_persistentEffects[statusEffectCategory];
     persistentEffectCategory.statModifiers.clear();
     persistentEffectCategory.uniqueEffects.clear();
-    addPersistentEffects(statusEffectCategory, effectList);
+    return addPersistentEffects(statusEffectCategory, effectList);
   }
 }
 
-void StatusController::clearPersistentEffects(String const& statusEffectCategory) {
-  setPersistentEffects(statusEffectCategory, {});
+std::expected<void, StarException> StatusController::clearPersistentEffects(String const& statusEffectCategory) {
+  return setPersistentEffects(statusEffectCategory, {});
 }
 
-void StatusController::clearAllPersistentEffects() {
-  for (auto const& effectCategory : m_persistentEffects.keys())
-    clearPersistentEffects(effectCategory);
+std::expected<void, StarException> StatusController::clearAllPersistentEffects() {
+  for (auto const& category : m_persistentEffects.keys()) {
+    if (auto result = clearPersistentEffects(category); !result) return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
-void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId) {
-  addEphemeralEffects({effect}, sourceEntityId);
+std::expected<void, StarException> StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId) {
+  return addEphemeralEffects({effect}, sourceEntityId);
 }
 
-void StatusController::addEphemeralEffects(
-    List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
+std::expected<void, StarException> StatusController::addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
   for (auto const& effect : effectList) {
     if (auto existingEffect = m_uniqueEffects.ptr(effect.uniqueEffect)) {
       auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
-
-      // If the effect exists and does not have a null duration, then refresh
-      // the
-      // duration to the max
-      if (metadata->duration) {
-        auto newDuration = effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect));
-        if (newDuration > *metadata->duration) {
-          // Only overwrite the sourceEntityId if the duration is *extended*
-          metadata->sourceEntityId.set(sourceEntityId);
-          metadata->duration = newDuration;
+      if (!metadata) return std::unexpected(std::move(metadata.error()));
+      if ((*metadata)->duration) {
+        auto defaultDuration = defaultUniqueEffectDuration(effect.uniqueEffect);
+        if (!defaultDuration) return std::unexpected(std::move(defaultDuration.error()));
+        auto newDuration = effect.duration.value_or(*defaultDuration);
+        if (newDuration > *(*metadata)->duration) {
+          (*metadata)->sourceEntityId.set(sourceEntityId);
+          (*metadata)->duration = newDuration;
         }
-        metadata->maxDuration.set(std::max(metadata->maxDuration.get(), newDuration));
+        (*metadata)->maxDuration.set(std::max((*metadata)->maxDuration.get(), newDuration));
       }
     } else {
-      addUniqueEffect(
-          effect.uniqueEffect, effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
+      auto defaultDuration = defaultUniqueEffectDuration(effect.uniqueEffect);
+      if (!defaultDuration) return std::unexpected(std::move(defaultDuration.error()));
+      auto added = addUniqueEffect(effect.uniqueEffect, effect.duration.value_or(*defaultDuration), sourceEntityId);
+      if (!added) return std::unexpected(std::move(added.error()));
     }
   }
+  return {};
 }
 
-bool StatusController::removeEphemeralEffect(UniqueStatusEffect const& effect) {
+std::expected<bool, StarException> StatusController::removeEphemeralEffect(UniqueStatusEffect const& effect) {
   if (auto uniqueEffect = m_uniqueEffects.ptr(effect)) {
     auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect->metadataId);
-    if (metadata->duration) {
-      removeUniqueEffect(effect);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) {
+      if (auto result = removeUniqueEffect(effect); !result) return std::unexpected(std::move(result.error()));
       return true;
     }
   }
-
   return false;
 }
 
-void StatusController::clearEphemeralEffects() {
-  for (auto const& key : m_uniqueEffects.keys())
-    removeEphemeralEffect(key);
+std::expected<void, StarException> StatusController::clearEphemeralEffects() {
+  for (auto const& key : m_uniqueEffects.keys()) {
+    if (auto result = removeEphemeralEffect(key); !result) return std::unexpected(std::move(result.error()));
+  }
+  return {};
 }
 
 bool StatusController::appliesEnvironmentStatusEffects() const {
@@ -443,13 +535,17 @@ void StatusController::setPrimaryDirectives(Directives const& directives) {
   m_primaryDirectives = directives;
 }
 
-List<DamageNotification> StatusController::applyDamageRequest(DamageRequest const& damageRequest) {
-  if (auto damageNotifications = m_primaryScript.invoke<List<DamageNotification>>("applyDamageRequest", damageRequest)) {
-    for (auto const& dn : *damageNotifications)
-      m_recentDamageTaken.add(dn);
-    return takeOptional(damageNotifications);
+std::expected<List<DamageNotification>, StarException> StatusController::applyDamageRequest(DamageRequest const& damageRequest) {
+  auto notifications = m_primaryScript.invoke<List<DamageNotification>>("applyDamageRequest", damageRequest);
+  if (!notifications) {
+    if (notifications.error().is<LuaException>()) return List<DamageNotification>{};
+    return std::unexpected(std::move(notifications.error()));
   }
-  return {};
+  if (*notifications) {
+    for (auto const& notification : **notifications) m_recentDamageTaken.add(notification);
+    return std::move(**notifications);
+  }
+  return List<DamageNotification>{};
 }
 
 void StatusController::hitOther(EntityId targetEntityId, DamageRequest damageRequest) {
@@ -464,11 +560,12 @@ List<DamageNotification> StatusController::pullSelfDamageNotifications() {
   return take(m_pendingSelfDamageNotifications);
 }
 
-void StatusController::applySelfDamageRequest(DamageRequest dr) {
-  auto damageNotifications = applyDamageRequest(std::move(dr));
-  for (auto const& dn : damageNotifications)
-    m_recentDamageTaken.add(dn);
-  m_pendingSelfDamageNotifications.appendAll(std::move(damageNotifications));
+std::expected<void, StarException> StatusController::applySelfDamageRequest(DamageRequest dr) {
+  auto notifications = applyDamageRequest(std::move(dr));
+  if (!notifications) return std::unexpected(std::move(notifications.error()));
+  for (auto const& notification : *notifications) m_recentDamageTaken.add(notification);
+  m_pendingSelfDamageNotifications.appendAll(std::move(*notifications));
+  return {};
 }
 
 std::pair<List<DamageNotification>, std::uint64_t> StatusController::damageTakenSince(std::uint64_t since) const {
@@ -483,171 +580,218 @@ std::pair<List<DamageNotification>, std::uint64_t> StatusController::inflictedDa
   return m_recentDamageGiven.query(since);
 }
 
-void StatusController::init(Entity* parentEntity, ActorMovementController* movementController) {
-  uninit();
+std::expected<void, StarException> StatusController::init(Entity* parentEntity, ActorMovementController* movementController) {
+  if (auto result = uninit(); !result) return std::unexpected(std::move(result.error()));
 
   m_parentEntity = parentEntity;
   m_movementController = movementController;
 
   if (m_parentEntity->isMaster()) {
-    initPrimaryScript();
+    if (auto result = initPrimaryScript(); !result) return std::unexpected(std::move(result.error()));
     for (auto& p : m_uniqueEffects.keys())
       if (auto effect = m_uniqueEffects.ptr(p))
-        initUniqueEffectScript(*effect);
+        if (auto result = initUniqueEffectScript(*effect); !result) return std::unexpected(std::move(result.error()));
   }
 
   m_environmentStatusEffectUpdateTimer.reset();
+  return {};
 }
 
-void StatusController::uninit() {
+std::expected<void, StarException> StatusController::uninit() {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
-
-  for (auto& p : m_uniqueEffects.keys())
-    if (auto effect = m_uniqueEffects.ptr(p))
-      uninitUniqueEffectScript(*effect);
-  uninitPrimaryScript();
-
+  std::optional<StarException> error;
+  for (auto const& key : m_uniqueEffects.keys()) {
+    if (auto effect = m_uniqueEffects.ptr(key)) {
+      auto result = uninitUniqueEffectScript(*effect);
+      if (!result && !error) error = std::move(result.error());
+    }
+  }
+  auto primary = uninitPrimaryScript();
+  if (!primary && !error) error = std::move(primary.error());
   m_recentHitsGiven.reset();
   m_recentDamageGiven.reset();
   m_recentDamageTaken.reset();
+  if (error) return std::unexpected(std::move(*error));
+  return {};
 }
 
 void StatusController::initNetVersion(NetElementVersion const* version) {
   m_netGroup.initNetVersion(version);
 }
 
-void StatusController::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
-  m_netGroup.netStore(ds, rules);
+std::expected<void, StarException> StatusController::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return {};
+  return m_netGroup.netStore(ds, rules);
 }
 
-void StatusController::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  clearAllPersistentEffects();
-  clearEphemeralEffects();
-
-  m_netGroup.netLoad(ds, rules);
+std::expected<void, StarException> StatusController::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
+  if (auto result = clearAllPersistentEffects(); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = clearEphemeralEffects(); !result) return std::unexpected(std::move(result.error()));
+  return m_netGroup.netLoad(ds, rules);
 }
 
-void StatusController::enableNetInterpolation(float extrapolationHint) {
-  m_netGroup.enableNetInterpolation(extrapolationHint);
+std::expected<void, StarException> StatusController::enableNetInterpolation(float extrapolationHint) {
+  return m_netGroup.enableNetInterpolation(extrapolationHint);
 }
 
-void StatusController::disableNetInterpolation() {
-  m_netGroup.disableNetInterpolation();
+std::expected<void, StarException> StatusController::disableNetInterpolation() {
+  return m_netGroup.disableNetInterpolation();
 }
 
-void StatusController::tickNetInterpolation(float dt) {
-  m_netGroup.tickNetInterpolation(dt);
+std::expected<void, StarException> StatusController::tickNetInterpolation(float dt) {
+  return m_netGroup.tickNetInterpolation(dt);
 }
 
-bool StatusController::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+std::expected<bool, StarException> StatusController::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   return m_netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
-void StatusController::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  m_netGroup.readNetDelta(ds, interpolationTime, rules);
+std::expected<void, StarException> StatusController::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  return m_netGroup.readNetDelta(ds, interpolationTime, rules);
 }
 
-void StatusController::blankNetDelta(float interpolationTime) {
-  m_netGroup.blankNetDelta(interpolationTime);
+std::expected<void, StarException> StatusController::blankNetDelta(float interpolationTime) {
+  return m_netGroup.blankNetDelta(interpolationTime);
 }
 
-void StatusController::tickMaster(float dt) {
-  m_statCollection.tickMaster(dt);
-
+std::expected<void, StarException> StatusController::tickMaster(float dt) {
+  m_statCollection->tickMaster(dt);
   m_recentHitsGiven.tick(1);
   m_recentDamageGiven.tick(1);
   m_recentDamageTaken.tick(1);
-
   bool statusImmune = statPositive("statusImmunity");
-
   if (!statusImmune && m_movementController->liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
-    auto liquidsDatabase = m_root.liquidsDatabase();
-    if (auto liquidSettings = liquidsDatabase->liquidSettings(m_movementController->liquidId())) {
-      for (auto const& effect : liquidSettings->statusEffects)
-        addEphemeralEffect(jsonToEphemeralStatusEffect(effect), {});
+    auto database = m_root.liquidsDatabase();
+    if (!database) return std::unexpected(std::move(database.error()));
+    if (auto settings = (*database)->liquidSettings(m_movementController->liquidId())) {
+      for (auto const& value : settings->statusEffects) {
+        auto effect = jsonToEphemeralStatusEffect(value);
+        if (!effect) return std::unexpected(std::move(effect.error()));
+        if (auto result = addEphemeralEffect(*effect, {}); !result) return std::unexpected(std::move(result.error()));
+      }
     }
   }
-
   if (m_environmentStatusEffectUpdateTimer.wrapTick(m_root.timing().timestep)) {
     PolyF collisionBody = m_movementController->collisionBody();
+    auto world = m_parentEntity->world();
+    if (!world) return std::unexpected(std::move(world.error()));
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
-      m_parentEntity->world()->forEachEntity(collisionBody.boundBox(),
-          [this, collisionBody, &entityEffects](std::shared_ptr<Entity> const& e) {
-            if (auto entity = as<StatusEffectEntity>(e)) {
-              auto statusEffectArea = entity->statusEffectArea();
-              statusEffectArea.translate(entity->position());
-              if (m_parentEntity->world()->geometry().polyIntersectsPoly(statusEffectArea, collisionBody))
-                entityEffects.appendAll(entity->statusEffects());
+      auto visited = (*world)->forEachEntity(collisionBody.boundBox(),
+        [world = *world, collisionBody, &entityEffects](std::shared_ptr<Entity> const& entity) -> std::expected<void, StarException> {
+          if (auto effectEntity = as<StatusEffectEntity>(entity)) {
+            auto area = effectEntity->statusEffectArea();
+            area.translate(effectEntity->position());
+            auto intersects = world->geometry().polyIntersectsPoly(area, collisionBody);
+            if (!intersects) return std::unexpected(std::move(intersects.error()));
+            if (*intersects) {
+              auto effects = effectEntity->statusEffects();
+              if (!effects) return std::unexpected(std::move(effects.error()));
+              entityEffects.appendAll(std::move(*effects));
             }
-          });
+          }
+          return {};
+        });
+      if (!visited) return std::unexpected(std::move(visited.error()));
     }
-    setPersistentEffects("entities", entityEffects);
-
-    if (!statusImmune && m_appliesEnvironmentStatusEffects)
-      setPersistentEffects("environment", m_parentEntity->world()->environmentStatusEffects(m_parentEntity->position()).transformed(jsonToPersistentStatusEffect));
-
-    if (!statusImmune && m_appliesWeatherStatusEffects)
-      addEphemeralEffects(m_parentEntity->world()->weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect), {});
+    if (auto result = setPersistentEffects("entities", entityEffects); !result) return std::unexpected(std::move(result.error()));
+    if (!statusImmune && m_appliesEnvironmentStatusEffects) {
+      auto values = (*world)->environmentStatusEffects(m_parentEntity->position());
+      if (!values) return std::unexpected(std::move(values.error()));
+      List<PersistentStatusEffect> effects;
+      for (auto const& value : *values) {
+        auto effect = jsonToPersistentStatusEffect(value);
+        if (!effect) return std::unexpected(std::move(effect.error()));
+        effects.append(std::move(*effect));
+      }
+      if (auto result = setPersistentEffects("environment", effects); !result) return std::unexpected(std::move(result.error()));
+    }
+    if (!statusImmune && m_appliesWeatherStatusEffects) {
+      auto values = (*world)->weatherStatusEffects(m_parentEntity->position());
+      if (!values) return std::unexpected(std::move(values.error()));
+      List<EphemeralStatusEffect> effects;
+      for (auto const& value : *values) {
+        auto effect = jsonToEphemeralStatusEffect(value);
+        if (!effect) return std::unexpected(std::move(effect.error()));
+        effects.append(std::move(*effect));
+      }
+      if (auto result = addEphemeralEffects(effects, {}); !result) return std::unexpected(std::move(result.error()));
+    }
   }
-
-  m_primaryScript.update(m_primaryScript.updateDt(dt));
-  for (auto& p : m_uniqueEffects) {
-    p.second.script.update(p.second.script.updateDt(dt));
-    auto metadata = m_uniqueEffectMetadata.getNetElement(p.second.metadataId);
-    if (metadata->duration)
-      *metadata->duration -= dt;
+  auto primary = m_primaryScript.update(m_primaryScript.updateDt(dt));
+  if (!primary && !primary.error().is<LuaException>()) return std::unexpected(std::move(primary.error()));
+  for (auto& entry : m_uniqueEffects) {
+    auto updated = entry.second.script.update(entry.second.script.updateDt(dt));
+    // Each failing effect has already been logged and disabled by its script component.
+    if (!updated && !updated.error().is<LuaException>()) return std::unexpected(std::move(updated.error()));
+    auto metadata = m_uniqueEffectMetadata.getNetElement(entry.second.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) *(*metadata)->duration -= dt;
   }
-
   for (auto const& key : m_uniqueEffects.keys()) {
-    auto& uniqueEffect = m_uniqueEffects.get(key);
-    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-    if (metadata->duration && *metadata->duration <= 0.0f)
-      removeUniqueEffect(key);
-    else if ((metadata->duration && statPositive("statusImmunity")) || (uniqueEffect.effectConfig.blockingStat && statPositive(*uniqueEffect.effectConfig.blockingStat)))
-      removeUniqueEffect(key);
+    auto effect = m_uniqueEffects.get(key);
+    if (!effect) return std::unexpected(std::move(effect.error()));
+    auto metadata = m_uniqueEffectMetadata.getNetElement((*effect)->metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if (((*metadata)->duration && *(*metadata)->duration <= 0.0f)
+        || (((*metadata)->duration && statPositive("statusImmunity"))
+          || ((*effect)->effectConfig.blockingStat && statPositive(*(*effect)->effectConfig.blockingStat)))) {
+      if (auto result = removeUniqueEffect(key); !result) return std::unexpected(std::move(result.error()));
+    }
   }
-
-  DirectivesGroup parentDirectives;
-  parentDirectives.append(m_primaryDirectives);
-  for (auto const& pair : m_uniqueEffects)
-    parentDirectives.append(pair.second.parentDirectives);
-
-  m_parentDirectives.set(std::move(parentDirectives));
-
-  updateAnimators(dt);
+  DirectivesGroup directives;
+  directives.append(m_primaryDirectives);
+  for (auto const& entry : m_uniqueEffects) directives.append(entry.second.parentDirectives);
+  m_parentDirectives.set(std::move(directives));
+  return updateAnimators(dt);
 }
 
-void StatusController::tickSlave(float dt) {
-  m_statCollection.tickSlave(dt);
-  updateAnimators(dt);
+std::expected<void, StarException> StatusController::tickSlave(float dt) {
+  m_statCollection->tickSlave(dt);
+  return updateAnimators(dt);
 }
 
 const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
-  List<Drawable> drawables;
-  for (auto const& animator : m_effectAnimators.netElements())
-    drawables.appendAll(animator->animator.drawables(m_movementController->position()));
-  return drawables;
+std::expected<List<Drawable>, StarException> StatusController::drawables() const {
+  List<Drawable> output;
+  for (auto const& animator : m_effectAnimators.netElements()) {
+    auto values = animator->animator->drawables(m_movementController->position());
+    if (!values) return std::unexpected(std::move(values.error()));
+    output.appendAll(std::move(*values));
+  }
+  return output;
 }
 
-List<LightSource> StatusController::lightSources() const {
-  List<LightSource> lightSources;
-  for (auto const& animator : m_effectAnimators.netElements())
-    lightSources.appendAll(animator->animator.lightSources(m_movementController->position()));
-  return lightSources;
+std::expected<List<LightSource>, StarException> StatusController::lightSources() const {
+  List<LightSource> output;
+  for (auto const& animator : m_effectAnimators.netElements()) {
+    auto values = animator->animator->lightSources(m_movementController->position());
+    if (!values) return std::unexpected(std::move(values.error()));
+    output.appendAll(std::move(*values));
+  }
+  return output;
 }
 
-List<OverheadBar> StatusController::overheadBars() {
-  if (auto bars = m_primaryScript.invoke<JsonArray>("overheadBars"))
-    return bars->transformed(construct<OverheadBar>());
-  return {};
+std::expected<List<OverheadBar>, StarException> StatusController::overheadBars() {
+  auto json = m_primaryScript.invoke<JsonArray>("overheadBars");
+  if (!json) {
+    if (json.error().is<LuaException>()) return List<OverheadBar>{};
+    return std::unexpected(std::move(json.error()));
+  }
+  List<OverheadBar> bars;
+  if (*json) {
+    for (auto const& value : **json) {
+      auto bar = OverheadBar::create(value);
+      if (!bar) return std::unexpected(std::move(bar.error()));
+      bars.append(std::move(*bar));
+    }
+  }
+  return bars;
 }
 
 bool StatusController::toolUsageSuppressed() const {
@@ -668,296 +812,383 @@ List<Particle> StatusController::pullNewParticles() {
   return newParticles;
 }
 
-std::optional<ChainableJsonMessageResponse> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  std::optional<ChainableJsonMessageResponse> result = m_primaryScript.handleMessage(message, localMessage, args);
-  for (auto& p : m_uniqueEffects) {
-    auto response = p.second.script.handleMessage(message, localMessage, args);
-    if (!result)
-      result = std::move(response);
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  auto result = m_primaryScript.handleMessage(message, localMessage, args);
+  if (!result) {
+    if (!result.error().is<LuaException>()) return std::unexpected(std::move(result.error()));
+    result = std::optional<ChainableJsonMessageResponse>{};
+  }
+  for (auto& entry : m_uniqueEffects) {
+    auto response = entry.second.script.handleMessage(message, localMessage, args);
+    if (!response) {
+      if (!response.error().is<LuaException>()) return std::unexpected(std::move(response.error()));
+      continue;
+    }
+    if (!*result) *result = std::move(*response);
   }
   return result;
 }
 
-StatusController::EffectAnimator::EffectAnimator(Root& root) : EffectAnimator(root, std::optional<String>{}) {}
+StatusController::EffectAnimator::EffectAnimator(Root& root) : m_root(root) {}
 
-StatusController::EffectAnimator::EffectAnimator(Root& root, std::optional<String> config) : m_root(root), animator(root) {
-  animationConfig = std::move(config);
-  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
+std::expected<std::shared_ptr<StatusController::EffectAnimator>, StarException> StatusController::EffectAnimator::create(Root& root, std::optional<String> config) {
+  auto result = std::make_shared<EffectAnimator>(root);
+  result->animationConfig = std::move(config);
+  if (result->animationConfig) {
+    auto animator = NetworkedAnimator::create(root, *result->animationConfig);
+    if (!animator) return std::unexpected(std::move(animator.error()));
+    result->animator = std::move(*animator);
+  } else {
+    auto animator = NetworkedAnimator::create(root);
+    if (!animator) return std::unexpected(std::move(animator.error()));
+    result->animator = std::move(*animator);
+  }
+  return result;
 }
 
 void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* version) {
-  animator.initNetVersion(version);
+  animator->initNetVersion(version);
 }
 
-void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
-  ds.write(animationConfig);
-  animator.netStore(ds, rules);
+std::expected<void, StarException> StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules)) return {};
+  if (auto result = ds.write(animationConfig); !result) return std::unexpected(std::move(result.error()));
+  return animator->netStore(ds, rules);
 }
 
-void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  ds.read(animationConfig);
-  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
-  animator.netLoad(ds, rules);
+std::expected<void, StarException> StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules)) return {};
+  if (auto result = ds.read(animationConfig); !result) return std::unexpected(std::move(result.error()));
+  if (animationConfig) {
+    auto created = NetworkedAnimator::create(m_root, *animationConfig);
+    if (!created) return std::unexpected(std::move(created.error()));
+    animator = std::move(*created);
+  } else {
+    auto created = NetworkedAnimator::create(m_root);
+    if (!created) return std::unexpected(std::move(created.error()));
+    animator = std::move(*created);
+  }
+  return animator->netLoad(ds, rules);
 }
 
-void StatusController::EffectAnimator::enableNetInterpolation(float extrapolationHint) {
-  animator.enableNetInterpolation(extrapolationHint);
+std::expected<void, StarException> StatusController::EffectAnimator::enableNetInterpolation(float extrapolationHint) {
+  return animator->enableNetInterpolation(extrapolationHint);
 }
 
-void StatusController::EffectAnimator::disableNetInterpolation() {
-  animator.disableNetInterpolation();
+std::expected<void, StarException> StatusController::EffectAnimator::disableNetInterpolation() {
+  return animator->disableNetInterpolation();
 }
 
-void StatusController::EffectAnimator::tickNetInterpolation(float dt) {
-  animator.tickNetInterpolation(dt);
+std::expected<void, StarException> StatusController::EffectAnimator::tickNetInterpolation(float dt) {
+  return animator->tickNetInterpolation(dt);
 }
 
-bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
-  return animator.writeNetDelta(ds, fromVersion, rules);
+std::expected<bool, StarException> StatusController::EffectAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+  return animator->writeNetDelta(ds, fromVersion, rules);
 }
 
-void StatusController::EffectAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  animator.readNetDelta(ds, interpolationTime, rules);
+std::expected<void, StarException> StatusController::EffectAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  return animator->readNetDelta(ds, interpolationTime, rules);
 }
 
-void StatusController::EffectAnimator::blankNetDelta(float interpolationTime) {
-  animator.blankNetDelta(interpolationTime);
+std::expected<void, StarException> StatusController::EffectAnimator::blankNetDelta(float interpolationTime) {
+  return animator->blankNetDelta(interpolationTime);
 }
 
 StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
-  addNetElement(&durationNetState);
-  addNetElement(&maxDuration);
-  addNetElement(&sourceEntityId);
   durationNetState.setFixedPointBase(0.01f);
   durationNetState.setInterpolator(lerp<float, float>);
 }
 
-StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId)
-  : UniqueEffectMetadata() {
-  this->effect = std::move(effect);
-  this->duration = std::move(duration);
-  this->maxDuration.set(this->duration.value_or(0.0f));
-  this->sourceEntityId.set(sourceEntityId);
+std::expected<std::shared_ptr<StatusController::UniqueEffectMetadata>, StarException> StatusController::UniqueEffectMetadata::create(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
+  auto result = std::make_shared<UniqueEffectMetadata>();
+  if (auto registered = result->addNetElement(&result->durationNetState); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = result->addNetElement(&result->maxDuration); !registered) return std::unexpected(std::move(registered.error()));
+  if (auto registered = result->addNetElement(&result->sourceEntityId); !registered) return std::unexpected(std::move(registered.error()));
+  result->effect = std::move(effect);
+  result->duration = duration;
+  result->maxDuration.set(duration.value_or(0.0f));
+  result->sourceEntityId.set(sourceEntityId);
+  return result;
 }
 
-void StatusController::UniqueEffectMetadata::netElementsNeedLoad(bool) {
+std::expected<void, StarException> StatusController::UniqueEffectMetadata::netElementsNeedLoad(bool) {
   duration = durationNetState.get() >= 0.0f ? std::optional<float>(durationNetState.get()) : std::optional<float>();
+  return {};
 }
 
-void StatusController::UniqueEffectMetadata::netElementsNeedStore() {
+std::expected<void, StarException> StatusController::UniqueEffectMetadata::netElementsNeedStore() {
   durationNetState.set(duration ? *duration : -1.0f);
+  return {};
 }
 
-void StatusController::updateAnimators(float dt) {
+std::expected<void, StarException> StatusController::updateAnimators(float dt) {
+  auto world = m_parentEntity->world();
+  if (!world) return std::unexpected(std::move(world.error()));
   for (auto const& animator : m_effectAnimators.netElements()) {
-    if (m_parentEntity->world()->isServer()) {
-      animator->animator.update(dt, nullptr);
+    if ((*world)->isServer()) {
+      if (auto result = animator->animator->update(dt, nullptr); !result) return std::unexpected(std::move(result.error()));
     } else {
-      animator->animator.update(dt, &animator->dynamicTarget);
+      if (auto result = animator->animator->update(dt, &animator->dynamicTarget); !result) return std::unexpected(std::move(result.error()));
       animator->dynamicTarget.updatePosition(m_movementController->position());
     }
   }
+  return {};
 }
 
-void StatusController::updatePersistentUniqueEffects() {
-  Set<UniqueStatusEffect> activePersistentUniqueEffects;
-  for (auto & categoryPair : m_persistentEffects) {
-    for (auto & uniqueEffectName : categoryPair.second.uniqueEffects) {
-      // It is important to note here that if a unique effect exists, it *may*
-      // not come from a persistent effect, it *may* be from an ephemeral effect.
-      // Here, when a persistent effect overrides an ephemeral effect, it is
-      // clearing the duration making it into a solely persistent effect.  This
-      // means that by applying a persistent effect and then clearing it, you can
-      // remove an ephemeral effect.
-      if (auto existingEffect = m_uniqueEffects.ptr(uniqueEffectName)) {
-        m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId)->duration.reset();
-        activePersistentUniqueEffects.add(uniqueEffectName);
+std::expected<void, StarException> StatusController::updatePersistentUniqueEffects() {
+  Set<UniqueStatusEffect> active;
+  for (auto& category : m_persistentEffects) {
+    for (auto it = category.second.uniqueEffects.begin(); it != category.second.uniqueEffects.end();) {
+      auto const& name = *it++;
+      if (auto existing = m_uniqueEffects.ptr(name)) {
+        auto metadata = m_uniqueEffectMetadata.getNetElement(existing->metadataId);
+        if (!metadata) return std::unexpected(std::move(metadata.error()));
+        (*metadata)->duration.reset();
+        active.add(name);
+      } else {
+        auto added = addUniqueEffect(name, {}, {});
+        if (!added) return std::unexpected(std::move(added.error()));
+        if (*added) active.add(name);
+        else category.second.uniqueEffects.remove(name);
       }
-      // we want to make sure the effect it's applying actually exists
-      // if not then it should be removed from the list
-      else if (addUniqueEffect(uniqueEffectName, {}, {}))
-        activePersistentUniqueEffects.add(uniqueEffectName);
-      else
-        categoryPair.second.uniqueEffects.remove(uniqueEffectName);
     }
   }
-  // Again, here we are using "durationless" to mean "persistent"
   for (auto const& key : m_uniqueEffects.keys()) {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(m_uniqueEffects.get(key).metadataId);
-    if (!metadata->duration && !activePersistentUniqueEffects.contains(key))
-      removeUniqueEffect(key);
+    auto effect = m_uniqueEffects.get(key);
+    if (!effect) return std::unexpected(std::move(effect.error()));
+    auto metadata = m_uniqueEffectMetadata.getNetElement((*effect)->metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if (!(*metadata)->duration && !active.contains(key)) {
+      if (auto result = removeUniqueEffect(key); !result) return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
-float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
-  return m_root.statusEffectDatabase()->uniqueEffectConfig(effect).defaultDuration;
+std::expected<float, StarException> StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
+  auto database = m_root.statusEffectDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  auto config = (*database)->uniqueEffectConfig(effect);
+  if (!config) return std::unexpected(std::move(config.error()));
+  return config->defaultDuration;
 }
 
-bool StatusController::addUniqueEffect(
-    UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
-  auto statusEffectDatabase = m_root.statusEffectDatabase();
-  if (statusEffectDatabase->isUniqueEffect(effect)) {
-    auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
-    if ((duration && statPositive("statusImmunity")) || (effectConfig.blockingStat && statPositive(*effectConfig.blockingStat)))
-      return false;
-
-    auto& uniqueEffect = m_uniqueEffects.try_emplace(effect, m_root).first->second;
-    uniqueEffect.effectConfig = effectConfig;
-    uniqueEffect.script.setScripts(uniqueEffect.effectConfig.scripts);
-    uniqueEffect.script.setUpdateDelta(uniqueEffect.effectConfig.scriptDelta);
-
-    uniqueEffect.metadataId =
-        m_uniqueEffectMetadata.addNetElement(std::make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
-
-    uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
-    if (uniqueEffect.effectConfig.animationConfig)
-      uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(m_root, uniqueEffect.effectConfig.animationConfig));
-
-    uniqueEffect.toolUsageSuppressed = false;
-
-    if (m_parentEntity)
-      initUniqueEffectScript(uniqueEffect);
-
-    return true;
-  } else {
-    m_root.logger().warn("Unique status effect '{}' not found in status effect database", effect);
+std::expected<bool, StarException> StatusController::addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
+  auto database = m_root.statusEffectDatabase();
+  if (!database) return std::unexpected(std::move(database.error()));
+  if (!(*database)->isUniqueEffect(effect)) {
+    if (auto result = m_root.logger().warn("Unique status effect '{}' not found in status effect database", effect); !result) return std::unexpected(std::move(result.error()));
     return false;
   }
+  auto config = (*database)->uniqueEffectConfig(effect);
+  if (!config) return std::unexpected(std::move(config.error()));
+  if ((duration && statPositive("statusImmunity")) || (config->blockingStat && statPositive(*config->blockingStat))) return false;
+  auto& instance = m_uniqueEffects.try_emplace(effect, m_root).first->second;
+  instance.effectConfig = std::move(*config);
+  if (auto result = instance.script.setScripts(instance.effectConfig.scripts); !result) {
+    m_uniqueEffects.remove(effect);
+    return std::unexpected(std::move(result.error()));
+  }
+  instance.script.setUpdateDelta(instance.effectConfig.scriptDelta);
+  auto createdMetadata = UniqueEffectMetadata::create(effect, duration, sourceEntityId);
+  if (!createdMetadata) { m_uniqueEffects.remove(effect); return std::unexpected(std::move(createdMetadata.error())); }
+  auto metadata = m_uniqueEffectMetadata.addNetElement(std::move(*createdMetadata));
+  if (!metadata) { m_uniqueEffects.remove(effect); return std::unexpected(std::move(metadata.error())); }
+  instance.metadataId = *metadata;
+  instance.animatorId = EffectAnimatorGroup::NullElementId;
+  if (instance.effectConfig.animationConfig) {
+    auto animator = EffectAnimator::create(m_root, instance.effectConfig.animationConfig);
+    if (!animator) {
+      m_uniqueEffectMetadata.removeNetElement(instance.metadataId);
+      m_uniqueEffects.remove(effect);
+      return std::unexpected(std::move(animator.error()));
+    }
+    auto id = m_effectAnimators.addNetElement(std::move(*animator));
+    if (!id) {
+      m_uniqueEffectMetadata.removeNetElement(instance.metadataId);
+      m_uniqueEffects.remove(effect);
+      return std::unexpected(std::move(id.error()));
+    }
+    instance.animatorId = *id;
+  }
+  instance.toolUsageSuppressed = false;
+  if (m_parentEntity) {
+    if (auto result = initUniqueEffectScript(instance); !result) {
+      auto cleanup = uninitUniqueEffectScript(instance);
+      m_uniqueEffectMetadata.removeNetElement(instance.metadataId);
+      if (instance.animatorId != EffectAnimatorGroup::NullElementId) m_effectAnimators.removeNetElement(instance.animatorId);
+      m_uniqueEffects.remove(effect);
+      if (!cleanup) return std::unexpected(cleanup.error().withContext(result.error().what()));
+      return std::unexpected(std::move(result.error()));
+    }
+  }
+  return true;
 }
 
-void StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
-  auto& uniqueEffect = m_uniqueEffects.get(effect);
-
-  uniqueEffect.script.invoke("onExpire");
-
-  uninitUniqueEffectScript(uniqueEffect);
-
-  m_uniqueEffectMetadata.removeNetElement(uniqueEffect.metadataId);
-
-  if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId)
-    m_effectAnimators.removeNetElement(uniqueEffect.animatorId);
-
+std::expected<void, StarException> StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
+  auto instance = m_uniqueEffects.get(effect);
+  if (!instance) return std::unexpected(std::move(instance.error()));
+  auto expired = (*instance)->script.invoke("onExpire");
+  auto uninitialized = uninitUniqueEffectScript(**instance);
+  m_uniqueEffectMetadata.removeNetElement((*instance)->metadataId);
+  if ((*instance)->animatorId != EffectAnimatorGroup::NullElementId)
+    m_effectAnimators.removeNetElement((*instance)->animatorId);
   m_uniqueEffects.remove(effect);
+  if (!expired && !expired.error().is<LuaException>()) return std::unexpected(std::move(expired.error()));
+  if (!uninitialized) return std::unexpected(std::move(uninitialized.error()));
+  return {};
 }
 
-void StatusController::initPrimaryScript() {
-  m_primaryScript.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(this));
-  m_primaryScript.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
+std::expected<void, StarException> StatusController::initPrimaryScript() {
+  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(this);
+  if (!statusCallbacks) return std::unexpected(std::move(statusCallbacks.error()));
+  if (auto result = m_primaryScript.addCallbacks("status", std::move(*statusCallbacks)); !result) return std::unexpected(std::move(result.error()));
+  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity);
+  if (!entityCallbacks) return std::unexpected(std::move(entityCallbacks.error()));
+  if (auto result = m_primaryScript.addCallbacks("entity", std::move(*entityCallbacks)); !result) return std::unexpected(std::move(result.error()));
   if (m_primaryAnimatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(m_primaryAnimatorId);
-    m_primaryScript.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
+    if (!animator) return std::unexpected(std::move(animator.error()));
+    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks((*animator)->animator.get());
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_primaryScript.addCallbacks("animator", std::move(*callbacks)); !result) return std::unexpected(std::move(result.error()));
   }
-  m_primaryScript.addActorMovementCallbacks(m_movementController);
-  m_primaryScript.init(m_parentEntity->world());
+  if (auto result = m_primaryScript.addActorMovementCallbacks(m_movementController); !result) return std::unexpected(std::move(result.error()));
+  auto world = m_parentEntity->world();
+  if (!world) return std::unexpected(std::move(world.error()));
+  auto initialized = m_primaryScript.init(*world);
+  if (!initialized && !initialized.error().is<LuaException>()) return std::unexpected(std::move(initialized.error()));
+  return {};
 }
 
-void StatusController::uninitPrimaryScript() {
-  m_primaryScript.uninit();
-  m_primaryScript.removeCallbacks("status");
-  m_primaryScript.removeCallbacks("entity");
-  m_primaryScript.removeCallbacks("animator");
-  m_primaryScript.removeActorMovementCallbacks();
+std::expected<void, StarException> StatusController::uninitPrimaryScript() {
+  auto uninitialized = m_primaryScript.uninit();
+  std::optional<StarException> error;
+  if (!uninitialized && !uninitialized.error().is<LuaException>()) error = std::move(uninitialized.error());
+  if (auto result = m_primaryScript.removeCallbacks("status"); !result && !error) error = std::move(result.error());
+  if (auto result = m_primaryScript.removeCallbacks("entity"); !result && !error) error = std::move(result.error());
+  if (auto result = m_primaryScript.removeCallbacks("animator"); !result && !error) error = std::move(result.error());
+  if (auto result = m_primaryScript.removeActorMovementCallbacks(); !result && !error) error = std::move(result.error());
+  if (error) return std::unexpected(std::move(*error));
+  return {};
 }
 
-void StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
-  uniqueEffect.script.addCallbacks("effect", makeUniqueEffectCallbacks(uniqueEffect));
-  uniqueEffect.script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(this));
-  uniqueEffect.script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
-      return uniqueEffect.effectConfig.effectConfig.query(name, def);
-    }));
-  uniqueEffect.script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
+std::expected<void, StarException> StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
+  auto effectCallbacks = makeUniqueEffectCallbacks(uniqueEffect);
+  if (!effectCallbacks) return std::unexpected(std::move(effectCallbacks.error()));
+  if (auto result = uniqueEffect.script.addCallbacks("effect", std::move(*effectCallbacks)); !result) return std::unexpected(std::move(result.error()));
+  auto statusCallbacks = LuaBindings::makeStatusControllerCallbacks(this);
+  if (!statusCallbacks) return std::unexpected(std::move(statusCallbacks.error()));
+  if (auto result = uniqueEffect.script.addCallbacks("status", std::move(*statusCallbacks)); !result) return std::unexpected(std::move(result.error()));
+  auto configCallbacks = LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
+    return uniqueEffect.effectConfig.effectConfig.query(name, def);
+  });
+  if (!configCallbacks) return std::unexpected(std::move(configCallbacks.error()));
+  if (auto result = uniqueEffect.script.addCallbacks("config", std::move(*configCallbacks)); !result) return std::unexpected(std::move(result.error()));
+  auto entityCallbacks = LuaBindings::makeEntityCallbacks(m_parentEntity);
+  if (!entityCallbacks) return std::unexpected(std::move(entityCallbacks.error()));
+  if (auto result = uniqueEffect.script.addCallbacks("entity", std::move(*entityCallbacks)); !result) return std::unexpected(std::move(result.error()));
   if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
-    uniqueEffect.script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&animator->animator));
+    if (!animator) return std::unexpected(std::move(animator.error()));
+    auto callbacks = LuaBindings::makeNetworkedAnimatorCallbacks((*animator)->animator.get());
+    if (!callbacks) return std::unexpected(std::move(callbacks.error()));
+    if (auto result = uniqueEffect.script.addCallbacks("animator", std::move(*callbacks)); !result) return std::unexpected(std::move(result.error()));
   }
-  uniqueEffect.script.addActorMovementCallbacks(m_movementController);
-  uniqueEffect.script.init(m_parentEntity->world());
+  if (auto result = uniqueEffect.script.addActorMovementCallbacks(m_movementController); !result) return std::unexpected(std::move(result.error()));
+  auto world = m_parentEntity->world();
+  if (!world) return std::unexpected(std::move(world.error()));
+  auto initialized = uniqueEffect.script.init(*world);
+  if (!initialized && !initialized.error().is<LuaException>()) return std::unexpected(std::move(initialized.error()));
+  return {};
 }
 
-void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
-  uniqueEffect.script.uninit();
-  uniqueEffect.script.removeCallbacks("effect");
-  uniqueEffect.script.removeCallbacks("status");
-  uniqueEffect.script.removeCallbacks("config");
-  uniqueEffect.script.removeCallbacks("entity");
-  uniqueEffect.script.removeCallbacks("animator");
-  uniqueEffect.script.removeActorMovementCallbacks();
-
-  for (auto modifierGroup : uniqueEffect.modifierGroups)
-    m_statCollection.removeStatModifierGroup(modifierGroup);
+std::expected<void, StarException> StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
+  auto uninitialized = uniqueEffect.script.uninit();
+  std::optional<StarException> error;
+  if (!uninitialized && !uninitialized.error().is<LuaException>()) error = std::move(uninitialized.error());
+  if (auto result = uniqueEffect.script.removeCallbacks("effect"); !result && !error) error = std::move(result.error());
+  if (auto result = uniqueEffect.script.removeCallbacks("status"); !result && !error) error = std::move(result.error());
+  if (auto result = uniqueEffect.script.removeCallbacks("config"); !result && !error) error = std::move(result.error());
+  if (auto result = uniqueEffect.script.removeCallbacks("entity"); !result && !error) error = std::move(result.error());
+  if (auto result = uniqueEffect.script.removeCallbacks("animator"); !result && !error) error = std::move(result.error());
+  if (auto result = uniqueEffect.script.removeActorMovementCallbacks(); !result && !error) error = std::move(result.error());
+  for (auto group : uniqueEffect.modifierGroups) m_statCollection->removeStatModifierGroup(group);
   uniqueEffect.modifierGroups.clear();
+  if (error) return std::unexpected(std::move(*error));
+  return {};
 }
 
-LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) {
+std::expected<LuaCallbacks, StarException> StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("name", [this, &uniqueEffect]() {
-    return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->effect;
-  });
-
-  callbacks.registerCallback("duration", [this, &uniqueEffect]() {
-      return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->duration;
-    });
-  callbacks.registerCallback("modifyDuration", [this, &uniqueEffect](float duration) {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      if (metadata->duration)
-        *metadata->duration += duration;
-    });
-  callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) {
+  if (auto result = callbacks.registerCallback("name", [this, &uniqueEffect]() -> std::expected<UniqueStatusEffect, StarException> {
     auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-    if (metadata->duration)
-      *metadata->duration = duration;
-  });
-
-  callbacks.registerCallback("expire", [this, &uniqueEffect]() {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      if (metadata->duration)
-        metadata->duration = 0.0f;
-    });
-  callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::optional<EntityId> {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      auto sourceEntityId = metadata->sourceEntityId.get();
-      if (!sourceEntityId)
-        return m_parentEntity->entityId();
-      if (sourceEntityId == NullEntityId)
-        return {};
-      return sourceEntityId;
-    });
-  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) {
-      uniqueEffect.parentDirectives = directives.value_or(String{});
-    });
-  callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> Json {
-      return uniqueEffect.effectConfig.effectConfig.query(name, def);
-    });
-  callbacks.registerCallback("addStatModifierGroup", [this, &uniqueEffect](List<StatModifier> const& modifiers) -> StatModifierGroupId {
-      auto newGroupId = m_statCollection.addStatModifierGroup(modifiers);
-      uniqueEffect.modifierGroups.add(newGroupId);
-      return newGroupId;
-    });
-  callbacks.registerCallback("setStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) {
-      if (!uniqueEffect.modifierGroups.contains(groupId))
-        throw StatusException("Cannot set stat modifier group that was not added from this effect");
-      m_statCollection.setStatModifierGroup(groupId, modifiers);
-    });
-  callbacks.registerCallback("removeStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId) {
-      if (!uniqueEffect.modifierGroups.contains(groupId))
-        throw StatusException("Cannot remove stat modifier group that was not added from this effect");
-      m_statCollection.removeStatModifierGroup(groupId);
-      uniqueEffect.modifierGroups.remove(groupId);
-    });
-  callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) {
-      if (uniqueEffect.toolUsageSuppressed == suppressed)
-        return;
-      uniqueEffect.toolUsageSuppressed = suppressed;
-      bool anySuppressed = false;
-      for (auto& p : m_uniqueEffects)
-        anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
-      m_toolUsageSuppressed.set(anySuppressed);
-    });
-
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    return (*metadata)->effect;
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("duration", [this, &uniqueEffect]() -> std::expected<std::optional<float>, StarException> {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    return (*metadata)->duration;
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("modifyDuration", [this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) *(*metadata)->duration += duration;
+    return {};
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) -> std::expected<void, StarException> {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) *(*metadata)->duration = duration;
+    return {};
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("expire", [this, &uniqueEffect]() -> std::expected<void, StarException> {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    if ((*metadata)->duration) (*metadata)->duration = 0.0f;
+    return {};
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::expected<std::optional<EntityId>, StarException> {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (!metadata) return std::unexpected(std::move(metadata.error()));
+    auto source = (*metadata)->sourceEntityId.get();
+    if (!source) return std::optional<EntityId>(m_parentEntity->entityId());
+    if (source == NullEntityId) return std::optional<EntityId>{};
+    return source;
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) -> void {
+    uniqueEffect.parentDirectives = directives.value_or(String{});
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> std::expected<Json, StarException> {
+    return uniqueEffect.effectConfig.effectConfig.query(name, def);
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("addStatModifierGroup", [this, &uniqueEffect](List<StatModifier> const& modifiers) -> std::expected<StatModifierGroupId, StarException> {
+    auto id = m_statCollection->addStatModifierGroup(modifiers);
+    if (!id) return std::unexpected(std::move(id.error()));
+    uniqueEffect.modifierGroups.add(*id);
+    return *id;
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) -> std::expected<void, StarException> {
+    if (!uniqueEffect.modifierGroups.contains(groupId))
+      return std::unexpected(StatusException("Cannot set stat modifier group that was not added from this effect"));
+    return m_statCollection->setStatModifierGroup(groupId, modifiers);
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("removeStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId) -> std::expected<void, StarException> {
+    if (!uniqueEffect.modifierGroups.contains(groupId))
+      return std::unexpected(StatusException("Cannot remove stat modifier group that was not added from this effect"));
+    m_statCollection->removeStatModifierGroup(groupId);
+    uniqueEffect.modifierGroups.remove(groupId);
+    return {};
+  }); !result) return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) -> void {
+    if (uniqueEffect.toolUsageSuppressed == suppressed) return;
+    uniqueEffect.toolUsageSuppressed = suppressed;
+    bool anySuppressed = false;
+    for (auto& entry : m_uniqueEffects) anySuppressed = anySuppressed || entry.second.toolUsageSuppressed;
+    m_toolUsageSuppressed.set(anySuppressed);
+  }); !result) return std::unexpected(std::move(result.error()));
   return callbacks;
 }
 

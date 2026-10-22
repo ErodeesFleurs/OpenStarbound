@@ -121,481 +121,607 @@ import star.item_bag;
 import star.matrix3;
 namespace Star {
 
-LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<CanvasWidget>>::make() {
+namespace {
+
+template <typename T, typename Function>
+[[nodiscard]] auto withWidget(Widget* parent, String const& name, Function&& function)
+    -> std::invoke_result_t<Function, std::shared_ptr<T>> {
+  auto widget = parent->fetchChild<T>(name);
+  if (!widget)
+    return std::unexpected(std::move(widget.error()));
+  if (!*widget)
+    return {};
+  return std::invoke(std::forward<Function>(function), std::move(*widget));
+}
+
+}
+
+std::expected<LuaMethods<std::shared_ptr<CanvasWidget>>, StarException> LuaUserDataMethods<std::shared_ptr<CanvasWidget>>::make() {
   LuaMethods<std::shared_ptr<CanvasWidget>> methods;
-
-  methods.registerMethodWithSignature<Vec2I, std::shared_ptr<CanvasWidget>>("size", std::mem_fn(&CanvasWidget::size));
-  methods.registerMethodWithSignature<Vec2I, std::shared_ptr<CanvasWidget>>("mousePosition", std::mem_fn(&CanvasWidget::mousePosition));
-
-  methods.registerMethodWithSignature<void, std::shared_ptr<CanvasWidget>>("clear", std::mem_fn(&CanvasWidget::clear));
-
-  methods.registerMethod("drawDrawable", [](std::shared_ptr<CanvasWidget> canvasWidget, Drawable drawable, std::optional<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(std::move(drawable), screenPos.value_or(Vec2F()));
-  });
-
-  methods.registerMethod("drawDrawables", [](std::shared_ptr<CanvasWidget> canvasWidget, List<Drawable> drawables, std::optional<Vec2F> screenPos) {
-    Vec2F pos = screenPos.value_or(Vec2F());
+  if (auto registered = methods.registerMethod("size", [](std::shared_ptr<CanvasWidget> canvas) { return canvas->size(); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("mousePosition", [](std::shared_ptr<CanvasWidget> canvas) { return canvas->mousePosition(); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("clear", [](std::shared_ptr<CanvasWidget> canvas) { canvas->clear(); }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawDrawable", [](std::shared_ptr<CanvasWidget> canvas, Drawable drawable, std::optional<Vec2F> position) {
+    canvas->drawDrawable(std::move(drawable), position.value_or(Vec2F()));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawDrawables", [](std::shared_ptr<CanvasWidget> canvas, List<Drawable> drawables, std::optional<Vec2F> position) {
     for (auto& drawable : drawables)
-      canvasWidget->drawDrawable(std::move(drawable), pos);
-  });
-
-  methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvasWidget, Json drawable, std::optional<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(Drawable(*canvasWidget->context()->root().imageMetadataDatabase(), drawable), screenPos.value_or(Vec2F()));
-  });
-
-  methods.registerMethod("drawJsonDrawables", [](std::shared_ptr<CanvasWidget> canvasWidget, JsonArray drawables, std::optional<Vec2F> screenPos) {
-    Vec2F pos = screenPos.value_or(Vec2F());
-    for (auto& drawable : drawables)
-      canvasWidget->drawDrawable(Drawable(*canvasWidget->context()->root().imageMetadataDatabase(), drawable), pos);
-  });
-
-  methods.registerMethod("drawImage",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, std::optional<float> scale, std::optional<Color> color, std::optional<bool> centered) {
-        if (centered && *centered)
-          canvasWidget->drawImageCentered(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
-        else
-          canvasWidget->drawImage(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
-      });
-  methods.registerMethod("drawImageDrawable",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, std::variant<std::monostate, Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) {
-        auto drawable = Drawable::makeImage(*canvasWidget->context()->root().imageMetadataDatabase(), image, 1.0, true, {0.0, 0.0}, color.value_or(Color::White));
-        if (auto s = std::get_if<Vec2F>(&scale))
-          drawable.transform(Mat3F::scaling(*s));
-        else if(auto s = std::get_if<float>(&scale))
-          drawable.transform(Mat3F::scaling(*s));
-        if (rotation)
-          drawable.rotate(*rotation);
-        canvasWidget->drawDrawable(drawable, position);
-      });
-  methods.registerMethod("drawImageRect",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, RectF texCoords, RectF screenCoords, std::optional<Color> color) {
-        canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value_or(Color::White).toRgba());
-      });
-  methods.registerMethod("drawTiledImage",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2D offset, RectF screenCoords, std::optional<float> scale, std::optional<Color> color) {
-        canvasWidget->drawTiledImage(image, scale.value_or(1.0f), offset, screenCoords, color.value_or(Color::White).toRgba());
-      });
-  methods.registerMethod("drawLine",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, Vec2F begin, Vec2F end, std::optional<Color> color, std::optional<float> lineWidth) {
-        canvasWidget->drawLine(begin, end, color.value_or(Color::White).toRgba(), lineWidth.value_or(1.0f));
-      });
-  methods.registerMethod("drawRect",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, RectF rect, std::optional<Color> color) {
-        canvasWidget->drawRect(rect, color.value_or(Color::White).toRgba());
-      });
-  methods.registerMethod("drawPoly",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, PolyF poly, std::optional<Color> color, std::optional<float> lineWidth) {
-        canvasWidget->drawPoly(poly, color.value_or(Color::White).toRgba(), lineWidth.value_or(1.0f));
-      });
-  methods.registerMethod("drawTriangles",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, List<PolyF> triangles, std::optional<Color> color) {
-        auto tris = triangles.transformed([](PolyF const& poly) {
-            if (poly.sides() != 3)
-              throw StarException("Triangle must have exactly 3 sides");
-            return std::tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
-          });
-        canvasWidget->drawTriangles(tris, color.value_or(Color::White).toRgba());
-      });
-  methods.registerMethod("drawText",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String text, Json tp, unsigned fontSize, std::optional<Color> color, std::optional<float> lineSpacing, std::optional<String> font, std::optional<String> directives) {
-        canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value_or(Color::White).toRgba(), FontMode::Normal, lineSpacing.value_or(DefaultLineSpacing), font.value_or(""), directives.value_or(""));
-      });
-
+      canvas->drawDrawable(std::move(drawable), position.value_or(Vec2F()));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvas, Json config, std::optional<Vec2F> position) -> std::expected<void, StarException> {
+    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    auto drawable = Drawable::create(**metadata, config);
+    if (!drawable)
+      return std::unexpected(std::move(drawable.error()));
+    canvas->drawDrawable(std::move(*drawable), position.value_or(Vec2F()));
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawJsonDrawables", [](std::shared_ptr<CanvasWidget> canvas, JsonArray configs, std::optional<Vec2F> position) -> std::expected<void, StarException> {
+    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    for (auto const& config : configs) {
+      auto drawable = Drawable::create(**metadata, config);
+      if (!drawable)
+        return std::unexpected(std::move(drawable.error()));
+      canvas->drawDrawable(std::move(*drawable), position.value_or(Vec2F()));
+    }
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawImage", [](std::shared_ptr<CanvasWidget> canvas, String image, Vec2F position, std::optional<float> scale, std::optional<Color> color, std::optional<bool> centered) {
+    if (centered.value_or(false))
+      canvas->drawImageCentered(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
+    else
+      canvas->drawImage(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawImageDrawable", [](std::shared_ptr<CanvasWidget> canvas, String image, Vec2F position, std::variant<std::monostate, Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) -> std::expected<void, StarException> {
+    auto metadata = canvas->context()->root().imageMetadataDatabase();
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    auto drawable = Drawable::makeImage(**metadata, image, 1.0, true, {0.0, 0.0}, color.value_or(Color::White));
+    if (!drawable)
+      return std::unexpected(std::move(drawable.error()));
+    if (auto value = std::get_if<Vec2F>(&scale))
+      drawable->transform(Mat3F::scaling(*value));
+    else if (auto value = std::get_if<float>(&scale))
+      drawable->transform(Mat3F::scaling(*value));
+    if (rotation)
+      drawable->rotate(*rotation);
+    canvas->drawDrawable(std::move(*drawable), position);
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawImageRect", [](std::shared_ptr<CanvasWidget> canvas, String image, RectF texture, RectF screen, std::optional<Color> color) {
+    canvas->drawImageRect(image, texture, screen, color.value_or(Color::White).toRgba());
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawTiledImage", [](std::shared_ptr<CanvasWidget> canvas, String image, Vec2D offset, RectF screen, std::optional<float> scale, std::optional<Color> color) {
+    canvas->drawTiledImage(image, scale.value_or(1.0f), offset, screen, color.value_or(Color::White).toRgba());
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawLine", [](std::shared_ptr<CanvasWidget> canvas, Vec2F begin, Vec2F end, std::optional<Color> color, std::optional<float> width) {
+    canvas->drawLine(begin, end, color.value_or(Color::White).toRgba(), width.value_or(1.0f));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawRect", [](std::shared_ptr<CanvasWidget> canvas, RectF rect, std::optional<Color> color) {
+    canvas->drawRect(rect, color.value_or(Color::White).toRgba());
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawPoly", [](std::shared_ptr<CanvasWidget> canvas, PolyF poly, std::optional<Color> color, std::optional<float> width) {
+    canvas->drawPoly(poly, color.value_or(Color::White).toRgba(), width.value_or(1.0f));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawTriangles", [](std::shared_ptr<CanvasWidget> canvas, List<PolyF> polygons, std::optional<Color> color) -> std::expected<void, StarException> {
+    List<std::tuple<Vec2F, Vec2F, Vec2F>> triangles;
+    triangles.reserve(polygons.size());
+    for (auto const& polygon : polygons) {
+      if (polygon.sides() != 3)
+        return std::unexpected(StarException("Triangle must have exactly 3 sides"));
+      triangles.emplace_back(polygon.vertex(0), polygon.vertex(1), polygon.vertex(2));
+    }
+    canvas->drawTriangles(triangles, color.value_or(Color::White).toRgba());
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = methods.registerMethod("drawText", [](std::shared_ptr<CanvasWidget> canvas, String text, Json config, unsigned size, std::optional<Color> color, std::optional<float> spacing, std::optional<String> font, std::optional<String> directives) -> std::expected<void, StarException> {
+    auto positioning = TextPositioning::create(config);
+    if (!positioning)
+      return std::unexpected(std::move(positioning.error()));
+    canvas->drawText(text, *positioning, size, color.value_or(Color::White).toRgba(), FontMode::Normal, spacing.value_or(DefaultLineSpacing), font.value_or(""), directives.value_or(""));
+    return {};
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   return methods;
 }
 
 namespace LuaBindings {
 
-LuaCallbacks makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
+std::expected<LuaCallbacks, StarException> makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
   if (!reader)
     reader = std::make_shared<GuiReader>(context);
-
   LuaCallbacks callbacks;
-
-  // a bit miscellaneous, but put this here since widgets have access to gui context
-
-  callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, std::optional<int> loops, std::optional<float> volume) -> std::shared_ptr<AudioInstance> {
-        return parentWidget->context()->playAudio(audio, loops.value_or(0), volume.value_or(1.0f));
-      });
-
-  // widget userdata methods
-
-  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> std::optional<std::shared_ptr<CanvasWidget>> {
-      if (auto canvas = parentWidget->fetchChild<CanvasWidget>(widgetName))
-        return canvas;
+  if (auto registered = callbacks.registerCallback("playSound", [parentWidget](String const& audio, std::optional<int> loops, std::optional<float> volume) {
+    return parentWidget->context()->playAudio(audio, loops.value_or(0), volume.value_or(1.0f));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {
+    return withWidget<CanvasWidget>(parentWidget, widgetName, [&](std::shared_ptr<CanvasWidget> widget) -> std::expected<std::optional<std::shared_ptr<CanvasWidget>>, StarException> {
+      return widget;
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getPosition", [parentWidget](String const& widgetName) -> std::expected<std::optional<Vec2I>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<Vec2I>, StarException> {
+      return widget->relativePosition();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setPosition", [parentWidget](String const& widgetName, Vec2I const& position) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->setPosition(position);
       return {};
     });
-
-  // generic widget callbacks
-
-  callbacks.registerCallback("getPosition", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->relativePosition();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getSize", [parentWidget](String const& widgetName) -> std::expected<std::optional<Vec2I>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<Vec2I>, StarException> {
+      return widget->size();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setSize", [parentWidget](String const& widgetName, Vec2I const& size) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->setSize(size);
       return {};
     });
-  callbacks.registerCallback("setPosition", [parentWidget](String const& widgetName, Vec2I const& position) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->setPosition(position);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setVisible", [parentWidget](String const& widgetName, bool visible) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      return widget->setVisibility(visible);
     });
-
-  callbacks.registerCallback("getSize", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->size();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("active", [parentWidget](String const& widgetName) -> std::expected<std::optional<bool>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<bool>, StarException> {
+      return widget->active();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("focus", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      return widget->focus();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("hasFocus", [parentWidget](String const& widgetName) -> std::expected<std::optional<bool>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<bool>, StarException> {
+      auto focused = widget->hasFocus();
+      if (!focused)
+        return std::unexpected(std::move(focused.error()));
+      return *focused;
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("blur", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      return widget->blur();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getData", [parentWidget](String const& widgetName) -> std::expected<Json, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<Json, StarException> {
+      return widget->data();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setData", [parentWidget](String const& widgetName, Json const& data) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->setData(data);
       return {};
     });
-  callbacks.registerCallback("setSize", [parentWidget](String const& widgetName, Vec2I const& size) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->setSize(size);
-    });
-
-  callbacks.registerCallback("setVisible", [parentWidget](String const& widgetName, bool visible) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->setVisibility(visible);
-    });
-
-  callbacks.registerCallback("active", [parentWidget](String const& widgetName) -> std::optional<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->active();
-      return {};
-    });
-
-  callbacks.registerCallback("focus", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->focus();
-    });
-
-  callbacks.registerCallback("hasFocus", [parentWidget](String const& widgetName) -> std::optional<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->hasFocus();
-      return {};
-    });
-
-  callbacks.registerCallback("blur", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->blur();
-    });
-
-  callbacks.registerCallback("getData", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->data();
-      return Json();
-    });
-
-  callbacks.registerCallback("setData", [parentWidget](String const& widgetName, Json const& data) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->setData(data);
-    });
-
-  callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& screenPosition) -> std::optional<String> {
-      if (auto widget = parentWidget->getChildAt(screenPosition))
-        return widget->fullName();
-      else
-        return{};
-    });
-
-  callbacks.registerCallback("inMember", [parentWidget](String const& widgetName, Vec2I const& screenPosition) -> std::optional<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        return widget->inMember(screenPosition);
-      else
-        return {};
-    });
-
-  callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, std::optional<String> const& newChildName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
-        String name = newChildName.value_or(toString(parentWidget->context()->root().random().randu64()));
-        if (auto newChild = reader->makeSingle(name, newChildConfig))
-          widget->addChild(name, newChild);
-      }
-    });
-
-  callbacks.registerCallback("removeAllChildren", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->removeAllChildren();
-    });
-
-  callbacks.registerCallback("removeChild", [parentWidget](String const& widgetName, String const& childName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
-        widget->removeChild(childName);
-    });
-
-  // callbacks only valid for specific widget types
-
-  callbacks.registerCallback("setHint", [parentWidget](String const& widgetName, String const& hint) {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
-      if (auto textBox = as<TextBoxWidget>(widget))
-        textBox->setHint(hint);
-    }
-  });
-
-  callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> std::optional<String> {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
-      if (auto textBox = as<TextBoxWidget>(widget))
-        return textBox->getHint();
-    }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& position) -> std::optional<String> {
+    if (auto widget = parentWidget->getChildAt(position))
+      return widget->fullName();
     return {};
-  });
-
-  callbacks.registerCallback("setCursorPosition", [parentWidget](String const& widgetName, int cursorPosition) {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("inMember", [parentWidget](String const& widgetName, Vec2I const& position) -> std::expected<std::optional<bool>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<bool>, StarException> {
+      return widget->inMember(position);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& config, std::optional<String> const& childName) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      String name = childName.value_or(toString(parentWidget->context()->root().random().randu64()));
+      auto child = reader->makeSingle(name, config);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      if (*child)
+        return widget->addChild(name, std::move(*child));
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("removeAllChildren", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->removeAllChildren();
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("removeChild", [parentWidget](String const& widgetName, String const& childName) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      widget->removeChild(childName);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setHint", [parentWidget](String const& widgetName, String const& hint) -> std::expected<void, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, widgetName, [&](std::shared_ptr<TextBoxWidget> widget) -> std::expected<void, StarException> {
+      widget->setHint(hint);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> std::expected<std::optional<String>, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, widgetName, [&](std::shared_ptr<TextBoxWidget> widget) -> std::expected<std::optional<String>, StarException> {
+      return widget->getHint();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setCursorPosition", [parentWidget](String const& widgetName, int position) -> std::expected<void, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, widgetName, [&](std::shared_ptr<TextBoxWidget> widget) -> std::expected<void, StarException> {
+      return widget->setCursorPosition(position);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> std::expected<std::optional<int>, StarException> {
+    return withWidget<TextBoxWidget>(parentWidget, widgetName, [&](std::shared_ptr<TextBoxWidget> widget) -> std::expected<std::optional<int>, StarException> {
+      return widget->getCursorPosition();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> std::expected<std::optional<String>, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<std::optional<String>, StarException> {
+      if (auto label = as<LabelWidget>(widget))
+        return label->text();
+      if (auto button = as<ButtonWidget>(widget))
+        return button->getText();
       if (auto textBox = as<TextBoxWidget>(widget))
-        textBox->setCursorPosition(cursorPosition);
-    }
-  });
-
-  callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> std::optional<int> {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
-      if (auto textBox = as<TextBoxWidget>(widget))
-        return textBox->getCursorPosition();
-    }
-    return {};
-  });
-
-  callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> std::optional<String> {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
-        if (auto label = as<LabelWidget>(widget))
-          return label->text();
-        else if (auto button = as<ButtonWidget>(widget))
-          return button->getText();
-        else if (auto textBox = as<TextBoxWidget>(widget))
-          return textBox->getText();
+        return textBox->getText();
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setText", [parentWidget](String const& widgetName, String const& text) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      if (auto label = as<LabelWidget>(widget))
+        return label->setText(text);
+      if (auto button = as<ButtonWidget>(widget))
+        button->setText(text);
+      else if (auto textBox = as<TextBoxWidget>(widget)) {
+        auto changed = textBox->setText(text);
+        if (!changed)
+          return std::unexpected(std::move(changed.error()));
       }
       return {};
     });
-
-  callbacks.registerCallback("setText", [parentWidget](String const& widgetName, String const& text) {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
-        if (auto label = as<LabelWidget>(widget))
-          label->setText(text);
-        else if (auto button = as<ButtonWidget>(widget))
-          button->setText(text);
-        else if (auto textBox = as<TextBoxWidget>(widget))
-          textBox->setText(text);
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color const& color) -> std::expected<void, StarException> {
+    return withWidget<Widget>(parentWidget, widgetName, [&](std::shared_ptr<Widget> widget) -> std::expected<void, StarException> {
+      if (auto label = as<LabelWidget>(widget))
+        label->setColor(color);
+      else if (auto button = as<ButtonWidget>(widget))
+        button->setFontColor(color);
+      else if (auto textBox = as<TextBoxWidget>(widget))
+        textBox->setColor(color);
+      return {};
     });
-
-  callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color const& color) {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
-        if (auto label = as<LabelWidget>(widget))
-          label->setColor(color);
-        else if (auto button = as<ButtonWidget>(widget))
-          button->setFontColor(color);
-        else if (auto textBox = as<TextBoxWidget>(widget))
-          textBox->setColor(color);
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setImage", [parentWidget](String const& widgetName, String const& image) -> std::expected<void, StarException> {
+    return withWidget<ImageWidget>(parentWidget, widgetName, [&](std::shared_ptr<ImageWidget> widget) -> std::expected<void, StarException> {
+      return widget->setImage(image);
     });
-
-  callbacks.registerCallback("setImage", [parentWidget](String const& widgetName, String const& imagePath) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
-        image->setImage(imagePath);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setImageScale", [parentWidget](String const& widgetName, float scale) -> std::expected<void, StarException> {
+    return withWidget<ImageWidget>(parentWidget, widgetName, [&](std::shared_ptr<ImageWidget> widget) -> std::expected<void, StarException> {
+      return widget->setScale(scale);
     });
-
-  callbacks.registerCallback("setImageScale", [parentWidget](String const& widgetName, float const& imageScale) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
-        image->setScale(imageScale);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setImageRotation", [parentWidget](String const& widgetName, float rotation) -> std::expected<void, StarException> {
+    return withWidget<ImageWidget>(parentWidget, widgetName, [&](std::shared_ptr<ImageWidget> widget) -> std::expected<void, StarException> {
+      return widget->setRotation(rotation);
     });
-
-  callbacks.registerCallback("setImageRotation", [parentWidget](String const& widgetName, float const& imageRotation) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
-        image->setRotation(imageRotation);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setButtonEnabled", [parentWidget](String const& widgetName, bool enabled) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      widget->setEnabled(enabled);
+      return {};
     });
-
-  callbacks.registerCallback("setButtonEnabled", [parentWidget](String const& widgetName, bool enabled) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setButtonImage", [parentWidget](String const& widgetName, String const& image) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      return widget->setImages(image);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setButtonImages", [parentWidget](String const& widgetName, Json const& images) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      auto base = images.getString("base");
+      if (!base)
+        return std::unexpected(std::move(base.error()));
+      auto hover = images.getString("hover", "");
+      if (!hover)
+        return std::unexpected(std::move(hover.error()));
+      auto pressed = images.getString("pressed", "");
+      if (!pressed)
+        return std::unexpected(std::move(pressed.error()));
+      auto disabled = images.getString("disabled", "");
+      if (!disabled)
+        return std::unexpected(std::move(disabled.error()));
+      return widget->setImages(*base, *hover, *pressed, *disabled);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setButtonCheckedImages", [parentWidget](String const& widgetName, Json const& images) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      auto base = images.getString("base");
+      if (!base)
+        return std::unexpected(std::move(base.error()));
+      auto hover = images.getString("hover", "");
+      if (!hover)
+        return std::unexpected(std::move(hover.error()));
+      auto pressed = images.getString("pressed", "");
+      if (!pressed)
+        return std::unexpected(std::move(pressed.error()));
+      auto disabled = images.getString("disabled", "");
+      if (!disabled)
+        return std::unexpected(std::move(disabled.error()));
+      return widget->setCheckedImages(*base, *hover, *pressed, *disabled);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setButtonOverlayImage", [parentWidget](String const& widgetName, String const& image) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      widget->setOverlayImage(image);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getChecked", [parentWidget](String const& widgetName) -> std::expected<std::optional<bool>, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<std::optional<bool>, StarException> {
+      return widget->isChecked();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setChecked", [parentWidget](String const& widgetName, bool checked) -> std::expected<void, StarException> {
+    return withWidget<ButtonWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonWidget> widget) -> std::expected<void, StarException> {
+      widget->setChecked(checked);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getSelectedOption", [parentWidget](String const& widgetName) -> std::expected<std::optional<int>, StarException> {
+    return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<std::optional<int>, StarException> {
+      return widget->checkedId();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getSelectedData", [parentWidget](String const& widgetName) -> std::expected<Json, StarException> {
+    return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<Json, StarException> {
+      if (auto button = widget->checkedButton())
+        return button->data();
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setSelectedOption", [parentWidget](String const& widgetName, std::optional<int> index) -> std::expected<void, StarException> {
+    return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<void, StarException> {
+      return widget->select(index.value_or(ButtonGroup::NoButton));
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setOptionEnabled", [parentWidget](String const& widgetName, int index, bool enabled) -> std::expected<void, StarException> {
+    return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<void, StarException> {
+      if (auto button = widget->button(index))
         button->setEnabled(enabled);
-    });
-
-  callbacks.registerCallback("setButtonImage", [parentWidget](String const& widgetName, String const& baseImage) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setImages(baseImage);
-    });
-
-  callbacks.registerCallback("setButtonImages", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setImages(imageSet.getString("base"), imageSet.getString("hover", ""), imageSet.getString("pressed", ""), imageSet.getString("disabled", ""));
-    });
-
-  callbacks.registerCallback("setButtonCheckedImages", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setCheckedImages(imageSet.getString("base"), imageSet.getString("hover", ""), imageSet.getString("pressed", ""), imageSet.getString("disabled", ""));
-    });
-
-  callbacks.registerCallback("setButtonOverlayImage", [parentWidget](String const& widgetName, String const& overlayImage) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setOverlayImage(overlayImage);
-    });
-
-  callbacks.registerCallback("getChecked", [parentWidget](String const& widgetName) -> std::optional<bool> {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        return button->isChecked();
       return {};
     });
-
-  callbacks.registerCallback("setChecked", [parentWidget](String const& widgetName, bool checked) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
-        button->setChecked(checked);
-    });
-
-  callbacks.registerCallback("getSelectedOption", [parentWidget](String const& widgetName) -> std::optional<int> {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
-        return buttonGroup->checkedId();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setOptionVisible", [parentWidget](String const& widgetName, int index, bool visible) -> std::expected<void, StarException> {
+    return withWidget<ButtonGroupWidget>(parentWidget, widgetName, [&](std::shared_ptr<ButtonGroupWidget> widget) -> std::expected<void, StarException> {
+      if (auto button = widget->button(index))
+        return button->setVisibility(visible);
       return {};
     });
-
-  callbacks.registerCallback("getSelectedData", [parentWidget](String const& widgetName) -> Json {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
-        if (auto button = buttonGroup->checkedButton())
-          return button->data();
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setProgress", [parentWidget](String const& widgetName, float value) -> std::expected<void, StarException> {
+    return withWidget<ProgressWidget>(parentWidget, widgetName, [&](std::shared_ptr<ProgressWidget> widget) -> std::expected<void, StarException> {
+      widget->setCurrentProgressLevel(value);
       return {};
     });
-
-  callbacks.registerCallback("setSelectedOption", [parentWidget](String const& widgetName, std::optional<int> index) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
-        buttonGroup->select(index.value_or(ButtonGroup::NoButton));
-    });
-
-  callbacks.registerCallback("setOptionEnabled", [parentWidget](String const& widgetName, int index, bool enabled) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
-        if (auto button = buttonGroup->button(index))
-          button->setEnabled(enabled);
-      }
-    });
-
-  callbacks.registerCallback("setOptionVisible", [parentWidget](String const& widgetName, int index, bool visible) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
-        if (auto button = buttonGroup->button(index))
-          button->setVisibility(visible);
-      }
-    });
-
-  callbacks.registerCallback("setProgress", [parentWidget](String const& widgetName, float const& value) {
-      if (auto progress = parentWidget->fetchChild<ProgressWidget>(widgetName))
-        progress->setCurrentProgressLevel(value);
-    });
-
-  callbacks.registerCallback("setSliderEnabled", [parentWidget](String const& widgetName, bool enabled) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
-        slider->setEnabled(enabled);
-    });
-
-  callbacks.registerCallback("getSliderValue", [parentWidget](String const& widgetName) -> std::optional<int> {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
-        return slider->val();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setSliderEnabled", [parentWidget](String const& widgetName, bool enabled) -> std::expected<void, StarException> {
+    return withWidget<SliderBarWidget>(parentWidget, widgetName, [&](std::shared_ptr<SliderBarWidget> widget) -> std::expected<void, StarException> {
+      widget->setEnabled(enabled);
       return {};
     });
-
-  callbacks.registerCallback("setSliderValue", [parentWidget](String const& widgetName, int newValue) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
-        return slider->setVal(newValue);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getSliderValue", [parentWidget](String const& widgetName) -> std::expected<std::optional<int>, StarException> {
+    return withWidget<SliderBarWidget>(parentWidget, widgetName, [&](std::shared_ptr<SliderBarWidget> widget) -> std::expected<std::optional<int>, StarException> {
+      return widget->val();
     });
-
-  callbacks.registerCallback("setSliderRange", [parentWidget](String const& widgetName, int newMin, int newMax, std::optional<int> newDelta) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
-        return slider->setRange(newMin, newMax, newDelta.value_or(1));
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setSliderValue", [parentWidget](String const& widgetName, int value) -> std::expected<void, StarException> {
+    return withWidget<SliderBarWidget>(parentWidget, widgetName, [&](std::shared_ptr<SliderBarWidget> widget) -> std::expected<void, StarException> {
+      return widget->setVal(value);
     });
-
-  callbacks.registerCallback("clearListItems", [parentWidget](String const& widgetName) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-        list->clear();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setSliderRange", [parentWidget](String const& widgetName, int min, int max, std::optional<int> delta) -> std::expected<void, StarException> {
+    return withWidget<SliderBarWidget>(parentWidget, widgetName, [&](std::shared_ptr<SliderBarWidget> widget) -> std::expected<void, StarException> {
+      return widget->setRange(min, max, delta.value_or(1));
     });
-
-  callbacks.registerCallback("addListItem", [parentWidget](String const& widgetName) -> std::optional<String> {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)) {
-        auto newItem = list->addItem();
-        return newItem->name();
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("clearListItems", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
+      return widget->clear();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("addListItem", [parentWidget](String const& widgetName) -> std::expected<std::optional<String>, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<std::optional<String>, StarException> {
+      auto item = widget->addItem();
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      return (*item)->name();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("removeListItem", [parentWidget](String const& widgetName, std::size_t index) -> std::expected<void, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
+      return widget->removeItem(index);
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getListSelected", [parentWidget](String const& widgetName) -> std::expected<std::optional<String>, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<std::optional<String>, StarException> {
+      if (widget->selectedItem() != NPos)
+        return widget->selectedWidget()->name();
       return {};
     });
-
-  callbacks.registerCallback("removeListItem", [parentWidget](String const& widgetName, std::size_t at) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-        list->removeItem(at);
-    });
-
-  callbacks.registerCallback("getListSelected", [parentWidget](String const& widgetName) -> std::optional<String> {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-        if (list->selectedItem() != NPos)
-          return list->selectedWidget()->name();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setListSelected", [parentWidget](String const& widgetName, String const& name) -> std::expected<void, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
+      auto selected = widget->fetchChild(name);
+      if (!selected)
+        return std::unexpected(std::move(selected.error()));
+      if (*selected)
+        return widget->setSelectedWidget(*selected);
       return {};
     });
-
-  callbacks.registerCallback("setListSelected", [parentWidget](String const& widgetName, String const& selectedName) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-        if (auto selected = list->fetchChild(selectedName))
-          list->setSelectedWidget(selected);
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("clearListSelected", [parentWidget](String const& widgetName) -> std::expected<void, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
+      return widget->clearSelected();
     });
-
-  callbacks.registerCallback("clearListSelected", [parentWidget](String const& widgetName) {
-    if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-      list->clearSelected();
-  });
-
-  callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)){
-        list->registerMemberCallback(name, [callback](Widget* widget) {
-            callback.invoke(widget->name(), widget->data());
-          });
-      }
-    });
-
-  callbacks.registerCallback("itemGridItems", [parentWidget](String const& widgetName) {
-      if (auto itemGrid = parentWidget->fetchChild<ItemGridWidget>(widgetName))
-        return itemGrid->bag()->toJson();
-      return Json();
-    });
-
-  callbacks.registerCallback("itemSlotItem", [parentWidget](String const& widgetName) -> std::optional<Json> {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        if (itemSlot->item())
-          return itemSlot->item()->descriptor().toJson();
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) -> std::expected<void, StarException> {
+    return withWidget<ListWidget>(parentWidget, widgetName, [&](std::shared_ptr<ListWidget> widget) -> std::expected<void, StarException> {
+      widget->registerMemberCallback(name, [callback](Widget* member) -> std::expected<void, StarException> {
+        return callback.invoke<void>(member->name(), member->data());
+      });
       return {};
     });
-
-  callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& item) {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        auto itemDb = parentWidget->context()->root().itemDatabase();
-        itemSlot->setItem(itemDb->fromJson(item));
-      }
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("itemGridItems", [parentWidget](String const& widgetName) -> std::expected<Json, StarException> {
+    return withWidget<ItemGridWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemGridWidget> widget) -> std::expected<Json, StarException> {
+      return widget->bag()->toJson();
     });
-
-  callbacks.registerCallback("setItemSlotProgress", [parentWidget](String const& widgetName, float progress) {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        itemSlot->setProgress(progress);
-      }
-    });
-
-  callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& childName, String const& image) {
-      if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
-        std::shared_ptr<Widget> newChild = std::make_shared<ImageWidget>(*parentWidget->context(), image);
-        flow->addChild(childName, newChild);
-      }
-    });
-
-  callbacks.registerCallback("setImageStretchSet", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto imageStretch = parentWidget->fetchChild<ImageStretchWidget>(widgetName)) {
-        imageStretch->setImageStretchSet(imageSet.getString("begin", ""), imageSet.getString("inner", ""), imageSet.getString("end", ""));
-      }
-    });
-
-  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
-        return scrollArea->scrollOffset();
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("itemSlotItem", [parentWidget](String const& widgetName) -> std::expected<std::optional<Json>, StarException> {
+    return withWidget<ItemSlotWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemSlotWidget> widget) -> std::expected<std::optional<Json>, StarException> {
+      if (auto item = widget->item())
+        return item->descriptor().toJson();
       return {};
-  });
-
-  callbacks.registerCallback("setScrollOffset", [parentWidget](String const& widgetName, Vec2I const& offset) {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
-        scrollArea->scrollAreaBy(offset - scrollArea->scrollOffset());
-  });
-
-  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
-        return scrollArea->maxScrollPosition();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& config) -> std::expected<void, StarException> {
+    return withWidget<ItemSlotWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemSlotWidget> widget) -> std::expected<void, StarException> {
+      auto database = parentWidget->context()->root().itemDatabase();
+      if (!database)
+        return std::unexpected(std::move(database.error()));
+      auto item = (*database)->fromJson(config);
+      if (!item)
+        return std::unexpected(std::move(item.error()));
+      widget->setItem(*item);
       return {};
-  });
-
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setItemSlotProgress", [parentWidget](String const& widgetName, float progress) -> std::expected<void, StarException> {
+    return withWidget<ItemSlotWidget>(parentWidget, widgetName, [&](std::shared_ptr<ItemSlotWidget> widget) -> std::expected<void, StarException> {
+      widget->setProgress(progress);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& name, String const& image) -> std::expected<void, StarException> {
+    return withWidget<FlowLayout>(parentWidget, widgetName, [&](std::shared_ptr<FlowLayout> widget) -> std::expected<void, StarException> {
+      auto child = ImageWidget::create(*parentWidget->context(), image);
+      if (!child)
+        return std::unexpected(std::move(child.error()));
+      return widget->addChild(name, std::move(*child));
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setImageStretchSet", [parentWidget](String const& widgetName, Json const& images) -> std::expected<void, StarException> {
+    return withWidget<ImageStretchWidget>(parentWidget, widgetName, [&](std::shared_ptr<ImageStretchWidget> widget) -> std::expected<void, StarException> {
+      auto begin = images.getString("begin", "");
+      if (!begin)
+        return std::unexpected(std::move(begin.error()));
+      auto inner = images.getString("inner", "");
+      if (!inner)
+        return std::unexpected(std::move(inner.error()));
+      auto end = images.getString("end", "");
+      if (!end)
+        return std::unexpected(std::move(end.error()));
+      widget->setImageStretchSet(*begin, *inner, *end);
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> std::expected<std::optional<Vec2I>, StarException> {
+    return withWidget<ScrollArea>(parentWidget, widgetName, [&](std::shared_ptr<ScrollArea> widget) -> std::expected<std::optional<Vec2I>, StarException> {
+      return widget->scrollOffset();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("setScrollOffset", [parentWidget](String const& widgetName, Vec2I const& offset) -> std::expected<void, StarException> {
+    return withWidget<ScrollArea>(parentWidget, widgetName, [&](std::shared_ptr<ScrollArea> widget) -> std::expected<void, StarException> {
+      widget->scrollAreaBy(offset - widget->scrollOffset());
+      return {};
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
+  if (auto registered = callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> std::expected<std::optional<Vec2I>, StarException> {
+    return withWidget<ScrollArea>(parentWidget, widgetName, [&](std::shared_ptr<ScrollArea> widget) -> std::expected<std::optional<Vec2I>, StarException> {
+      return widget->maxScrollPosition();
+    });
+  }); !registered)
+    return std::unexpected(std::move(registered.error()));
   return callbacks;
 }
 

@@ -4,7 +4,6 @@ import std;
 import star.unique_function;
 import star.format;
 import star.string;
-import star.optional;
 import star.type_identity;
 
 //#define STAR_MUTEX_LOG
@@ -39,10 +38,11 @@ public:
   // Yield this thread, offering the opportunity to reschedule.
   static void yield();
 
-  static unsigned numberOfProcessors();
+  [[nodiscard]] static std::expected<unsigned, StarException> numberOfProcessors();
 
   template <typename Function, typename... Args>
-  static ThreadFunction<std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>> invoke(String const& name, Function&& f, Args&&... args);
+  [[nodiscard]] static auto invoke(String const& name, Function&& f, Args&&... args)
+      -> std::expected<ThreadFunction<typename std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>::value_type>, StarException>;
 
   Thread(String const& name);
   Thread(Thread&&);
@@ -55,12 +55,12 @@ public:
 
   // Start a thread that is currently in the joined state.  Returns true if the
   // thread was joined and is now started, false if the thread was not joined.
-  bool start();
+  [[nodiscard]] std::expected<bool, StarException> start();
 
   // Wait for a thread to finish and re-join with the thread, on completion
   // isJoined() will be false.  Returns true if the thread was joinable, and is
   // now joined, false if the thread was already joined.
-  bool join();
+  [[nodiscard]] std::expected<bool, StarException> join();
 
   // Returns false when this thread been started without being joined.  This is
   // subtlely different than "!isRunning()", in that the thread could have
@@ -74,38 +74,25 @@ public:
   String name();
 
 protected:
-  virtual void run() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> run() = 0;
 
 private:
   std::unique_ptr<ThreadImpl> m_impl;
 };
 
-// Wraps a function call and calls in another thread, very nice lightweight
-// one-shot alternative to deriving from Thread.  Handles exceptions in a
-// different way from Thread, instead of logging the exception, the exception
-// is forwarded and re-thrown during the call to finish().
+// A one-shot thread whose owning diagnostic is returned by finish().
 template <>
 class ThreadFunction<void> {
 public:
   ThreadFunction();
   ThreadFunction(ThreadFunction&&);
-
-  // Automatically starts the given function, ThreadFunction can also be
-  // constructed with Thread::invoke, which is a shorthand.
-  ThreadFunction(UniqueFunction<void()> function, String const& name);
-
-  // Automatically calls finish, though BEWARE that often times this is quite
-  // dangerous, and this is here mostly as a fallback.  The natural destructor
-  // order for members of a class is often wrong, and if the function throws,
-  // since this destructor calls finish it will throw.
+  [[nodiscard]] static std::expected<ThreadFunction, StarException> create(
+      UniqueFunction<std::expected<void, StarException>()> function, String const& name);
+  // Destruction joins and reports any unobserved failure to the emergency log.
   ~ThreadFunction();
 
   ThreadFunction& operator=(ThreadFunction&&);
-
-  // Waits on function finish if function is assigned and started, otherwise
-  // does nothing.  If the function threw an exception, it will be re-thrown
-  // here (on the first call to finish() only).
-  void finish();
+  [[nodiscard]] std::expected<void, StarException> finish();
 
   // Returns whether the ThreadFunction::finish method been called and the
   // ThreadFunction has stopped.  Also returns true when the ThreadFunction has
@@ -129,16 +116,15 @@ class ThreadFunction {
 public:
   ThreadFunction();
   ThreadFunction(ThreadFunction&&);
-  ThreadFunction(UniqueFunction<Return()> function, String const& name);
+  [[nodiscard]] static std::expected<ThreadFunction, StarException> create(
+      UniqueFunction<std::expected<Return, StarException>()> function, String const& name);
 
   ~ThreadFunction();
 
   ThreadFunction& operator=(ThreadFunction&&);
 
-  // Finishes the thread, moving and returning the final value of the function.
-  // If the function threw an exception, finish() will rethrow that exception.
-  // May only be called once, otherwise will throw std::bad_optional_access.
-  Return finish();
+  // Moves out the result once; subsequent consumption returns a diagnostic.
+  [[nodiscard]] std::expected<Return, StarException> finish();
 
   bool isFinished() const;
   bool isRunning() const;
@@ -369,12 +355,15 @@ bool MLocker<MutexType>::tryLock() {
 }
 
 template <typename Function, typename... Args>
-ThreadFunction<std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {[function = std::forward<Function>(f), arguments = std::make_tuple(std::forward<Args>(args)...)]() mutable -> decltype(auto) {
-    return std::apply([&function](auto&... saved) -> decltype(auto) {
-      return std::invoke(function, saved...);
-    }, arguments);
-  }, name};
+[[nodiscard]] auto Thread::invoke(String const& name, Function&& f, Args&&... args)
+    -> std::expected<ThreadFunction<typename std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>::value_type>, StarException> {
+  using Return = typename std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>::value_type;
+  return ThreadFunction<Return>::create(
+      [function = std::forward<Function>(f), arguments = std::make_tuple(std::forward<Args>(args)...)]() mutable {
+        return std::apply([&function](auto&... saved) {
+          return std::invoke(function, saved...);
+        }, arguments);
+      }, name);
 }
 
 template <typename Return>
@@ -384,25 +373,40 @@ template <typename Return>
 ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction(UniqueFunction<Return()> function, String const& name) {
-  m_return = std::make_shared<std::optional<Return>>();
-  m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() mutable {
-      *retValue = function();
-    }, name);
+[[nodiscard]] std::expected<ThreadFunction<Return>, StarException> ThreadFunction<Return>::create(
+    UniqueFunction<std::expected<Return, StarException>()> function, String const& name) {
+  ThreadFunction result;
+  result.m_return = std::make_shared<std::optional<Return>>();
+  auto thread = ThreadFunction<void>::create(
+      [function = std::move(function), retValue = result.m_return]() mutable -> std::expected<void, StarException> {
+        auto value = function();
+        if (!value)
+          return std::unexpected(std::move(value.error()));
+        retValue->emplace(std::move(*value));
+        return {};
+      }, name);
+  if (!thread)
+    return std::unexpected(std::move(thread.error()));
+  result.m_function = std::move(*thread);
+  return result;
 }
 
 template <typename Return>
-ThreadFunction<Return>::~ThreadFunction() {
-  m_function.finish();
-}
+ThreadFunction<Return>::~ThreadFunction() = default;
 
 template <typename Return>
 ThreadFunction<Return>& ThreadFunction<Return>::operator=(ThreadFunction&&) = default;
 
 template <typename Return>
-Return ThreadFunction<Return>::finish() {
-  m_function.finish();
-  return takeOptional(*m_return);
+[[nodiscard]] std::expected<Return, StarException> ThreadFunction<Return>::finish() {
+  auto finished = m_function.finish();
+  if (!finished)
+    return std::unexpected(std::move(finished.error()));
+  if (!m_return || !*m_return)
+    return std::unexpected(StarException("Thread function has no unconsumed result"));
+  Return result = std::move(**m_return);
+  m_return->reset();
+  return result;
 }
 
 template <typename Return>

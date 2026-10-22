@@ -83,26 +83,66 @@ WorldRegion::WorldRegion()
     blockBiomeIndex(NullBiomeIndex),
     environmentBiomeIndex(NullBiomeIndex) {}
 
-WorldRegion::WorldRegion(Json const& store) {
-  terrainSelectorIndex = store.getUInt("terrainSelectorIndex");
-  foregroundCaveSelectorIndex = store.getUInt("foregroundCaveSelectorIndex");
-  backgroundCaveSelectorIndex = store.getUInt("backgroundCaveSelectorIndex");
-
-  blockBiomeIndex = store.getUInt("blockBiomeIndex");
-  environmentBiomeIndex = store.getUInt("environmentBiomeIndex");
-
-  regionLiquids.caveLiquid = store.getUInt("caveLiquid");
-  regionLiquids.caveLiquidSeedDensity = store.getFloat("caveLiquidSeedDensity");
-
-  regionLiquids.oceanLiquid = store.getUInt("oceanLiquid");
-  regionLiquids.oceanLiquidLevel = store.getInt("oceanLiquidLevel");
-
-  regionLiquids.encloseLiquids = store.getBool("encloseLiquids");
-  regionLiquids.fillMicrodungeons = store.getBool("fillMicrodungeons");
-
-  subBlockSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("subBlockSelectorIndexes"), std::mem_fn(&Json::toUInt));
-  foregroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("foregroundOreSelectorIndexes"), std::mem_fn(&Json::toUInt));
-  backgroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("backgroundOreSelectorIndexes"), std::mem_fn(&Json::toUInt));
+std::expected<WorldRegion, StarException> WorldRegion::create(Json const& store) {
+  WorldRegion result;
+  auto resultterrainSelectorIndexResult1 = store.getUInt("terrainSelectorIndex");
+  if (!resultterrainSelectorIndexResult1) return std::unexpected(std::move(resultterrainSelectorIndexResult1.error()));
+  result.terrainSelectorIndex = std::move((*resultterrainSelectorIndexResult1));
+  auto resultforegroundCaveSelectorIndexResult1 = store.getUInt("foregroundCaveSelectorIndex");
+  if (!resultforegroundCaveSelectorIndexResult1) return std::unexpected(std::move(resultforegroundCaveSelectorIndexResult1.error()));
+  result.foregroundCaveSelectorIndex = std::move((*resultforegroundCaveSelectorIndexResult1));
+  auto resultbackgroundCaveSelectorIndexResult1 = store.getUInt("backgroundCaveSelectorIndex");
+  if (!resultbackgroundCaveSelectorIndexResult1) return std::unexpected(std::move(resultbackgroundCaveSelectorIndexResult1.error()));
+  result.backgroundCaveSelectorIndex = std::move((*resultbackgroundCaveSelectorIndexResult1));
+  auto resultblockBiomeIndexResult1 = store.getUInt("blockBiomeIndex");
+  if (!resultblockBiomeIndexResult1) return std::unexpected(std::move(resultblockBiomeIndexResult1.error()));
+  result.blockBiomeIndex = std::move((*resultblockBiomeIndexResult1));
+  auto resultenvironmentBiomeIndexResult1 = store.getUInt("environmentBiomeIndex");
+  if (!resultenvironmentBiomeIndexResult1) return std::unexpected(std::move(resultenvironmentBiomeIndexResult1.error()));
+  result.environmentBiomeIndex = std::move((*resultenvironmentBiomeIndexResult1));
+  auto resultregionLiquidscaveLiquidResult1 = store.getUInt("caveLiquid");
+  if (!resultregionLiquidscaveLiquidResult1) return std::unexpected(std::move(resultregionLiquidscaveLiquidResult1.error()));
+  result.regionLiquids.caveLiquid = std::move((*resultregionLiquidscaveLiquidResult1));
+  auto resultregionLiquidscaveLiquidSeedDensityResult1 = store.getFloat("caveLiquidSeedDensity");
+  if (!resultregionLiquidscaveLiquidSeedDensityResult1) return std::unexpected(std::move(resultregionLiquidscaveLiquidSeedDensityResult1.error()));
+  result.regionLiquids.caveLiquidSeedDensity = std::move((*resultregionLiquidscaveLiquidSeedDensityResult1));
+  auto resultregionLiquidsoceanLiquidResult1 = store.getUInt("oceanLiquid");
+  if (!resultregionLiquidsoceanLiquidResult1) return std::unexpected(std::move(resultregionLiquidsoceanLiquidResult1.error()));
+  result.regionLiquids.oceanLiquid = std::move((*resultregionLiquidsoceanLiquidResult1));
+  auto resultregionLiquidsoceanLiquidLevelResult1 = store.getInt("oceanLiquidLevel");
+  if (!resultregionLiquidsoceanLiquidLevelResult1) return std::unexpected(std::move(resultregionLiquidsoceanLiquidLevelResult1.error()));
+  result.regionLiquids.oceanLiquidLevel = std::move((*resultregionLiquidsoceanLiquidLevelResult1));
+  auto resultregionLiquidsencloseLiquidsResult1 = store.getBool("encloseLiquids");
+  if (!resultregionLiquidsencloseLiquidsResult1) return std::unexpected(std::move(resultregionLiquidsencloseLiquidsResult1.error()));
+  result.regionLiquids.encloseLiquids = std::move((*resultregionLiquidsencloseLiquidsResult1));
+  auto resultregionLiquidsfillMicrodungeonsResult1 = store.getBool("fillMicrodungeons");
+  if (!resultregionLiquidsfillMicrodungeonsResult1) return std::unexpected(std::move(resultregionLiquidsfillMicrodungeonsResult1.error()));
+  result.regionLiquids.fillMicrodungeons = std::move((*resultregionLiquidsfillMicrodungeonsResult1));
+  auto autosubBlockSelectorIndexesResult1 = store.getArray("subBlockSelectorIndexes");
+  if (!autosubBlockSelectorIndexesResult1) return std::unexpected(std::move(autosubBlockSelectorIndexesResult1.error()));
+  auto subBlockSelectorIndexes = std::move((*autosubBlockSelectorIndexesResult1));
+  for (auto const& entry : subBlockSelectorIndexes) {
+    auto index = entry.toUInt();
+    if (!index) return std::unexpected(std::move(index.error()));
+    result.subBlockSelectorIndexes.append(*index);
+  }
+  auto autoforegroundOreSelectorIndexesResult1 = store.getArray("foregroundOreSelectorIndexes");
+  if (!autoforegroundOreSelectorIndexesResult1) return std::unexpected(std::move(autoforegroundOreSelectorIndexesResult1.error()));
+  auto foregroundOreSelectorIndexes = std::move((*autoforegroundOreSelectorIndexesResult1));
+  for (auto const& entry : foregroundOreSelectorIndexes) {
+    auto index = entry.toUInt();
+    if (!index) return std::unexpected(std::move(index.error()));
+    result.foregroundOreSelectorIndexes.append(*index);
+  }
+  auto autobackgroundOreSelectorIndexesResult1 = store.getArray("backgroundOreSelectorIndexes");
+  if (!autobackgroundOreSelectorIndexesResult1) return std::unexpected(std::move(autobackgroundOreSelectorIndexesResult1.error()));
+  auto backgroundOreSelectorIndexes = std::move((*autobackgroundOreSelectorIndexesResult1));
+  for (auto const& entry : backgroundOreSelectorIndexes) {
+    auto index = entry.toUInt();
+    if (!index) return std::unexpected(std::move(index.error()));
+    result.backgroundOreSelectorIndexes.append(*index);
+  }
+  return result;
 }
 
 Json WorldRegion::toJson() const {
@@ -129,59 +169,110 @@ Json WorldRegion::toJson() const {
   };
 }
 
-WorldLayout::BlockNoise WorldLayout::BlockNoise::build(Json const& config, std::uint64_t seed) {
+std::expected<WorldLayout::BlockNoise, StarException> WorldLayout::BlockNoise::build(Json const& config, std::uint64_t seed) {
   BlockNoise blockNoise;
-  blockNoise.horizontalNoise = PerlinF(config.get("horizontalNoise"), staticRandomU64(seed, "HorizontalNoise"));
-  blockNoise.verticalNoise = PerlinF(config.get("verticalNoise"), staticRandomU64(seed, "VerticalNoise"));
-  blockNoise.xNoise = PerlinF(config.get("noise"), staticRandomU64(seed, "XNoise"));
-  blockNoise.yNoise = PerlinF(config.get("noise"), staticRandomU64(seed, "yNoise"));
+  auto blockNoisehorizontalNoiseResult1 = config.get("horizontalNoise");
+  if (!blockNoisehorizontalNoiseResult1) return std::unexpected(std::move(blockNoisehorizontalNoiseResult1.error()));
+  auto blockNoisehorizontalNoisePerlin = PerlinF::create((*blockNoisehorizontalNoiseResult1), staticRandomU64(seed, "HorizontalNoise"));
+  if (!blockNoisehorizontalNoisePerlin) return std::unexpected(std::move(blockNoisehorizontalNoisePerlin.error()));
+  blockNoise.horizontalNoise = std::move(*blockNoisehorizontalNoisePerlin);
+  auto blockNoiseverticalNoiseResult1 = config.get("verticalNoise");
+  if (!blockNoiseverticalNoiseResult1) return std::unexpected(std::move(blockNoiseverticalNoiseResult1.error()));
+  auto blockNoiseverticalNoisePerlin = PerlinF::create((*blockNoiseverticalNoiseResult1), staticRandomU64(seed, "VerticalNoise"));
+  if (!blockNoiseverticalNoisePerlin) return std::unexpected(std::move(blockNoiseverticalNoisePerlin.error()));
+  blockNoise.verticalNoise = std::move(*blockNoiseverticalNoisePerlin);
+  auto blockNoisexNoiseResult1 = config.get("noise");
+  if (!blockNoisexNoiseResult1) return std::unexpected(std::move(blockNoisexNoiseResult1.error()));
+  auto blockNoisexNoisePerlin = PerlinF::create((*blockNoisexNoiseResult1), staticRandomU64(seed, "XNoise"));
+  if (!blockNoisexNoisePerlin) return std::unexpected(std::move(blockNoisexNoisePerlin.error()));
+  blockNoise.xNoise = std::move(*blockNoisexNoisePerlin);
+  auto blockNoiseyNoiseResult1 = config.get("noise");
+  if (!blockNoiseyNoiseResult1) return std::unexpected(std::move(blockNoiseyNoiseResult1.error()));
+  auto blockNoiseyNoisePerlin = PerlinF::create((*blockNoiseyNoiseResult1), staticRandomU64(seed, "yNoise"));
+  if (!blockNoiseyNoisePerlin) return std::unexpected(std::move(blockNoiseyNoisePerlin.error()));
+  blockNoise.yNoise = std::move(*blockNoiseyNoisePerlin);
   return blockNoise;
 }
 
 WorldLayout::BlockNoise::BlockNoise() {}
 
-WorldLayout::BlockNoise::BlockNoise(Json const& store) {
-  horizontalNoise = PerlinF(store.get("horizontalNoise"));
-  verticalNoise = PerlinF(store.get("verticalNoise"));
-  xNoise = PerlinF(store.get("xNoise"));
-  yNoise = PerlinF(store.get("yNoise"));
+std::expected<WorldLayout::BlockNoise, StarException> WorldLayout::BlockNoise::create(Json const& store) {
+  BlockNoise result;
+  auto resulthorizontalNoiseResult1 = store.get("horizontalNoise");
+  if (!resulthorizontalNoiseResult1) return std::unexpected(std::move(resulthorizontalNoiseResult1.error()));
+  auto resulthorizontalNoisePerlin = PerlinF::create((*resulthorizontalNoiseResult1));
+  if (!resulthorizontalNoisePerlin) return std::unexpected(std::move(resulthorizontalNoisePerlin.error()));
+  result.horizontalNoise = std::move(*resulthorizontalNoisePerlin);
+  auto resultverticalNoiseResult1 = store.get("verticalNoise");
+  if (!resultverticalNoiseResult1) return std::unexpected(std::move(resultverticalNoiseResult1.error()));
+  auto resultverticalNoisePerlin = PerlinF::create((*resultverticalNoiseResult1));
+  if (!resultverticalNoisePerlin) return std::unexpected(std::move(resultverticalNoisePerlin.error()));
+  result.verticalNoise = std::move(*resultverticalNoisePerlin);
+  auto resultxNoiseResult1 = store.get("xNoise");
+  if (!resultxNoiseResult1) return std::unexpected(std::move(resultxNoiseResult1.error()));
+  auto resultxNoisePerlin = PerlinF::create((*resultxNoiseResult1));
+  if (!resultxNoisePerlin) return std::unexpected(std::move(resultxNoisePerlin.error()));
+  result.xNoise = std::move(*resultxNoisePerlin);
+  auto resultyNoiseResult1 = store.get("yNoise");
+  if (!resultyNoiseResult1) return std::unexpected(std::move(resultyNoiseResult1.error()));
+  auto resultyNoisePerlin = PerlinF::create((*resultyNoiseResult1));
+  if (!resultyNoisePerlin) return std::unexpected(std::move(resultyNoisePerlin.error()));
+  result.yNoise = std::move(*resultyNoisePerlin);
+  return result;
 }
 
-Json WorldLayout::BlockNoise::toJson() const {
-  return JsonObject{
-    {"horizontalNoise", horizontalNoise.toJson()},
-    {"verticalNoise", verticalNoise.toJson()},
-    {"xNoise", xNoise.toJson()},
-    {"yNoise", yNoise.toJson()},
-  };
+std::expected<Json, StarException> WorldLayout::BlockNoise::toJson() const {
+  auto horizontalNoiseJson = horizontalNoise.toJson();
+  if (!horizontalNoiseJson) return std::unexpected(std::move(horizontalNoiseJson.error()));
+  auto verticalNoiseJson = verticalNoise.toJson();
+  if (!verticalNoiseJson) return std::unexpected(std::move(verticalNoiseJson.error()));
+  auto xNoiseJson = xNoise.toJson();
+  if (!xNoiseJson) return std::unexpected(std::move(xNoiseJson.error()));
+  auto yNoiseJson = yNoise.toJson();
+  if (!yNoiseJson) return std::unexpected(std::move(yNoiseJson.error()));
+  return JsonObject{{"horizontalNoise", std::move(*horizontalNoiseJson)}, {"verticalNoise", std::move(*verticalNoiseJson)}, {"xNoise", std::move(*xNoiseJson)}, {"yNoise", std::move(*yNoiseJson)}};
 }
 
-Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize) const {
+std::expected<Vec2I, StarException> WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize) const {
   float angle = (input[0] / (float)worldSize[0]) * 2 * std::numbers::pi;
   float xc = std::sin(angle) / (2 * std::numbers::pi) * worldSize[0];
   float zc = std::cos(angle) / (2 * std::numbers::pi) * worldSize[0];
 
+  auto horizontal = horizontalNoise.get(input[1]);
+  if (!horizontal) return std::unexpected(std::move(horizontal.error()));
+  auto x = xNoise.get(xc, input[1], zc);
+  if (!x) return std::unexpected(std::move(x.error()));
+  auto vertical = verticalNoise.get(xc, zc);
+  if (!vertical) return std::unexpected(std::move(vertical.error()));
+  auto y = yNoise.get(xc, input[1], zc);
+  if (!y) return std::unexpected(std::move(y.error()));
   Vec2I noisePos = Vec2I(
-      std::floor(input[0] + horizontalNoise.get(input[1]) + xNoise.get(xc, input[1], zc)),
-      std::floor(input[1] + verticalNoise.get(xc, zc) + yNoise.get(xc, input[1], zc))
+      std::floor(input[0] + *horizontal + *x),
+      std::floor(input[1] + *vertical + *y)
     );
   noisePos[1] = clamp<int>(noisePos[1], 0, worldSize[1]);
 
   return noisePos;
 }
 
-WorldLayout WorldLayout::buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed) {
+std::expected<WorldLayout, StarException> WorldLayout::buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed) {
   
-  auto assets = root.assets();
-  auto terrainDatabase = root.terrainDatabase();
-  auto biomeDatabase = root.biomeDatabase();
+  auto autoassetsResult1 = root.assets();
+  if (!autoassetsResult1) return std::unexpected(std::move(autoassetsResult1.error()));
+  auto assets = std::move((*autoassetsResult1));
+  auto autoterrainDatabaseResult1 = root.terrainDatabase();
+  if (!autoterrainDatabaseResult1) return std::unexpected(std::move(autoterrainDatabaseResult1.error()));
+  auto terrainDatabase = std::move((*autoterrainDatabaseResult1));
+  auto autobiomeDatabaseResult1 = root.biomeDatabase();
+  if (!autobiomeDatabaseResult1) return std::unexpected(std::move(autobiomeDatabaseResult1.error()));
+  auto biomeDatabase = std::move((*autobiomeDatabaseResult1));
 
   RandomSource randSource(seed);
 
   WorldLayout layout(root);
   layout.m_worldSize = terrestrialParameters.worldSize;
 
-  auto addLayer = [&](TerrestrialWorldParameters::TerrestrialLayer const& terrestrialLayer) {
+  auto addLayer = [&](TerrestrialWorldParameters::TerrestrialLayer const& terrestrialLayer) -> std::expected<void, StarException> {
     RegionParams primaryRegionParams = {
       terrestrialLayer.layerBaseHeight,
       terrestrialParameters.threatLevel,
@@ -272,7 +363,7 @@ WorldLayout WorldLayout::buildTerrestrialLayout(Root& root, TerrestrialWorldPara
       secondarySubRegions.append(secondarySubRegionParams);
     }
 
-    layout.addLayer(seed,
+    return layout.addLayer(seed,
         terrestrialLayer.layerMinHeight,
         terrestrialLayer.layerBaseHeight,
         terrestrialParameters.primaryBiome,
@@ -284,81 +375,159 @@ WorldLayout WorldLayout::buildTerrestrialLayout(Root& root, TerrestrialWorldPara
         terrestrialLayer.subRegionSizeRange);
   };
 
-  addLayer(terrestrialParameters.coreLayer);
-  for (auto const& undergroundLayer : std::views::reverse(terrestrialParameters.undergroundLayers))
-    addLayer(undergroundLayer);
+  {
 
-  addLayer(terrestrialParameters.subsurfaceLayer);
-  addLayer(terrestrialParameters.surfaceLayer);
-  addLayer(terrestrialParameters.atmosphereLayer);
-  addLayer(terrestrialParameters.spaceLayer);
+    auto added = addLayer(terrestrialParameters.coreLayer);
+
+    if (!added) return std::unexpected(std::move(added.error()));
+
+  }
+  for (auto const& undergroundLayer : std::views::reverse(terrestrialParameters.undergroundLayers))
+    {
+      auto added = addLayer(undergroundLayer);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
+
+  {
+
+    auto added = addLayer(terrestrialParameters.subsurfaceLayer);
+
+    if (!added) return std::unexpected(std::move(added.error()));
+
+  }
+  {
+    auto added = addLayer(terrestrialParameters.surfaceLayer);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  {
+    auto added = addLayer(terrestrialParameters.atmosphereLayer);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  {
+    auto added = addLayer(terrestrialParameters.spaceLayer);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
   layout.m_regionBlending = terrestrialParameters.blendSize;
-  if (terrestrialParameters.blockNoiseConfig)
-    layout.m_blockNoise = BlockNoise::build(terrestrialParameters.blockNoiseConfig, seed);
-  if (terrestrialParameters.blendNoiseConfig)
-    layout.m_blendNoise = PerlinF(terrestrialParameters.blendNoiseConfig, staticRandomU64(seed, "BlendNoise"));
+  if (terrestrialParameters.blockNoiseConfig) {
+    auto layoutm_blockNoiseResult1 = BlockNoise::build(terrestrialParameters.blockNoiseConfig, seed);
+    if (!layoutm_blockNoiseResult1) return std::unexpected(std::move(layoutm_blockNoiseResult1.error()));
+    layout.m_blockNoise = std::move((*layoutm_blockNoiseResult1));
+  }
+  if (terrestrialParameters.blendNoiseConfig) {
+    auto layoutm_blendNoiseResult1 = PerlinF::create(terrestrialParameters.blendNoiseConfig, staticRandomU64(seed, "BlendNoise"));
+    if (!layoutm_blendNoiseResult1) return std::unexpected(std::move(layoutm_blendNoiseResult1.error()));
+    layout.m_blendNoise = std::move((*layoutm_blendNoiseResult1));
+  }
 
-  layout.finalize(terrestrialParameters.skyColoring.mainColor);
+  auto finalized = layout.finalize(terrestrialParameters.skyColoring.mainColor);
+  if (!finalized) return std::unexpected(std::move(finalized.error()));
 
   return layout;
 }
 
-WorldLayout WorldLayout::buildAsteroidsLayout(Root& root, AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed) {
-  auto assets = root.assets();
+std::expected<WorldLayout, StarException> WorldLayout::buildAsteroidsLayout(Root& root, AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed) {
+  auto autoassetsResult1 = root.assets();
+  if (!autoassetsResult1) return std::unexpected(std::move(autoassetsResult1.error()));
+  auto assets = std::move((*autoassetsResult1));
 
   RandomSource randSource(seed);
 
-  auto asteroidsConfig = assets->json("/asteroids_worlds.config");
-  auto asteroidTerrainConfig = randSource.randFrom(asteroidsConfig.get("terrains").toArray());
-  auto emptyTerrainConfig = asteroidsConfig.get("emptyTerrain");
+  auto autoasteroidsConfigResult1 = assets->json("/asteroids_worlds.config");
+  if (!autoasteroidsConfigResult1) return std::unexpected(std::move(autoasteroidsConfigResult1.error()));
+  auto asteroidsConfig = std::move((*autoasteroidsConfigResult1));
+  auto autoasteroidTerrainsResult1 = asteroidsConfig.get("terrains");
+  if (!autoasteroidTerrainsResult1) return std::unexpected(std::move(autoasteroidTerrainsResult1.error()));
+  auto autoasteroidTerrainsResult2 = (*autoasteroidTerrainsResult1).toArray();
+  if (!autoasteroidTerrainsResult2) return std::unexpected(std::move(autoasteroidTerrainsResult2.error()));
+  auto asteroidTerrains = std::move((*autoasteroidTerrainsResult2));
+  auto selectedTerrain = randSource.randFrom(asteroidTerrains);
+  if (!selectedTerrain) return std::unexpected(std::move(selectedTerrain.error()));
+  auto const& asteroidTerrainConfig = **selectedTerrain;
+  auto autoemptyTerrainConfigResult1 = asteroidsConfig.get("emptyTerrain");
+  if (!autoemptyTerrainConfigResult1) return std::unexpected(std::move(autoemptyTerrainConfigResult1.error()));
+  auto emptyTerrainConfig = std::move((*autoemptyTerrainConfigResult1));
 
   WorldLayout layout(root);
   layout.m_worldSize = asteroidParameters.worldSize;
 
-  RegionParams asteroidRegion{
-    (int)asteroidParameters.worldSize[1] / 2,
-    asteroidParameters.threatLevel,
-    asteroidParameters.asteroidBiome,
-    asteroidTerrainConfig.getString("terrainSelector"),
-    asteroidTerrainConfig.getString("caveSelector"),
-    asteroidTerrainConfig.getString("bgCaveSelector"),
-    asteroidTerrainConfig.getString("oreSelector"),
-    asteroidTerrainConfig.getString("oreSelector"),
-    asteroidTerrainConfig.getString("subBlockSelector"),
-    {EmptyLiquidId, 0.0f, EmptyLiquidId, 0, false, false}
-  };
+  auto autoasteroidRegionField3Result1 = asteroidTerrainConfig.getString("terrainSelector");
+  if (!autoasteroidRegionField3Result1) return std::unexpected(std::move(autoasteroidRegionField3Result1.error()));
+  auto asteroidRegionField3 = std::move((*autoasteroidRegionField3Result1));
+  auto autoasteroidRegionField4Result1 = asteroidTerrainConfig.getString("caveSelector");
+  if (!autoasteroidRegionField4Result1) return std::unexpected(std::move(autoasteroidRegionField4Result1.error()));
+  auto asteroidRegionField4 = std::move((*autoasteroidRegionField4Result1));
+  auto autoasteroidRegionField5Result1 = asteroidTerrainConfig.getString("bgCaveSelector");
+  if (!autoasteroidRegionField5Result1) return std::unexpected(std::move(autoasteroidRegionField5Result1.error()));
+  auto asteroidRegionField5 = std::move((*autoasteroidRegionField5Result1));
+  auto autoasteroidRegionField6Result1 = asteroidTerrainConfig.getString("oreSelector");
+  if (!autoasteroidRegionField6Result1) return std::unexpected(std::move(autoasteroidRegionField6Result1.error()));
+  auto asteroidRegionField6 = std::move((*autoasteroidRegionField6Result1));
+  auto autoasteroidRegionField7Result1 = asteroidTerrainConfig.getString("oreSelector");
+  if (!autoasteroidRegionField7Result1) return std::unexpected(std::move(autoasteroidRegionField7Result1.error()));
+  auto asteroidRegionField7 = std::move((*autoasteroidRegionField7Result1));
+  auto autoasteroidRegionField8Result1 = asteroidTerrainConfig.getString("subBlockSelector");
+  if (!autoasteroidRegionField8Result1) return std::unexpected(std::move(autoasteroidRegionField8Result1.error()));
+  auto asteroidRegionField8 = std::move((*autoasteroidRegionField8Result1));
+  RegionParams asteroidRegion{(int)asteroidParameters.worldSize[1] / 2, asteroidParameters.threatLevel, asteroidParameters.asteroidBiome, asteroidRegionField3, asteroidRegionField4, asteroidRegionField5, asteroidRegionField6, asteroidRegionField7, asteroidRegionField8, {EmptyLiquidId, 0.0f, EmptyLiquidId, 0, false, false}};
 
-  RegionParams emptyRegion{
-    (int)asteroidParameters.worldSize[1] / 2,
-    asteroidParameters.threatLevel,
-    asteroidParameters.asteroidBiome,
-    emptyTerrainConfig.getString("terrainSelector"),
-    emptyTerrainConfig.getString("caveSelector"),
-    emptyTerrainConfig.getString("bgCaveSelector"),
-    emptyTerrainConfig.getString("oreSelector"),
-    emptyTerrainConfig.getString("oreSelector"),
-    emptyTerrainConfig.getString("subBlockSelector"),
-    {EmptyLiquidId, 0.0f, EmptyLiquidId, 0, false, false}
-  };
+  auto autoemptyRegionField3Result1 = emptyTerrainConfig.getString("terrainSelector");
+  if (!autoemptyRegionField3Result1) return std::unexpected(std::move(autoemptyRegionField3Result1.error()));
+  auto emptyRegionField3 = std::move((*autoemptyRegionField3Result1));
+  auto autoemptyRegionField4Result1 = emptyTerrainConfig.getString("caveSelector");
+  if (!autoemptyRegionField4Result1) return std::unexpected(std::move(autoemptyRegionField4Result1.error()));
+  auto emptyRegionField4 = std::move((*autoemptyRegionField4Result1));
+  auto autoemptyRegionField5Result1 = emptyTerrainConfig.getString("bgCaveSelector");
+  if (!autoemptyRegionField5Result1) return std::unexpected(std::move(autoemptyRegionField5Result1.error()));
+  auto emptyRegionField5 = std::move((*autoemptyRegionField5Result1));
+  auto autoemptyRegionField6Result1 = emptyTerrainConfig.getString("oreSelector");
+  if (!autoemptyRegionField6Result1) return std::unexpected(std::move(autoemptyRegionField6Result1.error()));
+  auto emptyRegionField6 = std::move((*autoemptyRegionField6Result1));
+  auto autoemptyRegionField7Result1 = emptyTerrainConfig.getString("oreSelector");
+  if (!autoemptyRegionField7Result1) return std::unexpected(std::move(autoemptyRegionField7Result1.error()));
+  auto emptyRegionField7 = std::move((*autoemptyRegionField7Result1));
+  auto autoemptyRegionField8Result1 = emptyTerrainConfig.getString("subBlockSelector");
+  if (!autoemptyRegionField8Result1) return std::unexpected(std::move(autoemptyRegionField8Result1.error()));
+  auto emptyRegionField8 = std::move((*autoemptyRegionField8Result1));
+  RegionParams emptyRegion{(int)asteroidParameters.worldSize[1] / 2, asteroidParameters.threatLevel, asteroidParameters.asteroidBiome, emptyRegionField3, emptyRegionField4, emptyRegionField5, emptyRegionField6, emptyRegionField7, emptyRegionField8, {EmptyLiquidId, 0.0f, EmptyLiquidId, 0, false, false}};
 
-  layout.addLayer(seed, 0, emptyRegion);
-  layout.addLayer(seed, asteroidParameters.asteroidBottomLevel, asteroidRegion);
-  layout.addLayer(seed, asteroidParameters.asteroidTopLevel, emptyRegion);
+  {
+    auto added = layout.addLayer(seed, 0, emptyRegion);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  {
+    auto added = layout.addLayer(seed, asteroidParameters.asteroidBottomLevel, asteroidRegion);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  {
+    auto added = layout.addLayer(seed, asteroidParameters.asteroidTopLevel, emptyRegion);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
 
   layout.m_regionBlending = asteroidParameters.blendSize;
-  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").transform(std::bind(&BlockNoise::build, std::placeholders::_1, seed));
+  auto noiseJson = asteroidsConfig.opt("blockNoise");
+  if (!noiseJson) return std::unexpected(std::move(noiseJson.error()));
+  if (*noiseJson) {
+    auto layoutm_blockNoiseResult1 = BlockNoise::build(**noiseJson, seed);
+    if (!layoutm_blockNoiseResult1) return std::unexpected(std::move(layoutm_blockNoiseResult1.error()));
+    layout.m_blockNoise = std::move((*layoutm_blockNoiseResult1));
+  }
 
   layout.m_playerStartSearchRegions.append(RectI(0, asteroidParameters.asteroidBottomLevel, asteroidParameters.worldSize[0], asteroidParameters.asteroidTopLevel));
 
-  layout.finalize(Color::Black);
+  auto finalized = layout.finalize(Color::Black);
+  if (!finalized) return std::unexpected(std::move(finalized.error()));
 
   return layout;
 }
 
-WorldLayout WorldLayout::buildFloatingDungeonLayout(Root& root, FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed) {
-  auto assets = root.assets();
-  auto biomeDatabase = root.biomeDatabase();
+std::expected<WorldLayout, StarException> WorldLayout::buildFloatingDungeonLayout(Root& root, FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed) {
+  auto autoassetsResult1 = root.assets();
+  if (!autoassetsResult1) return std::unexpected(std::move(autoassetsResult1.error()));
+  auto assets = std::move((*autoassetsResult1));
+  auto autobiomeDatabaseResult1 = root.biomeDatabase();
+  if (!autobiomeDatabaseResult1) return std::unexpected(std::move(autobiomeDatabaseResult1.error()));
+  auto biomeDatabase = std::move((*autobiomeDatabaseResult1));
 
   RandomSource randSource(seed);
 
@@ -373,58 +542,131 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(Root& root, FloatingDungeonW
     {EmptyLiquidId, 0.0f, EmptyLiquidId, 0, false, false}
   };
 
-  layout.addLayer(seed, 0, biomeRegion);
-  if (floatingDungeonParameters.biome)
-    biomeDatabase->biomeSkyColoring(*floatingDungeonParameters.biome, seed);
-  else
-    layout.finalize(Color::Black);
+  {
+    auto added = layout.addLayer(seed, 0, biomeRegion);
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
+  if (floatingDungeonParameters.biome) {
+    auto sky = biomeDatabase->biomeSkyColoring(*floatingDungeonParameters.biome, seed);
+    if (!sky) return std::unexpected(std::move(sky.error()));
+  } else {
+    auto finalized = layout.finalize(Color::Black);
+    if (!finalized) return std::unexpected(std::move(finalized.error()));
+  }
 
   return layout;
 }
 
 WorldLayout::WorldLayout(Root& root) : m_root(root), m_regionBlending(0.0f) {}
 
-WorldLayout::WorldLayout(Root& root, Json const& store) : WorldLayout(root) {
-  auto terrainDatabase = this->root().terrainDatabase();
-
-  m_worldSize = jsonToVec2U(store.get("worldSize"));
-
-  m_biomes = store.getArray("biomes").transformed([this](Json const& json) {
-      return std::shared_ptr<Biome const>(std::make_shared<Biome>(this->root(), json));
-    });
-
-  m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDatabase](Json const& v) {
-      return std::shared_ptr<TerrainSelector const>(terrainDatabase->loadSelector(v));
-    });
-
-  m_layers = store.getArray("layers").transformed([](Json const& l) {
+std::expected<std::shared_ptr<WorldLayout>, StarException> WorldLayout::create(Root& root, Json const& store) {
+  auto result = std::make_shared<WorldLayout>(root);
+  auto autoterrainDatabaseResult1 = root.terrainDatabase();
+  if (!autoterrainDatabaseResult1) return std::unexpected(std::move(autoterrainDatabaseResult1.error()));
+  auto terrainDatabase = std::move((*autoterrainDatabaseResult1));
+  auto resultm_worldSizeResult1 = store.get("worldSize");
+  if (!resultm_worldSizeResult1) return std::unexpected(std::move(resultm_worldSizeResult1.error()));
+  auto resultm_worldSizeResult2 = jsonToVec2U((*resultm_worldSizeResult1));
+  if (!resultm_worldSizeResult2) return std::unexpected(std::move(resultm_worldSizeResult2.error()));
+  result->m_worldSize = std::move((*resultm_worldSizeResult2));
+  auto autobiomesResult1 = store.getArray("biomes");
+  if (!autobiomesResult1) return std::unexpected(std::move(autobiomesResult1.error()));
+  auto biomes = std::move((*autobiomesResult1));
+  for (auto const& value : biomes) {
+    auto parsed = Biome::create(root, value);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    result->m_biomes.append(std::make_shared<Biome>(std::move(*parsed)));
+  }
+  auto autoterrainSelectorsResult1 = store.getArray("terrainSelectors");
+  if (!autoterrainSelectorsResult1) return std::unexpected(std::move(autoterrainSelectorsResult1.error()));
+  auto terrainSelectors = std::move((*autoterrainSelectorsResult1));
+  for (auto const& value : terrainSelectors) {
+    auto parsed = terrainDatabase->loadSelector(value);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    result->m_terrainSelectors.append(std::move(*parsed));
+  }
+  auto autolayersResult1 = store.getArray("layers");
+  if (!autolayersResult1) return std::unexpected(std::move(autolayersResult1.error()));
+  auto layers = std::move((*autolayersResult1));
+  for (auto const& value : layers) {
     WorldLayer layer;
-    layer.yStart = l.getInt("yStart");
-
-    for (auto const& b : l.getArray("boundaries"))
-      layer.boundaries.append(b.toInt());
-
-    for (auto const& r : l.getArray("cells"))
-      layer.cells.append(std::make_shared<WorldRegion>(r));
-
-    return layer;
-  });
-
-  m_regionBlending = store.getFloat("regionBlending");
-  m_blockNoise = store.opt("blockNoise").transform(construct<BlockNoise>());
-  m_blendNoise = store.opt("blendNoise").transform(construct<PerlinF>());
-
-  m_playerStartSearchRegions = store.getArray("playerStartSearchRegions").transformed(jsonToRectI);
+    auto layeryStartResult1 = value.getInt("yStart");
+    if (!layeryStartResult1) return std::unexpected(std::move(layeryStartResult1.error()));
+    layer.yStart = std::move((*layeryStartResult1));
+    auto autoboundariesResult1 = value.getArray("boundaries");
+    if (!autoboundariesResult1) return std::unexpected(std::move(autoboundariesResult1.error()));
+    auto boundaries = std::move((*autoboundariesResult1));
+    for (auto const& boundary : boundaries) {
+      auto autopositionResult1 = boundary.toInt();
+      if (!autopositionResult1) return std::unexpected(std::move(autopositionResult1.error()));
+      auto position = std::move((*autopositionResult1));
+      layer.boundaries.append(position);
+    }
+    auto autocellsResult1 = value.getArray("cells");
+    if (!autocellsResult1) return std::unexpected(std::move(autocellsResult1.error()));
+    auto cells = std::move((*autocellsResult1));
+    for (auto const& cell : cells) {
+      auto region = WorldRegion::create(cell);
+      if (!region) return std::unexpected(std::move(region.error()));
+      layer.cells.append(std::make_shared<WorldRegion>(std::move(*region)));
+    }
+    result->m_layers.append(std::move(layer));
+  }
+  auto resultm_regionBlendingResult1 = store.getFloat("regionBlending");
+  if (!resultm_regionBlendingResult1) return std::unexpected(std::move(resultm_regionBlendingResult1.error()));
+  result->m_regionBlending = std::move((*resultm_regionBlendingResult1));
+  auto resultm_blockNoiseJson = store.opt("blockNoise");
+  if (!resultm_blockNoiseJson) return std::unexpected(std::move(resultm_blockNoiseJson.error()));
+  if (*resultm_blockNoiseJson) {
+    auto value = BlockNoise::create(**resultm_blockNoiseJson);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_blockNoise = std::move(*value);
+  }
+  auto resultm_blendNoiseJson = store.opt("blendNoise");
+  if (!resultm_blendNoiseJson) return std::unexpected(std::move(resultm_blendNoiseJson.error()));
+  if (*resultm_blendNoiseJson) {
+    auto value = PerlinF::create(**resultm_blendNoiseJson);
+    if (!value) return std::unexpected(std::move(value.error()));
+    result->m_blendNoise = std::move(*value);
+  }
+  auto autosearchRegionsResult1 = store.getArray("playerStartSearchRegions");
+  if (!autosearchRegionsResult1) return std::unexpected(std::move(autosearchRegionsResult1.error()));
+  auto searchRegions = std::move((*autosearchRegionsResult1));
+  for (auto const& region : searchRegions) {
+    auto autorectResult1 = jsonToRectI(region);
+    if (!autorectResult1) return std::unexpected(std::move(autorectResult1.error()));
+    auto rect = std::move((*autorectResult1));
+    result->m_playerStartSearchRegions.append(rect);
+  }
+  return result;
 }
 
-Json WorldLayout::toJson() const {
-  auto terrainDatabase = this->root().terrainDatabase();
+std::expected<Json, StarException> WorldLayout::toJson() const {
+  auto autoterrainDatabaseResult1 = this->root().terrainDatabase();
+  if (!autoterrainDatabaseResult1) return std::unexpected(std::move(autoterrainDatabaseResult1.error()));
+  auto terrainDatabase = std::move((*autoterrainDatabaseResult1));
 
+  JsonArray biomes;
+  for (auto const& biome : m_biomes) {
+    auto stored = biome->toJson();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    biomes.append(std::move(*stored));
+  }
+  Json blockNoise;
+  if (m_blockNoise) {
+    auto stored = m_blockNoise->toJson();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    blockNoise = std::move(*stored);
+  }
+  Json blendNoise;
+  if (m_blendNoise) {
+    auto stored = m_blendNoise->toJson();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    blendNoise = std::move(*stored);
+  }
   return JsonObject{
     {"worldSize", jsonFromVec2U(m_worldSize)},
-    {"biomes", transform<JsonArray>(m_biomes, [](auto const& biome) {
-        return biome->toJson();
-      })},
+    {"biomes", std::move(biomes)},
     {"terrainSelectors", transform<JsonArray>(m_terrainSelectors, [terrainDatabase](auto const& selector) {
         return terrainDatabase->storeSelector(selector);
       })},
@@ -436,8 +678,8 @@ Json WorldLayout::toJson() const {
         };
       })},
     {"regionBlending", m_regionBlending},
-    {"blockNoise", m_blockNoise.transform(std::mem_fn(&BlockNoise::toJson)).value_or(Json{})},
-    {"blendNoise", m_blendNoise.transform(std::mem_fn(&PerlinF::toJson)).value_or(Json{})},
+    {"blockNoise", std::move(blockNoise)},
+    {"blendNoise", std::move(blendNoise)},
     {"playerStartSearchRegions", JsonArray::from(m_playerStartSearchRegions.transformed(jsonFromRectI))}
   };
 }
@@ -454,7 +696,7 @@ List<RectI> WorldLayout::playerStartSearchRegions() const {
   return m_playerStartSearchRegions;
 }
 
-List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const {
+std::expected<List<WorldLayout::RegionWeighting>, StarException> WorldLayout::getWeighting(int x, int y) const {
   List<RegionWeighting> weighting;
   WorldGeometry geometry(m_worldSize);
 
@@ -554,7 +796,7 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
   return weighting;
 }
 
-List<RectI> WorldLayout::previewAddBiomeRegion(Vec2I const& position, int width) const {
+std::expected<List<RectI>, StarException> WorldLayout::previewAddBiomeRegion(Vec2I const& position, int width) const {
   auto layerAndCell = findLayerAndCell(position[0], position[1]);
   auto targetLayer = m_layers[layerAndCell.first];
   auto targetRegion = targetLayer.cells[layerAndCell.second];
@@ -572,19 +814,23 @@ List<RectI> WorldLayout::previewAddBiomeRegion(Vec2I const& position, int width)
 
   auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second + 1, width);
 
-  return expandResult.second;
+  if (!expandResult) return std::unexpected(std::move(expandResult.error()));
+
+  return std::move(expandResult->second);
 }
 
-List<RectI> WorldLayout::previewExpandBiomeRegion(Vec2I const& position, int width) const {
+std::expected<List<RectI>, StarException> WorldLayout::previewExpandBiomeRegion(Vec2I const& position, int width) const {
   auto layerAndCell = findLayerAndCell(position[0], position[1]);
   auto targetLayer = m_layers[layerAndCell.first];
 
   auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second, width);
 
-  return expandResult.second;
+  if (!expandResult) return std::unexpected(std::move(expandResult.error()));
+
+  return std::move(expandResult->second);
 }
 
-String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
+std::expected<String, StarException> WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
   auto layerAndCell = findLayerAndCell(position[0], position[1]);
   auto targetLayer = m_layers[layerAndCell.first];
   auto targetBiomeIndex = targetLayer.cells[layerAndCell.second]->blockBiomeIndex;
@@ -594,10 +840,12 @@ String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
 
   m_layers[layerAndCell.first] = targetLayer;
 
-  return getBiome(targetBiomeIndex)->baseName;
+  auto biome = getBiome(targetBiomeIndex);
+  if (!biome) return std::unexpected(std::move(biome.error()));
+  return (**biome)->baseName;
 }
 
-void WorldLayout::addBiomeRegion(
+std::expected<void, StarException> WorldLayout::addBiomeRegion(
     TerrestrialWorldParameters const& terrestrialParameters,
     std::uint64_t seed,
     Vec2I const& position,
@@ -635,12 +883,16 @@ void WorldLayout::addBiomeRegion(
   newRegion.foregroundOreSelectorIndexes = targetRegion->foregroundOreSelectorIndexes;
   newRegion.backgroundOreSelectorIndexes = targetRegion->backgroundOreSelectorIndexes;
   newRegion.regionLiquids = targetRegion->regionLiquids;
+  auto autobiomeDatabaseResult1 = this->root().biomeDatabase();
+  if (!autobiomeDatabaseResult1) return std::unexpected(std::move(autobiomeDatabaseResult1.error()));
+  auto biomeDatabase = std::move((*autobiomeDatabaseResult1));
+  auto autonewBiomeResult1 = biomeDatabase->createBiome(biomeName, staticRandomU64(seed, "BiomeSeed"), terrestrialLayer.layerBaseHeight, terrestrialParameters.threatLevel);
+  if (!autonewBiomeResult1) return std::unexpected(std::move(autonewBiomeResult1.error()));
+  auto newBiome = std::move((*autonewBiomeResult1));
 
-  auto biomeDatabase = this->root().biomeDatabase();
-
-  auto newBiome = biomeDatabase->createBiome(biomeName, staticRandomU64(seed, "BiomeSeed"), terrestrialLayer.layerBaseHeight, terrestrialParameters.threatLevel);
-
-  auto oldBiome = getBiome(targetRegion->blockBiomeIndex);
+  auto oldBiomeResult = getBiome(targetRegion->blockBiomeIndex);
+  if (!oldBiomeResult) return std::unexpected(std::move(oldBiomeResult.error()));
+  auto const& oldBiome = **oldBiomeResult;
 
   newBiome->ores = oldBiome->ores;
 
@@ -650,10 +902,13 @@ void WorldLayout::addBiomeRegion(
   TerrainSelectorParameters baseSelectorParameters(this->root().random());
   baseSelectorParameters.worldWidth = m_worldSize[0];
   baseSelectorParameters.baseHeight = terrestrialLayer.layerBaseHeight;
-
-  auto terrainDatabase = this->root().terrainDatabase();
+  auto autoterrainDatabaseResult1 = this->root().terrainDatabase();
+  if (!autoterrainDatabaseResult1) return std::unexpected(std::move(autoterrainDatabaseResult1.error()));
+  auto terrainDatabase = std::move((*autoterrainDatabaseResult1));
   for (std::size_t i = 0; i < newBiome->subBlocks.size(); ++i) {
-    auto selector = terrainDatabase->createNamedSelector(subBlockSelector, baseSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
+    auto autoselectorResult1 = terrainDatabase->createNamedSelector(subBlockSelector, baseSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
+    if (!autoselectorResult1) return std::unexpected(std::move(autoselectorResult1.error()));
+    auto selector = std::move((*autoselectorResult1));
     newRegion.subBlockSelectorIndexes.append(registerTerrainSelector(selector));
   }
 
@@ -679,19 +934,24 @@ void WorldLayout::addBiomeRegion(
 
   // expand the cell to the desired size
   auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second + 1, width);
+  if (!expandResult) return std::unexpected(std::move(expandResult.error()));
 
   // update the layer in the template
-  m_layers[layerAndCell.first] = expandResult.first;
+  m_layers[layerAndCell.first] = std::move(expandResult->first);
+  return {};
 }
 
-void WorldLayout::expandBiomeRegion(Vec2I const& position, int newWidth) {
+std::expected<void, StarException> WorldLayout::expandBiomeRegion(Vec2I const& position, int newWidth) {
   auto layerAndCell = findLayerAndCell(position[0], position[1]);
 
   auto targetLayer = m_layers[layerAndCell.first];
 
   auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second, newWidth);
 
-  m_layers[layerAndCell.first] = expandResult.first;
+  if (!expandResult) return std::unexpected(std::move(expandResult.error()));
+
+  m_layers[layerAndCell.first] = std::move(expandResult->first);
+  return {};
 }
 
 std::pair<std::size_t, std::size_t> WorldLayout::findLayerAndCell(int x, int y) const {
@@ -713,7 +973,7 @@ std::pair<std::size_t, std::size_t> WorldLayout::findLayerAndCell(int x, int y) 
 
 WorldLayout::WorldLayer::WorldLayer() : yStart(0) {}
 
-std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(WorldLayout::WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const {
+std::expected<std::pair<WorldLayout::WorldLayer, List<RectI>>, StarException> WorldLayout::expandRegionInLayer(WorldLayout::WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const {
   struct RegionCell {
     int lBound;
     int rBound;
@@ -732,8 +992,9 @@ std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer
   List<RectI> regionRects;
 
   if (targetLayer.cells.size() == 1) {
-    this->root().logger().info("Cannot expand region as it already fills the layer");
-    return {targetLayer, regionRects};
+    auto logged = this->root().logger().info("Cannot expand region as it already fills the layer");
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    return std::pair(std::move(targetLayer), std::move(regionRects));
   }
 
   // this->root().logger().info("boundaries before expansion are {}", targetLayer.boundaries);
@@ -789,8 +1050,9 @@ std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer
       currentWidth += (regionCell.rBound - regionCell.lBound);
 
     if (currentWidth >= newWidth) {
-      this->root().logger().info("New cell width ({}) must be greater than current cell width {}!", newWidth, currentWidth);
-      return {targetLayer, regionRects};
+      auto logged = this->root().logger().info("New cell width ({}) must be greater than current cell width {}!", newWidth, currentWidth);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+      return std::pair(std::move(targetLayer), std::move(regionRects));
     }
 
     // expand the leftmost cell to the right and the rightmost cell to the left (they may be the same cell)
@@ -859,7 +1121,7 @@ std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer
 
   // this->root().logger().info("boundaries after expansion are {}", targetLayer.boundaries);
 
-  return {targetLayer, regionRects};
+  return std::pair(std::move(targetLayer), std::move(regionRects));
 }
 
 BiomeIndex WorldLayout::registerBiome(std::shared_ptr<Biome const> biome) {
@@ -880,9 +1142,13 @@ TerrainSelectorIndex WorldLayout::registerTerrainSelector(std::shared_ptr<Terrai
   return m_terrainSelectors.size();
 }
 
-WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& regionParams) {
-  auto terrainDatabase = this->root().terrainDatabase();
-  auto biomeDatabase = this->root().biomeDatabase();
+std::expected<WorldRegion, StarException> WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& regionParams) {
+  auto autoterrainDatabaseResult1 = this->root().terrainDatabase();
+  if (!autoterrainDatabaseResult1) return std::unexpected(std::move(autoterrainDatabaseResult1.error()));
+  auto terrainDatabase = std::move((*autoterrainDatabaseResult1));
+  auto autobiomeDatabaseResult1 = this->root().biomeDatabase();
+  if (!autobiomeDatabaseResult1) return std::unexpected(std::move(autobiomeDatabaseResult1.error()));
+  auto biomeDatabase = std::move((*autobiomeDatabaseResult1));
 
   WorldRegion region;
 
@@ -894,19 +1160,32 @@ WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& reg
   TerrainSelectorParameters foregroundCaveSelectorParameters = baseSelectorParameters.withSeed(staticRandomU64(seed, "ForegroundCaveSeed"));
   TerrainSelectorParameters backgroundCaveSelectorParameters = baseSelectorParameters.withSeed(staticRandomU64(seed, "BackgroundCave"));
 
-  if (regionParams.terrainSelector)
-    region.terrainSelectorIndex = registerTerrainSelector(terrainDatabase->createNamedSelector(*regionParams.terrainSelector, terrainSelectorParameters));
-  if (regionParams.fgCaveSelector)
-    region.foregroundCaveSelectorIndex = registerTerrainSelector(terrainDatabase->createNamedSelector(*regionParams.fgCaveSelector, foregroundCaveSelectorParameters));
-  if (regionParams.bgCaveSelector)
-    region.backgroundCaveSelectorIndex = registerTerrainSelector(terrainDatabase->createNamedSelector(*regionParams.bgCaveSelector, backgroundCaveSelectorParameters));
+  if (regionParams.terrainSelector) {
+    auto regionterrainSelectorIndexResult1 = terrainDatabase->createNamedSelector(*regionParams.terrainSelector, terrainSelectorParameters);
+    if (!regionterrainSelectorIndexResult1) return std::unexpected(std::move(regionterrainSelectorIndexResult1.error()));
+    region.terrainSelectorIndex = std::move(registerTerrainSelector((*regionterrainSelectorIndexResult1)));
+  }
+  if (regionParams.fgCaveSelector) {
+    auto regionforegroundCaveSelectorIndexResult1 = terrainDatabase->createNamedSelector(*regionParams.fgCaveSelector, foregroundCaveSelectorParameters);
+    if (!regionforegroundCaveSelectorIndexResult1) return std::unexpected(std::move(regionforegroundCaveSelectorIndexResult1.error()));
+    region.foregroundCaveSelectorIndex = std::move(registerTerrainSelector((*regionforegroundCaveSelectorIndexResult1)));
+  }
+  if (regionParams.bgCaveSelector) {
+    auto regionbackgroundCaveSelectorIndexResult1 = terrainDatabase->createNamedSelector(*regionParams.bgCaveSelector, backgroundCaveSelectorParameters);
+    if (!regionbackgroundCaveSelectorIndexResult1) return std::unexpected(std::move(regionbackgroundCaveSelectorIndexResult1.error()));
+    region.backgroundCaveSelectorIndex = std::move(registerTerrainSelector((*regionbackgroundCaveSelectorIndexResult1)));
 
+  }
   if (regionParams.biomeName) {
-    auto biome = biomeDatabase->createBiome(*regionParams.biomeName, staticRandomU64(seed, "BiomeSeed"), regionParams.baseHeight, regionParams.threatLevel);
+    auto autobiomeResult1 = biomeDatabase->createBiome(*regionParams.biomeName, staticRandomU64(seed, "BiomeSeed"), regionParams.baseHeight, regionParams.threatLevel);
+    if (!autobiomeResult1) return std::unexpected(std::move(autobiomeResult1.error()));
+    auto biome = std::move((*autobiomeResult1));
 
     if (regionParams.subBlockSelector) {
       for (std::size_t i = 0; i < biome->subBlocks.size(); ++i) {
-        auto selector = terrainDatabase->createNamedSelector(*regionParams.subBlockSelector, terrainSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
+        auto autoselectorResult1 = terrainDatabase->createNamedSelector(*regionParams.subBlockSelector, terrainSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
+        if (!autoselectorResult1) return std::unexpected(std::move(autoselectorResult1.error()));
+        auto selector = std::move((*autoselectorResult1));
         region.subBlockSelectorIndexes.append(registerTerrainSelector(selector));
       }
     }
@@ -915,12 +1194,16 @@ WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& reg
       auto oreSelectorTerrainParameters = terrainSelectorParameters.withCommonality(ore.second);
 
       if (regionParams.fgOreSelector) {
-        auto fgSelector = terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "FGOreSelector")));
+        auto autofgSelectorResult1 = terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "FGOreSelector")));
+        if (!autofgSelectorResult1) return std::unexpected(std::move(autofgSelectorResult1.error()));
+        auto fgSelector = std::move((*autofgSelectorResult1));
         region.foregroundOreSelectorIndexes.append(registerTerrainSelector(fgSelector));
       }
 
       if (regionParams.bgOreSelector) {
-        auto bgSelector = terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "BGOreSelector")));
+        auto autobgSelectorResult1 = terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "BGOreSelector")));
+        if (!autobgSelectorResult1) return std::unexpected(std::move(autobgSelectorResult1.error()));
+        auto bgSelector = std::move((*autobgSelectorResult1));
         region.backgroundOreSelectorIndexes.append(registerTerrainSelector(bgSelector));
       }
     }
@@ -934,17 +1217,19 @@ WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& reg
   return region;
 }
 
-void WorldLayout::addLayer(std::uint64_t seed, int yStart, RegionParams regionParams) {
+std::expected<void, StarException> WorldLayout::addLayer(std::uint64_t seed, int yStart, RegionParams regionParams) {
   WorldLayer layer;
   layer.yStart = yStart;
-
-  std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
+  auto stdshared_ptrWorldRegionregionResult1 = buildRegion(seed, regionParams);
+  if (!stdshared_ptrWorldRegionregionResult1) return std::unexpected(std::move(stdshared_ptrWorldRegionregionResult1.error()));
+  std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(std::move(*stdshared_ptrWorldRegionregionResult1));
   layer.cells.append(region);
 
-  m_layers.append(layer);
+  m_layers.append(std::move(layer));
+  return {};
 }
 
-void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
+std::expected<void, StarException> WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
     RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
     List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
     Vec2F secondaryRegionSize, Vec2F subRegionSize) {
@@ -954,15 +1239,27 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
   List<float> relativeRegionSizes;
   float totalRelativeSize = 0.0;
   int mix = 0;
-
-  BiomeIndex primaryEnvironmentBiomeIndex = buildRegion(seed, primaryRegionParams).environmentBiomeIndex;
+  auto BiomeIndexprimaryEnvironmentBiomeIndexResult1 = buildRegion(seed, primaryRegionParams);
+  if (!BiomeIndexprimaryEnvironmentBiomeIndexResult1) return std::unexpected(std::move(BiomeIndexprimaryEnvironmentBiomeIndexResult1.error()));
+  BiomeIndex primaryEnvironmentBiomeIndex = std::move((*BiomeIndexprimaryEnvironmentBiomeIndexResult1).environmentBiomeIndex);
 
   Set<BiomeIndex> spawnBiomeIndexes;
 
-  auto addRegion = [&](RegionParams const& regionParams, RegionParams const& subRegionParams, Vec2F const& regionSizeRange) {
-    std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
-    std::shared_ptr<WorldRegion> subRegion = std::make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
-    if (!this->root().assets()->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool())
+  auto addRegion = [&](RegionParams const& regionParams, RegionParams const& subRegionParams, Vec2F const& regionSizeRange) -> std::expected<void, StarException> {
+    auto stdshared_ptrWorldRegionregionResult1 = buildRegion(seed, regionParams);
+    if (!stdshared_ptrWorldRegionregionResult1) return std::unexpected(std::move(stdshared_ptrWorldRegionregionResult1.error()));
+    std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(std::move(*stdshared_ptrWorldRegionregionResult1));
+    auto stdshared_ptrWorldRegionsubRegionResult1 = buildRegion(seed, subRegionParams);
+    if (!stdshared_ptrWorldRegionsubRegionResult1) return std::unexpected(std::move(stdshared_ptrWorldRegionsubRegionResult1.error()));
+    std::shared_ptr<WorldRegion> subRegion = std::make_shared<WorldRegion>(std::move(*stdshared_ptrWorldRegionsubRegionResult1));
+    auto autouseSecondaryBiomeResult1 = this->root().assets();
+    if (!autouseSecondaryBiomeResult1) return std::unexpected(std::move(autouseSecondaryBiomeResult1.error()));
+    auto autouseSecondaryBiomeResult2 = (*autouseSecondaryBiomeResult1)->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex");
+    if (!autouseSecondaryBiomeResult2) return std::unexpected(std::move(autouseSecondaryBiomeResult2.error()));
+    auto autouseSecondaryBiomeResult3 = (*autouseSecondaryBiomeResult2).toBool();
+    if (!autouseSecondaryBiomeResult3) return std::unexpected(std::move(autouseSecondaryBiomeResult3.error()));
+    auto useSecondaryBiome = std::move((*autouseSecondaryBiomeResult3));
+    if (!useSecondaryBiome)
       region->environmentBiomeIndex = primaryEnvironmentBiomeIndex;
     subRegion->environmentBiomeIndex = region->environmentBiomeIndex;
 
@@ -974,13 +1271,14 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
     layer.cells.append(region);
     layer.cells.append(subRegion);
     layer.cells.append(region);
-
-    float regionRelativeSize = staticRandomFloatRange(regionSizeRange[0], regionSizeRange[1], seed, ++mix, yStart);
-    float subRegionRelativeSize = staticRandomFloatRange(subRegionSize[0], subRegionSize[1], seed, ++mix, yStart);
+    auto floatregionRelativeSizeResult1 = staticRandomFloatRange(regionSizeRange[0], regionSizeRange[1], seed, ++mix, yStart);
+    float regionRelativeSize = std::move(floatregionRelativeSizeResult1);
+    auto floatsubRegionRelativeSizeResult1 = staticRandomFloatRange(subRegionSize[0], subRegionSize[1], seed, ++mix, yStart);
+    float subRegionRelativeSize = std::move(floatsubRegionRelativeSizeResult1);
     totalRelativeSize += regionRelativeSize;
 
     if (subRegionRelativeSize >= 1.0f)
-      throw StarException("Relative size of subRegion must be less than 1.0!");
+      return std::unexpected(StarException("Relative size of subRegion must be less than 1.0!"));
 
     subRegionRelativeSize *= regionRelativeSize;
     regionRelativeSize -= subRegionRelativeSize;
@@ -988,15 +1286,23 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
     relativeRegionSizes.append(regionRelativeSize / 2);
     relativeRegionSizes.append(subRegionRelativeSize);
     relativeRegionSizes.append(regionRelativeSize / 2);
+    return {};
   };
 
   // construct list of region cells and relative sizes
-  addRegion(primaryRegionParams, primarySubRegionParams, Vec2F(1, 1));
+  {
+    auto added = addRegion(primaryRegionParams, primarySubRegionParams, Vec2F(1, 1));
+    if (!added) return std::unexpected(std::move(added.error()));
+  }
   for (std::size_t i = 0; i < secondaryRegions.size(); ++i)
-    addRegion(secondaryRegions[i], secondarySubRegions[i], secondaryRegionSize);
+    {
+      auto added = addRegion(secondaryRegions[i], secondarySubRegions[i], secondaryRegionSize);
+      if (!added) return std::unexpected(std::move(added.error()));
+    }
 
   // construct boundaries based on normalized sizes
-  int nextBoundary = staticRandomI32Range(0, m_worldSize[0] - 1, seed, yStart, "LayerOffset");
+  auto intnextBoundaryResult1 = staticRandomI32Range(0, m_worldSize[0] - 1, seed, yStart, "LayerOffset");
+  int nextBoundary = std::move(intnextBoundaryResult1);
   layer.boundaries.append(nextBoundary);
   for (std::size_t i = 0; i + 1 < relativeRegionSizes.size(); ++i) {
     int regionSize = (int)m_worldSize[0] * (relativeRegionSizes[i] / totalRelativeSize);
@@ -1005,34 +1311,52 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
   }
 
   // wrap cells + boundaries
-  while (layer.boundaries.last() > (int)m_worldSize[0]) {
-    layer.cells.prepend(layer.cells.takeLast());
-    layer.boundaries.prepend(layer.boundaries.takeLast() - m_worldSize[0]);
+  for (;;) {
+    auto last = layer.boundaries.last();
+    if (!last) return std::unexpected(std::move(last.error()));
+    if (**last <= (int)m_worldSize[0]) break;
+    auto cell = layer.cells.takeLast();
+    if (!cell) return std::unexpected(std::move(cell.error()));
+    layer.cells.prepend(std::move(*cell));
+    auto boundary = layer.boundaries.takeLast();
+    if (!boundary) return std::unexpected(std::move(boundary.error()));
+    layer.boundaries.prepend(*boundary - m_worldSize[0]);
   }
-  layer.cells.prepend(layer.cells.last());
-
-  int yRange = this->root().assets()->json("/world_template.config:playerStartSearchYRange").toInt();
+  auto lastCell = layer.cells.last();
+  if (!lastCell) return std::unexpected(std::move(lastCell.error()));
+  layer.cells.prepend(**lastCell);
+  auto intyRangeResult1 = this->root().assets();
+  if (!intyRangeResult1) return std::unexpected(std::move(intyRangeResult1.error()));
+  auto intyRangeResult2 = (*intyRangeResult1)->json("/world_template.config:playerStartSearchYRange");
+  if (!intyRangeResult2) return std::unexpected(std::move(intyRangeResult2.error()));
+  auto intyRangeResult3 = (*intyRangeResult2).toInt();
+  if (!intyRangeResult3) return std::unexpected(std::move(intyRangeResult3.error()));
+  int yRange = std::move((*intyRangeResult3));
   int i = 0;
   int lastBoundary = 0;
   for (auto region : layer.cells) {
-    int nextBoundary = i < (int)layer.boundaries.size() ? layer.boundaries[i] : m_worldSize[0];
+    int nextBoundary = std::move(i < (int)layer.boundaries.size() ? layer.boundaries[i] : m_worldSize[0]);
     if (spawnBiomeIndexes.contains(region->blockBiomeIndex))
       m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), nextBoundary, std::min((int)m_worldSize[1], yBase + yRange)));
     lastBoundary = nextBoundary;
     i++;
   }
 
-  m_layers.append(layer);
+  m_layers.append(std::move(layer));
+  return {};
 }
 
-void WorldLayout::finalize(Color mainSkyColor) {
+std::expected<void, StarException> WorldLayout::finalize(Color mainSkyColor) {
   std::sort(m_layers.begin(), m_layers.end(), [](WorldLayer const& a, WorldLayer const& b) { return a.yStart < b.yStart; });
 
   // Post-process all parallaxes
   for (auto const& biome : m_biomes) {
-    if (biome->parallax)
-      biome->parallax->fadeToSkyColor(mainSkyColor);
+    if (biome->parallax) {
+      auto faded = biome->parallax->fadeToSkyColor(mainSkyColor);
+      if (!faded) return std::unexpected(std::move(faded.error()));
+    }
   }
+  return {};
 }
 
 std::pair<std::size_t, int> WorldLayout::findContainingCell(WorldLayer const& layer, int x) const {

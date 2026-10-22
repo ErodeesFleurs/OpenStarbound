@@ -22,6 +22,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.string;
 import star.version;
 
@@ -53,16 +54,17 @@ import star.liquids_database;
 
 namespace Star {
 
-DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace) {
-  ds.write(materialSpace.space);
-  ds.write(materialSpace.material);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, MaterialSpace const& materialSpace) {
+  return ds << materialSpace.space << materialSpace.material;
 }
 
-DataStream& operator>>(DataStream& ds, MaterialSpace& materialSpace) {
-  ds.read(materialSpace.space);
-  ds.read(materialSpace.material);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, MaterialSpace& materialSpace) {
+  MaterialSpace decoded;
+  auto read = ds >> decoded.space >> decoded.material;
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  materialSpace = decoded;
+  return &ds;
 }
 
 TileEntity::TileEntity() {
@@ -85,11 +87,11 @@ List<MaterialSpace> TileEntity::materialSpaces() const {
   return {};
 }
 
-bool TileEntity::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const&) {
+std::expected<bool, StarException> TileEntity::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const&) {
   return false;
 }
 
-bool TileEntity::canBeDamaged() const {
+std::expected<bool, StarException> TileEntity::canBeDamaged() const {
   return true;
 }
 
@@ -101,50 +103,59 @@ List<Vec2I> TileEntity::interactiveSpaces() const {
   return spaces();
 }
 
-InteractAction TileEntity::interact(InteractRequest const& request) {
+std::expected<InteractAction, StarException> TileEntity::interact(InteractRequest const& request) {
   ((void)(request));
   return InteractAction();
 }
 
-List<QuestArcDescriptor> TileEntity::offeredQuests() const {
-  return {};
+std::expected<List<QuestArcDescriptor>, StarException> TileEntity::offeredQuests() const {
+  return List<QuestArcDescriptor>{};
 }
 
-StringSet TileEntity::turnInQuests() const {
+std::expected<StringSet, StarException> TileEntity::turnInQuests() const {
   return StringSet();
 }
 
-Vec2F TileEntity::questIndicatorPosition() const {
+std::expected<Vec2F, StarException> TileEntity::questIndicatorPosition() const {
   return position();
 }
 
-bool TileEntity::anySpacesOccupied(List<Vec2I> const& spaces) const {
+std::expected<bool, StarException> TileEntity::anySpacesOccupied(List<Vec2I> const& spaces) const {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (isConnectableMaterial(world()->material(pos, TileLayer::Foreground)))
+    if (isConnectableMaterial((*currentWorld)->material(pos, TileLayer::Foreground)))
       return true;
   }
 
   return false;
 }
 
-bool TileEntity::allSpacesOccupied(List<Vec2I> const& spaces) const {
+std::expected<bool, StarException> TileEntity::allSpacesOccupied(List<Vec2I> const& spaces) const {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (!isConnectableMaterial(world()->material(pos, TileLayer::Foreground)))
+    if (!isConnectableMaterial((*currentWorld)->material(pos, TileLayer::Foreground)))
       return false;
   }
 
   return true;
 }
 
-float TileEntity::spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const {
+std::expected<float, StarException> TileEntity::spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const {
+  auto currentWorld = world();
+  if (!currentWorld)
+    return std::unexpected(std::move(currentWorld.error()));
   float total = 0.0f;
   for (auto pos : relativeSpaces) {
     pos += tilePosition();
-    total += world()->liquidLevel(pos).level;
+    total += (*currentWorld)->liquidLevel(pos).level;
   }
   return total / relativeSpaces.size();
 }

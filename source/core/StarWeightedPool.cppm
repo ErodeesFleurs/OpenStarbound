@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.memory;
 import star.set;
 import star.list;
@@ -26,9 +27,9 @@ public:
   ItemsList const& items() const;
 
   std::size_t size() const;
-  std::pair<double, Item> const& at(std::size_t index) const;
-  double weight(std::size_t index) const;
-  Item const& item(std::size_t index) const;
+  [[nodiscard]] std::expected<std::pair<double, Item> const*, StarException> at(std::size_t index) const;
+  [[nodiscard]] std::expected<double, StarException> weight(std::size_t index) const;
+  [[nodiscard]] std::expected<Item const*, StarException> item(std::size_t index) const;
   bool empty() const;
 
   // Return item using the given randomness source
@@ -94,18 +95,24 @@ std::size_t WeightedPool<Item>::size() const {
 }
 
 template <typename Item>
-std::pair<double, Item> const& WeightedPool<Item>::at(std::size_t index) const {
+std::expected<std::pair<double, Item> const*, StarException> WeightedPool<Item>::at(std::size_t index) const {
   return m_items.at(index);
 }
 
 template <typename Item>
-double WeightedPool<Item>::weight(std::size_t index) const {
-  return at(index).first;
+std::expected<double, StarException> WeightedPool<Item>::weight(std::size_t index) const {
+  auto entry = at(index);
+  if (!entry)
+    return std::unexpected(std::move(entry.error()));
+  return (*entry)->first;
 }
 
 template <typename Item>
-Item const& WeightedPool<Item>::item(std::size_t index) const {
-  return at(index).second;
+std::expected<Item const*, StarException> WeightedPool<Item>::item(std::size_t index) const {
+  auto entry = at(index);
+  if (!entry)
+    return std::unexpected(std::move(entry.error()));
+  return &(*entry)->second;
 }
 
 template <typename Item>

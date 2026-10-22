@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 
@@ -69,7 +70,7 @@ public:
 
   int id(ButtonWidget* button) const;
 
-  void select(int id);
+  [[nodiscard]] std::expected<void, StarException> select(int id);
 
   // Will return null if no button is checked.
   ButtonWidget* checkedButton() const;
@@ -83,7 +84,7 @@ public:
 protected:
   // Should be called by child button widgets when they are changed from
   // unchecked to checked.
-  void wasChecked(ButtonWidget* self);
+  [[nodiscard]] std::expected<void, StarException> wasChecked(ButtonWidget* self);
 
 private:
   WidgetCallbackFunc m_callback;

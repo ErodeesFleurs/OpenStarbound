@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -69,35 +70,52 @@ public:
 
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static std::shared_ptr<ItemDrop> createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);
-  static std::shared_ptr<ItemDrop> createRandomizedDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> createRandomizedDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static std::shared_ptr<ItemDrop> throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static std::shared_ptr<ItemDrop> throwDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> throwDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
 
-  ItemDrop(Root& rootContext, std::shared_ptr<Item> item);
-  ItemDrop(Root& rootContext, Json const& diskStore);
-  ItemDrop(Root& rootContext, ByteArray netStore, NetCompatibilityRules rules = {});
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> create(Root& rootContext, std::shared_ptr<Item> item);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> create(Root& rootContext, Json const& diskStore);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<ItemDrop>, StarException> create(Root& rootContext, ByteArray netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]]
+  std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]]
+  std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]]
+  std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]]
+  std::expected<void, StarException> uninit() override;
 
-  String name() const override;
-  String description() const override;
+  [[nodiscard]]
+  std::expected<String, StarException> name() const override;
+  [[nodiscard]]
+  std::expected<String, StarException> description() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]]
+  std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]]
+  std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint = 0.0f) override;
-  void disableInterpolation() override;
+  [[nodiscard]]
+  std::expected<void, StarException> enableInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]]
+  std::expected<void, StarException> disableInterpolation() override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
@@ -106,12 +124,16 @@ public:
 
   RectF collisionArea() const override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]]
+  std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]]
+  std::expected<bool, StarException> shouldDestroy() const override;
 
-  virtual void render(RenderCallback* renderCallback) override;
-  virtual void renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]]
+  std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]]
+  std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
   
   MovementController* movementController() override;
   
@@ -126,40 +148,47 @@ public:
 
   // Mark this drop as taken by the given entity.  The drop will animate
   // towards them for a while and then disappear.
-  std::shared_ptr<Item> takeBy(EntityId entityId, float timeOffset = 0.0f);
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> takeBy(EntityId entityId, float timeOffset = 0.0f);
 
   // Mark this drop as taken, but do not animate it towards a player simply
   // disappear next step.
-  std::shared_ptr<Item> take();
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> take();
 
   // Item is not taken and is not intangible
-  bool canTake() const;
+  [[nodiscard]]
+  std::expected<bool, StarException> canTake() const;
 
   void setPosition(Vec2F const& position);
 
   Vec2F velocity() const;
   void setVelocity(Vec2F const& position);
   
-  Json configValue(String const& name, Json const& def = Json()) const;
-  
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]]
+  std::expected<Json, StarException> configValue(String const& name, Json const& def = Json()) const;
+
+  [[nodiscard]]
+  std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]]
+  std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
   
   ClientEntityMode clientEntityMode() const override;
 
 private:
   enum class Mode { Intangible, Available, Taken, Dead };
-  static EnumMap<Mode> const ModeNames;
+  static std::expected<EnumMap<Mode>, StarException> const ModeNames;
 
-  ItemDrop(Root& rootContext);
+  explicit ItemDrop(Root& rootContext);
+  [[nodiscard]]
+  std::expected<void, StarException> initialize();
+  [[nodiscard]]
+  std::expected<void, StarException> initializeItem(std::shared_ptr<Item> item);
+  [[nodiscard]]
+  std::expected<void, StarException> updateTaken(bool master);
 
-  // Set the movement controller's collision poly to match the
-  // item drop drawables
-  void updateCollisionPoly();
-
-  void updateTaken(bool master);
-  
-  LuaCallbacks makeItemDropCallbacks();
+  [[nodiscard]]
+  std::expected<LuaCallbacks, StarException> makeItemDropCallbacks();
 
   Json m_config;
   Json m_parameters;
@@ -181,8 +210,7 @@ private:
   NetElementEnum<Mode> m_mode;
   NetElementIntegral<EntityId> m_owningEntity;
   NetElementData<ItemDescriptor> m_itemDescriptor;
-  MovementController m_movementController;
-  RectF m_defaultBoundBox;
+  std::shared_ptr<MovementController> m_movementController;
 
   // Only updated on master
   bool m_eternal;

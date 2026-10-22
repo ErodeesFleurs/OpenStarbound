@@ -21,17 +21,18 @@ using VehicleDatabaseException = StarError<VehicleDatabaseExceptionTag, StarExce
 
 class VehicleDatabase {
 public:
-  explicit VehicleDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<VehicleDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<Vehicle> create(String const& vehicleName, Json const& extraConfig = Json()) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Vehicle>, StarException> create(String const& vehicleName, Json const& extraConfig = Json()) const;
 
-  ByteArray netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const;
-  std::shared_ptr<Vehicle> netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Vehicle>, StarException> netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
 
-  Json diskStore(std::shared_ptr<Vehicle> const& vehicle) const;
-  std::shared_ptr<Vehicle> diskLoad(Json const& diskStore) const;
+  [[nodiscard]] std::expected<Json, StarException> diskStore(std::shared_ptr<Vehicle> const& vehicle) const;
+  [[nodiscard]] std::expected<std::shared_ptr<Vehicle>, StarException> diskLoad(Json const& diskStore) const;
 
 private:
+  explicit VehicleDatabase(Root& root) : m_root(root) {}
   Root& m_root;
 
   StringMap<std::pair<String, Json>> m_vehicles;

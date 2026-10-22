@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.interpolation;
 import star.vector;
 import star.math_common;
@@ -10,15 +11,15 @@ export module star.image_scaling;
 
 export namespace Star {
 
-Image scaleNearest(Image const& srcImage, Vec2F const& scale);
-Image scaleBilinear(Image const& srcImage, Vec2F const& scale);
-Image scaleBicubic(Image const& srcImage, Vec2F const& scale);
+[[nodiscard]] std::expected<Image, StarException> scaleNearest(Image const& srcImage, Vec2F const& scale);
+[[nodiscard]] std::expected<Image, StarException> scaleBilinear(Image const& srcImage, Vec2F const& scale);
+[[nodiscard]] std::expected<Image, StarException> scaleBicubic(Image const& srcImage, Vec2F const& scale);
 
 }
 
 namespace Star {
 
-Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
+std::expected<Image, StarException> scaleNearest(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = std::max(destSize[0], 1u);
@@ -27,13 +28,16 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   Image destImage(destSize, srcImage.pixelFormat());
 
   for (unsigned y = 0; y < destSize[1]; ++y) {
-    for (unsigned x = 0; x < destSize[0]; ++x)
-      destImage.set({x, y}, srcImage.clamp(Vec2I::round(vdiv(Vec2F(x, y), scale))));
+    for (unsigned x = 0; x < destSize[0]; ++x) {
+      auto assigned = destImage.set({x, y}, srcImage.clamp(Vec2I::round(vdiv(Vec2F(x, y), scale))));
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
+    }
   }
   return destImage;
 }
 
-Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
+std::expected<Image, StarException> scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = std::max(destSize[0], 1u);
@@ -49,14 +53,16 @@ Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
 
       auto result = lerp(fpart[1], lerp(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1])), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1]))), lerp(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1] + 1)), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 1))));
 
-      destImage.set({x, y}, Vec4B(result));
+      auto assigned = destImage.set({x, y}, Vec4B(result));
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
     }
   }
 
   return destImage;
 }
 
-Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
+std::expected<Image, StarException> scaleBicubic(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
   destSize[0] = std::max(destSize[0], 1u);
@@ -96,12 +102,14 @@ Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
 
       auto result = cubic4(fpart[1], a, b, c, d);
 
-      destImage.set({x, y}, Vec4B(
+      auto assigned = destImage.set({x, y}, Vec4B(
           clamp(result[0], 0.0f, 255.0f),
           clamp(result[1], 0.0f, 255.0f),
           clamp(result[2], 0.0f, 255.0f),
           clamp(result[3], 0.0f, 255.0f)
         ));
+      if (!assigned)
+        return std::unexpected(std::move(assigned.error()));
     }
   }
 

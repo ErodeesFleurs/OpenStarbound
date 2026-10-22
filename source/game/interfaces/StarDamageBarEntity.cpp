@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.id_map;
 import star.string;
@@ -27,10 +28,10 @@ import star.damage_bar_entity;
 
 namespace Star {
 
-extern EnumMap<DamageBarType> const DamageBarTypeNames{
+extern std::expected<EnumMap<DamageBarType>, StarException> const DamageBarTypeNames = EnumMap<DamageBarType>::create({
   {DamageBarType::Default, "Default"},
   {DamageBarType::None, "None"},
   {DamageBarType::Special, "Special"}
-};
+});
 
 }

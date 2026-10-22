@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.json_extra;
 import star.list;
@@ -33,60 +34,63 @@ import star.matrix3;
 import star.line;
 namespace Star {
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition) {
+std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition) {
   if (!directives)
-    return *this;
-
+    return this;
+  std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
-    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
-    image.directives += directives;
-    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
-
-    // If we are trying to maintain the image center, PRE translate the image by
-    // the change in size / 2
-    transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
-  } else {
-    image.directives += directives;
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    oldSize = Vec2F(*size);
   }
-
-  return *this;
+  image.directives += directives;
+  if (oldSize) {
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
+  }
+  return this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
+std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
   if (directivesGroup.empty())
-    return *this;
-
+    return this;
+  std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
-    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
-    for (Directives const& directives : directivesGroup.list())
-      image.directives += directives;
-    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
-
-    // If we are trying to maintain the image center, PRE translate the image by
-    // the change in size / 2
-    transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
-  } else {
-    for (Directives const& directives : directivesGroup.list())
-       image.directives += directives;
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    oldSize = Vec2F(*size);
   }
-
-  return *this;
+  for (Directives const& directives : directivesGroup.list())
+    image.directives += directives;
+  if (oldSize) {
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
+  }
+  return this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition) {
+std::expected<Drawable::ImagePart*, StarException> Drawable::ImagePart::removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition) {
+  std::optional<Vec2F> oldSize;
   if (keepImageCenterPosition) {
-    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
-    image.directives.clear();
-    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
-
-    // If we are trying to maintain the image center, PRE translate the image by
-    // the change in size / 2
-    transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
-  } else {
-    image.directives.clear();
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    oldSize = Vec2F(*size);
   }
-
-  return *this;
+  image.directives.clear();
+  if (oldSize) {
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    transformation *= Mat3F::translation((*oldSize - Vec2F(*size)) / 2);
+  }
+  return this;
 }
 
 Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
@@ -107,12 +111,14 @@ Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& positio
   return drawable;
 }
 
-Drawable Drawable::makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
+std::expected<Drawable, StarException> Drawable::makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
   Drawable drawable;
   Mat3F transformation = Mat3F::identity();
   if (centered) {
-    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
-    transformation.translate(-imageSize / 2);
+    auto size = imageMetadata.imageSize(image);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    transformation.translate(-Vec2F(*size) / 2);
   }
 
   if (pixelSize != 1.0f)
@@ -128,37 +134,102 @@ Drawable Drawable::makeImage(ImageMetadataDatabase const& imageMetadata, AssetPa
 Drawable::Drawable()
   : color(Color::White), fullbright(false) {}
 
-Drawable::Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json) {
-  if (auto line = json.opt("line")) {
-    part = LinePart{jsonToLine2F(*line), json.getFloat("width"), {}};
-  } else if (auto poly = json.opt("poly")) {
-    part = PolyPart{jsonToPolyF(*poly)};
-  } else if (auto image = json.opt("image")) {
-    auto imageString = image->toString();
-    Mat3F transformation = Mat3F::identity();
-    if (auto transformationConfig = json.opt("transformation")) {
-      transformation = jsonToMat3F(*transformationConfig);
+std::expected<Drawable, StarException> Drawable::create(ImageMetadataDatabase const& imageMetadata, Json const& json) {
+  Drawable drawable;
+  auto line = json.opt("line");
+  if (!line)
+    return std::unexpected(std::move(line.error()));
+  if (*line) {
+    auto geometry = jsonToLine2F(**line);
+    if (!geometry)
+      return std::unexpected(std::move(geometry.error()));
+    auto width = json.getFloat("width");
+    if (!width)
+      return std::unexpected(std::move(width.error()));
+    drawable.part = LinePart{*geometry, *width, {}};
+  } else {
+    auto poly = json.opt("poly");
+    if (!poly)
+      return std::unexpected(std::move(poly.error()));
+    if (*poly) {
+      auto geometry = jsonToPolyF(**poly);
+      if (!geometry)
+        return std::unexpected(std::move(geometry.error()));
+      drawable.part = PolyPart{std::move(*geometry)};
     } else {
-      if (json.getBool("centered", true)) {
-        Vec2F imageSize = Vec2F(imageMetadata.imageSize(imageString));
-        transformation.translate(-imageSize / 2);
+      auto image = json.opt("image");
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+      if (*image) {
+        auto imageString = (**image).toString();
+        if (!imageString)
+          return std::unexpected(std::move(imageString.error()));
+        AssetPath imagePath(std::move(*imageString));
+        Mat3F transformation = Mat3F::identity();
+        auto transformationConfig = json.opt("transformation");
+        if (!transformationConfig)
+          return std::unexpected(std::move(transformationConfig.error()));
+        if (*transformationConfig) {
+          auto matrix = jsonToMat3F(**transformationConfig);
+          if (!matrix)
+            return std::unexpected(std::move(matrix.error()));
+          transformation = *matrix;
+        } else {
+          auto centered = json.getBool("centered", true);
+          if (!centered)
+            return std::unexpected(std::move(centered.error()));
+          if (*centered) {
+            auto size = imageMetadata.imageSize(imagePath);
+            if (!size)
+              return std::unexpected(std::move(size.error()));
+            transformation.translate(-Vec2F(*size) / 2);
+          }
+          auto rotation = json.optFloat("rotation");
+          if (!rotation)
+            return std::unexpected(std::move(rotation.error()));
+          if (*rotation)
+            transformation.rotate(**rotation);
+          auto mirrored = json.getBool("mirrored", false);
+          if (!mirrored)
+            return std::unexpected(std::move(mirrored.error()));
+          if (*mirrored)
+            transformation.scale(Vec2F(-1, 1));
+          auto scale = json.optFloat("scale");
+          if (!scale)
+            return std::unexpected(std::move(scale.error()));
+          if (*scale)
+            transformation.scale(**scale);
+        }
+        drawable.part = ImagePart{std::move(imagePath), std::move(transformation)};
       }
-      if (auto rotation = json.optFloat("rotation"))
-        transformation.rotate(*rotation);
-      if (json.getBool("mirrored", false))
-        transformation.scale(Vec2F(-1, 1));
-      if (auto scale = json.optFloat("scale"))
-        transformation.scale(*scale);
     }
-
-    part = ImagePart{std::move(imageString), std::move(transformation)};
   }
-  position = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
-  color = json.opt("color").transform(jsonToColor).value_or(Color::White);
-  fullbright = json.getBool("fullbright", false);
+  auto position = json.opt("position");
+  if (!position)
+    return std::unexpected(std::move(position.error()));
+  if (*position) {
+    auto value = jsonToVec2F(**position);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    drawable.position = *value;
+  }
+  auto color = json.opt("color");
+  if (!color)
+    return std::unexpected(std::move(color.error()));
+  if (*color) {
+    auto value = jsonToColor(**color);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    drawable.color = *value;
+  }
+  auto fullbright = json.getBool("fullbright", false);
+  if (!fullbright)
+    return std::unexpected(std::move(fullbright.error()));
+  drawable.fullbright = *fullbright;
+  return drawable;
 }
 
-Json Drawable::toJson() const {
+std::expected<Json, StarException> Drawable::toJson() const {
   JsonObject json;
   if (auto line = std::get_if<LinePart>(&part)) {
     json.set("line", jsonFromLine2F(line->line));
@@ -169,11 +240,9 @@ Json Drawable::toJson() const {
     json.set("image", AssetPath::join(image->image));
     json.set("transformation", jsonFromMat3F(image->transformation));
   }
-
   json.set("position", jsonFromVec2F(position));
   json.set("color", jsonFromColor(color));
   json.set("fullbright", fullbright);
-
   return json;
 }
 
@@ -232,7 +301,7 @@ void Drawable::rebase(Vec2F const& newBase) {
   position = newBase;
 }
 
-RectF Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const {
+std::expected<RectF, StarException> Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const {
   RectF boundBox = RectF::null();
   if (auto line = std::get_if<LinePart>(&part)) {
     boundBox.combine(line->line.min());
@@ -244,11 +313,16 @@ RectF Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropIm
   } else if (auto image = std::get_if<ImagePart>(&part)) {
     RectF imageRegion = RectF::null();
     if (cropImages) {
-      RectU nonEmptyRegion = imageMetadata.nonEmptyRegion(image->image);
-      if (!nonEmptyRegion.isNull())
-        imageRegion = RectF(nonEmptyRegion);
+      auto nonEmptyRegion = imageMetadata.nonEmptyRegion(image->image);
+      if (!nonEmptyRegion)
+        return std::unexpected(std::move(nonEmptyRegion.error()));
+      if (!nonEmptyRegion->isNull())
+        imageRegion = RectF(*nonEmptyRegion);
     } else {
-      imageRegion = RectF::withSize(Vec2F(), Vec2F(imageMetadata.imageSize(image->image)));
+      auto size = imageMetadata.imageSize(image->image);
+      if (!size)
+        return std::unexpected(std::move(size.error()));
+      imageRegion = RectF::withSize(Vec2F(), Vec2F(*size));
     }
 
     if (!imageRegion.isNull()) {
@@ -265,55 +339,36 @@ RectF Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropIm
   return boundBox;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable::LinePart& line) {
-  ds >> line.line;
-  ds >> line.width;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::LinePart& line) {
+  return ds >> line.line >> line.width;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::LinePart const& line) {
-  ds << line.line;
-  ds << line.width;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::LinePart const& line) {
+  return ds << line.line << line.width;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable::PolyPart& poly) {
-  ds >> poly.poly;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::PolyPart& poly) {
+  return ds >> poly.poly;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
-  ds << poly.poly;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
+  return ds << poly.poly;
 }
 
-// I need to find out if this is for network serialization or not eventually
-DataStream& operator>>(DataStream& ds, Drawable::ImagePart& image) {
-  ds >> image.image;
-  ds >> image.transformation;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable::ImagePart& image) {
+  return ds >> image.image >> image.transformation;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::ImagePart const& image) {
-  ds << image.image;
-  ds << image.transformation;
-  return ds;
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable::ImagePart const& image) {
+  return ds << image.image << image.transformation;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable& drawable) {
-  ds >> drawable.part;
-  ds >> drawable.position;
-  ds >> drawable.color;
-  ds >> drawable.fullbright;
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, Drawable& drawable) {
+  return ds >> drawable.part >> drawable.position >> drawable.color >> drawable.fullbright;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable const& drawable) {
-  ds << drawable.part;
-  ds << drawable.position;
-  ds << drawable.color;
-  ds << drawable.fullbright;
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, Drawable const& drawable) {
+  return ds << drawable.part << drawable.position << drawable.color << drawable.fullbright;
 }
 
 }

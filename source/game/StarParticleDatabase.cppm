@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -22,12 +23,13 @@ class Root;
 
 class ParticleConfig {
 public:
-  ParticleConfig(Root& root, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<ParticleConfig>, StarException> create(Root& root, Json const& config);
 
   String const& kind();
   Particle instance();
 
 private:
+  explicit ParticleConfig(Root& root) : m_root(root) {}
   Root& m_root;
   String m_kind;
   Particle m_particle;
@@ -36,20 +38,21 @@ private:
 
 class ParticleDatabase {
 public:
-  explicit ParticleDatabase(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<ParticleDatabase>, StarException> create(Root& root);
 
-  std::shared_ptr<ParticleConfig> config(String const& kind) const;
+  [[nodiscard]] std::expected<std::shared_ptr<ParticleConfig>, StarException> config(String const& kind) const;
 
   // If the given variant is a string, loads the particle of that kind,
   // otherwise loads the given config directly.  If the config is given
   // directly it is assumed to optionally contain the variance config in-line.
-  ParticleVariantCreator particleCreator(Json const& kindOrConfig, String const& relativePath = "") const;
+  [[nodiscard]] std::expected<ParticleVariantCreator, StarException> particleCreator(Json const& kindOrConfig, String const& relativePath = "") const;
 
   // Like particleCreator except just returns a single particle.  Probably not
   // what you want if you want to support particle variance.
-  Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
+  [[nodiscard]] std::expected<Particle, StarException> particle(Json const& kindOrConfig, String const& relativePath = "") const;
 
 private:
+  explicit ParticleDatabase(Root& root) : m_root(root) {}
   Root& m_root;
   StringMap<std::shared_ptr<ParticleConfig>> m_configs;
 };

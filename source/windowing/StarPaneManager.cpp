@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.game_types;
@@ -62,30 +63,65 @@ import star.matrix3;
 import star.algorithm;
 namespace Star {
 
-extern EnumMap<PaneLayer> const PaneLayerNames{
+extern std::expected<EnumMap<PaneLayer>, StarException> const PaneLayerNames = EnumMap<PaneLayer>::create({
   {PaneLayer::Tooltip, "Tooltip"},
   {PaneLayer::ModalWindow, "ModalWindow"},
   {PaneLayer::Window, "Window"},
   {PaneLayer::Hud, "Hud"},
   {PaneLayer::World, "World"}
-};
+});
 
 PaneManager::PaneManager(GuiContext& context)
-  : m_context(&context), m_prevInterfaceScale(1) {
-  auto assets = m_context->root().assets();
-  m_tooltipMouseoverRadius = assets->json("/panes.config:tooltipMouseoverRadius").toFloat();
-  m_tooltipMouseOffset = jsonToVec2I(assets->json("/panes.config:tooltipMouseoverOffset"));
-  m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());
+  : m_context(&context), m_prevInterfaceScale(1), m_tooltipMouseoverRadius(0) {}
+
+std::expected<std::shared_ptr<PaneManager>, StarException> PaneManager::create(GuiContext& context) {
+  auto manager = std::make_shared<PaneManager>(context);
+  auto initialized = manager->initializePaneManager();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return manager;
 }
 
-void PaneManager::displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss) {
+std::expected<void, StarException> PaneManager::initializePaneManager() {
+  auto assets = m_context->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto radiusJson = (*assets)->json("/panes.config:tooltipMouseoverRadius");
+  if (!radiusJson)
+    return std::unexpected(std::move(radiusJson.error()));
+  auto radius = radiusJson->toFloat();
+  if (!radius)
+    return std::unexpected(std::move(radius.error()));
+  auto offsetJson = (*assets)->json("/panes.config:tooltipMouseoverOffset");
+  if (!offsetJson)
+    return std::unexpected(std::move(offsetJson.error()));
+  auto offset = jsonToVec2I(*offsetJson);
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
+  auto timeJson = (*assets)->json("/panes.config:tooltipMouseoverTime");
+  if (!timeJson)
+    return std::unexpected(std::move(timeJson.error()));
+  auto time = timeJson->toFloat();
+  if (!time)
+    return std::unexpected(std::move(time.error()));
+  m_tooltipMouseoverRadius = *radius;
+  m_tooltipMouseOffset = *offset;
+  m_tooltipShowTimer = GameTimer(*time);
+  return {};
+}
+
+std::expected<void, StarException> PaneManager::displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss) {
   if (!m_displayedPanes[paneLayer].insertFront(pane, std::move(onDismiss)).second)
-    throw GuiException("Pane displayed twice in PaneManager::displayPane");
+    return std::unexpected(GuiException("Pane displayed twice in PaneManager::displayPane"));
 
-  if (!pane->hasDisplayed() && pane->anchor() == PaneAnchor::None)
-    pane->setPosition(Vec2I((windowSize() - pane->size()) / 2) + pane->centerOffset()); // center it
+  if (!pane->hasDisplayed() && pane->anchor() == PaneAnchor::None) {
+    auto size = windowSize();
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    pane->setPosition(Vec2I((*size - pane->size()) / 2) + pane->centerOffset()); // center it
+  }
 
-  pane->displayed();
+  return pane->displayed();
 }
 
 bool PaneManager::isDisplayed(std::shared_ptr<Pane> const& pane) const {
@@ -97,29 +133,41 @@ bool PaneManager::isDisplayed(std::shared_ptr<Pane> const& pane) const {
   return false;
 }
 
-void PaneManager::dismissPane(std::shared_ptr<Pane> const& pane) {
-  if (!dismiss(pane))
-    throw GuiException("No such pane in PaneManager::dismissPane");
+std::expected<void, StarException> PaneManager::dismissPane(std::shared_ptr<Pane> const& pane) {
+  auto dismissed = dismiss(pane);
+  if (!dismissed)
+    return std::unexpected(std::move(dismissed.error()));
+  if (!*dismissed)
+    return std::unexpected(GuiException("No such pane in PaneManager::dismissPane"));
+  return {};
 }
 
-void PaneManager::dismissAllPanes(Set<PaneLayer> const& paneLayers) {
+std::expected<void, StarException> PaneManager::dismissAllPanes(Set<PaneLayer> const& paneLayers) {
   for (auto const& paneLayer : paneLayers) {
-    for (auto const& panePair : copy(m_displayedPanes[paneLayer]))
-      dismiss(panePair.first);
+    for (auto const& panePair : copy(m_displayedPanes[paneLayer])) {
+      auto dismissed = dismiss(panePair.first);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    }
   }
+  return {};
 }
 
-void PaneManager::dismissAllPanes() {
-  for (auto layerPair : copy(m_displayedPanes)) {
-    for (auto const& panePair : layerPair.second)
-      dismiss(panePair.first);
+std::expected<void, StarException> PaneManager::dismissAllPanes() {
+  for (auto const& layerPair : copy(m_displayedPanes)) {
+    for (auto const& panePair : layerPair.second) {
+      auto dismissed = dismiss(panePair.first);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+    }
   }
+  return {};
 }
 
 std::shared_ptr<Pane> PaneManager::topPane(Set<PaneLayer> const& paneLayers) const {
   for (auto const& layerPair : m_displayedPanes) {
     if (paneLayers.contains(layerPair.first) && !layerPair.second.empty())
-      return layerPair.second.firstKey();
+      return layerPair.second.begin()->first;
   }
   return {};
 }
@@ -127,38 +175,39 @@ std::shared_ptr<Pane> PaneManager::topPane(Set<PaneLayer> const& paneLayers) con
 std::shared_ptr<Pane> PaneManager::topPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     if (!layerPair.second.empty())
-      return layerPair.second.firstKey();
+      return layerPair.second.begin()->first;
   }
   return {};
 }
 
-void PaneManager::bringToTop(std::shared_ptr<Pane> const& pane) {
+std::expected<void, StarException> PaneManager::bringToTop(std::shared_ptr<Pane> const& pane) {
   for (auto& layerPair : m_displayedPanes) {
-    if (layerPair.second.contains(pane)) {
-      layerPair.second.toFront(pane);
-      return;
-    }
+    if (layerPair.second.contains(pane))
+      return layerPair.second.toFront(pane);
   }
 
-  throw GuiException("Pane was not displayed in PaneManager::bringToTop");
+  return std::unexpected(GuiException("Pane was not displayed in PaneManager::bringToTop"));
 }
 
-void PaneManager::bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap) {
+std::expected<void, StarException> PaneManager::bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap) {
+  auto size = windowSize();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
   Vec2I centerAdjacent = anchor->position() + (anchor->size() / 2) - (adjacent->size() / 2);
-  centerAdjacent = centerAdjacent.piecewiseClamp(Vec2I(), windowSize() - adjacent->size()); // keeps pane inside window
+  centerAdjacent = centerAdjacent.piecewiseClamp(Vec2I(), *size - adjacent->size()); // keeps pane inside window
 
-  if (anchor->position()[0] + anchor->size()[0] + gap + adjacent->size()[0] <= windowSize()[0])
+  if (anchor->position()[0] + anchor->size()[0] + gap + adjacent->size()[0] <= (*size)[0])
     adjacent->setPosition(Vec2I(anchor->position()[0] + anchor->size()[0] + gap, centerAdjacent[1])); // place to the right
   else if (anchor->position()[0] - gap - adjacent->size()[0] >= 0)
     adjacent->setPosition(Vec2I(anchor->position()[0] - gap - adjacent->size()[0], centerAdjacent[1])); // place to the left
-  else if (anchor->position()[1] + anchor->size()[1] + gap + adjacent->size()[1] <= windowSize()[1])
+  else if (anchor->position()[1] + anchor->size()[1] + gap + adjacent->size()[1] <= (*size)[1])
     adjacent->setPosition(Vec2I(centerAdjacent[0], anchor->position()[1] + anchor->size()[1] + gap)); // place above
   else if (anchor->position()[1] - gap - adjacent->size()[1] >= 0)
     adjacent->setPosition(Vec2I(centerAdjacent[0], anchor->position()[1] - gap - adjacent->size()[1])); // place below
   else
     adjacent->setPosition(centerAdjacent);
 
-  bringToTop(adjacent);
+  return bringToTop(adjacent);
 }
 
 std::shared_ptr<Pane> PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const {
@@ -203,52 +252,74 @@ void PaneManager::setBackgroundWidget(std::shared_ptr<Widget> bg) {
   m_backgroundWidget = bg;
 }
 
-void PaneManager::dismissWhere(std::function<bool(std::shared_ptr<Pane> const&)> func) {
+std::expected<void, StarException> PaneManager::dismissWhere(std::function<std::expected<bool, StarException>(std::shared_ptr<Pane> const&)> func) {
   if (!func)
-    return;
+    return {};
 
   for (auto& layerPair : m_displayedPanes) {
-    eraseWhere(layerPair.second, [&](auto& panePair) {
-      if (func(panePair.first)) {
-        panePair.first->dismissed();
-        if (panePair.second)
-          panePair.second(panePair.first);
-        return true;
+    for (auto it = layerPair.second.begin(); it != layerPair.second.end();) {
+      auto matches = func(it->first);
+      if (!matches)
+        return std::unexpected(std::move(matches.error()));
+      if (!*matches) {
+        ++it;
+        continue;
       }
-      return false;
-    });
+      auto dismissed = it->first->dismissed();
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
+      if (it->second) {
+        auto notified = it->second(it->first);
+        if (!notified)
+          return std::unexpected(std::move(notified.error()));
+      }
+      it = layerPair.second.erase(it);
+    }
   }
+  return {};
 }
 
-std::shared_ptr<Pane> PaneManager::keyboardCapturedPane() const {
+std::expected<std::shared_ptr<Pane>, StarException> PaneManager::keyboardCapturedPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
-      if (panePair.first->keyboardCapturer())
+      auto capturer = panePair.first->keyboardCapturer();
+      if (!capturer)
+        return std::unexpected(std::move(capturer.error()));
+      if (*capturer)
         return panePair.first;
     }
   }
 
-  return {};
+  return std::shared_ptr<Pane>{};
 }
 
-std::shared_ptr<Widget> PaneManager::keyboardCapturedWidget() const {
+std::expected<std::shared_ptr<Widget>, StarException> PaneManager::keyboardCapturedWidget() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
-      if (auto capturer = panePair.first->keyboardCapturer())
-        return capturer;
+      auto capturer = panePair.first->keyboardCapturer();
+      if (!capturer)
+        return std::unexpected(std::move(capturer.error()));
+      if (*capturer)
+        return std::move(*capturer);
     }
   }
 
-  return {};
+  return std::shared_ptr<Widget>{};
 }
 
-bool PaneManager::keyboardCapturedForTextInput() const {
-  if (auto widget = keyboardCapturedWidget())
-    return widget->keyboardCaptureMode() == KeyboardCaptureMode::TextInput;
-  return false;
+std::expected<bool, StarException> PaneManager::keyboardCapturedForTextInput() const {
+  auto widget = keyboardCapturedWidget();
+  if (!widget)
+    return std::unexpected(std::move(widget.error()));
+  if (!*widget)
+    return false;
+  auto mode = (*widget)->keyboardCaptureMode();
+  if (!mode)
+    return std::unexpected(std::move(mode.error()));
+  return *mode == KeyboardCaptureMode::TextInput;
 }
 
-bool PaneManager::sendInputEvent(InputEvent const& event) {
+std::expected<bool, StarException> PaneManager::sendInputEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseMoveEvent>(event)) {
     m_tooltipLastMousePos = *m_context->mousePosition(event);
 
@@ -265,7 +336,9 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   if (std::holds_alternative<MouseButtonDownEvent>(event)) {
     m_tooltipShowTimer.reset();
     if (m_activeTooltip) {
-      dismiss(m_activeTooltip);
+      auto dismissed = dismiss(m_activeTooltip);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
       m_activeTooltip.reset();
       m_tooltipParentPane.reset();
       m_tooltipShowTimer.reset();
@@ -289,7 +362,9 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   // really needs to (like the keybindings window).
   if (std::holds_alternative<KeyDownEvent>(event) && m_context->actions(event).contains(InterfaceAction::GuiClose)) {
     if (auto top = topPane({PaneLayer::ModalWindow, PaneLayer::Window})) {
-      dismiss(top);
+      auto dismissed = dismiss(top);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
       return true;
     }
   }
@@ -297,15 +372,23 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   // If there is a pane that has captured the keyboard, keyboard events will
   // ONLY be sent to it.
   auto keyCapturePane = keyboardCapturedPane();
-  if (keyCapturePane && (std::holds_alternative<KeyDownEvent>(event) || std::holds_alternative<KeyUpEvent>(event) || std::holds_alternative<TextInputEvent>(event)))
-    return keyCapturePane->sendEvent(event);
+  if (!keyCapturePane)
+    return std::unexpected(std::move(keyCapturePane.error()));
+  if (*keyCapturePane && (std::holds_alternative<KeyDownEvent>(event) || std::holds_alternative<KeyUpEvent>(event) || std::holds_alternative<TextInputEvent>(event)))
+    return (*keyCapturePane)->sendEvent(event);
 
   bool foundModal = false;
   for (auto& layerPair : m_displayedPanes) {
     for (auto const& panePair : copy(layerPair.second)) {
-      if (panePair.first->sendEvent(event)) {
-        if (std::holds_alternative<MouseButtonDownEvent>(event))
-          layerPair.second.toFront(panePair.first);
+      auto consumed = panePair.first->sendEvent(event);
+      if (!consumed)
+        return std::unexpected(std::move(consumed.error()));
+      if (*consumed) {
+        if (std::holds_alternative<MouseButtonDownEvent>(event)) {
+          auto raised = layerPair.second.toFront(panePair.first);
+          if (!raised)
+            return std::unexpected(std::move(raised.error()));
+        }
         return true;
       }
       // If any modal windows are shown, Only the first modal window should
@@ -323,31 +406,47 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   return false;
 }
 
-void PaneManager::render() {
+std::expected<void, StarException> PaneManager::render() {
+  auto bounds = windowSize();
+  if (!bounds)
+    return std::unexpected(std::move(bounds.error()));
   if (m_backgroundWidget) {
     auto size = m_backgroundWidget->size();
-    m_backgroundWidget->setPosition(Vec2I((windowSize()[0] - size[0]) / 2, (windowSize()[1] - size[1]) / 2));
-    m_backgroundWidget->render(RectI(Vec2I(), windowSize()));
+    m_backgroundWidget->setPosition(Vec2I(((*bounds)[0] - size[0]) / 2, ((*bounds)[1] - size[1]) / 2));
+    auto rendered = m_backgroundWidget->render(RectI(Vec2I(), *bounds));
+    if (!rendered)
+      return std::unexpected(std::move(rendered.error()));
   }
 
   for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
     for (auto const& panePair : std::views::reverse(layerPair.second)) {
       if (panePair.first->active()) {
-        if (m_prevInterfaceScale != m_context->interfaceScale())
-          panePair.first->setPosition(
-              calculateNewInterfacePosition(panePair.first, (float)m_context->interfaceScale() / m_prevInterfaceScale));
+        if (m_prevInterfaceScale != m_context->interfaceScale()) {
+          auto position = calculateNewInterfacePosition(panePair.first, m_context->interfaceScale() / m_prevInterfaceScale);
+          if (!position)
+            return std::unexpected(std::move(position.error()));
+          panePair.first->setPosition(*position);
+        }
 
-        panePair.first->setDrawingOffset(calculatePaneOffset(panePair.first));
-        panePair.first->render(RectI(Vec2I(), windowSize()));
+        auto offset = calculatePaneOffset(panePair.first);
+        if (!offset)
+          return std::unexpected(std::move(offset.error()));
+        panePair.first->setDrawingOffset(*offset);
+        auto rendered = panePair.first->render(RectI(Vec2I(), *bounds));
+        if (!rendered)
+          return std::unexpected(std::move(rendered.error()));
       }
     }
   }
 
-  m_context->resetInterfaceScissorRect();
+  auto reset = m_context->resetInterfaceScissorRect();
+  if (!reset)
+    return std::unexpected(std::move(reset.error()));
   m_prevInterfaceScale = m_context->interfaceScale();
+  return {};
 }
 
-void PaneManager::update(float dt) {
+std::expected<void, StarException> PaneManager::update(float dt) {
   auto newTooltipParentPane = getPaneAt(m_tooltipLastMousePos);
 
   bool updateTooltip = m_tooltipShowTimer.tick(dt) || (m_activeTooltip && (
@@ -357,18 +456,25 @@ void PaneManager::update(float dt) {
 
   if (updateTooltip) {
     if (m_activeTooltip) {
-      dismiss(m_activeTooltip);
+      auto dismissed = dismiss(m_activeTooltip);
+      if (!dismissed)
+        return std::unexpected(std::move(dismissed.error()));
       m_activeTooltip.reset();
       m_tooltipParentPane.reset();
     }
 
     m_tooltipShowTimer.reset();
     if (newTooltipParentPane) {
-      if (auto tooltip = newTooltipParentPane->createTooltip(m_tooltipLastMousePos)) {
-        m_activeTooltip = std::move(tooltip);
+      auto tooltip = newTooltipParentPane->createTooltip(m_tooltipLastMousePos);
+      if (!tooltip)
+        return std::unexpected(std::move(tooltip.error()));
+      if (*tooltip) {
+        m_activeTooltip = std::move(*tooltip);
         m_tooltipParentPane = std::move(newTooltipParentPane);
         m_tooltipInitialPosition = m_tooltipLastMousePos;
-        displayPane(PaneLayer::Tooltip, m_activeTooltip, {});
+        auto displayed = displayPane(PaneLayer::Tooltip, m_activeTooltip, {});
+        if (!displayed)
+          return std::unexpected(std::move(displayed.error()));
       }
     }
   }
@@ -377,7 +483,10 @@ void PaneManager::update(float dt) {
     Vec2I offsetDirection = Vec2I::filled(1);
     Vec2I offsetAdjust = Vec2I();
 
-    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)m_context->windowWidth() / m_context->interfaceScale()) {
+    auto width = m_context->windowWidth();
+    if (!width)
+      return std::unexpected(std::move(width.error()));
+    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)*width / m_context->interfaceScale()) {
       offsetDirection[0] = -1;
       offsetAdjust[0] = -m_activeTooltip->size()[0];
     }
@@ -392,60 +501,78 @@ void PaneManager::update(float dt) {
 
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : copy(layerPair.second)) {
-      if (panePair.first->isDismissed())
-        dismiss(panePair.first);
+      if (panePair.first->isDismissed()) {
+        auto dismissed = dismiss(panePair.first);
+        if (!dismissed)
+          return std::unexpected(std::move(dismissed.error()));
+      }
     }
   }
 
   for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
     for (auto const& panePair : std::views::reverse(layerPair.second)) {
-      panePair.first->tick(dt);
-      if (panePair.first->active())
-        panePair.first->update(dt);
+      auto ticked = panePair.first->tick(dt);
+      if (!ticked)
+        return std::unexpected(std::move(ticked.error()));
+      if (panePair.first->active()) {
+        auto updated = panePair.first->update(dt);
+        if (!updated)
+          return std::unexpected(std::move(updated.error()));
+      }
     }
   }
+  return {};
 }
 
-Vec2I PaneManager::windowSize() const {
-  return Vec2I(m_context->windowInterfaceSize());
+std::expected<Vec2I, StarException> PaneManager::windowSize() const {
+  auto size = m_context->windowInterfaceSize();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  return Vec2I(*size);
 }
 
-Vec2I PaneManager::calculatePaneOffset(std::shared_ptr<Pane> const& pane) const {
+std::expected<Vec2I, StarException> PaneManager::calculatePaneOffset(std::shared_ptr<Pane> const& pane) const {
+  auto anchor = pane->anchor();
+  if (anchor == PaneAnchor::None || anchor == PaneAnchor::BottomLeft)
+    return pane->anchorOffset();
+  auto bounds = windowSize();
+  if (!bounds)
+    return std::unexpected(std::move(bounds.error()));
   Vec2I size = pane->size();
-  switch (pane->anchor()) {
-    case PaneAnchor::None:
-      return pane->anchorOffset();
-    case PaneAnchor::BottomLeft:
-      return pane->anchorOffset();
+  switch (anchor) {
     case PaneAnchor::BottomRight:
-      return pane->anchorOffset() + Vec2I{windowSize()[0] - size[0], 0};
+      return pane->anchorOffset() + Vec2I{(*bounds)[0] - size[0], 0};
     case PaneAnchor::TopLeft:
-      return pane->anchorOffset() + Vec2I{0, windowSize()[1] - size[1]};
+      return pane->anchorOffset() + Vec2I{0, (*bounds)[1] - size[1]};
     case PaneAnchor::TopRight:
-      return pane->anchorOffset() + (windowSize() - size);
+      return pane->anchorOffset() + (*bounds - size);
     case PaneAnchor::CenterTop:
-      return pane->anchorOffset() + Vec2I{(windowSize()[0] - size[0]) / 2, windowSize()[1] - size[1]};
+      return pane->anchorOffset() + Vec2I{((*bounds)[0] - size[0]) / 2, (*bounds)[1] - size[1]};
     case PaneAnchor::CenterBottom:
-      return pane->anchorOffset() + Vec2I{(windowSize()[0] - size[0]) / 2, 0};
+      return pane->anchorOffset() + Vec2I{((*bounds)[0] - size[0]) / 2, 0};
     case PaneAnchor::CenterLeft:
-      return pane->anchorOffset() + Vec2I{0, (windowSize()[1] - size[1]) / 2};
+      return pane->anchorOffset() + Vec2I{0, ((*bounds)[1] - size[1]) / 2};
     case PaneAnchor::CenterRight:
-      return pane->anchorOffset() + Vec2I{windowSize()[0] - size[0], (windowSize()[1] - size[1]) / 2};
+      return pane->anchorOffset() + Vec2I{(*bounds)[0] - size[0], ((*bounds)[1] - size[1]) / 2};
     case PaneAnchor::Center:
-      return pane->anchorOffset() + ((windowSize() - size) / 2);
+      return pane->anchorOffset() + ((*bounds - size) / 2);
     default:
       return pane->anchorOffset();
   }
 }
 
-Vec2I PaneManager::calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const {
+std::expected<Vec2I, StarException> PaneManager::calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const {
   Vec2F position(pane->relativePosition());
   Vec2F size(pane->size());
   Mat3F scale;
   switch (pane->anchor()) {
-    case PaneAnchor::None:
-      scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(windowSize()) / 2);
+    case PaneAnchor::None: {
+      auto bounds = windowSize();
+      if (!bounds)
+        return std::unexpected(std::move(bounds.error()));
+      scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(*bounds) / 2);
       break;
+    }
     case PaneAnchor::BottomLeft:
       scale = Mat3F::scaling(interfaceScaleRatio);
       break;
@@ -473,20 +600,29 @@ Vec2I PaneManager::calculateNewInterfacePosition(std::shared_ptr<Pane> const& pa
     case PaneAnchor::Center:
       scale = Mat3F::scaling(interfaceScaleRatio, size / 2);
       break;
-    default:
-      scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(windowSize()) / 2);
+    default: {
+      auto bounds = windowSize();
+      if (!bounds)
+        return std::unexpected(std::move(bounds.error()));
+      scale = Mat3F::scaling(interfaceScaleRatio, Vec2F(*bounds) / 2);
+    }
   }
   return Vec2I::round((scale * Vec3F(position, 0)).vec2());
 }
 
-bool PaneManager::dismiss(std::shared_ptr<Pane> const& pane) {
+std::expected<bool, StarException> PaneManager::dismiss(std::shared_ptr<Pane> const& pane) {
   bool dismissed = false;
   for (auto& layerPair : m_displayedPanes) {
     if (auto panePair = layerPair.second.maybeTake(pane)) {
       dismissed = true;
-      panePair->first->dismissed();
-      if (panePair->second)
-        panePair->second(pane);
+      auto hidden = panePair->first->dismissed();
+      if (!hidden)
+        return std::unexpected(std::move(hidden.error()));
+      if (panePair->second) {
+        auto notified = panePair->second(pane);
+        if (!notified)
+          return std::unexpected(std::move(notified.error()));
+      }
     }
   }
 

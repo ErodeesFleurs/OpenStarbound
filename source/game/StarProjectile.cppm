@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.game_timers;
 import star.string;
@@ -78,19 +79,19 @@ public:
     return Star::typeName<Projectile>();
   }
 
-  Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
-  Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<Projectile>, StarException> create(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<Projectile>, StarException> create(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {}) const;
 
   EntityType entityType() const override;
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   String typeName() const;
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] std::expected<String, StarException> name() const override;
+  [[nodiscard]] std::expected<String, StarException> description() const override;
 
   Vec2F position() const override;
   RectF metaBoundBox() const override;
@@ -101,32 +102,32 @@ public:
   ClientEntityMode clientEntityMode() const override;
   bool masterOnly() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  void enableInterpolation(float extrapolationHint = 0.0f) override;
-  void disableInterpolation() override;
+  [[nodiscard]] std::expected<void, StarException> enableInterpolation(float extrapolationHint = 0.0f) override;
+  [[nodiscard]] std::expected<void, StarException> disableInterpolation() override;
 
   // If the bullet time to live has run out, or if it has collided, etc this
   // will return true.
-  bool shouldDestroy() const override;
-  void destroy(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
+  [[nodiscard]] std::expected<void, StarException> destroy(RenderCallback* renderCallback) override;
 
-  List<DamageSource> damageSources() const override;
-  void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const override;
+  [[nodiscard]] std::expected<void, StarException> hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
-  void update(float dt, std::uint64_t currentStep) override;
-  void render(RenderCallback* renderCallback) override;
-  void renderLightSources(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback) override;
+  [[nodiscard]] std::expected<void, StarException> renderLightSources(RenderCallback* renderCallback) override;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
 
   String projectileType() const;
   
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] std::expected<Json, StarException> configValue(String const& name, Json const& def = Json()) const;
 
   // InitialPosition, InitialDirection, InitialVelocity, PowerMultiplier, and
   // additional status effects must be set before the projectile is added to
@@ -151,18 +152,22 @@ public:
   void setSourceEntity(EntityId source, bool trackSource);
   EntityId sourceEntity() const;
 
-  List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const override;
   PolyF statusEffectArea() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const override;
   std::size_t movingCollisionCount() const override;
-  std::optional<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
+  [[nodiscard]] std::expected<std::optional<PhysicsMovingCollision>, StarException> movingCollision(std::size_t positionIndex) const override;
 
   using Entity::setTeam;
   
   MovementController* movementController() override;
 
 private:
+  Projectile(Root& rootContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& data, NetCompatibilityRules rules);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
+
   struct PhysicsForceConfig {
     PhysicsForceRegion forceRegion;
     NetElementBool enabled;
@@ -173,20 +178,20 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource);
+  [[nodiscard]] static std::expected<List<Particle>, StarException> sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource);
 
   int getFrame() const;
   void setFrame(int frame);
-  String drawableFrame();
+  [[nodiscard]] std::expected<String, StarException> drawableFrame();
 
-  void processAction(Json const& action);
-  void tickShared(float dt);
+  [[nodiscard]] std::expected<void, StarException> processAction(Json const& action);
+  [[nodiscard]] std::expected<void, StarException> tickShared(float dt);
 
-  void setup();
+  [[nodiscard]] std::expected<void, StarException> setup();
 
-  LuaCallbacks makeProjectileCallbacks();
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeProjectileCallbacks();
 
-  void renderPendingRenderables(RenderCallback* renderCallback);
+  [[nodiscard]] std::expected<void, StarException> renderPendingRenderables(RenderCallback* renderCallback);
 
   std::shared_ptr<ProjectileConfig> m_config;
   Json m_parameters;

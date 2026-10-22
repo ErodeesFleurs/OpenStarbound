@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.memory;
 import star.string;
@@ -53,31 +54,31 @@ public:
   std::size_t containerSize() const;
   List<std::shared_ptr<Item>> containerItems() const;
 
-  virtual Json containerGuiConfig() const = 0;
-  virtual String containerDescription() const = 0;
-  virtual String containerSubTitle() const = 0;
-  virtual ItemDescriptor iconItem() const = 0;
+  [[nodiscard]] virtual std::expected<Json, StarException> containerGuiConfig() const = 0;
+  [[nodiscard]] virtual std::expected<String, StarException> containerDescription() const = 0;
+  [[nodiscard]] virtual std::expected<String, StarException> containerSubTitle() const = 0;
+  [[nodiscard]] virtual std::expected<ItemDescriptor, StarException> iconItem() const = 0;
 
   virtual std::shared_ptr<ItemBag const> itemBag() const = 0;
 
-  virtual void containerOpen() = 0;
-  virtual void containerClose() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> containerOpen() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> containerClose() = 0;
 
-  virtual void startCrafting() = 0;
-  virtual void stopCrafting() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> startCrafting() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> stopCrafting() = 0;
   virtual bool isCrafting() const = 0;
   virtual float craftingProgress() const = 0;
 
-  virtual void burnContainerContents() = 0;
+  [[nodiscard]] virtual std::expected<void, StarException> burnContainerContents() = 0;
 
-  virtual RpcPromise<std::shared_ptr<Item>> addItems(std::shared_ptr<Item> const& items) = 0;
-  virtual RpcPromise<std::shared_ptr<Item>> putItems(std::size_t slot, std::shared_ptr<Item> const& items) = 0;
-  virtual RpcPromise<std::shared_ptr<Item>> takeItems(std::size_t slot, std::size_t count = NPos) = 0;
-  virtual RpcPromise<std::shared_ptr<Item>> swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true) = 0;
-  virtual RpcPromise<std::shared_ptr<Item>> applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) = 0;
-  virtual RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) = 0;
-  virtual RpcPromise<bool> consumeItems(std::size_t slot, std::size_t count) = 0;
-  virtual RpcPromise<List<std::shared_ptr<Item>>> clearContainer() = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> addItems(std::shared_ptr<Item> const& items) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> putItems(std::size_t slot, std::shared_ptr<Item> const& items) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> takeItems(std::size_t slot, std::size_t count = NPos) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<std::shared_ptr<Item>>, StarException> applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<bool>, StarException> consumeItems(ItemDescriptor const& descriptor) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<bool>, StarException> consumeItems(std::size_t slot, std::size_t count) = 0;
+  [[nodiscard]] virtual std::expected<RpcPromise<List<std::shared_ptr<Item>>>, StarException> clearContainer() = 0;
 };
 
 }

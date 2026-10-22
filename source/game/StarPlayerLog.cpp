@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.set;
@@ -17,16 +18,42 @@ PlayerLog::PlayerLog() {
   m_cinematics = StringSet();
 }
 
-PlayerLog::PlayerLog(Json const& json) {
-  m_deathCount = json.getInt("deathCount");
-  m_playTime = json.getDouble("playTime");
-  m_introComplete = json.getBool("introComplete");
-  m_scannedObjects = jsonToStringSet(json.get("scannedObjects"));
-  m_radioMessages = jsonToStringSet(json.get("radioMessages"));
-  m_cinematics = jsonToStringSet(json.get("cinematics"));
-
-  for (auto pair : json.get("collections").iterateObject())
-    m_collections[pair.first] = jsonToStringSet(pair.second);
+std::expected<PlayerLog, StarException> PlayerLog::create(Json const& json) {
+  PlayerLog log;
+  auto deaths = json.getInt("deathCount");
+  if (!deaths)
+    return std::unexpected(std::move(deaths.error()));
+  log.m_deathCount = *deaths;
+  auto playTime = json.getDouble("playTime");
+  if (!playTime)
+    return std::unexpected(std::move(playTime.error()));
+  log.m_playTime = *playTime;
+  auto introComplete = json.getBool("introComplete");
+  if (!introComplete)
+    return std::unexpected(std::move(introComplete.error()));
+  log.m_introComplete = *introComplete;
+  for (auto const& field : {
+      std::pair{"scannedObjects", &log.m_scannedObjects},
+      std::pair{"radioMessages", &log.m_radioMessages},
+      std::pair{"cinematics", &log.m_cinematics}}) {
+    auto value = json.get(field.first);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto strings = jsonToStringSet(*value);
+    if (!strings)
+      return std::unexpected(std::move(strings.error()));
+    *field.second = std::move(*strings);
+  }
+  auto collections = json.getObject("collections");
+  if (!collections)
+    return std::unexpected(std::move(collections.error()));
+  for (auto const& entry : *collections) {
+    auto strings = jsonToStringSet(entry.second);
+    if (!strings)
+      return std::unexpected(std::move(strings.error()));
+    log.m_collections[entry.first] = std::move(*strings);
+  }
+  return log;
 }
 
 Json PlayerLog::toJson() const {
@@ -112,10 +139,9 @@ StringList PlayerLog::collections() const {
 }
 
 StringSet PlayerLog::collectables(String const& collection) const {
-  if (!m_collections.contains(collection))
-    return {};
-
-  return m_collections.get(collection);
+  if (auto collectables = m_collections.ptr(collection))
+    return *collectables;
+  return {};
 }
 
 bool PlayerLog::addCollectable(String const& collection, String const& collectable) {

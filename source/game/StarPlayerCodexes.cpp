@@ -33,24 +33,38 @@ import star.player_codexes;
 import star.algorithm;
 namespace Star {
 
-PlayerCodexes::PlayerCodexes(Root& root) : PlayerCodexes(root, Json{}) {}
+PlayerCodexes::PlayerCodexes(Root& root) : m_root(root) {}
 
-PlayerCodexes::PlayerCodexes(Root& root, Json const& variant) : m_root(root) {
-  if (variant) {
-    auto assets = m_root.assets();
-    auto codexData = jsonToMapV<StringMap<bool>>(variant, std::mem_fn(&Json::toBool));
-    for (auto pair : codexData) {
-      if (auto codex = m_root.codexDatabase()->codex(pair.first)) {
-        m_codexes[pair.first] = CodexEntry{codex, pair.second};
-      } else {
-        m_root.logger().debug("Failed to load missing codex '{}'", pair.first);
-      }
+std::expected<std::shared_ptr<PlayerCodexes>, StarException> PlayerCodexes::create(Root& root, Json const& json) {
+  auto playerCodexes = std::make_shared<PlayerCodexes>(root);
+  if (!json)
+    return playerCodexes;
+  auto database = root.codexDatabase();
+  if (!database)
+    return std::unexpected(std::move(database.error()));
+  auto entries = json.iterateObject();
+  if (!entries)
+    return std::unexpected(std::move(entries.error()));
+  for (auto const& entry : *entries) {
+    auto read = entry.second.toBool();
+    if (!read)
+      return std::unexpected(std::move(read.error()));
+    if (auto codex = (*database)->codex(entry.first)) {
+      playerCodexes->m_codexes[entry.first] = CodexEntry{std::move(codex), *read};
+    } else {
+      auto logged = root.logger().debug("Failed to load missing codex '{}'", entry.first);
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
     }
   }
+  return playerCodexes;
 }
 
 Json PlayerCodexes::toJson() const {
-  return jsonFromMapV<StringMap<CodexEntry>>(m_codexes, [](CodexEntry const& entry) { return entry.second; });
+  JsonObject entries;
+  for (auto const& entry : m_codexes)
+    entries[entry.first] = entry.second.second;
+  return entries;
 }
 
 List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
@@ -68,19 +82,22 @@ bool PlayerCodexes::codexKnown(String const& codexId) const {
   return m_codexes.contains(codexId);
 }
 
-std::shared_ptr<Codex const> PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
+std::expected<std::shared_ptr<Codex const>, StarException> PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
   if (!codexKnown(codexId)) {
-    if (auto codex = m_root.codexDatabase()->codex(codexId)) {
-      auto entry = CodexEntry{codex, markRead};
-      m_codexes[codexId] = entry;
-      return entry.first;
+    auto database = m_root.codexDatabase();
+    if (!database)
+      return std::unexpected(std::move(database.error()));
+    if (auto codex = (*database)->codex(codexId)) {
+      m_codexes[codexId] = CodexEntry{codex, markRead};
+      return codex;
     }
   }
-  return {};
+  return std::shared_ptr<Codex const>();
 }
 
 bool PlayerCodexes::codexRead(String const& codexId) const {
-  return m_codexes.contains(codexId) && m_codexes.get(codexId).second;
+  auto entry = m_codexes.ptr(codexId);
+  return entry && entry->second;
 }
 
 bool PlayerCodexes::markCodexRead(String const& codexId) {
@@ -99,9 +116,22 @@ bool PlayerCodexes::markCodexUnread(String const& codexId) {
   return false;
 }
 
-void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
-  for (auto codexId : jsonToStringList(m_root.assets()->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
-    learnCodex(codexId, true);
+std::expected<void, StarException> PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
+  auto assets = m_root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json(strf("/player.config:defaultCodexes.{}", playerSpecies));
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto codexes = jsonToStringList(*config);
+  if (!codexes)
+    return std::unexpected(std::move(codexes.error()));
+  for (auto const& codexId : *codexes) {
+    auto learned = learnCodex(codexId, true);
+    if (!learned)
+      return std::unexpected(std::move(learned.error()));
+  }
+  return {};
 }
 
 std::shared_ptr<Codex const> PlayerCodexes::firstNewCodex() const {

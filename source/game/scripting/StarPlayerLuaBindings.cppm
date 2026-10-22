@@ -1,13 +1,15 @@
 module;
+import std;
+import star.format;
+import star.lua;
 
 namespace Star {
 class Root;
-class LuaCallbacks;
 class Player;
 }
 
 export module star.player_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makePlayerCallbacks(Root& root, Player* player);
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makePlayerCallbacks(Root& root, Player* player);
 }

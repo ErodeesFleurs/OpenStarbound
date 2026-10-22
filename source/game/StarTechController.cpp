@@ -1,3 +1,4 @@
+import star.format;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -117,7 +118,7 @@ import star.net_compatibility;
 import star.algorithm;
 namespace Star {
 
-EnumMap<TechController::ParentState> const TechController::ParentStateNames{
+std::expected<EnumMap<TechController::ParentState>, StarException> const TechController::ParentStateNames = EnumMap<TechController::ParentState>::create({
   {TechController::ParentState::Stand, "Stand"},
   {TechController::ParentState::Fly, "Fly"},
   {TechController::ParentState::Fall, "Fall"},
@@ -128,9 +129,9 @@ EnumMap<TechController::ParentState> const TechController::ParentStateNames{
   {TechController::ParentState::Run, "Run"},
   {TechController::ParentState::Swim, "Swim"},
   {TechController::ParentState::SwimIdle, "SwimIdle"}
-};
+});
 
-TechController::TechController(Root& root) : m_root(root), m_techAnimators([&root] { return std::make_shared<TechAnimator>(root); }) {
+TechController::TechController(Root& root) : m_root(root), m_techAnimators([&root] { return TechAnimator::create(root); }) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
@@ -147,13 +148,6 @@ TechController::TechController(Root& root) : m_root(root), m_techAnimators([&roo
   m_moveSpecial2 = false;
   m_moveSpecial3 = false;
 
-  addNetElement(&m_techAnimators);
-  addNetElement(&m_parentState);
-  addNetElement(&m_parentDirectives);
-  addNetElement(&m_xParentOffset);
-  addNetElement(&m_yParentOffset);
-  addNetElement(&m_parentHidden);
-  addNetElement(&m_toolUsageSuppressed);
 
   m_xParentOffset.setFixedPointBase(0.003125);
   m_yParentOffset.setFixedPointBase(0.003125);
@@ -161,30 +155,53 @@ TechController::TechController(Root& root) : m_root(root), m_techAnimators([&roo
   m_yParentOffset.setInterpolator(lerp<float, float>);
 }
 
-Json TechController::diskStore() {
-  if (m_overriddenTech) {
-    auto modules = JsonArray();
-    for (String moduleName : *m_overriddenTech)
-      modules.append(JsonObject{{"module", moduleName}, {"scriptData", JsonObject()}});
-    return JsonObject{{"techModules", modules}};
-  } else {
-    return JsonObject{{"techModules", transform<JsonArray>(m_techModules, [](TechModule const& tm) {
-        return JsonObject{
-            {"module", tm.config.name},
-            {"scriptData", tm.scriptComponent.getScriptStorage()}
-          };
-      })
-    }};
+std::expected<std::shared_ptr<TechController>, StarException> TechController::create(Root& root) {
+  auto controller = std::shared_ptr<TechController>(new TechController(root));
+  for (auto element : {static_cast<NetElement*>(&controller->m_techAnimators),
+      static_cast<NetElement*>(&controller->m_parentState), static_cast<NetElement*>(&controller->m_parentDirectives),
+      static_cast<NetElement*>(&controller->m_xParentOffset), static_cast<NetElement*>(&controller->m_yParentOffset),
+      static_cast<NetElement*>(&controller->m_parentHidden), static_cast<NetElement*>(&controller->m_toolUsageSuppressed)}) {
+    auto added = controller->addNetElement(element);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
   }
+  return controller;
 }
 
-void TechController::diskLoad(Json const& store) {
-  setupTechModules( store.getArray("techModules", {}).transformed([](Json const& v) {
-      return std::make_tuple(v.getString("module"), v.getObject("scriptData", {}));
-    }));
+std::expected<Json, StarException> TechController::diskStore() {
+  JsonArray modules;
+  if (m_overriddenTech) {
+    for (auto const& name : *m_overriddenTech)
+      modules.append(JsonObject{{"module", name}, {"scriptData", JsonObject()}});
+  } else {
+    for (auto const& module : m_techModules) {
+      auto storage = module.scriptComponent.getScriptStorage();
+      if (!storage)
+        return std::unexpected(std::move(storage.error()));
+      modules.append(JsonObject{{"module", module.config.name}, {"scriptData", std::move(*storage)}});
+    }
+  }
+  return JsonObject{{"techModules", std::move(modules)}};
 }
 
-void TechController::init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) {
+std::expected<void, StarException> TechController::diskLoad(Json const& store) {
+  auto modules = store.getArray("techModules", {});
+  if (!modules)
+    return std::unexpected(std::move(modules.error()));
+  List<std::tuple<String, JsonObject>> moduleInits;
+  for (auto const& module : *modules) {
+    auto name = module.getString("module");
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto data = module.getObject("scriptData", {});
+    if (!data)
+      return std::unexpected(std::move(data.error()));
+    moduleInits.append(std::make_tuple(std::move(*name), std::move(*data)));
+  }
+  return setupTechModules(moduleInits);
+}
+
+std::expected<void, StarException> TechController::init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) {
   m_parentEntity = parentEntity;
   m_movementController = movementController;
   m_statusController = statusController;
@@ -195,50 +212,66 @@ void TechController::init(Entity* parentEntity, ActorMovementController* movemen
   resetMoves();
 
   if (m_parentEntity->isMaster())
-    initializeModules();
+    return initializeModules();
+  return {};
 }
 
-void TechController::uninit() {
+std::expected<void, StarException> TechController::uninit() {
+  std::optional<StarException> error;
+  for (auto& module : m_techModules) {
+    auto unloaded = unloadModule(module);
+    if (!unloaded) {
+      if (error)
+        *error = error->withContext(unloaded.error().what());
+      else
+        error = std::move(unloaded.error());
+    }
+  }
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
-
-  for (auto& module : m_techModules)
-    unloadModule(module);
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-void TechController::setLoadedTech(StringList const& techModules, bool forceLoad) {
+std::expected<void, StarException> TechController::setLoadedTech(StringList const& techModules, bool forceLoad) {
   if (forceLoad || loadedTech() != techModules) {
-    setupTechModules(techModules.transformed([](String const& module) { return std::make_tuple(module, JsonObject()); }));
+    auto setup = setupTechModules(techModules.transformed([](String const& module) { return std::make_tuple(module, JsonObject()); }));
+    if (!setup)
+      return std::unexpected(std::move(setup.error()));
     if (m_parentEntity)
-      initializeModules();
+      return initializeModules();
   }
+  return {};
 }
 
 StringList TechController::loadedTech() const {
   return transform<StringList>(m_techModules, [](TechModule const& tm) { return tm.config.name; });
 }
 
-void TechController::reloadTech() {
-  setLoadedTech(loadedTech(), true);
+std::expected<void, StarException> TechController::reloadTech() {
+  return setLoadedTech(loadedTech(), true);
 }
 
 bool TechController::techOverridden() const {
   return (bool)m_overriddenTech;
 }
 
-void TechController::setOverrideTech(StringList const& techModules) {
+std::expected<void, StarException> TechController::setOverrideTech(StringList const& techModules) {
   if (!m_overriddenTech)
     m_overriddenTech = loadedTech();
-
-  setLoadedTech(techModules, true);
+  return setLoadedTech(techModules, true);
 }
 
-void TechController::clearOverrideTech() {
+std::expected<void, StarException> TechController::clearOverrideTech() {
   if (m_overriddenTech) {
-    setLoadedTech(*m_overriddenTech, true);
+    auto loaded = setLoadedTech(*m_overriddenTech, true);
+    if (!loaded)
+      return std::unexpected(std::move(loaded.error()));
     m_overriddenTech = {};
   }
+  return {};
 }
 
 void TechController::setShouldRun(bool shouldRun) {
@@ -294,7 +327,7 @@ void TechController::setAimPosition(Vec2F const& aimPosition) {
   m_aimPosition = aimPosition;
 }
 
-void TechController::tickMaster(float dt) {
+std::expected<void, StarException> TechController::tickMaster(float dt) {
   // if there's no gravity, fly instead of walking
   if (m_movementController->zeroG()) {
     if (m_moveRight || m_moveLeft || m_moveUp || m_moveDown) {
@@ -339,16 +372,18 @@ void TechController::tickMaster(float dt) {
       {"special3", m_moveSpecial3}
     };
 
-    module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", module.scriptComponent.updateDt(dt)}});
+    auto updated = module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", module.scriptComponent.updateDt(dt)}});
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
   }
 
   resetMoves();
-  updateAnimators(dt);
+  return updateAnimators(dt);
 }
 
-void TechController::tickSlave(float dt) {
+std::expected<void, StarException> TechController::tickSlave(float dt) {
   resetMoves();
-  updateAnimators(dt);
+  return updateAnimators(dt);
 }
 
 std::optional<TechController::ParentState> TechController::parentState() const {
@@ -371,12 +406,15 @@ bool TechController::parentHidden() const {
   return m_parentHidden.get();
 }
 
-List<Drawable> TechController::backDrawables() {
+std::expected<List<Drawable>, StarException> TechController::backDrawables() {
   List<Drawable> drawables;
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+      auto pieces = animator->animator->drawablesWithZLevel(m_movementController->position());
+      if (!pieces)
+        return std::unexpected(std::move(pieces.error()));
+      for (auto& piece : *pieces) {
         if (piece.second < 0.0f)
           drawables.append(std::move(piece.first));
       }
@@ -386,12 +424,15 @@ List<Drawable> TechController::backDrawables() {
   return drawables;
 }
 
-List<Drawable> TechController::frontDrawables() {
+std::expected<List<Drawable>, StarException> TechController::frontDrawables() {
   List<Drawable> drawables;
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+      auto pieces = animator->animator->drawablesWithZLevel(m_movementController->position());
+      if (!pieces)
+        return std::unexpected(std::move(pieces.error()));
+      for (auto& piece : *pieces) {
         if (piece.second >= 0.0f)
           drawables.append(std::move(piece.first));
       }
@@ -401,12 +442,16 @@ List<Drawable> TechController::frontDrawables() {
   return drawables;
 }
 
-List<LightSource> TechController::lightSources() const {
+std::expected<List<LightSource>, StarException> TechController::lightSources() const {
   List<LightSource> lightSources;
 
   for (auto const& animator : m_techAnimators.netElements()) {
-    if (animator->isVisible())
-      lightSources.appendAll(animator->animator.lightSources(m_movementController->position()));
+    if (animator->isVisible()) {
+      auto lights = animator->animator->lightSources(m_movementController->position());
+      if (!lights)
+        return std::unexpected(std::move(lights.error()));
+      lightSources.appendAll(std::move(*lights));
+    }
   }
 
   return lightSources;
@@ -438,62 +483,88 @@ List<Particle> TechController::pullNewParticles() {
   return newParticles;
 }
 
-std::optional<ChainableJsonMessageResponse> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   for (auto& module : m_techModules) {
-    if (auto res = module.scriptComponent.handleMessage(message, localMessage, args))
-      return res;
+    auto response = module.scriptComponent.handleMessage(message, localMessage, args);
+    if (!response)
+      return std::unexpected(std::move(response.error()));
+    if (*response)
+      return std::move(*response);
   }
-  return {};
+  return std::optional<ChainableJsonMessageResponse>();
 }
 
-TechController::TechAnimator::TechAnimator(Root& root) : TechAnimator(root, std::optional<String>{}) {}
+TechController::TechAnimator::TechAnimator(Root& root) : m_root(root) {}
 
-TechController::TechAnimator::TechAnimator(Root& root, std::optional<String> ac) : m_root(root), animator(root) {
-  animationConfig = std::move(ac);
-  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
-  netGroup.addNetElement(&animator);
-  netGroup.addNetElement(&visible);
+std::expected<std::shared_ptr<TechController::TechAnimator>, StarException> TechController::TechAnimator::create(Root& root, std::optional<String> config) {
+  auto result = std::make_shared<TechAnimator>(root);
+  auto animator = config ? NetworkedAnimator::create(root, *config) : NetworkedAnimator::create(root);
+  if (!animator)
+    return std::unexpected(std::move(animator.error()));
+  result->animationConfig = std::move(config);
+  result->animator = std::move(*animator);
+  if (auto added = result->netGroup.addNetElement(result->animator.get()); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = result->netGroup.addNetElement(&result->visible); !added)
+    return std::unexpected(std::move(added.error()));
+  return result;
 }
 
 void TechController::TechAnimator::initNetVersion(NetElementVersion const* version) {
   netGroup.initNetVersion(version);
 }
 
-void TechController::TechAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
-  ds << animationConfig;
-  netGroup.netStore(ds, rules);
+std::expected<void, StarException> TechController::TechAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
+  if (!checkWithRules(rules))
+    return {};
+  auto written = ds << animationConfig;
+  if (!written)
+    return std::unexpected(std::move(written.error()));
+  return netGroup.netStore(ds, rules);
 }
 
-void TechController::TechAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
-  ds >> animationConfig;
-  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
-  netGroup.netLoad(ds, rules);
+std::expected<void, StarException> TechController::TechAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
+  if (!checkWithRules(rules))
+    return {};
+  std::optional<String> config;
+  auto read = ds >> config;
+  if (!read)
+    return std::unexpected(std::move(read.error()));
+  auto created = config ? NetworkedAnimator::create(m_root, *config) : NetworkedAnimator::create(m_root);
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  netGroup.clearNetElements();
+  animationConfig = std::move(config);
+  animator = std::move(*created);
+  if (auto added = netGroup.addNetElement(animator.get()); !added)
+    return std::unexpected(std::move(added.error()));
+  if (auto added = netGroup.addNetElement(&visible); !added)
+    return std::unexpected(std::move(added.error()));
+  return netGroup.netLoad(ds, rules);
 }
 
-void TechController::TechAnimator::enableNetInterpolation(float extrapolationHint) {
-  netGroup.enableNetInterpolation(extrapolationHint);
+std::expected<void, StarException> TechController::TechAnimator::enableNetInterpolation(float extrapolationHint) {
+  return netGroup.enableNetInterpolation(extrapolationHint);
 }
 
-void TechController::TechAnimator::disableNetInterpolation() {
-  netGroup.disableNetInterpolation();
+std::expected<void, StarException> TechController::TechAnimator::disableNetInterpolation() {
+  return netGroup.disableNetInterpolation();
 }
 
-void TechController::TechAnimator::tickNetInterpolation(float dt) {
-  netGroup.tickNetInterpolation(dt);
+std::expected<void, StarException> TechController::TechAnimator::tickNetInterpolation(float dt) {
+  return netGroup.tickNetInterpolation(dt);
 }
 
-bool TechController::TechAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
+std::expected<bool, StarException> TechController::TechAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   return netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
-void TechController::TechAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  netGroup.readNetDelta(ds, interpolationTime, rules);
+std::expected<void, StarException> TechController::TechAnimator::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
+  return netGroup.readNetDelta(ds, interpolationTime, rules);
 }
 
-void TechController::TechAnimator::blankNetDelta(float interpolationTime) {
-  netGroup.blankNetDelta(interpolationTime);
+std::expected<void, StarException> TechController::TechAnimator::blankNetDelta(float interpolationTime) {
+  return netGroup.blankNetDelta(interpolationTime);
 }
 
 void TechController::TechAnimator::setVisible(bool visible) {
@@ -506,64 +577,130 @@ bool TechController::TechAnimator::isVisible() const {
   return visible.get();
 }
 
-void TechController::setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits) {
-  for (auto& techModule : m_techModules)
-    unloadModule(techModule);
-
-  m_techModules.clear();
-  m_techAnimators.clearNetElements();
-
-  auto techDatabase = m_root.techDatabase();
-
-  for (auto const& moduleInit : moduleInits) {
-    if (techDatabase->contains(std::get<0>(moduleInit))) {
-      auto& module = m_techModules.emplaceAppend(m_root);
-
-      module.config = techDatabase->tech(std::get<0>(moduleInit));
-
-      module.scriptComponent.setScripts(module.config.scripts);
-      module.scriptComponent.setScriptStorage(std::get<1>(moduleInit));
-
-      module.visible = module.config.parameters.getBool("visible", true);
-
-      module.toolUsageSuppressed = false;
-
-      auto moduleAnimator = std::make_shared<TechAnimator>(m_root, module.config.animationConfig);
-      for (auto const& pair : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
-        moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
-      module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
-    } else {
-      m_root.logger().warn("Tech module '{}' not found in tech database", std::get<0>(moduleInit));
+std::expected<void, StarException> TechController::setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits) {
+  std::optional<StarException> unloadError;
+  for (auto& module : m_techModules) {
+    auto unloaded = unloadModule(module);
+    if (!unloaded) {
+      if (unloadError)
+        *unloadError = unloadError->withContext(unloaded.error().what());
+      else
+        unloadError = std::move(unloaded.error());
     }
   }
-}
-
-void TechController::unloadModule(TechModule& techModule) {
-  techModule.scriptComponent.uninit();
-  techModule.scriptComponent.removeCallbacks("tech");
-  techModule.scriptComponent.removeCallbacks("config");
-  techModule.scriptComponent.removeCallbacks("entity");
-  techModule.scriptComponent.removeCallbacks("animator");
-  techModule.scriptComponent.removeCallbacks("status");
-  techModule.scriptComponent.removeCallbacks("player");
-  techModule.scriptComponent.removeActorMovementCallbacks();
-}
-
-void TechController::initializeModules() {
-  for (auto& module : m_techModules) {
-    module.scriptComponent.addCallbacks("tech", makeTechCallbacks(module));
-    module.scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([&module](String const& name, Json const& def) {
-        return module.config.parameters.query(name, def);
-      }));
-    module.scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
-    module.scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_techAnimators.getNetElement(module.animatorId)->animator));
-    module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController));
-    if (auto player = as<Player>(m_parentEntity))
-      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, player));
-    module.scriptComponent.addActorMovementCallbacks(m_movementController);
-
-    module.scriptComponent.init(m_parentEntity->world());
+  if (unloadError)
+    return std::unexpected(std::move(*unloadError));
+  m_techModules.clear();
+  m_techAnimators.clearNetElements();
+  auto techDatabase = m_root.techDatabase();
+  if (!techDatabase)
+    return std::unexpected(std::move(techDatabase.error()));
+  for (auto const& moduleInit : moduleInits) {
+    if (!(*techDatabase)->contains(std::get<0>(moduleInit))) {
+      auto logged = m_root.logger().warn("Tech module '{}' not found in tech database", std::get<0>(moduleInit));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      continue;
+    }
+    auto config = (*techDatabase)->tech(std::get<0>(moduleInit));
+    if (!config)
+      return std::unexpected(std::move(config.error()));
+    auto visible = config->parameters.getBool("visible", true);
+    if (!visible)
+      return std::unexpected(std::move(visible.error()));
+    auto moduleAnimator = TechAnimator::create(m_root, config->animationConfig);
+    if (!moduleAnimator)
+      return std::unexpected(std::move(moduleAnimator.error()));
+    auto parts = config->parameters.getObject("animationParts", JsonObject());
+    if (!parts)
+      return std::unexpected(std::move(parts.error()));
+    for (auto const& entry : *parts) {
+      auto image = entry.second.toString();
+      if (!image)
+        return std::unexpected(std::move(image.error()));
+      (*moduleAnimator)->animator->setPartTag(entry.first, "partImage", std::move(*image));
+    }
+    auto& module = m_techModules.emplaceAppend(m_root);
+    module.config = std::move(*config);
+    module.visible = *visible;
+    module.toolUsageSuppressed = false;
+    if (auto installed = module.scriptComponent.setScripts(module.config.scripts); !installed)
+      return std::unexpected(std::move(installed.error()));
+    if (auto stored = module.scriptComponent.setScriptStorage(std::get<1>(moduleInit)); !stored)
+      return std::unexpected(std::move(stored.error()));
+    auto added = m_techAnimators.addNetElement(std::move(*moduleAnimator));
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    module.animatorId = *added;
   }
+  return {};
+}
+
+std::expected<void, StarException> TechController::unloadModule(TechModule& module) {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result) {
+      if (error)
+        *error = error->withContext(result.error().what());
+      else
+        error = std::move(result.error());
+    }
+  };
+  remember(module.scriptComponent.uninit());
+  for (auto const& name : {"tech", "config", "entity", "animator", "status", "player"})
+    remember(module.scriptComponent.removeCallbacks(name));
+  remember(module.scriptComponent.removeActorMovementCallbacks());
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
+}
+
+std::expected<void, StarException> TechController::initializeModules() {
+  auto initialized = [&]() -> std::expected<void, StarException> {
+    for (auto& module : m_techModules) {
+      auto add = [&](String name, std::expected<LuaCallbacks, StarException> callbacks) -> std::expected<void, StarException> {
+        if (!callbacks)
+          return std::unexpected(std::move(callbacks.error()));
+        return module.scriptComponent.addCallbacks(std::move(name), std::move(*callbacks));
+      };
+      if (auto result = add("tech", makeTechCallbacks(module)); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto result = add("config", LuaBindings::makeConfigCallbacks(
+          [&module](String const& name, Json const& def) { return module.config.parameters.query(name, def); })); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto result = add("entity", LuaBindings::makeEntityCallbacks(m_parentEntity)); !result)
+        return std::unexpected(std::move(result.error()));
+      auto animator = m_techAnimators.getNetElement(module.animatorId);
+      if (!animator)
+        return std::unexpected(std::move(animator.error()));
+      if (auto result = add("animator", LuaBindings::makeNetworkedAnimatorCallbacks((*animator)->animator.get())); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto result = add("status", LuaBindings::makeStatusControllerCallbacks(m_statusController)); !result)
+        return std::unexpected(std::move(result.error()));
+      if (auto player = as<Player>(m_parentEntity)) {
+        if (auto result = add("player", LuaBindings::makePlayerCallbacks(m_root, player)); !result)
+          return std::unexpected(std::move(result.error()));
+      }
+      if (auto added = module.scriptComponent.addActorMovementCallbacks(m_movementController); !added)
+        return std::unexpected(std::move(added.error()));
+      auto world = m_parentEntity->world();
+      if (!world)
+        return std::unexpected(std::move(world.error()));
+      if (auto result = module.scriptComponent.init(*world); !result)
+        return std::unexpected(std::move(result.error()));
+    }
+    return {};
+  }();
+  if (!initialized) {
+    auto error = std::move(initialized.error());
+    for (auto& module : m_techModules) {
+      auto unloaded = unloadModule(module);
+      if (!unloaded)
+        error = error.withContext(unloaded.error().what());
+    }
+    return std::unexpected(std::move(error));
+  }
+  return {};
 }
 
 void TechController::resetMoves() {
@@ -578,72 +715,81 @@ void TechController::resetMoves() {
   m_moveSpecial3 = false;
 }
 
-void TechController::updateAnimators(float dt) {
-  for (auto const& module : m_techModules)
-    m_techAnimators.getNetElement(module.animatorId)->setVisible(module.visible);
-
-  for (auto const& animator : m_techAnimators.netElements()) {
-    if (m_parentEntity->world()->isServer() || !animator->isVisible()) {
-      animator->animator.update(dt, nullptr);
-    } else {
-      animator->animator.update(dt, &animator->dynamicTarget);
-      animator->dynamicTarget.updatePosition(m_movementController->position());
-    }
+std::expected<void, StarException> TechController::updateAnimators(float dt) {
+  for (auto const& module : m_techModules) {
+    auto animator = m_techAnimators.getNetElement(module.animatorId);
+    if (!animator)
+      return std::unexpected(std::move(animator.error()));
+    (*animator)->setVisible(module.visible);
   }
+  auto world = m_parentEntity->world();
+  if (!world)
+    return std::unexpected(std::move(world.error()));
+  for (auto const& animator : m_techAnimators.netElements()) {
+    auto dynamicTarget = (*world)->isServer() || !animator->isVisible() ? nullptr : &animator->dynamicTarget;
+    auto updated = animator->animator->update(dt, dynamicTarget);
+    if (!updated)
+      return std::unexpected(std::move(updated.error()));
+    if (dynamicTarget)
+      dynamicTarget->updatePosition(m_movementController->position());
+  }
+  return {};
 }
 
-LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
+std::expected<LuaCallbacks, StarException> TechController::makeTechCallbacks(TechModule& techModule) {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("aimPosition", [this]() {
-      return m_aimPosition;
-    });
-
-  callbacks.registerCallback("setVisible", [&techModule](bool visible) {
+  if (auto result = callbacks.registerCallback("aimPosition", [this]() { return m_aimPosition; }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setVisible", [&techModule](bool visible) {
       techModule.visible = visible;
-    });
-
-  callbacks.registerCallback("setParentState", [this](std::optional<String> const& state) {
-      if (state)
-        m_parentState.set(ParentStateNames.getLeft(*state));
-      else
-        m_parentState.set({});
-    });
-
-  callbacks.registerCallback("setParentDirectives", [this, &techModule](std::optional<String> const& directives) {
+    }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setParentState",
+      [this](std::optional<String> const& state) -> std::expected<void, StarException> {
+        if (state) {
+          if (!ParentStateNames)
+            return std::unexpected(ParentStateNames.error());
+          auto value = ParentStateNames->getLeft(*state);
+          if (!value)
+            return std::unexpected(std::move(value.error()));
+          m_parentState.set(**value);
+        } else {
+          m_parentState.set({});
+        }
+        return {};
+      }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setParentDirectives", [this, &techModule](std::optional<String> const& directives) {
       techModule.parentDirectives = directives.value_or(String{});
-
-      DirectivesGroup newParentDirectives;
-      for (auto& module : m_techModules)
-        newParentDirectives.append(module.parentDirectives);
-      m_parentDirectives.set(std::move(newParentDirectives));
-    });
-
-  callbacks.registerCallback("setParentHidden", [this](bool hidden) {
-      m_parentHidden.set(hidden);
-    });
-
-  callbacks.registerCallback("setParentOffset", [this](Vec2F const& po) {
-      m_xParentOffset.set(po[0]);
-      m_yParentOffset.set(po[1]);
-    });
-
-  callbacks.registerCallback("parentLounging", [this]() {
-      if (auto loungingEntity = as<LoungingEntity>(m_parentEntity))
-        return loungingEntity->loungingIn().has_value();
+      DirectivesGroup combined;
+      for (auto const& module : m_techModules)
+        combined.append(module.parentDirectives);
+      m_parentDirectives.set(std::move(combined));
+    }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setParentHidden", [this](bool hidden) { m_parentHidden.set(hidden); }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setParentOffset", [this](Vec2F const& offset) {
+      m_xParentOffset.set(offset[0]);
+      m_yParentOffset.set(offset[1]);
+    }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("parentLounging", [this]() {
+      if (auto entity = as<LoungingEntity>(m_parentEntity))
+        return entity->loungingIn().has_value();
       return false;
-    });
-
-  callbacks.registerCallback("setToolUsageSuppressed", [this, &techModule](bool suppressed) {
+    }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("setToolUsageSuppressed", [this, &techModule](bool suppressed) {
       if (techModule.toolUsageSuppressed == suppressed)
         return;
       techModule.toolUsageSuppressed = suppressed;
       bool anySuppressed = false;
-      for (auto& module : m_techModules)
-        anySuppressed = anySuppressed || module.toolUsageSuppressed;
+      for (auto const& module : m_techModules)
+        anySuppressed |= module.toolUsageSuppressed;
       m_toolUsageSuppressed.set(anySuppressed);
-    });
-
+    }); !result)
+    return std::unexpected(std::move(result.error()));
   return callbacks;
 }
 

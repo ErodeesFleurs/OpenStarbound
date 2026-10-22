@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.string;
 import star.list;
 import star.json;
@@ -32,15 +33,15 @@ bool InteractiveEntity::isInteractive() const {
   return true;
 }
 
-List<QuestArcDescriptor> InteractiveEntity::offeredQuests() const {
-  return {};
+std::expected<List<QuestArcDescriptor>, StarException> InteractiveEntity::offeredQuests() const {
+  return List<QuestArcDescriptor>{};
 }
 
-StringSet InteractiveEntity::turnInQuests() const {
-  return {};
+std::expected<StringSet, StarException> InteractiveEntity::turnInQuests() const {
+  return StringSet{};
 }
 
-Vec2F InteractiveEntity::questIndicatorPosition() const {
+std::expected<Vec2F, StarException> InteractiveEntity::questIndicatorPosition() const {
   return position();
 }
 

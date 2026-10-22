@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -73,20 +74,21 @@ public:
     return Star::typeName<HttpTrustDialog>();
   }
 
-  HttpTrustDialog(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<HttpTrustDialog>, StarException> create(GuiContext& guiContext);
 
   ~HttpTrustDialog() override;
 
-  void displayRequest(String const& domain, std::function<void(HttpTrustReply, bool)> callback);
+  [[nodiscard]] std::expected<void, StarException> displayRequest(String const& domain, std::function<std::expected<void, StarException>(HttpTrustReply, bool)> callback);
 
-  void dismissed() override;
+  [[nodiscard]] std::expected<void, StarException> dismissed() override;
 
 private:
-  void reply(HttpTrustReply replyType);
+  explicit HttpTrustDialog(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> reply(HttpTrustReply replyType);
 
   String m_domain;
   bool m_confirmed;
-  std::function<void(HttpTrustReply, bool)> m_callback;
+  std::function<std::expected<void, StarException>(HttpTrustReply, bool)> m_callback;
 };
 
 }

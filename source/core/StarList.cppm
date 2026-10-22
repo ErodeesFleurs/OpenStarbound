@@ -24,35 +24,47 @@ public:
   typedef typename Base::value_type value_type;
   typedef typename Base::reference reference;
   typedef typename Base::const_reference const_reference;
+  using AppendResult = decltype(std::declval<Base&>().push_back(std::declval<value_type>()));
 
   ListMixin();
   ListMixin(Base const& list);
   ListMixin(Base&& list);
-  ListMixin(value_type const* p, std::size_t count);
+  ListMixin(value_type const* p, std::size_t count) requires (!requires { Base::MaximumSize; });
   template <typename InputIterator>
-  ListMixin(InputIterator beg, InputIterator end);
-  explicit ListMixin(std::size_t len, const_reference s1 = value_type());
-  ListMixin(std::initializer_list<value_type> list);
+  ListMixin(InputIterator beg, InputIterator end) requires (!requires { Base::MaximumSize; });
+  explicit ListMixin(std::size_t len, const_reference s1 = value_type()) requires (!requires { Base::MaximumSize; });
+  ListMixin(std::initializer_list<value_type> list) requires (!requires { Base::MaximumSize; });
 
-  void append(value_type e);
+  [[nodiscard]]
+  AppendResult append(value_type e);
 
   template <typename Container>
-  void appendAll(Container&& list);
+  [[nodiscard]]
+  AppendResult appendAll(Container&& list);
 
   template <class... Args>
-  reference emplaceAppend(Args&&... args);
+  reference emplaceAppend(Args&&... args) requires std::is_void_v<AppendResult>;
+  template <class... Args>
+  [[nodiscard]]
+  std::expected<value_type*, StarException> emplaceAppend(Args&&... args) requires (!std::is_void_v<AppendResult>);
 
-  reference first();
-  const_reference first() const;
+  [[nodiscard]]
+  std::expected<value_type*, StarException> first();
+  [[nodiscard]]
+  std::expected<value_type const*, StarException> first() const;
 
-  reference last();
-  const_reference last() const;
+  [[nodiscard]]
+  std::expected<value_type*, StarException> last();
+  [[nodiscard]]
+  std::expected<value_type const*, StarException> last() const;
 
   std::optional<value_type> maybeFirst();
   std::optional<value_type> maybeLast();
 
-  void removeLast();
-  value_type takeLast();
+  [[nodiscard]]
+  std::expected<void, StarException> removeLast();
+  [[nodiscard]]
+  std::expected<value_type, StarException> takeLast();
 
   std::optional<value_type> maybeTakeLast();
 
@@ -67,11 +79,14 @@ public:
   std::size_t remove(const_reference e);
 
   template <typename Filter>
-  void filter(Filter&& filter);
+  [[nodiscard]]
+  auto filter(Filter&& filter);
 
   template <typename Comparator>
-  void insertSorted(value_type e, Comparator&& comparator);
-  void insertSorted(value_type e);
+  [[nodiscard]]
+  AppendResult insertSorted(value_type e, Comparator&& comparator);
+  [[nodiscard]]
+  AppendResult insertSorted(value_type e);
 
   // Returns true if this *sorted* list contains the given element.
   template <typename Comparator>
@@ -79,21 +94,26 @@ public:
   bool containsSorted(value_type e);
 
   template <typename Function>
-  void exec(Function&& function);
+  [[nodiscard]]
+  auto exec(Function&& function);
 
   template <typename Function>
-  void exec(Function&& function) const;
+  [[nodiscard]]
+  auto exec(Function&& function) const;
 
   template <typename Function>
-  void transform(Function&& function);
+  [[nodiscard]]
+  auto transform(Function&& function);
 
   template <typename Function>
-  bool any(Function&& function) const;
-  bool any() const;
+  [[nodiscard]]
+  auto any(Function&& function) const;
+  [[nodiscard]] auto any() const;
 
   template <typename Function>
-  bool all(Function&& function) const;
-  bool all() const;
+  [[nodiscard]]
+  auto all(Function&& function) const;
+  [[nodiscard]] auto all() const;
 };
 
 template <typename List>
@@ -115,6 +135,7 @@ public:
   typedef typename Base::value_type value_type;
   typedef typename Base::reference reference;
   typedef typename Base::const_reference const_reference;
+  using AppendResult = typename Base::AppendResult;
 
   using Base::Base;
 
@@ -129,8 +150,10 @@ public:
   // Returns last index of given element, NPos if not found.
   std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const;
 
-  const_reference at(std::size_t n) const;
-  reference at(std::size_t n);
+  [[nodiscard]]
+  std::expected<value_type const*, StarException> at(std::size_t n) const;
+  [[nodiscard]]
+  std::expected<value_type*, StarException> at(std::size_t n);
 
   const_reference operator[](std::size_t n) const;
   reference operator[](std::size_t n);
@@ -138,12 +161,14 @@ public:
   // Does not throw if n is beyond end of list, instead returns def
   value_type get(std::size_t n, value_type def = value_type()) const;
 
-  value_type takeAt(std::size_t i);
+  [[nodiscard]]
+  std::expected<value_type, StarException> takeAt(std::size_t i);
 
-  // Same as at, but wraps around back to the beginning
-  // (throws if list is empty)
-  const_reference wrap(std::size_t n) const;
-  reference wrap(std::size_t n);
+  // Same as at, but wraps around back to the beginning.
+  [[nodiscard]]
+  std::expected<value_type const*, StarException> wrap(std::size_t n) const;
+  [[nodiscard]]
+  std::expected<value_type*, StarException> wrap(std::size_t n);
 
   // Does not throw if list is empty
   value_type wrap(std::size_t n, value_type def) const;
@@ -152,17 +177,21 @@ public:
   // Erases region from begin to end, not including end.
   void eraseAt(std::size_t begin, std::size_t end);
 
-  void insertAt(std::size_t pos, value_type e);
+  [[nodiscard]]
+  AppendResult insertAt(std::size_t pos, value_type e);
 
   template <typename Container>
-  void insertAllAt(std::size_t pos, Container const& l);
+  [[nodiscard]]
+  AppendResult insertAllAt(std::size_t pos, Container const& l);
 
   // Ensures that list is large enough to hold pos elements.
-  void set(std::size_t pos, value_type e);
+  [[nodiscard]]
+  AppendResult set(std::size_t pos, value_type e);
 
   void swap(std::size_t i, std::size_t j);
   // same as insert(to, takeAt(from))
-  void move(std::size_t from, std::size_t to);
+  [[nodiscard]]
+  std::expected<void, StarException> move(std::size_t from, std::size_t to);
 };
 
 template <typename BaseList>
@@ -186,8 +215,10 @@ public:
   template <class... Args>
   reference emplacePrepend(Args&&... args);
 
-  void removeFirst();
-  value_type takeFirst();
+  [[nodiscard]]
+  std::expected<void, StarException> removeFirst();
+  [[nodiscard]]
+  std::expected<value_type, StarException> takeFirst();
 
   // Limit the size of the list by removing elements from the front until the
   // size is the maximumSize or less.
@@ -217,16 +248,19 @@ public:
   List slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  List filtered(Filter&& filter) const;
+  [[nodiscard]]
+  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   List sorted(Comparator&& comparator) const;
   List sorted() const;
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function);
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function) const;
 };
 
@@ -245,23 +279,35 @@ public:
   typedef typename Base::const_reference const_reference;
 
   template <typename Container>
-  static StaticList from(Container const& c);
+  [[nodiscard]]
+  static std::expected<StaticList, StarException> from(Container const& c);
+  template <typename Iterator>
+  [[nodiscard]]
+  static std::expected<StaticList, StarException> create(Iterator first, Iterator last);
+  [[nodiscard]]
+  static std::expected<StaticList, StarException> create(std::initializer_list<Element> list);
+  [[nodiscard]]
+  static std::expected<StaticList, StarException> create(std::size_t size, Element const& value = Element());
 
   using Base::Base;
 
-  StaticList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]]
+  std::expected<StaticList, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  StaticList filtered(Filter&& filter) const;
+  [[nodiscard]]
+  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   StaticList sorted(Comparator&& comparator) const;
   StaticList sorted() const;
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function);
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function) const;
 };
 
@@ -287,16 +333,19 @@ public:
   SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  SmallList filtered(Filter&& filter) const;
+  [[nodiscard]]
+  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   SmallList sorted(Comparator&& comparator) const;
   SmallList sorted() const;
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function);
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function) const;
 };
 
@@ -322,16 +371,19 @@ public:
   Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  Deque filtered(Filter&& filter) const;
+  [[nodiscard]]
+  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   Deque sorted(Comparator&& comparator) const;
   Deque sorted() const;
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function);
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function) const;
 };
 
@@ -363,24 +415,44 @@ public:
   void prependAll(Container&& list);
 
   template <typename Filter>
-  LinkedList filtered(Filter&& filter) const;
+  [[nodiscard]]
+  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   LinkedList sorted(Comparator&& comparator) const;
   LinkedList sorted() const;
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function);
 
   template <typename Function>
+  [[nodiscard]]
   auto transformed(Function&& function) const;
 };
 
 template <typename Element, typename Allocator>
 struct hash<LinkedList<Element, Allocator>> : public ListHasher<LinkedList<Element, Allocator>> {};
 
+template <typename T>
+decltype(auto) listDiagnosticValue(T const& value) {
+  if constexpr (requires { outputOptional(value); })
+    return outputOptional(value);
+  else
+    return (value);
+}
+
 template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list);
+using ListDiagnosticResult = decltype(std::declval<std::ostream&>() << listDiagnosticValue(std::declval<typename BaseList::value_type const&>()));
+
+template <typename BaseList>
+std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list)
+    requires std::same_as<ListDiagnosticResult<BaseList>, std::ostream&>;
+
+template <typename BaseList>
+[[nodiscard]]
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ListMixin<BaseList> const& list)
+    requires std::same_as<ListDiagnosticResult<BaseList>, std::expected<std::ostream*, StarException>>;
 
 template <typename... Containers>
 struct ListZipTypes {
@@ -413,74 +485,98 @@ ListMixin<BaseList>::ListMixin(Base&& list)
   : Base(std::move(list)) {}
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin(std::size_t len, const_reference s1)
+ListMixin<BaseList>::ListMixin(std::size_t len, const_reference s1) requires (!requires { Base::MaximumSize; })
   : Base(len, s1) {}
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin(value_type const* p, std::size_t count)
+ListMixin<BaseList>::ListMixin(value_type const* p, std::size_t count) requires (!requires { Base::MaximumSize; })
   : Base(p, p + count) {}
 
 template <typename BaseList>
 template <typename InputIterator>
-ListMixin<BaseList>::ListMixin(InputIterator beg, InputIterator end)
+ListMixin<BaseList>::ListMixin(InputIterator beg, InputIterator end) requires (!requires { Base::MaximumSize; })
   : Base(beg, end) {}
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin(std::initializer_list<value_type> list) {
+ListMixin<BaseList>::ListMixin(std::initializer_list<value_type> list) requires (!requires { Base::MaximumSize; }) {
   // In case underlying class type doesn't support initializer_list
   for (auto& e : list)
     append(std::move(e));
 }
 
 template <typename BaseList>
-void ListMixin<BaseList>::append(value_type e) {
-  Base::push_back(std::move(e));
+auto ListMixin<BaseList>::append(value_type e) -> AppendResult {
+  return Base::push_back(std::move(e));
 }
 
 template <typename BaseList>
 template <typename Container>
-void ListMixin<BaseList>::appendAll(Container&& list) {
+auto ListMixin<BaseList>::appendAll(Container&& list) -> AppendResult {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
-      Base::push_back(std::move(e));
-    else
-      Base::push_back(e);
+    if constexpr (std::is_void_v<AppendResult>) {
+      if constexpr (std::is_rvalue_reference_v<Container&&>)
+        Base::push_back(std::move(e));
+      else
+        Base::push_back(e);
+    } else {
+      auto added = [&] {
+        if constexpr (std::is_rvalue_reference_v<Container&&>)
+          return Base::push_back(std::move(e));
+        else
+          return Base::push_back(e);
+      }();
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+    }
   }
+  if constexpr (!std::is_void_v<AppendResult>)
+    return {};
 }
 
 template <typename BaseList>
 template <class... Args>
-auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> reference {
+auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> reference
+    requires std::is_void_v<AppendResult> {
   Base::emplace_back(std::forward<Args>(args)...);
   return *std::prev(Base::end());
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::first() -> reference {
-  if (Base::empty())
-    throw OutOfRangeException("first() called on empty list");
-  return *Base::begin();
+template <class... Args>
+auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+    requires (!std::is_void_v<AppendResult>) {
+  auto added = Base::emplace_back(std::forward<Args>(args)...);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return std::addressof(*std::prev(Base::end()));
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::first() const -> const_reference {
+auto ListMixin<BaseList>::first() -> std::expected<value_type*, StarException> {
   if (Base::empty())
-    throw OutOfRangeException("first() called on empty list");
-  return *Base::begin();
+    return std::unexpected(OutOfRangeException("first() called on empty list"));
+  return std::addressof(*Base::begin());
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::last() -> reference {
+auto ListMixin<BaseList>::first() const -> std::expected<value_type const*, StarException> {
   if (Base::empty())
-    throw OutOfRangeException("last() called on empty list");
-  return *std::prev(Base::end());
+    return std::unexpected(OutOfRangeException("first() called on empty list"));
+  return std::addressof(*Base::begin());
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::last() const -> const_reference {
+auto ListMixin<BaseList>::last() -> std::expected<value_type*, StarException> {
   if (Base::empty())
-    throw OutOfRangeException("last() called on empty list");
-  return *std::prev(Base::end());
+    return std::unexpected(OutOfRangeException("last() called on empty list"));
+  return std::addressof(*std::prev(Base::end()));
+}
+
+template <typename BaseList>
+auto ListMixin<BaseList>::last() const -> std::expected<value_type const*, StarException> {
+  if (Base::empty())
+    return std::unexpected(OutOfRangeException("last() called on empty list"));
+  return std::addressof(*std::prev(Base::end()));
 }
 
 template <typename BaseList>
@@ -498,16 +594,19 @@ auto ListMixin<BaseList>::maybeLast() -> std::optional<value_type> {
 }
 
 template <typename BaseList>
-void ListMixin<BaseList>::removeLast() {
+std::expected<void, StarException> ListMixin<BaseList>::removeLast() {
   if (Base::empty())
-    throw OutOfRangeException("removeLast() called on empty list");
-  Base::pop_back();
+    return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+  Base::erase(std::prev(Base::end()));
+  return {};
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::takeLast() -> value_type {
-  value_type e = std::move(last());
-  Base::pop_back();
+auto ListMixin<BaseList>::takeLast() -> std::expected<value_type, StarException> {
+  if (Base::empty())
+    return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+  value_type e = std::move(*std::prev(Base::end()));
+  Base::erase(std::prev(Base::end()));
   return e;
 }
 
@@ -515,15 +614,15 @@ template <typename BaseList>
 auto ListMixin<BaseList>::maybeTakeLast() -> std::optional<value_type> {
   if (Base::empty())
     return {};
-  value_type e = std::move(last());
-  Base::pop_back();
+  value_type e = std::move(*std::prev(Base::end()));
+  Base::erase(std::prev(Base::end()));
   return std::optional<value_type>(std::in_place, std::move(e));
 }
 
 template <typename BaseList>
 void ListMixin<BaseList>::limitSizeBack(std::size_t maximumSize) {
   while (Base::size() > maximumSize)
-    Base::pop_back();
+    Base::erase(std::prev(Base::end()));
 }
 
 template <typename BaseList>
@@ -559,29 +658,57 @@ std::size_t ListMixin<BaseList>::remove(const_reference e) {
 
 template <typename BaseList>
 template <typename Filter>
-void ListMixin<BaseList>::filter(Filter&& filter) {
-  auto removed = std::remove_if(Base::begin(), Base::end(), [&](auto&& value) {
-    return !filter(std::forward<decltype(value)>(value));
-  });
-  Base::erase(removed, Base::end());
+auto ListMixin<BaseList>::filter(Filter&& filter) {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Filter&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  auto destination = Base::begin();
+  for (auto source = Base::begin(); source != Base::end(); ++source) {
+    bool keep;
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto accepted = std::invoke(filter, *source);
+      if (!accepted)
+        return Status(std::unexpected(std::move(accepted.error())));
+      keep = static_cast<bool>(*accepted);
+    } else {
+      keep = static_cast<bool>(std::invoke(filter, *source));
+    }
+    if (keep) {
+      if (destination != source)
+        *destination = std::move(*source);
+      ++destination;
+    }
+  }
+  Base::erase(destination, Base::end());
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
 }
 
 template <typename BaseList>
 template <typename Comparator>
-void ListMixin<BaseList>::insertSorted(value_type e, Comparator&& comparator) {
+auto ListMixin<BaseList>::insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+      "Sorted insertion requires a nonfallible bool comparator");
   auto i = std::upper_bound(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
-  Base::insert(i, std::move(e));
+  if constexpr (std::is_void_v<AppendResult>) {
+    Base::insert(i, std::move(e));
+  } else {
+    auto added = Base::insert(i, std::move(e));
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return {};
+  }
 }
 
 template <typename BaseList>
-void ListMixin<BaseList>::insertSorted(value_type e) {
-  auto i = std::upper_bound(Base::begin(), Base::end(), e);
-  Base::insert(i, std::move(e));
+auto ListMixin<BaseList>::insertSorted(value_type e) -> AppendResult {
+  return insertSorted(std::move(e), std::less<value_type>{});
 }
 
 template <typename BaseList>
 template <typename Comparator>
 bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+      "Sorted lookup requires a nonfallible bool comparator");
   auto range = std::equal_range(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
   return range.first != range.second;
 }
@@ -594,58 +721,112 @@ bool ListMixin<BaseList>::containsSorted(value_type e) {
 
 template <typename BaseList>
 template <typename Function>
-void ListMixin<BaseList>::exec(Function&& function) {
-  for (auto& e : *this)
-    function(e);
+auto ListMixin<BaseList>::exec(Function&& function) {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  for (auto& e : *this) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto result = std::invoke(function, e);
+      if (!result)
+        return Status(std::unexpected(std::move(result.error())));
+    } else {
+      std::invoke(function, e);
+    }
+  }
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
 }
 
 template <typename BaseList>
 template <typename Function>
-void ListMixin<BaseList>::exec(Function&& function) const {
-  for (auto const& e : *this)
-    function(e);
+auto ListMixin<BaseList>::exec(Function&& function) const {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  for (auto const& e : *this) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto result = std::invoke(function, e);
+      if (!result)
+        return Status(std::unexpected(std::move(result.error())));
+    } else {
+      std::invoke(function, e);
+    }
+  }
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
 }
 
 template <typename BaseList>
 template <typename Function>
-void ListMixin<BaseList>::transform(Function&& function) {
-  for (auto& e : *this)
-    e = function(e);
+auto ListMixin<BaseList>::transform(Function&& function) {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  for (auto& e : *this) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto result = std::invoke(function, e);
+      if (!result)
+        return Status(std::unexpected(std::move(result.error())));
+      e = std::move(*result);
+    } else {
+      e = std::invoke(function, e);
+    }
+  }
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
 }
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::any(Function&& function) const {
-  return std::any_of(Base::begin(), Base::end(), [&function](auto&& value) {
-    return static_cast<bool>(std::as_const(function)(std::forward<decltype(value)>(value)));
-  });
+auto ListMixin<BaseList>::any(Function&& function) const {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
+  for (auto const& e : *this) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      decltype(auto) accepted = std::invoke(std::as_const(function), e);
+      if (!accepted)
+        return Result(std::unexpected(std::move(accepted.error())));
+      if (static_cast<bool>(*accepted))
+        return Result(true);
+    } else if (static_cast<bool>(std::invoke(std::as_const(function), e))) {
+      return Result(true);
+    }
+  }
+  return Result(false);
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::any() const {
-  return std::any_of(Base::begin(), Base::end(), [](auto&& value) {
-    return static_cast<bool>(value);
-  });
+auto ListMixin<BaseList>::any() const {
+  return any([](auto const& value) -> auto const& { return value; });
 }
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::all(Function&& function) const {
-  return std::all_of(Base::begin(), Base::end(), [&function](auto&& value) {
-    return static_cast<bool>(std::as_const(function)(std::forward<decltype(value)>(value)));
-  });
+auto ListMixin<BaseList>::all(Function&& function) const {
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
+  for (auto const& e : *this) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      decltype(auto) accepted = std::invoke(std::as_const(function), e);
+      if (!accepted)
+        return Result(std::unexpected(std::move(accepted.error())));
+      if (!static_cast<bool>(*accepted))
+        return Result(false);
+    } else if (!static_cast<bool>(std::invoke(std::as_const(function), e))) {
+      return Result(false);
+    }
+  }
+  return Result(true);
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::all() const {
-  return std::all_of(Base::begin(), Base::end(), [](auto&& value) {
-    return static_cast<bool>(value);
-  });
+auto ListMixin<BaseList>::all() const {
+  return all([](auto const& value) -> auto const& { return value; });
 }
 
 template <typename BaseList>
 template <typename Comparator>
 void RandomAccessListMixin<BaseList>::sort(Comparator&& comparator) {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   std::sort(Base::begin(), Base::end(), std::forward<Comparator>(comparator));
 }
 
@@ -679,17 +860,17 @@ std::size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, std:
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::at(std::size_t n) const -> const_reference {
+auto RandomAccessListMixin<BaseList>::at(std::size_t n) const -> std::expected<value_type const*, StarException> {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at({})", n));
-  return operator[](n);
+    return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+  return std::addressof(operator[](n));
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::at(std::size_t n) -> reference {
+auto RandomAccessListMixin<BaseList>::at(std::size_t n) -> std::expected<value_type*, StarException> {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at({})", n));
-  return operator[](n);
+    return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+  return std::addressof(operator[](n));
 }
 
 template <typename BaseList>
@@ -716,26 +897,27 @@ auto RandomAccessListMixin<BaseList>::get(std::size_t n, value_type def) const -
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::takeAt(std::size_t i) -> value_type {
-  value_type e = at(i);
+auto RandomAccessListMixin<BaseList>::takeAt(std::size_t i) -> std::expected<value_type, StarException> {
+  auto element = at(i);
+  if (!element)
+    return std::unexpected(std::move(element.error()));
+  value_type e = std::move(**element);
   Base::erase(Base::begin() + i);
   return e;
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) const -> const_reference {
+auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
   if (BaseList::empty())
-    throw OutOfRangeException();
-  else
-    return operator[](n % BaseList::size());
+    return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+  return std::addressof(operator[](n % BaseList::size()));
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) -> reference {
+auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) -> std::expected<value_type*, StarException> {
   if (BaseList::empty())
-    throw OutOfRangeException();
-  else
-    return operator[](n % BaseList::size());
+    return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+  return std::addressof(operator[](n % BaseList::size()));
 }
 
 template <typename BaseList>
@@ -763,27 +945,51 @@ void RandomAccessListMixin<BaseList>::eraseAt(std::size_t b, std::size_t e) {
 }
 
 template <typename BaseList>
-void RandomAccessListMixin<BaseList>::insertAt(std::size_t pos, value_type e) {
-  if constexpr (Star::DebugEnabled) {
+auto RandomAccessListMixin<BaseList>::insertAt(std::size_t pos, value_type e) -> AppendResult {
+  if constexpr (Star::DebugEnabled)
     Star::starAssertFailed((pos <= Base::size()));
+  if constexpr (std::is_void_v<AppendResult>) {
+    Base::insert(Base::begin() + pos, std::move(e));
+  } else {
+    auto added = Base::insert(Base::begin() + pos, std::move(e));
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return {};
   }
-  Base::insert(Base::begin() + pos, std::move(e));
 }
 
 template <typename BaseList>
 template <typename Container>
-void RandomAccessListMixin<BaseList>::insertAllAt(std::size_t pos, Container const& l) {
-  if constexpr (Star::DebugEnabled) {
+auto RandomAccessListMixin<BaseList>::insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
+  if constexpr (Star::DebugEnabled)
     Star::starAssertFailed((pos <= Base::size()));
+  if constexpr (std::is_void_v<AppendResult>) {
+    Base::insert(Base::begin() + pos, l.begin(), l.end());
+  } else {
+    auto added = Base::insert(Base::begin() + pos, l.begin(), l.end());
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return {};
   }
-  Base::insert(Base::begin() + pos, l.begin(), l.end());
 }
 
 template <typename BaseList>
-void RandomAccessListMixin<BaseList>::set(std::size_t pos, value_type e) {
-  if (pos >= Base::size())
-    Base::resize(pos + 1);
-  operator[](pos) = std::move(e);
+auto RandomAccessListMixin<BaseList>::set(std::size_t pos, value_type e) -> AppendResult {
+  if constexpr (std::is_void_v<AppendResult>) {
+    if (pos >= Base::size())
+      Base::resize(pos + 1);
+    operator[](pos) = std::move(e);
+  } else {
+    if (pos == std::numeric_limits<std::size_t>::max())
+      return std::unexpected(OutOfRangeException("List::set index overflows size"));
+    if (pos >= Base::size()) {
+      auto resized = Base::resize(pos + 1);
+      if (!resized)
+        return std::unexpected(std::move(resized.error()));
+    }
+    operator[](pos) = std::move(e);
+    return {};
+  }
 }
 
 template <typename BaseList>
@@ -792,8 +998,14 @@ void RandomAccessListMixin<BaseList>::swap(std::size_t i, std::size_t j) {
 }
 
 template <typename BaseList>
-void RandomAccessListMixin<BaseList>::move(std::size_t from, std::size_t to) {
-  Base::insert(to, takeAt(from));
+std::expected<void, StarException> RandomAccessListMixin<BaseList>::move(std::size_t from, std::size_t to) {
+  if (from >= Base::size() || to >= Base::size())
+    return std::unexpected(OutOfRangeException("List::move index out of range"));
+  if (from < to)
+    std::rotate(Base::begin() + from, Base::begin() + from + 1, Base::begin() + to + 1);
+  else if (to < from)
+    std::rotate(Base::begin() + to, Base::begin() + from, Base::begin() + from + 1);
+  return {};
 }
 
 template <typename BaseList>
@@ -820,15 +1032,18 @@ auto FrontModifyingListMixin<BaseList>::emplacePrepend(Args&&... args) -> refere
 }
 
 template <typename BaseList>
-void FrontModifyingListMixin<BaseList>::removeFirst() {
+std::expected<void, StarException> FrontModifyingListMixin<BaseList>::removeFirst() {
   if (Base::empty())
-    throw OutOfRangeException("removeFirst() called on empty list");
+    return std::unexpected(OutOfRangeException("removeFirst() called on empty list"));
   Base::pop_front();
+  return {};
 }
 
 template <typename BaseList>
-auto FrontModifyingListMixin<BaseList>::takeFirst() -> value_type {
-  value_type e = std::move(Base::first());
+auto FrontModifyingListMixin<BaseList>::takeFirst() -> std::expected<value_type, StarException> {
+  if (Base::empty())
+    return std::unexpected(OutOfRangeException("takeFirst() called on empty list"));
+  value_type e = std::move(*Base::begin());
   Base::pop_front();
   return e;
 }
@@ -862,15 +1077,24 @@ auto List<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const ->
 
 template <typename Element, typename Allocator>
 template <typename Filter>
-auto List<Element, Allocator>::filtered(Filter&& filter) const -> List {
+auto List<Element, Allocator>::filtered(Filter&& filter) const {
   List list(*this);
-  list.filter(std::forward<Filter>(filter));
-  return list;
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<List, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<List, StarException>(std::move(list));
+  }
 }
 
 template <typename Element, typename Allocator>
 template <typename Comparator>
 auto List<Element, Allocator>::sorted(Comparator&& comparator) const -> List {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   List list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
@@ -886,43 +1110,94 @@ List<Element, Allocator> List<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type> res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Output = List<typename AlgorithmResultInfo<Invocation>::Value>;
+  Output res;
   res.reserve(Base::size());
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    auto transformed = transformInto(res, *this, std::forward<Function>(function));
+    if (!transformed)
+      return std::expected<Output, StarException>(std::unexpected(std::move(transformed.error())));
+    return std::expected<Output, StarException>(std::move(res));
+  } else {
+    transformInto(res, *this, std::forward<Function>(function));
+    return res;
+  }
 }
 
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) const {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type> res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  using Output = List<typename AlgorithmResultInfo<Invocation>::Value>;
+  Output res;
   res.reserve(Base::size());
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    auto transformed = transformInto(res, *this, std::forward<Function>(function));
+    if (!transformed)
+      return std::expected<Output, StarException>(std::unexpected(std::move(transformed.error())));
+    return std::expected<Output, StarException>(std::move(res));
+  } else {
+    transformInto(res, *this, std::forward<Function>(function));
+    return res;
+  }
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Container>
-StaticList<Element, MaxSize> StaticList<Element, MaxSize>::from(Container const& c) {
-  return StaticList(c.begin(), c.end());
+auto StaticList<Element, MaxSize>::from(Container const& c) -> std::expected<StaticList, StarException> {
+  return create(c.begin(), c.end());
 }
 
 template <typename Element, std::size_t MaxSize>
-auto StaticList<Element, MaxSize>::slice(SliceIndex a, SliceIndex b, int i) const -> StaticList {
+template <typename Iterator>
+auto StaticList<Element, MaxSize>::create(Iterator first, Iterator last) -> std::expected<StaticList, StarException> {
+  StaticList result;
+  auto added = result.insert(result.end(), first, last);
+  if (!added)
+    return std::unexpected(std::move(added.error()));
+  return result;
+}
+
+template <typename Element, std::size_t MaxSize>
+auto StaticList<Element, MaxSize>::create(std::initializer_list<Element> list) -> std::expected<StaticList, StarException> {
+  return create(list.begin(), list.end());
+}
+
+template <typename Element, std::size_t MaxSize>
+auto StaticList<Element, MaxSize>::create(std::size_t size, Element const& value) -> std::expected<StaticList, StarException> {
+  StaticList result;
+  auto resized = result.resize(size, value);
+  if (!resized)
+    return std::unexpected(std::move(resized.error()));
+  return result;
+}
+
+template <typename Element, std::size_t MaxSize>
+auto StaticList<Element, MaxSize>::slice(SliceIndex a, SliceIndex b, int i) const -> std::expected<StaticList, StarException> {
   return Star::slice(*this, a, b, i);
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Filter>
-auto StaticList<Element, MaxSize>::filtered(Filter&& filter) const -> StaticList {
+auto StaticList<Element, MaxSize>::filtered(Filter&& filter) const {
   StaticList list(*this);
-  list.filter(std::forward<Filter>(filter));
-  return list;
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<StaticList, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<StaticList, StarException>(std::move(list));
+  }
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Comparator>
 auto StaticList<Element, MaxSize>::sorted(Comparator&& comparator) const -> StaticList {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   StaticList list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
@@ -938,17 +1213,17 @@ StaticList<Element, MaxSize> StaticList<Element, MaxSize>::sorted() const {
 template <typename Element, std::size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxSize> res;
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Output = StaticList<typename AlgorithmResultInfo<Invocation>::Value, MaxSize>;
+  return Star::transform<Output>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) const {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxSize> res;
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  using Output = StaticList<typename AlgorithmResultInfo<Invocation>::Value, MaxSize>;
+  return Star::transform<Output>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -964,15 +1239,24 @@ auto SmallList<Element, MaxStackSize>::slice(SliceIndex a, SliceIndex b, int i) 
 
 template <typename Element, std::size_t MaxStackSize>
 template <typename Filter>
-auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const -> SmallList {
+auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const {
   SmallList list(*this);
-  list.filter(std::forward<Filter>(filter));
-  return list;
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<SmallList, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<SmallList, StarException>(std::move(list));
+  }
 }
 
 template <typename Element, std::size_t MaxStackSize>
 template <typename Comparator>
 auto SmallList<Element, MaxStackSize>::sorted(Comparator&& comparator) const -> SmallList {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   SmallList list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
@@ -988,17 +1272,17 @@ SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::sorted() cons
 template <typename Element, std::size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxStackSize> res;
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Output = SmallList<typename AlgorithmResultInfo<Invocation>::Value, MaxStackSize>;
+  return Star::transform<Output>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, std::size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) const {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxStackSize> res;
-  transformInto(res, *this, std::forward<Function>(function));
-  return res;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  using Output = SmallList<typename AlgorithmResultInfo<Invocation>::Value, MaxStackSize>;
+  return Star::transform<Output>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
@@ -1014,15 +1298,24 @@ Deque<Element, Allocator> Deque<Element, Allocator>::slice(SliceIndex a, SliceIn
 
 template <typename Element, typename Allocator>
 template <typename Filter>
-Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) const {
-  Deque l(*this);
-  l.filter(std::forward<Filter>(filter));
-  return l;
+auto Deque<Element, Allocator>::filtered(Filter&& filter) const {
+  Deque list(*this);
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<Deque, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<Deque, StarException>(std::move(list));
+  }
 }
 
 template <typename Element, typename Allocator>
 template <typename Comparator>
 Deque<Element, Allocator> Deque<Element, Allocator>::sorted(Comparator&& comparator) const {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   Deque l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
@@ -1038,13 +1331,15 @@ Deque<Element, Allocator> Deque<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto Deque<Element, Allocator>::transformed(Function&& function) {
-  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, std::forward<Function>(function));
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  return Star::transform<Deque<typename AlgorithmResultInfo<Invocation>::Value>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
 template <typename Function>
 auto Deque<Element, Allocator>::transformed(Function&& function) const {
-  return Star::transform<Deque<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, std::forward<Function>(function));
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  return Star::transform<Deque<typename AlgorithmResultInfo<Invocation>::Value>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
@@ -1087,15 +1382,24 @@ void LinkedList<Element, Allocator>::prependAll(Container&& list) {
 
 template <typename Element, typename Allocator>
 template <typename Filter>
-LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
+auto LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
   LinkedList list(*this);
-  list.filter(std::forward<Filter>(filter));
-  return list;
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<LinkedList, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<LinkedList, StarException>(std::move(list));
+  }
 }
 
 template <typename Element, typename Allocator>
 template <typename Comparator>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted(Comparator&& comparator) const {
+  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
   LinkedList l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
@@ -1111,28 +1415,44 @@ LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto LinkedList<Element, Allocator>::transformed(Function&& function) {
-  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<reference>()))>>(*this, std::forward<Function>(function));
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  return Star::transform<LinkedList<typename AlgorithmResultInfo<Invocation>::Value>>(*this, std::forward<Function>(function));
 }
 
 template <typename Element, typename Allocator>
 template <typename Function>
 auto LinkedList<Element, Allocator>::transformed(Function&& function) const {
-  return Star::transform<LinkedList<decltype(std::declval<Function>()(std::declval<const_reference>()))>>(*this, std::forward<Function>(function));
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
+  return Star::transform<LinkedList<typename AlgorithmResultInfo<Invocation>::Value>>(*this, std::forward<Function>(function));
 }
 
+
 template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list) {
+std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list)
+    requires std::same_as<ListDiagnosticResult<BaseList>, std::ostream&> {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
       os << ", ";
-    if constexpr (requires { outputOptional(*i); })
-      os << outputOptional(*i);
-    else
-      os << *i;
+    os << listDiagnosticValue(*i);
+  }
+  return os << ")";
+}
+
+template <typename BaseList>
+[[nodiscard]]
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ListMixin<BaseList> const& list)
+    requires std::same_as<ListDiagnosticResult<BaseList>, std::expected<std::ostream*, StarException>> {
+  os << "(";
+  for (auto i = list.begin(); i != list.end(); ++i) {
+    if (i != list.begin())
+      os << ", ";
+    auto written = os << listDiagnosticValue(*i);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
   }
   os << ")";
-  return os;
+  return &os;
 }
 
 template <typename List>
@@ -1180,6 +1500,7 @@ export namespace Star {
 
 
 export template <typename BaseList>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::ListMixin<BaseList> const&>()), std::ostream&>
 struct std::formatter<Star::ListMixin<BaseList>> : Star::StreamFormatter {};
 
 export namespace Star {

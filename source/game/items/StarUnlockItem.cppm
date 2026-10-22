@@ -116,17 +116,23 @@ public:
     return Star::typeName<UnlockItem>();
   }
 
-  UnlockItem(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<UnlockItem>, StarException> create(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
-  std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  List<Drawable> drawables() const override;
-  List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> drawables() const override;
+  [[nodiscard]]
+  std::expected<List<Drawable>, StarException> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
-  void fireTriggered() override;
+  [[nodiscard]]
+  std::expected<void, StarException> fireTriggered() override;
 
 private:
+  explicit UnlockItem(Root& root) : Item(root) {}
   std::optional<String> m_sectorUnlock;
   std::optional<String> m_tierRecipesUnlock;
   std::optional<unsigned> m_shipUpgrade;
@@ -138,63 +144,115 @@ private:
 
 namespace Star {
 
-UnlockItem::UnlockItem(Root& root, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(root, config, directory, itemParameters), SwingableItem(config) {
-  m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
-  m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
-  m_unlockMessage = instanceValue("unlockMessage").optString().value_or(String{});
-  auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F())};
+std::expected<std::shared_ptr<UnlockItem>, StarException> UnlockItem::create(Root& root, Json const& config, String const& directory, Json const& itemParameters) {
+  auto item = std::shared_ptr<UnlockItem>(new UnlockItem(root));
+  auto initialized = item->initialize(config, directory, itemParameters);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto swingable = item->initializeSwingable(config);
+  if (!swingable)
+    return std::unexpected(std::move(swingable.error()));
+  auto recipes = item->instanceValue("tierRecipesUnlock").and_then([](Json const& value) { return value.optString(); });
+  if (!recipes)
+    return std::unexpected(std::move(recipes.error()));
+  item->m_tierRecipesUnlock = std::move(*recipes);
+  auto upgrade = item->instanceValue("shipUpgrade").and_then([](Json const& value) { return value.optUInt(); });
+  if (!upgrade)
+    return std::unexpected(std::move(upgrade.error()));
+  item->m_shipUpgrade = *upgrade;
+  auto message = item->instanceValue("unlockMessage").and_then([](Json const& value) { return value.optString(); });
+  if (!message)
+    return std::unexpected(std::move(message.error()));
+  item->m_unlockMessage = message->value_or(String{});
+  auto image = item->instanceValue("image").and_then([](Json const& value) { return value.toString(); });
+  if (!image)
+    return std::unexpected(std::move(image.error()));
+  auto metadata = root.imageMetadataDatabase();
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  auto drawable = Drawable::makeImage(**metadata, AssetPath::relativeTo(directory, *image), 1.0f / TilePixels, true, Vec2F());
+  if (!drawable)
+    return std::unexpected(std::move(drawable.error()));
+  item->m_drawables = {std::move(*drawable)};
+  return item;
 }
 
-std::shared_ptr<Item> UnlockItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> UnlockItem::clone() const {
   return std::make_shared<UnlockItem>(*this);
 }
 
-List<Drawable> UnlockItem::drawables() const {
+std::expected<List<Drawable>, StarException> UnlockItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> UnlockItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
+std::expected<List<Drawable>, StarException> UnlockItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
-void UnlockItem::fireTriggered() {
+std::expected<void, StarException> UnlockItem::fireTriggered() {
   if (!initialized())
-    throw ItemException("Item not init'd properly, or user not recognized as Tool User.");
-
-  // Only the player can use an unlock item, for any other entity it should do
-  // nothing.
-  if (auto player = as<Player>(owner())) {
-    if (instanceValue("consume", true).toBool() && !consume(1))
-      return;
-
+    return std::unexpected(ItemException("Item not init'd properly, or user not recognized as Tool User."));
+  auto itemOwner = owner();
+  if (!itemOwner)
+    return std::unexpected(std::move(itemOwner.error()));
+  // Only players can use unlock items.
+  if (auto player = as<Player>(*itemOwner)) {
+    auto shouldConsume = instanceValue("consume", true).and_then([](Json const& value) { return value.toBool(); });
+    if (!shouldConsume)
+      return std::unexpected(std::move(shouldConsume.error()));
+    if (*shouldConsume && !consume(1))
+      return {};
     if (auto clientContext = player->clientContext()) {
-      if (m_shipUpgrade)
-        player->applyShipUpgrades(JsonObject{ {"shipLevel", *m_shipUpgrade} });
+      if (m_shipUpgrade) {
+        auto applied = player->applyShipUpgrades(JsonObject{{"shipLevel", *m_shipUpgrade}});
+        if (!applied)
+          return std::unexpected(std::move(applied.error()));
+      }
     }
-
     if (!m_unlockMessage.empty()) {
       JsonObject message;
       message["message"] = m_unlockMessage;
-      owner()->interact(InteractAction(InteractActionType::ShowPopup, owner()->entityId(), message));
+      auto interacted = (*itemOwner)->interact(InteractAction(InteractActionType::ShowPopup, (*itemOwner)->entityId(), message));
+      if (!interacted)
+        return std::unexpected(std::move(interacted.error()));
     }
-
     if (m_tierRecipesUnlock) {
-      auto playerConfig = root().assets()->json("/player.config");
-
+      auto assets = root().assets();
+      if (!assets)
+        return std::unexpected(std::move(assets.error()));
+      auto playerConfig = (*assets)->json("/player.config");
+      if (!playerConfig)
+        return std::unexpected(std::move(playerConfig.error()));
       List<ItemDescriptor> blueprints;
-      for (Json v : playerConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
-        blueprints.append(ItemDescriptor(v));
-
-      auto speciesConfig = root().assets()->json(strf("/species/{}.species", player->species()));
-      for (Json v : speciesConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
-        blueprints.append(ItemDescriptor(v));
-
-      for (auto b : blueprints)
-        player->addBlueprint(b);
+      auto playerBlueprints = playerConfig->get("defaultBlueprints", JsonObject()).and_then([&](Json const& value) { return value.getArray(*m_tierRecipesUnlock, JsonArray()); });
+      if (!playerBlueprints)
+        return std::unexpected(std::move(playerBlueprints.error()));
+      for (auto const& value : *playerBlueprints) {
+        auto blueprint = ItemDescriptor::create(value);
+        if (!blueprint)
+          return std::unexpected(std::move(blueprint.error()));
+        blueprints.append(std::move(*blueprint));
+      }
+      auto speciesConfig = (*assets)->json(strf("/species/{}.species", player->species()));
+      if (!speciesConfig)
+        return std::unexpected(std::move(speciesConfig.error()));
+      auto speciesBlueprints = speciesConfig->get("defaultBlueprints", JsonObject()).and_then([&](Json const& value) { return value.getArray(*m_tierRecipesUnlock, JsonArray()); });
+      if (!speciesBlueprints)
+        return std::unexpected(std::move(speciesBlueprints.error()));
+      for (auto const& value : *speciesBlueprints) {
+        auto blueprint = ItemDescriptor::create(value);
+        if (!blueprint)
+          return std::unexpected(std::move(blueprint.error()));
+        blueprints.append(std::move(*blueprint));
+      }
+      for (auto const& blueprint : blueprints) {
+        auto added = player->addBlueprint(blueprint);
+        if (!added)
+          return std::unexpected(std::move(added.error()));
+      }
     }
   }
+  return {};
 }
 
 }

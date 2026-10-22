@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.json;
@@ -35,21 +36,21 @@ public:
 
   // If this entity can be entered into the player log, will return the log
   // identifier.
-  virtual std::optional<String> inspectionLogName() const;
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> inspectionLogName() const;
 
   // Long description to display when inspected, if any
-  virtual std::optional<String> inspectionDescription(String const& species) const;
+  [[nodiscard]] virtual std::expected<std::optional<String>, StarException> inspectionDescription(String const& species) const;
 };
 
 inline bool InspectableEntity::inspectable() const {
   return true;
 }
 
-inline std::optional<String> InspectableEntity::inspectionLogName() const {
+[[nodiscard]] inline std::expected<std::optional<String>, StarException> InspectableEntity::inspectionLogName() const {
   return {};
 }
 
-inline std::optional<String> InspectableEntity::inspectionDescription(String const&) const {
+[[nodiscard]] inline std::expected<std::optional<String>, StarException> InspectableEntity::inspectionDescription(String const&) const {
   return {};
 }
 

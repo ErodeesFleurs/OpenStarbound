@@ -13,6 +13,7 @@ import star.ref_ptr;
 import star.io_device;
 import star.string;
 import star.file;
+import star.format;
 import std;
 
 import star.assets;
@@ -29,9 +30,7 @@ import star.root;
 import star.random;
 import star.logging;
 
-
 #include "gtest/gtest.h"
-#include "gtest/gtest-spi.h"
 
 import star.algorithm;
 using namespace Star;
@@ -41,56 +40,79 @@ namespace {
     return std::filesystem::path(path.utf8());
   }
 
-  struct PngIoFailure {};
+  struct PngIoFailureTag {
+    static constexpr char const* name() { return "PngIoFailure"; }
+  };
+  using PngIoFailure = StarError<PngIoFailureTag, StarException>;
 
   class FailingPngNameBuffer : public Buffer {
   public:
     explicit FailingPngNameBuffer(ByteArray bytes) : Buffer(std::move(bytes)) {}
-    String deviceName() const override { throw PngIoFailure{}; }
+    [[nodiscard]] std::expected<String, StarException> deviceName() const override {
+      return std::unexpected(PngIoFailure("Injected PNG device-name failure"));
+    }
   };
 
   class FailingPngBuffer : public Buffer {
   public:
     FailingPngBuffer(ByteArray bytes, StreamOffset failAt) : Buffer(std::move(bytes)), m_failAt(failAt) {}
 
-    void readFull(char* data, std::size_t length) override {
-      failIfRequested();
-      Buffer::readFull(data, length);
+    [[nodiscard]] std::expected<void, StarException> readFull(char* data, std::size_t length) override {
+      auto ready = failIfRequested();
+      if (!ready)
+        return std::unexpected(std::move(ready.error()));
+      return Buffer::readFull(data, length);
     }
 
-    void writeFull(char const* data, std::size_t length) override {
-      failIfRequested();
-      Buffer::writeFull(data, length);
+    [[nodiscard]] std::expected<void, StarException> writeFull(char const* data, std::size_t length) override {
+      auto ready = failIfRequested();
+      if (!ready)
+        return std::unexpected(std::move(ready.error()));
+      return Buffer::writeFull(data, length);
     }
 
     unsigned unwound = 0;
 
   private:
-    void failIfRequested() {
-      if (pos() >= m_failAt) {
-        struct UnwindWitness {
+    [[nodiscard]] std::expected<void, StarException> failIfRequested() {
+      auto position = pos();
+      if (!position)
+        return std::unexpected(std::move(position.error()));
+      if (*position >= m_failAt) {
+        struct CleanupWitness {
           unsigned& count;
-          ~UnwindWitness() { ++count; }
+          ~CleanupWitness() { ++count; }
         } witness{unwound};
-        throw PngIoFailure{};
+        return std::unexpected(PngIoFailure("Injected PNG transfer failure"));
       }
+      return {};
     }
 
     StreamOffset m_failAt;
   };
 
-  Image pngTestImage(PixelFormat format) {
+  [[nodiscard]] std::expected<Image, StarException> pngTestImage(PixelFormat format) {
     Image image(2, 2, format);
-    image.set(0, 0, Vec4B{255, 0, 0, 64});
-    image.set(1, 0, Vec4B{0, 255, 0, 128});
-    image.set(0, 1, Vec4B{0, 0, 255, 192});
-    image.set(1, 1, Vec4B{255, 255, 0, 255});
+    for (auto const& [position, color] : std::array{
+        std::pair{Vec2U{0, 0}, Vec4B{255, 0, 0, 64}},
+        std::pair{Vec2U{1, 0}, Vec4B{0, 255, 0, 128}},
+        std::pair{Vec2U{0, 1}, Vec4B{0, 0, 255, 192}},
+        std::pair{Vec2U{1, 1}, Vec4B{255, 255, 0, 255}}}) {
+      auto set = image.set(position[0], position[1], color);
+      if (!set)
+        return std::unexpected(std::move(set.error()));
+    }
     return image;
   }
 
-  ByteArray pngTestBytes(Logger& logger) {
+  [[nodiscard]] std::expected<ByteArray, StarException> pngTestBytes(Logger& logger) {
     auto buffer = std::make_shared<Buffer>();
-    pngTestImage(PixelFormat::RGBA32).writePng(logger, buffer);
+    auto image = pngTestImage(PixelFormat::RGBA32);
+    if (!image)
+      return std::unexpected(std::move(image.error()));
+    auto written = image->writePng(logger, buffer);
+    if (!written)
+      return std::unexpected(std::move(written.error()));
     return buffer->takeData();
   }
 }
@@ -107,37 +129,44 @@ const GameTestRegistration assetsAll("AssetsTest", "All", [](GameTest&) {
   EXPECT_EQ(AssetPath::filename("/foo/"), "");
   EXPECT_EQ(AssetPath::filename("/foo/bar"), "bar");
 
-  //AssetPath compare = AssetPath{"/foo/bar/baz", String("baf"), {"whoa", "there"}};
-  //EXPECT_EQ(AssetPath::split("/foo/bar/baz:baf?whoa?there"), compare);
-
   EXPECT_EQ(
       AssetPath::relativeTo("/foo/bar/baz:baf?whoa?there", "thing:sub?directive"), "/foo/bar/thing:sub?directive");
 });
 
 const GameTestRegistration assetsSymlinkLoopIsNotFollowed("AssetsTest", "SymlinkLoopIsNotFollowed", [](GameTest& fixture) {
-  // A symlink pointing back at one of its own parent directories used to make
-  // the asset scan recurse until the operating system reported ELOOP; the
-  // resulting exception escaped the Assets constructor and killed the game.
-  auto tempDir = File::temporaryDirectory(fixture.root().random());
-  auto finallyGuard = finally([&tempDir]() { File::removeDirectoryRecursive(tempDir); });
+  // A link back to an ancestor must not make asset scanning fail with ELOOP.
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory);
+  auto tempDir = std::move(*directory);
+  auto finallyGuard = finally([&tempDir]() { EXPECT_TRUE(File::removeDirectoryRecursive(tempDir)); });
 
   std::error_code ec;
   std::filesystem::create_directories(fsPath(File::relativeTo(tempDir, "real")), ec);
-  File::writeFile("data", File::relativeTo(File::relativeTo(tempDir, "real"), "asset.txt"));
+  ASSERT_FALSE(ec) << ec.message();
+  ASSERT_TRUE(File::writeFile("data", File::relativeTo(File::relativeTo(tempDir, "real"), "asset.txt")));
   std::filesystem::create_directory_symlink(
       fsPath(File::relativeTo(tempDir, "real")), fsPath(File::relativeTo(tempDir, "link")), ec);
+  if (ec)
+    GTEST_SKIP() << "cannot create directory symlinks here: " << ec.message();
   std::filesystem::create_directory_symlink(fsPath(tempDir), fsPath(File::relativeTo(tempDir, "loop")), ec);
   if (ec)
     GTEST_SKIP() << "cannot create directory symlinks here: " << ec.message();
 
-  DirectoryAssetSource source(fixture.root().logger(), tempDir);
-  auto paths = source.assetPaths();
-  EXPECT_TRUE(paths.contains("/real/asset.txt"));
-  // A symlink to a sibling directory is not a loop, so it is still followed.
-  EXPECT_TRUE(paths.contains("/link/asset.txt"));
-  // The self-referential one has to be skipped, not recursed into forever.
-  EXPECT_FALSE(paths.contains("/loop/real/asset.txt"));
-  EXPECT_FALSE(paths.contains("/loop/link/asset.txt"));
+  auto source = DirectoryAssetSource::create(fixture.root().logger(), tempDir);
+  ASSERT_TRUE(source);
+  auto paths = (*source)->assetPaths();
+  auto real = paths.contains("/real/asset.txt");
+  ASSERT_TRUE(real);
+  EXPECT_TRUE(*real);
+  auto sibling = paths.contains("/link/asset.txt");
+  ASSERT_TRUE(sibling);
+  EXPECT_TRUE(*sibling);
+  auto loopReal = paths.contains("/loop/real/asset.txt");
+  ASSERT_TRUE(loopReal);
+  EXPECT_FALSE(*loopReal);
+  auto loopSibling = paths.contains("/loop/link/asset.txt");
+  ASSERT_TRUE(loopSibling);
+  EXPECT_FALSE(*loopSibling);
 });
 
 const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("AssetsTest", "ConstAnimationCachesRefreshFramesAndParts", [](GameTest&) {
@@ -166,175 +195,266 @@ const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("Asse
       }
     }
   })");
-  AnimatedPartSet animation(config, 1);
-  animation.update(0.75f);
+  ASSERT_TRUE(config);
+  auto created = AnimatedPartSet::create(*config, 1);
+  ASSERT_TRUE(created);
+  auto animation = std::move(*created);
+  ASSERT_TRUE(animation.update(0.75f));
   AnimatedPartSet const frozen = animation;
-  auto const& part = frozen.activePart("body");
+  auto partResult = frozen.activePart("body");
+  ASSERT_TRUE(partResult);
+  auto const& part = **partResult;
   ASSERT_TRUE(part.activeState);
   EXPECT_EQ(part.activeState->frame, 1u);
-  EXPECT_EQ(part.properties.get("partFrame").toInt(), 40);
-  EXPECT_EQ(part.nextProperties.get("partFrame").toInt(), 30);
-  auto const& state = frozen.activeState("movement");
+  auto partFrame = part.properties.get("partFrame");
+  ASSERT_TRUE(partFrame);
+  auto partFrameValue = (*partFrame)->toInt();
+  ASSERT_TRUE(partFrameValue);
+  EXPECT_EQ(*partFrameValue, 40);
+  auto nextPartFrame = part.nextProperties.get("partFrame");
+  ASSERT_TRUE(nextPartFrame);
+  auto nextPartFrameValue = (*nextPartFrame)->toInt();
+  ASSERT_TRUE(nextPartFrameValue);
+  EXPECT_EQ(*nextPartFrameValue, 30);
+  auto stateResult = frozen.activeState("movement");
+  ASSERT_TRUE(stateResult);
+  auto const& state = **stateResult;
   EXPECT_EQ(state.frame, 1u);
   EXPECT_EQ(state.nextFrame, 0u);
   EXPECT_FLOAT_EQ(state.frameProgress, 0.5f);
-  EXPECT_EQ(state.properties.get("stateFrame").toInt(), 20);
+  auto stateFrame = state.properties.get("stateFrame");
+  ASSERT_TRUE(stateFrame);
+  auto stateFrameValue = (*stateFrame)->toInt();
+  ASSERT_TRUE(stateFrameValue);
+  EXPECT_EQ(*stateFrameValue, 20);
 
-  // Exercise callback-driven cache refresh on a genuinely const, still-dirty copy.
   AnimatedPartSet const callbackCopy = animation;
   unsigned stateCount = 0;
-  callbackCopy.forEachActiveState([&](String const& name, auto const& active) {
+  ASSERT_TRUE(callbackCopy.forEachActiveState([&](String const& name, auto const& active) -> std::expected<void, StarException> {
     EXPECT_EQ(name, "movement");
     EXPECT_EQ(active.frame, 1u);
     ++stateCount;
-  });
+    return {};
+  }));
   unsigned partCount = 0;
-  callbackCopy.forEachActivePart([&](String const& name, auto const& active) {
+  ASSERT_TRUE(callbackCopy.forEachActivePart([&](String const& name, auto const& active) -> std::expected<void, StarException> {
     EXPECT_EQ(name, "body");
-    EXPECT_EQ(active.properties.get("partFrame").toInt(), 40);
+    auto frame = active.properties.get("partFrame");
+    if (!frame)
+      return std::unexpected(std::move(frame.error()));
+    auto value = (*frame)->toInt();
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    EXPECT_EQ(*value, 40);
     ++partCount;
-  });
+    return {};
+  }));
   EXPECT_EQ(stateCount, 1u);
   EXPECT_EQ(partCount, 1u);
 
-  // The public nonconst parts interface remains writable.
-  animation.parts().get("body").partProperties["base"] = false;
-  animation.parts().get("body").activePartDirty = true;
-  EXPECT_FALSE(animation.activePart("body").properties.get("base").toBool());
-  animation.setStateTypeEnabled("movement", false);
-  EXPECT_FALSE(animation.activePart("body").activeState);
+  auto writablePart = animation.parts().get("body");
+  ASSERT_TRUE(writablePart);
+  (*writablePart)->partProperties["base"] = false;
+  (*writablePart)->activePartDirty = true;
+  auto updatedPart = animation.activePart("body");
+  ASSERT_TRUE(updatedPart);
+  auto base = (*updatedPart)->properties.get("base");
+  ASSERT_TRUE(base);
+  auto baseValue = (*base)->toBool();
+  ASSERT_TRUE(baseValue);
+  EXPECT_FALSE(*baseValue);
+  ASSERT_TRUE(animation.setStateTypeEnabled("movement", false));
+  auto disabledPart = animation.activePart("body");
+  ASSERT_TRUE(disabledPart);
+  EXPECT_FALSE((*disabledPart)->activeState);
 });
 
 const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSignaturesAndPcmSamples", [](GameTest&) {
-  // Mono, 8 kHz, 16-bit PCM with two samples.
   std::array<unsigned char, 48> bytes = {
     'R', 'I', 'F', 'F', 40, 0, 0, 0, 'W', 'A', 'V', 'E',
     'f', 'm', 't', ' ', 16, 0, 0, 0, 1, 0, 1, 0,
     0x40, 0x1f, 0, 0, 0x80, 0x3e, 0, 0, 2, 0, 16, 0,
     'd', 'a', 't', 'a', 4, 0, 0, 0, 0x34, 0x12, 0xfe, 0xff
   };
-  auto device = [&] {
+  auto device = [&]() -> std::expected<std::shared_ptr<Buffer>, StarException> {
     auto buffer = std::make_shared<Buffer>();
-    buffer->writeFull(reinterpret_cast<char const*>(bytes.data()), bytes.size());
-    buffer->seek(0);
+    auto written = buffer->writeFull(reinterpret_cast<char const*>(bytes.data()), bytes.size());
+    if (!written)
+      return std::unexpected(std::move(written.error()));
+    auto sought = buffer->seek(0);
+    if (!sought)
+      return std::unexpected(std::move(sought.error()));
     return buffer;
   };
-  Audio audio(device(), "signature-regression.wav");
-  EXPECT_FALSE(audio.compressed());
-  EXPECT_EQ(audio.channels(), 1u);
-  EXPECT_EQ(audio.sampleRate(), 8000u);
+  auto input = device();
+  ASSERT_TRUE(input);
+  auto audio = Audio::create(*input, "signature-regression.wav");
+  ASSERT_TRUE(audio);
+  EXPECT_FALSE(audio->compressed());
+  EXPECT_EQ(audio->channels(), 1u);
+  EXPECT_EQ(audio->sampleRate(), 8000u);
   std::array<std::int16_t, 2> samples{};
-  ASSERT_EQ(audio.read(samples.data(), samples.size()), samples.size());
+  auto read = audio->read(samples.data(), samples.size());
+  ASSERT_TRUE(read);
+  ASSERT_EQ(*read, samples.size());
   EXPECT_EQ(samples[0], 0x1234);
   EXPECT_EQ(samples[1], -2);
 
   // High-bit signature bytes must be classified as unsigned characters.
   bytes[12] = 0xff;
-  EXPECT_THROW((Audio(device(), "invalid-fmt.wav")), AudioException);
+  auto invalidFmtInput = device();
+  ASSERT_TRUE(invalidFmtInput);
+  auto invalidFmt = Audio::create(*invalidFmtInput, "invalid-fmt.wav");
+  ASSERT_FALSE(invalidFmt);
+  EXPECT_TRUE(invalidFmt.error().is<AudioException>());
   bytes[12] = 'f';
   bytes[36] = 0x80;
-  EXPECT_THROW((Audio(device(), "invalid-data.wav")), AudioException);
+  auto invalidDataInput = device();
+  ASSERT_TRUE(invalidDataInput);
+  auto invalidData = Audio::create(*invalidDataInput, "invalid-data.wav");
+  ASSERT_FALSE(invalidData);
+  EXPECT_TRUE(invalidData.error().is<AudioException>());
 });
 
 const GameTestRegistration assetsFailedStartupJoinsWorkers("AssetsTest", "FailedStartupJoinsWorkers", [](GameTest& fixture) {
-  auto tempDir = File::temporaryDirectory(fixture.root().random());
-  auto cleanup = finally([&] { File::removeDirectoryRecursive(tempDir); });
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory);
+  auto tempDir = std::move(*directory);
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(tempDir)); });
   Assets::Settings settings{};
   settings.workerPoolSize = 4;
   settings.assetTimeToLive = 10;
-  // Each failure occurs after worker launch, including successful preload work
-  // followed by a failure. No commercial assets or process-global Root needed.
-  // The game test environment turns every Error log into a gtest failure.
-  // Assert exactly the intentional loading failure, without muting the sink:
-  // extra errors (including errors from workers) must still fail the test.
-  for (unsigned attempt = 0; attempt < 4; ++attempt)
-    EXPECT_NONFATAL_FAILURE(
-        EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
-        "Error was logged: Exception caught loading asset: /preload.config,");
+  // Fail after worker launch, including completed preload work followed by failure.
+  Logger logger;
+  for (unsigned attempt = 0; attempt < 4; ++attempt) {
+    auto assets = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+    ASSERT_FALSE(assets);
+    EXPECT_TRUE(assets.error().is<AssetException>());
+  }
 
-  File::writeFile("not json", File::relativeTo(tempDir, "preload.config"));
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
-      "Error was logged: Exception caught loading asset: /preload.config,");
+  ASSERT_TRUE(File::writeFile("not json", File::relativeTo(tempDir, "preload.config")));
+  auto malformed = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+  ASSERT_FALSE(malformed);
+  EXPECT_TRUE(malformed.error().is<AssetException>());
 
-  File::writeFile("{}", File::relativeTo(tempDir, "present.json"));
-  File::writeFile(
+  ASSERT_TRUE(File::writeFile("{}", File::relativeTo(tempDir, "present.json")));
+  ASSERT_TRUE(File::writeFile(
       "[{\"type\":\"json\",\"path\":\"/present.json\"},{\"type\":\"json\",\"path\":\"/absent.json\"}]",
-      File::relativeTo(tempDir, "preload.config"));
-  EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
-      "Error was logged: Exception caught loading asset: /absent.json,");
+      File::relativeTo(tempDir, "preload.config")));
+  auto missing = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+  ASSERT_FALSE(missing);
+  EXPECT_TRUE(missing.error().is<AssetException>());
 
-  File::writeFile("[{\"type\":\"image\",\"path\":\"relative.png\"}]",
-      File::relativeTo(tempDir, "preload.config"));
-  EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException);
-  File::writeFile("[]", File::relativeTo(tempDir, "preload.config"));
-  EXPECT_NO_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})));
+  ASSERT_TRUE(File::writeFile("[{\"type\":\"image\",\"path\":\"relative.png\"}]",
+      File::relativeTo(tempDir, "preload.config")));
+  auto invalid = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().is<AssetException>());
+  ASSERT_TRUE(File::writeFile("[]", File::relativeTo(tempDir, "preload.config")));
+  auto valid = Assets::create(logger, fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+  ASSERT_TRUE(valid);
+  auto recovered = (*valid)->json("/present.json");
+  ASSERT_TRUE(recovered);
+  EXPECT_EQ(*recovered, Json(JsonObject{}));
 });
 
 const GameTestRegistration assetsShutdownWithQueuedImageDependencies("AssetsTest", "ShutdownWithQueuedImageDependencies", [](GameTest& fixture) {
-  auto tempDir = File::temporaryDirectory(fixture.root().random());
-  auto cleanup = finally([&] { File::removeDirectoryRecursive(tempDir); });
-  File::writeFile("[]", File::relativeTo(tempDir, "preload.config"));
-  File::writeFile(pngTestBytes(fixture.root().logger()), File::relativeTo(tempDir, "sample.png"));
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  ASSERT_TRUE(directory);
+  auto tempDir = std::move(*directory);
+  auto cleanup = finally([&] { EXPECT_TRUE(File::removeDirectoryRecursive(tempDir)); });
+  ASSERT_TRUE(File::writeFile("[]", File::relativeTo(tempDir, "preload.config")));
+  auto bytes = pngTestBytes(fixture.root().logger());
+  ASSERT_TRUE(bytes);
+  ASSERT_TRUE(File::writeFile(*bytes, File::relativeTo(tempDir, "sample.png")));
   Assets::Settings settings{};
   settings.workerPoolSize = 4;
   settings.assetTimeToLive = 10;
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
-    Assets assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
-    assets.queueImages(StringList{"/sample.png?flipx", "/sample.png?flipy", "/sample.png"});
+    auto assets = Assets::create(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
+    ASSERT_TRUE(assets);
+    ASSERT_TRUE((*assets)->queueImages(StringList{"/sample.png?flipx", "/sample.png?flipy", "/sample.png"}));
   }
 });
 
 const GameTestRegistration pngRoundTripPreservesPixelsAndMetadata("ImageTest", "PngRoundTripPreservesPixelsAndMetadata", [](GameTest& fixture) {
   for (auto format : {PixelFormat::RGB24, PixelFormat::RGBA32}) {
     auto image = pngTestImage(format);
+    ASSERT_TRUE(image);
     auto buffer = std::make_shared<Buffer>();
-    image.writePng(fixture.root().logger(), buffer);
-    buffer->seek(0);
-    auto [size, decodedFormat] = Image::readPngMetadata(fixture.root().logger(), buffer);
-    EXPECT_EQ(size, image.size());
+    ASSERT_TRUE(image->writePng(fixture.root().logger(), buffer));
+    ASSERT_TRUE(buffer->seek(0));
+    auto metadata = Image::readPngMetadata(fixture.root().logger(), buffer);
+    ASSERT_TRUE(metadata);
+    auto [size, decodedFormat] = *metadata;
+    EXPECT_EQ(size, image->size());
     EXPECT_EQ(decodedFormat, format);
-    buffer->seek(0);
+    ASSERT_TRUE(buffer->seek(0));
     auto decoded = Image::readPng(fixture.root().logger(), buffer);
-    EXPECT_EQ(decoded.pixelFormat(), format);
+    ASSERT_TRUE(decoded);
+    EXPECT_EQ(decoded->pixelFormat(), format);
     for (unsigned y = 0; y < 2; ++y)
-      for (unsigned x = 0; x < 2; ++x)
-        EXPECT_EQ(decoded.get(x, y), image.get(x, y));
+      for (unsigned x = 0; x < 2; ++x) {
+        auto actual = decoded->get(x, y);
+        ASSERT_TRUE(actual);
+        auto expected = image->get(x, y);
+        ASSERT_TRUE(expected);
+        EXPECT_EQ(*actual, *expected);
+      }
   }
 });
 
 const GameTestRegistration damagedPngHeaderAndImageDataThrow("ImageTest", "DamagedPngHeaderAndImageDataThrow", [](GameTest& fixture) {
-  auto bytes = pngTestBytes(fixture.root().logger());
+  auto encoded = pngTestBytes(fixture.root().logger());
+  ASSERT_TRUE(encoded);
+  auto bytes = std::move(*encoded);
   ASSERT_GT(bytes.size(), 41u);
   ASSERT_EQ(std::memcmp(bytes.ptr() + 37, "IDAT", 4), 0);
   auto badHeader = bytes;
-  badHeader[29] ^= 1; // IHDR CRC: signature is intact, metadata parsing fails.
+  badHeader[29] ^= 1; // IHDR CRC: signature intact, metadata parsing fails.
   auto badPixels = bytes;
   badPixels[41] = 0; // Invalid zlib header, reached after Image/rows allocation.
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
-    EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badHeader)), ImageException);
-    EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badHeader)), ImageException);
-    EXPECT_NO_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badPixels)));
-    EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badPixels)), ImageException);
+    auto headerMetadata = Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badHeader));
+    ASSERT_FALSE(headerMetadata);
+    EXPECT_TRUE(headerMetadata.error().is<ImageException>());
+    auto headerImage = Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badHeader));
+    ASSERT_FALSE(headerImage);
+    EXPECT_TRUE(headerImage.error().is<ImageException>());
+    auto pixelMetadata = Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badPixels));
+    ASSERT_TRUE(pixelMetadata);
+    auto pixelImage = Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badPixels));
+    ASSERT_FALSE(pixelImage);
+    EXPECT_TRUE(pixelImage.error().is<ImageException>());
   }
 });
 
 const GameTestRegistration pngCallbacksRethrowOriginalIoException("ImageTest", "PngCallbacksRethrowOriginalIoException", [](GameTest& fixture) {
   auto bytes = pngTestBytes(fixture.root().logger());
+  ASSERT_TRUE(bytes);
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
-    auto metadata = std::make_shared<FailingPngBuffer>(bytes, 8);
-    EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), metadata), PngIoFailure);
+    auto metadata = std::make_shared<FailingPngBuffer>(*bytes, 8);
+    auto metadataResult = Image::readPngMetadata(fixture.root().logger(), metadata);
+    ASSERT_FALSE(metadataResult);
+    EXPECT_TRUE(metadataResult.error().is<PngIoFailure>());
     EXPECT_EQ(metadata->unwound, 1u);
-    auto header = std::make_shared<FailingPngBuffer>(bytes, 8);
-    EXPECT_THROW(Image::readPng(fixture.root().logger(), header), PngIoFailure);
+    auto header = std::make_shared<FailingPngBuffer>(*bytes, 8);
+    auto headerResult = Image::readPng(fixture.root().logger(), header);
+    ASSERT_FALSE(headerResult);
+    EXPECT_TRUE(headerResult.error().is<PngIoFailure>());
     EXPECT_EQ(header->unwound, 1u);
-    auto pixels = std::make_shared<FailingPngBuffer>(bytes, 41);
-    EXPECT_THROW(Image::readPng(fixture.root().logger(), pixels), PngIoFailure);
+    auto pixels = std::make_shared<FailingPngBuffer>(*bytes, 41);
+    auto pixelResult = Image::readPng(fixture.root().logger(), pixels);
+    ASSERT_FALSE(pixelResult);
+    EXPECT_TRUE(pixelResult.error().is<PngIoFailure>());
     EXPECT_EQ(pixels->unwound, 1u);
     for (StreamOffset failAt : {0, 41}) {
       auto output = std::make_shared<FailingPngBuffer>(ByteArray{}, failAt);
-      EXPECT_THROW(pngTestImage(PixelFormat::RGBA32).writePng(fixture.root().logger(), output), PngIoFailure);
+      auto image = pngTestImage(PixelFormat::RGBA32);
+      ASSERT_TRUE(image);
+      auto written = image->writePng(fixture.root().logger(), output);
+      ASSERT_FALSE(written);
+      EXPECT_TRUE(written.error().is<PngIoFailure>());
       EXPECT_EQ(output->unwound, 1u);
     }
   }
@@ -342,12 +462,19 @@ const GameTestRegistration pngCallbacksRethrowOriginalIoException("ImageTest", "
 
 const GameTestRegistration pngErrorCallbackContainsDiagnosticExceptions("ImageTest", "PngErrorCallbackContainsDiagnosticExceptions", [](GameTest& fixture) {
   auto damaged = pngTestBytes(fixture.root().logger());
-  damaged[29] ^= 1;
-  EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
-  EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
+  ASSERT_TRUE(damaged);
+  (*damaged)[29] ^= 1;
+  auto metadata = Image::readPngMetadata(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(*damaged));
+  ASSERT_FALSE(metadata);
+  EXPECT_TRUE(metadata.error().is<PngIoFailure>());
+  auto image = Image::readPng(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(*damaged));
+  ASSERT_FALSE(image);
+  EXPECT_TRUE(image.error().is<PngIoFailure>());
 });
 
 const GameTestRegistration invalidPngWriteThrows("ImageTest", "InvalidPngWriteThrows", [](GameTest& fixture) {
   auto output = std::make_shared<Buffer>();
-  EXPECT_THROW(Image().writePng(fixture.root().logger(), output), ImageException);
+  auto written = Image().writePng(fixture.root().logger(), output);
+  ASSERT_FALSE(written);
+  EXPECT_TRUE(written.error().is<ImageException>());
 });

@@ -21,49 +21,49 @@ using StatusException = StarError<StatusExceptionTag, StarException>;
 // they do not interact with each other, thus stacking a 0.0 and a 2.0 leaves
 // the stat unmodified
 struct StatBaseMultiplier {
-  friend DataStream& operator>>(DataStream& ds, StatBaseMultiplier& value);
-  friend DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& value);
   String statName;
   float baseMultiplier;
 
   bool operator==(StatBaseMultiplier const& rhs) const;
 };
 
-DataStream& operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier);
-DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier);
 
 struct StatValueModifier {
-  friend DataStream& operator>>(DataStream& ds, StatValueModifier& value);
-  friend DataStream& operator<<(DataStream& ds, StatValueModifier const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& value);
   String statName;
   float value;
 
   bool operator==(StatValueModifier const& rhs) const;
 };
 
-DataStream& operator>>(DataStream& ds, StatValueModifier& valueModifier);
-DataStream& operator<<(DataStream& ds, StatValueModifier const& valueModifier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatValueModifier& valueModifier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatValueModifier const& valueModifier);
 
 // Unlike base multipliers, these all stack multiplicatively with the final
 // stat value (including all base and value modifiers) such that an effective
 // multiplier of 0.0 will ALWAYS reduce the stat to 0 regardless of other
 // effects
 struct StatEffectiveMultiplier {
-  friend DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& value);
-  friend DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& value);
   String statName;
   float effectiveMultiplier;
 
   bool operator==(StatEffectiveMultiplier const& rhs) const;
 };
 
-DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
-DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
 
 typedef std::variant<std::monostate, StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier> StatModifier;
 
-StatModifier jsonToStatModifier(Json const& config);
-Json jsonFromStatModifier(StatModifier const& modifier);
+[[nodiscard]] std::expected<StatModifier, StarException> jsonToStatModifier(Json const& config);
+[[nodiscard]] std::expected<Json, StarException> jsonFromStatModifier(StatModifier const& modifier);
 
 typedef std::uint32_t StatModifierGroupId;
 typedef IdMap<StatModifierGroupId, List<StatModifier>> StatModifierGroupMap;
@@ -79,26 +79,26 @@ typedef List<std::pair<UniqueStatusEffect, std::optional<float>>> ActiveUniqueSt
 typedef std::variant<std::monostate, StatModifier, UniqueStatusEffect> PersistentStatusEffect;
 
 // Reads either a name of a unique stat effect or a stat modifier object
-PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config);
-Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
+[[nodiscard]] std::expected<PersistentStatusEffect, StarException> jsonToPersistentStatusEffect(Json const& config);
+[[nodiscard]] std::expected<Json, StarException> jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
 
 // Ephemeral effects are always unique effects and either use the default
 // duration in their config or optionally the default
 struct EphemeralStatusEffect {
-  friend DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& value);
-  friend DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& value);
   UniqueStatusEffect uniqueEffect;
   std::optional<float> duration;
 
   bool operator==(EphemeralStatusEffect const& rhs) const;
 };
 
-DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect);
-DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralStatusEffect);
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect);
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralStatusEffect);
 
 // Reads either a name of a unique stat effect or an object containing the
 // type name and optionally the duration.
-EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config);
+[[nodiscard]] std::expected<EphemeralStatusEffect, StarException> jsonToEphemeralStatusEffect(Json const& config);
 Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect);
 
 }

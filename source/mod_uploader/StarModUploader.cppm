@@ -8,6 +8,7 @@ module;
 #include <QPushButton>
 #include <QCheckBox>
 
+class QProgressDialog;
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
 import star.steam_dispatch;
@@ -22,6 +23,7 @@ import star.directory_asset_source;
 import star.s_plain_text_edit;
 import star.logging;
 import star.random;
+import star.format;
 
 namespace Star {
 
@@ -29,21 +31,27 @@ namespace Star {
 class ModUploader : public QMainWindow {
   Q_OBJECT
 public:
-  ModUploader(Logger& logger, RandomService& random);
+  [[nodiscard]] static std::expected<std::unique_ptr<ModUploader>, StarException> create(Logger& logger, RandomService& random);
 
 private slots:
   void selectDirectory();
   void loadDirectory();
   void selectPreview();
   void writeMetadata();
-  void writePreview();
   void resetModId();
   void uploadToSteam();
 
 private:
+  ModUploader(Logger& logger, RandomService& random);
+  void showError(StarException const& error);
+  [[nodiscard]] std::expected<void, StarException> loadDirectoryImpl();
+  [[nodiscard]] std::expected<void, StarException> writeMetadataImpl();
+  [[nodiscard]] std::expected<void, StarException> savePreview(QImage const& preview);
+  [[nodiscard]] std::expected<void, StarException> resetModIdImpl();
+  [[nodiscard]] std::expected<void, StarException> uploadToSteamImpl(QProgressDialog& progress);
   void closeEvent(QCloseEvent* event) override;
-  void onSteamCreateItem(CreateItemResult_t* result, bool ioFailure);
-  void onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure);
+  [[nodiscard]] std::expected<void, StarException> onSteamCreateItem(CreateItemResult_t* result, bool ioFailure);
+  [[nodiscard]] std::expected<void, StarException> onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure);
 
   Logger& m_logger;
   RandomService& m_random;
@@ -61,7 +69,7 @@ private:
   HashMap<String, QCheckBox*> m_categorySelectors;
 
   std::optional<String> m_modDirectory;
-  std::optional<DirectoryAssetSource> m_assetSource;
+  std::shared_ptr<DirectoryAssetSource> m_assetSource;
   QImage m_modPreview;
 
   SteamDispatch m_steamDispatch;

@@ -31,150 +31,280 @@ import star.name_generator;
 
 namespace Star {
 
-PatternedNameGenerator::PatternedNameGenerator(Root& root) : m_root(root) {
-  auto assets = m_root.assets();
-  auto &files = assets->scanExtension("namesource");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    try {
-      auto sourceConfig = assets->json(file);
+PatternedNameGenerator::PatternedNameGenerator(Root& root) : m_root(root) {}
 
-      if (m_markovSources.contains(sourceConfig.getString("name")))
-        throw NameGeneratorException::format("Duplicate name source '{}', config file '{}'", sourceConfig.getString("name"), file);
-
-      m_markovSources.insert(sourceConfig.getString("name"), makeMarkovSource(sourceConfig.getUInt("prefixSize", 1),
-          sourceConfig.getUInt("endSize", 1), jsonToStringList(sourceConfig.get("sourceNames"))));
-    } catch (std::exception const&) {
-      ExceptionDiagnostic const e(std::current_exception());
-      throw NameGeneratorException(strf("Error reading name source config {}", file), e);
-    }
+std::expected<std::shared_ptr<PatternedNameGenerator>, StarException> PatternedNameGenerator::create(Root& root) {
+  auto result = std::shared_ptr<PatternedNameGenerator>(new PatternedNameGenerator(root));
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("namesource");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  auto queued = (*assets)->queueJsons(**files);
+  if (!queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& assetFile : **files) {
+    auto const& file = assetFile.string();
+    auto loaded = [&]() -> std::expected<void, StarException> {
+      auto config = (*assets)->json(file);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      auto name = config->getString("name");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      if (result->m_markovSources.contains(*name))
+        return std::unexpected(NameGeneratorException::format("Duplicate name source '{}', config file '{}'", *name, file));
+      auto prefixSize = config->getUInt("prefixSize", 1);
+      if (!prefixSize)
+        return std::unexpected(std::move(prefixSize.error()));
+      auto endSize = config->getUInt("endSize", 1);
+      if (!endSize)
+        return std::unexpected(std::move(endSize.error()));
+      auto namesConfig = config->get("sourceNames");
+      if (!namesConfig)
+        return std::unexpected(std::move(namesConfig.error()));
+      auto names = jsonToStringList(*namesConfig);
+      if (!names)
+        return std::unexpected(std::move(names.error()));
+      auto source = result->makeMarkovSource(*prefixSize, *endSize, std::move(*names));
+      if (!source)
+        return std::unexpected(std::move(source.error()));
+      result->m_markovSources[*name] = std::move(*source);
+      return {};
+    }();
+    if (!loaded)
+      return std::unexpected(NameGeneratorException(strf("Error reading name source config {}", file), loaded.error()));
   }
-
-  auto profanityFilter = assets->json("/names/profanityfilter.config").toArray();
-  for (auto& naughtyWord : profanityFilter)
-    m_profanityFilter.add(naughtyWord.toString().toLower());
+  auto profanityConfig = (*assets)->json("/names/profanityfilter.config");
+  if (!profanityConfig)
+    return std::unexpected(std::move(profanityConfig.error()));
+  auto profanity = profanityConfig->iterateArray();
+  if (!profanity)
+    return std::unexpected(std::move(profanity.error()));
+  for (auto const& entry : *profanity) {
+    auto word = entry.toString();
+    if (!word)
+      return std::unexpected(std::move(word.error()));
+    auto lower = word->toLower();
+    if (!lower)
+      return std::unexpected(std::move(lower.error()));
+    result->m_profanityFilter.add(std::move(*lower));
+  }
+  return result;
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset) const {
+std::expected<String, StarException> PatternedNameGenerator::generateName(String const& rulesAsset) const {
   RandomSource random(m_root.random().randu64());
   return generateName(rulesAsset, random);
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset, std::uint64_t seed) const {
-  RandomSource random = RandomSource(seed);
+std::expected<String, StarException> PatternedNameGenerator::generateName(String const& rulesAsset, std::uint64_t seed) const {
+  RandomSource random(seed);
   return generateName(rulesAsset, random);
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
+std::expected<String, StarException> PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
   auto assets = m_root.assets();
-  auto rules = assets->json(rulesAsset).arrayPtr();
-  String res = "";
-  int tries = 100;
-  while ((res.empty() || isProfane(res)) && tries > 0) {
-    --tries;
-    res = processRule(*rules, random);
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json(rulesAsset);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto rules = config->arrayPtr();
+  if (!rules)
+    return std::unexpected(std::move(rules.error()));
+  String result;
+  for (int tries = 100; tries > 0; --tries) {
+    if (!result.empty()) {
+      auto profane = isProfane(result);
+      if (!profane)
+        return std::unexpected(std::move(profane.error()));
+      if (!*profane)
+        break;
+    }
+    auto generated = processRule(**rules, random);
+    if (!generated)
+      return std::unexpected(std::move(generated.error()));
+    result = std::move(*generated);
   }
-  return res;
+  return result;
 }
 
-String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& random) const {
+std::expected<String, StarException> PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& random) const {
   if (rule.empty())
-    return "";
+    return String();
   Json meta;
   String result;
   String mode = "alts";
   std::size_t index = 0;
   bool titleCase = false;
-  if (rule[0].type() == Json::Type::Object) {
+  if (rule[0].isType(Json::Type::Object)) {
     meta = rule[0];
-    mode = meta.getString("mode", mode);
-    titleCase = meta.getBool("titleCase", false);
-    index++;
+    auto configuredMode = meta.getString("mode", mode);
+    if (!configuredMode)
+      return std::unexpected(std::move(configuredMode.error()));
+    mode = std::move(*configuredMode);
+    auto configuredTitleCase = meta.getBool("titleCase", false);
+    if (!configuredTitleCase)
+      return std::unexpected(std::move(configuredTitleCase.error()));
+    titleCase = *configuredTitleCase;
+    ++index;
   }
-
+  auto evaluate = [&](Json const& entry) -> std::expected<String, StarException> {
+    if (!entry.isType(Json::Type::Array))
+      return entry.toString();
+    auto nested = entry.arrayPtr();
+    if (!nested)
+      return std::unexpected(std::move(nested.error()));
+    return processRule(**nested, random);
+  };
   if (mode == "serie") {
-    for (; index < rule.size(); index++) {
-      auto const& entry = rule[index];
-      if (entry.type() == Json::Type::Array)
-        result += processRule(*entry.arrayPtr(), random);
-      else
-        result += entry.toString();
+    for (; index < rule.size(); ++index) {
+      auto part = evaluate(rule[index]);
+      if (!part)
+        return std::unexpected(std::move(part.error()));
+      result += *part;
     }
   } else if (mode == "alts") {
-    int i = index + random.randInt(rule.size() - 1 - index);
-    auto const& entry = rule[i];
-    if (entry.type() == Json::Type::Array)
-      result += processRule(*entry.arrayPtr(), random);
-    else
-      result += entry.toString();
+    if (index == rule.size())
+      return std::unexpected(NameGeneratorException("Name rule has no alternatives"));
+    auto selected = random.randInt(rule.size() - 1 - index);
+    auto part = evaluate(rule[index + selected]);
+    if (!part)
+      return std::unexpected(std::move(part.error()));
+    result += *part;
   } else if (mode == "markov") {
-    if (!m_markovSources.contains(meta.getString("source")))
-      throw NameGeneratorException::format("Unknown name source '{}'", meta.getString("source"));
-
-    auto const& source = m_markovSources.get(meta.getString("source"));
-    auto lengthRange = meta.getArray("targetLength");
-    auto targetLength = random.randUInt(lengthRange[0].toUInt(), lengthRange[1].toUInt());
-
-    std::size_t tries = 0;
+    auto sourceName = meta.getString("source");
+    if (!sourceName)
+      return std::unexpected(std::move(sourceName.error()));
+    auto source = m_markovSources.ptr(*sourceName);
+    if (!source)
+      return std::unexpected(NameGeneratorException::format("Unknown name source '{}'", *sourceName));
+    auto range = meta.get("targetLength").and_then([](Json const& value) { return value.arrayPtr(); });
+    if (!range)
+      return std::unexpected(std::move(range.error()));
+    if ((*range)->size() < 2)
+      return std::unexpected(NameGeneratorException("Name targetLength must contain two bounds"));
+    auto minimum = (**range)[0].toUInt();
+    if (!minimum)
+      return std::unexpected(std::move(minimum.error()));
+    auto maximum = (**range)[1].toUInt();
+    if (!maximum)
+      return std::unexpected(std::move(maximum.error()));
+    auto target = random.randUInt(*minimum, *maximum);
+    if (!target)
+      return std::unexpected(std::move(target.error()));
     String piece;
-    do {
-      ++tries;
-      piece = random.randFrom(source.starts);
-      while (piece.length() < targetLength
-          || !source.ends.contains(piece.slice(piece.length() - source.endSize, piece.length()))) {
-        String link = piece.slice(piece.length() - source.prefixSize, piece.length());
-        if (!source.chains.contains(link))
+    for (std::size_t tries = 0; tries < 10; ++tries) {
+      auto start = random.randFrom(source->starts);
+      if (!start)
+        return std::unexpected(std::move(start.error()));
+      piece = **start;
+      while (true) {
+        auto length = piece.length();
+        if (!length)
+          return std::unexpected(std::move(length.error()));
+        if (*length >= *target) {
+          auto ending = piece.slice(*length - source->endSize, *length);
+          if (!ending)
+            return std::unexpected(std::move(ending.error()));
+          if (source->ends.contains(*ending))
+            break;
+        }
+        auto link = piece.slice(*length - source->prefixSize, *length);
+        if (!link)
+          return std::unexpected(std::move(link.error()));
+        auto chain = source->chains.ptr(*link);
+        if (!chain)
           break;
-        piece += random.randFrom(source.chains.get(link));
+        auto next = random.randFrom(*chain);
+        if (!next)
+          return std::unexpected(std::move(next.error()));
+        piece += **next;
       }
-    } while (piece.length() > lengthRange[1].toUInt() && tries < 10);
-
+      auto length = piece.length();
+      if (!length)
+        return std::unexpected(std::move(length.error()));
+      if (*length <= *maximum)
+        break;
+    }
     result += piece;
-  } else
-    throw StarException::format("Unknown mode: {}", mode);
-
+  } else {
+    return std::unexpected(StarException::format("Unknown mode: {}", mode));
+  }
   if (titleCase)
-    result = result.titleCase();
-
+    return result.titleCase();
   return result;
 }
 
-bool PatternedNameGenerator::isProfane(String const& name) const {
-  auto matchNames = name.toLower().rot13().splitAny(" -");
-  for (auto& naughtyWord : m_profanityFilter) {
-    for (auto& matchName : matchNames) {
-      auto find = matchName.find(naughtyWord);
-      if (find != NPos && (find == 0 || naughtyWord.size() + 1 >= matchName.size()))
+std::expected<bool, StarException> PatternedNameGenerator::isProfane(String const& name) const {
+  auto lower = name.toLower();
+  if (!lower)
+    return std::unexpected(std::move(lower.error()));
+  auto rotated = lower->rot13();
+  if (!rotated)
+    return std::unexpected(std::move(rotated.error()));
+  auto matches = rotated->splitAny(" -");
+  if (!matches)
+    return std::unexpected(std::move(matches.error()));
+  for (auto const& word : m_profanityFilter) {
+    for (auto const& match : *matches) {
+      auto found = match.find(word);
+      if (!found)
+        return std::unexpected(std::move(found.error()));
+      if (*found == NPos)
+        continue;
+      if (*found == 0)
+        return true;
+      auto wordSize = word.size();
+      if (!wordSize)
+        return std::unexpected(std::move(wordSize.error()));
+      auto matchSize = match.size();
+      if (!matchSize)
+        return std::unexpected(std::move(matchSize.error()));
+      if (*wordSize + 1 >= *matchSize)
         return true;
     }
   }
   return false;
 }
 
-MarkovSource PatternedNameGenerator::makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames) {
-  MarkovSource newSource;
-  newSource.prefixSize = prefixSize;
-  newSource.endSize = endSize;
-  for (auto sourceName : sourceNames) {
-    if (sourceName.length() < prefixSize || sourceName.length() < endSize)
+std::expected<MarkovSource, StarException> PatternedNameGenerator::makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames) {
+  MarkovSource source;
+  source.prefixSize = prefixSize;
+  source.endSize = endSize;
+  for (auto const& original : sourceNames) {
+    auto length = original.length();
+    if (!length)
+      return std::unexpected(std::move(length.error()));
+    if (*length < prefixSize || *length < endSize)
       continue;
-
-    sourceName = sourceName.toLower();
-    newSource.ends.add(sourceName.slice(sourceName.length() - endSize, sourceName.length()));
-    for (int i = 0; i + prefixSize <= sourceName.length(); ++i) {
-      auto prefix = sourceName.slice(i, i + prefixSize);
+    auto name = original.toLower();
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    auto lowerLength = name->length();
+    if (!lowerLength)
+      return std::unexpected(std::move(lowerLength.error()));
+    auto ending = name->slice(*lowerLength - endSize, *lowerLength);
+    if (!ending)
+      return std::unexpected(std::move(ending.error()));
+    source.ends.add(std::move(*ending));
+    for (std::size_t i = 0; i + prefixSize <= *lowerLength; ++i) {
+      auto prefix = name->slice(i, i + prefixSize);
+      if (!prefix)
+        return std::unexpected(std::move(prefix.error()));
       if (i == 0)
-        newSource.starts.append(prefix);
-
-      if (i + prefixSize < sourceName.length()) {
-        if (!newSource.chains.contains(prefix))
-          newSource.chains.insert(prefix, StringList());
-
-        newSource.chains.get(prefix).append(sourceName.slice(i + prefixSize, i + prefixSize + 1));
+        source.starts.append(*prefix);
+      if (i + prefixSize < *lowerLength) {
+        auto next = name->slice(i + prefixSize, i + prefixSize + 1);
+        if (!next)
+          return std::unexpected(std::move(next.error()));
+        source.chains[*prefix].append(std::move(*next));
       }
     }
   }
-  return newSource;
+  return source;
 }
 
 }

@@ -1,103 +1,163 @@
+import std;
 import star.json;
 import star.json_extra;
-import star.data_stream;
 import star.bi_map;
-import star.ordered_map;
-import star.thread;
-import star.io_device;
 import star.list;
-import star.image_processing;
-import star.hash;
-import star.string_view;
-import star.directives;
-import star.asset_path;
-import star.ref_ptr;
-import star.logging;
-import star.listener;
-import std;
 import star.string;
 import star.format;
-import star.version;
-
+import star.logging;
 import star.item_descriptor;
-import star.asset_source;
 import star.assets;
-
 import star.quest_template_database;
-
 namespace Star {
-
-QuestTemplate::QuestTemplate(Json const& config) {
-  this->config = config;
-  templateId = config.getString("id");
-  title = config.getString("title", "");
-  text = config.getString("text", "");
-  completionText = config.getString("completionText", "");
-  failureText = config.getString("failureText", "");
-
-  parameterTypes = {};
-  parameterExamples = {};
-  for (auto entry : config.getObject("parameters", JsonObject{})) {
-    parameterTypes[entry.first] = entry.second.getString("type");
-    if (entry.second.contains("example"))
-      parameterExamples[entry.first] = entry.second.get("example");
-  }
-
-  moneyRange = jsonToVec2U(config.get("moneyRange", JsonArray{0, 0}));
-  for (auto options : config.getArray("rewards", {})) {
-    List<ItemDescriptor> rewardOption;
-    for (auto entry : options.iterateArray()) {
-      rewardOption.append(ItemDescriptor(entry));
+std::expected<std::shared_ptr<QuestTemplate>, StarException> QuestTemplate::create(Json const& config) {
+  auto result = std::shared_ptr<QuestTemplate>(new QuestTemplate());
+  result->config = config;
+  auto id = config.getString("id");
+  if (!id) return std::unexpected(std::move(id.error()));
+  result->templateId = std::move(*id);
+  auto title = config.getString("title", "");
+  if (!title) return std::unexpected(std::move(title.error()));
+  result->title = std::move(*title);
+  auto text = config.getString("text", "");
+  if (!text) return std::unexpected(std::move(text.error()));
+  result->text = std::move(*text);
+  auto completion = config.getString("completionText", "");
+  if (!completion) return std::unexpected(std::move(completion.error()));
+  result->completionText = std::move(*completion);
+  auto failure = config.getString("failureText", "");
+  if (!failure) return std::unexpected(std::move(failure.error()));
+  result->failureText = std::move(*failure);
+  auto parameters = config.getObject("parameters", {});
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  for (auto const& entry : *parameters) {
+    auto type = entry.second.getString("type");
+    if (!type) return std::unexpected(std::move(type.error()));
+    result->parameterTypes[entry.first] = std::move(*type);
+    auto contains = entry.second.contains("example");
+    if (!contains) return std::unexpected(std::move(contains.error()));
+    if (*contains) {
+      auto example = entry.second.get("example");
+      if (!example) return std::unexpected(std::move(example.error()));
+      result->parameterExamples[entry.first] = std::move(*example);
     }
-    rewards.append(rewardOption);
   }
-  rewardParameters = config.getArray("rewardParameters", {}).transformed(std::mem_fn(&Json::toString));
-  completionCinema = config.optString("completionCinema");
-  canBeAbandoned = config.getBool("canBeAbandoned", true);
-  ephemeral = config.getBool("ephemeral", false);
-  showInLog = config.getBool("showInLog", true);
-  showAcceptDialog = config.getBool("showAcceptDialog", true);
-  showCompleteDialog = config.getBool("showCompleteDialog", true);
-  showFailDialog = config.getBool("showFailDialog", true);
-  mainQuest = config.getBool("mainQuest", false);
-  hideCrossServer = config.getBool("hideCrossServer", false);
-  questGiverIndicator = config.getString("questGiverIndicator", "questgiver");
-  questReceiverIndicator = config.getString("questReceiverIndicator", "questreceiver");
-  prerequisiteQuests = jsonToStringList(config.get("prerequisites", JsonArray{}));
-  requiredShipLevel = config.optUInt("requiredShipLevel");
-  requiredItems = config.getArray("requiredItems", {}).transformed([](Json item) { return ItemDescriptor(item); });
-
-  updateDelta = config.getUInt("updateDelta", 10);
-  script = config.optString("script");
-  scriptConfig = config.getObject("scriptConfig", JsonObject{});
-
-  if (auto guiConfigs = config.opt("guiConfigs")) {
-    newQuestGuiConfig = guiConfigs->optString("newQuest");
-    questCompleteGuiConfig = guiConfigs->optString("questComplete");
-    questFailedGuiConfig = guiConfigs->optString("questFailed");
+  auto rangeJson = config.get("moneyRange", JsonArray{0, 0});
+  if (!rangeJson) return std::unexpected(std::move(rangeJson.error()));
+  auto range = jsonToVec2U(*rangeJson);
+  if (!range) return std::unexpected(std::move(range.error()));
+  result->moneyRange = *range;
+  auto rewards = config.getArray("rewards", {});
+  if (!rewards) return std::unexpected(std::move(rewards.error()));
+  for (auto const& options : *rewards) {
+    auto array = options.toArray();
+    if (!array) return std::unexpected(std::move(array.error()));
+    List<ItemDescriptor> rewardOption;
+    for (auto const& entry : *array) {
+      auto item = ItemDescriptor::create(entry);
+      if (!item) return std::unexpected(std::move(item.error()));
+      rewardOption.append(std::move(*item));
+    }
+    result->rewards.append(std::move(rewardOption));
   }
-}
-
-QuestTemplateDatabase::QuestTemplateDatabase(std::shared_ptr<Assets const> assets, Logger& logger) : m_logger(logger) {
-  auto& files = assets->scanExtension("questtemplate");
-  assets->queueJsons(files);
-  for (auto& qt : files) {
-    auto questTemplate = std::make_shared<QuestTemplate>(assets->json(qt));
-    if (!m_templates.insert(questTemplate->templateId, questTemplate).second)
-      throw StarException(strf("Duplicate quest template '{}'", questTemplate->templateId));
+  auto rewardParameters = config.get("rewardParameters", JsonArray{});
+  if (!rewardParameters) return std::unexpected(std::move(rewardParameters.error()));
+  auto rewardNames = jsonToStringList(*rewardParameters);
+  if (!rewardNames) return std::unexpected(std::move(rewardNames.error()));
+  result->rewardParameters = std::move(*rewardNames);
+  auto cinema = config.optString("completionCinema");
+  if (!cinema) return std::unexpected(std::move(cinema.error()));
+  result->completionCinema = std::move(*cinema);
+  auto canBeAbandoned = config.getBool("canBeAbandoned", true);
+  if (!canBeAbandoned) return std::unexpected(std::move(canBeAbandoned.error()));
+  result->canBeAbandoned = *canBeAbandoned;
+  auto ephemeral = config.getBool("ephemeral", false);
+  if (!ephemeral) return std::unexpected(std::move(ephemeral.error()));
+  result->ephemeral = *ephemeral;
+  auto showInLog = config.getBool("showInLog", true);
+  if (!showInLog) return std::unexpected(std::move(showInLog.error()));
+  result->showInLog = *showInLog;
+  auto showAcceptDialog = config.getBool("showAcceptDialog", true);
+  if (!showAcceptDialog) return std::unexpected(std::move(showAcceptDialog.error()));
+  result->showAcceptDialog = *showAcceptDialog;
+  auto showCompleteDialog = config.getBool("showCompleteDialog", true);
+  if (!showCompleteDialog) return std::unexpected(std::move(showCompleteDialog.error()));
+  result->showCompleteDialog = *showCompleteDialog;
+  auto showFailDialog = config.getBool("showFailDialog", true);
+  if (!showFailDialog) return std::unexpected(std::move(showFailDialog.error()));
+  result->showFailDialog = *showFailDialog;
+  auto mainQuest = config.getBool("mainQuest", false);
+  if (!mainQuest) return std::unexpected(std::move(mainQuest.error()));
+  result->mainQuest = *mainQuest;
+  auto hideCrossServer = config.getBool("hideCrossServer", false);
+  if (!hideCrossServer) return std::unexpected(std::move(hideCrossServer.error()));
+  result->hideCrossServer = *hideCrossServer;
+  auto giver = config.getString("questGiverIndicator", "questgiver");
+  if (!giver) return std::unexpected(std::move(giver.error()));
+  result->questGiverIndicator = std::move(*giver);
+  auto receiver = config.getString("questReceiverIndicator", "questreceiver");
+  if (!receiver) return std::unexpected(std::move(receiver.error()));
+  result->questReceiverIndicator = std::move(*receiver);
+  auto prerequisites = config.get("prerequisites", JsonArray{});
+  if (!prerequisites) return std::unexpected(std::move(prerequisites.error()));
+  auto prerequisiteNames = jsonToStringList(*prerequisites);
+  if (!prerequisiteNames) return std::unexpected(std::move(prerequisiteNames.error()));
+  result->prerequisiteQuests = std::move(*prerequisiteNames);
+  auto level = config.optUInt("requiredShipLevel");
+  if (!level) return std::unexpected(std::move(level.error()));
+  result->requiredShipLevel = *level;
+  auto items = config.getArray("requiredItems", {});
+  if (!items) return std::unexpected(std::move(items.error()));
+  for (auto const& json : *items) {
+    auto item = ItemDescriptor::create(json);
+    if (!item) return std::unexpected(std::move(item.error()));
+    result->requiredItems.append(std::move(*item));
   }
-}
-
-List<String> QuestTemplateDatabase::allQuestTemplateIds() const {
-  return m_templates.keys();
-}
-
-std::shared_ptr<QuestTemplate> QuestTemplateDatabase::questTemplate(String const& templateId) const {
-  if (!m_templates.contains(templateId)) {
-    m_logger.error("No quest template found for id '{}'", templateId);
-    return {};
+  auto delta = config.getUInt("updateDelta", 10);
+  if (!delta) return std::unexpected(std::move(delta.error()));
+  result->updateDelta = *delta;
+  auto script = config.optString("script");
+  if (!script) return std::unexpected(std::move(script.error()));
+  result->script = std::move(*script);
+  auto scriptConfig = config.getObject("scriptConfig", {});
+  if (!scriptConfig) return std::unexpected(std::move(scriptConfig.error()));
+  result->scriptConfig = std::move(*scriptConfig);
+  auto gui = config.opt("guiConfigs");
+  if (!gui) return std::unexpected(std::move(gui.error()));
+  if (*gui) {
+    auto newQuest = (**gui).optString("newQuest");
+    if (!newQuest) return std::unexpected(std::move(newQuest.error()));
+    result->newQuestGuiConfig = std::move(*newQuest);
+    auto complete = (**gui).optString("questComplete");
+    if (!complete) return std::unexpected(std::move(complete.error()));
+    result->questCompleteGuiConfig = std::move(*complete);
+    auto failed = (**gui).optString("questFailed");
+    if (!failed) return std::unexpected(std::move(failed.error()));
+    result->questFailedGuiConfig = std::move(*failed);
   }
-  return m_templates.get(templateId);
+  return result;
 }
-
+std::expected<std::shared_ptr<QuestTemplateDatabase>, StarException> QuestTemplateDatabase::create(std::shared_ptr<Assets const> assets, Logger& logger) {
+  auto database = std::shared_ptr<QuestTemplateDatabase>(new QuestTemplateDatabase(logger));
+  auto files = assets->scanExtension("questtemplate");
+  if (!files) return std::unexpected(std::move(files.error()));
+  auto queued = assets->queueJsons(**files);
+  if (!queued) return std::unexpected(std::move(queued.error()));
+  for (auto const& file : **files) {
+    auto config = assets->json(file.string());
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto quest = QuestTemplate::create(*config);
+    if (!quest) return std::unexpected(std::move(quest.error()));
+    if (!database->m_templates.insert((*quest)->templateId, *quest).second)
+      return std::unexpected(StarException(strf("Duplicate quest template '{}'", (*quest)->templateId)));
+  }
+  return database;
+}
+List<String> QuestTemplateDatabase::allQuestTemplateIds() const { return m_templates.keys(); }
+std::expected<std::shared_ptr<QuestTemplate>, StarException> QuestTemplateDatabase::questTemplate(String const& id) const {
+  if (auto result = m_templates.maybe(id)) return *result;
+  auto logged = m_logger.error("No quest template found for id '{}'", id);
+  if (!logged) return std::unexpected(std::move(logged.error()));
+  return std::shared_ptr<QuestTemplate>();
+}
 }

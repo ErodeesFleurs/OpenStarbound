@@ -44,6 +44,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 
+import star.format;
 namespace Star {
 
 class ImageStretchWidget : public Widget {
@@ -55,15 +56,16 @@ public:
     return Star::typeName<ImageStretchWidget>();
   }
 
-  ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction);
+  [[nodiscard]] static std::expected<std::shared_ptr<ImageStretchWidget>, StarException> create(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction);
   void setImageStretchSet(String const& beginImage, String const& innerImage, String const& endImage);
 
   virtual ~ImageStretchWidget() {}
 
 protected:
-  virtual void renderImpl();
+  [[nodiscard]] std::expected<void, StarException> renderImpl() override;
 
 private:
+  ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction);
   ImageStretchSet m_imageStretchSet;
   GuiDirection m_direction;
 };

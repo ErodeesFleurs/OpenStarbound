@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -95,33 +96,91 @@ import star.animation;
 
 namespace Star {
 
-WorldPainter::WorldPainter(Root& root) : m_root(root) {
-  m_assets = m_root.assets();
+WorldPainter::WorldPainter(Root& root) : m_root(root) {}
 
-  m_camera.setScreenSize({800, 600});
-  m_camera.setCenterWorldPosition(Vec2F());
-  m_camera.setPixelRatio(m_root.configuration()->get("zoomLevel").toFloat());
-
-  m_highlightConfig = m_assets->json("/highlights.config");
-  for (auto p : m_highlightConfig.get("highlightDirectives").iterateObject())
-    m_highlightDirectives.set(EntityHighlightEffectTypeNames.getLeft(p.first), {p.second.getString("underlay", ""), p.second.getString("overlay", "")});
-
-  m_entityBarOffset = jsonToVec2F(m_assets->json("/rendering.config:entityBarOffset"));
-  m_entityBarSpacing = jsonToVec2F(m_assets->json("/rendering.config:entityBarSpacing"));
-  m_entityBarSize = jsonToVec2F(m_assets->json("/rendering.config:entityBarSize"));
-  m_entityBarIconOffset = jsonToVec2F(m_assets->json("/rendering.config:entityBarIconOffset"));
-  m_preloadTextureChance = m_assets->json("/rendering.config:preloadTextureChance").toFloat();
+std::expected<std::shared_ptr<WorldPainter>, StarException> WorldPainter::create(Root& root) {
+  auto painter = std::shared_ptr<WorldPainter>(new WorldPainter(root));
+  auto initialized = painter->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return painter;
 }
 
-void WorldPainter::renderInit(std::shared_ptr<Renderer> renderer) {
-  m_assets = m_root.assets();
+std::expected<void, StarException> WorldPainter::initialize() {
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  m_assets = *assets;
+  auto configuration = m_root.configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto zoomJson = (*configuration)->get("zoomLevel");
+  if (!zoomJson) return std::unexpected(std::move(zoomJson.error()));
+  auto zoom = zoomJson->toFloat();
+  if (!zoom) return std::unexpected(std::move(zoom.error()));
+  m_camera.setScreenSize({800, 600});
+  m_camera.setCenterWorldPosition(Vec2F());
+  m_camera.setPixelRatio(*zoom);
 
+  auto highlightConfig = m_assets->json("/highlights.config");
+  if (!highlightConfig) return std::unexpected(std::move(highlightConfig.error()));
+  m_highlightConfig = std::move(*highlightConfig);
+  auto directives = m_highlightConfig.get("highlightDirectives");
+  if (!directives) return std::unexpected(std::move(directives.error()));
+  auto entries = directives->iterateObject();
+  if (!entries) return std::unexpected(std::move(entries.error()));
+  for (auto const& p : *entries) {
+    if (!EntityHighlightEffectTypeNames) return std::unexpected(EntityHighlightEffectTypeNames.error());
+    auto type = EntityHighlightEffectTypeNames->getLeft(p.first);
+    if (!type) return std::unexpected(std::move(type.error()));
+    auto underlay = p.second.getString("underlay", "");
+    if (!underlay) return std::unexpected(std::move(underlay.error()));
+    auto overlay = p.second.getString("overlay", "");
+    if (!overlay) return std::unexpected(std::move(overlay.error()));
+    m_highlightDirectives.set(**type, {Directives(*underlay), Directives(*overlay)});
+  }
+  auto loadVector = [this](char const* path) -> std::expected<Vec2F, StarException> {
+    auto json = m_assets->json(path);
+    if (!json) return std::unexpected(std::move(json.error()));
+    return jsonToVec2F(*json);
+  };
+  auto offset = loadVector("/rendering.config:entityBarOffset");
+  if (!offset) return std::unexpected(std::move(offset.error()));
+  m_entityBarOffset = *offset;
+  auto spacing = loadVector("/rendering.config:entityBarSpacing");
+  if (!spacing) return std::unexpected(std::move(spacing.error()));
+  m_entityBarSpacing = *spacing;
+  auto size = loadVector("/rendering.config:entityBarSize");
+  if (!size) return std::unexpected(std::move(size.error()));
+  m_entityBarSize = *size;
+  auto iconOffset = loadVector("/rendering.config:entityBarIconOffset");
+  if (!iconOffset) return std::unexpected(std::move(iconOffset.error()));
+  m_entityBarIconOffset = *iconOffset;
+  auto preloadJson = m_assets->json("/rendering.config:preloadTextureChance");
+  if (!preloadJson) return std::unexpected(std::move(preloadJson.error()));
+  auto preload = preloadJson->toFloat();
+  if (!preload) return std::unexpected(std::move(preload.error()));
+  m_preloadTextureChance = *preload;
+  return {};
+}
+
+std::expected<void, StarException> WorldPainter::renderInit(std::shared_ptr<Renderer> renderer) {
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto textureGroup = renderer->createTextureGroup(TextureGroupSize::Large);
+  if (!textureGroup) return std::unexpected(std::move(textureGroup.error()));
+  auto textPainter = TextPainter::create(m_root, renderer, *textureGroup);
+  if (!textPainter) return std::unexpected(std::move(textPainter.error()));
+  auto tilePainter = TilePainter::create(m_root, renderer);
+  if (!tilePainter) return std::unexpected(std::move(tilePainter.error()));
+  auto environmentPainter = EnvironmentPainter::create(m_root, renderer);
+  if (!environmentPainter) return std::unexpected(std::move(environmentPainter.error()));
+  auto drawablePainter = std::make_shared<DrawablePainter>(renderer, std::make_shared<AssetTextureGroup>(m_root, *textureGroup));
+  m_assets = std::move(*assets);
   m_renderer = std::move(renderer);
-  auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
-  m_textPainter = std::make_shared<TextPainter>(m_root, m_renderer, textureGroup);
-  m_tilePainter = std::make_shared<TilePainter>(m_root, m_renderer);
-  m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, std::make_shared<AssetTextureGroup>(m_root, textureGroup));
-  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_root, m_renderer);
+  m_textPainter = std::move(*textPainter);
+  m_tilePainter = std::move(*tilePainter);
+  m_drawablePainter = std::move(drawablePainter);
+  m_environmentPainter = std::move(*environmentPainter);
+  return {};
 }
 
 void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const& position) {
@@ -141,14 +200,23 @@ void WorldPainter::update(float dt) {
   m_environmentPainter->update(dt);
 }
 
-void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lightWaiter) {
+std::expected<void, StarException> WorldPainter::render(WorldRenderData& renderData, std::function<std::expected<bool, StarException>()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
-  m_camera.setTargetPixelRatio(m_root.configuration()->get("zoomLevel").toFloat());
-
-  m_assets = m_root.assets();
-  m_imageMetadata = m_root.imageMetadataDatabase();
-
-  m_tilePainter->setup(m_camera, renderData);
+  auto configuration = m_root.configuration();
+  if (!configuration) return std::unexpected(std::move(configuration.error()));
+  auto zoomJson = (*configuration)->get("zoomLevel");
+  if (!zoomJson) return std::unexpected(std::move(zoomJson.error()));
+  auto zoom = zoomJson->toFloat();
+  if (!zoom) return std::unexpected(std::move(zoom.error()));
+  m_camera.setTargetPixelRatio(*zoom);
+  auto assets = m_root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  m_assets = *assets;
+  auto imageMetadata = m_root.imageMetadataDatabase();
+  if (!imageMetadata) return std::unexpected(std::move(imageMetadata.error()));
+  m_imageMetadata = *imageMetadata;
+  if (auto result = m_tilePainter->setup(m_camera, renderData); !result)
+    return std::unexpected(std::move(result.error()));
 
   // Stars, Debris Fields, Sky, and Orbiters
 
@@ -157,32 +225,56 @@ void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lig
   float starAndDebrisRatio = lerp(0.0625f, pixelRatioBasis * 2.0f, m_camera.pixelRatio());
   float orbiterAndPlanetRatio = lerp(0.125f, pixelRatioBasis * 3.0f, m_camera.pixelRatio());
 
-  m_environmentPainter->renderStars(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderDebrisFields(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  if (renderData.skyRenderData.type != SkyType::Atmosphereless)
-    m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderSky(Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
-  if (renderData.skyRenderData.type == SkyType::Atmosphereless)
-    m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData);
+  if (auto result = m_environmentPainter->renderStars(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_environmentPainter->renderDebrisFields(starAndDebrisRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+    return std::unexpected(std::move(result.error()));
+  if (renderData.skyRenderData.type != SkyType::Atmosphereless) {
+    if (auto result = m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  if (auto result = m_environmentPainter->renderPlanetHorizon(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_environmentPainter->renderSky(Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = m_environmentPainter->renderFrontOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+    return std::unexpected(std::move(result.error()));
+  if (renderData.skyRenderData.type == SkyType::Atmosphereless) {
+    if (auto result = m_environmentPainter->renderBackOrbiters(orbiterAndPlanetRatio, Vec2F(m_camera.screenSize()), renderData.skyRenderData); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  if (auto result = m_renderer->flush(); !result)
+    return std::unexpected(std::move(result.error()));
 
-  m_renderer->flush();
-
-  bool lightMapUpdated = lightWaiter ? lightWaiter() : false;
-
-  m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright);
+  bool lightMapUpdated = false;
+  if (lightWaiter) {
+    auto waited = lightWaiter();
+    if (!waited) return std::unexpected(std::move(waited.error()));
+    lightMapUpdated = *waited;
+  }
+  if (auto result = m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright); !result)
+    return std::unexpected(std::move(result.error()));
   if (renderData.isFullbright) {
-    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
-    m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
+    if (auto result = m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), {255, 255, 255, 255}, PixelFormat::RGB24)); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_renderer->setEffectParameter("lightMapMultiplier", 1.0f); !result)
+      return std::unexpected(std::move(result.error()));
   } else {
     if (lightMapUpdated) {
-      adjustLighting(renderData);
-      m_renderer->setEffectTexture("lightMap", renderData.lightMap);
+      if (auto result = adjustLighting(renderData); !result) return std::unexpected(std::move(result.error()));
+      if (auto result = m_renderer->setEffectTexture("lightMap", renderData.lightMap); !result)
+        return std::unexpected(std::move(result.error()));
     }
-    m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
-    m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
-    m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition)));
+    auto multiplierJson = m_assets->json("/rendering.config:lightMapMultiplier");
+    if (!multiplierJson) return std::unexpected(std::move(multiplierJson.error()));
+    auto multiplier = multiplierJson->toFloat();
+    if (!multiplier) return std::unexpected(std::move(multiplier.error()));
+    if (auto result = m_renderer->setEffectParameter("lightMapMultiplier", *multiplier); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio())); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition))); !result)
+      return std::unexpected(std::move(result.error()));
   }
 
   // Parallax layers
@@ -195,8 +287,10 @@ void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lig
   m_previousCameraCenter = m_camera.centerWorldPosition();
   m_parallaxWorldPosition[1] = m_camera.centerWorldPosition()[1];
 
-  if (!renderData.parallaxLayers.empty())
-    m_environmentPainter->renderParallaxLayers(m_parallaxWorldPosition, m_camera, renderData.parallaxLayers, renderData.skyRenderData);
+  if (!renderData.parallaxLayers.empty()) {
+    if (auto result = m_environmentPainter->renderParallaxLayers(m_parallaxWorldPosition, m_camera, renderData.parallaxLayers, renderData.skyRenderData); !result)
+      return std::unexpected(std::move(result.error()));
+  }
 
   // Main world layers
 
@@ -207,64 +301,79 @@ void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lig
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
-  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](std::optional<EntityRenderLayer> until) {
+  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](std::optional<EntityRenderLayer> until) -> std::expected<void, StarException> {
     while (true) {
       if (entityDrawableIterator == entityDrawables.end())
         break;
       if (until && entityDrawableIterator->first >= *until)
         break;
-      for (auto& edl : entityDrawableIterator->second)
-        drawEntityLayer(std::move(edl.second), edl.first);
+      for (auto& edl : entityDrawableIterator->second) {
+        if (auto result = drawEntityLayer(std::move(edl.second), edl.first); !result)
+          return std::unexpected(std::move(result.error()));
+      }
       ++entityDrawableIterator;
     }
 
-    m_renderer->flush();
+    return m_renderer->flush();
   };
 
-  renderEntitiesUntil(RenderLayerBackgroundOverlay);
-  drawDrawableSet(renderData.backgroundOverlays);
-  renderEntitiesUntil(RenderLayerBackgroundTile);
-  m_tilePainter->renderBackground(m_camera);
-  renderEntitiesUntil(RenderLayerPlatform);
-  m_tilePainter->renderMidground(m_camera);
-  renderEntitiesUntil(RenderLayerBackParticle);
-  renderParticles(renderData, Particle::Layer::Back);
-  renderEntitiesUntil(RenderLayerLiquid);
-  m_tilePainter->renderLiquid(m_camera);
-  renderEntitiesUntil(RenderLayerMiddleParticle);
-  renderParticles(renderData, Particle::Layer::Middle);
-  renderEntitiesUntil(RenderLayerForegroundTile);
-  m_tilePainter->renderForeground(m_camera);
-  renderEntitiesUntil(RenderLayerForegroundOverlay);
-  drawDrawableSet(renderData.foregroundOverlays);
-  renderEntitiesUntil(RenderLayerFrontParticle);
-  renderParticles(renderData, Particle::Layer::Front);
-  renderEntitiesUntil(RenderLayerOverlay);
-  drawDrawableSet(renderData.nametags);
-  renderBars(renderData);
-  renderEntitiesUntil({});
+  if (auto r = renderEntitiesUntil(RenderLayerBackgroundOverlay); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = drawDrawableSet(renderData.backgroundOverlays); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerBackgroundTile); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_tilePainter->renderBackground(m_camera); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerPlatform); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_tilePainter->renderMidground(m_camera); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerBackParticle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderParticles(renderData, Particle::Layer::Back); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerLiquid); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_tilePainter->renderLiquid(m_camera); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerMiddleParticle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderParticles(renderData, Particle::Layer::Middle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerForegroundTile); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = m_tilePainter->renderForeground(m_camera); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerForegroundOverlay); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = drawDrawableSet(renderData.foregroundOverlays); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerFrontParticle); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderParticles(renderData, Particle::Layer::Front); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil(RenderLayerOverlay); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = drawDrawableSet(renderData.nametags); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderBars(renderData); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = renderEntitiesUntil({}); !r) return std::unexpected(std::move(r.error()));
 
   auto dimLevel = std::round(renderData.dimLevel * 255);
   if (dimLevel != 0)
     m_renderer->render(renderFlatRect(RectF::withSize({}, Vec2F(m_camera.screenSize())), Vec4B(renderData.dimColor, dimLevel), 0.0f));
 
-  std::int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
+  auto timeoutJson = m_assets->json("/rendering.config:textureTimeout");
+  if (!timeoutJson) return std::unexpected(std::move(timeoutJson.error()));
+  auto timeout = timeoutJson->toInt();
+  if (!timeout) return std::unexpected(std::move(timeout.error()));
+  std::int64_t textureTimeout = *timeout;
   m_textPainter->cleanup(textureTimeout);
   m_drawablePainter->cleanup(textureTimeout);
   m_environmentPainter->cleanup(textureTimeout);
   m_tilePainter->cleanup();
+  return {};
 }
 
-void WorldPainter::adjustLighting(WorldRenderData& renderData) {
-  m_tilePainter->adjustLighting(renderData);
+std::expected<void, StarException> WorldPainter::adjustLighting(WorldRenderData& renderData) {
+  return m_tilePainter->adjustLighting(renderData);
 }
 
-void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer layer) {
-  const int textParticleFontSize = m_assets->json("/rendering.config:textParticleFontSize").toInt();
-  const RectF particleRenderWindow = RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).padded(m_assets->json("/rendering.config:particleRenderWindowPadding").toInt());
+std::expected<void, StarException> WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer layer) {
+  auto fontSizeJson = m_assets->json("/rendering.config:textParticleFontSize");
+  if (!fontSizeJson) return std::unexpected(std::move(fontSizeJson.error()));
+  auto fontSize = fontSizeJson->toInt();
+  if (!fontSize) return std::unexpected(std::move(fontSize.error()));
+  const int textParticleFontSize = *fontSize;
+  auto paddingJson = m_assets->json("/rendering.config:particleRenderWindowPadding");
+  if (!paddingJson) return std::unexpected(std::move(paddingJson.error()));
+  auto padding = paddingJson->toInt();
+  if (!padding) return std::unexpected(std::move(padding.error()));
+  const RectF particleRenderWindow = RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).padded(*padding);
 
   if (!renderData.particles)
-    return;
+    return {};
 
   for (Particle const& particle : *renderData.particles) {
     if (layer != particle.layer)
@@ -299,22 +408,24 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
         color, lightMapMultiplier);
 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
-      Drawable drawable;
-      if (particle.type == Particle::Type::Textured)
-        drawable = Drawable::makeImage(*m_imageMetadata, particle.image, 1.0f / TilePixels, true, Vec2F(0, 0));
-      else
-        drawable = particle.animation->drawable(1.0f / TilePixels);
+      auto drawableResult = particle.type == Particle::Type::Textured
+          ? Drawable::makeImage(*m_imageMetadata, particle.image, 1.0f / TilePixels, true, Vec2F(0, 0))
+          : particle.animation->drawable(1.0f / TilePixels);
+      if (!drawableResult) return std::unexpected(std::move(drawableResult.error()));
+      Drawable drawable = std::move(*drawableResult);
 
       if (particle.flip && particle.flippable)
         drawable.scale(Vec2F(-1, 1));
-      if (drawable.isImage() && particle.type != Particle::Type::Animated)
-        drawable.imagePart().addDirectivesGroup(*m_imageMetadata, particle.directives, true);
+      if (drawable.isImage() && particle.type != Particle::Type::Animated) {
+        if (auto result = drawable.imagePart().addDirectivesGroup(*m_imageMetadata, particle.directives, true); !result)
+          return std::unexpected(std::move(result.error()));
+      }
       drawable.fullbright = particle.fullbright;
       drawable.color = particle.color;
       drawable.rotate(particle.rotation);
       drawable.scale(particle.size);
       drawable.translate(particle.position);
-      drawDrawable(std::move(drawable));
+      if (auto result = drawDrawable(std::move(drawable)); !result) return std::unexpected(std::move(result.error()));
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
@@ -322,24 +433,28 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());
-        m_textPainter->setProcessingDirectives("");
-        m_textPainter->setFont("");
-        m_textPainter->renderText(particle.string, {position, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
+        if (auto result = m_textPainter->setProcessingDirectives(""); !result) return std::unexpected(std::move(result.error()));
+        if (auto result = m_textPainter->setFont(""); !result)
+          return std::unexpected(std::move(result.error()));
+        if (auto result = m_textPainter->renderText(particle.string, {position, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor}); !result)
+          return std::unexpected(std::move(result.error()));
       }
     }
   }
 
-  m_renderer->flush();
+  return m_renderer->flush();
 }
 
-void WorldPainter::renderBars(WorldRenderData& renderData) {
+std::expected<void, StarException> WorldPainter::renderBars(WorldRenderData& renderData) {
   auto offset = m_entityBarOffset;
   for (auto const& bar : renderData.overheadBars) {
     auto position = bar.entityPosition + offset;
     offset += m_entityBarSpacing;
     if (bar.icon) {
       auto iconDrawPosition = position - (m_entityBarSize / 2).round() + m_entityBarIconOffset;
-      drawDrawable(Drawable::makeImage(*m_imageMetadata, *bar.icon, 1.0f / TilePixels, true, iconDrawPosition));
+      auto drawable = Drawable::makeImage(*m_imageMetadata, *bar.icon, 1.0f / TilePixels, true, iconDrawPosition);
+      if (!drawable) return std::unexpected(std::move(drawable.error()));
+      if (auto result = drawDrawable(std::move(*drawable)); !result) return std::unexpected(std::move(result.error()));
     }
 
     if (!bar.detailOnly) {
@@ -348,16 +463,18 @@ void WorldPainter::renderBars(WorldRenderData& renderData) {
       auto fullColor = bar.color;
       auto emptyColor = Color::Black;
 
-      drawDrawable(Drawable::makePoly(PolyF(emptyBar), emptyColor, position));
-      drawDrawable(Drawable::makePoly(PolyF(fullBar), fullColor, position));
+      if (auto result = drawDrawable(Drawable::makePoly(PolyF(emptyBar), emptyColor, position)); !result) return std::unexpected(std::move(result.error()));
+      if (auto result = drawDrawable(Drawable::makePoly(PolyF(fullBar), fullColor, position)); !result) return std::unexpected(std::move(result.error()));
     }
   }
 
-  m_renderer->flush();
+  return m_renderer->flush();
 }
 
-void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffect highlightEffect) {
-  highlightEffect.level *= m_highlightConfig.getFloat("maxHighlightLevel", 1.0);
+std::expected<void, StarException> WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffect highlightEffect) {
+  auto maxLevel = m_highlightConfig.getFloat("maxHighlightLevel", 1.0);
+  if (!maxLevel) return std::unexpected(std::move(maxLevel.error()));
+  highlightEffect.level *= *maxLevel;
   if (m_highlightDirectives.contains(highlightEffect.type) && highlightEffect.level > 0) {
     // first pass, draw underlay
     auto underlayDirectives = m_highlightDirectives[highlightEffect.type].first;
@@ -367,8 +484,9 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
           auto underlayDrawable = Drawable(d);
           underlayDrawable.fullbright = true;
           underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-          underlayDrawable.imagePart().addDirectives(*m_imageMetadata, underlayDirectives, true);
-          drawDrawable(std::move(underlayDrawable));
+          if (auto result = underlayDrawable.imagePart().addDirectives(*m_imageMetadata, underlayDirectives, true); !result)
+            return std::unexpected(std::move(result.error()));
+          if (auto result = drawDrawable(std::move(underlayDrawable)); !result) return std::unexpected(std::move(result.error()));
         }
       }
     }
@@ -376,22 +494,25 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
     // second pass, draw main drawables and overlays
     auto overlayDirectives = m_highlightDirectives[highlightEffect.type].second;
     for (auto& d : drawables) {
-      drawDrawable(d);
+      if (auto result = drawDrawable(d); !result) return std::unexpected(std::move(result.error()));
       if (!overlayDirectives.empty() && d.isImage()) {
         auto overlayDrawable = Drawable(d);
         overlayDrawable.fullbright = true;
         overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-        overlayDrawable.imagePart().addDirectives(*m_imageMetadata, overlayDirectives, true);
-        drawDrawable(std::move(overlayDrawable));
+        if (auto result = overlayDrawable.imagePart().addDirectives(*m_imageMetadata, overlayDirectives, true); !result)
+          return std::unexpected(std::move(result.error()));
+        if (auto result = drawDrawable(std::move(overlayDrawable)); !result) return std::unexpected(std::move(result.error()));
       }
     }
   } else {
-    for (auto& d : drawables)
-      drawDrawable(std::move(d));
+    for (auto& d : drawables) {
+      if (auto result = drawDrawable(std::move(d)); !result) return std::unexpected(std::move(result.error()));
+    }
   }
+  return {};
 }
 
-void WorldPainter::drawDrawable(Drawable drawable) {
+std::expected<void, StarException> WorldPainter::drawDrawable(Drawable drawable) {
   drawable.position = m_camera.worldToScreen(drawable.position);
   drawable.scale(m_camera.pixelRatio() * TilePixels, drawable.position);
 
@@ -401,17 +522,22 @@ void WorldPainter::drawDrawable(Drawable drawable) {
   // draw the drawable if it's on screen
   // if it's not on screen, there's a random chance to pre-load
   // pre-load is not done on every tick because it's expensive to look up images with long paths
-  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(*m_imageMetadata, false)))
-    m_drawablePainter->drawDrawable(drawable);
-  else if (drawable.isImage() && m_root.random().randf() < m_preloadTextureChance)
-    m_assets->tryImage(drawable.imagePart().image);
+  auto bounds = drawable.boundBox(*m_imageMetadata, false);
+  if (!bounds) return std::unexpected(std::move(bounds.error()));
+  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(*bounds))
+    return m_drawablePainter->drawDrawable(drawable);
+  if (drawable.isImage() && m_root.random().randf() < m_preloadTextureChance) {
+    auto image = m_assets->tryImage(drawable.imagePart().image);
+    if (!image) return std::unexpected(std::move(image.error()));
+  }
+  return {};
 }
 
-void WorldPainter::drawDrawableSet(List<Drawable>& drawables) {
-  for (Drawable& drawable : drawables)
-    drawDrawable(std::move(drawable));
-
-  m_renderer->flush();
+std::expected<void, StarException> WorldPainter::drawDrawableSet(List<Drawable>& drawables) {
+  for (Drawable& drawable : drawables) {
+    if (auto result = drawDrawable(std::move(drawable)); !result) return std::unexpected(std::move(result.error()));
+  }
+  return m_renderer->flush();
 }
 
 }

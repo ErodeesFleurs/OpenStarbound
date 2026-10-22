@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.hash;
 import star.game_types;
@@ -20,30 +21,30 @@ std::size_t hash<WireConnection>::operator()(WireConnection const& wireConnectio
   return hashOf(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 
-DataStream& operator>>(DataStream& ds, WireConnection& wireConnection) {
-  ds.viread(wireConnection.entityLocation[0]);
-  ds.viread(wireConnection.entityLocation[1]);
-  ds.vuread(wireConnection.nodeIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireConnection& wireConnection) {
+  if (auto r = ds.viread(wireConnection.entityLocation[0]); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.viread(wireConnection.entityLocation[1]); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.vuread(wireConnection.nodeIndex); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, WireConnection const& wireConnection) {
-  ds.viwrite(wireConnection.entityLocation[0]);
-  ds.viwrite(wireConnection.entityLocation[1]);
-  ds.vuwrite(wireConnection.nodeIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireConnection const& wireConnection) {
+  if (auto r = ds.viwrite(wireConnection.entityLocation[0]); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.viwrite(wireConnection.entityLocation[1]); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.vuwrite(wireConnection.nodeIndex); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator>>(DataStream& ds, WireNode& wireNode) {
-  ds.read(wireNode.direction);
-  ds.vuread(wireNode.nodeIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, WireNode& wireNode) {
+  if (auto r = ds.read(wireNode.direction); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.vuread(wireNode.nodeIndex); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, WireNode const& wireNode) {
-  ds.write(wireNode.direction);
-  ds.vuwrite(wireNode.nodeIndex);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, WireNode const& wireNode) {
+  if (auto r = ds.write(wireNode.direction); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.vuwrite(wireNode.nodeIndex); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
 }

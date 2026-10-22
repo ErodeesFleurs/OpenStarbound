@@ -8,6 +8,7 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
+import star.format;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -31,16 +32,17 @@ public:
   SteamUserGeneratedContentService(std::shared_ptr<PcPlatformServicesState> state);
 
   StringList subscribedContentIds() const override;
-  std::optional<String> contentDownloadDirectory(String const& contentId) const override;
-  UserGeneratedContentService::UGCState triggerContentDownload() override;
+  [[nodiscard]] std::expected<std::optional<String>, StarException> contentDownloadDirectory(String const& contentId) const override;
+  [[nodiscard]] std::expected<UserGeneratedContentService::UGCState, StarException> triggerContentDownload() override;
 
 private:
-  void onDownloadResult(DownloadItemResult_t* result);
+  std::expected<void, StarException> onDownloadResult(DownloadItemResult_t* result);
 
   std::shared_ptr<PcPlatformServicesState> m_state;
   SteamCallback<SteamUserGeneratedContentService, DownloadItemResult_t> m_callbackDownloadResult;
 
   HashMap<PublishedFileId_t, bool> m_currentDownloadState;
+  std::optional<StarException> m_downloadError;
 
   bool m_checkedUGC;
 };

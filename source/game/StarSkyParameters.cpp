@@ -1,3 +1,4 @@
+import star.format;
 import std;
 import star.string;
 import star.json;
@@ -52,50 +53,69 @@ namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
-SkyParameters::SkyParameters(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
-  : SkyParameters() {
+std::expected<SkyParameters, StarException> SkyParameters::create(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase) {
+  SkyParameters sky;
   if (!coordinate || coordinate.isSystem())
-    return;
-  auto params = celestialDatabase->parameters(coordinate);
-  if (!params)
-    return;
-  auto systemParams = celestialDatabase->parameters(coordinate.system());
-  seed = staticRandomU64(params->seed(), "SkySeed");
-
-  // Gather up all the CelestialParameters and scales for all the celestial
-  // objects to draw in the sky, we should draw the parent planet if we are a
-  // satellite, as well as all the other satellites.
+    return sky;
+  auto parameters = celestialDatabase->parameters(coordinate);
+  if (!parameters) return std::unexpected(std::move(parameters.error()));
+  auto params = *parameters;
+  if (!params) return sky;
+  auto system = coordinate.system();
+  if (!system) return std::unexpected(std::move(system.error()));
+  auto systemParameters = celestialDatabase->parameters(*system);
+  if (!systemParameters) return std::unexpected(std::move(systemParameters.error()));
+  auto systemParams = *systemParameters;
+  sky.seed = staticRandomU64(params->seed(), "SkySeed");
   auto selfCoordinate = params->coordinate();
   if (selfCoordinate.isSatelliteBody()) {
-    if (auto planet = celestialDatabase->parameters(selfCoordinate.parent())) {
+    auto parent = selfCoordinate.parent();
+    if (!parent) return std::unexpected(std::move(parent.error()));
+    auto planetResult = celestialDatabase->parameters(*parent);
+    if (!planetResult) return std::unexpected(std::move(planetResult.error()));
+    if (auto planet = *planetResult) {
       Vec2F pos;
       pos[0] = staticRandomFloat(params->seed(), planet->seed(), "x");
       pos[1] = staticRandomFloat(params->seed(), planet->seed(), "y");
-
-      // My parent's parent is no one.
-      nearbyPlanet = {{CelestialGraphics::drawWorld(root, *planet, {}), pos}};
+      auto layers = CelestialGraphics::drawWorld(root, *planet, {});
+      if (!layers) return std::unexpected(std::move(layers.error()));
+      sky.nearbyPlanet = {{std::move(*layers), pos}};
     }
   }
-
-  for (auto satelliteCoordinate : celestialDatabase->children(selfCoordinate.planet())) {
+  auto planetCoordinate = selfCoordinate.planet();
+  if (!planetCoordinate) return std::unexpected(std::move(planetCoordinate.error()));
+  auto children = celestialDatabase->children(*planetCoordinate);
+  if (!children) return std::unexpected(std::move(children.error()));
+  for (auto satelliteCoordinate : *children) {
     if (satelliteCoordinate != selfCoordinate) {
-      if (auto satellite = celestialDatabase->parameters(satelliteCoordinate)) {
+      auto satelliteResult = celestialDatabase->parameters(satelliteCoordinate);
+      if (!satelliteResult) return std::unexpected(std::move(satelliteResult.error()));
+      if (auto satellite = *satelliteResult) {
         Vec2F pos;
         pos[0] = staticRandomFloat(params->seed(), satellite->seed(), "x");
         pos[1] = staticRandomFloat(params->seed(), satellite->seed(), "y");
-
-        nearbyMoons.append(
-            {CelestialGraphics::drawWorld(root, *satellite, celestialDatabase->parameters(satelliteCoordinate.parent())),
-                pos});
+        auto parent = satelliteCoordinate.parent();
+        if (!parent) return std::unexpected(std::move(parent.error()));
+        auto parentParameters = celestialDatabase->parameters(*parent);
+        if (!parentParameters) return std::unexpected(std::move(parentParameters.error()));
+        auto layers = CelestialGraphics::drawWorld(root, *satellite, *parentParameters);
+        if (!layers) return std::unexpected(std::move(layers.error()));
+        sky.nearbyMoons.append({std::move(*layers), pos});
       }
     }
   }
-
-  horizonImages = CelestialGraphics::worldHorizonImages(root, *params);
-
-  readVisitableParameters(params->visitableParameters());
-
-  sunType = systemParams->getParameter("typeName").toString();
+  auto horizon = CelestialGraphics::worldHorizonImages(root, *params);
+  if (!horizon) return std::unexpected(std::move(horizon.error()));
+  sky.horizonImages = std::move(*horizon);
+  sky.readVisitableParameters(params->visitableParameters());
+  if (!systemParams)
+    return std::unexpected(SkyException("Missing celestial system parameters"));
+  auto type = systemParams->getParameter("typeName");
+  if (!type) return std::unexpected(std::move(type.error()));
+  auto sunType = type->toString();
+  if (!sunType) return std::unexpected(std::move(sunType.error()));
+  sky.sunType = std::move(*sunType);
+  return sky;
 }
 
 SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, std::shared_ptr<VisitableWorldParameters const> newVisitableParameters) : SkyParameters() {
@@ -103,139 +123,164 @@ SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, std::shared_
   readVisitableParameters(newVisitableParameters);
 }
 
-SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
-  if (config.isNull())
-    return;
-
-  seed = config.getUInt("seed");
-  dayLength = config.optFloat("dayLength");
-
-  auto extractLayerData = [](Json const& v, std::uint64_t selfSeed) -> std::pair<List<std::pair<String, float>>, Vec2F> {
+std::expected<SkyParameters, StarException> SkyParameters::create(Json const& config) {
+  SkyParameters sky;
+  if (config.isNull()) return sky;
+  auto seed = config.getUInt("seed");
+  if (!seed) return std::unexpected(std::move(seed.error()));
+  sky.seed = *seed;
+  auto dayLength = config.optFloat("dayLength");
+  if (!dayLength) return std::unexpected(std::move(dayLength.error()));
+  sky.dayLength = *dayLength;
+  auto extractLayerData = [](Json const& v, std::uint64_t selfSeed) -> std::expected<std::pair<List<std::pair<String, float>>, Vec2F>, StarException> {
     Vec2F pos;
-
-    if (v.contains("pos")) {
-      pos = jsonToVec2F(v.get("pos"));
-    } else if (v.contains("seed")) {
-      pos[0] = staticRandomFloat(selfSeed, v.getUInt("seed"), "x");
-      pos[1] = staticRandomFloat(selfSeed, v.getUInt("seed"), "y");
+    auto position = v.opt("pos");
+    if (!position) return std::unexpected(std::move(position.error()));
+    if (*position) {
+      auto parsed = jsonToVec2F(**position);
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      pos = *parsed;
+    } else {
+      auto seed = v.optUInt("seed");
+      if (!seed) return std::unexpected(std::move(seed.error()));
+      if (*seed) {
+        pos[0] = staticRandomFloat(selfSeed, **seed, "x");
+        pos[1] = staticRandomFloat(selfSeed, **seed, "y");
+      }
     }
-
+    auto layersJson = v.getArray("layers");
+    if (!layersJson) return std::unexpected(std::move(layersJson.error()));
     List<std::pair<String, float>> layers;
-    for (auto const& l : v.get("layers").iterateArray())
-      layers.append({l.getString("image"), l.getFloat("scale")});
-
-    return {layers, pos};
+    for (auto const& layer : *layersJson) {
+      auto image = layer.getString("image");
+      if (!image) return std::unexpected(std::move(image.error()));
+      auto scale = layer.getFloat("scale");
+      if (!scale) return std::unexpected(std::move(scale.error()));
+      layers.append({std::move(*image), *scale});
+    }
+    return std::pair{std::move(layers), pos};
   };
-
-  if (config.contains("planet") && config.get("planet"))
-    nearbyPlanet = extractLayerData(config.get("planet"), seed);
-
-  if (config.contains("satellites"))
-    nearbyMoons =
-        jsonToList<std::pair<List<std::pair<String, float>>, Vec2F>>(config.get("satellites"), std::bind(extractLayerData, std::placeholders::_1, seed));
-
-  if (config.contains("horizonImages")) {
-    horizonImages = jsonToList<std::pair<String, String>>(config.get("horizonImages"),
-        [](Json const& v) -> std::pair<String, String> {
-          return {v.getString("left"), v.getString("right")};
-        });
+  auto planet = config.opt("planet");
+  if (!planet) return std::unexpected(std::move(planet.error()));
+  if (*planet && **planet) {
+    auto layers = extractLayerData(**planet, sky.seed);
+    if (!layers) return std::unexpected(std::move(layers.error()));
+    sky.nearbyPlanet = std::move(*layers);
   }
-
-  horizonClouds = config.getBool("horizonClouds", true);
-
-  skyType = SkyTypeNames.getLeft(config.getString("skyType", "barren"));
-  if (auto colors = config.opt("skyColoring")) {
-    skyColoring.setLeft(SkyColoring{*colors});
-  } else if (auto ambientLightLevel = config.opt("ambientLightLevel")) {
-    skyColoring.setRight(jsonToColor(*ambientLightLevel));
+  auto satellites = config.optArray("satellites");
+  if (!satellites) return std::unexpected(std::move(satellites.error()));
+  if (*satellites) {
+    for (auto const& satellite : **satellites) {
+      auto layers = extractLayerData(satellite, sky.seed);
+      if (!layers) return std::unexpected(std::move(layers.error()));
+      sky.nearbyMoons.append(std::move(*layers));
+    }
+  }
+  auto horizons = config.optArray("horizonImages");
+  if (!horizons) return std::unexpected(std::move(horizons.error()));
+  if (*horizons) {
+    for (auto const& horizon : **horizons) {
+      auto left = horizon.getString("left");
+      if (!left) return std::unexpected(std::move(left.error()));
+      auto right = horizon.getString("right");
+      if (!right) return std::unexpected(std::move(right.error()));
+      sky.horizonImages.append({std::move(*left), std::move(*right)});
+    }
+  }
+  auto clouds = config.getBool("horizonClouds", true);
+  if (!clouds) return std::unexpected(std::move(clouds.error()));
+  sky.horizonClouds = *clouds;
+  auto typeName = config.getString("skyType", "barren");
+  if (!typeName) return std::unexpected(std::move(typeName.error()));
+  if (!SkyTypeNames) return std::unexpected(SkyTypeNames.error());
+  auto type = SkyTypeNames->getLeft(*typeName);
+  if (!type) return std::unexpected(std::move(type.error()));
+  sky.skyType = **type;
+  auto colors = config.opt("skyColoring");
+  if (!colors) return std::unexpected(std::move(colors.error()));
+  if (*colors) {
+    auto coloring = SkyColoring::create(**colors);
+    if (!coloring) return std::unexpected(std::move(coloring.error()));
+    sky.skyColoring.setLeft(std::move(*coloring));
   } else {
-    skyColoring.setRight(Color::Black);
+    auto light = config.opt("ambientLightLevel");
+    if (!light) return std::unexpected(std::move(light.error()));
+    if (*light) {
+      auto color = jsonToColor(**light);
+      if (!color) return std::unexpected(std::move(color.error()));
+      sky.skyColoring.setRight(*color);
+    } else {
+      sky.skyColoring.setRight(Color::Black);
+    }
   }
-
-  spaceLevel = config.optFloat("spaceLevel");
-  surfaceLevel = config.optFloat("surfaceLevel");
-
-  sunType = config.getString("sunType", "");
-
-  settings = config.get("settings", JsonObject());
+  auto space = config.optFloat("spaceLevel");
+  if (!space) return std::unexpected(std::move(space.error()));
+  sky.spaceLevel = *space;
+  auto surface = config.optFloat("surfaceLevel");
+  if (!surface) return std::unexpected(std::move(surface.error()));
+  sky.surfaceLevel = *surface;
+  auto sun = config.getString("sunType", "");
+  if (!sun) return std::unexpected(std::move(sun.error()));
+  sky.sunType = std::move(*sun);
+  auto settings = config.get("settings", JsonObject());
+  if (!settings) return std::unexpected(std::move(settings.error()));
+  sky.settings = std::move(*settings);
+  return sky;
 }
 
-Json SkyParameters::toJson() const {
-  return JsonObject{
-      {"seed", seed},
-      {"dayLength", jsonFromOptional<float>(dayLength)},
-      {"planet",
-          jsonFromOptional<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyPlanet,
-              [](std::pair<List<std::pair<String, float>>, Vec2F> p) -> Json {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](std::pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"satellites",
-          jsonFromList<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyMoons,
-              [](std::pair<List<std::pair<String, float>>, Vec2F> const& p) {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](std::pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"horizonImages",
-          jsonFromList<std::pair<String, String>>(horizonImages,
-              [](std::pair<String, String> p) {
-                return JsonObject{
-                    {"left", p.first}, {"right", p.second},
-                };
-              })},
-      {"horizonClouds", horizonClouds},
-      {"skyType", SkyTypeNames.getRight(skyType)},
-      {"skyColoring", jsonFromOptional<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
-      {"ambientLightLevel", jsonFromOptional<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
-      {"spaceLevel", jsonFromOptional<float>(spaceLevel)},
-      {"surfaceLevel", jsonFromOptional<float>(surfaceLevel)},
-      {"sunType", sunType},
-      {"settings", settings}
+std::expected<Json, StarException> SkyParameters::toJson() const {
+  if (!SkyTypeNames) return std::unexpected(SkyTypeNames.error());
+  auto typeName = SkyTypeNames->getRight(skyType);
+  if (!typeName) return std::unexpected(std::move(typeName.error()));
+  auto layerJson = [](std::pair<List<std::pair<String, float>>, Vec2F> const& planet) -> Json {
+    JsonArray layers;
+    for (auto const& layer : planet.first)
+      layers.append(JsonObject{{"image", layer.first}, {"scale", layer.second}});
+    return JsonObject{{"layers", std::move(layers)}, {"pos", jsonFromVec2F(planet.second)}};
   };
+  Json planet;
+  if (nearbyPlanet) planet = layerJson(*nearbyPlanet);
+  JsonArray satellites;
+  for (auto const& moon : nearbyMoons) satellites.append(layerJson(moon));
+  JsonArray horizons;
+  for (auto const& horizon : horizonImages)
+    horizons.append(JsonObject{{"left", horizon.first}, {"right", horizon.second}});
+  Json coloring;
+  if (auto value = skyColoring.leftPtr()) coloring = value->toJson();
+  Json light;
+  if (auto value = skyColoring.rightPtr()) light = jsonFromColor(*value);
+  return JsonObject{
+      {"seed", seed}, {"dayLength", jsonFromOptional<float>(dayLength)},
+      {"planet", std::move(planet)}, {"satellites", std::move(satellites)},
+      {"horizonImages", std::move(horizons)}, {"horizonClouds", horizonClouds},
+      {"skyType", **typeName}, {"skyColoring", std::move(coloring)},
+      {"ambientLightLevel", std::move(light)}, {"spaceLevel", jsonFromOptional<float>(spaceLevel)},
+      {"surfaceLevel", jsonFromOptional<float>(surfaceLevel)}, {"sunType", sunType}, {"settings", settings}};
 }
 
-void SkyParameters::read(DataStream& ds) {
-  ds >> seed;
-  ds >> dayLength;
-  ds >> nearbyPlanet;
-  ds >> nearbyMoons;
-  ds >> horizonImages;
-  ds >> horizonClouds;
-  ds >> skyType;
-  ds >> skyColoring;
-  ds >> spaceLevel;
-  ds >> surfaceLevel;
-  ds >> sunType;
-  if (ds.streamCompatibilityVersion() >= 3)
-    ds >> settings;
-  else
-    settings = JsonObject();
+std::expected<void, StarException> SkyParameters::read(DataStream& ds) {
+  SkyParameters value;
+  auto fields = ds >> value.seed >> value.dayLength >> value.nearbyPlanet >> value.nearbyMoons
+      >> value.horizonImages >> value.horizonClouds >> value.skyType >> value.skyColoring
+      >> value.spaceLevel >> value.surfaceLevel >> value.sunType;
+  if (!fields) return std::unexpected(std::move(fields.error()));
+  if (ds.streamCompatibilityVersion() >= 3) {
+    auto settings = ds >> value.settings;
+    if (!settings) return std::unexpected(std::move(settings.error()));
+  }
+  *this = std::move(value);
+  return {};
 }
 
-void SkyParameters::write(DataStream& ds) const {
-  ds << seed;
-  ds << dayLength;
-  ds << nearbyPlanet;
-  ds << nearbyMoons;
-  ds << horizonImages;
-  ds << horizonClouds;
-  ds << skyType;
-  ds << skyColoring;
-  ds << spaceLevel;
-  ds << surfaceLevel;
-  ds << sunType;
-  if (ds.streamCompatibilityVersion() >= 3)
-    ds << settings;
+std::expected<void, StarException> SkyParameters::write(DataStream& ds) const {
+  auto fields = ds << seed << dayLength << nearbyPlanet << nearbyMoons << horizonImages << horizonClouds
+      << skyType << skyColoring << spaceLevel << surfaceLevel << sunType;
+  if (!fields) return std::unexpected(std::move(fields.error()));
+  if (ds.streamCompatibilityVersion() >= 3) {
+    auto settingsResult = ds << settings;
+    if (!settingsResult) return std::unexpected(std::move(settingsResult.error()));
+  }
+  return {};
 }
 
 void SkyParameters::readVisitableParameters(std::shared_ptr<VisitableWorldParameters const> visitableParameters) {
@@ -265,14 +310,16 @@ void SkyParameters::readVisitableParameters(std::shared_ptr<VisitableWorldParame
   }
 }
 
-DataStream& operator>>(DataStream& ds, SkyParameters& sky) {
-  sky.read(ds);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, SkyParameters& sky) {
+  auto result = sky.read(ds);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, SkyParameters const& sky) {
-  sky.write(ds);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, SkyParameters const& sky) {
+  auto result = sky.write(ds);
+  if (!result) return std::unexpected(std::move(result.error()));
+  return &ds;
 }
 
 }

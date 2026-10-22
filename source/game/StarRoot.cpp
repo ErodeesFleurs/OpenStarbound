@@ -26,6 +26,7 @@ import star.byte_array;
 import star.encode;
 import std;
 import star.format;
+import star.output_proxy;
 import star.version;
 import star.parametric_function;
 import star.multi_array_interpolator;
@@ -175,32 +176,63 @@ namespace {
   unsigned const RootLoadThreads = 4;
 }
 
-Root::Root(Settings settings) : m_identity(m_random), m_workers("Root CPU") {
-  m_settings = std::move(settings);
+Root::Root(Settings settings)
+  : m_random(0), m_identity(m_random), m_workers("Root CPU"), m_settings(std::move(settings)) {}
+
+std::expected<std::unique_ptr<Root>, StarException> Root::create(Settings settings) {
+  auto root = std::unique_ptr<Root>(new Root(std::move(settings)));
+  auto initialized = root->initialize();
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  return root;
+}
+
+std::expected<void, StarException> Root::initialize() {
+  auto random = m_random.init();
+  if (!random)
+    return std::unexpected(std::move(random.error()));
   if (m_settings.runtimeConfigFile)
     m_runtimeConfigFile = toStoragePath(*m_settings.runtimeConfigFile);
 
-  if (!File::isDirectory(m_settings.storageDirectory))
-    File::makeDirectory(m_settings.storageDirectory);
+  auto storageExists = File::isDirectory(m_settings.storageDirectory);
+  if (!storageExists)
+    return std::unexpected(std::move(storageExists.error()));
+  if (!*storageExists) {
+    auto made = File::makeDirectory(m_settings.storageDirectory);
+    if (!made)
+      return std::unexpected(std::move(made.error()));
+  }
 
   if (m_settings.logFile) {
     String logFile = File::relativeTo(m_settings.logDirectory.value_or(m_settings.storageDirectory), *m_settings.logFile);
     String oldLogDirectory = m_settings.logDirectory.value_or(File::relativeTo(m_settings.storageDirectory, "logs"));
-    if (!File::isDirectory(oldLogDirectory))
-      File::makeDirectory(oldLogDirectory);
+    auto logDirectoryExists = File::isDirectory(oldLogDirectory);
+    if (!logDirectoryExists)
+      return std::unexpected(std::move(logDirectoryExists.error()));
+    if (!*logDirectoryExists) {
+      auto made = File::makeDirectory(oldLogDirectory);
+      if (!made)
+        return std::unexpected(std::move(made.error()));
+    }
 
-    File::backupFileInSequence(logFile, File::relativeTo(oldLogDirectory, *m_settings.logFile), m_settings.logFileBackups);
-    m_logger.addSink(std::make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
+    auto backup = File::backupFileInSequence(logFile, File::relativeTo(oldLogDirectory, *m_settings.logFile), m_settings.logFileBackups);
+    if (!backup)
+      return std::unexpected(std::move(backup.error()));
+    auto sink = FileLogSink::create(logFile, m_settings.logLevel, true);
+    if (!sink)
+      return std::unexpected(std::move(sink.error()));
+    m_logger.addSink(std::move(*sink));
   }
   m_logger.stdoutSink()->setLevel(m_settings.logLevel);
 
   if (m_settings.quiet)
     m_logger.removeStdoutSink();
 
-  m_logger.info("Root: Preparing...");
+  auto preparing = m_logger.info("Root: Preparing...");
+  if (!preparing)
+    return std::unexpected(std::move(preparing.error()));
 
-  m_stopMaintenanceThread = false;
-  m_maintenanceThread = Thread::invoke("Root::maintenanceMain", [this]() {
+  auto maintenance = Thread::invoke("Root::maintenanceMain", [this]() -> std::expected<void, StarException> {
       MutexLocker locker(m_maintenanceStopMutex);
       while (!m_stopMaintenanceThread) {
         m_reloadListeners.clearExpiredListeners();
@@ -248,39 +280,55 @@ Root::Root(Settings settings) : m_identity(m_random), m_workers("Root CPU") {
           }
         }
 
-        m_random.addEntropy();
+        auto entropy = m_random.addEntropy();
+        if (!entropy)
+          return std::unexpected(std::move(entropy.error()));
 
         {
           MutexLocker locker(m_configurationMutex);
-          writeConfig();
+          auto written = writeConfig();
+          if (!written)
+            return std::unexpected(std::move(written.error()));
         }
 
         m_maintenanceStopCondition.wait(m_maintenanceStopMutex, RootMaintenanceSleep);
       }
+      return {};
     });
+  if (!maintenance)
+    return std::unexpected(std::move(maintenance.error()));
+  m_maintenanceThread = std::move(*maintenance);
 
-  m_logger.info("Root: Done preparing Root.");
+  return m_logger.info("Root: Done preparing Root.");
 }
 
 Root::~Root() {
-  m_logger.info("Root: Shutting down Root");
+  if (auto logged = m_logger.info("Root: Shutting down Root"); !logged)
+    EmergencyLog::error("Root: Shutdown log failed: {}", outputException(logged.error(), true));
 
   {
     MutexLocker locker(m_maintenanceStopMutex);
     m_stopMaintenanceThread = true;
     m_maintenanceStopCondition.signal();
   }
-  m_maintenanceThread.finish();
-  m_workers.finish();
+  if (m_maintenanceThread) {
+    if (auto finished = m_maintenanceThread.finish(); !finished)
+      EmergencyLog::error("Root: Maintenance failed during shutdown: {}", outputException(finished.error(), true));
+  }
+  if (auto finished = m_workers.finish(); !finished)
+    EmergencyLog::error("Root: Worker shutdown failed: {}", outputException(finished.error(), true));
 
   m_reloadListeners.clearAllListeners();
 
-  writeConfig();
+  if (auto written = writeConfig(); !written)
+    EmergencyLog::error("Root: Could not write configuration during shutdown: {}", outputException(written.error(), true));
 
 }
 
-void Root::reload() {
-  m_logger.info("Root: Reloading from disk");
+std::expected<void, StarException> Root::reload() {
+  auto logged = m_logger.info("Root: Reloading from disk");
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
 
   {
     // We need to lock all the mutexes to reset everything to cause it to be
@@ -358,7 +406,9 @@ void Root::reload() {
     MutexLocker configurationLock(m_configurationMutex);
     MutexLocker assetsLock(m_assetsMutex);
 
-    writeConfig();
+    auto written = writeConfig();
+    if (!written)
+      return std::unexpected(std::move(written.error()));
 
     m_entityFactory.reset();
     m_speciesDatabase.reset();
@@ -402,10 +452,10 @@ void Root::reload() {
     m_configuration.reset();
   }
 
-  m_reloadListeners.trigger();
+  return m_reloadListeners.trigger();
 }
 
-void Root::loadMods(StringList modDirectories, bool _reload) {
+std::expected<void, StarException> Root::loadMods(StringList modDirectories, bool _reload) {
   // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.  
   if (_reload)
     m_modDirectories.clear();
@@ -414,307 +464,376 @@ void Root::loadMods(StringList modDirectories, bool _reload) {
   m_modDirectories = std::move(modDirectories);
   
   if (_reload)
-    reload();
+    return reload();
+  return {};
 }
 
-void Root::fullyLoad() {
-  auto workerPool = WorkerPool("Root::fullyLoad", RootLoadThreads);
+std::expected<void, StarException> Root::fullyLoad() {
+  WorkerPool workerPool("Root::fullyLoad");
+  auto started = workerPool.start(RootLoadThreads);
+  if (!started)
+    return std::unexpected(std::move(started.error()));
   List<WorkerPoolHandle> loaders;
 
   loaders.reserve(40);
 
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::assets, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::configuration, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::codexDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::behaviorDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::techDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::aiDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::questTemplateDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::emoteProcessor, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::terrainDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::particleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::versioningDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::functionDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::imageMetadataDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::tenantDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::nameGenerator, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::danceDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::spawnTypeDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::radioMessageDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::collectionDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::statisticsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::speciesDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::projectileDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::stagehandDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::damageDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::effectSourceDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::statusEffectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::treasureDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::materialDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::objectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::npcDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::plantDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::itemDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::monsterDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::vehicleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::playerFactory, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::entityFactory, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::biomeDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::liquidsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::dungeonDefinitions, this))));
-  loaders.append(workerPool.addWork(swallow(std::bind_front(&Root::tilesetDatabase, this))));
+  auto add = [&](auto method) {
+    loaders.append(workerPool.addWork([this, method]() -> std::expected<void, StarException> {
+      auto loaded = (this->*method)();
+      if (!loaded)
+        return std::unexpected(std::move(loaded.error()));
+      return {};
+    }));
+  };
+  add(&Root::assets);
+  add(&Root::configuration);
+  add(&Root::codexDatabase);
+  add(&Root::behaviorDatabase);
+  add(&Root::techDatabase);
+  add(&Root::aiDatabase);
+  add(&Root::questTemplateDatabase);
+  add(&Root::emoteProcessor);
+  add(&Root::terrainDatabase);
+  add(&Root::particleDatabase);
+  add(&Root::versioningDatabase);
+  add(&Root::functionDatabase);
+  add(&Root::imageMetadataDatabase);
+  add(&Root::tenantDatabase);
+  add(&Root::nameGenerator);
+  add(&Root::danceDatabase);
+  add(&Root::spawnTypeDatabase);
+  add(&Root::radioMessageDatabase);
+  add(&Root::collectionDatabase);
+  add(&Root::statisticsDatabase);
+  add(&Root::speciesDatabase);
+  add(&Root::projectileDatabase);
+  add(&Root::stagehandDatabase);
+  add(&Root::damageDatabase);
+  add(&Root::effectSourceDatabase);
+  add(&Root::statusEffectDatabase);
+  add(&Root::treasureDatabase);
+  add(&Root::materialDatabase);
+  add(&Root::objectDatabase);
+  add(&Root::npcDatabase);
+  add(&Root::plantDatabase);
+  add(&Root::itemDatabase);
+  add(&Root::monsterDatabase);
+  add(&Root::vehicleDatabase);
+  add(&Root::playerFactory);
+  add(&Root::entityFactory);
+  add(&Root::biomeDatabase);
+  add(&Root::liquidsDatabase);
+  add(&Root::dungeonDefinitions);
+  add(&Root::tilesetDatabase);
 
   auto startSeconds = Time::monotonicTime();
-  for (auto& loader : loaders)
-    loader.finish();
-  m_logger.info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
+  std::optional<StarException> failure;
+  for (auto& loader : loaders) {
+    auto finished = loader.finish();
+    if (!finished && !failure)
+      failure = std::move(finished.error());
+  }
+  // Every accepted job borrows this Root. Drain the entire pool even on failure.
+  auto finished = workerPool.finish();
+  if (!finished && !failure)
+    failure = std::move(finished.error());
+  if (failure)
+    return std::unexpected(std::move(*failure));
+  auto logged = m_logger.info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
+  if (!logged)
+    return std::unexpected(std::move(logged.error()));
 
   {
     MutexLocker locker(m_assetsMutex);
     if (m_assets)
       m_assets->clearCache();
   }
+  return {};
 }
 
 ListenerSubscription Root::registerReloadListener(std::weak_ptr<Listener> reloadListener) {
   return m_reloadListeners.addListener(std::move(reloadListener));
 }
 
-void Root::hotReload() {
-  assets()->hotReload();
-  m_reloadListeners.trigger();
+std::expected<void, StarException> Root::hotReload() {
+  auto loaded = assets();
+  if (!loaded)
+    return std::unexpected(std::move(loaded.error()));
+  (*loaded)->hotReload();
+  return m_reloadListeners.trigger();
 }
 
 String Root::toStoragePath(String const& path) const {
   return File::relativeTo(m_settings.storageDirectory, File::convertDirSeparators(path));
 }
 
-std::shared_ptr<Assets const> Root::assets() {
-  return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
+std::expected<std::shared_ptr<Assets const>, StarException> Root::assets() {
+  return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() -> std::expected<std::shared_ptr<Assets>, StarException> {
       StringList assetDirectories = m_settings.assetDirectories;
       assetDirectories.appendAll(m_modDirectories);
-      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
-
-      auto assets = std::make_shared<Assets>(m_logger, m_random, m_logMap, m_settings.assetsSettings, assetSources);
-      m_logger.info("Assets digest is {}", hexEncode(assets->digest()));
-      return assets;
+      auto assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
+      if (!assetSources)
+        return std::unexpected(std::move(assetSources.error()));
+      auto loaded = Assets::create(m_logger, m_random, m_logMap, m_settings.assetsSettings, std::move(*assetSources));
+      if (!loaded)
+        return std::unexpected(std::move(loaded.error()));
+      auto logged = m_logger.info("Assets digest is {}", hexEncode((*loaded)->digest()));
+      if (!logged)
+        return std::unexpected(std::move(logged.error()));
+      return loaded;
     });
 }
 
-std::shared_ptr<Configuration> Root::configuration() {
-  return loadMemberFunction<Configuration>(m_configuration, m_configurationMutex, "Configuration", [this]() {
-      Json currentConfig;
-
+std::expected<std::shared_ptr<Configuration>, StarException> Root::configuration() {
+  return loadMemberFunction<Configuration>(m_configuration, m_configurationMutex, "Configuration",
+    [this]() -> std::expected<std::shared_ptr<Configuration>, StarException> {
+      Json currentConfig = m_settings.defaultConfiguration;
       if (m_runtimeConfigFile) {
-        if (!File::isFile(*m_runtimeConfigFile)) {
-          m_logger.info("Root: no runtime config file, creating new default runtime config");
-          currentConfig = m_settings.defaultConfiguration;
+        auto exists = File::isFile(*m_runtimeConfigFile);
+        if (!exists)
+          return std::unexpected(std::move(exists.error()));
+        if (!*exists) {
+          auto logged = m_logger.info("Root: no runtime config file, creating new default runtime config");
+          if (!logged)
+            return std::unexpected(std::move(logged.error()));
         } else {
-          try {
-            Json jConfig = Json::parseJson(File::readFileString(*m_runtimeConfigFile));
-            if (!jConfig.isType(Json::Type::Object))
-              throw ConfigurationException("User config is not of JSON type Object");
-
-            if (jConfig.get("configurationVersion", {}) != m_settings.defaultConfiguration.get("configurationVersion", {}))
-              throw ConfigurationException("User config version does not match default config version");
-
-            auto config = jConfig.toObject();
-            for (auto& entry : *m_settings.defaultConfiguration.objectPtr()) {
-              if (!config.contains(entry.first))
-                config.insert(entry.first, entry.second);
+          auto readConfiguration = [this]() -> std::expected<Json, StarException> {
+            auto contents = File::readFileString(*m_runtimeConfigFile);
+            if (!contents)
+              return std::unexpected(std::move(contents.error()));
+            auto parsed = Json::parseJson(*contents);
+            if (!parsed)
+              return std::unexpected(std::move(parsed.error()));
+            if (!parsed->isType(Json::Type::Object))
+              return std::unexpected(ConfigurationException("User config is not of JSON type Object"));
+            auto version = parsed->get("configurationVersion", {});
+            if (!version)
+              return std::unexpected(std::move(version.error()));
+            auto defaultVersion = m_settings.defaultConfiguration.get("configurationVersion", {});
+            if (!defaultVersion)
+              return std::unexpected(std::move(defaultVersion.error()));
+            if (*version != *defaultVersion)
+              return std::unexpected(ConfigurationException("User config version does not match default config version"));
+            auto config = parsed->toObject();
+            if (!config)
+              return std::unexpected(std::move(config.error()));
+            auto defaults = m_settings.defaultConfiguration.objectPtr();
+            if (!defaults)
+              return std::unexpected(std::move(defaults.error()));
+            for (auto const& entry : **defaults) {
+              if (!config->contains(entry.first))
+                config->insert(entry.first, entry.second);
             }
-
-            currentConfig = config;
-          } catch (std::exception const&) {
-            ExceptionDiagnostic const e(std::current_exception());
-            m_logger.warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
-            currentConfig = m_settings.defaultConfiguration;
-            File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
+            return Json(std::move(*config));
+          };
+          auto loaded = readConfiguration();
+          if (loaded) {
+            currentConfig = std::move(*loaded);
+          } else {
+            auto logged = m_logger.warn("Root: Failed to load user configuration file {}, resetting user config: {}",
+              *m_runtimeConfigFile, outputException(loaded.error(), false));
+            if (!logged)
+              return std::unexpected(std::move(logged.error()));
+            auto backup = File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
+            if (!backup)
+              return std::unexpected(std::move(backup.error()));
           }
         }
-      } else {
-        currentConfig = m_settings.defaultConfiguration;
       }
-
-      return std::make_shared<Configuration>(m_settings.defaultConfiguration, currentConfig);
+      return std::make_shared<Configuration>(m_settings.defaultConfiguration, std::move(currentConfig));
     });
 }
 
-std::shared_ptr<ObjectDatabase const> Root::objectDatabase() {
+std::expected<std::shared_ptr<ObjectDatabase const>, StarException> Root::objectDatabase() {
   return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", *this);
 }
 
-std::shared_ptr<PlantDatabase const> Root::plantDatabase() {
+std::expected<std::shared_ptr<PlantDatabase const>, StarException> Root::plantDatabase() {
   return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", *this);
 }
 
-std::shared_ptr<ProjectileDatabase const> Root::projectileDatabase() {
+std::expected<std::shared_ptr<ProjectileDatabase const>, StarException> Root::projectileDatabase() {
   return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase", *this);
 }
 
-std::shared_ptr<MonsterDatabase const> Root::monsterDatabase() {
+std::expected<std::shared_ptr<MonsterDatabase const>, StarException> Root::monsterDatabase() {
   return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", *this);
 }
 
-std::shared_ptr<NpcDatabase const> Root::npcDatabase() {
+std::expected<std::shared_ptr<NpcDatabase const>, StarException> Root::npcDatabase() {
   return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", *this);
 }
 
-std::shared_ptr<StagehandDatabase const> Root::stagehandDatabase() {
+std::expected<std::shared_ptr<StagehandDatabase const>, StarException> Root::stagehandDatabase() {
   return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase", *this);
 }
 
-std::shared_ptr<VehicleDatabase const> Root::vehicleDatabase() {
+std::expected<std::shared_ptr<VehicleDatabase const>, StarException> Root::vehicleDatabase() {
   return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", *this);
 }
 
-std::shared_ptr<PlayerFactory const> Root::playerFactory() {
+std::expected<std::shared_ptr<PlayerFactory const>, StarException> Root::playerFactory() {
   return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", *this);
 }
 
-std::shared_ptr<EntityFactory const> Root::entityFactory() {
+std::expected<std::shared_ptr<EntityFactory const>, StarException> Root::entityFactory() {
   return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory", *this);
 }
 
-std::shared_ptr<PatternedNameGenerator const> Root::nameGenerator() {
+std::expected<std::shared_ptr<PatternedNameGenerator const>, StarException> Root::nameGenerator() {
   return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator", *this);
 }
 
-std::shared_ptr<ItemDatabase const> Root::itemDatabase() {
+std::expected<std::shared_ptr<ItemDatabase const>, StarException> Root::itemDatabase() {
   return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", *this);
 }
 
-std::shared_ptr<MaterialDatabase const> Root::materialDatabase() {
-  return loadMemberFunction<MaterialDatabase>(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", [this] {
-    return std::make_shared<MaterialDatabase>(assets(), particleDatabase(), *imageMetadataDatabase(), logger(), random());
-  });
+std::expected<std::shared_ptr<MaterialDatabase const>, StarException> Root::materialDatabase() {
+  return loadMemberFunction<MaterialDatabase>(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase",
+    [this]() -> std::expected<std::shared_ptr<MaterialDatabase>, StarException> {
+      auto a = assets();
+      if (!a) return std::unexpected(std::move(a.error()));
+      auto particles = particleDatabase();
+      if (!particles) return std::unexpected(std::move(particles.error()));
+      auto metadata = imageMetadataDatabase();
+      if (!metadata) return std::unexpected(std::move(metadata.error()));
+      return MaterialDatabase::create(*a, *particles, **metadata, logger(), random());
+    });
 }
 
-std::shared_ptr<TerrainDatabase const> Root::terrainDatabase() {
+std::expected<std::shared_ptr<TerrainDatabase const>, StarException> Root::terrainDatabase() {
   return loadMemberFunction<TerrainDatabase>(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase", [this] {
-    return std::make_shared<TerrainDatabase>(assets(), random());
+    return assets().and_then([this](auto const& a) { return TerrainDatabase::create(a, random()); });
   });
 }
 
-std::shared_ptr<BiomeDatabase const> Root::biomeDatabase() {
+std::expected<std::shared_ptr<BiomeDatabase const>, StarException> Root::biomeDatabase() {
   return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", *this);
 }
 
-std::shared_ptr<LiquidsDatabase const> Root::liquidsDatabase() {
-  return loadMemberFunction<LiquidsDatabase>(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase", [this] {
-    return std::make_shared<LiquidsDatabase>(assets(), materialDatabase());
-  });
+std::expected<std::shared_ptr<LiquidsDatabase const>, StarException> Root::liquidsDatabase() {
+  return loadMemberFunction<LiquidsDatabase>(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase",
+    [this]() -> std::expected<std::shared_ptr<LiquidsDatabase>, StarException> {
+      auto a = assets();
+      if (!a) return std::unexpected(std::move(a.error()));
+      auto materials = materialDatabase();
+      if (!materials) return std::unexpected(std::move(materials.error()));
+      return LiquidsDatabase::create(*a, *materials);
+    });
 }
 
-std::shared_ptr<StatusEffectDatabase const> Root::statusEffectDatabase() {
+std::expected<std::shared_ptr<StatusEffectDatabase const>, StarException> Root::statusEffectDatabase() {
   return loadMemberFunction<StatusEffectDatabase>(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase", [this] {
-    return std::make_shared<StatusEffectDatabase>(assets());
+    return assets().and_then([](auto const& a) { return StatusEffectDatabase::create(a); });
   });
 }
 
-std::shared_ptr<DamageDatabase const> Root::damageDatabase() {
+std::expected<std::shared_ptr<DamageDatabase const>, StarException> Root::damageDatabase() {
   return loadMemberFunction<DamageDatabase>(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase", [this] {
-    return std::make_shared<DamageDatabase>(assets());
+    return assets().and_then([](auto const& a) { return DamageDatabase::create(a); });
   });
 }
 
-std::shared_ptr<ParticleDatabase const> Root::particleDatabase() {
+std::expected<std::shared_ptr<ParticleDatabase const>, StarException> Root::particleDatabase() {
   return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", *this);
 }
 
-std::shared_ptr<EffectSourceDatabase const> Root::effectSourceDatabase() {
+std::expected<std::shared_ptr<EffectSourceDatabase const>, StarException> Root::effectSourceDatabase() {
   return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase", *this);
 }
 
-std::shared_ptr<FunctionDatabase const> Root::functionDatabase() {
+std::expected<std::shared_ptr<FunctionDatabase const>, StarException> Root::functionDatabase() {
   return loadMemberFunction<FunctionDatabase>(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase", [this] {
-    return std::make_shared<FunctionDatabase>(assets());
+    return assets().and_then([](auto const& a) { return FunctionDatabase::create(a); });
   });
 }
 
-std::shared_ptr<TreasureDatabase const> Root::treasureDatabase() {
+std::expected<std::shared_ptr<TreasureDatabase const>, StarException> Root::treasureDatabase() {
   return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", *this);
 }
 
-std::shared_ptr<DungeonDefinitions const> Root::dungeonDefinitions() {
+std::expected<std::shared_ptr<DungeonDefinitions const>, StarException> Root::dungeonDefinitions() {
   return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", *this);
 }
 
-std::shared_ptr<TilesetDatabase const> Root::tilesetDatabase() {
+std::expected<std::shared_ptr<TilesetDatabase const>, StarException> Root::tilesetDatabase() {
   return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase", *this);
 }
 
-std::shared_ptr<StatisticsDatabase const> Root::statisticsDatabase() {
+std::expected<std::shared_ptr<StatisticsDatabase const>, StarException> Root::statisticsDatabase() {
   return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase", *this);
 }
 
-std::shared_ptr<EmoteProcessor const> Root::emoteProcessor() {
+std::expected<std::shared_ptr<EmoteProcessor const>, StarException> Root::emoteProcessor() {
   return loadMemberFunction<EmoteProcessor>(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor", [this] {
-    return std::make_shared<EmoteProcessor>(assets());
+    return assets().and_then([](auto const& a) { return EmoteProcessor::create(a); });
   });
 }
 
-std::shared_ptr<SpeciesDatabase const> Root::speciesDatabase() {
+std::expected<std::shared_ptr<SpeciesDatabase const>, StarException> Root::speciesDatabase() {
   return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", *this);
 }
 
-std::shared_ptr<ImageMetadataDatabase const> Root::imageMetadataDatabase() {
-  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase", *this);
+std::expected<std::shared_ptr<ImageMetadataDatabase const>, StarException> Root::imageMetadataDatabase() {
+  return loadMemberFunction<ImageMetadataDatabase>(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase",
+    [this]() -> std::expected<std::shared_ptr<ImageMetadataDatabase>, StarException> {
+      return std::make_shared<ImageMetadataDatabase>(*this);
+    });
 }
 
-std::shared_ptr<VersioningDatabase const> Root::versioningDatabase() {
+std::expected<std::shared_ptr<VersioningDatabase const>, StarException> Root::versioningDatabase() {
   return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", *this);
 }
 
-std::shared_ptr<QuestTemplateDatabase const> Root::questTemplateDatabase() {
+std::expected<std::shared_ptr<QuestTemplateDatabase const>, StarException> Root::questTemplateDatabase() {
   return loadMemberFunction<QuestTemplateDatabase>(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase", [this] {
-    return std::make_shared<QuestTemplateDatabase>(assets(), logger());
+    return assets().and_then([this](auto const& a) { return QuestTemplateDatabase::create(a, logger()); });
   });
 }
 
-std::shared_ptr<AiDatabase const> Root::aiDatabase() {
+std::expected<std::shared_ptr<AiDatabase const>, StarException> Root::aiDatabase() {
   return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", *this);
 }
 
-std::shared_ptr<TechDatabase const> Root::techDatabase() {
+std::expected<std::shared_ptr<TechDatabase const>, StarException> Root::techDatabase() {
   return loadMemberFunction<TechDatabase>(m_techDatabase, m_techDatabaseMutex, "TechDatabase", [this] {
-    return std::make_shared<TechDatabase>(assets());
+    return assets().and_then([](auto const& a) { return TechDatabase::create(a); });
   });
 }
 
-std::shared_ptr<CodexDatabase const> Root::codexDatabase() {
+std::expected<std::shared_ptr<CodexDatabase const>, StarException> Root::codexDatabase() {
   return loadMemberFunction<CodexDatabase>(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase", [this] {
-    return std::make_shared<CodexDatabase>(assets());
+    return assets().and_then([](auto const& a) { return CodexDatabase::create(a); });
   });
 }
 
-std::shared_ptr<BehaviorDatabase const> Root::behaviorDatabase() {
+std::expected<std::shared_ptr<BehaviorDatabase const>, StarException> Root::behaviorDatabase() {
   return loadMemberFunction<BehaviorDatabase>(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase", [this] {
-    return std::make_shared<BehaviorDatabase>(assets());
+    return assets().and_then([](auto const& a) { return BehaviorDatabase::create(a); });
   });
 }
 
-std::shared_ptr<TenantDatabase const> Root::tenantDatabase() {
+std::expected<std::shared_ptr<TenantDatabase const>, StarException> Root::tenantDatabase() {
   return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase", *this);
 }
 
-std::shared_ptr<DanceDatabase const> Root::danceDatabase() {
+std::expected<std::shared_ptr<DanceDatabase const>, StarException> Root::danceDatabase() {
   return loadMemberFunction<DanceDatabase>(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase", [this] {
-    return std::make_shared<DanceDatabase>(assets(), logger());
+    return assets().and_then([this](auto const& a) { return DanceDatabase::create(a, logger()); });
   });
 }
 
-std::shared_ptr<SpawnTypeDatabase const> Root::spawnTypeDatabase() {
+std::expected<std::shared_ptr<SpawnTypeDatabase const>, StarException> Root::spawnTypeDatabase() {
   return loadMemberFunction<SpawnTypeDatabase>(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase", [this] {
-    return std::make_shared<SpawnTypeDatabase>(assets());
+    return assets().and_then([](auto const& a) { return SpawnTypeDatabase::create(a); });
   });
 }
 
-std::shared_ptr<RadioMessageDatabase const> Root::radioMessageDatabase() {
+std::expected<std::shared_ptr<RadioMessageDatabase const>, StarException> Root::radioMessageDatabase() {
   return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase", *this);
 }
 
-std::shared_ptr<CollectionDatabase const> Root::collectionDatabase() {
+std::expected<std::shared_ptr<CollectionDatabase const>, StarException> Root::collectionDatabase() {
   return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase", *this);
 }
 
@@ -722,7 +841,7 @@ Root::Settings& Root::settings() {
   return m_settings;
 }
 
-StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
+std::expected<StringList, StarException> Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
   struct AssetSource {
     String path;
     std::optional<String> name;
@@ -734,17 +853,34 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   List<std::shared_ptr<AssetSource>> assetSources;
   StringMap<std::shared_ptr<AssetSource>> namedSources;
 
-  auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
+  auto processEntry = [&](String const& sourcePath, bool isDirectory) -> std::expected<bool, StarException> {
     std::shared_ptr<Star::AssetSource> source;
     auto name = File::baseName(sourcePath);
-    if (name.beginsWith(".") || name.beginsWith("_"))
-      m_logger.info("Root: Skipping hidden '{}' in asset directory", name);
-    else if (isDirectory)
-      source = std::make_shared<DirectoryAssetSource>(m_logger, sourcePath);
-    else if (sourcePath.endsWith(".pak"))
-      source = std::make_shared<PackedAssetSource>(sourcePath);
-    else
-      m_logger.warn("Root: Unrecognized file in asset directory '{}', skipping", name);
+    auto hidden = name.beginsWith(".");
+    if (!hidden) return std::unexpected(std::move(hidden.error()));
+    if (!*hidden) {
+      hidden = name.beginsWith("_");
+      if (!hidden) return std::unexpected(std::move(hidden.error()));
+    }
+    if (*hidden) {
+      auto logged = m_logger.info("Root: Skipping hidden '{}' in asset directory", name);
+      if (!logged) return std::unexpected(std::move(logged.error()));
+    } else if (isDirectory) {
+      auto created = DirectoryAssetSource::create(m_logger, sourcePath);
+      if (!created) return std::unexpected(std::move(created.error()));
+      source = std::move(*created);
+    } else {
+      auto packed = sourcePath.endsWith(".pak");
+      if (!packed) return std::unexpected(std::move(packed.error()));
+      if (*packed) {
+        auto created = PackedAssetSource::create(sourcePath);
+        if (!created) return std::unexpected(std::move(created.error()));
+        source = std::move(*created);
+      } else {
+        auto logged = m_logger.warn("Root: Unrecognized file in asset directory '{}', skipping", name);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+      }
+    }
 
     if (!source)
       return false;
@@ -753,26 +889,42 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
     auto assetSource = std::make_shared<AssetSource>();
     assetSource->path = sourcePath;
-    assetSource->name = metadata.maybe("name").transform([](Json const& value) { return value.toString(); });
-    assetSource->version = metadata.maybe("version").transform(std::mem_fn(&Json::printString));
-    assetSource->priority = metadata.value("priority", 0.0f).toFloat();
-    assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
-    assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
+    if (auto value = metadata.maybe("name")) {
+      auto parsed = value->toString();
+      if (!parsed) return std::unexpected(std::move(parsed.error()));
+      assetSource->name = std::move(*parsed);
+    }
+    if (auto value = metadata.maybe("version")) {
+      auto printed = value->printString();
+      if (!printed) return std::unexpected(std::move(printed.error()));
+      assetSource->version = std::move(*printed);
+    }
+    auto priority = metadata.value("priority", 0.0f).toFloat();
+    if (!priority) return std::unexpected(std::move(priority.error()));
+    assetSource->priority = *priority;
+    auto required = jsonToStringList(metadata.value("requires", JsonArray{}));
+    if (!required) return std::unexpected(std::move(required.error()));
+    assetSource->requires_ = std::move(*required);
+    auto included = jsonToStringList(metadata.value("includes", JsonArray{}));
+    if (!included) return std::unexpected(std::move(included.error()));
+    assetSource->includes = std::move(*included);
 
     if (assetSource->name.value_or(String{}) == "opensb_base" && assetSource->version.value_or(String{}) != OpenStarVersionString) {
-      throw AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
-        OpenStarVersionString, assetSource->version.value_or(String{})), false);
+      return std::unexpected(AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
+        OpenStarVersionString, assetSource->version.value_or(String{})), false));
     }
 
     if (assetSource->name) {
       if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
         if (oldAssetSource->priority <= assetSource->priority) {
-          m_logger.warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
+          auto logged = m_logger.warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
               oldAssetSource->path, *assetSource->name, assetSource->path);
+          if (!logged) return std::unexpected(std::move(logged.error()));
           *oldAssetSource = *assetSource;
         } else {
-          m_logger.warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
+          auto logged = m_logger.warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
               assetSource->path, *assetSource->name, oldAssetSource->priority);
+          if (!logged) return std::unexpected(std::move(logged.error()));
         }
       } else {
         namedSources[*assetSource->name] = assetSource;
@@ -790,20 +942,33 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   // file / directory name
 
   for (auto const& directory : directories) {
-    if (!File::isDirectory(directory)) {
-      m_logger.info("Root: Skipping asset directory '{}', directory not found", directory);
+    auto directoryExists = File::isDirectory(directory);
+    if (!directoryExists) return std::unexpected(std::move(directoryExists.error()));
+    if (!*directoryExists) {
+      auto logged = m_logger.info("Root: Skipping asset directory '{}', directory not found", directory);
+      if (!logged) return std::unexpected(std::move(logged.error()));
       continue;
     }
 
-    m_logger.info("Root: Scanning for asset sources in directory '{}'", directory);
-    for (auto& entry : File::dirList(directory, true).sorted())
-      processEntry(File::relativeTo(directory, entry.first), entry.second);
+    auto logged = m_logger.info("Root: Scanning for asset sources in directory '{}'", directory);
+    if (!logged) return std::unexpected(std::move(logged.error()));
+    auto entries = File::dirList(directory, true);
+    if (!entries) return std::unexpected(std::move(entries.error()));
+    entries->sort();
+    for (auto& entry : *entries) {
+      auto processed = processEntry(File::relativeTo(directory, entry.first), entry.second);
+      if (!processed) return std::unexpected(std::move(processed.error()));
+    }
   }
 
   // Take in any manual asset source paths
 
-  for (auto& path : manual)
-    processEntry(path, File::isDirectory(path));
+  for (auto& path : manual) {
+    auto directory = File::isDirectory(path);
+    if (!directory) return std::unexpected(std::move(directory.error()));
+    auto processed = processEntry(path, *directory);
+    if (!processed) return std::unexpected(std::move(processed.error()));
+  }
 
   // Then, order asset sources so that lower priority assets come before higher
   // priority ones
@@ -821,93 +986,119 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   HashSet<std::shared_ptr<AssetSource>> workingSet;
   OrderedHashSet<std::shared_ptr<AssetSource>> dependencySortedSources;
 
-  std::function<void(std::shared_ptr<AssetSource>)> dependencySortVisit;
-  dependencySortVisit = [&](std::shared_ptr<AssetSource> source) {
+  std::function<std::expected<void, StarException>(std::shared_ptr<AssetSource>)> dependencySortVisit;
+  dependencySortVisit = [&](std::shared_ptr<AssetSource> source) -> std::expected<void, StarException> {
     if (workingSet.contains(source))
-      throw AssetSourceException("Asset dependencies form a cycle");
+      return std::unexpected(AssetSourceException("Asset dependencies form a cycle"));
 
     if (dependencySortedSources.contains(source))
-      return;
+      return {};
 
     workingSet.add(source);
 
     for (auto const& includeName : source->includes) {
-      if (auto include = namedSources.ptr(includeName))
-        dependencySortVisit(*include);
+      if (auto include = namedSources.ptr(includeName)) {
+        auto visited = dependencySortVisit(*include);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+      }
     }
 
     for (auto const& requirementName : source->requires_) {
-      if (auto requirement = namedSources.ptr(requirementName))
-        dependencySortVisit(*requirement);
-      else
-        throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
+      if (auto requirement = namedSources.ptr(requirementName)) {
+        auto visited = dependencySortVisit(*requirement);
+        if (!visited) return std::unexpected(std::move(visited.error()));
+      } else {
+        return std::unexpected(AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
           requirementName != "base" ? "" :
             "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
-            "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
+            "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false));
+      }
     }
 
     workingSet.remove(source);
 
     dependencySortedSources.add(std::move(source));
+    return {};
   };
 
-  for (auto source : assetSources)
-    dependencySortVisit(std::move(source));
+  for (auto source : assetSources) {
+    auto visited = dependencySortVisit(std::move(source));
+    if (!visited) return std::unexpected(std::move(visited.error()));
+  }
 
   StringList sourcePaths;
   for (auto const& source : dependencySortedSources) {
     auto path = File::convertDirSeparators(source->path);
-    if (source->name)
-      m_logger.info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path);
-    else
-      m_logger.info("Root: Detected unnamed asset source at '{}'", path);
+    auto logged = source->name
+      ? m_logger.info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path)
+      : m_logger.info("Root: Detected unnamed asset source at '{}'", path);
+    if (!logged) return std::unexpected(std::move(logged.error()));
     sourcePaths.append(path);
   }
 
   return sourcePaths;
 }
 
-void Root::writeConfig() {
+std::expected<void, StarException> Root::writeConfig() {
   if (m_configuration) {
     auto currentConfig = m_configuration->currentConfiguration();
     if (m_lastRuntimeConfig != currentConfig) {
       if (m_runtimeConfigFile) {
-        m_logger.info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
-        File::overwriteFileWithRename(m_configuration->printConfiguration(), *m_runtimeConfigFile);
+        auto logged = m_logger.info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
+        if (!logged) return std::unexpected(std::move(logged.error()));
+        auto contents = m_configuration->printConfiguration();
+        if (!contents) return std::unexpected(std::move(contents.error()));
+        auto written = File::overwriteFileWithRename(*contents, *m_runtimeConfigFile);
+        if (!written) return std::unexpected(std::move(written.error()));
       }
-      m_lastRuntimeConfig = currentConfig;
+      m_lastRuntimeConfig = std::move(currentConfig);
     }
   }
+  return {};
 }
 
-WorkerPool& Root::workers() {
-  std::call_once(m_workersStarted, [this] {
-    m_workers.start(std::max(1u, std::thread::hardware_concurrency()));
-  });
-  return m_workers;
+std::expected<WorkerPool*, StarException> Root::workers() {
+  MutexLocker locker(m_workersStartMutex);
+  if (!m_workersStarted) {
+    auto started = m_workers.start(std::max(1u, std::thread::hardware_concurrency()));
+    if (!started) return std::unexpected(std::move(started.error()));
+    m_workersStarted = true;
+  }
+  return &m_workers;
 }
 
-bool& Root::humanoidHeadRotation() {
-  std::call_once(m_headRotationInitialized, [this] {
-    m_humanoidHeadRotation = configuration()->get("humanoidHeadRotation").optBool().value_or(true);
-  });
-  return m_humanoidHeadRotation;
+std::expected<bool*, StarException> Root::humanoidHeadRotation() {
+  MutexLocker locker(m_headRotationMutex);
+  if (!m_headRotationInitialized) {
+    auto config = configuration();
+    if (!config) return std::unexpected(std::move(config.error()));
+    auto setting = (*config)->get("humanoidHeadRotation");
+    if (!setting) return std::unexpected(std::move(setting.error()));
+    auto value = setting->optBool();
+    if (!value) return std::unexpected(std::move(value.error()));
+    m_humanoidHeadRotation = value->value_or(true);
+    m_headRotationInitialized = true;
+  }
+  return &m_humanoidHeadRotation;
 }
 
 template <typename T, typename... Params>
-std::shared_ptr<T> Root::loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
-      return std::make_shared<T>(std::forward<Params>(params)...);
+      return T::create(std::forward<Params>(params)...);
     });
 }
 
 template <typename T>
-std::shared_ptr<T> Root::loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::shared_ptr<T>()> loadFunction) {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction) {
   MutexLocker locker(mutex);
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();
-    ptr = loadFunction();
-    m_logger.info("Root: Loaded {} in {} seconds", name, Time::monotonicTime() - startSeconds);
+    auto loaded = loadFunction();
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    ptr = std::move(*loaded);
+    auto logged = m_logger.info("Root: Loaded {} in {} seconds", name, Time::monotonicTime() - startSeconds);
+    if (!logged) return std::unexpected(std::move(logged.error()));
   }
   return ptr;
 }

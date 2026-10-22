@@ -21,7 +21,7 @@ enum class PerlinType {
   Billow,
   RidgedMulti
 };
-extern EnumMap<PerlinType> const PerlinTypeNames;
+extern std::expected<EnumMap<PerlinType>, StarException> const PerlinTypeNames;
 
 inline constexpr int PerlinSampleSize = 512;
 
@@ -33,8 +33,8 @@ public:
 
   Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
   Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
-  Perlin(Json const& config, std::uint64_t seed);
-  explicit Perlin(Json const& json);
+  [[nodiscard]] static std::expected<Perlin, StarException> create(Json const& config, std::uint64_t seed);
+  [[nodiscard]] static std::expected<Perlin, StarException> create(Json const& json);
 
   Perlin(Perlin const& perlin);
   Perlin(Perlin&& perlin);
@@ -42,9 +42,9 @@ public:
   Perlin& operator=(Perlin const& perlin);
   Perlin& operator=(Perlin&& perlin);
 
-  Float get(Float x) const;
-  Float get(Float x, Float y) const;
-  Float get(Float x, Float y, Float z) const;
+  [[nodiscard]] std::expected<Float, StarException> get(Float x) const;
+  [[nodiscard]] std::expected<Float, StarException> get(Float x, Float y) const;
+  [[nodiscard]] std::expected<Float, StarException> get(Float x, Float y, Float z) const;
 
   PerlinType type() const;
 
@@ -55,7 +55,7 @@ public:
   Float alpha() const;
   Float beta() const;
 
-  Json toJson() const;
+  [[nodiscard]] std::expected<Json, StarException> toJson() const;
 
 private:
   static Float s_curve(Float t);
@@ -187,25 +187,51 @@ Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, 
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(Json const& config, std::uint64_t seed)
-  : Perlin(config.set("seed", seed)) {}
+std::expected<Perlin<Float>, StarException> Perlin<Float>::create(Json const& config, std::uint64_t seed) {
+  auto seeded = config.set("seed", seed);
+  if (!seeded)
+    return std::unexpected(std::move(seeded.error()));
+  return create(*seeded);
+}
 
 template <typename Float>
-Perlin<Float>::Perlin(Json const& json) {
-  m_seed = json.getUInt("seed");
-  m_octaves = json.getInt("octaves", 1);
-  m_frequency = json.getDouble("frequency", 1.0);
-  m_amplitude = json.getDouble("amplitude", 1.0);
-  m_bias = json.getDouble("bias", 0.0);
-  m_alpha = json.getDouble("alpha", 2.0);
-  m_beta = json.getDouble("beta", 2.0);
-
-  m_offset = json.getDouble("offset", 1.0);
-  m_gain = json.getDouble("gain", 2.0);
-
-  m_type = PerlinTypeNames.getLeft(json.getString("type"));
-
-  init(m_seed);
+std::expected<Perlin<Float>, StarException> Perlin<Float>::create(Json const& json) {
+  auto seed = json.getUInt("seed");
+  if (!seed) return std::unexpected(std::move(seed.error()));
+  auto octaves = json.getInt("octaves", 1);
+  if (!octaves) return std::unexpected(std::move(octaves.error()));
+  auto frequency = json.getDouble("frequency", 1.0);
+  if (!frequency) return std::unexpected(std::move(frequency.error()));
+  auto amplitude = json.getDouble("amplitude", 1.0);
+  if (!amplitude) return std::unexpected(std::move(amplitude.error()));
+  auto bias = json.getDouble("bias", 0.0);
+  if (!bias) return std::unexpected(std::move(bias.error()));
+  auto alpha = json.getDouble("alpha", 2.0);
+  if (!alpha) return std::unexpected(std::move(alpha.error()));
+  auto beta = json.getDouble("beta", 2.0);
+  if (!beta) return std::unexpected(std::move(beta.error()));
+  auto offset = json.getDouble("offset", 1.0);
+  if (!offset) return std::unexpected(std::move(offset.error()));
+  auto gain = json.getDouble("gain", 2.0);
+  if (!gain) return std::unexpected(std::move(gain.error()));
+  auto typeName = json.getString("type");
+  if (!typeName) return std::unexpected(std::move(typeName.error()));
+  if (!PerlinTypeNames) return std::unexpected(PerlinTypeNames.error());
+  auto type = PerlinTypeNames->getLeft(*typeName);
+  if (!type) return std::unexpected(std::move(type.error()));
+  Perlin perlin;
+  perlin.m_seed = *seed;
+  perlin.m_octaves = *octaves;
+  perlin.m_frequency = *frequency;
+  perlin.m_amplitude = *amplitude;
+  perlin.m_bias = *bias;
+  perlin.m_alpha = *alpha;
+  perlin.m_beta = *beta;
+  perlin.m_offset = *offset;
+  perlin.m_gain = *gain;
+  perlin.m_type = **type;
+  perlin.init(perlin.m_seed);
+  return perlin;
 }
 
 template <typename Float>
@@ -275,7 +301,7 @@ Perlin<Float>& Perlin<Float>::operator=(Perlin&& perlin) {
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x) const {
+std::expected<Float, StarException> Perlin<Float>::get(Float x) const {
   switch (m_type) {
     case PerlinType::Perlin:
       return perlin(x);
@@ -284,12 +310,12 @@ Float Perlin<Float>::get(Float x) const {
     case PerlinType::RidgedMulti:
       return ridgedMulti(x);
     default:
-      throw PerlinException("::get called on uninitialized Perlin");
+      return std::unexpected(PerlinException("::get called on uninitialized Perlin"));
   }
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x, Float y) const {
+std::expected<Float, StarException> Perlin<Float>::get(Float x, Float y) const {
   switch (m_type) {
     case PerlinType::Perlin:
       return perlin(x, y);
@@ -298,12 +324,12 @@ Float Perlin<Float>::get(Float x, Float y) const {
     case PerlinType::RidgedMulti:
       return ridgedMulti(x, y);
     default:
-      throw PerlinException("::get called on uninitialized Perlin");
+      return std::unexpected(PerlinException("::get called on uninitialized Perlin"));
   }
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x, Float y, Float z) const {
+std::expected<Float, StarException> Perlin<Float>::get(Float x, Float y, Float z) const {
   switch (m_type) {
     case PerlinType::Perlin:
       return perlin(x, y, z);
@@ -312,7 +338,7 @@ Float Perlin<Float>::get(Float x, Float y, Float z) const {
     case PerlinType::RidgedMulti:
       return ridgedMulti(x, y, z);
     default:
-      throw PerlinException("::get called on uninitialized Perlin");
+      return std::unexpected(PerlinException("::get called on uninitialized Perlin"));
   }
 }
 
@@ -352,7 +378,10 @@ Float Perlin<Float>::beta() const {
 }
 
 template <typename Float>
-Json Perlin<Float>::toJson() const {
+std::expected<Json, StarException> Perlin<Float>::toJson() const {
+  if (!PerlinTypeNames) return std::unexpected(PerlinTypeNames.error());
+  auto type = PerlinTypeNames->getRight(m_type);
+  if (!type) return std::unexpected(std::move(type.error()));
   return JsonObject{
     {"seed", m_seed},
     {"octaves", m_octaves},
@@ -363,7 +392,7 @@ Json Perlin<Float>::toJson() const {
     {"beta", m_beta},
     {"offset", m_offset},
     {"gain", m_gain},
-    {"type", PerlinTypeNames.getRight(m_type)}
+    {"type", **type}
   };
 }
 
@@ -500,14 +529,14 @@ void Perlin<Float>::init(std::uint64_t seed) {
 
   for (i = 0; i < PerlinSampleSize; i++) {
     p[i] = i;
-    g1[i] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+    g1[i] = (Float)(static_cast<std::int64_t>(randomSource.randUInt(PerlinSampleSize * 2)) - PerlinSampleSize) / PerlinSampleSize;
 
     for (j = 0; j < 2; j++)
-      g2[i][j] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+      g2[i][j] = (Float)(static_cast<std::int64_t>(randomSource.randUInt(PerlinSampleSize * 2)) - PerlinSampleSize) / PerlinSampleSize;
     normalize2(g2[i]);
 
     for (j = 0; j < 3; j++)
-      g3[i][j] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+      g3[i][j] = (Float)(static_cast<std::int64_t>(randomSource.randUInt(PerlinSampleSize * 2)) - PerlinSampleSize) / PerlinSampleSize;
     normalize3(g3[i]);
   }
 

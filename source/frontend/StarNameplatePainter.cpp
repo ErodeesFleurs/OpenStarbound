@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -168,114 +169,149 @@ import star.mixer;
 import star.gui_context;
 
 namespace Star {
+NameplatePainter::NameplatePainter(GuiContext& context) : m_guiContext(&context) {}
 
-NameplatePainter::NameplatePainter(GuiContext& context) : m_guiContext(&context) {
-  auto assets = context.root().assets();
-
-  Json nametagConfig = assets->json("/interface.config:nametag");
-  m_showMasterNames = nametagConfig.getBool("showMasterNames");
-  m_opacityRate = nametagConfig.getFloat("opacityRate");
-  m_inspectOpacityRate = nametagConfig.queryFloat("inspectOpacityRate", m_opacityRate);
-  m_offset = jsonToVec2F(nametagConfig.get("offset"));
-  Json textStyle = nametagConfig.get("textStyle");
-  m_textStyle = textStyle;
-  m_statusTextStyle = nametagConfig.get("statusTextStyle", textStyle);
-  m_statusOffset = jsonToVec2F(nametagConfig.get("statusOffset"));
-  m_statusTextStyle.color = jsonToColor(nametagConfig.get("statusColor")).toRgba();
-  m_opacityBoost = nametagConfig.getFloat("opacityBoost");
-  m_nametags.setTweenFactor(nametagConfig.getFloat("tweenFactor"));
-  m_nametags.setMovementThreshold(nametagConfig.getFloat("movementThreshold"));
+std::expected<std::shared_ptr<NameplatePainter>, StarException> NameplatePainter::create(GuiContext& context) {
+  auto painter = std::shared_ptr<NameplatePainter>(new NameplatePainter(context));
+  auto initialized = painter->initialize();
+  if (!initialized) return std::unexpected(std::move(initialized.error()));
+  return painter;
 }
 
-void NameplatePainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode) {
-  m_camera = camera;
+std::expected<void, StarException> NameplatePainter::initialize() {
+  auto assets = m_guiContext->root().assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface.config:nametag");
+  if (!config) return std::unexpected(std::move(config.error()));
+  { auto value = config->getBool("showMasterNames"); if (!value) return std::unexpected(std::move(value.error())); m_showMasterNames = *value; }
+  { auto value = config->getFloat("opacityRate"); if (!value) return std::unexpected(std::move(value.error())); m_opacityRate = *value; }
+  { auto value = config->queryFloat("inspectOpacityRate", m_opacityRate); if (!value) return std::unexpected(std::move(value.error())); m_inspectOpacityRate = *value; }
+  { auto value = config->getFloat("opacityBoost"); if (!value) return std::unexpected(std::move(value.error())); m_opacityBoost = *value; }
+  { auto json = config->get("offset"); if (!json) return std::unexpected(std::move(json.error())); auto value = jsonToVec2F(*json); if (!value) return std::unexpected(std::move(value.error())); m_offset = *value; }
+  { auto json = config->get("statusOffset"); if (!json) return std::unexpected(std::move(json.error())); auto value = jsonToVec2F(*json); if (!value) return std::unexpected(std::move(value.error())); m_statusOffset = *value; }
+  auto textJson = config->get("textStyle");
+  if (!textJson) return std::unexpected(std::move(textJson.error()));
+  auto text = TextStyle::create(*textJson);
+  if (!text) return std::unexpected(std::move(text.error()));
+  m_textStyle = std::move(*text);
+  auto statusJson = config->get("statusTextStyle", *textJson);
+  if (!statusJson) return std::unexpected(std::move(statusJson.error()));
+  auto status = TextStyle::create(*statusJson);
+  if (!status) return std::unexpected(std::move(status.error()));
+  m_statusTextStyle = std::move(*status);
+  auto colorJson = config->get("statusColor");
+  if (!colorJson) return std::unexpected(std::move(colorJson.error()));
+  auto color = jsonToColor(*colorJson);
+  if (!color) return std::unexpected(std::move(color.error()));
+  m_statusTextStyle.color = color->toRgba();
+  auto tween = config->getFloat("tweenFactor");
+  if (!tween) return std::unexpected(std::move(tween.error()));
+  m_nametags.setTweenFactor(*tween);
+  auto threshold = config->getFloat("movementThreshold");
+  if (!threshold) return std::unexpected(std::move(threshold.error()));
+  m_nametags.setMovementThreshold(*threshold);
+  return {};
+}
 
+std::expected<void, StarException> NameplatePainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode) {
+  m_camera = camera;
   auto& foundEntities = m_foundEntities;
   foundEntities.clear();
-  for (auto const& entity : world->query<NametagEntity>(camera.worldScreenRect())) {
-    if ((entity->isMaster() && !m_showMasterNames) || !entity->displayNametag())
-      continue;
+  auto entities = world->query<NametagEntity>(camera.worldScreenRect());
+  if (!entities) return std::unexpected(std::move(entities.error()));
+  for (auto const& entity : *entities) {
+    if ((entity->isMaster() && !m_showMasterNames) || !entity->displayNametag()) continue;
     if (auto player = as<Player>(entity)) {
-      if (player->isTeleporting())
-        continue;
+      if (player->isTeleporting()) continue;
     }
     foundEntities.insert(entity->entityId());
-
     if (!m_entitiesWithNametags.contains(entity->entityId())) {
-      Nametag nametag = {entity->nametag(), entity->statusText(), entity->nametagColor(), 1.0f, entity->entityId()};
-      RectF boundBox = determineBoundBox(Vec2F(), nametag);
-      m_nametags.addBubble(Vec2F(), boundBox, std::move(nametag));
+      auto name = entity->nametag();
+      if (!name) return std::unexpected(std::move(name.error()));
+      auto color = entity->nametagColor();
+      if (!color) return std::unexpected(std::move(color.error()));
+      Nametag nametag = {std::move(*name), entity->statusText(), *color, 1.0f, entity->entityId()};
+      auto bounds = determineBoundBox(Vec2F(), nametag);
+      if (!bounds) return std::unexpected(std::move(bounds.error()));
+      m_nametags.addBubble(Vec2F(), *bounds, std::move(nametag));
     }
   }
-
-  m_nametags.filter([&foundEntities](
-      BubbleState<Nametag> const&, Nametag const& nametag) { return foundEntities.contains(nametag.entityId); });
-
-  m_nametags.forEach([&world, &camera, this, inspectionMode](BubbleState<Nametag>& bubbleState, Nametag& nametag) {
+  m_nametags.filter([&foundEntities](BubbleState<Nametag> const&, Nametag const& nametag) { return foundEntities.contains(nametag.entityId); });
+  auto updated = m_nametags.forEach([&world, &camera, this, inspectionMode](BubbleState<Nametag>& bubbleState, Nametag& nametag) -> std::expected<void, StarException> {
     if (auto entity = as<NametagEntity>(world->entity(nametag.entityId))) {
-      bubbleState.idealDestination = camera.worldToScreen(entity->nametagOrigin()) + m_offset * camera.pixelRatio();
-      bubbleState.boundBox = determineBoundBox(bubbleState.idealDestination, nametag);
-
+      auto origin = entity->nametagOrigin();
+      if (!origin) return std::unexpected(std::move(origin.error()));
+      bubbleState.idealDestination = camera.worldToScreen(*origin) + m_offset * camera.pixelRatio();
+      auto bounds = determineBoundBox(bubbleState.idealDestination, nametag);
+      if (!bounds) return std::unexpected(std::move(bounds.error()));
+      bubbleState.boundBox = *bounds;
       nametag.statusText = entity->statusText();
-      nametag.name = entity->nametag();
-      nametag.color = entity->nametagColor();
-      bool fullyOnScreen = world->geometry().rectContains(camera.worldScreenRect(), entity->position());
-      if (inspectionMode)
-        nametag.opacity = approach(1.0f, nametag.opacity, m_inspectOpacityRate);
-      else if (fullyOnScreen)
-        nametag.opacity = approach(0.0f, nametag.opacity, m_opacityRate);
-      else
-        nametag.opacity = approach(m_opacityBoost, nametag.opacity, m_opacityRate);
+      auto name = entity->nametag();
+      if (!name) return std::unexpected(std::move(name.error()));
+      nametag.name = std::move(*name);
+      auto color = entity->nametagColor();
+      if (!color) return std::unexpected(std::move(color.error()));
+      nametag.color = *color;
+      auto fullyOnScreen = world->geometry().rectContains(camera.worldScreenRect(), entity->position());
+      if (!fullyOnScreen) return std::unexpected(std::move(fullyOnScreen.error()));
+      if (inspectionMode) nametag.opacity = approach(1.0f, nametag.opacity, m_inspectOpacityRate);
+      else if (*fullyOnScreen) nametag.opacity = approach(0.0f, nametag.opacity, m_opacityRate);
+      else nametag.opacity = approach(m_opacityBoost, nametag.opacity, m_opacityRate);
     }
+    return {};
   });
-
+  if (!updated) return std::unexpected(std::move(updated.error()));
   std::swap(m_entitiesWithNametags, m_foundEntities);
   m_nametags.update(dt);
+  return {};
 }
 
-void NameplatePainter::render() {
+std::expected<void, StarException> NameplatePainter::render() {
   auto& context = *m_guiContext;
-
-  m_nametags.forEach([&context, this](BubbleState<Nametag> const& bubble, Nametag const& nametag) {
-    if (nametag.opacity == 0.0f)
-      return;
-
-    auto& setStyle = context.setTextStyle(m_textStyle);
+  return m_nametags.forEach([&context, this](BubbleState<Nametag> const& bubble, Nametag const& nametag) -> std::expected<void, StarException> {
+    if (nametag.opacity == 0.0f) return {};
+    auto style = context.setTextStyle(m_textStyle);
+    if (!style) return std::unexpected(std::move(style.error()));
     auto color = Color::rgb(nametag.color);
     color.setAlphaF(nametag.opacity);
-    setStyle.color = color.toRgba();
-
-    context.renderText(nametag.name, namePosition(bubble.currentPosition));
-
+    (*style)->color = color.toRgba();
+    auto name = context.renderText(nametag.name, namePosition(bubble.currentPosition));
+    if (!name) return std::unexpected(std::move(name.error()));
     if (nametag.statusText) {
-      context.setTextStyle(m_statusTextStyle).color[3] *= nametag.opacity;
-      context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
+      auto status = context.setTextStyle(m_statusTextStyle);
+      if (!status) return std::unexpected(std::move(status.error()));
+      (*status)->color[3] *= nametag.opacity;
+      auto drawn = context.renderText(*nametag.statusText, statusPosition(bubble.currentPosition));
+      if (!drawn) return std::unexpected(std::move(drawn.error()));
     }
-    context.clearTextStyle();
+    return context.clearTextStyle();
   });
 }
 
-TextPositioning NameplatePainter::namePosition(Vec2F bubblePosition) const {
-  return TextPositioning(bubblePosition, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
+TextPositioning NameplatePainter::namePosition(Vec2F position) const {
+  return TextPositioning(position, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
 }
 
-TextPositioning NameplatePainter::statusPosition(Vec2F bubblePosition) const {
-  auto& context = *m_guiContext;
-  return TextPositioning(
-      bubblePosition + m_statusOffset * context.interfaceScale(),
-      HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
+TextPositioning NameplatePainter::statusPosition(Vec2F position) const {
+  return TextPositioning(position + m_statusOffset * m_guiContext->interfaceScale(), HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
 }
 
-RectF NameplatePainter::determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const {
+std::expected<RectF, StarException> NameplatePainter::determineBoundBox(Vec2F position, Nametag const& nametag) const {
   auto& context = *m_guiContext;
-  context.setTextStyle(m_textStyle);
-  RectF nametagBox = context.determineTextSize(nametag.name, namePosition(bubblePosition));
+  auto style = context.setTextStyle(m_textStyle);
+  if (!style) return std::unexpected(std::move(style.error()));
+  auto bounds = context.determineTextSize(nametag.name, namePosition(position));
+  if (!bounds) return std::unexpected(std::move(bounds.error()));
   if (nametag.statusText) {
-    context.setTextStyle(m_statusTextStyle);
-    nametagBox.combine(context.determineTextSize(*nametag.statusText, statusPosition(bubblePosition)));
+    auto status = context.setTextStyle(m_statusTextStyle);
+    if (!status) return std::unexpected(std::move(status.error()));
+    auto statusBounds = context.determineTextSize(*nametag.statusText, statusPosition(position));
+    if (!statusBounds) return std::unexpected(std::move(statusBounds.error()));
+    bounds->combine(*statusBounds);
   }
-  context.clearTextStyle();
-  return nametagBox;
+  auto cleared = context.clearTextStyle();
+  if (!cleared) return std::unexpected(std::move(cleared.error()));
+  return *bounds;
 }
 
 }

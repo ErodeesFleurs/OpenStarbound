@@ -8,14 +8,18 @@ import std;
 
 using namespace Star;
 
-TEST(StaticRandomTest, FromEmptyContainerThrows) {
+TEST(StaticRandomTest, FromEmptyContainerReturnsError) {
   // size() - 1 on an empty container used to wrap around to SIZE_MAX, which
   // became -1 and then a division by zero inside staticRandomI32Range.
   std::vector<int> const empty;
-  EXPECT_THROW(staticRandomFrom(empty, 1), StarException);
+  auto rejected = staticRandomFrom(empty, 1);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().is<StarException>());
 
   std::vector<int> const one{7};
-  EXPECT_EQ(staticRandomFrom(one, 1), 7);
+  auto selected = staticRandomFrom(one, 1);
+  ASSERT_TRUE(selected);
+  EXPECT_EQ(**selected, 7);
 }
 
 TEST(RandTest, All) {
@@ -93,34 +97,142 @@ TEST(RandTest, All) {
   EXPECT_EQ(rand.randUInt(rand.randu32()), 1499799820u);
   EXPECT_EQ(rand.randUInt(rand.randu32()), 1807471845u);
 
-  EXPECT_EQ(rand.randInt(83, 198207), 90862);
-  EXPECT_EQ(rand.randInt(-98982, -989), -23203);
-  EXPECT_EQ(rand.randInt(0, 1), 1);
-  EXPECT_EQ(rand.randInt(-8279, rand.randu32()), 20616743);
-  EXPECT_EQ(rand.randInt(87297, 298398), 142455);
-  EXPECT_EQ(rand.randInt(-93792, rand.randu32()), 734418822);
-  EXPECT_EQ(rand.randInt(2, 5), 3);
-  EXPECT_EQ(rand.randInt(2938, 2940), 2939);
-  EXPECT_EQ(rand.randUInt(9802, 87297), 47048u);
-  EXPECT_EQ(rand.randUInt(9809802, 372987297), 150191254u);
-  EXPECT_EQ(rand.randUInt(9809809, 272987297), 263742306u);
-  EXPECT_EQ(rand.randUInt(4, (std::uint64_t)(-1)), 7288528389985641665u);
-  EXPECT_EQ(rand.randUInt(rand.randu32(), (std::uint64_t)(-1)), 1748024317879856867u);
-  EXPECT_EQ(rand.randUInt(2, rand.randu32()), 558624029u);
-  EXPECT_EQ(rand.randUInt(9382, 888888), 212491u);
+  {
+    auto result = rand.randInt(83, 198207);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 90862);
+  }
+  {
+    auto result = rand.randInt(-98982, -989);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, -23203);
+  }
+  {
+    auto result = rand.randInt(0, 1);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 1);
+  }
+  {
+    auto result = rand.randInt(-8279, rand.randu32());
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 20616743);
+  }
+  {
+    auto result = rand.randInt(87297, 298398);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 142455);
+  }
+  {
+    auto result = rand.randInt(-93792, rand.randu32());
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 734418822);
+  }
+  {
+    auto result = rand.randInt(2, 5);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 3);
+  }
+  {
+    auto result = rand.randInt(2938, 2940);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 2939);
+  }
+  {
+    auto result = rand.randUInt(9802, 87297);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 47048u);
+  }
+  {
+    auto result = rand.randUInt(9809802, 372987297);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 150191254u);
+  }
+  {
+    auto result = rand.randUInt(9809809, 272987297);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 263742306u);
+  }
+  {
+    auto result = rand.randUInt(4, (std::uint64_t)(-1));
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 7288528389985641665u);
+  }
+  {
+    auto result = rand.randUInt(rand.randu32(), (std::uint64_t)(-1));
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 1748024317879856867u);
+  }
+  {
+    auto result = rand.randUInt(2, rand.randu32());
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 558624029u);
+  }
+  {
+    auto result = rand.randUInt(9382, 888888);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, 212491u);
+  }
 
-  EXPECT_FLOAT_EQ(rand.randf(4.3f, 4.4f), 4.395795345306396f);
-  EXPECT_FLOAT_EQ(rand.randf(rand.randf(), 5.0f), 4.580977439880371f);
-  EXPECT_FLOAT_EQ(rand.randf(387.f, 3920.f), 3740.644775390625f);
-  EXPECT_FLOAT_EQ(rand.randf(rand.randf(), 1.0f), 0.9794777631759644f);
-  EXPECT_FLOAT_EQ(rand.randf(-392.f, rand.randf()), -276.0828552246094f);
-  EXPECT_FLOAT_EQ(rand.randf(-2.f, rand.randf()), 0.1681497097015381f);
-  EXPECT_DOUBLE_EQ(rand.randd(rand.randd(), 1.0), 0.942969795571236168996165361023);
-  EXPECT_DOUBLE_EQ(rand.randd(rand.randd(), 1.1), 0.751293963391068353452340033982);
-  EXPECT_DOUBLE_EQ(rand.randd(rand.randd(), 83), 9.31872432254218274749746342422);
-  EXPECT_DOUBLE_EQ(rand.randd(-2, rand.randd()), 0.361844402875284743004158372059);
-  EXPECT_DOUBLE_EQ(rand.randd(-2.3, rand.randd()), 0.580774591935332651360113231931);
-  EXPECT_DOUBLE_EQ(rand.randd(-303, rand.randd()), -110.181037142766882652722415514);
+  {
+    auto result = rand.randf(4.3f, 4.4f);
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, 4.395795345306396f);
+  }
+  {
+    auto result = rand.randf(rand.randf(), 5.0f);
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, 4.580977439880371f);
+  }
+  {
+    auto result = rand.randf(387.f, 3920.f);
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, 3740.644775390625f);
+  }
+  {
+    auto result = rand.randf(rand.randf(), 1.0f);
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, 0.9794777631759644f);
+  }
+  {
+    auto result = rand.randf(-392.f, rand.randf());
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, -276.0828552246094f);
+  }
+  {
+    auto result = rand.randf(-2.f, rand.randf());
+    ASSERT_TRUE(result);
+    EXPECT_FLOAT_EQ(*result, 0.1681497097015381f);
+  }
+  {
+    auto result = rand.randd(rand.randd(), 1.0);
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, 0.942969795571236168996165361023);
+  }
+  {
+    auto result = rand.randd(rand.randd(), 1.1);
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, 0.751293963391068353452340033982);
+  }
+  {
+    auto result = rand.randd(rand.randd(), 83);
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, 9.31872432254218274749746342422);
+  }
+  {
+    auto result = rand.randd(-2, rand.randd());
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, 0.361844402875284743004158372059);
+  }
+  {
+    auto result = rand.randd(-2.3, rand.randd());
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, 0.580774591935332651360113231931);
+  }
+  {
+    auto result = rand.randd(-303, rand.randd());
+    ASSERT_TRUE(result);
+    EXPECT_DOUBLE_EQ(*result, -110.181037142766882652722415514);
+  }
 
   EXPECT_EQ(rand.randb(), false);
   EXPECT_EQ(rand.randb(), true);

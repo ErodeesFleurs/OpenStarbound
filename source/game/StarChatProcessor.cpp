@@ -21,7 +21,7 @@ ChatProcessor::ChatProcessor(RandomService& random) : m_random(random) {}
 
 char const* const ChatProcessor::ServerNick = "server";
 
-String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
+std::expected<String, StarException> ChatProcessor::connectClient(ConnectionId clientId, String nick) {
   RecursiveMutexLocker locker(m_mutex);
 
   if (nick.empty())
@@ -38,18 +38,21 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
       });
   }
 
-  m_clients.add(clientId, ClientInfo(clientId, nick));
+  auto added = m_clients.add(clientId, ClientInfo(clientId, nick));
+  if (!added) return std::unexpected(std::move(added.error()));
   m_nicks[nick] = clientId;
   return nick;
 }
 
-List<ChatReceivedMessage> ChatProcessor::disconnectClient(ConnectionId clientId) {
+std::expected<List<ChatReceivedMessage>, StarException> ChatProcessor::disconnectClient(ConnectionId clientId) {
   RecursiveMutexLocker locker(m_mutex);
 
   for (auto channel : clientChannels(clientId))
     leaveChannel(clientId, channel);
 
-  auto clientInfo = m_clients.take(clientId);
+  auto clientInfoResult = m_clients.take(clientId);
+  if (!clientInfoResult) return std::unexpected(std::move(clientInfoResult.error()));
+  auto clientInfo = std::move(*clientInfoResult);
 
   m_nicks.remove(clientInfo.nick);
 
@@ -84,23 +87,25 @@ std::optional<ConnectionId> ChatProcessor::findNick(String const& nick) const {
   return {};
 }
 
-String ChatProcessor::connectionNick(ConnectionId clientId) const {
+std::expected<String, StarException> ChatProcessor::connectionNick(ConnectionId clientId) const {
   RecursiveMutexLocker locker(m_mutex);
-
   if (clientId == ServerConnectionId)
     return ServerNick;
-  else
-    return m_clients.get(clientId).nick;
+  auto client = m_clients.get(clientId);
+  if (!client) return std::unexpected(std::move(client.error()));
+  return (*client)->nick;
 }
 
-String ChatProcessor::renick(ConnectionId clientId, String const& nick) {
+std::expected<String, StarException> ChatProcessor::renick(ConnectionId clientId, String const& nick) {
   RecursiveMutexLocker locker(m_mutex);
 
-  auto& clientInfo = m_clients.get(clientId);
+  auto clientInfoResult = m_clients.get(clientId);
+  if (!clientInfoResult) return std::unexpected(std::move(clientInfoResult.error()));
+  auto& clientInfo = **clientInfoResult;
   m_nicks.remove(clientInfo.nick);
 
   clientInfo.nick = makeNickUnique(nick);
-  m_clients.get(clientId).nick = nick;
+  clientInfo.nick = nick;
   m_nicks[nick] = clientId;
   return nick;
 }
@@ -139,87 +144,105 @@ StringList ChatProcessor::activeChannels() const {
   return channels;
 }
 
-void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data) {
+std::expected<void, StarException> ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
+  auto nick = connectionNick(sourceConnectionId);
+  if (!nick) return std::unexpected(std::move(nick.error()));
   ChatReceivedMessage message = {
     {MessageContext::Broadcast},
     sourceConnectionId,
-    connectionNick(sourceConnectionId),
+    *nick,
     text
   };
 
   message.data = std::move(data);
 
-  if (handleCommand(message))
-    return;
+  auto handled = handleCommand(message);
+  if (!handled) return std::unexpected(std::move(handled.error()));
+  if (*handled) return {};
 
   for (auto& pair : m_clients)
     pair.second.pendingMessages.append(message);
+  return {};
 }
 
-void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mode mode, String const& channelName, String const& text, JsonObject data) {
+std::expected<void, StarException> ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mode mode, String const& channelName, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
+  auto nick = connectionNick(sourceConnectionId);
+  if (!nick) return std::unexpected(std::move(nick.error()));
   ChatReceivedMessage message = {
     {mode, channelName},
     sourceConnectionId,
-    connectionNick(sourceConnectionId),
+    *nick,
     text
   };
 
   message.data = std::move(data);
 
-  if (handleCommand(message))
-    return;
+  auto handled = handleCommand(message);
+  if (!handled) return std::unexpected(std::move(handled.error()));
+  if (*handled) return {};
 
   for (auto clientId : m_channels[channelName]) {
-    auto& clientInfo = m_clients.get(clientId);
+    auto clientInfoResult = m_clients.get(clientId);
+    if (!clientInfoResult) return std::unexpected(std::move(clientInfoResult.error()));
+    auto& clientInfo = **clientInfoResult;
     clientInfo.pendingMessages.append(message);
   }
+  return {};
 }
 
-void ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text, JsonObject data) {
+std::expected<void, StarException> ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId targetClientId, String const& text, JsonObject data) {
   RecursiveMutexLocker locker(m_mutex);
 
+  auto nick = connectionNick(sourceConnectionId);
+  if (!nick) return std::unexpected(std::move(nick.error()));
   ChatReceivedMessage message = {
     {MessageContext::Whisper},
     sourceConnectionId,
-    connectionNick(sourceConnectionId),
+    *nick,
     text
   };
 
   message.data = std::move(data);
 
-  if (handleCommand(message))
-    return;
+  auto handled = handleCommand(message);
+  if (!handled) return std::unexpected(std::move(handled.error()));
+  if (*handled) return {};
 
-  if (sourceConnectionId != ServerConnectionId)
-    m_clients.get(sourceConnectionId).pendingMessages.append(message);
-
-  m_clients.get(targetClientId).pendingMessages.append(message);
-}
-
-void ChatProcessor::adminBroadcast(String const& text) {
-  RecursiveMutexLocker locker(m_mutex);
-  broadcast(ServerConnectionId, text, {});
-}
-
-void ChatProcessor::adminMessage(MessageContext::Mode context, String const& channelName, String const& text) {
-  RecursiveMutexLocker locker(m_mutex);
-  ChatProcessor::message(ServerConnectionId, context, channelName, text, {});
-}
-
-void ChatProcessor::adminWhisper(ConnectionId targetClientId, String const& text) {
-  RecursiveMutexLocker locker(m_mutex);
-  whisper(ServerConnectionId, targetClientId, text, {});
-}
-
-List<ChatReceivedMessage> ChatProcessor::pullPendingMessages(ConnectionId clientId) {
-  RecursiveMutexLocker locker(m_mutex);
-  if (m_clients.contains(clientId))
-    return take(m_clients.get(clientId).pendingMessages);
+  if (sourceConnectionId != ServerConnectionId) {
+    auto source = m_clients.get(sourceConnectionId);
+    if (!source) return std::unexpected(std::move(source.error()));
+    (*source)->pendingMessages.append(message);
+  }
+  auto target = m_clients.get(targetClientId);
+  if (!target) return std::unexpected(std::move(target.error()));
+  (*target)->pendingMessages.append(message);
   return {};
+}
+
+std::expected<void, StarException> ChatProcessor::adminBroadcast(String const& text) {
+  RecursiveMutexLocker locker(m_mutex);
+  return broadcast(ServerConnectionId, text, {});
+}
+
+std::expected<void, StarException> ChatProcessor::adminMessage(MessageContext::Mode context, String const& channelName, String const& text) {
+  RecursiveMutexLocker locker(m_mutex);
+  return ChatProcessor::message(ServerConnectionId, context, channelName, text, {});
+}
+
+std::expected<void, StarException> ChatProcessor::adminWhisper(ConnectionId targetClientId, String const& text) {
+  RecursiveMutexLocker locker(m_mutex);
+  return whisper(ServerConnectionId, targetClientId, text, {});
+}
+
+std::expected<List<ChatReceivedMessage>, StarException> ChatProcessor::pullPendingMessages(ConnectionId clientId) {
+  RecursiveMutexLocker locker(m_mutex);
+  if (auto client = m_clients.ptr(clientId))
+    return take(client->pendingMessages);
+  return List<ChatReceivedMessage>{};
 }
 
 void ChatProcessor::setCommandHandler(CommandHandler commandHandler) {
@@ -241,73 +264,89 @@ String ChatProcessor::makeNickUnique(String nick) {
   return nick;
 }
 
-bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
-  if (!message.text.beginsWith("/")) {
-    return false;
-  } else if (message.text.beginsWith("//")) {
-    message.text = message.text.substr(1);
+std::expected<bool, StarException> ChatProcessor::handleCommand(ChatReceivedMessage& message) {
+  auto isCommand = message.text.beginsWith("/");
+  if (!isCommand) return std::unexpected(std::move(isCommand.error()));
+  if (!*isCommand) return false;
+  auto escaped = message.text.beginsWith("//");
+  if (!escaped) return std::unexpected(std::move(escaped.error()));
+  auto line = message.text.substr(1);
+  if (!line) return std::unexpected(std::move(line.error()));
+  if (*escaped) {
+    message.text = std::move(*line);
     return false;
   }
-
-  String commandLine = message.text.substr(1);
-  String command = commandLine.extract();
-
+  String commandLine = std::move(*line);
+  auto command = commandLine.extract();
+  if (!command) return std::unexpected(std::move(command.error()));
   String response;
-
-  if (command == "nick") {
-    auto newNick = renick(message.fromConnection, commandLine.trim());
-    response = strf("Nick changed to {}", newNick);
-  } else if (command == "w") {
-    String target = commandLine.extract();
-    if (m_nicks.contains(target))
-      whisper(message.fromConnection, m_nicks.get(target), commandLine.trim(), {});
-    else
-      response = strf("No such nick {}", target);
-  } else if (m_commandHandler) {
-    auto res = m_commandHandler(message.fromConnection, command, commandLine);
-    if (std::holds_alternative<String>(res)) {
-      response = std::get<String>(res);
+  if (*command == "nick") {
+    auto trimmed = commandLine.trim();
+    if (!trimmed) return std::unexpected(std::move(trimmed.error()));
+    auto newNick = renick(message.fromConnection, *trimmed);
+    if (!newNick) return std::unexpected(std::move(newNick.error()));
+    response = strf("Nick changed to {}", *newNick);
+  } else if (*command == "w") {
+    auto target = commandLine.extract();
+    if (!target) return std::unexpected(std::move(target.error()));
+    if (auto id = m_nicks.ptr(*target)) {
+      auto trimmed = commandLine.trim();
+      if (!trimmed) return std::unexpected(std::move(trimmed.error()));
+      auto sent = whisper(message.fromConnection, *id, *trimmed, {});
+      if (!sent) return std::unexpected(std::move(sent.error()));
     } else {
+      response = strf("No such nick {}", *target);
+    }
+  } else if (m_commandHandler) {
+    auto res = m_commandHandler(message.fromConnection, *command, commandLine);
+    if (!res) return std::unexpected(std::move(res.error()));
+    if (auto text = std::get_if<String>(&*res))
+      response = std::move(*text);
+    else {
       Uuid uuid(m_random);
-      m_commandPromises[uuid] = std::make_pair(message.fromConnection,std::get<RpcPromise<String>>(res));
+      m_commandPromises[uuid] = std::make_pair(message.fromConnection, std::move(std::get<RpcPromise<String>>(*res)));
     }
   } else {
-    response = strf("No such command {}", command);
+    response = strf("No such command {}", *command);
   }
-
   if (!response.empty()) {
-    m_clients.get(message.fromConnection).pendingMessages.append({
-        MessageContext(MessageContext::CommandResult),
-        ServerConnectionId,
-        connectionNick(ServerConnectionId),
-        response
-      });
+    auto client = m_clients.get(message.fromConnection);
+    if (!client) return std::unexpected(std::move(client.error()));
+    (*client)->pendingMessages.append({MessageContext(MessageContext::CommandResult), ServerConnectionId, ServerNick, response});
   }
-
   return true;
 }
 
-void ChatProcessor::updatePromises() {
+std::expected<void, StarException> ChatProcessor::updatePromises() {
   RecursiveMutexLocker locker(m_mutex);
-  for (auto& uuid : m_commandPromises.keys()) {
-    if (m_commandPromises[uuid].second.finished()) {
+  for (auto const& uuid : m_commandPromises.keys()) {
+    auto& entry = m_commandPromises[uuid];
+    auto finished = entry.second.finished();
+    if (!finished) return std::unexpected(std::move(finished.error()));
+    if (*finished) {
       String response;
-      if (m_commandPromises[uuid].second.succeeded()) {
-        response = *m_commandPromises[uuid].second.result();
+      auto succeeded = entry.second.succeeded();
+      if (!succeeded) return std::unexpected(std::move(succeeded.error()));
+      if (*succeeded) {
+        auto value = entry.second.result();
+        if (!value) return std::unexpected(std::move(value.error()));
+        if (!*value) return std::unexpected(RpcPromiseException("Completed command has no result"));
+        response = **value;
       } else {
-        response = strf("Error: {}", *m_commandPromises[uuid].second.error());
+        auto error = entry.second.error();
+        if (!error) return std::unexpected(std::move(error.error()));
+        if (!*error) return std::unexpected(RpcPromiseException("Failed command has no error"));
+        response = strf("Error: {}", **error);
       }
       if (!response.empty()) {
-        m_clients.get(m_commandPromises[uuid].first).pendingMessages.append({
-            MessageContext(MessageContext::CommandResult),
-            ServerConnectionId,
-            connectionNick(ServerConnectionId),
-            response
-          });
+        auto client = m_clients.get(entry.first);
+        if (!client) return std::unexpected(std::move(client.error()));
+        (*client)->pendingMessages.append({MessageContext(MessageContext::CommandResult), ServerConnectionId, ServerNick, response});
       }
       m_commandPromises.remove(uuid);
     }
   }
+  return {};
 }
 
 }

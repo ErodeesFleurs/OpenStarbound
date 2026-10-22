@@ -55,26 +55,76 @@ ParallaxLayer::ParallaxLayer() {
   alpha = 1.0f;
 }
 
-ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
-  textures = jsonToStringList(store.get("textures"));
-  directives = store.getString("directives");
-  frameNumber = store.getInt("frameNumber", 1);
-  frameOffset = store.getInt("frameOffset", 0);
-  animationCycle = store.getFloat("animationCycle", 1.0f);
-  parallaxValue = jsonToVec2F(store.get("parallaxValue"));
-  repeat = jsonToVec2B(store.get("repeat"));
-  tileLimitTop = store.optFloat("tileLimitTop");
-  tileLimitBottom = store.optFloat("tileLimitBottom");
-  verticalOrigin = store.getFloat("verticalOrigin");
-  zLevel = store.getFloat("zLevel");
-  parallaxOffset = jsonToVec2F(store.get("parallaxOffset"));
-  timeOfDayCorrelation = store.getString("timeOfDayCorrelation");
-  speed = { store.getFloat("speed"), store.getFloat("speedY", 0.0f) };
-  followsWind = store.getBool("followsWind", false);
-  windSpeedMultiplier = store.optFloat("windSpeedMultiplier");
-  unlit = store.getBool("unlit");
-  lightMapped = store.getBool("lightMapped");
-  fadePercent = store.getFloat("fadePercent");
+std::expected<ParallaxLayer, StarException> ParallaxLayer::create(Json const& store) {
+  ParallaxLayer result;
+  auto textures = store.get("textures");
+  if (!textures) return std::unexpected(std::move(textures.error()));
+  auto textureList = jsonToStringList(*textures);
+  if (!textureList) return std::unexpected(std::move(textureList.error()));
+  result.textures = std::move(*textureList);
+  auto directivesResult = store.getString("directives");
+  if (!directivesResult) return std::unexpected(std::move(directivesResult.error()));
+  result.directives = std::move(*directivesResult);
+  auto frameNumberResult = store.getInt("frameNumber", 1);
+  if (!frameNumberResult) return std::unexpected(std::move(frameNumberResult.error()));
+  result.frameNumber = std::move(*frameNumberResult);
+  auto frameOffsetResult = store.getInt("frameOffset", 0);
+  if (!frameOffsetResult) return std::unexpected(std::move(frameOffsetResult.error()));
+  result.frameOffset = std::move(*frameOffsetResult);
+  auto animationCycleResult = store.getFloat("animationCycle", 1.0f);
+  if (!animationCycleResult) return std::unexpected(std::move(animationCycleResult.error()));
+  result.animationCycle = std::move(*animationCycleResult);
+  auto tileLimitTopResult = store.optFloat("tileLimitTop");
+  if (!tileLimitTopResult) return std::unexpected(std::move(tileLimitTopResult.error()));
+  result.tileLimitTop = std::move(*tileLimitTopResult);
+  auto tileLimitBottomResult = store.optFloat("tileLimitBottom");
+  if (!tileLimitBottomResult) return std::unexpected(std::move(tileLimitBottomResult.error()));
+  result.tileLimitBottom = std::move(*tileLimitBottomResult);
+  auto verticalOriginResult = store.getFloat("verticalOrigin");
+  if (!verticalOriginResult) return std::unexpected(std::move(verticalOriginResult.error()));
+  result.verticalOrigin = std::move(*verticalOriginResult);
+  auto zLevelResult = store.getFloat("zLevel");
+  if (!zLevelResult) return std::unexpected(std::move(zLevelResult.error()));
+  result.zLevel = std::move(*zLevelResult);
+  auto timeOfDayCorrelationResult = store.getString("timeOfDayCorrelation");
+  if (!timeOfDayCorrelationResult) return std::unexpected(std::move(timeOfDayCorrelationResult.error()));
+  result.timeOfDayCorrelation = std::move(*timeOfDayCorrelationResult);
+  auto followsWindResult = store.getBool("followsWind", false);
+  if (!followsWindResult) return std::unexpected(std::move(followsWindResult.error()));
+  result.followsWind = std::move(*followsWindResult);
+  auto windSpeedMultiplierResult = store.optFloat("windSpeedMultiplier");
+  if (!windSpeedMultiplierResult) return std::unexpected(std::move(windSpeedMultiplierResult.error()));
+  result.windSpeedMultiplier = std::move(*windSpeedMultiplierResult);
+  auto unlitResult = store.getBool("unlit");
+  if (!unlitResult) return std::unexpected(std::move(unlitResult.error()));
+  result.unlit = std::move(*unlitResult);
+  auto lightMappedResult = store.getBool("lightMapped");
+  if (!lightMappedResult) return std::unexpected(std::move(lightMappedResult.error()));
+  result.lightMapped = std::move(*lightMappedResult);
+  auto fadePercentResult = store.getFloat("fadePercent");
+  if (!fadePercentResult) return std::unexpected(std::move(fadePercentResult.error()));
+  result.fadePercent = std::move(*fadePercentResult);
+  auto parallaxValueJson = store.get("parallaxValue");
+  if (!parallaxValueJson) return std::unexpected(std::move(parallaxValueJson.error()));
+  auto parallaxValueResult = jsonToVec2F(*parallaxValueJson);
+  if (!parallaxValueResult) return std::unexpected(std::move(parallaxValueResult.error()));
+  result.parallaxValue = std::move(*parallaxValueResult);
+  auto repeatJson = store.get("repeat");
+  if (!repeatJson) return std::unexpected(std::move(repeatJson.error()));
+  auto repeatResult = jsonToVec2B(*repeatJson);
+  if (!repeatResult) return std::unexpected(std::move(repeatResult.error()));
+  result.repeat = std::move(*repeatResult);
+  auto parallaxOffsetJson = store.get("parallaxOffset");
+  if (!parallaxOffsetJson) return std::unexpected(std::move(parallaxOffsetJson.error()));
+  auto parallaxOffsetResult = jsonToVec2F(*parallaxOffsetJson);
+  if (!parallaxOffsetResult) return std::unexpected(std::move(parallaxOffsetResult.error()));
+  result.parallaxOffset = std::move(*parallaxOffsetResult);
+  auto speedX = store.getFloat("speed");
+  if (!speedX) return std::unexpected(std::move(speedX.error()));
+  auto speedY = store.getFloat("speedY", 0.0f);
+  if (!speedY) return std::unexpected(std::move(speedY.error()));
+  result.speed = {*speedX, *speedY};
+  return result;
 }
 
 Json ParallaxLayer::store() const {
@@ -106,7 +156,7 @@ void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
     if (directives) {
       String dirString = directives.string();
 
-      auto& newString = newDirectives->string;
+      auto const& newString = *newDirectives.stringPtr();
       if (!newString.empty()) {
         if (newString.utf8().front() != '?')
           dirString += "?";
@@ -120,201 +170,345 @@ void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
   }
 }
 
-void ParallaxLayer::fadeToSkyColor(Color skyColor) {
+std::expected<void, StarException> ParallaxLayer::fadeToSkyColor(Color skyColor) {
   if (fadePercent > 0) {
-    String fade = "fade=" + skyColor.toHex().slice(0, 6) + "=" + toString(fadePercent);
+    auto hex = skyColor.toHex().slice(0, 6);
+    if (!hex) return std::unexpected(std::move(hex.error()));
+    String fade = "fade=" + *hex + "=" + toString(fadePercent);
     addImageDirectives(fade);
   }
+  return {};
 }
 
-DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
-  ds.read(parallaxLayer.textures);
-  ds.read(parallaxLayer.directives);
-  ds.read(parallaxLayer.alpha);
-  ds.read(parallaxLayer.parallaxValue);
-  ds.read(parallaxLayer.repeat);
-  ds.read(parallaxLayer.tileLimitTop);
-  ds.read(parallaxLayer.tileLimitBottom);
-  ds.read(parallaxLayer.verticalOrigin);
-  ds.read(parallaxLayer.zLevel);
-  ds.read(parallaxLayer.parallaxOffset);
-  ds.read(parallaxLayer.timeOfDayCorrelation);
-  ds.read(parallaxLayer.speed);
-  ds.read(parallaxLayer.followsWind);
-  ds.read(parallaxLayer.windSpeedMultiplier);
-  ds.read(parallaxLayer.unlit);
-  ds.read(parallaxLayer.lightMapped);
-  ds.read(parallaxLayer.fadePercent);
-  return ds;
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
+  if (auto r = ds.read(parallaxLayer.textures); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.directives); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.alpha); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.parallaxValue); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.repeat); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.tileLimitTop); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.tileLimitBottom); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.verticalOrigin); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.zLevel); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.parallaxOffset); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.timeOfDayCorrelation); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.speed); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.followsWind); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.windSpeedMultiplier); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.unlit); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.lightMapped); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.read(parallaxLayer.fadePercent); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
-  ds.write(parallaxLayer.textures);
-  ds.write(parallaxLayer.directives);
-  ds.write(parallaxLayer.alpha);
-  ds.write(parallaxLayer.parallaxValue);
-  ds.write(parallaxLayer.repeat);
-  ds.write(parallaxLayer.tileLimitTop);
-  ds.write(parallaxLayer.tileLimitBottom);
-  ds.write(parallaxLayer.verticalOrigin);
-  ds.write(parallaxLayer.zLevel);
-  ds.write(parallaxLayer.parallaxOffset);
-  ds.write(parallaxLayer.timeOfDayCorrelation);
-  ds.write(parallaxLayer.speed);
-  ds.write(parallaxLayer.followsWind);
-  ds.write(parallaxLayer.windSpeedMultiplier);
-  ds.write(parallaxLayer.unlit);
-  ds.write(parallaxLayer.lightMapped);
-  ds.write(parallaxLayer.fadePercent);
-  return ds;
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
+  if (auto r = ds.write(parallaxLayer.textures); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.directives); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.alpha); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.parallaxValue); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.repeat); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.tileLimitTop); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.tileLimitBottom); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.verticalOrigin); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.zLevel); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.parallaxOffset); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.timeOfDayCorrelation); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.speed); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.followsWind); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.windSpeedMultiplier); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.unlit); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.lightMapped); !r) return std::unexpected(std::move(r.error()));
+  if (auto r = ds.write(parallaxLayer.fadePercent); !r) return std::unexpected(std::move(r.error()));
+  return &ds;
 }
 
-Parallax::Parallax(Root& root, String const& assetFile,
-    std::uint64_t seed,
-    float verticalOrigin,
-    float hueShift,
-    std::optional<TreeVariant> parallaxTreeVariant) : m_root(root) {
-  m_seed = seed;
-  m_verticalOrigin = verticalOrigin;
-  m_parallaxTreeVariant = parallaxTreeVariant;
-  m_hueShift = hueShift;
-  m_imageDirectory = "/parallax/images/";
-
-  auto assets = m_root.assets();
-
-  Json config = assets->json(assetFile);
-
-  m_verticalOrigin += config.getFloat("verticalOrigin", 0);
-
-  RandomSource rnd(m_seed);
-
-  for (auto layerSettings : config.getArray("layers")) {
-    String kind = layerSettings.getString("kind");
-
-    float frequency = layerSettings.getFloat("frequency", 1.0);
-    if (rnd.randf() > frequency)
-      continue;
-
-    buildLayer(layerSettings, kind);
+std::expected<std::shared_ptr<Parallax>, StarException> Parallax::create(Root& root, String const& assetFile,
+    std::uint64_t seed, float verticalOrigin, float hueShift, std::optional<TreeVariant> parallaxTreeVariant) {
+  auto result = std::shared_ptr<Parallax>(new Parallax(root));
+  result->m_seed = seed;
+  result->m_verticalOrigin = verticalOrigin;
+  result->m_parallaxTreeVariant = std::move(parallaxTreeVariant);
+  result->m_hueShift = hueShift;
+  result->m_imageDirectory = "/parallax/images/";
+  auto assets = root.assets();
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json(assetFile);
+  if (!config) return std::unexpected(std::move(config.error()));
+  auto origin = config->getFloat("verticalOrigin", 0);
+  if (!origin) return std::unexpected(std::move(origin.error()));
+  result->m_verticalOrigin += *origin;
+  RandomSource rnd(seed);
+  auto layers = config->getArray("layers");
+  if (!layers) return std::unexpected(std::move(layers.error()));
+  for (auto const& settings : *layers) {
+    auto kind = settings.getString("kind");
+    if (!kind) return std::unexpected(std::move(kind.error()));
+    auto frequency = settings.getFloat("frequency", 1.0);
+    if (!frequency) return std::unexpected(std::move(frequency.error()));
+    if (rnd.randf() > *frequency) continue;
+    if (auto r = result->buildLayer(settings, *kind); !r) return std::unexpected(std::move(r.error()));
   }
-
-  // sort with highest Z level first
-  std::stable_sort(m_layers.begin(), m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  std::stable_sort(result->m_layers.begin(), result->m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  return result;
 }
 
-Parallax::Parallax(Root& root, Json const& store) : m_root(root) {
-  m_seed = store.getUInt("seed");
-  m_verticalOrigin = store.getFloat("verticalOrigin");
-  if (auto treeVariant = store.opt("parallaxTreeVariant"))
-    m_parallaxTreeVariant = TreeVariant(*root.assets(), *treeVariant);
-  m_hueShift = store.getFloat("hueShift");
-  m_imageDirectory = store.getString("imageDirectory");
-  m_layers = store.getArray("layers").transformed(construct<ParallaxLayer>());
-
-  std::stable_sort(m_layers.begin(), m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+std::expected<std::shared_ptr<Parallax>, StarException> Parallax::create(Root& root, Json const& store) {
+  auto result = std::shared_ptr<Parallax>(new Parallax(root));
+  auto m_seedResult = store.getUInt("seed");
+  if (!m_seedResult) return std::unexpected(std::move(m_seedResult.error()));
+  result->m_seed = std::move(*m_seedResult);
+  auto m_verticalOriginResult = store.getFloat("verticalOrigin");
+  if (!m_verticalOriginResult) return std::unexpected(std::move(m_verticalOriginResult.error()));
+  result->m_verticalOrigin = std::move(*m_verticalOriginResult);
+  auto m_hueShiftResult = store.getFloat("hueShift");
+  if (!m_hueShiftResult) return std::unexpected(std::move(m_hueShiftResult.error()));
+  result->m_hueShift = std::move(*m_hueShiftResult);
+  auto m_imageDirectoryResult = store.getString("imageDirectory");
+  if (!m_imageDirectoryResult) return std::unexpected(std::move(m_imageDirectoryResult.error()));
+  result->m_imageDirectory = std::move(*m_imageDirectoryResult);
+  auto tree = store.opt("parallaxTreeVariant");
+  if (!tree) return std::unexpected(std::move(tree.error()));
+  if (*tree) {
+    auto assets = root.assets();
+    if (!assets) return std::unexpected(std::move(assets.error()));
+    auto variant = TreeVariant::create(**assets, **tree);
+    if (!variant) return std::unexpected(std::move(variant.error()));
+    result->m_parallaxTreeVariant = std::move(*variant);
+  }
+  auto layers = store.getArray("layers");
+  if (!layers) return std::unexpected(std::move(layers.error()));
+  for (auto const& layer : *layers) {
+    auto loaded = ParallaxLayer::create(layer);
+    if (!loaded) return std::unexpected(std::move(loaded.error()));
+    result->m_layers.append(std::move(*loaded));
+  }
+  std::stable_sort(result->m_layers.begin(), result->m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  return result;
 }
 
-Json Parallax::store() const {
+std::expected<Json, StarException> Parallax::store() const {
+  Json tree;
+  if (m_parallaxTreeVariant) {
+    auto stored = m_parallaxTreeVariant->toJson();
+    if (!stored) return std::unexpected(std::move(stored.error()));
+    tree = std::move(*stored);
+  }
   return JsonObject{{"seed", m_seed},
       {"verticalOrigin", m_verticalOrigin},
-      {"parallaxTreeVariant", m_parallaxTreeVariant ? m_parallaxTreeVariant->toJson() : Json()},
+      {"parallaxTreeVariant", std::move(tree)},
       {"hueShift", m_hueShift},
       {"imageDirectory", m_imageDirectory},
       {"layers", m_layers.transformed(std::mem_fn(&ParallaxLayer::store))}};
 }
 
-void Parallax::fadeToSkyColor(Color const& skyColor) {
+std::expected<void, StarException> Parallax::fadeToSkyColor(Color const& skyColor) {
   for (auto& layer : m_layers) {
-    layer.fadeToSkyColor(skyColor);
+    if (auto r = layer.fadeToSkyColor(skyColor); !r) return std::unexpected(std::move(r.error()));
   }
+  return {};
 }
 
-std::shared_ptr<Parallax> Parallax::createOverlay(String const& assetFile) const {
-  return std::make_shared<Parallax>(m_root, assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
+std::expected<std::shared_ptr<Parallax>, StarException> Parallax::createOverlay(String const& assetFile) const {
+  return Parallax::create(m_root, assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
 }
 
 ParallaxLayers const& Parallax::layers() const {
   return m_layers;
 }
 
-void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
-  bool isFoliage = kind.beginsWith("foliage/");
-  bool isStem = kind.beginsWith("stem/");
+std::expected<void, StarException> Parallax::buildLayer(Json const& layerSettings, String const& kind) {
+  auto isFoliage = kind.beginsWith("foliage/");
+  if (!isFoliage)
+    return std::unexpected(std::move(isFoliage.error()));
+  auto isStem = kind.beginsWith("stem/");
+  if (!isStem)
+    return std::unexpected(std::move(isStem.error()));
 
   String texPath = m_imageDirectory + kind + "/";
-  if (isFoliage) {
-    // If our tree type has no foliage, don't construct this layer
-    if (!m_parallaxTreeVariant || !m_parallaxTreeVariant->foliageSettings.getBool("parallaxFoliage", false))
-      return;
-
-    texPath = m_parallaxTreeVariant->foliageDirectory + "parallax/" + kind.replace("foliage/", "") + "/";
-  } else if (isStem) {
+  if (*isFoliage) {
+    // If our tree type has no foliage, don't construct this layer.
     if (!m_parallaxTreeVariant)
-      return;
-
-    texPath = m_parallaxTreeVariant->stemDirectory + "parallax/" + kind.replace("stem/", "") + "/";
+      return {};
+    auto enabled = m_parallaxTreeVariant->foliageSettings.getBool("parallaxFoliage", false);
+    if (!enabled)
+      return std::unexpected(std::move(enabled.error()));
+    if (!*enabled)
+      return {};
+    auto subdirectory = kind.replace("foliage/", "");
+    if (!subdirectory)
+      return std::unexpected(std::move(subdirectory.error()));
+    texPath = m_parallaxTreeVariant->foliageDirectory + "parallax/" + *subdirectory + "/";
+  } else if (*isStem) {
+    if (!m_parallaxTreeVariant)
+      return {};
+    auto subdirectory = kind.replace("stem/", "");
+    if (!subdirectory)
+      return std::unexpected(std::move(subdirectory.error()));
+    texPath = m_parallaxTreeVariant->stemDirectory + "parallax/" + *subdirectory + "/";
   }
 
   ParallaxLayer layer;
   RandomSource rnd(m_seed + m_layers.size());
   auto imgMetadata = m_root.imageMetadataDatabase();
+  if (!imgMetadata)
+    return std::unexpected(std::move(imgMetadata.error()));
 
-  int baseCount = layerSettings.getInt("baseCount", 1);
-  int base = rnd.randInt(baseCount - 1) + 1;
+  auto baseCount = layerSettings.getInt("baseCount", 1);
+  if (!baseCount)
+    return std::unexpected(std::move(baseCount.error()));
+  int baseCountValue = *baseCount;
+  int base = rnd.randInt(baseCountValue - 1) + 1;
   layer.textures.append(AssetPath::relativeTo(texPath, "base/" + toString<int>(base) + ".png"));
-
-  int modCount = layerSettings.getInt("modCount", 0);
-  int mod = rnd.randInt(modCount);
+  auto modCount = layerSettings.getInt("modCount", 0);
+  if (!modCount)
+    return std::unexpected(std::move(modCount.error()));
+  int modCountValue = *modCount;
+  int mod = rnd.randInt(modCountValue);
   if (mod != 0)
     layer.textures.append(AssetPath::relativeTo(texPath, "mod/" + toString<int>(mod) + ".png"));
 
-  if (layerSettings.get("parallax").type() == Json::Type::Array)
-    layer.parallaxValue = jsonToVec2F(layerSettings.get("parallax"));
-  else
-    layer.parallaxValue = Vec2F::filled(layerSettings.getFloat("parallax"));
+  auto parallaxConfig = layerSettings.get("parallax");
+  if (!parallaxConfig)
+    return std::unexpected(std::move(parallaxConfig.error()));
+  if (parallaxConfig->type() == Json::Type::Array) {
+    auto value = jsonToVec2F(*parallaxConfig);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    layer.parallaxValue = *value;
+  } else {
+    auto value = parallaxConfig->toFloat();
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    layer.parallaxValue = Vec2F::filled(*value);
+  }
 
-  bool repeatY = layerSettings.getBool("repeatY", false);
-  layer.repeat = {true, repeatY};
-  if (repeatY) {
-    layer.tileLimitTop = layerSettings.optFloat("tileLimitTop");
-    layer.tileLimitBottom = layerSettings.optFloat("tileLimitBottom");
+  auto repeatY = layerSettings.getBool("repeatY", false);
+  if (!repeatY)
+    return std::unexpected(std::move(repeatY.error()));
+  layer.repeat = {true, *repeatY};
+  if (*repeatY) {
+    auto top = layerSettings.optFloat("tileLimitTop");
+    if (!top)
+      return std::unexpected(std::move(top.error()));
+    layer.tileLimitTop = *top;
+    auto bottom = layerSettings.optFloat("tileLimitBottom");
+    if (!bottom)
+      return std::unexpected(std::move(bottom.error()));
+    layer.tileLimitBottom = *bottom;
   }
 
   layer.verticalOrigin = m_verticalOrigin;
   layer.zLevel = layer.parallaxValue.sum();
-  auto offset = layerSettings.getArray("offset", { 0, 0 });
-  layer.parallaxOffset = { offset[0].toFloat(), offset[1].toFloat() }; // shift from bottom left to horizon level in the image
-  if (!layerSettings.getBool("noRandomOffset", false))
-    layer.parallaxOffset[0] += rnd.randInt(imgMetadata->imageSize(layer.textures[0])[0]);
-  layer.timeOfDayCorrelation = layerSettings.getString("timeOfDayCorrelation", "");
+  auto offset = layerSettings.getArray("offset", {0, 0});
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
+  auto offsetX = offset->at(0);
+  if (!offsetX)
+    return std::unexpected(std::move(offsetX.error()));
+  auto x = (*offsetX)->toFloat();
+  if (!x)
+    return std::unexpected(std::move(x.error()));
+  auto offsetY = offset->at(1);
+  if (!offsetY)
+    return std::unexpected(std::move(offsetY.error()));
+  auto y = (*offsetY)->toFloat();
+  if (!y)
+    return std::unexpected(std::move(y.error()));
+  layer.parallaxOffset = {*x, *y};
+  auto noRandomOffset = layerSettings.getBool("noRandomOffset", false);
+  if (!noRandomOffset)
+    return std::unexpected(std::move(noRandomOffset.error()));
+  if (!*noRandomOffset) {
+    auto size = (*imgMetadata)->imageSize(layer.textures[0]);
+    if (!size)
+      return std::unexpected(std::move(size.error()));
+    layer.parallaxOffset[0] += rnd.randInt((*size)[0]);
+  }
+  auto correlation = layerSettings.getString("timeOfDayCorrelation", "");
+  if (!correlation)
+    return std::unexpected(std::move(correlation.error()));
+  layer.timeOfDayCorrelation = std::move(*correlation);
   auto minSpeed = layerSettings.get("minSpeed", 0.0f);
+  if (!minSpeed)
+    return std::unexpected(std::move(minSpeed.error()));
   auto maxSpeed = layerSettings.get("maxSpeed", 0.0f);
-  if (!minSpeed.isType(Json::Type::Array))
-    minSpeed = JsonArray{ minSpeed, 0.0f };
-  if (!maxSpeed.isType(Json::Type::Array))
-    maxSpeed = JsonArray{ maxSpeed, 0.0f };
-  layer.speed = { rnd.randf(minSpeed.getFloat(0), maxSpeed.getFloat(0)),
-                  rnd.randf(minSpeed.getFloat(1), maxSpeed.getFloat(1)) };
-  layer.followsWind = layerSettings.getBool("followsWind", false);
-  layer.windSpeedMultiplier = layerSettings.optFloat("windSpeedMultiplier");
-  layer.unlit = layerSettings.getBool("unlit", false);
-  layer.lightMapped = layerSettings.getBool("lightMapped", false);
+  if (!maxSpeed)
+    return std::unexpected(std::move(maxSpeed.error()));
+  if (!minSpeed->isType(Json::Type::Array))
+    *minSpeed = JsonArray{*minSpeed, 0.0f};
+  if (!maxSpeed->isType(Json::Type::Array))
+    *maxSpeed = JsonArray{*maxSpeed, 0.0f};
+  auto minX = minSpeed->getFloat(0);
+  if (!minX)
+    return std::unexpected(std::move(minX.error()));
+  auto maxX = maxSpeed->getFloat(0);
+  if (!maxX)
+    return std::unexpected(std::move(maxX.error()));
+  auto speedX = rnd.randf(*minX, *maxX);
+  if (!speedX)
+    return std::unexpected(std::move(speedX.error()));
+  auto minY = minSpeed->getFloat(1);
+  if (!minY)
+    return std::unexpected(std::move(minY.error()));
+  auto maxY = maxSpeed->getFloat(1);
+  if (!maxY)
+    return std::unexpected(std::move(maxY.error()));
+  auto speedY = rnd.randf(*minY, *maxY);
+  if (!speedY)
+    return std::unexpected(std::move(speedY.error()));
+  layer.speed = {*speedX, *speedY};
+  auto followsWind = layerSettings.getBool("followsWind", false);
+  if (!followsWind)
+    return std::unexpected(std::move(followsWind.error()));
+  layer.followsWind = *followsWind;
+  auto windSpeedMultiplier = layerSettings.optFloat("windSpeedMultiplier");
+  if (!windSpeedMultiplier)
+    return std::unexpected(std::move(windSpeedMultiplier.error()));
+  layer.windSpeedMultiplier = *windSpeedMultiplier;
+  auto unlit = layerSettings.getBool("unlit", false);
+  if (!unlit)
+    return std::unexpected(std::move(unlit.error()));
+  layer.unlit = *unlit;
+  auto lightMapped = layerSettings.getBool("lightMapped", false);
+  if (!lightMapped)
+    return std::unexpected(std::move(lightMapped.error()));
+  layer.lightMapped = *lightMapped;
 
-  layer.addImageDirectives(layerSettings.getString("directives", ""));
-  if (isFoliage)
+  auto directives = layerSettings.getString("directives", "");
+  if (!directives)
+    return std::unexpected(std::move(directives.error()));
+  layer.addImageDirectives(*directives);
+  if (*isFoliage) {
     layer.addImageDirectives(String(strf("hueshift={}", m_parallaxTreeVariant->foliageHueShift)));
-  else if (isStem)
+  } else if (*isStem) {
     layer.addImageDirectives(String(strf("hueshift={}", m_parallaxTreeVariant->stemHueShift)));
-  else if (!layerSettings.getBool("nohueshift", false))
-    layer.addImageDirectives(String(strf("hueshift={}", m_hueShift)));
+  } else {
+    auto noHueShift = layerSettings.getBool("nohueshift", false);
+    if (!noHueShift)
+      return std::unexpected(std::move(noHueShift.error()));
+    if (!*noHueShift)
+      layer.addImageDirectives(String(strf("hueshift={}", m_hueShift)));
+  }
 
-  layer.fadePercent = layerSettings.getFloat("fadePercent", 0);
-  
-  layer.frameNumber = layerSettings.getInt("frameNumber", 1);
-  layer.frameOffset = layerSettings.getInt("frameOffset", 0);
-  layer.animationCycle = layerSettings.getFloat("animationCycle", 1.0f);
+  auto fadePercent = layerSettings.getFloat("fadePercent", 0);
+  if (!fadePercent)
+    return std::unexpected(std::move(fadePercent.error()));
+  layer.fadePercent = *fadePercent;
+  auto frameNumber = layerSettings.getInt("frameNumber", 1);
+  if (!frameNumber)
+    return std::unexpected(std::move(frameNumber.error()));
+  layer.frameNumber = *frameNumber;
+  auto frameOffset = layerSettings.getInt("frameOffset", 0);
+  if (!frameOffset)
+    return std::unexpected(std::move(frameOffset.error()));
+  layer.frameOffset = *frameOffset;
+  auto animationCycle = layerSettings.getFloat("animationCycle", 1.0f);
+  if (!animationCycle)
+    return std::unexpected(std::move(animationCycle.error()));
+  layer.animationCycle = *animationCycle;
 
-  m_layers.append(layer);
+  m_layers.append(std::move(layer));
+  return {};
 }
 
 }

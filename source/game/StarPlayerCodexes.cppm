@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.string;
 import star.list;
@@ -20,20 +21,20 @@ public:
   typedef std::pair<std::shared_ptr<Codex const>, bool> CodexEntry;
 
   PlayerCodexes(Root& root);
-  PlayerCodexes(Root& root, Json const& json);
+  [[nodiscard]] static std::expected<std::shared_ptr<PlayerCodexes>, StarException> create(Root& root, Json const& json);
 
   Json toJson() const;
 
   List<CodexEntry> codexes() const;
 
   bool codexKnown(String const& codexId) const;
-  std::shared_ptr<Codex const> learnCodex(String const& codexId, bool markRead = false);
+  [[nodiscard]] std::expected<std::shared_ptr<Codex const>, StarException> learnCodex(String const& codexId, bool markRead = false);
 
   bool codexRead(String const& codexId) const;
   bool markCodexRead(String const& codexId);
   bool markCodexUnread(String const& codexId);
 
-  void learnInitialCodexes(String const& playerSpecies);
+  [[nodiscard]] std::expected<void, StarException> learnInitialCodexes(String const& playerSpecies);
 
   std::shared_ptr<Codex const> firstNewCodex() const;
 

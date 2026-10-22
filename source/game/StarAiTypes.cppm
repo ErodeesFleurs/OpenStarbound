@@ -29,7 +29,7 @@ struct AiSpeech {
 
 struct AiState {
   AiState();
-  AiState(Json const& v);
+  [[nodiscard]] static std::expected<AiState, StarException> create(Json const& v);
 
   Json toJson() const;
 

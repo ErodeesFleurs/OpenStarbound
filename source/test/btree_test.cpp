@@ -97,7 +97,7 @@ Pointer SimpleBTreeIndex<Key, Pointer>::pointer(std::size_t i) const {
   if (i == 0)
     return *beginPointer;
   else
-    return pointers.at(i - 1).pointer;
+    return pointers[i - 1].pointer;
 }
 
 template <typename Key, typename Pointer>
@@ -105,23 +105,23 @@ void SimpleBTreeIndex<Key, Pointer>::updatePointer(std::size_t i, Pointer p) {
   if (i == 0)
     *beginPointer = p;
   else
-    pointers.at(i - 1).pointer = p;
+    pointers[i - 1].pointer = p;
 }
 
 template <typename Key, typename Pointer>
 Key const& SimpleBTreeIndex<Key, Pointer>::keyBefore(std::size_t i) const {
-  return pointers.at(i - 1).key;
+  return pointers[i - 1].key;
 }
 
 template <typename Key, typename Pointer>
 void SimpleBTreeIndex<Key, Pointer>::updateKeyBefore(std::size_t i, Key k) {
-  pointers.at(i - 1).key = k;
+  pointers[i - 1].key = k;
 }
 
 template <typename Key, typename Pointer>
 void SimpleBTreeIndex<Key, Pointer>::removeBefore(std::size_t i) {
   if (i == 0) {
-    beginPointer = pointers.at(0).pointer;
+    beginPointer = pointers[0].pointer;
     pointers.eraseAt(0);
   } else {
     pointers.eraseAt(i - 1);
@@ -158,7 +158,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftLeft(Key const& mid, SimpleBTreeIndex&
 
   right.pointers.erase(right.pointers.begin(), s);
   if (right.pointers.size() != 0) {
-    right.beginPointer = right.pointers.at(0).pointer;
+    right.beginPointer = right.pointers[0].pointer;
     right.pointers.eraseAt(0);
   } else {
     right.beginPointer.reset();
@@ -181,10 +181,10 @@ void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex
 
   left.pointers.erase(s, left.pointers.end());
   if (left.pointers.size() != 0) {
-    beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
+    beginPointer = left.pointers[left.pointers.size() - 1].pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {
-    beginPointer = takeOptional(left.beginPointer);
+    beginPointer = std::exchange(left.beginPointer, std::nullopt);
   }
 }
 
@@ -213,12 +213,12 @@ std::size_t SimpleBTreeLeaf<Key, Data, Pointer>::count() const {
 
 template <typename Key, typename Data, typename Pointer>
 Key const& SimpleBTreeLeaf<Key, Data, Pointer>::key(std::size_t i) const {
-  return elements.at(i).key;
+  return elements[i].key;
 }
 
 template <typename Key, typename Data, typename Pointer>
 Data const& SimpleBTreeLeaf<Key, Data, Pointer>::data(std::size_t i) const {
-  return elements.at(i).data;
+  return elements[i].data;
 }
 
 template <typename Key, typename Data, typename Pointer>
@@ -297,7 +297,7 @@ struct SimpleBTreeBase {
     return rootleaf;
   }
 
-  void setNewRoot(Pointer pointer, bool isLeaf) {
+  [[nodiscard]] std::expected<void, StarException> setNewRoot(Pointer pointer, bool isLeaf) {
     root = pointer;
     rootleaf = isLeaf;
 
@@ -309,6 +309,7 @@ struct SimpleBTreeBase {
 
     deletedLeaves.clear();
     deletedIndexes.clear();
+    return {};
   }
 
   // Should create new empty leaf.
@@ -318,9 +319,12 @@ struct SimpleBTreeBase {
     return leaf;
   }
 
-  Leaf loadLeaf(Pointer const& pointer) {
+  [[nodiscard]] std::expected<Leaf, StarException> loadLeaf(Pointer const& pointer) {
     // To make sure to accurately test storage, always *copy* in and out
-    return leaves.get(pointer);
+    auto leaf = leaves.get(pointer);
+    if (!leaf)
+      return std::unexpected(std::move(leaf.error()));
+    return **leaf;
   }
 
   bool leafNeedsShift(Leaf const& leaf) {
@@ -361,9 +365,12 @@ struct SimpleBTreeBase {
     }
   }
 
-  Pointer storeLeaf(Leaf leaf) {
-    if (leaf.self != -1)
-      deleteLeaf(leaf);
+  [[nodiscard]] std::expected<Pointer, StarException> storeLeaf(Leaf leaf) {
+    if (leaf.self != -1) {
+      auto deleted = deleteLeaf(leaf);
+      if (!deleted)
+        return std::unexpected(std::move(deleted.error()));
+    }
 
     while (leaves.contains(leafId))
       ++leafId;
@@ -375,8 +382,9 @@ struct SimpleBTreeBase {
     return leaf.self;
   }
 
-  void deleteLeaf(Leaf const& leaf) {
+  [[nodiscard]] std::expected<void, StarException> deleteLeaf(Leaf const& leaf) {
     deletedLeaves.append(leaf.self);
+    return {};
   }
 
   // Should create new index with two pointers and one mid key.
@@ -388,8 +396,11 @@ struct SimpleBTreeBase {
     return indexNode;
   }
 
-  Index loadIndex(Pointer const& pointer) {
-    return indexes.get(pointer);
+  [[nodiscard]] std::expected<Index, StarException> loadIndex(Pointer const& pointer) {
+    auto index = indexes.get(pointer);
+    if (!index)
+      return std::unexpected(std::move(index.error()));
+    return **index;
   }
 
   bool indexNeedsShift(Index const& index) {
@@ -426,7 +437,7 @@ struct SimpleBTreeBase {
     }
   }
 
-  Pointer storeIndex(Index index) {
+  [[nodiscard]] std::expected<Pointer, StarException> storeIndex(Index index) {
     if (index.self != -1)
       deleteIndex(index);
 
@@ -530,17 +541,18 @@ struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
 
     leafId = 0;
     indexId = 0;
-
-    createNewRoot();
   }
 
-  void print() {
-    forAllNodes(Printer());
+  [[nodiscard]] std::expected<void, StarException> print() {
+    auto printed = forAllNodes(Printer());
+    if (!printed)
+      return std::unexpected(std::move(printed.error()));
     std::cout << std::endl;
+    return {};
   }
 
   struct Printer {
-    bool operator()(Index const& index) {
+    [[nodiscard]] std::expected<bool, StarException> operator()(Index const& index) {
       std::cout << "[" << index.level << ":" << index.self << "]"
            << " " << outputOptional(index.beginPointer) << " ";
       for (Index::Element e : index.pointers) {
@@ -551,7 +563,7 @@ struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
       return true;
     }
 
-    bool operator()(Leaf const& leaf) {
+    [[nodiscard]] std::expected<bool, StarException> operator()(Leaf const& leaf) {
       std::cout << "[" << leaf.self << "]"
            << " ";
       for (Leaf::Element e : leaf.elements) {
@@ -579,21 +591,26 @@ bool checkValue(int k, String v) {
 
 void putAll(SimpleBTree& db, List<int> keys) {
   for (int k : keys)
-    db.insert(k, genValue(k));
+    ASSERT_TRUE(db.insert(k, genValue(k)));
 }
 
 void checkAll(SimpleBTree& db, List<int> keys) {
   for (int k : keys) {
     auto v = db.find(k);
-    EXPECT_TRUE(checkValue(k, *v));
+    ASSERT_TRUE(v);
+    ASSERT_TRUE(*v);
+    EXPECT_TRUE(checkValue(k, **v));
   }
 }
 
-std::size_t removeAll(SimpleBTree& db, List<int> keys) {
+[[nodiscard]] std::expected<std::size_t, StarException> removeAll(SimpleBTree& db, List<int> keys) {
   std::size_t totalRemoved = 0;
   Set<int> removed;
   for (int k : keys) {
-    if (db.remove(k)) {
+    auto result = db.remove(k);
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+    if (*result) {
       EXPECT_FALSE(removed.contains(k));
       removed.add(k);
       ++totalRemoved;
@@ -603,10 +620,13 @@ std::size_t removeAll(SimpleBTree& db, List<int> keys) {
 }
 
 void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
-  RandomService random;
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto& random = **randomResult;
   std::srand(std::time(0));
 
   SimpleBTree db(maxIndexSize, maxLeafSize);
+  ASSERT_TRUE(db.createNewRoot());
 
   Set<int> keySet;
   while (keySet.size() < TestCount)
@@ -622,7 +642,9 @@ void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
   random.shuffle(keys);
   putAll(db, keys);
 
-  EXPECT_EQ(db.recordCount(), TestCount);
+  auto recordCount = db.recordCount();
+  ASSERT_TRUE(recordCount);
+  EXPECT_EQ(*recordCount, TestCount);
 
   random.shuffle(keys);
   checkAll(db, keys);
@@ -630,9 +652,9 @@ void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
   // Random reads/writes with ShrinkCount cycles...
   for (std::size_t i = 0; i < ShrinkCount; ++i) {
     random.shuffle(keys);
-    List<int> keysTemp = keys.slice(0, keys.size() / 2);
+    List<int> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
 
-    removeAll(db, keysTemp);
+    ASSERT_TRUE(removeAll(db, keysTemp));
 
     random.shuffle(keysTemp);
     putAll(db, keysTemp);
@@ -641,8 +663,9 @@ void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
     checkAll(db, keys);
   }
 
-  std::size_t totalRemoved = removeAll(db, keys);
-  EXPECT_EQ(totalRemoved, TestCount);
+  auto totalRemoved = removeAll(db, keys);
+  ASSERT_TRUE(totalRemoved);
+  EXPECT_EQ(*totalRemoved, TestCount);
 }
 
 TEST(BTreeTest, All) {

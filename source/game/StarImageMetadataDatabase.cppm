@@ -1,4 +1,5 @@
 module;
+import star.format;
 import std;
 import star.json;
 
@@ -28,9 +29,9 @@ class Root;
 class ImageMetadataDatabase {
 public:
   explicit ImageMetadataDatabase(Root& root);
-  Vec2U imageSize(AssetPath const& path) const;
-  List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
-  RectU nonEmptyRegion(AssetPath const& path) const;
+  [[nodiscard]] std::expected<Vec2U, StarException> imageSize(AssetPath const& path) const;
+  [[nodiscard]] std::expected<List<Vec2I>, StarException> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
+  [[nodiscard]] std::expected<RectU, StarException> nonEmptyRegion(AssetPath const& path) const;
   void cleanup() const;
 
 private:
@@ -38,7 +39,7 @@ private:
   // non-empty regions.
   static AssetPath filterProcessing(AssetPath const& path);
 
-  Vec2U calculateImageSize(AssetPath const& path) const;
+  [[nodiscard]] std::expected<Vec2U, StarException> calculateImageSize(AssetPath const& path) const;
 
   // Path, position, fillLimit, and flip
   typedef std::tuple<AssetPath, Vec2I, float, bool> SpacesEntry;

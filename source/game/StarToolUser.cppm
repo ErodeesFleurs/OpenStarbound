@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.set;
 import star.json;
 import star.net_compatibility;
@@ -52,39 +53,39 @@ class Root;
 
 class ToolUser : public NetElementSyncGroup {
 public:
-  explicit ToolUser(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<ToolUser>, StarException> create(Root& root);
 
-  Json diskStore() const;
-  void diskLoad(Json const& diskStore);
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<void, StarException> diskLoad(Json const& diskStore);
 
-  void init(ToolUserEntity* user);
-  void uninit();
+  [[nodiscard]] std::expected<void, StarException> init(ToolUserEntity* user);
+  [[nodiscard]] std::expected<void, StarException> uninit();
 
   std::shared_ptr<Item> primaryHandItem() const;
   std::shared_ptr<Item> altHandItem() const;
   ItemDescriptor primaryHandItemDescriptor() const;
   ItemDescriptor altHandItemDescriptor() const;
 
-  List<LightSource> lightSources() const;
-  void effects(EffectEmitter& emitter) const;
-  List<PersistentStatusEffect> statusEffects() const;
+  [[nodiscard]] std::expected<List<LightSource>, StarException> lightSources() const;
+  [[nodiscard]] std::expected<void, StarException> effects(EffectEmitter& emitter) const;
+  [[nodiscard]] std::expected<List<PersistentStatusEffect>, StarException> statusEffects() const;
 
-  std::optional<float> toolRadius() const;
+  [[nodiscard]] std::expected<std::optional<float>, StarException> toolRadius() const;
   // FIXME: There is a render method in ToolUser, why can't this be rendered
   // with the rest of everything else, there are TILE previews and OBJECT
   // previews, but of course one has to go through the render method and the
   // other has to be rendered separately.
-  List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor);
-  // Returns the facing override direciton if there is one
-  std::optional<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
-  void setupHumanoidHandItemDrawables(Humanoid& humanoid) const;
+  [[nodiscard]] std::expected<List<Drawable>, StarException> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor);
+  // Returns the facing override direction if there is one.
+  [[nodiscard]] std::expected<std::optional<Direction>, StarException> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
+  [[nodiscard]] std::expected<void, StarException> setupHumanoidHandItemDrawables(Humanoid& humanoid) const;
 
-  Vec2F armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const;
-  Vec2F handOffset(Humanoid const& humanoid, ToolHand hand, Direction facingDirection) const;
-  Vec2F handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const;
-  bool queryShieldHit(DamageSource const& source) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> handOffset(Humanoid const& humanoid, ToolHand hand, Direction facingDirection) const;
+  [[nodiscard]] std::expected<Vec2F, StarException> handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const;
+  [[nodiscard]] std::expected<bool, StarException> queryShieldHit(DamageSource const& source) const;
 
-  void tick(float dt, bool shifting, HashSet<MoveControlType> const& moves);
+  [[nodiscard]] std::expected<void, StarException> tick(float dt, bool shifting, HashSet<MoveControlType> const& moves);
 
   void beginPrimaryFire();
   void beginAltFire();
@@ -94,39 +95,43 @@ public:
   bool firingPrimary() const;
   bool firingAlt() const;
 
-  List<DamageSource> damageSources() const;
-  List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]] std::expected<List<DamageSource>, StarException> damageSources() const;
+  [[nodiscard]] std::expected<List<PhysicsForceRegion>, StarException> forceRegions() const;
 
-  void render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
+  [[nodiscard]] std::expected<void, StarException> render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
 
-  void setItems(std::shared_ptr<Item> primaryHandItem, std::shared_ptr<Item> altHandItem);
+  [[nodiscard]] std::expected<void, StarException> setItems(std::shared_ptr<Item> primaryHandItem, std::shared_ptr<Item> altHandItem);
 
   void suppressItems(bool suppress);
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
-  float beamGunRadius() const;
+  [[nodiscard]] std::expected<float, StarException> beamGunRadius() const;
 
 private:
+  template <typename> friend class NetElementTop;
+  explicit ToolUser(Root& root);
+  [[nodiscard]] std::expected<void, StarException> initialize();
+
   class NetItem : public NetElement {
   public:
     explicit NetItem(Root& root);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
-    void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-    void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
+    [[nodiscard]] std::expected<void, StarException> netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-    void enableNetInterpolation(float extrapolationHint = 0.0f) override;
-    void disableNetInterpolation() override;
-    void tickNetInterpolation(float dt) override;
+    [[nodiscard]] std::expected<void, StarException> enableNetInterpolation(float extrapolationHint = 0.0f) override;
+    [[nodiscard]] std::expected<void, StarException> disableNetInterpolation() override;
+    [[nodiscard]] std::expected<void, StarException> tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
-    void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
-    void blankNetDelta(float interpolationTime) override;
+    [[nodiscard]] std::expected<bool, StarException> writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] std::expected<void, StarException> readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+    [[nodiscard]] std::expected<void, StarException> blankNetDelta(float interpolationTime) override;
 
     std::shared_ptr<Item> const& get() const;
-    void set(std::shared_ptr<Item> item);
+    [[nodiscard]] std::expected<void, StarException> set(std::shared_ptr<Item> item);
 
     bool pullNewItem();
 
@@ -143,12 +148,12 @@ private:
     mutable DataStreamBuffer m_buffer;
   };
 
-  void initPrimaryHandItem();
-  void initAltHandItem();
-  void uninitItem(std::shared_ptr<Item> const& item);
+  [[nodiscard]] std::expected<void, StarException> initPrimaryHandItem();
+  [[nodiscard]] std::expected<void, StarException> initAltHandItem();
+  [[nodiscard]] std::expected<void, StarException> uninitItem(std::shared_ptr<Item> const& item);
 
-  void netElementsNeedLoad(bool full) override;
-  void netElementsNeedStore() override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedLoad(bool full) override;
+  [[nodiscard]] std::expected<void, StarException> netElementsNeedStore() override;
 
   // Borrowed for this tool user's lifetime; catalog lookups remain reload-aware.
   Root* m_root;

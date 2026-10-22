@@ -1,5 +1,6 @@
 module;
 #include <stddef.h>
+import star.format;
 import star.xx_hash;
 import star.json;
 import star.list;
@@ -102,8 +103,10 @@ struct ServerTile : public WorldTile {
 
   bool isColliding(CollisionSet const& collisionSet) const;
 
-  void write(DataStream& ds) const;
-  void read(DataStream& ds, VersionNumber serializationVersion);
+  [[nodiscard]]
+  std::expected<void, StarException> write(DataStream& ds) const;
+  [[nodiscard]]
+  std::expected<void, StarException> read(DataStream& ds, VersionNumber serializationVersion);
 
   // Updates collision, clears cache, and if the collision kind does not
   // support liquid destroys it.
@@ -142,8 +145,8 @@ typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
-  friend DataStream& operator>>(DataStream& ds, NetTile& value);
-  friend DataStream& operator<<(DataStream& ds, NetTile const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& value);
   NetTile();
 
   MaterialId background;
@@ -162,8 +165,10 @@ struct NetTile {
   LiquidNetUpdate liquid;
   DungeonId dungeonId;
 };
-DataStream& operator>>(DataStream& ds, NetTile& tile);
-DataStream& operator<<(DataStream& ds, NetTile const& tile);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, NetTile& tile);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, NetTile const& tile);
 
 // For storing predicted tile state.
 struct PredictedTile {
@@ -200,8 +205,8 @@ struct PredictedTile {
 // out specifically to avoid padding bytes so that a fast path can be taken
 // when hashing for chunk render caching.
 struct RenderTile {
-  friend DataStream& operator>>(DataStream& ds, RenderTile& value);
-  friend DataStream& operator<<(DataStream& ds, RenderTile const& value);
+  friend std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& value);
+  friend std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& value);
   MaterialId foreground;
   ModId foregroundMod;
 
@@ -229,8 +234,10 @@ struct RenderTile {
   template <typename Hasher>
   void hashPushLiquid(Hasher& hasher) const;
 };
-DataStream& operator>>(DataStream& ds, RenderTile& tile);
-DataStream& operator<<(DataStream& ds, RenderTile const& tile);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator>>(DataStream& ds, RenderTile& tile);
+[[nodiscard]]
+std::expected<DataStream*, StarException> operator<<(DataStream& ds, RenderTile const& tile);
 
 typedef MultiArray<RenderTile, 2> RenderTileArray;
 

@@ -1,4 +1,5 @@
 module;
+import star.format;
 import star.json;
 
 import star.string;
@@ -17,7 +18,7 @@ enum class Direction : std::uint8_t {
   Left,
   Right
 };
-extern EnumMap<Direction> const DirectionNames;
+extern std::expected<EnumMap<Direction>, StarException> const DirectionNames;
 
 inline Direction operator-(Direction dir) {
   if (dir == Direction::Left)
@@ -44,26 +45,26 @@ enum class Gender : std::uint8_t {
   Male,
   Female
 };
-extern EnumMap<Gender> const GenderNames;
+extern std::expected<EnumMap<Gender>, StarException> const GenderNames;
 
 enum class FireMode : std::uint8_t {
   None,
   Primary,
   Alt
 };
-extern EnumMap<FireMode> const FireModeNames;
+extern std::expected<EnumMap<FireMode>, StarException> const FireModeNames;
 
 enum class ToolHand : std::uint8_t {
   Primary,
   Alt
 };
-extern EnumMap<ToolHand> const ToolHandNames;
+extern std::expected<EnumMap<ToolHand>, StarException> const ToolHandNames;
 
 enum class TileLayer : std::uint8_t {
   Foreground,
   Background
 };
-extern EnumMap<TileLayer> const TileLayerNames;
+extern std::expected<EnumMap<TileLayer>, StarException> const TileLayerNames;
 
 enum class MoveControlType : std::uint8_t {
   Left,
@@ -72,7 +73,7 @@ enum class MoveControlType : std::uint8_t {
   Up,
   Jump
 };
-extern EnumMap<MoveControlType> const MoveControlTypeNames;
+extern std::expected<EnumMap<MoveControlType>, StarException> const MoveControlTypeNames;
 
 enum class PortraitMode {
   Head,
@@ -82,7 +83,7 @@ enum class PortraitMode {
   FullNude,
   FullNeutralNude
 };
-extern EnumMap<PortraitMode> const PortraitModeNames;
+extern std::expected<EnumMap<PortraitMode>, StarException> const PortraitModeNames;
 
 enum class Rarity {
   Common,
@@ -91,7 +92,7 @@ enum class Rarity {
   Legendary,
   Essential
 };
-extern EnumMap<Rarity> const RarityNames;
+extern std::expected<EnumMap<Rarity>, StarException> const RarityNames;
 
 // Transformation from tile space to pixel space.  Number of pixels in 1.0
 // distance (one tile).
@@ -173,9 +174,9 @@ inline bool isRealDungeon(DungeonId dungeon) {
 // Returns the inclusive beginning and end of the entity id space for the
 // given connection.  All client connection id spaces will be within the range
 // [-2^31, -1].
-std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
+[[nodiscard]] std::expected<std::pair<EntityId, EntityId>, StarException> connectionEntitySpace(ConnectionId connectionId);
 
-bool entityIdInSpace(EntityId entityId, ConnectionId connectionId);
+[[nodiscard]] std::expected<bool, StarException> entityIdInSpace(EntityId entityId, ConnectionId connectionId);
 
 ConnectionId connectionForEntity(EntityId entityId);
 

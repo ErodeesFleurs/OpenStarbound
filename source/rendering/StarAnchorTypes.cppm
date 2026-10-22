@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.bi_map;
 
 namespace Star {
@@ -10,14 +11,14 @@ enum class HorizontalAnchor {
   HMidAnchor,
   RightAnchor
 };
-extern EnumMap<HorizontalAnchor> const HorizontalAnchorNames;
+extern std::expected<EnumMap<HorizontalAnchor>, StarException> const HorizontalAnchorNames;
 
 enum class VerticalAnchor {
   BottomAnchor,
   VMidAnchor,
   TopAnchor
 };
-extern EnumMap<VerticalAnchor> const VerticalAnchorNames;
+extern std::expected<EnumMap<VerticalAnchor>, StarException> const VerticalAnchorNames;
 
 }
 

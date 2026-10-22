@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.json;
 import star.json_extra;
 import star.list;
@@ -39,45 +40,100 @@ import star.gui_context;
 import star.vector;
 namespace Star {
 
-InterfaceCursor::InterfaceCursor(GuiContext& context) : m_guiContext(&context) {
-  resetCursor();
+InterfaceCursor::InterfaceCursor(GuiContext& context) : m_guiContext(&context), m_scale(0) {}
+
+std::expected<std::shared_ptr<InterfaceCursor>, StarException> InterfaceCursor::create(GuiContext& context) {
+  auto cursor = std::shared_ptr<InterfaceCursor>(new InterfaceCursor(context));
+  auto reset = cursor->resetCursor();
+  if (!reset)
+    return std::unexpected(std::move(reset.error()));
+  return cursor;
 }
 
-void InterfaceCursor::resetCursor() {
-  auto& root = m_guiContext->root();
-  auto assets = root.assets();
-  setCursor(assets->json("/interface.config:defaultCursor").toString());
+std::expected<void, StarException> InterfaceCursor::resetCursor() {
+  auto assets = m_guiContext->root().assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto config = (*assets)->json("/interface.config:defaultCursor");
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto path = config->toString();
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  return setCursor(*path);
 }
 
-void InterfaceCursor::setCursor(String const& configFile) {
+std::expected<void, StarException> InterfaceCursor::setCursor(String const& configFile) {
   if (m_configFile == configFile)
-    return;
-
-  m_configFile = configFile;
+    return {};
 
   auto& root = m_guiContext->root();
   auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
   auto imageMetadata = root.imageMetadataDatabase();
+  if (!imageMetadata)
+    return std::unexpected(std::move(imageMetadata.error()));
+  auto config = (*assets)->json(configFile);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  auto offsetJson = config->get("offset");
+  if (!offsetJson)
+    return std::unexpected(std::move(offsetJson.error()));
+  auto offset = jsonToVec2I(*offsetJson);
+  if (!offset)
+    return std::unexpected(std::move(offset.error()));
 
-  auto config = assets->json(m_configFile);
-
-  m_offset = jsonToVec2I(config.get("offset"));
-  if (config.contains("image")) {
-    m_drawable = config.getString("image");
-    m_size = Vec2I{imageMetadata->imageSize(config.getString("image"))};
+  std::variant<std::monostate, String, Animation> drawable;
+  Vec2I size;
+  auto hasImage = config->contains("image");
+  if (!hasImage) return std::unexpected(std::move(hasImage.error()));
+  if (*hasImage) {
+    auto image = config->getString("image");
+    if (!image)
+      return std::unexpected(std::move(image.error()));
+    auto imageSize = (*imageMetadata)->imageSize(*image);
+    if (!imageSize)
+      return std::unexpected(std::move(imageSize.error()));
+    drawable = std::move(*image);
+    size = Vec2I(*imageSize);
   } else {
-    m_drawable = Animation(root, config.get("animation"), "/interface");
-    m_size = Vec2I(std::get<Animation>(m_drawable).drawable(1.0f).boundBox(*imageMetadata, false).size());
+    auto animationJson = config->get("animation");
+    if (!animationJson)
+      return std::unexpected(std::move(animationJson.error()));
+    auto animation = Animation::create(root, *animationJson, "/interface");
+    if (!animation)
+      return std::unexpected(std::move(animation.error()));
+    auto frame = animation->drawable(1.0f);
+    if (!frame)
+      return std::unexpected(std::move(frame.error()));
+    auto bounds = frame->boundBox(**imageMetadata, false);
+    if (!bounds)
+      return std::unexpected(std::move(bounds.error()));
+    size = Vec2I(bounds->size());
+    drawable = std::move(*animation);
   }
-
-  m_scale = config.getUInt("scale", 0);
+  auto scale = config->getUInt("scale", 0);
+  if (!scale)
+    return std::unexpected(std::move(scale.error()));
+  m_configFile = configFile;
+  m_offset = *offset;
+  m_size = size;
+  m_scale = *scale;
+  m_drawable = std::move(drawable);
+  return {};
 }
 
-Drawable InterfaceCursor::drawable() const {
-  if (std::holds_alternative<String>(m_drawable))
-    return Drawable::makeImage(*m_guiContext->root().imageMetadataDatabase(), std::get<String>(m_drawable), 1.0f, false, {});
-  else
-    return std::get<Animation>(m_drawable).drawable(1.0f);
+std::expected<Drawable, StarException> InterfaceCursor::drawable() const {
+  if (auto image = std::get_if<String>(&m_drawable)) {
+    auto metadata = m_guiContext->root().imageMetadataDatabase();
+    if (!metadata)
+      return std::unexpected(std::move(metadata.error()));
+    return Drawable::makeImage(**metadata, *image, 1.0f, false, {});
+  }
+  if (auto animation = std::get_if<Animation>(&m_drawable))
+    return animation->drawable(1.0f);
+  return std::unexpected(StarException("Cursor has not been initialized"));
 }
 
 Vec2I InterfaceCursor::size() const {
@@ -92,10 +148,10 @@ float InterfaceCursor::scale(float interfaceScale) const {
   return m_scale ? m_scale : interfaceScale;
 }
 
-void InterfaceCursor::update(float dt) {
-  if (std::holds_alternative<Animation>(m_drawable)) {
-    std::get<Animation>(m_drawable).update(dt);
-  }
+std::expected<void, StarException> InterfaceCursor::update(float dt) {
+  if (auto animation = std::get_if<Animation>(&m_drawable))
+    animation->update(dt);
+  return {};
 }
 
 }

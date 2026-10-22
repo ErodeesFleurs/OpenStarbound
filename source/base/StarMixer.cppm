@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.format;
 import star.audio;
 import star.string;
 import star.thread;
@@ -28,11 +29,11 @@ enum class MixerGroup : std::uint8_t {
   Cinematic,
   Instruments
 };
-extern EnumMap<MixerGroup> const MixerGroupNames;
+extern std::expected<EnumMap<MixerGroup>, StarException> const MixerGroupNames;
 
 class AudioInstance {
 public:
-  AudioInstance(Audio const& audio);
+  [[nodiscard]] static std::expected<std::shared_ptr<AudioInstance>, StarException> create(Audio const& audio);
 
   std::optional<Vec2F> position() const;
   void setPosition(std::optional<Vec2F> position);
@@ -51,11 +52,11 @@ public:
   void setLoops(int loops);
 
   // Returns the current audio playing time position
-  double currentTime() const;
+  [[nodiscard]] std::expected<double, StarException> currentTime() const;
   // Total length of time of the audio in seconds
-  double totalTime() const;
+  [[nodiscard]] std::expected<double, StarException> totalTime() const;
   // Seeks the audio to the current time in seconds
-  void seekTime(double time);
+  [[nodiscard]] std::expected<void, StarException> seekTime(double time);
 
   // The MixerGroup defaults to Effects
   MixerGroup mixerGroup() const;
@@ -71,6 +72,8 @@ public:
 
 private:
   friend class Mixer;
+
+  explicit AudioInstance(Audio audio);
 
   mutable Mutex m_mutex;
 
@@ -99,9 +102,9 @@ private:
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
-  typedef std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)> ExtraMixFunction;
-  typedef std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)> EffectFunction;
-  typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  typedef std::function<std::expected<void, StarException>(std::int16_t* buffer, std::size_t frames, unsigned channels)> ExtraMixFunction;
+  typedef std::function<std::expected<void, StarException>(std::int16_t* buffer, std::size_t frames, unsigned channels)> EffectFunction;
+  typedef std::function<std::expected<float, StarException>(unsigned, Vec2F, float)> PositionalAttenuationFunction;
 
   Mixer(Logger& logger, unsigned sampleRate, unsigned channels);
 
@@ -114,7 +117,7 @@ public:
   EffectFunction echo(float time, float dry, float wet) const;
 
   // Adds / removes effects that affect all playback.
-  void addEffect(String const& effectName, EffectFunction effectFunction, float rampTime);
+  [[nodiscard]] std::expected<void, StarException> addEffect(String const& effectName, EffectFunction effectFunction, float rampTime);
   void removeEffect(String const& effectName, float rampTime);
   StringList currentEffects();
   bool hasEffect(String const& effectName);
@@ -128,17 +131,17 @@ public:
   // per mixer group volume
   void setGroupVolume(MixerGroup group, float targetValue, float rampTime = 0.0f);
 
-  void play(std::shared_ptr<AudioInstance> sample);
+  [[nodiscard]] std::expected<void, StarException> play(std::shared_ptr<AudioInstance> sample);
 
   void stopAll(float rampTime);
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  void read(std::int16_t* samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
+  [[nodiscard]] std::expected<void, StarException> read(std::int16_t* samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.
-  void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
+  [[nodiscard]] std::expected<void, StarException> update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
 private:
   struct EffectInfo {

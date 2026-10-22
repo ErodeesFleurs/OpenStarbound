@@ -1,56 +1,74 @@
 import std;
+import star.format;
 import star.lua_converters;
 import star.lua;
 import star.color;
 
 namespace Star {
 
-LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
-  if (c.alpha() == 255)
-    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue()});
-  else
-    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
+std::expected<LuaValue, StarException> LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
+  auto table = c.alpha() == 255
+      ? engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue()})
+      : engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
+  if (!table)
+    return std::unexpected(std::move(table.error()));
+  return std::move(*table);
 }
 
-std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
+std::expected<std::optional<Color>, StarException> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto t = std::get_if<LuaTable>(&v)) {
-    Color c = Color::rgba(0, 0, 0, 255);
-    std::optional<int> r = engine.luaMaybeTo<int>(t->get(1));
-    std::optional<int> g = engine.luaMaybeTo<int>(t->get(2));
-    std::optional<int> b = engine.luaMaybeTo<int>(t->get(3));
-    if (!r || !g || !b)
-      return {};
-
-    c.setRed(*r);
-    c.setGreen(*g);
-    c.setBlue(*b);
-
-    if (std::optional<int> a = engine.luaMaybeTo<int>(t->get(4))) {
-      if (!a)
-        return {};
-      c.setAlpha(*a);
+    std::array<int, 3> channels;
+    for (std::size_t i = 0; i < channels.size(); ++i) {
+      auto value = t->get<LuaValue>(i + 1);
+      if (!value)
+        return std::unexpected(std::move(value.error()));
+      auto channel = engine.luaMaybeTo<int>(*value);
+      if (!channel)
+        return std::unexpected(std::move(channel.error()));
+      if (!*channel)
+        return std::nullopt;
+      channels[i] = **channel;
     }
-
+    Color c = Color::rgba(channels[0], channels[1], channels[2], 255);
+    auto value = t->get<LuaValue>(4);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto alpha = engine.luaMaybeTo<int>(*value);
+    if (!alpha)
+      return std::unexpected(std::move(alpha.error()));
+    if (*alpha)
+      c.setAlpha(**alpha);
     return c;
   } else if (auto s = std::get_if<LuaString>(&v)) {
-    try {
-      return Color(s->ptr());
-    } catch (ColorException const&) {}
+    auto color = Color::create(s->ptr());
+    if (!color) {
+      if (color.error().is<ColorException>())
+        return std::nullopt;
+      return std::unexpected(std::move(color.error()));
+    }
+    return std::move(*color);
   }
-
-  return {};
+  return std::nullopt;
 }
 
-LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const& c) {
-  auto table = engine.createTable(0, c.callbacks().size());
-  for (auto& callback : c.callbacks())
-    table.set(callback.first, engine.createWrappedFunction(callback.second));
-
+std::expected<LuaValue, StarException> LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const& c) {
+  auto created = engine.createTable(0, c.callbacks().size());
+  if (!created)
+    return std::unexpected(std::move(created.error()));
+  auto table = std::move(*created);
+  for (auto& callback : c.callbacks()) {
+    auto function = engine.createWrappedFunction(callback.second);
+    if (!function)
+      return std::unexpected(std::move(function.error()));
+    auto result = table.set(callback.first, std::move(*function));
+    if (!result)
+      return std::unexpected(std::move(result.error()));
+  }
   return table;
 }
 
-std::optional<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
-  return {};
+std::expected<std::optional<LuaCallbacks>, StarException> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
+  return std::nullopt;
 }
 
 }

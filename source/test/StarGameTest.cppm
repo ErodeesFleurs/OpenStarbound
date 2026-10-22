@@ -17,6 +17,7 @@ private:
   friend class GameTest;
   Root::Settings m_settings;
   std::unique_ptr<Root> m_root;
+  bool m_ready = false;
 };
 
 class GameTest : public testing::Test {

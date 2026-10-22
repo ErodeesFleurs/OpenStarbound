@@ -33,7 +33,7 @@ namespace Star {
 
 const char* InputBindingConfigRoot = "modBindings";
 
-BiMap<Key, KeyMod> const KeysToMods{
+std::expected<BiMap<Key, KeyMod>, StarException> const KeysToMods = BiMap<Key, KeyMod>::create({
   {Key::LShift, KeyMod::LShift},
   {Key::RShift, KeyMod::RShift},
   {Key::LCtrl, KeyMod::LCtrl},
@@ -44,7 +44,7 @@ BiMap<Key, KeyMod> const KeysToMods{
   {Key::RGui, KeyMod::RGui},
   {Key::AltGr, KeyMod::AltGr},
   {Key::ScrollLock, KeyMod::Scroll}
-};
+});
 
 const KeyMod KeyModOptional = KeyMod::Num | KeyMod::Caps | KeyMod::Scroll;
 
@@ -78,14 +78,21 @@ Json keyModsToJson(KeyMod mod) {
 }
 
 // Optional pointer argument to output calculated priority
-KeyMod keyModsFromJson(Json const& json, std::uint8_t* priority = nullptr) {
+[[nodiscard]] std::expected<KeyMod, StarException> keyModsFromJson(Json const& json, std::uint8_t* priority = nullptr) {
   KeyMod mod = KeyMod::NoMod;
   if (!json.isType(Json::Type::Array))
     return mod;
 
   std::uint8_t modPriority = 0;
-  for (Json const& jMod : json.toArray()) {
-    KeyMod changedMod = mod | KeyModNames.getLeft(jMod.toString());
+  auto array = json.toArray();
+  if (!array) return std::unexpected(std::move(array.error()));
+  if (!KeyModNames) return std::unexpected(KeyModNames.error());
+  for (Json const& jMod : *array) {
+    auto text = jMod.toString();
+    if (!text) return std::unexpected(std::move(text.error()));
+    auto named = KeyModNames->getLeft(*text);
+    if (!named) return std::unexpected(std::move(named.error()));
+    KeyMod changedMod = mod | **named;
     if (mod != changedMod) {
       mod = changedMod;
       ++modPriority;
@@ -109,31 +116,41 @@ std::size_t hash<InputVariant>::operator()(InputVariant const& v) const {
   return indexHash;
 }
 
-Json Input::inputEventToJson(InputEvent const& input) {
+std::expected<Json, StarException> Input::inputEventToJson(InputEvent const& input) {
   String type;
   Json data;
 
   if (auto keyDown = std::get_if<KeyDownEvent>(&input)) {
     type = "KeyDown";
+    if (!KeyNames) return std::unexpected(KeyNames.error());
+    auto name = KeyNames->getRight(keyDown->key);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"key", KeyNames.getRight(keyDown->key)},
+      {"key", **name},
       {"mods", keyModsToJson(keyDown->mods)}
     };
   } else if (auto keyUp = std::get_if<KeyUpEvent>(&input)) {
     type = "KeyUp";
-    data = JsonObject{
-      {"key", KeyNames.getRight(keyUp->key)}
-    };
+    if (!KeyNames) return std::unexpected(KeyNames.error());
+    auto name = KeyNames->getRight(keyUp->key);
+    if (!name) return std::unexpected(std::move(name.error()));
+    data = JsonObject{{"key", **name}};
   } else if (auto mouseDown = std::get_if<MouseButtonDownEvent>(&input)) {
     type = "MouseButtonDown";
+    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
+    auto name = MouseButtonNames->getRight(mouseDown->mouseButton);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"mouseButton", MouseButtonNames.getRight(mouseDown->mouseButton)},
+      {"mouseButton", **name},
       {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}
     };
   } else if (auto mouseUp = std::get_if<MouseButtonUpEvent>(&input)) {
     type = "MouseButtonUp";
+    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
+    auto name = MouseButtonNames->getRight(mouseUp->mouseButton);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"mouseButton", MouseButtonNames.getRight(mouseUp->mouseButton)},
+      {"mouseButton", **name},
       {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}
     };
   } else if (auto mouseWheel = std::get_if<MouseWheelEvent>(&input)) {
@@ -150,18 +167,27 @@ Json Input::inputEventToJson(InputEvent const& input) {
     };
   } else if (auto controllerDown = std::get_if<ControllerButtonDownEvent>(&input)) {
     type = "ControllerButtonDown";
+    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
+    auto name = ControllerButtonNames->getRight(controllerDown->controllerButton);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerButton", ControllerButtonNames.getRight(controllerDown->controllerButton)},
+      {"controllerButton", **name},
       {"controller", controllerDown->controller}};
   } else if (auto controllerUp = std::get_if<ControllerButtonUpEvent>(&input)) {
     type = "ControllerButtonUp";
+    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
+    auto name = ControllerButtonNames->getRight(controllerUp->controllerButton);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerButton", ControllerButtonNames.getRight(controllerUp->controllerButton)},
+      {"controllerButton", **name},
       {"controller", controllerUp->controller}};
   } else if (auto controllerAxis = std::get_if<ControllerAxisEvent>(&input)) {
     type = "ControllerAxis";
+    if (!ControllerAxisNames) return std::unexpected(ControllerAxisNames.error());
+    auto name = ControllerAxisNames->getRight(controllerAxis->controllerAxis);
+    if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerAxis", ControllerAxisNames.getRight(controllerAxis->controllerAxis)},
+      {"controllerAxis", **name},
       {"controllerAxisValue", controllerAxis->controllerAxisValue},
       {"controller", controllerAxis->controller}};
   }
@@ -176,68 +202,97 @@ Json Input::inputEventToJson(InputEvent const& input) {
   return data;
 }
 
-Input::Bind Input::bindFromJson(Json const& json) {
+std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) {
   Bind bind;
   if (json.isNull())
     return bind;
 
-  String type = json.getString("type");
-  Json value = json.get("value", {});
+  auto typeResult = json.getString("type");
+  if (!typeResult) return std::unexpected(std::move(typeResult.error()));
+  String const& type = *typeResult;
+  auto valueResult = json.get("value", {});
+  if (!valueResult) return std::unexpected(std::move(valueResult.error()));
+  Json const& value = *valueResult;
+  auto text = value.toString();
+  if ((type == "key" || type == "mouse" || type == "controller") && !text)
+    return std::unexpected(std::move(text.error()));
 
   if (type == "key") {
     KeyBind keyBind;
-    if (auto key = KeyNames.maybeLeft(value.toString()))
-      keyBind.key = *key;
-    else
-      return bind;
-    keyBind.mods = keyModsFromJson(json.getArray("mods", {}), &keyBind.priority);
+    if (!KeyNames) return std::unexpected(KeyNames.error());
+    auto key = KeyNames->maybeLeft(*text);
+    if (!key) return std::unexpected(std::move(key.error()));
+    if (!*key) return bind;
+    keyBind.key = **key;
+    auto mods = json.getArray("mods", {});
+    if (!mods) return std::unexpected(std::move(mods.error()));
+    auto parsed = keyModsFromJson(Json(*mods), &keyBind.priority);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    keyBind.mods = *parsed;
     bind = std::move(keyBind);
   }
   else if (type == "mouse") {
     MouseBind mouseBind;
-    if (auto button = MouseButtonNames.maybeLeft(value.toString()))
-      mouseBind.button = *button;
-    else
-      return bind;
-    mouseBind.mods = keyModsFromJson(json.getArray("mods", {}), &mouseBind.priority);
+    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
+    auto button = MouseButtonNames->maybeLeft(*text);
+    if (!button) return std::unexpected(std::move(button.error()));
+    if (!*button) return bind;
+    mouseBind.button = **button;
+    auto mods = json.getArray("mods", {});
+    if (!mods) return std::unexpected(std::move(mods.error()));
+    auto parsed = keyModsFromJson(Json(*mods), &mouseBind.priority);
+    if (!parsed) return std::unexpected(std::move(parsed.error()));
+    mouseBind.mods = *parsed;
     bind = std::move(mouseBind);
   }
   else if (type == "controller") {
     ControllerBind controllerBind;
-    if (auto button = ControllerButtonNames.maybeLeft(value.toString()))
-      controllerBind.button = *button;
-    else
-      return bind;
-    controllerBind.controller = json.getUInt("controller", 0);
+    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
+    auto button = ControllerButtonNames->maybeLeft(*text);
+    if (!button) return std::unexpected(std::move(button.error()));
+    if (!*button) return bind;
+    controllerBind.button = **button;
+    auto controller = json.getUInt("controller", 0);
+    if (!controller) return std::unexpected(std::move(controller.error()));
+    controllerBind.controller = *controller;
     bind = std::move(controllerBind);
   }
 
   return bind;
 }
 
-Json Input::bindToJson(Bind const& bind) {
+std::expected<Json, StarException> Input::bindToJson(Bind const& bind) {
   if (auto keyBind = std::get_if<KeyBind>(&bind)) {
+    if (!KeyNames) return std::unexpected(KeyNames.error());
+    auto name = KeyNames->getRight(keyBind->key);
+    if (!name) return std::unexpected(std::move(name.error()));
     auto obj = JsonObject{
       {"type", "key"},
-      {"value", KeyNames.getRight(keyBind->key)}
+      {"value", **name}
     }; // don't want empty mods to exist as null entry
     if (auto mods = keyModsToJson(keyBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
   }
   else if (auto mouseBind = std::get_if<MouseBind>(&bind)) {
+    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
+    auto name = MouseButtonNames->getRight(mouseBind->button);
+    if (!name) return std::unexpected(std::move(name.error()));
     auto obj = JsonObject{
       {"type", "mouse"},
-      {"value", MouseButtonNames.getRight(mouseBind->button)}
+      {"value", **name}
     };
     if (auto mods = keyModsToJson(mouseBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
   }
   else if (auto controllerBind = std::get_if<ControllerBind>(&bind)) {
+    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
+    auto name = ControllerButtonNames->getRight(controllerBind->button);
+    if (!name) return std::unexpected(std::move(name.error()));
     return JsonObject{
       {"type", "controller"},
-      {"value", ControllerButtonNames.getRight(controllerBind->button)},
+      {"value", **name},
       {"controller", controllerBind->controller}
     };
   }
@@ -245,42 +300,56 @@ Json Input::bindToJson(Bind const& bind) {
   return Json();
 }
 
-Input::BindEntry::BindEntry(Input& input, String entryId, Json const& config, BindCategory const& parentCategory)
-  : owner(input) {
-  category = &parentCategory;
-  id = entryId;
-  name = config.getString("name", id);
-  tags = jsonToStringList(config.get("tags", JsonArray()));
-  for (Json const& jBind : config.getArray("default", {})) {
-    try
-      { defaultBinds.emplace_back(bindFromJson(jBind)); }
-    catch (JsonException const& e)
-      { owner.m_root.logger().error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, id, e.what()); }
+std::expected<Input::BindEntry, StarException> Input::BindEntry::create(Input& input, String entryId, Json const& config, BindCategory const& parentCategory) {
+  BindEntry result(input);
+  result.category = &parentCategory;
+  result.id = std::move(entryId);
+  auto name = config.getString("name", result.id);
+  if (!name) return std::unexpected(std::move(name.error()));
+  result.name = std::move(*name);
+  auto tags = config.get("tags", JsonArray());
+  if (!tags) return std::unexpected(std::move(tags.error()));
+  auto tagList = jsonToStringList(*tags);
+  if (!tagList) return std::unexpected(std::move(tagList.error()));
+  result.tags = std::move(*tagList);
+  auto defaults = config.getArray("default", {});
+  if (!defaults) return std::unexpected(std::move(defaults.error()));
+  for (Json const& jBind : *defaults) {
+    auto bind = bindFromJson(jBind);
+    if (!bind) {
+      if (!bind.error().is<JsonException>()) return std::unexpected(std::move(bind.error()));
+      auto logged = input.m_root.logger().error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, result.id, bind.error().what());
+      if (!logged) return std::unexpected(std::move(logged.error()));
+    } else result.defaultBinds.emplace_back(std::move(*bind));
   }
+  return result;
 }
 
-void Input::BindEntry::updated() {
+std::expected<void, StarException> Input::BindEntry::updated() {
   auto config = owner.m_root.configuration();
-
+  if (!config) return std::unexpected(std::move(config.error()));
   JsonArray array;
-  for (auto const& bind : customBinds)
-    array.emplace_back(bindToJson(bind));
-
-  if (!config->get(InputBindingConfigRoot).isType(Json::Type::Object))
-    config->set(InputBindingConfigRoot, JsonObject());
-
+  for (auto const& bind : customBinds) {
+    auto json = bindToJson(bind);
+    if (!json) return std::unexpected(std::move(json.error()));
+    array.emplace_back(std::move(*json));
+  }
+  auto root = (*config)->get(InputBindingConfigRoot);
+  if (!root) return std::unexpected(std::move(root.error()));
+  if (!root->isType(Json::Type::Object)) {
+    if (auto r = (*config)->set(InputBindingConfigRoot, JsonObject()); !r) return std::unexpected(std::move(r.error()));
+  }
   String path = strf("{}.{}", InputBindingConfigRoot, category->id);
-  if (!config->getPath(path).isType(Json::Type::Object)) {
-    config->setPath(path, JsonObject{
-      { id, std::move(array) }
-    });
-  }
-  else {
+  auto category = (*config)->getPath(path);
+  if (!category) return std::unexpected(std::move(category.error()));
+  if (!category->isType(Json::Type::Object)) {
+    if (auto r = (*config)->setPath(path, JsonObject{{id, std::move(array)}}); !r) return std::unexpected(std::move(r.error()));
+  } else {
     path = strf("{}.{}", path, id);
-    config->setPath(path, array);
+    if (auto r = (*config)->setPath(path, array); !r) return std::unexpected(std::move(r.error()));
   }
-
   owner.rebuildMappings();
+  return {};
 }
 
 Input::BindRef::BindRef(BindEntry& bindEntry, KeyBind& keyBind) {
@@ -303,35 +372,41 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
 
 Input::BindCategory::BindCategory(Input& input) : owner(input) {}
 
-void Input::BindCategory::mergeJson(String const& categoryId, Json const& categoryConfig) {
+std::expected<void, StarException> Input::BindCategory::mergeJson(String const& categoryId, Json const& categoryConfig) {
   id = categoryId;
   config = jsonMerge(config, categoryConfig);
-  name = config.getString("name", id);
+  auto categoryName = config.getString("name", id);
+  if (!categoryName) return std::unexpected(std::move(categoryName.error()));
+  name = std::move(*categoryName);
   entries.clear();
-
-  std::shared_ptr<Configuration> userConfig = owner.m_root.configuration();
-  auto userBindings = userConfig->get(InputBindingConfigRoot);
-
-  for (auto& pair : config.getObject("binds", {})) {
+  auto userConfig = owner.m_root.configuration();
+  if (!userConfig) return std::unexpected(std::move(userConfig.error()));
+  auto userBindings = (*userConfig)->get(InputBindingConfigRoot);
+  if (!userBindings) return std::unexpected(std::move(userBindings.error()));
+  auto configured = config.getObject("binds", {});
+  if (!configured) return std::unexpected(std::move(configured.error()));
+  for (auto const& pair : *configured) {
     String const& bindId = pair.first;
     Json const& bindConfig = pair.second;
-    if (!bindConfig.isType(Json::Type::Object))
-      continue;
-
-    BindEntry& entry = entries.try_emplace(bindId, owner, bindId, bindConfig, *this).first->second;
-
-    if (userBindings.isType(Json::Type::Object)) {
-      for (auto& jBind : userBindings.queryArray(strf("{}.{}", id, bindId), {})) {
-        try
-          { entry.customBinds.emplace_back(bindFromJson(jBind)); }
-        catch (JsonException const& e)
-          { owner.m_root.logger().error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
+    if (!bindConfig.isType(Json::Type::Object)) continue;
+    auto built = BindEntry::create(owner, bindId, bindConfig, *this);
+    if (!built) return std::unexpected(std::move(built.error()));
+    auto& entry = entries.try_emplace(bindId, std::move(*built)).first->second;
+    if (userBindings->isType(Json::Type::Object)) {
+      auto bindings = userBindings->queryArray(strf("{}.{}", id, bindId), {});
+      if (!bindings) return std::unexpected(std::move(bindings.error()));
+      for (auto const& jBind : *bindings) {
+        auto bind = bindFromJson(jBind);
+        if (!bind) {
+          if (!bind.error().is<JsonException>()) return std::unexpected(std::move(bind.error()));
+          auto logged = owner.m_root.logger().error("Binds: Error loading user bind in {}.{}: {}", id, bindId, bind.error().what());
+          if (!logged) return std::unexpected(std::move(logged.error()));
+        } else entry.customBinds.emplace_back(std::move(*bind));
       }
     }
-
-    if (entry.customBinds.empty())
-      entry.customBinds = entry.defaultBinds;
+    if (entry.customBinds.empty()) entry.customBinds = entry.defaultBinds;
   }
+  return {};
 }
 
 List<Input::BindEntry*> Input::filterBindEntries(List<Input::BindRef> const& binds, KeyMod mods) const {
@@ -358,11 +433,11 @@ Input::BindEntry* Input::bindEntryPtr(String const& categoryId, String const& bi
   return nullptr;
 }
 
-Input::BindEntry& Input::bindEntry(String const& categoryId, String const& bindId) {
+std::expected<Input::BindEntry*, StarException> Input::bindEntry(String const& categoryId, String const& bindId) {
   if (auto ptr = bindEntryPtr(categoryId, bindId))
-    return *ptr;
+    return ptr;
   else
-    throw InputException::format("Could not find bind entry {}.{}", categoryId, bindId);
+    return std::unexpected(InputException::format("Could not find bind entry {}.{}", categoryId, bindId));
 }
 
 Input::InputState* Input::bindStatePtr(String const& categoryId, String const& bindId) {
@@ -381,17 +456,16 @@ Input::InputState& Input::addBindState(BindEntry const* bindEntry) {
   return insertion.first->second;
 }
 
-Input::Input(Root& root) : m_root(root) {
+Input::Input(Root& root) : m_root(root), m_pressedMods(KeyMod::NoMod) {}
 
-  m_pressedMods = KeyMod::NoMod;
-
-  reload();
-
-  m_rootReloadListener = std::make_shared<CallbackListener>([this]() {
-    reload();
+std::expected<std::shared_ptr<Input>, StarException> Input::create(Root& root) {
+  auto result = std::shared_ptr<Input>(new Input(root));
+  if (auto r = result->reload(); !r) return std::unexpected(std::move(r.error()));
+  result->m_rootReloadListener = std::make_shared<CallbackListener>([ptr = result.get()]() {
+    return ptr->reload();
   });
-
-  m_rootReloadSubscription = m_root.registerReloadListener(m_rootReloadListener);
+  result->m_rootReloadSubscription = root.registerReloadListener(result->m_rootReloadListener);
+  return result;
 }
 
 Input::~Input() {
@@ -441,10 +515,11 @@ void Input::update() {
   reset(false);
 }
 
-bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
+std::expected<bool, StarException> Input::handleInput(InputEvent const& input, bool gameProcessed) {
+  if (!KeysToMods) return std::unexpected(KeysToMods.error());
   m_inputEvents.emplace_back(input, gameProcessed);
   if (auto keyDown = std::get_if<KeyDownEvent>(&input)) {
-    auto keyToMod = KeysToMods.rightPtr(keyDown->key);
+    auto keyToMod = KeysToMods->rightPtr(keyDown->key);
     if (keyToMod)
       m_pressedMods |= *keyToMod;
 
@@ -461,7 +536,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
     }
   }
   else if (auto keyUp = std::get_if<KeyUpEvent>(&input)) {
-    auto keyToMod = KeysToMods.rightPtr(keyUp->key);
+    auto keyToMod = KeysToMods->rightPtr(keyUp->key);
     if (keyToMod)
       m_pressedMods &= ~*keyToMod;
 
@@ -559,29 +634,28 @@ void Input::rebuildMappings() {
   }
 }
 
-void Input::reload() {;
+std::expected<void, StarException> Input::reload() {
   m_bindCategories.clear();
-
   auto assets = m_root.assets();
-
-  for (auto& bindPath : assets->scanExtension("binds")) {
-    for (auto& pair : assets->json(bindPath).toObject()) {
-      String const& categoryId = pair.first;
-      Json const& categoryConfig = pair.second;
-      if (!categoryConfig.isType(Json::Type::Object))
-        continue;
-
-      m_bindCategories.try_emplace(categoryId, *this).first->second.mergeJson(categoryId, categoryConfig);
+  if (!assets) return std::unexpected(std::move(assets.error()));
+  auto paths = (*assets)->scanExtension("binds");
+  if (!paths) return std::unexpected(std::move(paths.error()));
+  for (auto const& bindPath : **paths) {
+    auto json = (*assets)->json(bindPath.string());
+    if (!json) return std::unexpected(std::move(json.error()));
+    auto categories = json->toObject();
+    if (!categories) return std::unexpected(std::move(categories.error()));
+    for (auto const& pair : *categories) {
+      if (!pair.second.isType(Json::Type::Object)) continue;
+      auto r = m_bindCategories.try_emplace(pair.first, *this).first->second.mergeJson(pair.first, pair.second);
+      if (!r) return std::unexpected(std::move(r.error()));
     }
   }
-
   std::size_t count = 0;
-  for (auto& pair : m_bindCategories)
-    count += pair.second.entries.size();
-
-  m_root.logger().info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
-
+  for (auto const& pair : m_bindCategories) count += pair.second.entries.size();
+  if (auto r = m_root.logger().info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s"); !r) return std::unexpected(std::move(r.error()));
   rebuildMappings();
+  return {};
 }
 
 void Input::setTextInputActive(bool active) {
@@ -657,38 +731,50 @@ Vec2F Input::mousePosition() const {
   return m_mousePosition;
 }
 
-void Input::resetBinds(String const& categoryId, String const& bindId) {
-  auto& entry = bindEntry(categoryId, bindId);
-
-  entry.customBinds = entry.defaultBinds;
-  entry.updated();
+std::expected<void, StarException> Input::resetBinds(String const& categoryId, String const& bindId) {
+  auto entry = bindEntry(categoryId, bindId);
+  if (!entry) return std::unexpected(std::move(entry.error()));
+  (*entry)->customBinds = (*entry)->defaultBinds;
+  return (*entry)->updated();
 }
 
-Json Input::getDefaultBinds(String const& categoryId, String const& bindId) {
+std::expected<Json, StarException> Input::getDefaultBinds(String const& categoryId, String const& bindId) {
+  auto entry = bindEntry(categoryId, bindId);
+  if (!entry) return std::unexpected(std::move(entry.error()));
   JsonArray array;
-  for (Bind const& bind : bindEntry(categoryId, bindId).defaultBinds)
-    array.emplace_back(bindToJson(bind));
-
+  for (Bind const& bind : (*entry)->defaultBinds) {
+    auto json = bindToJson(bind);
+    if (!json) return std::unexpected(std::move(json.error()));
+    array.emplace_back(std::move(*json));
+  }
   return array;
 }
 
-Json Input::getBinds(String const& categoryId, String const& bindId) {
+std::expected<Json, StarException> Input::getBinds(String const& categoryId, String const& bindId) {
+  auto entry = bindEntry(categoryId, bindId);
+  if (!entry) return std::unexpected(std::move(entry.error()));
   JsonArray array;
-  for (Bind const& bind : bindEntry(categoryId, bindId).customBinds)
-    array.emplace_back(bindToJson(bind));
-
+  for (Bind const& bind : (*entry)->customBinds) {
+    auto json = bindToJson(bind);
+    if (!json) return std::unexpected(std::move(json.error()));
+    array.emplace_back(std::move(*json));
+  }
   return array;
 }
 
-void Input::setBinds(String const& categoryId, String const& bindId, Json const& jBinds) {
-  auto& entry = bindEntry(categoryId, bindId);
-
+std::expected<void, StarException> Input::setBinds(String const& categoryId, String const& bindId, Json const& jBinds) {
+  auto entry = bindEntry(categoryId, bindId);
+  if (!entry) return std::unexpected(std::move(entry.error()));
+  auto array = jBinds.toArray();
+  if (!array) return std::unexpected(std::move(array.error()));
   List<Bind> binds;
-  for (Json const& jBind : jBinds.toArray())
-    binds.emplace_back(bindFromJson(jBind));
-
-  entry.customBinds = std::move(binds);
-  entry.updated();
+  for (Json const& jBind : *array) {
+    auto bind = bindFromJson(jBind);
+    if (!bind) return std::unexpected(std::move(bind.error()));
+    binds.emplace_back(std::move(*bind));
+  }
+  (*entry)->customBinds = std::move(binds);
+  return (*entry)->updated();
 }
 
 unsigned Input::getTag(String const& tagName) const {

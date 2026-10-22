@@ -24,6 +24,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.format;
 import star.type_identity;
 import star.string;
 import star.version;
@@ -60,14 +61,14 @@ public:
     return Star::typeName<Stagehand>();
   }
 
-  Stagehand(Root& rootContext, Json const& config);
-  Stagehand(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  [[nodiscard]] static std::expected<std::shared_ptr<Stagehand>, StarException> create(Root& rootContext, Json const& config);
+  [[nodiscard]] static std::expected<std::shared_ptr<Stagehand>, StarException> create(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] std::expected<Json, StarException> diskStore() const;
+  [[nodiscard]] std::expected<ByteArray, StarException> netStore(NetCompatibilityRules rules = {});
 
-  void init(World* world, EntityId entityId, EntityMode mode) override;
-  void uninit() override;
+  [[nodiscard]] std::expected<void, StarException> init(World* world, EntityId entityId, EntityMode mode) override;
+  [[nodiscard]] std::expected<void, StarException> uninit() override;
 
   EntityType entityType() const override;
 
@@ -77,34 +78,34 @@ public:
 
   RectF metaBoundBox() const override;
 
-  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<std::pair<ByteArray, std::uint64_t>, StarException> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] std::expected<void, StarException> readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  String name() const override;
+  [[nodiscard]] std::expected<String, StarException> name() const override;
 
-  void update(float dt, std::uint64_t currentStep) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt, std::uint64_t currentStep) override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] std::expected<bool, StarException> shouldDestroy() const override;
   
   ClientEntityMode clientEntityMode() const override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] std::expected<std::optional<LuaValue>, StarException> evalScript(String const& code) override;
 
-  String typeName() const;
-  
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] std::expected<String, StarException> typeName() const;
 
-  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] std::expected<Json, StarException> configValue(String const& name, Json const& def = Json()) const;
+
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   using Entity::setUniqueId;
 
 private:
   Stagehand(Root& rootContext);
 
-  void readConfig(Json config);
+  [[nodiscard]] std::expected<void, StarException> readConfig(Json config);
 
-  LuaCallbacks makeStagehandCallbacks();
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeStagehandCallbacks();
 
   Json m_config;
 

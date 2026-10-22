@@ -25,18 +25,19 @@ struct MarkovSource {
 
 class PatternedNameGenerator {
 public:
-  explicit PatternedNameGenerator(Root& root);
+  [[nodiscard]] static std::expected<std::shared_ptr<PatternedNameGenerator>, StarException> create(Root& root);
 
-  String generateName(String const& rulesAsset) const;
-  String generateName(String const& rulesAsset, std::uint64_t seed) const;
-  String generateName(String const& rulesAsset, RandomSource& random) const;
+  [[nodiscard]] std::expected<String, StarException> generateName(String const& rulesAsset) const;
+  [[nodiscard]] std::expected<String, StarException> generateName(String const& rulesAsset, std::uint64_t seed) const;
+  [[nodiscard]] std::expected<String, StarException> generateName(String const& rulesAsset, RandomSource& random) const;
 
 private:
-  String processRule(JsonArray const& rule, RandomSource& random) const;
+  explicit PatternedNameGenerator(Root& root);
+  [[nodiscard]] std::expected<String, StarException> processRule(JsonArray const& rule, RandomSource& random) const;
 
-  bool isProfane(String const& name) const;
+  [[nodiscard]] std::expected<bool, StarException> isProfane(String const& name) const;
 
-  MarkovSource makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames);
+  [[nodiscard]] std::expected<MarkovSource, StarException> makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames);
 
   Root& m_root;
   StringMap<MarkovSource> m_markovSources;

@@ -4,6 +4,7 @@ import star.string;
 import star.list;
 import star.set;
 import star.json;
+import star.format;
 
 import star.game_types;
 import star.byte_array;
@@ -25,9 +26,8 @@ struct Packet;
 enum class WorldServerFidelity;
 typedef HashMap<ByteArray, std::optional<ByteArray>> WorldChunks;
 
-// Runs a WorldServer in a separate thread and guards exceptions that occur in
-// it.  All methods are designed to not throw exceptions, but will instead log
-// the error and trigger the WorldServerThread error state.
+// Runs a WorldServer in a separate thread. World failures are logged at the
+// original recovery boundaries and are also returned to synchronous callers.
 class WorldServerThread : public Thread {
 public:
   struct Message {
@@ -36,31 +36,37 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef std::function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
+  typedef std::function<std::expected<void, StarException>(WorldServerThread*, WorldServer*)> WorldServerAction;
 
-  WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<WorldServerThread>, StarException> create(std::shared_ptr<WorldServer> server, WorldId worldId);
   ~WorldServerThread();
 
   WorldId worldId() const;
 
-  void start();
-  // Signals the WorldServerThread to stop and then joins it
-  void stop();
+  [[nodiscard]]
+  std::expected<void, StarException> start();
+  // Signals the WorldServerThread to stop and then joins it.
+  [[nodiscard]]
+  std::expected<void, StarException> stop();
   // Final teardown after client migration and chunk export have completed.
   // Unlike stop(), this removes clients and closes storage.
-  void close();
+  [[nodiscard]]
+  std::expected<void, StarException> close();
   void setPause(std::shared_ptr<const std::atomic<bool>> pause);
 
-  // An exception occurred from the actual WorldServer itself and the
-  // WorldServerThread has stopped running.
+  // A world failure has been logged and stopped the server thread.
   bool serverErrorOccurred();
   bool shouldExpire();
 
-  bool spawnTargetValid(SpawnTarget const& spawnTarget);
+  [[nodiscard]]
+  std::expected<bool, StarException> spawnTargetValid(SpawnTarget const& spawnTarget);
 
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}, ClientSubWorldId subWorldId = MainClientWorldId);
+  [[nodiscard]]
+  std::expected<bool, StarException> addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}, ClientSubWorldId subWorldId = MainClientWorldId);
   // Returns final outgoing packets
-  List<std::shared_ptr<Packet>> removeClient(ConnectionId clientId);
+  [[nodiscard]]
+  std::expected<List<std::shared_ptr<Packet>>, StarException> removeClient(ConnectionId clientId);
 
   List<ConnectionId> clients() const;
   bool hasClient(ConnectionId clientId) const;
@@ -76,15 +82,16 @@ public:
   void pushIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
   List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
-  std::optional<Vec2F> playerRevivePosition(ConnectionId clientId) const;
+  [[nodiscard]]
+  std::expected<std::optional<Vec2F>, StarException> playerRevivePosition(ConnectionId clientId) const;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  std::optional<std::pair<String, String>> pullNewPlanetType();
+  [[nodiscard]]
+  std::expected<std::optional<std::pair<String, String>>, StarException> pullNewPlanetType();
 
-  // Executes the given action on the world in a thread safe context.  This
-  // does *not* catch exceptions thrown by the action or set the server error
-  // flag.
-  void executeAction(WorldServerAction action);
+  // Executes an action under the world lock; returns its failure to the caller.
+  [[nodiscard]]
+  std::expected<void, StarException> executeAction(WorldServerAction action);
 
   // If a callback is set here, then this is called after every world update,
   // also in a thread safe context.
@@ -93,25 +100,40 @@ public:
   // 
   void passMessages(List<Message>&& messages);
 
-  void unloadAll(bool force = false);
+  [[nodiscard]]
+  std::expected<void, StarException> unloadAll(bool force = false);
 
   // Syncs all active sectors to disk and reads the full content of the world
   // into memory, useful for the ship.
-  WorldChunks readChunks();
+  [[nodiscard]]
+  std::expected<WorldChunks, StarException> readChunks();
 
 protected:
-  virtual void run();
+  [[nodiscard]]
+  std::expected<void, StarException> run() override;
 
 private:
-  void update(WorldServerFidelity fidelity);
-  void sync();
+  WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId, String worldName);
+  [[nodiscard]]
+  std::expected<void, StarException> recordError(StarException const& error) const;
+  [[nodiscard]]
+  std::expected<void, StarException> runLoop();
+  [[nodiscard]]
+  std::expected<void, StarException> drainMessages();
+  [[nodiscard]]
+  std::expected<void, StarException> update(WorldServerFidelity fidelity);
+  [[nodiscard]]
+  std::expected<void, StarException> sync();
 
   mutable RecursiveMutex m_mutex;
 
   HashSet<ConnectionId> m_clients;
+  // A failed removal may be retried, but its incoming packets must not run again.
+  HashSet<ConnectionId> m_removingClients;
 
   std::shared_ptr<WorldServer> m_worldServer;
   WorldId m_worldId;
+  String m_worldName;
   WorldServerAction m_updateAction;
 
   mutable RecursiveMutex m_queueMutex;

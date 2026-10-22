@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 
 import star.bi_map;
@@ -14,9 +15,13 @@ export namespace Star {
 struct RidgeBlocksSelector : TerrainSelector {
   static char const* const Name;
 
-  RidgeBlocksSelector(Json const& config, TerrainSelectorParameters const& parameters);
+  [[nodiscard]] static std::expected<std::shared_ptr<RidgeBlocksSelector>, StarException> create(Json const& config, TerrainSelectorParameters const& parameters);
+private:
+  struct ConstructionKey { explicit ConstructionKey() = default; };
+public:
+  RidgeBlocksSelector(ConstructionKey, Json const& config, TerrainSelectorParameters const& parameters) : TerrainSelector(Name, config, parameters) {}
 
-  float get(int x, int y) const override;
+  [[nodiscard]] std::expected<float, StarException> get(int x, int y) const override;
 
   float commonality;
 
@@ -38,31 +43,54 @@ namespace Star {
 
 char const* const RidgeBlocksSelector::Name = "ridgeblocks";
 
-RidgeBlocksSelector::RidgeBlocksSelector(Json const& config, TerrainSelectorParameters const& parameters)
-  : TerrainSelector(Name, config, parameters) {
-  commonality = parameters.commonality;
-
-  amplitude = config.getFloat("amplitude");
-  frequency = config.getFloat("frequency");
-  bias = config.getFloat("bias");
-
-  noiseAmplitude = config.getFloat("noiseAmplitude");
-  noiseFrequency = config.getFloat("noiseFrequency");
-
+std::expected<std::shared_ptr<RidgeBlocksSelector>, StarException> RidgeBlocksSelector::create(Json const& config, TerrainSelectorParameters const& parameters) {
+  auto result = std::make_shared<RidgeBlocksSelector>(ConstructionKey{}, config, parameters);
+  result->commonality = parameters.commonality;
+  auto amplitude = config.getFloat("amplitude");
+  if (!amplitude)
+    return std::unexpected(std::move(amplitude.error()));
+  result->amplitude = *amplitude;
+  auto frequency = config.getFloat("frequency");
+  if (!frequency)
+    return std::unexpected(std::move(frequency.error()));
+  result->frequency = *frequency;
+  auto bias = config.getFloat("bias");
+  if (!bias)
+    return std::unexpected(std::move(bias.error()));
+  result->bias = *bias;
+  auto noiseAmplitude = config.getFloat("noiseAmplitude");
+  if (!noiseAmplitude)
+    return std::unexpected(std::move(noiseAmplitude.error()));
+  result->noiseAmplitude = *noiseAmplitude;
+  auto noiseFrequency = config.getFloat("noiseFrequency");
+  if (!noiseFrequency)
+    return std::unexpected(std::move(noiseFrequency.error()));
+  result->noiseFrequency = *noiseFrequency;
   RandomSource random(parameters.seed);
-  ridgePerlin1 = PerlinF(PerlinType::RidgedMulti, 2, frequency, amplitude, 0, 2.0f, 2.0f, random.randu64());
-  ridgePerlin2 = PerlinF(PerlinType::RidgedMulti, 2, frequency, amplitude, 0, 2.0f, 2.0f, random.randu64());
-  noisePerlin = PerlinF(1, noiseFrequency, noiseAmplitude, 0, 1.0f, 2.0f, random.randu64());
+  result->ridgePerlin1 = PerlinF(PerlinType::RidgedMulti, 2, *frequency, *amplitude, 0, 2.0f, 2.0f, random.randu64());
+  result->ridgePerlin2 = PerlinF(PerlinType::RidgedMulti, 2, *frequency, *amplitude, 0, 2.0f, 2.0f, random.randu64());
+  result->noisePerlin = PerlinF(1, *noiseFrequency, *noiseAmplitude, 0, 1.0f, 2.0f, random.randu64());
+  return result;
 }
 
-float RidgeBlocksSelector::get(int x, int y) const {
-  if (commonality <= 0.0f) {
+std::expected<float, StarException> RidgeBlocksSelector::get(int x, int y) const {
+  if (commonality <= 0.0f)
     return 0.0f;
-  } else {
-    x += noisePerlin.get(x, y);
-    y += noisePerlin.get(y, x);
-    return (ridgePerlin1.get(x, y) - ridgePerlin2.get(x, y)) * commonality + bias;
-  }
+  auto xNoise = noisePerlin.get(x, y);
+  if (!xNoise)
+    return std::unexpected(std::move(xNoise.error()));
+  x += *xNoise;
+  auto yNoise = noisePerlin.get(y, x);
+  if (!yNoise)
+    return std::unexpected(std::move(yNoise.error()));
+  y += *yNoise;
+  auto first = ridgePerlin1.get(x, y);
+  if (!first)
+    return std::unexpected(std::move(first.error()));
+  auto second = ridgePerlin2.get(x, y);
+  if (!second)
+    return std::unexpected(std::move(second.error()));
+  return (*first - *second) * commonality + bias;
 }
 
 }

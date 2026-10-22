@@ -31,10 +31,10 @@ public:
 
   operator ImageView();
 
-  void set(unsigned x, unsigned y, float v);
-  void set(unsigned x, unsigned y, Vec3F const& v);
-  void add(unsigned x, unsigned y, Vec3F const& v);
-  Vec3F get(unsigned x, unsigned y) const;
+  [[nodiscard]] std::expected<void, StarException> set(unsigned x, unsigned y, float v);
+  [[nodiscard]] std::expected<void, StarException> set(unsigned x, unsigned y, Vec3F const& v);
+  [[nodiscard]] std::expected<void, StarException> add(unsigned x, unsigned y, Vec3F const& v);
+  [[nodiscard]] std::expected<Vec3F, StarException> get(unsigned x, unsigned y) const;
 
   bool empty() const;
 
@@ -51,42 +51,37 @@ private:
   unsigned m_height;
 };
 
-inline void Lightmap::set(unsigned x, unsigned y, float v) {
-  if (x >= m_width || y >= m_height) {
-    throw LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y));
-    return;
-  }
+inline std::expected<void, StarException> Lightmap::set(unsigned x, unsigned y, float v) {
+  if (x >= m_width || y >= m_height)
+    return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y)));
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
   ptr[0] = ptr[1] = ptr[2] = v;
+  return {};
 }
 
-inline void Lightmap::set(unsigned x, unsigned y, Vec3F const& v) {
-  if (x >= m_width || y >= m_height) {
-    throw LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y));
-    return;
-  }
+inline std::expected<void, StarException> Lightmap::set(unsigned x, unsigned y, Vec3F const& v) {
+  if (x >= m_width || y >= m_height)
+    return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::set", x, y)));
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
   ptr[0] = v.x();
   ptr[1] = v.y();
   ptr[2] = v.z();
+  return {};
 }
 
-inline void Lightmap::add(unsigned x, unsigned y, Vec3F const& v) {
-  if (x >= m_width || y >= m_height) {
-    throw LightmapException(strf("[{}, {}] out of range in Lightmap::add", x, y));
-    return;
-  }
+inline std::expected<void, StarException> Lightmap::add(unsigned x, unsigned y, Vec3F const& v) {
+  if (x >= m_width || y >= m_height)
+    return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::add", x, y)));
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
   ptr[0] += v.x();
   ptr[1] += v.y();
   ptr[2] += v.z();
+  return {};
 }
 
-inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
-  if (x >= m_width || y >= m_height) {
-    throw LightmapException(strf("[{}, {}] out of range in Lightmap::get", x, y));
-    return Vec3F();
-  }
+inline std::expected<Vec3F, StarException> Lightmap::get(unsigned x, unsigned y) const {
+  if (x >= m_width || y >= m_height)
+    return std::unexpected(LightmapException(strf("[{}, {}] out of range in Lightmap::get", x, y)));
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
   return Vec3F(ptr[0], ptr[1], ptr[2]);
 }
@@ -126,9 +121,9 @@ public:
 
   typedef ColoredCellularLightArray::Cell Cell;
 
-  void setMonochrome(bool monochrome);
+  [[nodiscard]] std::expected<void, StarException> setMonochrome(bool monochrome);
 
-  void setParameters(Json const& config);
+  [[nodiscard]] std::expected<void, StarException> setParameters(Json const& config);
 
   // Call 'begin' to start a calculation for the given region
   void begin(RectI const& queryRegion);
@@ -150,7 +145,7 @@ public:
   // the call to 'begin', and formatted as RGB24.
   void calculate(Image& output);
   // Same as above, but the color data in a float buffer instead.
-  void calculate(Lightmap& output);
+  [[nodiscard]] std::expected<void, StarException> calculate(Lightmap& output);
 
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
 private:
@@ -168,7 +163,7 @@ class CellularLightIntensityCalculator {
 public:
   typedef ScalarCellularLightArray::Cell Cell;
 
-  void setParameters(Json const& config);
+  [[nodiscard]] std::expected<void, StarException> setParameters(Json const& config);
 
   void begin(Vec2F const& queryPosition);
 
@@ -195,9 +190,9 @@ inline std::size_t CellularLightingCalculator::baseIndexFor(Vec2I const& positio
 
 inline void CellularLightingCalculator::setCellIndex(std::size_t cellIndex, Vec3F const& light, bool obstacle) {
   if (m_monochrome)
-    m_lightArray.right().cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{light.sum() / 3, obstacle};
+    m_lightArray.rightPtr()->cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{light.sum() / 3, obstacle};
   else
-    m_lightArray.left().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
+    m_lightArray.leftPtr()->cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
 }
 
 }

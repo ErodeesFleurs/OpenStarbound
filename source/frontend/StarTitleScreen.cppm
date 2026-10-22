@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.json;
 import star.game_types;
 import star.vector;
@@ -87,16 +88,18 @@ enum class TitleState {
 
 class TitleScreen {
 public:
-  TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] static std::expected<std::shared_ptr<TitleScreen>, StarException> create(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client);
+  ~TitleScreen();
+  [[nodiscard]] std::expected<void, StarException> close();
 
-  void renderInit(std::shared_ptr<Renderer> renderer);
+  [[nodiscard]] std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer);
 
-  void render();
+  [[nodiscard]] std::expected<void, StarException> render();
 
-  bool handleInputEvent(InputEvent const& event);
-  void update(float dt);
+  [[nodiscard]] std::expected<bool, StarException> handleInputEvent(InputEvent const& event);
+  [[nodiscard]] std::expected<void, StarException> update(float dt);
 
-  bool textInputActive() const;
+  [[nodiscard]] std::expected<bool, StarException> textInputActive() const;
 
   typedef RegisteredPaneManager<String> TitlePaneManager;
   TitlePaneManager* paneManager();
@@ -104,49 +107,49 @@ public:
   TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
   bool finishedState() const;
-  void resetState();
+  [[nodiscard]] std::expected<void, StarException> resetState();
   // Switches to multi player select character screen immediately, skipping the
   // connection screen if 'skipConnection' is true.  If the player backs out of
   // the multiplayer menu, the skip connection is forgotten.
-  void goToMultiPlayerSelectCharacter(bool skipConnection);
+  [[nodiscard]] std::expected<void, StarException> goToMultiPlayerSelectCharacter(bool skipConnection);
 
   void stopMusic();
 
   std::shared_ptr<Player> currentlySelectedPlayer() const;
 
   String multiPlayerAddress() const;
-  void setMultiPlayerAddress(String address);
+  [[nodiscard]] std::expected<void, StarException> setMultiPlayerAddress(String address);
 
   String multiPlayerPort() const;
-  void setMultiPlayerPort(String port);
+  [[nodiscard]] std::expected<void, StarException> setMultiPlayerPort(String port);
 
   String multiPlayerAccount() const;
-  void setMultiPlayerAccount(String account);
+  [[nodiscard]] std::expected<void, StarException> setMultiPlayerAccount(String account);
 
   String multiPlayerPassword() const;
-  void setMultiPlayerPassword(String password);
+  [[nodiscard]] std::expected<void, StarException> setMultiPlayerPassword(String password);
 
   bool multiPlayerForceLegacy() const;
-  void setMultiPlayerForceLegacy(bool const& forceLegacy);
+  [[nodiscard]] std::expected<void, StarException> setMultiPlayerForceLegacy(bool const& forceLegacy);
 
 private:
-  void initMainMenu();
-  void initCharSelectionMenu();
-  void initCharCreationMenu();
-  void initMultiPlayerMenu();
-  void initOptionsMenu(std::shared_ptr<UniverseClient> client);
-  void initModsMenu();
+  TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer);
+  [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] std::expected<void, StarException> initMainMenu();
+  [[nodiscard]] std::expected<void, StarException> initCharSelectionMenu();
+  [[nodiscard]] std::expected<void, StarException> initCharCreationMenu();
+  [[nodiscard]] std::expected<void, StarException> initMultiPlayerMenu();
+  [[nodiscard]] std::expected<void, StarException> initOptionsMenu(std::shared_ptr<UniverseClient> client);
+  [[nodiscard]] std::expected<void, StarException> initModsMenu();
 
-  void renderCursor();
+  [[nodiscard]] std::expected<void, StarException> renderCursor();
 
-  void switchState(TitleState titleState);
-  void back();
+  [[nodiscard]] std::expected<void, StarException> switchState(TitleState titleState);
+  [[nodiscard]] std::expected<void, StarException> back();
 
-  void populateServerList(ListWidget* list);
+  [[nodiscard]] std::expected<void, StarException> populateServerList(ListWidget* list);
 
   float interfaceScale() const;
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
 
   typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
   std::shared_ptr<ScriptComponent> m_scriptComponent;
@@ -160,10 +163,10 @@ private:
   std::shared_ptr<Pane> m_serverSelectPane;
   Json m_serverList;
 
-  TitlePaneManager m_paneManager;
+  std::shared_ptr<TitlePaneManager> m_paneManager;
 
   Vec2I m_cursorScreenPos;
-  InterfaceCursor m_cursor;
+  std::shared_ptr<InterfaceCursor> m_cursor;
   TitleState m_titleState;
 
   std::shared_ptr<Pane> m_mainMenu;

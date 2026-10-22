@@ -1,6 +1,7 @@
 module;
 import std;
 import star.type_identity;
+import star.format;
 import star.json;
 
 import star.casting;
@@ -54,14 +55,16 @@ public:
     return Star::typeName<QuestTrackerPane>();
   }
 
-  QuestTrackerPane(GuiContext& guiContext);
+  [[nodiscard]] static std::expected<std::shared_ptr<QuestTrackerPane>, StarException> create(GuiContext& guiContext);
 
-  bool sendEvent(InputEvent const& event) override;
-  void update(float dt) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> update(float dt) override;
 
   void setQuest(std::shared_ptr<Quest> const& quest);
 
 private:
+  QuestTrackerPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize();
   void setExpanded(bool expanded);
 
   std::shared_ptr<ImageWidget> m_frame;

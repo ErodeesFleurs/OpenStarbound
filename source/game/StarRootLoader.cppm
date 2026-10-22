@@ -4,6 +4,7 @@ import star.string;
 import star.ordered_map;
 import star.ordered_set;
 import std;
+import star.format;
 import star.version;
 import star.bi_map;
 import star.thread;
@@ -33,7 +34,7 @@ namespace Star {
 // them.
 //
 // It is designed to load settings first from the settings passed into the
-// constructor, then from the required boot config file , then from any passed
+// factory, then from the required boot config file, then from any passed
 // in command line flags.  Besides -version, the accepted command line flags
 // are:
 //
@@ -75,16 +76,17 @@ public:
     std::optional<String> runtimeConfigFile;
   };
 
-  RootLoader(Defaults defaults);
+  [[nodiscard]] static std::expected<RootLoader, StarException> create(Defaults defaults);
 
-  std::pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
-  std::pair<std::unique_ptr<Root>, Options> initOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] std::expected<std::pair<Root::Settings, Options>, StarException> parseOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] std::expected<std::pair<std::unique_ptr<Root>, Options>, StarException> initOrDie(StringList const& cmdLineArguments) const;
 
-  std::pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
-  std::pair<std::unique_ptr<Root>, Options> commandInitOrDie(int argc, char** argv);
+  [[nodiscard]] std::expected<std::pair<Root::Settings, Options>, StarException> commandParseOrDie(int argc, char** argv);
+  [[nodiscard]] std::expected<std::pair<std::unique_ptr<Root>, Options>, StarException> commandInitOrDie(int argc, char** argv);
 
 private:
-  Root::Settings rootSettingsForOptions(Options const& options) const;
+  explicit RootLoader(Defaults defaults);
+  [[nodiscard]] std::expected<Root::Settings, StarException> rootSettingsForOptions(Options const& options) const;
 
   Defaults m_defaults;
 };

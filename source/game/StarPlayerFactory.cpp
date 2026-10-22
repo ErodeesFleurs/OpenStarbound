@@ -102,83 +102,170 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-PlayerConfig::PlayerConfig(Root& root, JsonObject const& cfg) : humanoidTiming(root, cfg.value("humanoidTiming")) {
-  defaultIdentity = HumanoidIdentity(cfg.value("defaultHumanoidIdentity"));
-
-
-  for (Json v : cfg.value("defaultItems", JsonArray()).toArray())
-    defaultItems.append(ItemDescriptor(v));
-
-  for (Json v : cfg.value("defaultBlueprints", JsonObject()).getArray("tier1", JsonArray()))
-    defaultBlueprints.append(ItemDescriptor(v));
-
-  metaBoundBox = jsonToRectF(cfg.get("metaBoundBox"));
-
-  movementParameters = cfg.get("movementParameters");
-  zeroGMovementParameters = cfg.get("zeroGMovementParameters");
-  statusControllerSettings = cfg.get("statusControllerSettings");
-
-  footstepTiming = cfg.get("footstepTiming").toFloat();
-  footstepSensor = jsonToVec2F(cfg.get("footstepSensor"));
-
-  underwaterSensor = jsonToVec2F(cfg.get("underwaterSensor"));
-  underwaterMinWaterLevel = cfg.get("underwaterMinWaterLevel").toFloat();
-
-  splashConfig = EntitySplashConfig(root, cfg.get("splashConfig"));
-
-  companionsConfig = cfg.get("companionsConfig");
-
-  deploymentConfig = cfg.get("deploymentConfig");
-
-  effectsAnimator = cfg.get("effectsAnimator").toString();
-
-  teleportInTime = cfg.get("teleportInTime").toFloat();
-  teleportOutTime = cfg.get("teleportOutTime").toFloat();
-
-  deployInTime = cfg.get("deployInTime").toFloat();
-  deployOutTime = cfg.get("deployOutTime").toFloat();
-
-  bodyMaterialKind = cfg.get("bodyMaterialKind").toString();
-
-  for (auto& p : cfg.get("genericScriptContexts").optObject().value_or(JsonObject()))
-    genericScriptContexts[p.first] = p.second.toString();
-}
-
-PlayerFactory::PlayerFactory(Root& root) : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "player")) {
-  auto assets = m_root.assets();
-  m_config = std::make_shared<PlayerConfig>(m_root, assets->json("/player.config").toObject());
-}
-
-std::shared_ptr<Player> PlayerFactory::create() const {
-  return std::make_shared<Player>(m_root, m_config);
-}
-
-std::shared_ptr<Player> PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
-  std::shared_ptr<Player> player;
-  try {
-    player = std::make_shared<Player>(m_root, m_config, diskStore);
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    auto exception = std::current_exception();
-    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
-      try {
-        player = std::make_shared<Player>(m_root, m_config, store);
-      } catch (std::exception const&) {
-        ExceptionDiagnostic const e(std::current_exception());
-        exception = std::current_exception();
-        return strf("{}", outputException(e, false));
-      }
-      return {};
-    });
-
-    if (!success)
-      std::rethrow_exception(exception);
+std::expected<std::shared_ptr<PlayerConfig>, StarException> PlayerConfig::create(Root& root, JsonObject const& cfg) {
+  Json json(cfg);
+  auto timingConfig = json.get("humanoidTiming", {});
+  if (!timingConfig)
+    return std::unexpected(std::move(timingConfig.error()));
+  auto timing = Humanoid::HumanoidTiming::create(root, *timingConfig);
+  if (!timing)
+    return std::unexpected(std::move(timing.error()));
+  auto config = std::shared_ptr<PlayerConfig>(new PlayerConfig(std::move(*timing)));
+  auto identityConfig = json.get("defaultHumanoidIdentity", {});
+  if (!identityConfig)
+    return std::unexpected(std::move(identityConfig.error()));
+  auto identity = HumanoidIdentity::create(*identityConfig);
+  if (!identity)
+    return std::unexpected(std::move(identity.error()));
+  config->defaultIdentity = std::move(*identity);
+  auto items = json.getArray("defaultItems", JsonArray());
+  if (!items)
+    return std::unexpected(std::move(items.error()));
+  for (auto const& itemJson : *items) {
+    auto item = ItemDescriptor::create(itemJson);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    config->defaultItems.append(std::move(*item));
   }
-  return player;
+  auto blueprintConfig = json.get("defaultBlueprints", JsonObject());
+  if (!blueprintConfig)
+    return std::unexpected(std::move(blueprintConfig.error()));
+  auto blueprints = blueprintConfig->getArray("tier1", JsonArray());
+  if (!blueprints)
+    return std::unexpected(std::move(blueprints.error()));
+  for (auto const& itemJson : *blueprints) {
+    auto item = ItemDescriptor::create(itemJson);
+    if (!item)
+      return std::unexpected(std::move(item.error()));
+    config->defaultBlueprints.append(std::move(*item));
+  }
+  auto boundsConfig = json.get("metaBoundBox");
+  if (!boundsConfig)
+    return std::unexpected(std::move(boundsConfig.error()));
+  auto bounds = jsonToRectF(*boundsConfig);
+  if (!bounds)
+    return std::unexpected(std::move(bounds.error()));
+  config->metaBoundBox = *bounds;
+  for (auto const& field : {
+      std::pair{"movementParameters", &config->movementParameters},
+      std::pair{"zeroGMovementParameters", &config->zeroGMovementParameters},
+      std::pair{"statusControllerSettings", &config->statusControllerSettings},
+      std::pair{"companionsConfig", &config->companionsConfig},
+      std::pair{"deploymentConfig", &config->deploymentConfig}}) {
+    auto value = json.get(field.first);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *field.second = std::move(*value);
+  }
+  for (auto const& field : {
+      std::pair{"footstepTiming", &config->footstepTiming},
+      std::pair{"underwaterMinWaterLevel", &config->underwaterMinWaterLevel},
+      std::pair{"teleportInTime", &config->teleportInTime},
+      std::pair{"teleportOutTime", &config->teleportOutTime},
+      std::pair{"deployInTime", &config->deployInTime},
+      std::pair{"deployOutTime", &config->deployOutTime}}) {
+    auto value = json.getFloat(field.first);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *field.second = *value;
+  }
+  for (auto const& field : {
+      std::pair{"footstepSensor", &config->footstepSensor},
+      std::pair{"underwaterSensor", &config->underwaterSensor}}) {
+    auto value = json.get(field.first);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    auto vector = jsonToVec2F(*value);
+    if (!vector)
+      return std::unexpected(std::move(vector.error()));
+    *field.second = *vector;
+  }
+  auto splashConfig = json.get("splashConfig");
+  if (!splashConfig)
+    return std::unexpected(std::move(splashConfig.error()));
+  auto splash = EntitySplashConfig::create(root, *splashConfig);
+  if (!splash)
+    return std::unexpected(std::move(splash.error()));
+  config->splashConfig = std::move(*splash);
+  for (auto const& field : {
+      std::pair{"effectsAnimator", &config->effectsAnimator},
+      std::pair{"bodyMaterialKind", &config->bodyMaterialKind}}) {
+    auto value = json.getString(field.first);
+    if (!value)
+      return std::unexpected(std::move(value.error()));
+    *field.second = std::move(*value);
+  }
+  auto contextConfig = json.get("genericScriptContexts");
+  if (!contextConfig)
+    return std::unexpected(std::move(contextConfig.error()));
+  auto contexts = contextConfig->optObject();
+  if (!contexts)
+    return std::unexpected(std::move(contexts.error()));
+  if (*contexts) {
+    for (auto const& entry : **contexts) {
+      auto name = entry.second.toString();
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      config->genericScriptContexts[entry.first] = std::move(*name);
+    }
+  }
+  return config;
 }
 
-std::shared_ptr<Player> PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return std::make_shared<Player>(m_root, m_config, netStore, rules);
+PlayerFactory::PlayerFactory(Root& root) : m_root(root) {}
+
+std::expected<std::shared_ptr<PlayerFactory>, StarException> PlayerFactory::create(Root& root) {
+  auto factory = std::shared_ptr<PlayerFactory>(new PlayerFactory(root));
+  auto rebuilder = Rebuilder::create(root, "player");
+  if (!rebuilder)
+    return std::unexpected(std::move(rebuilder.error()));
+  factory->m_rebuilder = std::move(*rebuilder);
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto configJson = (*assets)->json("/player.config");
+  if (!configJson)
+    return std::unexpected(std::move(configJson.error()));
+  auto object = configJson->toObject();
+  if (!object)
+    return std::unexpected(std::move(object.error()));
+  auto config = PlayerConfig::create(root, *object);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  factory->m_config = std::move(*config);
+  return factory;
+}
+
+std::expected<std::shared_ptr<Player>, StarException> PlayerFactory::create() const {
+  return Player::create(m_root, m_config);
+}
+
+std::expected<std::shared_ptr<Player>, StarException> PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
+  auto player = Player::create(m_root, m_config, diskStore);
+  if (player)
+    return std::move(*player);
+  auto lastError = std::move(player.error());
+  auto rebuilt = m_rebuilder->rebuild(diskStore, lastError,
+      [&](Json const& store) -> std::expected<void, StarException> {
+    player = Player::create(m_root, m_config, store);
+    if (!player) {
+      lastError = player.error();
+      return std::unexpected(lastError);
+    }
+    return {};
+  });
+  if (!rebuilt)
+    return std::unexpected(std::move(rebuilt.error()));
+  if (!*rebuilt)
+    return std::unexpected(std::move(lastError));
+  // Rebuilder reports success only after a successful attempt.
+  if (!player)
+    return std::unexpected(std::move(player.error()));
+  return std::move(*player);
+}
+
+std::expected<std::shared_ptr<Player>, StarException> PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
+  return Player::create(m_root, m_config, netStore, rules);
 }
 
 }

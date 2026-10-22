@@ -50,123 +50,94 @@ using GuiContextException = StarError<GuiContextExceptionTag, StarException>;
 
 class GuiContext {
 public:
-  GuiContext(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
+  [[nodiscard]] static std::expected<std::shared_ptr<GuiContext>, StarException> create(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
   ~GuiContext();
 
   Root& root() const;
   void bindInput(Input& input);
-  Input& input() const;
+  [[nodiscard]] std::expected<Input*, StarException> input() const;
   void bindVoice(Voice& voice);
-  Voice& voice() const;
+  [[nodiscard]] std::expected<Voice*, StarException> voice() const;
   void setTileDrawer(TileDrawer* tileDrawer);
   TileDrawer* tileDrawer() const;
 
   GuiContext(GuiContext const&) = delete;
   GuiContext& operator=(GuiContext const&) = delete;
 
-  void renderInit(std::shared_ptr<Renderer> renderer);
-
+  [[nodiscard]] std::expected<void, StarException> renderInit(std::shared_ptr<Renderer> renderer);
   std::shared_ptr<Mixer> const& mixer() const;
   std::shared_ptr<ApplicationController> const& applicationController() const;
-  std::shared_ptr<Renderer> const& renderer() const;
-  std::shared_ptr<AssetTextureGroup> const& assetTextureGroup() const;
-  std::shared_ptr<TextPainter> const& textPainter() const;
+  [[nodiscard]] std::expected<Renderer*, StarException> renderer() const;
+  [[nodiscard]] std::expected<AssetTextureGroup*, StarException> assetTextureGroup() const;
+  [[nodiscard]] std::expected<TextPainter*, StarException> textPainter() const;
 
-  unsigned windowWidth() const;
-  unsigned windowHeight() const;
-
-  Vec2U windowSize() const;
-  Vec2U windowInterfaceSize() const;
-
+  [[nodiscard]] std::expected<unsigned, StarException> windowWidth() const;
+  [[nodiscard]] std::expected<unsigned, StarException> windowHeight() const;
+  [[nodiscard]] std::expected<Vec2U, StarException> windowSize() const;
+  [[nodiscard]] std::expected<Vec2U, StarException> windowInterfaceSize() const;
   float interfaceScale() const;
   void setInterfaceScale(float interfaceScale);
-
   std::optional<Vec2I> mousePosition(InputEvent const& event, float pixelRatio) const;
   std::optional<Vec2I> mousePosition(InputEvent const& event) const;
-
   Set<InterfaceAction> actions(InputEvent const& event) const;
-  // used to cancel chorded inputs on KeyUp
   Set<InterfaceAction> actionsForKey(Key key) const;
-  void refreshKeybindings();
+  [[nodiscard]] std::expected<void, StarException> refreshKeybindings();
 
-  // Drawing wrappers to internal renderers.  Automatically loads textures before drawing.
-
-  void setInterfaceScissorRect(RectI const& scissor);
-  void resetInterfaceScissorRect();
-
-  Vec2U textureSize(AssetPath const& texName);
-
-  void drawQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(AssetPath const& texName, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
-  void drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-
-  void drawDrawable(Drawable drawable, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
-
-  void drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
-  void drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth = 1);
-
-  void drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
-
-  void drawInterfaceDrawable(Drawable drawable, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
-
-  void drawInterfaceLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
-  void drawInterfacePolyLines(PolyF poly, Vec4B const& color, float lineWidth = 1);
-
-  void drawInterfaceTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
-
-  void drawInterfaceQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, float scale, Vec4B const& color = Vec4B::filled(255));
-  void drawInterfaceQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
-
-  void drawImageStretchSet(ImageStretchSet const& imageSet, RectF const& screenPos, GuiDirection direction = GuiDirection::Horizontal, Vec4B const& color = Vec4B::filled(255));
-
-  // Returns true if the hardware cursor was successfully set to the drawable. Generally fails if the Drawable isn't an image part or the image is too big.
-  bool trySetCursor(Drawable const& drawable, Vec2I const& offset, int pixelRatio);
-
-  RectF renderText(String const& s, TextPositioning const& positioning);
-  RectF renderInterfaceText(String const& s, TextPositioning const& positioning);
-
-  RectF determineTextSize(String const& s, TextPositioning const& positioning);
-  RectF determineInterfaceTextSize(String const& s, TextPositioning const& positioning);
-
-  void setFontSize(unsigned size);
-  void setFontSize(unsigned size, float pixelRatio);
-  void setFontColor(Vec4B const& color);
-  void setFontMode(FontMode mode);
-  void setFontProcessingDirectives(String const& directives);
-  void setFont(String const& font);
-  void setDefaultFont();
-  TextStyle& setTextStyle(TextStyle const& textStyle, float pixelRatio);
-  TextStyle& setTextStyle(TextStyle const& textStyle);
-  void clearTextStyle();
-
-  void setLineSpacing(float lineSpacing);
-  void setDefaultLineSpacing();
-
-  int stringWidth(String const& s);
-  int stringInterfaceWidth(String const& s);
-
-  StringList wrapText(String const& s, std::optional<unsigned> wrapWidth);
-  StringList wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth);
-
-  void playAudio(std::shared_ptr<AudioInstance> audioInstance);
-  std::shared_ptr<AudioInstance> playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
-
+  [[nodiscard]] std::expected<void, StarException> setInterfaceScissorRect(RectI const& scissor);
+  [[nodiscard]] std::expected<void, StarException> resetInterfaceScissorRect();
+  [[nodiscard]] std::expected<Vec2U, StarException> textureSize(AssetPath const& texName);
+  [[nodiscard]] std::expected<void, StarException> drawQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawQuad(AssetPath const& texName, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawQuad(AssetPath const& texName, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawDrawable(Drawable drawable, Vec2F const& screenPos, float pixelRatio, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
+  [[nodiscard]] std::expected<void, StarException> drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth = 1);
+  [[nodiscard]] std::expected<void, StarException> drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceDrawable(Drawable drawable, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
+  [[nodiscard]] std::expected<void, StarException> drawInterfacePolyLines(PolyF poly, Vec4B const& color, float lineWidth = 1);
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, float scale, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawInterfaceQuad(AssetPath const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<void, StarException> drawImageStretchSet(ImageStretchSet const& imageSet, RectF const& screenPos, GuiDirection direction = GuiDirection::Horizontal, Vec4B const& color = Vec4B::filled(255));
+  [[nodiscard]] std::expected<bool, StarException> trySetCursor(Drawable const& drawable, Vec2I const& offset, int pixelRatio);
+  [[nodiscard]] std::expected<RectF, StarException> renderText(String const& s, TextPositioning const& positioning);
+  [[nodiscard]] std::expected<RectF, StarException> renderInterfaceText(String const& s, TextPositioning const& positioning);
+  [[nodiscard]] std::expected<RectF, StarException> determineTextSize(String const& s, TextPositioning const& positioning);
+  [[nodiscard]] std::expected<RectF, StarException> determineInterfaceTextSize(String const& s, TextPositioning const& positioning);
+  [[nodiscard]] std::expected<void, StarException> setFontSize(unsigned size);
+  [[nodiscard]] std::expected<void, StarException> setFontSize(unsigned size, float pixelRatio);
+  [[nodiscard]] std::expected<void, StarException> setFontColor(Vec4B const& color);
+  [[nodiscard]] std::expected<void, StarException> setFontMode(FontMode mode);
+  [[nodiscard]] std::expected<void, StarException> setFontProcessingDirectives(String const& directives);
+  [[nodiscard]] std::expected<void, StarException> setFont(String const& font);
+  [[nodiscard]] std::expected<void, StarException> setDefaultFont();
+  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle, float pixelRatio);
+  [[nodiscard]] std::expected<TextStyle*, StarException> setTextStyle(TextStyle const& textStyle);
+  [[nodiscard]] std::expected<void, StarException> clearTextStyle();
+  [[nodiscard]] std::expected<void, StarException> setLineSpacing(float lineSpacing);
+  [[nodiscard]] std::expected<void, StarException> setDefaultLineSpacing();
+  [[nodiscard]] std::expected<int, StarException> stringWidth(String const& s);
+  [[nodiscard]] std::expected<int, StarException> stringInterfaceWidth(String const& s);
+  [[nodiscard]] std::expected<StringList, StarException> wrapText(String const& s, std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<StringList, StarException> wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth);
+  [[nodiscard]] std::expected<void, StarException> playAudio(std::shared_ptr<AudioInstance> audioInstance);
+  [[nodiscard]] std::expected<std::shared_ptr<AudioInstance>, StarException> playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
   bool shiftHeld() const;
   void setShiftHeld(bool held);
-
   String getClipboard() const;
   bool setClipboard(String text);
   bool setClipboardData(StringMap<ByteArray> data);
-  bool setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
-  bool setClipboardFile(String const& path);
+  [[nodiscard]] std::expected<bool, StarException> setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
+  [[nodiscard]] std::expected<bool, StarException> setClipboardFile(String const& path);
   float getDisplayScale() const;
-
-  void cleanup();
+  [[nodiscard]] std::expected<void, StarException> cleanup();
 
 private:
+  GuiContext(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
   Root& m_root;
   Input* m_input = nullptr;
   Voice* m_voice = nullptr;

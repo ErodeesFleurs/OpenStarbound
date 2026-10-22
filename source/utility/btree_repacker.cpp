@@ -13,6 +13,7 @@ import star.ordered_set;
 import star.option_parser;
 import std;
 import star.format;
+import star.output_proxy;
 import star.version;
 import star.version_option_parser;
 import star.logging;
@@ -21,63 +22,114 @@ import star.native_runtime;
 import star.byte_array;
 using namespace Star;
 
+[[nodiscard]]
+static std::expected<int, StarException> repackBTree(int argc, char** argv) {
+  Logger logger;
+  double startTime = Time::monotonicTime();
+
+  auto parser = VersionOptionParser::create();
+  if (!parser)
+    return std::unexpected(std::move(parser.error()));
+  auto& optParse = *parser;
+  optParse.setVersionName("Btree Repacker");
+  optParse.setSummary("Repacks a Starbound BTree file to shrink its file size");
+  optParse.addArgument("input file path", OptionParser::Required, "Path to the BTree to be repacked");
+  optParse.addArgument("output filename", OptionParser::Optional, "Output BTree file");
+
+  auto parsed = optParse.commandParseOrDie(argc, argv);
+  if (!parsed)
+    return std::unexpected(std::move(parsed.error()));
+  auto& opts = *parsed;
+  auto inputArgument = opts.arguments.at(0);
+  if (!inputArgument)
+    return std::unexpected(std::move(inputArgument.error()));
+  String bTreePath = **inputArgument;
+  String outputFilename = opts.arguments.get(1, bTreePath + ".repack");
+
+  auto outputDirectory = File::fullPath(File::dirName(outputFilename));
+  if (!outputDirectory)
+    return std::unexpected(std::move(outputDirectory.error()));
+  outputFilename = File::relativeTo(*outputDirectory, File::baseName(outputFilename));
+  // Open the old database.
+  BTreeDatabase db(logger);
+  auto inputFile = File::open(bTreePath, IOMode::Read);
+  if (!inputFile)
+    return std::unexpected(std::move(inputFile.error()));
+  auto inputDevice = db.setIODevice(std::move(*inputFile));
+  if (!inputDevice)
+    return std::unexpected(std::move(inputDevice.error()));
+  auto openedInput = db.open();
+  if (!openedInput)
+    return std::unexpected(std::move(openedInput.error()));
+
+  // Make a new database with the original layout settings.
+  BTreeDatabase newDb(logger);
+  auto blockSize = newDb.setBlockSize(db.blockSize());
+  if (!blockSize)
+    return std::unexpected(std::move(blockSize.error()));
+  auto contentIdentifier = newDb.setContentIdentifier(db.contentIdentifier());
+  if (!contentIdentifier)
+    return std::unexpected(std::move(contentIdentifier.error()));
+  auto keySize = newDb.setKeySize(db.keySize());
+  if (!keySize)
+    return std::unexpected(std::move(keySize.error()));
+  auto autoCommit = newDb.setAutoCommit(false);
+  if (!autoCommit)
+    return std::unexpected(std::move(autoCommit.error()));
+
+  auto outputFile = File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate);
+  if (!outputFile)
+    return std::unexpected(std::move(outputFile.error()));
+  auto outputDevice = newDb.setIODevice(std::move(*outputFile));
+  if (!outputDevice)
+    return std::unexpected(std::move(outputDevice.error()));
+  auto openedOutput = newDb.open();
+  if (!openedOutput)
+    return std::unexpected(std::move(openedOutput.error()));
+  coutf("Repacking {}...\n", bTreePath);
+
+  unsigned count = 0, overwritten = 0;
+  auto visitor = [&](ByteArray key, ByteArray data) -> std::expected<void, StarException> {
+    auto inserted = newDb.insert(key, data);
+    if (!inserted)
+      return std::unexpected(std::move(inserted.error()));
+    if (*inserted)
+      ++overwritten;
+    ++count;
+    return {};
+  };
+  auto errorHandler = [&](String const& error, ExceptionDiagnostic const& diagnostic) -> std::expected<void, StarException> {
+    coutf("{}: {}\n", error, outputException(diagnostic, false));
+    return {};
+  };
+  auto recovered = db.recoverAll(visitor, errorHandler);
+  if (!recovered)
+    return std::unexpected(std::move(recovered.error()));
+
+  auto closedInput = db.close(true);
+  if (!closedInput)
+    return std::unexpected(std::move(closedInput.error()));
+  auto committed = newDb.commit();
+  if (!committed)
+    return std::unexpected(std::move(committed.error()));
+  auto closedOutput = newDb.close(true);
+  if (!closedOutput)
+    return std::unexpected(std::move(closedOutput.error()));
+
+  coutf("Repacked BTree to {} in {:.6f}s\n({} inserts, {} overwritten)\n", outputFilename, Time::monotonicTime() - startTime, count, overwritten);
+  return 0;
+}
+
 int main(int argc, char** argv) {
-  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
-  try {
-    Logger logger;
-    double startTime = Time::monotonicTime();
-
-    VersionOptionParser optParse;
-    optParse.setVersionName("Btree Repacker");
-    optParse.setSummary("Repacks a Starbound BTree file to shrink its file size");
-    optParse.addArgument("input file path", OptionParser::Required, "Path to the BTree to be repacked");
-    optParse.addArgument("output filename", OptionParser::Optional, "Output BTree file");
-
-    auto opts = optParse.commandParseOrDie(argc, argv);
-
-    String bTreePath = opts.arguments.at(0);
-    String outputFilename = opts.arguments.get(1, bTreePath + ".repack");
-
-    outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
-    //open the old db
-    BTreeDatabase db(logger);
-    db.setIODevice(File::open(bTreePath, IOMode::Read));
-    db.open();
-
-    //make a new db
-    BTreeDatabase newDb(logger);
-    newDb.setBlockSize(db.blockSize());
-    newDb.setContentIdentifier(db.contentIdentifier());
-    newDb.setKeySize(db.keySize());
-    newDb.setAutoCommit(false);
-
-    newDb.setIODevice(File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate));
-    newDb.open();
-    coutf("Repacking {}...\n", bTreePath);
-    //copy the data over
-    unsigned count = 0, overwritten = 0;
-    auto visitor = [&](ByteArray key, ByteArray data) {
-      if (newDb.insert(key, data))
-        ++overwritten;
-      ++count;
-    };
-    auto errorHandler = [&](String const& error, ExceptionDiagnostic const& e) {
-      coutf("{}: {}\n", error, outputException(e, false));
-    };
-    db.recoverAll(visitor, errorHandler);
-
-    //close the old db
-    db.close(true);
-    //commit and close the new db
-    newDb.commit();
-    newDb.close(true);
-
-    coutf("Repacked BTree to {} in {:.6f}s\n({} inserts, {} overwritten)\n", outputFilename, Time::monotonicTime() - startTime, count, overwritten);
-    return 0;
-
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    cerrf("Exception caught: {}\n", outputException(e, true));
+  auto nativeRuntime = NativeRuntime::create();
+  if (!nativeRuntime) {
+    cerrf("Exception caught: {}\n", outputException(ExceptionDiagnostic(nativeRuntime.error()), true));
     return 1;
   }
+  auto result = repackBTree(argc, argv);
+  if (!result) {
+    cerrf("Exception caught: {}\n", outputException(ExceptionDiagnostic(result.error()), true));
+    return 1;
+  }
+  return *result;
 }

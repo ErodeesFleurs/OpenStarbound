@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.id_map;
@@ -84,26 +85,28 @@ public:
     return Star::typeName<InventoryPane>();
   }
 
-  InventoryPane(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  [[nodiscard]] static std::expected<std::shared_ptr<InventoryPane>, StarException> create(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
 
-  void displayed() override;
-  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] std::expected<void, StarException> displayed() override;
+  [[nodiscard]] std::expected<std::shared_ptr<Pane>, StarException> createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] std::expected<bool, StarException> sendEvent(InputEvent const& event) override;
 
-  bool giveContainerResult(ContainerResult result);
+  [[nodiscard]] std::expected<bool, StarException> giveContainerResult(ContainerResult result);
 
   // update only item grids, to see if they have had their slots changed
   // this is a little hacky and should probably be checked in the player inventory instead
-  void updateItems();
+  [[nodiscard]] std::expected<void, StarException> updateItems();
   bool containsNewItems() const;
-  void clearChangedSlots();
+  [[nodiscard]] std::expected<void, StarException> clearChangedSlots();
 
 protected:
-  virtual void update(float dt) override;
+  [[nodiscard]] virtual std::expected<void, StarException> update(float dt) override;
 
-  void selectTab(String const& selected);
+  [[nodiscard]] std::expected<void, StarException> selectTab(String const& selected);
 
 private:
+  explicit InventoryPane(GuiContext& guiContext);
+  [[nodiscard]] std::expected<void, StarException> initialize(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
   MainInterface* m_parent;
   std::shared_ptr<Player> m_player;
   std::shared_ptr<ContainerInteractor> m_containerInteractor;

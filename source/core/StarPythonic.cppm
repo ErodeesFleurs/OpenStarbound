@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 
 namespace Star {
 
@@ -18,11 +19,13 @@ inline SliceIndex const SliceNil = SliceIndex();
 // T must have operator[](int), size(), and
 // push_back(typeof T::operator[](int()))
 template <typename Res, typename In>
-Res slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
+[[nodiscard]] auto slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1)
+    -> std::conditional_t<std::is_void_v<decltype(std::declval<Res&>().push_back(r[0]))>, Res, std::expected<Res, StarException>> {
+  using AppendResult = decltype(std::declval<Res&>().push_back(r[0]));
   int size = (int)r.size();
   int start, end;
 
-  // Throw exception on j == 0?
+  // A zero stride preserves the existing successful empty-slice behavior.
   if (j == 0 || size == 0)
     return Res();
 
@@ -69,24 +72,42 @@ Res slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
 
   Res returnSlice;
   int i;
-  for (i = start; i < end; i += j)
-    returnSlice.push_back(r[i]);
+  for (i = start; i < end; i += j) {
+    if constexpr (std::is_void_v<AppendResult>) {
+      returnSlice.push_back(r[i]);
+    } else {
+      auto appended = returnSlice.push_back(r[i]);
+      if (!appended)
+        return std::unexpected(std::move(appended.error()));
+    }
+  }
 
   return returnSlice;
 }
 
 template <typename T>
-T slice(T const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
+[[nodiscard]] auto slice(T const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
   return slice<T, T>(r, a, b, j);
 }
 
 template <typename ResultContainer, typename Iterable>
-ResultContainer enumerateConstruct(Iterable&& list) {
+[[nodiscard]] auto enumerateConstruct(Iterable&& list) {
+  using Reference = decltype(*std::begin(list));
+  using Value = std::pair<Reference, std::size_t>;
+  using AppendResult = decltype(std::declval<ResultContainer&>().push_back(std::declval<Value>()));
+  using Result = std::conditional_t<std::is_void_v<AppendResult>, ResultContainer, std::expected<ResultContainer, StarException>>;
   ResultContainer res;
-  for (auto [index, value] : std::views::enumerate(list))
-    res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
+  for (auto [index, value] : std::views::enumerate(list)) {
+    if constexpr (std::is_void_v<AppendResult>) {
+      res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
+    } else {
+      auto appended = res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
+      if (!appended)
+        return Result(std::unexpected(std::move(appended.error())));
+    }
+  }
 
-  return res;
+  return Result(std::move(res));
 }
 
 }

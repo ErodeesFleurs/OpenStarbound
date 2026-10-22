@@ -1,4 +1,5 @@
 import std;
+import star.format;
 import star.data_stream;
 
 import star.net_element;
@@ -14,12 +15,12 @@ std::uint64_t NetElementVersion::increment() {
   return ++m_version;
 }
 
-void NetElement::enableNetInterpolation(float) {}
+std::expected<void, StarException> NetElement::enableNetInterpolation(float) { return {}; }
 
-void NetElement::disableNetInterpolation() {}
+std::expected<void, StarException> NetElement::disableNetInterpolation() { return {}; }
 
-void NetElement::tickNetInterpolation(float) {}
+std::expected<void, StarException> NetElement::tickNetInterpolation(float) { return {}; }
 
-void NetElement::blankNetDelta(float) {}
+std::expected<void, StarException> NetElement::blankNetDelta(float) { return {}; }
 
 }

@@ -43,30 +43,44 @@ import star.stagehand_database;
 
 namespace Star {
 
-StagehandDatabase::StagehandDatabase(Root& root) : m_root(root) {
-  auto assets = m_root.assets();
-  auto& files = assets->scanExtension("stagehand");
-  assets->queueJsons(files);
-  for (auto& file : files) {
-    try {
-      auto config = assets->json(file);
-
-      String typeName = config.getString("type");
-
-      if (m_stagehandTypes.contains(typeName))
-        throw StagehandDatabaseException(strf("Repeat stagehand type name '{}'", typeName));
-
-      m_stagehandTypes[typeName] = config;
-
-    } catch (StarException const& e) {
-      throw StagehandDatabaseException(strf("Error loading stagehand type '{}'", file), e);
-    }
+std::expected<std::shared_ptr<StagehandDatabase>, StarException> StagehandDatabase::create(Root& root) {
+  struct MakeShared final : StagehandDatabase {
+    explicit MakeShared(Root& root) : StagehandDatabase(root) {}
+  };
+  auto database = std::make_shared<MakeShared>(root);
+  auto assets = root.assets();
+  if (!assets)
+    return std::unexpected(std::move(assets.error()));
+  auto files = (*assets)->scanExtension("stagehand");
+  if (!files)
+    return std::unexpected(std::move(files.error()));
+  if (auto queued = (*assets)->queueJsons(**files); !queued)
+    return std::unexpected(std::move(queued.error()));
+  for (auto const& scannedFile : **files) {
+    String file = scannedFile.string();
+    auto load = [&]() -> std::expected<void, StarException> {
+      auto config = (*assets)->json(file);
+      if (!config)
+        return std::unexpected(std::move(config.error()));
+      auto typeName = config->getString("type");
+      if (!typeName)
+        return std::unexpected(std::move(typeName.error()));
+      if (database->m_stagehandTypes.contains(*typeName))
+        return std::unexpected(StagehandDatabaseException(strf("Repeat stagehand type name '{}'", *typeName)));
+      database->m_stagehandTypes[*typeName] = std::move(*config);
+      return {};
+    }();
+    if (!load)
+      return std::unexpected(StagehandDatabaseException(strf("Error loading stagehand type '{}'", file), load.error()));
   }
+  return database;
 }
 
-std::shared_ptr<Stagehand> StagehandDatabase::createStagehand(String const& stagehandType, Json const& extraConfig) const {
-  auto finalConfig = jsonMerge(m_stagehandTypes.get(stagehandType), extraConfig);
-  return std::make_shared<Stagehand>(m_root, finalConfig);
+std::expected<std::shared_ptr<Stagehand>, StarException> StagehandDatabase::createStagehand(String const& stagehandType, Json const& extraConfig) const {
+  auto config = m_stagehandTypes.get(stagehandType);
+  if (!config)
+    return std::unexpected(std::move(config.error()));
+  return Stagehand::create(m_root, jsonMerge(**config, extraConfig));
 }
 
 }

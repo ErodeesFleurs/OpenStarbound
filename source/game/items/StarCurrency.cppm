@@ -1,5 +1,6 @@
 module;
 import std;
+import star.format;
 import star.type_identity;
 import star.json;
 import star.json_extra;
@@ -41,11 +42,14 @@ public:
     return Star::typeName<CurrencyItem>();
   }
 
-  CurrencyItem(Root& root, Json const& config, String const& directory);
+  [[nodiscard]]
+  static std::expected<std::shared_ptr<CurrencyItem>, StarException> create(Root& root, Json const& config, String const& directory);
 
-  virtual std::shared_ptr<Item> clone() const override;
+  [[nodiscard]]
+  std::expected<std::shared_ptr<Item>, StarException> clone() const override;
 
-  virtual String pickupSound() const override;
+  [[nodiscard]]
+  std::expected<String, StarException> pickupSound() const override;
 
   String currencyType();
 
@@ -56,6 +60,7 @@ public:
   std::uint64_t totalValue();
 
 private:
+  explicit CurrencyItem(Root& root) : Item(root) {}
   String m_currency;
   std::uint64_t m_value;
 };
@@ -64,25 +69,56 @@ private:
 
 namespace Star {
 
-CurrencyItem::CurrencyItem(Root& root, Json const& config, String const& directory) : Item(root, config, directory) {
-  m_currency = config.getString("currency");
-  m_value = config.getUInt("value");
+std::expected<std::shared_ptr<CurrencyItem>, StarException> CurrencyItem::create(Root& root, Json const& config, String const& directory) {
+  auto item = std::shared_ptr<CurrencyItem>(new CurrencyItem(root));
+  auto initialized = item->initialize(config, directory);
+  if (!initialized)
+    return std::unexpected(std::move(initialized.error()));
+  auto currency = config.getString("currency");
+  if (!currency)
+    return std::unexpected(std::move(currency.error()));
+  item->m_currency = std::move(*currency);
+  auto value = config.getUInt("value");
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  item->m_value = *value;
+  return item;
 }
 
-std::shared_ptr<Item> CurrencyItem::clone() const {
+std::expected<std::shared_ptr<Item>, StarException> CurrencyItem::clone() const {
   return std::make_shared<CurrencyItem>(*this);
 }
 
-String CurrencyItem::pickupSound() const {
-  if (count() <= instanceValue("smallStackLimit", 100).toUInt()) {
-    if (!instanceValue("pickupSoundsSmall", {}).isNull())
-      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsSmall")));
-  } else if (count() <= instanceValue("mediumStackLimit", 10000).toUInt()) {
-    if (!instanceValue("pickupSoundsMedium", {}).isNull())
-      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsMedium")));
+std::expected<String, StarException> CurrencyItem::pickupSound() const {
+  auto smallLimitValue = instanceValue("smallStackLimit", 100);
+  if (!smallLimitValue)
+    return std::unexpected(std::move(smallLimitValue.error()));
+  auto smallLimit = smallLimitValue->toUInt();
+  if (!smallLimit)
+    return std::unexpected(std::move(smallLimit.error()));
+  String soundsKey;
+  if (count() <= *smallLimit) {
+    soundsKey = "pickupSoundsSmall";
   } else {
-    if (!instanceValue("pickupSoundsLarge", {}).isNull())
-      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsLarge")));
+    auto mediumLimitValue = instanceValue("mediumStackLimit", 10000);
+    if (!mediumLimitValue)
+      return std::unexpected(std::move(mediumLimitValue.error()));
+    auto mediumLimit = mediumLimitValue->toUInt();
+    if (!mediumLimit)
+      return std::unexpected(std::move(mediumLimit.error()));
+    soundsKey = count() <= *mediumLimit ? "pickupSoundsMedium" : "pickupSoundsLarge";
+  }
+  auto soundsValue = instanceValue(soundsKey, {});
+  if (!soundsValue)
+    return std::unexpected(std::move(soundsValue.error()));
+  if (!soundsValue->isNull()) {
+    auto sounds = jsonToStringSet(*soundsValue);
+    if (!sounds)
+      return std::unexpected(std::move(sounds.error()));
+    auto sound = root().random().randFrom(*sounds);
+    if (!sound)
+      return std::unexpected(std::move(sound.error()));
+    return **sound;
   }
   return Item::pickupSound();
 }

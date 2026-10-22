@@ -1,269 +1,342 @@
+import std;
 import star.json;
 import star.json_extra;
-import star.id_map;
-import star.casting;
-import star.data_stream;
-import star.strong_typedef;
-import star.game_types;
 import star.list;
 import star.rpc_promise;
-import star.bi_map;
-import star.a_star;
 import star.string;
-import star.color;
-import star.image_processing;
-import star.hash;
-import star.string_view;
 import star.thread;
-import star.directives;
-import star.asset_path;
 import star.lua;
-import star.random;
-import star.periodic_function;
-import star.ordered_map;
-import star.audio;
-import star.map;
-import star.set;
-import star.io_device;
-import star.ref_ptr;
-import star.listener;
-import std;
-import star.format;
-import star.version;
 import star.logging;
-
+import star.output_proxy;
+import star.game_types;
+import star.format;
 import star.scriptable_thread;
 import star.lua_root;
 import star.lua_converters;
-import star.damage_types;
-import star.world_geometry;
-import star.status_types;
-import star.damage;
-import star.light_source;
-import star.entity;
-import star.tile_damage;
-import star.interaction_types;
-import star.item_descriptor;
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.interactive_entity;
-import star.collision_block;
-import star.tile_entity;
-import star.tile_modification;
-import star.force_regions;
-import star.world;
-import star.physics_entity;
-import star.movement_controller;
-import star.platformer_astar_types;
-import star.anchorable_entity;
-import star.game_timers;
-import star.actor_movement_controller;
-import star.drawable;
-import star.animation;
-import star.particle;
-import star.animated_part_set;
-import star.mixer;
-import star.networked_animator;
-import star.humanoid;
-import star.portrait_entity;
-import star.damage_bar_entity;
-import star.nametag_entity;
-import star.scripted_entity;
-import star.chat_action;
-import star.chatty_entity;
-import star.emote_entity;
-import star.entity_rendering_types;
-import star.lounging_entities;
-import star.mobile_entity;
-import star.actor_entity;
-import star.tool_user_entity;
 import star.lua_components;
-import star.lua_actor_movement_component;
-import star.lua_animation_component;
-import star.npc_database;
-import star.effect_emitter;
-import star.npc;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
-
 import star.tick_rate_monitor;
 import star.config_lua_bindings;
 
-import star.math_common;
 namespace Star {
 
-ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
-  : Thread("ScriptableThread: " + parameters.getString("name")),
-    m_parameters(std::move(parameters)),
-    m_stop(false),
-    m_errorOccurred(false),
-    m_shouldExpire(false),
-    m_parent(parent) {
-      m_luaRoot = std::make_shared<LuaRoot>(parent->root());
-      m_luaRoot->luaEngine().setNullTerminated(false);
-      m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
-      m_name = m_parameters.getString("name");
-      m_logMapped = m_parameters.getBool("logMapped",true);
-      
-      m_timestep = 1.0f / m_parameters.getFloat("tickRate",60.0f);
-      
-      // since thread's not blocking anything important, allow modifying the instruction limit
-      if (auto instructionLimit = m_parameters.optUInt("instructionLimit"))
-        m_luaRoot->luaEngine().setInstructionLimit(instructionLimit.value());
-        
-      m_luaRoot->addCallbacks("thread", makeThreadCallbacks());
-      m_luaRoot->addCallbacks(
-          "config", LuaBindings::makeConfigCallbacks(std::bind(&ScriptableThread::configValue, this, std::placeholders::_1, std::placeholders::_2)));
+ScriptableThread::ScriptableThread(Json parameters, String name, LuaBaseComponent* parent)
+  : Thread("ScriptableThread: " + name), m_parameters(std::move(parameters)),
+    m_name(std::move(name)), m_logMapped(true), m_timestep(1.0f / 60.0f),
+    m_stop(false), m_pause(false), m_errorOccurred(false), m_shouldExpire(false), m_parent(parent) {}
+
+std::expected<std::shared_ptr<ScriptableThread>, StarException> ScriptableThread::create(Json parameters, LuaBaseComponent* parent) {
+  auto name = parameters.getString("name");
+  if (!name)
+    return std::unexpected(std::move(name.error()));
+  auto thread = std::shared_ptr<ScriptableThread>(new ScriptableThread(std::move(parameters), std::move(*name), parent));
+  auto root = LuaRoot::create(parent->root());
+  if (!root)
+    return std::unexpected(std::move(root.error()));
+  thread->m_luaRoot = std::move(*root);
+  thread->m_luaRoot->luaEngine().setNullTerminated(false);
+  auto pause = thread->m_parameters.getFloat("luaGcPause", 1.2f);
+  if (!pause)
+    return std::unexpected(std::move(pause.error()));
+  auto step = thread->m_parameters.getFloat("luaGcStepMultiplier", 1.2f);
+  if (!step)
+    return std::unexpected(std::move(step.error()));
+  thread->m_luaRoot->tuneAutoGarbageCollection(*pause, *step);
+  auto logMapped = thread->m_parameters.getBool("logMapped", true);
+  if (!logMapped)
+    return std::unexpected(std::move(logMapped.error()));
+  thread->m_logMapped = *logMapped;
+  auto tickRate = thread->m_parameters.getFloat("tickRate", 60.0f);
+  if (!tickRate)
+    return std::unexpected(std::move(tickRate.error()));
+  thread->m_timestep = 1.0f / *tickRate;
+  auto limit = thread->m_parameters.optUInt("instructionLimit");
+  if (!limit)
+    return std::unexpected(std::move(limit.error()));
+  if (*limit)
+    thread->m_luaRoot->luaEngine().setInstructionLimit(**limit);
+  auto callbacks = thread->makeThreadCallbacks();
+  if (!callbacks)
+    return std::unexpected(std::move(callbacks.error()));
+  thread->m_luaRoot->addCallbacks("thread", *callbacks);
+  auto configCallbacks = LuaBindings::makeConfigCallbacks([owner = thread.get()](String const& name, Json const& def) {
+    return owner->configValue(name, def);
+  });
+  if (!configCallbacks)
+    return std::unexpected(std::move(configCallbacks.error()));
+  thread->m_luaRoot->addCallbacks("config", *configCallbacks);
+  return thread;
 }
 
 ScriptableThread::~ScriptableThread() {
-  stop();
+  if (auto result = stop(); !result)
+    EmergencyLog::error("Error stopping ScriptableThread: {}", outputException(result.error(), true));
   m_scriptContexts.clear();
 }
 
-void ScriptableThread::addCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
-  if (m_threadCallbacks.insert(groupName, callbacks).second) {
-    for (auto const& p : m_scriptContexts) {
-      p.second->addCallbacks(groupName,callbacks);
-      p.second->addThreadCallbacks(groupName,callbacks);
+std::expected<void, StarException> ScriptableThread::addCallbacks(String const& group, LuaCallbacks const& callbacks) {
+  if (m_threadCallbacks.contains(group))
+    return {};
+  List<std::shared_ptr<ScriptComponent>> changed;
+  for (auto const& p : m_scriptContexts) {
+    auto result = p.second->addCallbacks(group, callbacks);
+    if (result) {
+      result = p.second->addThreadCallbacks(group, callbacks);
+      if (!result) {
+        if (auto rollback = p.second->removeCallbacks(group); !rollback)
+          EmergencyLog::error("Error rolling back script thread callbacks: {}", outputException(rollback.error(), true));
+      }
     }
-  }
-}
-void ScriptableThread::removeCallbacks(String const& groupName) {
-  if (m_threadCallbacks.remove(groupName)) {
-    for (auto const& p : m_scriptContexts) {
-      p.second->removeCallbacks(groupName);
-      p.second->removeThreadCallbacks(groupName);
+    if (!result) {
+      for (auto const& component : changed) {
+        if (auto rollback = component->removeCallbacks(group); !rollback)
+          EmergencyLog::error("Error rolling back script thread callbacks: {}", outputException(rollback.error(), true));
+        if (auto rollback = component->removeThreadCallbacks(group); !rollback)
+          EmergencyLog::error("Error rolling back nested thread callbacks: {}", outputException(rollback.error(), true));
+      }
+      return std::unexpected(std::move(result.error()));
     }
+    changed.append(p.second);
   }
+  m_threadCallbacks.insert(group, callbacks);
+  return {};
 }
 
-void ScriptableThread::start() {
+std::expected<void, StarException> ScriptableThread::removeCallbacks(String const& group) {
+  auto callbacks = m_threadCallbacks.ptr(group);
+  if (!callbacks)
+    return {};
+  struct RemovedCallbacks {
+    std::shared_ptr<ScriptComponent> component;
+    bool callbacks;
+    bool threadCallbacks;
+  };
+  List<RemovedCallbacks> changed;
+  auto rollback = [&](StarException error) -> std::expected<void, StarException> {
+    for (auto const& removed : changed) {
+      if (removed.callbacks) {
+        if (auto restored = removed.component->addCallbacks(group, *callbacks); !restored)
+          error = restored.error().withContext(strf("Original script callback removal failure: {}", outputException(error, true)));
+      }
+      if (removed.threadCallbacks) {
+        if (auto restored = removed.component->addThreadCallbacks(group, *callbacks); !restored)
+          error = restored.error().withContext(strf("Original script callback removal failure: {}", outputException(error, true)));
+      }
+    }
+    return std::unexpected(std::move(error));
+  };
+  for (auto const& p : m_scriptContexts) {
+    auto removed = p.second->removeCallbacks(group);
+    if (!removed)
+      return rollback(std::move(removed.error()));
+    changed.append({p.second, *removed, false});
+    auto removedThread = p.second->removeThreadCallbacks(group);
+    if (!removedThread)
+      return rollback(std::move(removedThread.error()));
+    changed.back().threadCallbacks = *removedThread;
+  }
+  m_threadCallbacks.remove(group);
+  return {};
+}
+
+std::expected<bool, StarException> ScriptableThread::start() {
   m_stop = false;
   m_errorOccurred = false;
-  Thread::start();
+  return Thread::start();
 }
 
-void ScriptableThread::stop() {
+std::expected<void, StarException> ScriptableThread::stop() {
   m_stop = true;
-  Thread::join();
-}
-
-void ScriptableThread::setPause(bool pause) {
-  m_pause = pause;
-}
-
-bool ScriptableThread::errorOccurred() {
-  return m_errorOccurred;
-}
-
-bool ScriptableThread::shouldExpire() {
-  return m_shouldExpire;
-}
-
-void ScriptableThread::passMessage(Message&& message) {
-  RecursiveMutexLocker locker(m_messageMutex);
-  m_messages.append(std::move(message));
-}
-
-void ScriptableThread::run() {
-  try {
-    for (auto& p : m_parameters.getObject("scripts")) {
-      auto scriptComponent = std::make_shared<ScriptComponent>(m_luaRoot->root());
-      scriptComponent->setLuaRoot(m_luaRoot);
-      scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
-      
-      for (auto const& callbackPair : m_threadCallbacks) {
-        scriptComponent->addCallbacks(callbackPair.first, callbackPair.second);
-        scriptComponent->addThreadCallbacks(callbackPair.first, callbackPair.second);
-      }
-
-      m_scriptContexts.set(p.first, scriptComponent);
-      scriptComponent->init();
+  auto joined = Thread::join();
+  List<Message> messages;
+  {
+    RecursiveMutexLocker locker(m_messageMutex);
+    messages = std::move(m_messages);
+  }
+  std::optional<StarException> error;
+  if (!joined)
+    error = std::move(joined.error());
+  for (auto& message : messages) {
+    if (auto failed = message.promise.fail("Thread is stopped"); !failed) {
+      if (!error)
+        error = std::move(failed.error());
+      else
+        EmergencyLog::error("Error failing stopped thread message: {}", outputException(failed.error(), true));
     }
-    
-    double updateMeasureWindow = m_parameters.getDouble("updateMeasureWindow",0.5);
-    TickRateApproacher tickApproacher(1.0f / m_timestep, updateMeasureWindow);
+  }
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
+}
 
+void ScriptableThread::setPause(bool pause) { m_pause = pause; }
+bool ScriptableThread::errorOccurred() { return m_errorOccurred; }
+bool ScriptableThread::shouldExpire() { return m_shouldExpire; }
+
+std::expected<void, StarException> ScriptableThread::passMessage(Message&& message) {
+  RecursiveMutexLocker locker(m_messageMutex);
+  if (m_stop || m_errorOccurred)
+    return message.promise.fail("Thread is stopped");
+  m_messages.append(std::move(message));
+  return {};
+}
+
+std::expected<void, StarException> ScriptableThread::run() {
+  auto result = [&]() -> std::expected<void, StarException> {
+    auto scripts = m_parameters.getObject("scripts");
+    if (!scripts)
+      return std::unexpected(std::move(scripts.error()));
+    for (auto const& p : *scripts) {
+      auto component = std::make_shared<ScriptComponent>(m_luaRoot->root());
+      if (auto set = component->setLuaRoot(m_luaRoot); !set)
+        return std::unexpected(std::move(set.error()));
+      auto array = p.second.toArray();
+      if (!array)
+        return std::unexpected(std::move(array.error()));
+      auto paths = jsonToStringList(*array);
+      if (!paths)
+        return std::unexpected(std::move(paths.error()));
+      if (auto set = component->setScripts(std::move(*paths)); !set)
+        return std::unexpected(std::move(set.error()));
+      for (auto const& callbacks : m_threadCallbacks) {
+        if (auto added = component->addCallbacks(callbacks.first, callbacks.second); !added)
+          return std::unexpected(std::move(added.error()));
+        if (auto added = component->addThreadCallbacks(callbacks.first, callbacks.second); !added)
+          return std::unexpected(std::move(added.error()));
+      }
+      m_scriptContexts.set(p.first, component);
+      if (auto initialized = component->init(); !initialized) {
+        // The component already logged and disabled a failed script. Preserve
+        // the old per-context isolation; infrastructure failures stop the thread.
+        if (!initialized.error().is<LuaException>())
+          return std::unexpected(std::move(initialized.error()));
+      }
+    }
+    auto window = m_parameters.getDouble("updateMeasureWindow", 0.5);
+    if (!window)
+      return std::unexpected(std::move(window.error()));
+    TickRateApproacher approacher(1.0f / m_timestep, *window);
     while (!m_stop && !m_errorOccurred) {
       if (m_logMapped)
-        m_luaRoot->root().logMap().set(strf("lua_{}_update", m_name), strf("{:4.2f}Hz", tickApproacher.rate()));
-
-      update();
-      tickApproacher.setTargetTickRate(1.0f / m_timestep);
-      tickApproacher.tick();
-
-      double spareTime = tickApproacher.spareTime();
-
-      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
-      if (spareMilliseconds > 0)
-        Thread::sleepPrecise(spareMilliseconds);
+        m_luaRoot->root().logMap().set(strf("lua_{}_update", m_name), strf("{:4.2f}Hz", approacher.rate()));
+      if (auto updated = update(); !updated)
+        return std::unexpected(std::move(updated.error()));
+      approacher.setTargetTickRate(1.0f / m_timestep);
+      approacher.tick();
+      std::int64_t spare = std::floor(approacher.spareTime() * 1000);
+      if (spare > 0)
+        Thread::sleepPrecise(spare);
     }
-  } catch (std::exception const&) {
-    ExceptionDiagnostic const e(std::current_exception());
-    m_luaRoot->root().logger().error("ScriptableThread exception caught: {}", outputException(e, true));
+    return {};
+  }();
+  if (!result) {
     m_errorOccurred = true;
+    if (auto logged = m_luaRoot->root().logger().error("ScriptableThread exception caught: {}", outputException(result.error(), true)); !logged)
+      result.error() = logged.error().withContext(strf("Could not log ScriptableThread failure: {}", outputException(result.error(), true)));
   }
-  for (auto& p : m_scriptContexts)
-    p.second->uninit();
-}
-
-std::optional<ChainableJsonMessageResponse> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
-  std::optional<ChainableJsonMessageResponse> result;
-  for (auto& p : m_scriptContexts) {
-    result = p.second->handleMessage(message, true, args);
-    if (result)
-      break;
+  // Always tear down all contexts and settle messages, including failed startup.
+  for (auto const& p : m_scriptContexts) {
+    if (auto uninitialized = p.second->uninit(); !uninitialized) {
+      if (result)
+        result = std::unexpected(std::move(uninitialized.error()));
+      else
+        EmergencyLog::error("Error uninitializing ScriptableThread: {}", outputException(uninitialized.error(), true));
+    }
+  }
+  List<Message> messages;
+  {
+    RecursiveMutexLocker locker(m_messageMutex);
+    m_stop = true;
+    messages = std::move(m_messages);
+  }
+  for (auto& message : messages) {
+    if (auto failed = message.promise.fail("Thread is stopped"); !failed) {
+      if (result)
+        result = std::unexpected(std::move(failed.error()));
+      else
+        EmergencyLog::error("Error settling ScriptableThread message: {}", outputException(failed.error(), true));
+    }
   }
   return result;
 }
 
-void ScriptableThread::update() {
-  float dt = m_timestep;
-  
-  if (dt > 0.0f && !m_pause) {
-    for (auto& p : m_scriptContexts) {
-      p.second->update(p.second->updateDt(dt));
+std::expected<std::optional<ChainableJsonMessageResponse>, StarException> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
+  for (auto const& p : m_scriptContexts) {
+    auto result = p.second->handleMessage(message, true, args);
+    if (!result) {
+      if (result.error().is<LuaException>())
+        continue; // The failed component logged/reset itself; try the next one.
+      return std::unexpected(std::move(result.error()));
+    }
+    if (*result)
+      return result;
+  }
+  return std::optional<ChainableJsonMessageResponse>{};
+}
+
+std::expected<void, StarException> ScriptableThread::update() {
+  std::optional<StarException> error;
+  if (m_timestep > 0.0f && !m_pause) {
+    for (auto const& p : m_scriptContexts) {
+      if (auto updated = p.second->update(p.second->updateDt(m_timestep)); !updated) {
+        if (updated.error().is<LuaException>())
+          continue; // Retain the existing logged per-context recovery boundary.
+        if (!error)
+          error = std::move(updated.error());
+        else
+          EmergencyLog::error("Error updating ScriptableThread context: {}", outputException(updated.error(), true));
+      }
     }
   }
-  
   List<Message> messages;
   {
     RecursiveMutexLocker locker(m_messageMutex);
     messages = std::move(m_messages);
   }
   for (auto& message : messages) {
-    if (auto resp = receiveMessage(message.message, message.args))
-      if (std::holds_alternative<RpcPromise<Json>>(*resp))
-        message.promise.chain(std::get<RpcPromise<Json>>(*resp));
+    auto response = receiveMessage(message.message, message.args);
+    std::expected<void, StarException> settled;
+    if (!response) {
+      settled = message.promise.fail(printException(response.error(), false));
+      if (!error)
+        error = std::move(response.error());
+    } else if (!*response) {
+      settled = message.promise.fail("Message not handled by thread");
+    } else if (auto promise = std::get_if<RpcPromise<Json>>(&**response)) {
+      settled = message.promise.chain(*promise);
+    } else {
+      settled = message.promise.fulfill(std::get<Json>(**response));
+    }
+    if (!settled) {
+      if (!error)
+        error = std::move(settled.error());
       else
-        message.promise.fulfill(std::get<Json>(*resp));
-    else
-      message.promise.fail("Message not handled by thread");
+        EmergencyLog::error("Error settling ScriptableThread message: {}", outputException(settled.error(), true));
+    }
   }
   if (m_logMapped)
     m_luaRoot->root().logMap().set(strf("lua_{}_lua_mem", m_name), m_luaRoot->luaMemoryUsage());
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
 }
 
-LuaCallbacks ScriptableThread::makeThreadCallbacks() {
+std::expected<LuaCallbacks, StarException> ScriptableThread::makeThreadCallbacks() {
   LuaCallbacks callbacks;
-
-  callbacks.registerCallback("stop", [this]() {
-      m_stop = true;
-      m_shouldExpire = true;
-    });
-
-  callbacks.registerCallback("sendParentMessage", [this](String const& message, LuaVariadic<Json> args) {
-      return m_parent->threadPassMessage(m_name, message, JsonArray::from(std::move(args)));
-    });
-
+  if (auto result = callbacks.registerCallback("stop", [this]() {
+    m_stop = true;
+    m_shouldExpire = true;
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  if (auto result = callbacks.registerCallback("sendParentMessage", [this](String const& message, LuaVariadic<Json> args) {
+    return m_parent->threadPassMessage(m_name, message, JsonArray::from(std::move(args)));
+  }); !result)
+    return std::unexpected(std::move(result.error()));
   return callbacks;
 }
 
-Json ScriptableThread::configValue(String const& name, Json def) const {
+std::expected<Json, StarException> ScriptableThread::configValue(String const& name, Json def) const {
   return m_parameters.get(name, std::move(def));
 }
+
 }

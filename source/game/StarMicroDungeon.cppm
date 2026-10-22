@@ -5,6 +5,7 @@ import std;
 import star.list;
 import star.string;
 import star.set;
+import star.format;
 
 import star.vector;
 namespace Star {
@@ -21,7 +22,9 @@ class MicroDungeonFactory {
 public:
   MicroDungeonFactory(Root& root);
 
-  std::optional<std::pair<List<RectI>, Set<Vec2I>>> generate(RectI const& bounds,
+  // A successful empty optional means no placement; errors retain the dungeon
+  // generation context and never become a skipped placement.
+  [[nodiscard]] std::expected<std::optional<std::pair<List<RectI>, Set<Vec2I>>>, StarException> generate(RectI const& bounds,
       String const& dungeonName,
       Vec2I const& position,
       std::uint64_t seed,
