@@ -1515,6 +1515,10 @@ WorldServerFidelity WorldServer::fidelity() const {
 }
 
 std::expected<void, StarException> WorldServer::setFidelity(WorldServerFidelity fidelity) {
+  if (m_fidelity != fidelity) {
+    m_updateTimings = {};
+    m_processingLimits = {};
+  }
   m_fidelity = fidelity;
   auto result150 = m_serverConfig.get("fidelitySettings");
   if (!result150)
@@ -1527,6 +1531,18 @@ std::expected<void, StarException> WorldServer::setFidelity(WorldServerFidelity 
   auto result152 = std::move(*result150).get((**result151));
   if (!result152)
     return std::unexpected(std::move(result152.error()));
+  JsonObject const* identity = nullptr;
+  if (result152->type() == Json::Type::Object) {
+    auto object = result152->objectPtr();
+    if (!object)
+      return std::unexpected(std::move(object.error()));
+    identity = object->get();
+  }
+  if (!identity || identity != m_fidelityConfigIdentity) {
+    m_updateTimings = {};
+    m_processingLimits = {};
+  }
+  m_fidelityConfigIdentity = identity;
   m_fidelityConfig = std::move(*result152);
   return {};
 }
@@ -1630,7 +1646,7 @@ std::expected<void, StarException> WorldServer::update(float dt) {
   auto result164 = updateDamage(dt);
   if (!result164)
     return std::unexpected(std::move(result164.error()));
-  auto result165 = shouldRunThisStep("wiringUpdate");
+  auto result165 = shouldRunThisStep(UpdateTiming::Wiring);
   if (!result165)
     return std::unexpected(std::move(result165.error()));
   if (std::move(*result165)) {
@@ -1683,11 +1699,11 @@ std::expected<void, StarException> WorldServer::update(float dt) {
     }
   }
 
-  auto result173 = shouldRunThisStep("liquidUpdate");
+  auto result173 = shouldRunThisStep(UpdateTiming::Liquid);
   if (!result173)
     return std::unexpected(std::move(result173.error()));
   if (std::move(*result173)) {
-    auto result174 = m_fidelityConfig.optUInt("liquidEngineBackgroundProcessingLimit");
+    auto result174 = processingLimit(ProcessingLimit::Liquid);
     if (!result174)
       return std::unexpected(std::move(result174.error()));
     m_liquidEngine->setProcessingLimit(std::move(*result174));
@@ -1697,7 +1713,7 @@ std::expected<void, StarException> WorldServer::update(float dt) {
       return std::unexpected(std::move(result175.error()));
   }
 
-  auto result176 = shouldRunThisStep("fallingBlocksUpdate");
+  auto result176 = shouldRunThisStep(UpdateTiming::FallingBlocks);
   if (!result176)
     return std::unexpected(std::move(result176.error()));
   if (std::move(*result176)) {
@@ -1706,7 +1722,7 @@ std::expected<void, StarException> WorldServer::update(float dt) {
       return std::unexpected(std::move(result177.error()));
   }
 
-  auto result178 = shouldRunThisStep("blockDamageUpdate");
+  auto result178 = shouldRunThisStep(UpdateTiming::BlockDamage);
   if (!result178)
     return std::unexpected(std::move(result178.error()));
   if (auto delta = std::move(*result178)) {
@@ -1715,7 +1731,7 @@ std::expected<void, StarException> WorldServer::update(float dt) {
       return std::unexpected(std::move(result179.error()));
   }
 
-  auto result180 = shouldRunThisStep("worldStorageTick");
+  auto result180 = shouldRunThisStep(UpdateTiming::StorageTick);
   if (!result180)
     return std::unexpected(std::move(result180.error()));
   if (auto delta = std::move(*result180)) {
@@ -1724,11 +1740,11 @@ std::expected<void, StarException> WorldServer::update(float dt) {
       return std::unexpected(std::move(result181.error()));
   }
 
-  auto result182 = shouldRunThisStep("worldStorageGenerate");
+  auto result182 = shouldRunThisStep(UpdateTiming::StorageGenerate);
   if (!result182)
     return std::unexpected(std::move(result182.error()));
   if (auto delta = std::move(*result182)) {
-    auto result183 = m_fidelityConfig.optUInt("worldStorageGenerationLevelLimit");
+    auto result183 = processingLimit(ProcessingLimit::StorageGenerate);
     if (!result183)
       return std::unexpected(std::move(result183.error()));
     auto result184 = m_worldStorage->generateQueue(std::move(*result183), [this](WorldStorage::Sector a, WorldStorage::Sector b) {
@@ -2992,17 +3008,38 @@ std::expected<void, StarException> WorldServer::init(bool firstTime) {
   return {};
 }
 
-std::expected<std::optional<unsigned>, StarException> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
-  auto result331 = m_fidelityConfig.get(timingConfiguration);
-  if (!result331)
-    return std::unexpected(std::move(result331.error()));
-  auto result332 = jsonToVec2U(std::move(*result331));
-  if (!result332)
-    return std::unexpected(std::move(result332.error()));
-  Vec2U timing = std::move(*result332);
-  if ((m_currentStep + timing[1]) % timing[0] == 0)
-    return timing[0];
+std::expected<std::optional<unsigned>, StarException> WorldServer::shouldRunThisStep(UpdateTiming timingConfiguration) {
+  auto index = static_cast<std::size_t>(timingConfiguration);
+  auto& cached = m_updateTimings[index];
+  if (!cached) {
+    static constexpr std::array<char const*, static_cast<std::size_t>(UpdateTiming::Count)> names{
+        "wiringUpdate", "liquidUpdate", "fallingBlocksUpdate", "blockDamageUpdate",
+        "worldStorageTick", "worldStorageGenerate", "environmentUpdate"};
+    auto configured = m_fidelityConfig.get(names[index]);
+    if (!configured)
+      return std::unexpected(std::move(configured.error()));
+    auto timing = jsonToVec2U(*configured);
+    if (!timing)
+      return std::unexpected(std::move(timing.error()));
+    cached = std::move(*timing);
+  }
+  if ((m_currentStep + (*cached)[1]) % (*cached)[0] == 0)
+    return (*cached)[0];
   return {};
+}
+
+std::expected<std::optional<std::uint64_t>, StarException> WorldServer::processingLimit(ProcessingLimit limitConfiguration) {
+  auto index = static_cast<std::size_t>(limitConfiguration);
+  auto& cached = m_processingLimits[index];
+  if (!cached) {
+    static constexpr std::array<char const*, static_cast<std::size_t>(ProcessingLimit::Count)> names{
+        "liquidEngineBackgroundProcessingLimit", "worldStorageGenerationLevelLimit"};
+    auto configured = m_fidelityConfig.optUInt(names[index]);
+    if (!configured)
+      return std::unexpected(std::move(configured.error()));
+    cached.emplace(std::move(*configured));
+  }
+  return *cached;
 }
 
 std::expected<TileModificationList, StarException> WorldServer::doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection, bool updateNeighbors) {
@@ -3620,7 +3657,7 @@ std::expected<void, StarException> WorldServer::queueUpdatePackets(ConnectionId 
     clientInfo->weatherNetVersion = 0;
   }
 
-  auto result397 = shouldRunThisStep("environmentUpdate");
+  auto result397 = shouldRunThisStep(UpdateTiming::Environment);
   if (!result397)
     return std::unexpected(std::move(result397.error()));
   if (std::move(*result397) || weatherDomainChanged) {

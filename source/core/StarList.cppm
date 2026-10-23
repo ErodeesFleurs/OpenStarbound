@@ -82,6 +82,10 @@ public:
   [[nodiscard]]
   auto filter(Filter&& filter);
 
+  template <typename Self, typename Filter>
+  [[nodiscard]]
+  auto filtered(this Self const& self, Filter&& filter);
+
   template <typename Comparator>
   [[nodiscard]]
   AppendResult insertSorted(value_type e, Comparator&& comparator);
@@ -247,10 +251,6 @@ public:
 
   List slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
-  template <typename Filter>
-  [[nodiscard]]
-  auto filtered(Filter&& filter) const;
-
   template <typename Comparator>
   List sorted(Comparator&& comparator) const;
   List sorted() const;
@@ -294,10 +294,6 @@ public:
   [[nodiscard]]
   std::expected<StaticList, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
-  template <typename Filter>
-  [[nodiscard]]
-  auto filtered(Filter&& filter) const;
-
   template <typename Comparator>
   StaticList sorted(Comparator&& comparator) const;
   StaticList sorted() const;
@@ -332,10 +328,6 @@ public:
 
   SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
-  template <typename Filter>
-  [[nodiscard]]
-  auto filtered(Filter&& filter) const;
-
   template <typename Comparator>
   SmallList sorted(Comparator&& comparator) const;
   SmallList sorted() const;
@@ -369,10 +361,6 @@ public:
   using Base::Base;
 
   Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
-
-  template <typename Filter>
-  [[nodiscard]]
-  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   Deque sorted(Comparator&& comparator) const;
@@ -413,10 +401,6 @@ public:
   void appendAll(Container&& list);
   template <typename Container>
   void prependAll(Container&& list);
-
-  template <typename Filter>
-  [[nodiscard]]
-  auto filtered(Filter&& filter) const;
 
   template <typename Comparator>
   LinkedList sorted(Comparator&& comparator) const;
@@ -681,6 +665,21 @@ auto ListMixin<BaseList>::filter(Filter&& filter) {
   Base::erase(destination, Base::end());
   if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
     return Status();
+}
+
+template <typename BaseList>
+template <typename Self, typename Filter>
+auto ListMixin<BaseList>::filtered(this Self const& self, Filter&& filter) {
+  Self list(self);
+  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+    list.filter(std::forward<Filter>(filter));
+    return list;
+  } else {
+    auto filtered = list.filter(std::forward<Filter>(filter));
+    if (!filtered)
+      return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+    return std::expected<Self, StarException>(std::move(list));
+  }
 }
 
 template <typename BaseList>
@@ -1076,21 +1075,6 @@ auto List<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const ->
 }
 
 template <typename Element, typename Allocator>
-template <typename Filter>
-auto List<Element, Allocator>::filtered(Filter&& filter) const {
-  List list(*this);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<List, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<List, StarException>(std::move(list));
-  }
-}
-
-template <typename Element, typename Allocator>
 template <typename Comparator>
 auto List<Element, Allocator>::sorted(Comparator&& comparator) const -> List {
   static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
@@ -1179,21 +1163,6 @@ auto StaticList<Element, MaxSize>::slice(SliceIndex a, SliceIndex b, int i) cons
 }
 
 template <typename Element, std::size_t MaxSize>
-template <typename Filter>
-auto StaticList<Element, MaxSize>::filtered(Filter&& filter) const {
-  StaticList list(*this);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<StaticList, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<StaticList, StarException>(std::move(list));
-  }
-}
-
-template <typename Element, std::size_t MaxSize>
 template <typename Comparator>
 auto StaticList<Element, MaxSize>::sorted(Comparator&& comparator) const -> StaticList {
   static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
@@ -1238,21 +1207,6 @@ auto SmallList<Element, MaxStackSize>::slice(SliceIndex a, SliceIndex b, int i) 
 }
 
 template <typename Element, std::size_t MaxStackSize>
-template <typename Filter>
-auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const {
-  SmallList list(*this);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<SmallList, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<SmallList, StarException>(std::move(list));
-  }
-}
-
-template <typename Element, std::size_t MaxStackSize>
 template <typename Comparator>
 auto SmallList<Element, MaxStackSize>::sorted(Comparator&& comparator) const -> SmallList {
   static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
@@ -1294,21 +1248,6 @@ Deque<Element, Allocator> Deque<Element, Allocator>::from(Container const& c) {
 template <typename Element, typename Allocator>
 Deque<Element, Allocator> Deque<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const {
   return Star::slice(*this, a, b, i);
-}
-
-template <typename Element, typename Allocator>
-template <typename Filter>
-auto Deque<Element, Allocator>::filtered(Filter&& filter) const {
-  Deque list(*this);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<Deque, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<Deque, StarException>(std::move(list));
-  }
 }
 
 template <typename Element, typename Allocator>
@@ -1377,21 +1316,6 @@ void LinkedList<Element, Allocator>::prependAll(Container&& list) {
       Base::push_front(std::move(*i));
     else
       Base::push_front(*i);
-  }
-}
-
-template <typename Element, typename Allocator>
-template <typename Filter>
-auto LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
-  LinkedList list(*this);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<LinkedList, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<LinkedList, StarException>(std::move(list));
   }
 }
 

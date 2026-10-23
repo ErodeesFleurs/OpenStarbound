@@ -447,3 +447,110 @@ const GameTestRegistration delayedExplosionOutlivesProjectile("ProjectileActions
     ASSERT_TRUE(world->update(0.2f));
   EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), EmptyMaterialId);
 });
+
+const GameTestRegistration firstContactTriggersCollisionActionOnce("ProjectileActions", "FirstContactTriggersCollisionActionOnce", [](GameTest& fixture) {
+  auto& root = fixture.root();
+  auto storage = File::ephemeralFile(root.random());
+  ASSERT_TRUE(storage) << storage.error().what();
+  auto created = WorldServer::create(root, Vec2U(2048, 2048), *storage);
+  ASSERT_TRUE(created) << created.error().what();
+  auto world = *created;
+  auto closeWorld = finally([&] { EXPECT_TRUE(world->close()); });
+  world->setSpawningEnabled(false);
+  world->setTileProtectionEnabled(false);
+  Vec2I ground(1024, 1024);
+  ASSERT_TRUE(world->generateRegion(RectI::withSize(ground - Vec2I(4, 4), Vec2I(9, 9))));
+  auto materials = root.materialDatabase();
+  ASSERT_TRUE(materials) << materials.error().what();
+  auto dirt = (*materials)->materialId("dirt");
+  ASSERT_TRUE(dirt) << dirt.error().what();
+  auto attachment = world->modifyServerTile(ground, true);
+  ASSERT_TRUE(attachment) << attachment.error().what();
+  ASSERT_NE(*attachment, nullptr);
+  ASSERT_EQ((*attachment)->foreground, EmptyMaterialId);
+  // As in the real material-isolation fixture, supply a background attachment:
+  // forceModifyTile bypasses protection, not the normal adjacency requirement.
+  (*attachment)->background = StructureMaterialId;
+  // Production placement derives foreground collision from the material.
+  auto placed = world->forceModifyTile(ground, PlaceMaterial{TileLayer::Foreground, *dirt, MaterialHue(0)}, true);
+  ASSERT_TRUE(placed) << placed.error().what();
+  ASSERT_TRUE(*placed);
+  ASSERT_EQ(world->material(ground, TileLayer::Foreground), *dirt);
+  auto solid = world->pointTileCollision(Vec2F(ground) + Vec2F(0.5f, 0.5f));
+  ASSERT_TRUE(solid) << solid.error().what();
+  ASSERT_TRUE(*solid);
+
+  auto database = root.projectileDatabase();
+  ASSERT_TRUE(database) << database.error().what();
+  auto config = Json::parse(R"({
+    "timeToLive":10, "bounces":-1, "power":0, "onlyHitTerrain":true,
+    "scripts":[], "periodicActions":[],
+    "actionOnReap":[], "actionOnHit":[], "actionOnTimeout":[],
+    "movementSettings":{
+      "mass":1, "collisionEnabled":true, "gravityEnabled":false,
+      "frictionEnabled":false, "stickyCollision":true, "stickyForce":100,
+      "maxMovementPerStep":1,
+      "collisionPoly":[[-0.125,-0.125],[0.125,-0.125],[0.125,0.125],[-0.125,0.125]]
+    },
+    "actionOnCollide":[{
+      "action":"projectile", "type":"grenade", "offset":[2,2], "direction":[1,0],
+      "config":{
+        "collisionActionMarker":true, "speed":0, "timeToLive":10,
+        "power":0, "onlyHitTerrain":true, "scripts":[], "periodicActions":[],
+        "actionOnCollide":[], "actionOnReap":[], "actionOnHit":[], "actionOnTimeout":[],
+        "movementSettings":{"collisionEnabled":false,"gravityEnabled":false}
+      }
+    }]
+  })");
+  ASSERT_TRUE(config) << config.error().what();
+  auto madeProjectile = (*database)->createProjectile("grenade", *config);
+  ASSERT_TRUE(madeProjectile) << madeProjectile.error().what();
+  auto projectile = *madeProjectile;
+  projectile->setInitialPosition(Vec2F(ground) + Vec2F(0.5f, 1.5f));
+  projectile->setInitialVelocity(Vec2F(0, -20));
+  projectile->setSourceEntity(4242, false);
+  ASSERT_TRUE(world->addEntity(projectile));
+  auto projectileId = projectile->entityId();
+  auto markerCount = [&]() -> std::expected<unsigned, StarException> {
+    unsigned count = 0;
+    for (auto entityId : world->entityIds()) {
+      if (auto entity = world->get<Projectile>(entityId)) {
+        auto marker = entity->configValue("collisionActionMarker", false);
+        if (!marker)
+          return std::unexpected(std::move(marker.error()));
+        if (*marker == Json(true))
+          ++count;
+      }
+    }
+    return count;
+  };
+  auto before = markerCount();
+  ASSERT_TRUE(before) << before.error().what();
+  EXPECT_EQ(*before, 0u);
+
+  // This first movement crosses the tile top. Sticky contact keeps the parent
+  // alive; no earlier non-colliding update initializes the collision-edge state.
+  ASSERT_TRUE(world->update(0.025f));
+  ASSERT_TRUE(world->entity(projectileId));
+  EXPECT_GT(projectile->position()[1], 1025.0f);
+  EXPECT_LT(projectile->position()[1], 1025.5f);
+  auto firstStep = markerCount();
+  ASSERT_TRUE(firstStep) << firstStep.error().what();
+  EXPECT_EQ(*firstStep, 0u); // tickShared consumes the collision event next tick.
+
+  ASSERT_TRUE(world->update(0.025f));
+  auto firstAction = markerCount();
+  ASSERT_TRUE(firstAction) << firstAction.error().what();
+  ASSERT_EQ(*firstAction, 1u);
+  auto contactPosition = projectile->position();
+  for (unsigned tick = 0; tick < 5; ++tick) {
+    ASSERT_TRUE(world->update(0.025f));
+    ASSERT_TRUE(world->entity(projectileId));
+    EXPECT_NEAR(projectile->position()[0], contactPosition[0], 0.001f);
+    EXPECT_NEAR(projectile->position()[1], contactPosition[1], 0.001f);
+    auto continuedContact = markerCount();
+    ASSERT_TRUE(continuedContact) << continuedContact.error().what();
+    EXPECT_EQ(*continuedContact, 1u) << "continuous contact must not retrigger actionOnCollide";
+  }
+  EXPECT_EQ(world->material(ground, TileLayer::Foreground), *dirt);
+});

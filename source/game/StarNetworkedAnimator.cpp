@@ -710,7 +710,7 @@ void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> 
   m_partDrawables.set(partName, drawables);
 }
 void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
-  m_partDrawables.ptr(partName)->appendAll(drawables);
+  m_partDrawables[partName].appendAll(drawables);
 }
 std::expected<String, StarException> NetworkedAnimator::applyPartTags(String const& partName, String apply) const {
   HashMap<String, String> animationTags = m_localTags;

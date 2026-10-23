@@ -241,7 +241,7 @@ private:
   float m_animationCycle;
 
   // not quite the same thing as m_collision, used for triggering actionOnCollide
-  bool m_wasColliding;
+  bool m_wasColliding = false;
   NetElementEvent m_collisionEvent;
 
   bool m_collision;

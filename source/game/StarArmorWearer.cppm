@@ -32,6 +32,8 @@ class ToolUserEntity;
 class Item;
 class World;
 class EffectEmitter;
+class ToolUser;
+class StatusController;
 
 class ArmorWearer : public NetElementSyncGroup {
 public:
@@ -106,6 +108,10 @@ private:
   bool m_lastNude;
 };
 
+// Commit armor before querying tools; failures preserve earlier category updates.
+[[nodiscard]] std::expected<void, StarException> synchronizeEquipmentStatusEffects(
+    ArmorWearer const& armor, ToolUser const& tools, StatusController& statusController, bool cosmeticOnly = false);
+
 }
 
 export module star.armor_wearer;
@@ -121,4 +127,5 @@ export namespace Star {
   using ::Star::World;
   using ::Star::EffectEmitter;
   using ::Star::ArmorWearer;
+  using ::Star::synchronizeEquipmentStatusEffects;
 }

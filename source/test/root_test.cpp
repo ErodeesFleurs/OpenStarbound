@@ -43,6 +43,10 @@ import star.utility_lua_bindings;
 import star.vector;
 import star.world_server;
 import star.world_tiles;
+import star.networked_animator;
+import star.networked_animator_lua_bindings;
+import star.scripted_animator_lua_bindings;
+import star.drawable;
 
 #include "gtest/gtest.h"
 
@@ -512,6 +516,71 @@ const GameTestRegistration simultaneousWorldMaterials("RootTest", "SimultaneousW
   ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1040, 1024), material, false));
   ASSERT_TRUE(rootB->reload());
   ASSERT_TRUE(placeIsolationMaterial(*worldB, Vec2I(1048, 1024), material, true));
+});
+
+const GameTestRegistration animatorPartDrawableFirstAdd("AnimatorTest", "PartDrawableFirstAdd", [](GameTest& fixture) {
+  auto config = Json::parseJson(R"JSON({"animatedParts":{"parts":{"body":{"properties":{}}}}})JSON");
+  ASSERT_TRUE(config) << config.error().what();
+  for (bool scripted : {false, true}) {
+    for (bool emptyFirst : {false, true}) {
+      SCOPED_TRACE(scripted ? "scripted" : "networked");
+      SCOPED_TRACE(emptyFirst ? "empty first add" : "nonempty first add");
+      auto created = NetworkedAnimator::create(fixture.root(), *config);
+      ASSERT_TRUE(created) << created.error().what();
+      auto animator = std::move(*created);
+      auto callbacks = scripted
+          ? LuaBindings::makeScriptedAnimatorCallbacks(animator.get(),
+              [](String const&, Json const& fallback) -> std::expected<Json, StarException> { return fallback; })
+          : LuaBindings::makeNetworkedAnimatorCallbacks(animator.get());
+      ASSERT_TRUE(callbacks) << callbacks.error().what();
+      auto engine = LuaEngine::create();
+      ASSERT_TRUE(engine) << engine.error().what();
+      (*engine)->setExecutionHost(std::make_unique<LuaExecutionScope>(fixture.root()));
+      auto contextResult = (*engine)->createContext();
+      ASSERT_TRUE(contextResult) << contextResult.error().what();
+      auto context = std::move(*contextResult);
+      ASSERT_TRUE(context.setCallbacks("animator", *callbacks));
+
+      auto widths = [&]() -> std::expected<std::vector<float>, StarException> {
+        auto drawables = animator->drawables();
+        if (!drawables) return std::unexpected(std::move(drawables.error()));
+        std::vector<float> result;
+        for (auto const& drawable : *drawables) {
+          auto json = drawable.toJson();
+          if (!json) return std::unexpected(std::move(json.error()));
+          auto width = json->getFloat("width");
+          if (!width) return std::unexpected(std::move(width.error()));
+          result.push_back(*width);
+        }
+        return result;
+      };
+      if (emptyFirst) {
+        ASSERT_TRUE(context.load("animator.addPartJsonDrawables('body', {})"));
+        auto output = widths();
+        ASSERT_TRUE(output) << output.error().what();
+        EXPECT_TRUE(output->empty());
+      }
+      ASSERT_TRUE(context.load(R"LUA(animator.addPartJsonDrawables('body', {{line = {{0,0}, {1,1}}, width = 11}}))LUA"));
+      auto firstOutput = widths();
+      ASSERT_TRUE(firstOutput) << firstOutput.error().what();
+      EXPECT_EQ(*firstOutput, (std::vector<float>{11}));
+      ASSERT_TRUE(context.load(R"LUA(animator.addPartJsonDrawables('body', {{line = {{0,0}, {2,2}}, width = 22}}))LUA"));
+      auto appendedOutput = widths();
+      ASSERT_TRUE(appendedOutput) << appendedOutput.error().what();
+      EXPECT_EQ(*appendedOutput, (std::vector<float>{11, 22}));
+
+      for (auto operation : {"addPartJsonDrawables", "setPartJsonDrawables"}) {
+        String script = String("animator.") + operation
+            + R"LUA(('body', {{line = {{0,0}, {3,3}}, width = 33}, {line = {{0,0}, {4,4}}, width = 'invalid'}}))LUA";
+        auto failed = context.load(script);
+        EXPECT_FALSE(failed);
+        EXPECT_EQ(context.eval<int>("6 * 7"), 42);
+        auto output = widths();
+        ASSERT_TRUE(output) << output.error().what();
+        EXPECT_EQ(*output, (std::vector<float>{11, 22}));
+      }
+    }
+  }
 });
 
 }

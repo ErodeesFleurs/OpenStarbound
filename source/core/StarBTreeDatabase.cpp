@@ -112,11 +112,8 @@ namespace Star {
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::setAutoCommit(bool autoCommit) {
     WriteLocker writeLocker(m_lock);
     m_autoCommit = autoCommit;
-    if (m_autoCommit) {
-      auto result293 = doCommit();
-      if (!result293) return std::unexpected(std::move(result293.error()));
-
-    }
+    if (m_autoCommit)
+      return doCommit();
     return {};
   }
 
@@ -279,40 +276,34 @@ namespace Star {
       return std::unexpected(std::move(failure));
     }
     m_open = true;
-    return *initialized;
+    return initialized;
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeDatabase::contains(ByteArray const& k) {
     ReadLocker readLocker(m_lock);
-    auto result289 = checkKeySize(k);
-    if (!result289) return std::unexpected(std::move(result289.error()));
+    if (auto keyChecked = checkKeySize(k); !keyChecked)
+      return std::unexpected(std::move(keyChecked.error()));
 
-    auto result290 = m_impl.contains(k);
-    if (!result290) return std::unexpected(std::move(result290.error()));
-    return std::move(*result290);
+    return m_impl.contains(k);
   }
 
   [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> BTreeDatabase::find(ByteArray const& k) {
     ReadLocker readLocker(m_lock);
-    auto result287 = checkKeySize(k);
-    if (!result287) return std::unexpected(std::move(result287.error()));
+    if (auto keyChecked = checkKeySize(k); !keyChecked)
+      return std::unexpected(std::move(keyChecked.error()));
 
-    auto result288 = m_impl.find(k);
-    if (!result288) return std::unexpected(std::move(result288.error()));
-    return std::move(*result288);
+    return m_impl.find(k);
   }
 
   [[nodiscard]] std::expected<List<std::pair<ByteArray, ByteArray>>, StarException> BTreeDatabase::find(ByteArray const& lower, ByteArray const& upper) {
     ReadLocker readLocker(m_lock);
-    auto result284 = checkKeySize(lower);
-    if (!result284) return std::unexpected(std::move(result284.error()));
+    if (auto lowerKeyChecked = checkKeySize(lower); !lowerKeyChecked)
+      return std::unexpected(std::move(lowerKeyChecked.error()));
 
-    auto result285 = checkKeySize(upper);
-    if (!result285) return std::unexpected(std::move(result285.error()));
+    if (auto upperKeyChecked = checkKeySize(upper); !upperKeyChecked)
+      return std::unexpected(std::move(upperKeyChecked.error()));
 
-    auto result286 = m_impl.find(lower, upper);
-    if (!result286) return std::unexpected(std::move(result286.error()));
-    return std::move(*result286);
+    return m_impl.find(lower, upper);
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::forEach(ByteArray const& lower, ByteArray const& upper, std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v) {
@@ -320,15 +311,13 @@ namespace Star {
       return std::unexpected(DBException("Missing database visitor"));
     }
     ReadLocker readLocker(m_lock);
-    auto result281 = checkKeySize(lower);
-    if (!result281) return std::unexpected(std::move(result281.error()));
+    if (auto lowerKeyChecked = checkKeySize(lower); !lowerKeyChecked)
+      return std::unexpected(std::move(lowerKeyChecked.error()));
 
-    auto result282 = checkKeySize(upper);
-    if (!result282) return std::unexpected(std::move(result282.error()));
+    if (auto upperKeyChecked = checkKeySize(upper); !upperKeyChecked)
+      return std::unexpected(std::move(upperKeyChecked.error()));
 
-    auto result283 = m_impl.forEach(lower, upper, std::move(v));
-    if (!result283) return std::unexpected(std::move(result283.error()));
-    return {};
+    return m_impl.forEach(lower, upper, std::move(v));
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::forAll(std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v) {
@@ -336,12 +325,10 @@ namespace Star {
       return std::unexpected(DBException("Missing database visitor"));
     }
     ReadLocker readLocker(m_lock);
-    auto result279 = checkIfOpen("forAll", true);
-    if (!result279) return std::unexpected(std::move(result279.error()));
+    if (auto stateChecked = checkIfOpen("forAll", true); !stateChecked)
+      return std::unexpected(std::move(stateChecked.error()));
 
-    auto result280 = m_impl.forAll(std::move(v));
-    if (!result280) return std::unexpected(std::move(result280.error()));
-    return {};
+    return m_impl.forAll(std::move(v));
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::recoverAll(std::function<std::expected<void, StarException>(ByteArray, ByteArray)> v, std::function<std::expected<void, StarException>(String const&, ExceptionDiagnostic const&)> e) {
@@ -349,12 +336,10 @@ namespace Star {
       return std::unexpected(DBException("Missing database recovery callback"));
     }
     ReadLocker readLocker(m_lock);
-    auto result277 = checkIfOpen("recoverAll", true);
-    if (!result277) return std::unexpected(std::move(result277.error()));
+    if (auto stateChecked = checkIfOpen("recoverAll", true); !stateChecked)
+      return std::unexpected(std::move(stateChecked.error()));
 
-    auto result278 = m_impl.recoverAll(std::move(v), std::move(e));
-    if (!result278) return std::unexpected(std::move(result278.error()));
-    return {};
+    return m_impl.recoverAll(std::move(v), std::move(e));
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) {
@@ -367,7 +352,7 @@ namespace Star {
       auto committed = doCommit();
       if (!committed) return std::unexpected(std::move(committed.error()));
     }
-    return *modified;
+    return modified;
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeDatabase::remove(ByteArray const& k) {
@@ -380,7 +365,7 @@ namespace Star {
       auto committed = doCommit();
       if (!committed) return std::unexpected(std::move(committed.error()));
     }
-    return *modified;
+    return modified;
   }
 
   [[nodiscard]] std::expected<List<ByteArray>, StarException> BTreeDatabase::remove(ByteArray const& lower, ByteArray const& upper) {
@@ -398,12 +383,10 @@ namespace Star {
 
   [[nodiscard]] std::expected<std::uint64_t, StarException> BTreeDatabase::recordCount() {
     ReadLocker readLocker(m_lock);
-    auto result271 = checkIfOpen("recordCount", true);
-    if (!result271) return std::unexpected(std::move(result271.error()));
+    if (auto stateChecked = checkIfOpen("recordCount", true); !stateChecked)
+      return std::unexpected(std::move(stateChecked.error()));
 
-    auto result272 = m_impl.recordCount();
-    if (!result272) return std::unexpected(std::move(result272.error()));
-    return std::move(*result272);
+    return m_impl.recordCount();
   }
 
   [[nodiscard]] std::expected<std::uint8_t, StarException> BTreeDatabase::indexLevels() {
@@ -496,10 +479,7 @@ namespace Star {
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::commit() {
     WriteLocker writeLocker(m_lock);
-    auto result259 = doCommit();
-    if (!result259) return std::unexpected(std::move(result259.error()));
-
-    return {};
+    return doCommit();
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::rollback() {
@@ -512,14 +492,11 @@ namespace Star {
     m_uncommittedWrites.clear();
     m_uncommitted.clear();
 
-    auto result257 = readRoot();
-    if (!result257) return std::unexpected(std::move(result257.error()));
+    if (auto rootRead = readRoot(); !rootRead)
+      return std::unexpected(std::move(rootRead.error()));
 
-    if (m_device->isWritable()) {
-      auto result258 = m_device->resize(m_deviceSize);
-      if (!result258) return std::unexpected(std::move(result258.error()));
-
-    }
+    if (m_device->isWritable())
+      return m_device->resize(m_deviceSize);
     return {};
   }
 
@@ -527,22 +504,18 @@ namespace Star {
     WriteLocker writeLocker(m_lock);
     if (m_open) {
 
-      auto result254 = tryFlatten();
-      if (!result254) return std::unexpected(std::move(result254.error()));
-      if (!(*result254)) {
-        auto result255 = doCommit();
-        if (!result255) return std::unexpected(std::move(result255.error()));
-
+      auto flattened = tryFlatten();
+      if (!flattened) return std::unexpected(std::move(flattened.error()));
+      if (!*flattened) {
+        if (auto committed = doCommit(); !committed)
+          return std::unexpected(std::move(committed.error()));
       }
 
       m_indexCache.clear();
 
       m_open = false;
-      if (closeDevice && m_device && m_device->isOpen()) {
-        auto result256 = m_device->close();
-        if (!result256) return std::unexpected(std::move(result256.error()));
-
-      }
+      if (closeDevice && m_device && m_device->isOpen())
+        return m_device->close();
     }
     return {};
   }
@@ -1207,13 +1180,10 @@ namespace Star {
   void BTreeDatabase::BTreeImpl::setNextLeaf(Leaf&, std::optional<Pointer>) {}
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const {
-    auto result219 = checkBlockIndex(blockIndex);
-    if (!result219) return std::unexpected(std::move(result219.error()));
+    if (auto blockChecked = checkBlockIndex(blockIndex); !blockChecked)
+      return std::unexpected(std::move(blockChecked.error()));
 
-    auto result220 = rawReadBlock(blockIndex, blockOffset, block, size);
-    if (!result220) return std::unexpected(std::move(result220.error()));
-
-    return {};
+    return rawReadBlock(blockIndex, blockOffset, block, size);
   }
 
   [[nodiscard]] std::expected<ByteArray, StarException> BTreeDatabase::readBlock(BlockIndex blockIndex) const {
@@ -1225,13 +1195,10 @@ namespace Star {
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::updateBlock(BlockIndex blockIndex, ByteArray const& block) {
-    auto result216 = checkBlockIndex(blockIndex);
-    if (!result216) return std::unexpected(std::move(result216.error()));
+    if (auto blockChecked = checkBlockIndex(blockIndex); !blockChecked)
+      return std::unexpected(std::move(blockChecked.error()));
 
-    auto result217 = rawWriteBlock(blockIndex, 0, block.ptr(), block.size());
-    if (!result217) return std::unexpected(std::move(result217.error()));
-
-    return {};
+    return rawWriteBlock(blockIndex, 0, block.ptr(), block.size());
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const {
@@ -1246,9 +1213,7 @@ namespace Star {
     if (auto buffer = m_uncommittedWrites.ptr(blockIndex)) {
       buffer->copyTo(block, blockOffset, size);
     } else {
-      auto result215 = m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, block, size);
-      if (!result215) return std::unexpected(std::move(result215.error()));
-
+      return m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, block, size);
     }
     return {};
   }
@@ -1462,41 +1427,38 @@ namespace Star {
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::writeRoot() {
     DataStreamIODevice ds(m_device);
     // First write the root info to whichever section we are not currently using
-    auto result175 = ds.seek(BTreeRootInfoStart + (m_usingAltRoot ? 0 : BTreeRootInfoSize));
-    if (!result175) return std::unexpected(std::move(result175.error()));
+    if (auto rootPositioned = ds.seek(BTreeRootInfoStart + (m_usingAltRoot ? 0 : BTreeRootInfoSize)); !rootPositioned)
+      return std::unexpected(std::move(rootPositioned.error()));
 
-    auto result176 = ds.write<BlockIndex>(m_headFreeIndexBlock);
-    if (!result176) return std::unexpected(std::move(result176.error()));
+    if (auto freeIndexWritten = ds.write<BlockIndex>(m_headFreeIndexBlock); !freeIndexWritten)
+      return std::unexpected(std::move(freeIndexWritten.error()));
 
-    auto result177 = ds.write<StreamOffset>(m_deviceSize);
-    if (!result177) return std::unexpected(std::move(result177.error()));
+    if (auto sizeWritten = ds.write<StreamOffset>(m_deviceSize); !sizeWritten)
+      return std::unexpected(std::move(sizeWritten.error()));
 
-    auto result178 = ds.write<BlockIndex>(m_root);
-    if (!result178) return std::unexpected(std::move(result178.error()));
+    if (auto rootWritten = ds.write<BlockIndex>(m_root); !rootWritten)
+      return std::unexpected(std::move(rootWritten.error()));
 
-    auto result179 = ds.write<bool>(m_rootIsLeaf);
-    if (!result179) return std::unexpected(std::move(result179.error()));
+    if (auto leafFlagWritten = ds.write<bool>(m_rootIsLeaf); !leafFlagWritten)
+      return std::unexpected(std::move(leafFlagWritten.error()));
 
     // Then flush all the pending changes.
-    auto result180 = m_device->sync();
-    if (!result180) return std::unexpected(std::move(result180.error()));
+    if (auto changesSynced = m_device->sync(); !changesSynced)
+      return std::unexpected(std::move(changesSynced.error()));
 
     // Then switch headers by writing the single bit that switches them
     bool usingAltRoot = !m_usingAltRoot;
-    auto result181 = ds.seek(BTreeRootSelectorBit);
-    if (!result181) return std::unexpected(std::move(result181.error()));
+    if (auto selectorPositioned = ds.seek(BTreeRootSelectorBit); !selectorPositioned)
+      return std::unexpected(std::move(selectorPositioned.error()));
 
-    auto result182 = ds.write(usingAltRoot);
-    if (!result182) return std::unexpected(std::move(result182.error()));
+    if (auto selectorWritten = ds.write(usingAltRoot); !selectorWritten)
+      return std::unexpected(std::move(selectorWritten.error()));
 
     m_usingAltRoot = usingAltRoot;
 
     // Then flush this single bit write to make sure it happens before anything
     // else.
-    auto result183 = m_device->sync();
-    if (!result183) return std::unexpected(std::move(result183.error()));
-
-    return {};
+    return m_device->sync();
   }
 
   [[nodiscard]] std::expected<void, StarException> BTreeDatabase::readRoot() {
@@ -1838,51 +1800,35 @@ namespace Star {
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::contains(ByteArray const& key) {
-    auto result137 = BTreeDatabase::contains(sha256(key));
-    if (!result137) return std::unexpected(std::move(result137.error()));
-    return std::move(*result137);
+    return BTreeDatabase::contains(sha256(key));
   }
 
   [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> BTreeSha256Database::find(ByteArray const& key) {
-    auto result136 = BTreeDatabase::find(sha256(key));
-    if (!result136) return std::unexpected(std::move(result136.error()));
-    return std::move(*result136);
+    return BTreeDatabase::find(sha256(key));
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::insert(ByteArray const& key, ByteArray const& value) {
-    auto result135 = BTreeDatabase::insert(sha256(key), value);
-    if (!result135) return std::unexpected(std::move(result135.error()));
-    return std::move(*result135);
+    return BTreeDatabase::insert(sha256(key), value);
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::remove(ByteArray const& key) {
-    auto result134 = BTreeDatabase::remove(sha256(key));
-    if (!result134) return std::unexpected(std::move(result134.error()));
-    return std::move(*result134);
+    return BTreeDatabase::remove(sha256(key));
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::contains(String const& key) {
-    auto result133 = BTreeDatabase::contains(sha256(key));
-    if (!result133) return std::unexpected(std::move(result133.error()));
-    return std::move(*result133);
+    return BTreeDatabase::contains(sha256(key));
   }
 
   [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> BTreeSha256Database::find(String const& key) {
-    auto result132 = BTreeDatabase::find(sha256(key));
-    if (!result132) return std::unexpected(std::move(result132.error()));
-    return std::move(*result132);
+    return BTreeDatabase::find(sha256(key));
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::insert(String const& key, ByteArray const& value) {
-    auto result131 = BTreeDatabase::insert(sha256(key), value);
-    if (!result131) return std::unexpected(std::move(result131.error()));
-    return std::move(*result131);
+    return BTreeDatabase::insert(sha256(key), value);
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeSha256Database::remove(String const& key) {
-    auto result130 = BTreeDatabase::remove(sha256(key));
-    if (!result130) return std::unexpected(std::move(result130.error()));
-    return std::move(*result130);
+    return BTreeDatabase::remove(sha256(key));
   }
 
 }

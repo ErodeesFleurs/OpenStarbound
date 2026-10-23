@@ -1033,15 +1033,8 @@ if (!result200) return std::unexpected(std::move(result200.error()));
 if (!result201) return std::unexpected(std::move(result201.error()));
 
 
-    auto result202 = m_armor->statusEffects(m_disableWornArmor.get());
-if (!result202) return std::unexpected(std::move(result202.error()));
-auto result203 = m_statusController->setPersistentEffects("armor", std::move(*result202));
-if (!result203) return std::unexpected(std::move(result203.error()));
-
-    auto result204 = m_tools->statusEffects();
-if (!result204) return std::unexpected(std::move(result204.error()));
-auto result205 = m_statusController->setPersistentEffects("tools", std::move(*result204));
-if (!result205) return std::unexpected(std::move(result205.error()));
+    if (auto result = synchronizeEquipmentStatusEffects(*m_armor, *m_tools, *m_statusController, m_disableWornArmor.get()); !result)
+      return std::unexpected(std::move(result.error()));
 
 
     auto result206 = m_movementController->tickMaster(dt);

@@ -260,34 +260,26 @@ namespace Star {
   template <typename Base>
   [[nodiscard]] std::expected<bool, StarException> BTreeMixin<Base>::contains(Key const& k) {
     if (Base::rootIsLeaf()) {
-      auto result99 = Base::loadLeaf(Base::rootPointer());
-      if (!result99) return std::unexpected(std::move(result99.error()));
-      auto result100 = contains((*result99), k);
-      if (!result100) return std::unexpected(std::move(result100.error()));
-      return std::move(*result100);
+      auto leaf = Base::loadLeaf(Base::rootPointer());
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      return contains(*leaf, k);
     } else {
-      auto result101 = Base::loadIndex(Base::rootPointer());
-      if (!result101) return std::unexpected(std::move(result101.error()));
-      auto result102 = contains((*result101), k);
-      if (!result102) return std::unexpected(std::move(result102.error()));
-      return std::move(*result102);
+      auto index = Base::loadIndex(Base::rootPointer());
+      if (!index) return std::unexpected(std::move(index.error()));
+      return contains(*index, k);
     }
   }
 
   template <typename Base>
   [[nodiscard]] auto BTreeMixin<Base>::find(Key const& k) -> std::expected<std::optional<Data>, StarException> {
     if (Base::rootIsLeaf()) {
-      auto result95 = Base::loadLeaf(Base::rootPointer());
-      if (!result95) return std::unexpected(std::move(result95.error()));
-      auto result96 = find((*result95), k);
-      if (!result96) return std::unexpected(std::move(result96.error()));
-      return std::move(*result96);
+      auto leaf = Base::loadLeaf(Base::rootPointer());
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      return find(*leaf, k);
     } else {
-      auto result97 = Base::loadIndex(Base::rootPointer());
-      if (!result97) return std::unexpected(std::move(result97.error()));
-      auto result98 = find((*result97), k);
-      if (!result98) return std::unexpected(std::move(result98.error()));
-      return std::move(*result98);
+      auto index = Base::loadIndex(Base::rootPointer());
+      if (!index) return std::unexpected(std::move(index.error()));
+      return find(*index, k);
     }
   }
 
@@ -349,41 +341,32 @@ namespace Star {
     auto node = Base::loadIndex(Base::rootPointer());
     if (!node) return error("Error loading root index or leaf node", ExceptionDiagnostic(node.error()));
     return recoverAll(*node, visitor, error);
-
-    return {};
   }
 
   template <typename Base>
   template <typename Visitor>
   [[nodiscard]] std::expected<void, StarException> BTreeMixin<Base>::forAllNodes(Visitor&& visitor) {
     if (Base::rootIsLeaf()) {
-      auto result82 = Base::loadLeaf(Base::rootPointer());
-      if (!result82) return std::unexpected(std::move(result82.error()));
-      auto result83 = visitor((*result82));
-      if (!result83) return std::unexpected(std::move(result83.error()));
-
+      auto leaf = Base::loadLeaf(Base::rootPointer());
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      if (auto visited = visitor(*leaf); !visited)
+        return std::unexpected(std::move(visited.error()));
     } else {
-      auto result84 = Base::loadIndex(Base::rootPointer());
-      if (!result84) return std::unexpected(std::move(result84.error()));
-      auto result85 = forAllNodes((*result84), std::forward<Visitor>(visitor));
-      if (!result85) return std::unexpected(std::move(result85.error()));
-
+      auto index = Base::loadIndex(Base::rootPointer());
+      if (!index) return std::unexpected(std::move(index.error()));
+      return forAllNodes(*index, std::forward<Visitor>(visitor));
     }
     return {};
   }
 
   template <typename Base>
   [[nodiscard]] std::expected<bool, StarException> BTreeMixin<Base>::insert(Key k, Data data) {
-    auto result81 = modify(DataElement{std::move(k), std::move(data)}, InsertAction);
-    if (!result81) return std::unexpected(std::move(result81.error()));
-    return std::move(*result81);
+    return modify(DataElement{std::move(k), std::move(data)}, InsertAction);
   }
 
   template <typename Base>
   [[nodiscard]] std::expected<bool, StarException> BTreeMixin<Base>::remove(Key k) {
-    auto result80 = modify(DataElement{std::move(k), Data()}, RemoveAction);
-    if (!result80) return std::unexpected(std::move(result80.error()));
-    return std::move(*result80);
+    return modify(DataElement{std::move(k), Data()}, RemoveAction);
   }
 
   template <typename Base>
@@ -441,12 +424,9 @@ namespace Star {
 
   template <typename Base>
   [[nodiscard]] std::expected<void, StarException> BTreeMixin<Base>::createNewRoot() {
-    auto result72 = Base::storeLeaf(Base::createLeaf());
-    if (!result72) return std::unexpected(std::move(result72.error()));
-    auto result73 = Base::setNewRoot((*result72), true);
-    if (!result73) return std::unexpected(std::move(result73.error()));
-
-    return {};
+    auto rootPointer = Base::storeLeaf(Base::createLeaf());
+    if (!rootPointer) return std::unexpected(std::move(rootPointer.error()));
+    return Base::setNewRoot(*rootPointer, true);
   }
 
   template <typename Base>
@@ -509,17 +489,13 @@ namespace Star {
   [[nodiscard]] std::expected<bool, StarException> BTreeMixin<Base>::contains(Index const& index, Key const& k) {
     std::size_t i = indexFind(index, k);
     if (Base::indexLevel(index) == 0) {
-      auto result68 = Base::loadLeaf(Base::indexPointer(index, i));
-      if (!result68) return std::unexpected(std::move(result68.error()));
-      auto result69 = contains((*result68), k);
-      if (!result69) return std::unexpected(std::move(result69.error()));
-      return std::move(*result69);
+      auto leaf = Base::loadLeaf(Base::indexPointer(index, i));
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      return contains(*leaf, k);
     } else {
-      auto result70 = Base::loadIndex(Base::indexPointer(index, i));
-      if (!result70) return std::unexpected(std::move(result70.error()));
-      auto result71 = contains((*result70), k);
-      if (!result71) return std::unexpected(std::move(result71.error()));
-      return std::move(*result71);
+      auto childIndex = Base::loadIndex(Base::indexPointer(index, i));
+      if (!childIndex) return std::unexpected(std::move(childIndex.error()));
+      return contains(*childIndex, k);
     }
   }
 
@@ -532,17 +508,13 @@ namespace Star {
   [[nodiscard]] auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> std::expected<std::optional<Data>, StarException> {
     std::size_t i = indexFind(index, k);
     if (Base::indexLevel(index) == 0) {
-      auto result64 = Base::loadLeaf(Base::indexPointer(index, i));
-      if (!result64) return std::unexpected(std::move(result64.error()));
-      auto result65 = find((*result64), k);
-      if (!result65) return std::unexpected(std::move(result65.error()));
-      return std::move(*result65);
+      auto leaf = Base::loadLeaf(Base::indexPointer(index, i));
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      return find(*leaf, k);
     } else {
-      auto result66 = Base::loadIndex(Base::indexPointer(index, i));
-      if (!result66) return std::unexpected(std::move(result66.error()));
-      auto result67 = find((*result66), k);
-      if (!result67) return std::unexpected(std::move(result67.error()));
-      return std::move(*result67);
+      auto childIndex = Base::loadIndex(Base::indexPointer(index, i));
+      if (!childIndex) return std::unexpected(std::move(childIndex.error()));
+      return find(*childIndex, k);
     }
   }
 
@@ -628,9 +600,8 @@ namespace Star {
       if (!(currentKey < lower)) {
 
         if (currentKey < upper) {
-          auto result53 = o(currentKey, Base::leafData(leaf, i));
-          if (!result53) return std::unexpected(std::move(result53.error()));
-
+          if (auto visited = o(currentKey, Base::leafData(leaf, i)); !visited)
+            return std::unexpected(std::move(visited.error()));
         } else {
           return currentKey;
         }
@@ -638,11 +609,9 @@ namespace Star {
     }
 
     if (auto nextLeafPointer = Base::nextLeaf(leaf)) {
-      auto result54 = Base::loadLeaf(*nextLeafPointer);
-      if (!result54) return std::unexpected(std::move(result54.error()));
-      auto result55 = forEach((*result54), lower, upper, o);
-      if (!result55) return std::unexpected(std::move(result55.error()));
-      return std::move(*result55);
+      auto nextLeaf = Base::loadLeaf(*nextLeafPointer);
+      if (!nextLeaf) return std::unexpected(std::move(nextLeaf.error()));
+      return forEach(*nextLeaf, lower, upper, o);
     } else {
       return Base::leafKey(leaf, Base::leafElementCount(leaf) - 1);
     }
@@ -689,17 +658,14 @@ namespace Star {
     for (std::size_t i = 0; i != Base::leafElementCount(leaf); ++i) {
 
       Key currentKey = Base::leafKey(leaf, i);
-      auto result46 = o(Base::leafKey(leaf, i), Base::leafData(leaf, i));
-      if (!result46) return std::unexpected(std::move(result46.error()));
-
+      if (auto visited = o(Base::leafKey(leaf, i), Base::leafData(leaf, i)); !visited)
+        return std::unexpected(std::move(visited.error()));
     }
 
     if (auto nextLeafPointer = Base::nextLeaf(leaf)) {
-      auto result47 = Base::loadLeaf(*nextLeafPointer);
-      if (!result47) return std::unexpected(std::move(result47.error()));
-      auto result48 = forAll((*result47), std::forward<Visitor>(o));
-      if (!result48) return std::unexpected(std::move(result48.error()));
-      return std::move(*result48);
+      auto nextLeaf = Base::loadLeaf(*nextLeafPointer);
+      if (!nextLeaf) return std::unexpected(std::move(nextLeaf.error()));
+      return forAll(*nextLeaf, std::forward<Visitor>(o));
     } else {
       return Base::leafKey(leaf, Base::leafElementCount(leaf) - 1);
     }
@@ -1150,17 +1116,14 @@ namespace Star {
   [[nodiscard]] auto BTreeMixin<Base>::getLeftKey(Index const& index) -> std::expected<Key, StarException> {
     if (Base::indexLevel(index) == 0) {
 
-      auto result6 = Base::loadLeaf(Base::indexPointer(index, 0));
-      if (!result6) return std::unexpected(std::move(result6.error()));
-      Leaf leaf = std::move(*result6);
-      return Base::leafKey(leaf, 0);
+      auto leaf = Base::loadLeaf(Base::indexPointer(index, 0));
+      if (!leaf) return std::unexpected(std::move(leaf.error()));
+      return Base::leafKey(*leaf, 0);
     } else {
 
-      auto result7 = Base::loadIndex(Base::indexPointer(index, 0));
-      if (!result7) return std::unexpected(std::move(result7.error()));
-      auto result8 = getLeftKey((*result7));
-      if (!result8) return std::unexpected(std::move(result8.error()));
-      return std::move(*result8);
+      auto childIndex = Base::loadIndex(Base::indexPointer(index, 0));
+      if (!childIndex) return std::unexpected(std::move(childIndex.error()));
+      return getLeftKey(*childIndex);
     }
   }
 

@@ -361,6 +361,8 @@ private:
   [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> customWorldPromise(CustomWorldId const& customWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
   [[nodiscard]] std::expected<std::optional<WorldServerPromise>, StarException> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate = {});
   
+  [[nodiscard]] std::expected<std::shared_ptr<WorldServerThread>, StarException> startWorldThread(std::shared_ptr<WorldServerThread> thread, WorldId const& worldId);
+
   [[nodiscard]] std::expected<void, StarException> notifyWorldCreated(WorldId const& worldId);
 
   // If the system world is not created, initialize it, otherwise return the

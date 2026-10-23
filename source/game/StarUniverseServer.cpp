@@ -4163,12 +4163,7 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
     if (!initial)
       return std::unexpected(std::move(initial.error()));
     client->updateShipChunks(std::move(*initial));
-    if (auto started = (*thread)->start(); !started)
-      return std::unexpected(std::move(started.error()));
-    (*thread)->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
-    if (auto notified = notifyWorldCreated(id); !notified)
-      return std::unexpected(std::move(notified.error()));
-    return std::move(*thread);
+    return startWorldThread(std::move(*thread), id);
   }));
 }
 
@@ -4223,12 +4218,7 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
     if (!thread)
       return std::unexpected(std::move(thread.error()));
     (*thread)->setPause(m_pause);
-    if (auto started = (*thread)->start(); !started)
-      return std::unexpected(std::move(started.error()));
-    (*thread)->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
-    if (auto notified = notifyWorldCreated(id); !notified)
-      return std::unexpected(std::move(notified.error()));
-    return std::move(*thread);
+    return startWorldThread(std::move(*thread), id);
   }));
 }
 
@@ -4453,12 +4443,7 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
     if (!thread)
       return std::unexpected(std::move(thread.error()));
     (*thread)->setPause(m_pause);
-    if (auto started = (*thread)->start(); !started)
-      return std::unexpected(std::move(started.error()));
-    (*thread)->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
-    if (auto notified = notifyWorldCreated(id); !notified)
-      return std::unexpected(std::move(notified.error()));
-    return std::move(*thread);
+    return startWorldThread(std::move(*thread), id);
   }));
 }
 
@@ -4512,12 +4497,7 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
     if (!thread)
       return std::unexpected(std::move(thread.error()));
     (*thread)->setPause(m_pause);
-    if (auto started = (*thread)->start(); !started)
-      return std::unexpected(std::move(started.error()));
-    (*thread)->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
-    if (auto notified = notifyWorldCreated(id); !notified)
-      return std::unexpected(std::move(notified.error()));
-    return std::move(*thread);
+    return startWorldThread(std::move(*thread), id);
   }));
 }
 
@@ -4595,12 +4575,7 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
         return std::unexpected(std::move(initial.error()));
       client->updateCustomWorldChunks(id.name, std::move(*initial));
       client->setCustomWorldActive(id.name, true);
-      if (auto started = (*thread)->start(); !started)
-        return std::unexpected(std::move(started.error()));
-      (*thread)->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
-      if (auto notified = notifyWorldCreated(id); !notified)
-        return std::unexpected(std::move(notified.error()));
-      return std::move(*thread);
+      return startWorldThread(std::move(*thread), id);
     });
   };
   if (auto chunks = client->customWorldChunks(id.name))
@@ -4617,6 +4592,15 @@ std::expected<std::optional<UniverseServer::WorldServerPromise>, StarException> 
     return std::unexpected(std::move(sent.error()));
   }
   return WorldServerPromise(std::move(producer), pair.first);
+}
+
+std::expected<std::shared_ptr<WorldServerThread>, StarException> UniverseServer::startWorldThread(std::shared_ptr<WorldServerThread> thread, WorldId const& worldId) {
+  if (auto started = thread->start(); !started)
+    return std::unexpected(std::move(started.error()));
+  thread->setUpdateAction(std::bind(&UniverseServer::worldUpdated, this, std::placeholders::_1));
+  if (auto notified = notifyWorldCreated(worldId); !notified)
+    return std::unexpected(std::move(notified.error()));
+  return thread;
 }
 
 std::expected<void, StarException> UniverseServer::notifyWorldCreated(WorldId const& worldId) {

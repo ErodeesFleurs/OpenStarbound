@@ -240,6 +240,28 @@ import star.entity_splash;
 import star.algorithm;
 namespace Star {
 
+namespace {
+
+template <typename Armor>
+std::expected<void, StarException> applyLoungeCosmeticOverride(
+    JsonObject const& overrides, String const& key, EquipmentSlot slot, ItemDatabase const& itemDatabase,
+    ArmorWearer& armor, void (ArmorWearer::*setItem)(std::shared_ptr<Armor>)) {
+  auto overrideJson = overrides.maybe(key);
+  if (!overrideJson)
+    return {};
+  auto descriptor = ItemDescriptor::create(*overrideJson);
+  if (!descriptor)
+    return std::unexpected(std::move(descriptor.error()));
+  auto item = itemDatabase.item(std::move(*descriptor));
+  if (!item)
+    return std::unexpected(std::move(item.error()));
+  if (PlayerInventory::itemAllowedAsEquipment(*item, slot))
+    (armor.*setItem)(as<Armor>(*item));
+  return {};
+}
+
+}
+
 std::expected<EnumMap<Player::State>, StarException> const Player::StateNames = EnumMap<State>::create({
   {Player::State::Idle, "idle"},
   {Player::State::Walk, "walk"},
@@ -532,17 +554,7 @@ std::expected<void, StarException> Player::initialize(std::shared_ptr<PlayerConf
     m_inCinematicStatusEffects.append(std::move(effect));
   }
 
-  auto armorEffectsResult = m_armor->statusEffects();
-  if (!armorEffectsResult)
-    return std::unexpected(std::move(armorEffectsResult.error()));
-  auto armorEffects = std::move(*armorEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("armor", armorEffects); !result)
-    return std::unexpected(std::move(result.error()));
-  auto toolsEffectsResult = m_tools->statusEffects();
-  if (!toolsEffectsResult)
-    return std::unexpected(std::move(toolsEffectsResult.error()));
-  auto toolsEffects = std::move(*toolsEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("tools", toolsEffects); !result)
+  if (auto result = synchronizeEquipmentStatusEffects(*m_armor, *m_tools, *m_statusController); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = m_statusController->resetAllResources(); !result)
     return std::unexpected(std::move(result.error()));
@@ -1584,17 +1596,7 @@ std::expected<void, StarException> Player::revive(Vec2F const& footPosition) {
     return {};
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
-  auto armorEffectsResult = m_armor->statusEffects();
-  if (!armorEffectsResult)
-    return std::unexpected(std::move(armorEffectsResult.error()));
-  auto armorEffects = std::move(*armorEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("armor", armorEffects); !result)
-    return std::unexpected(std::move(result.error()));
-  auto toolEffectsResult = m_tools->statusEffects();
-  if (!toolEffectsResult)
-    return std::unexpected(std::move(toolEffectsResult.error()));
-  auto toolEffects = std::move(*toolEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("tools", toolEffects); !result)
+  if (auto result = synchronizeEquipmentStatusEffects(*m_armor, *m_tools, *m_statusController); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = m_statusController->resetAllResources(); !result)
     return std::unexpected(std::move(result.error()));
@@ -2001,57 +2003,22 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
             }
 
           auto itemDatabaseResult = root().itemDatabase();
-  if (!itemDatabaseResult)
-    return std::unexpected(std::move(itemDatabaseResult.error()));
-  auto itemDatabase = std::move(*itemDatabaseResult);
-          if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
-            auto descriptorResult = ItemDescriptor::create(*headOverride);
-            if (!descriptorResult)
-              return std::unexpected(std::move(descriptorResult.error()));
-            auto descriptor = std::move(*descriptorResult);
-            auto overrideItemResult = itemDatabase->item(descriptor);
-            if (!overrideItemResult)
-              return std::unexpected(std::move(overrideItemResult.error()));
-            auto overrideItem = std::move(*overrideItemResult);
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
-              m_armor->setHeadCosmeticItem(as<HeadArmor>(overrideItem));
-          }
-          if (auto chestOverride = loungeAnchor->armorCosmeticOverrides.maybe("chest")) {
-            auto descriptorResult = ItemDescriptor::create(*chestOverride);
-            if (!descriptorResult)
-              return std::unexpected(std::move(descriptorResult.error()));
-            auto descriptor = std::move(*descriptorResult);
-            auto overrideItemResult = itemDatabase->item(descriptor);
-            if (!overrideItemResult)
-              return std::unexpected(std::move(overrideItemResult.error()));
-            auto overrideItem = std::move(*overrideItemResult);
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::ChestCosmetic))
-              m_armor->setChestCosmeticItem(as<ChestArmor>(overrideItem));
-          }
-          if (auto legsOverride = loungeAnchor->armorCosmeticOverrides.maybe("legs")) {
-            auto descriptorResult = ItemDescriptor::create(*legsOverride);
-            if (!descriptorResult)
-              return std::unexpected(std::move(descriptorResult.error()));
-            auto descriptor = std::move(*descriptorResult);
-            auto overrideItemResult = itemDatabase->item(descriptor);
-            if (!overrideItemResult)
-              return std::unexpected(std::move(overrideItemResult.error()));
-            auto overrideItem = std::move(*overrideItemResult);
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::LegsCosmetic))
-              m_armor->setLegsCosmeticItem(as<LegsArmor>(overrideItem));
-          }
-          if (auto backOverride = loungeAnchor->armorCosmeticOverrides.maybe("back")) {
-            auto descriptorResult = ItemDescriptor::create(*backOverride);
-            if (!descriptorResult)
-              return std::unexpected(std::move(descriptorResult.error()));
-            auto descriptor = std::move(*descriptorResult);
-            auto overrideItemResult = itemDatabase->item(descriptor);
-            if (!overrideItemResult)
-              return std::unexpected(std::move(overrideItemResult.error()));
-            auto overrideItem = std::move(*overrideItemResult);
-            if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::BackCosmetic))
-              m_armor->setBackCosmeticItem(as<BackArmor>(overrideItem));
-          }
+          if (!itemDatabaseResult)
+            return std::unexpected(std::move(itemDatabaseResult.error()));
+          auto itemDatabase = std::move(*itemDatabaseResult);
+          auto const& overrides = loungeAnchor->armorCosmeticOverrides;
+          if (auto result = applyLoungeCosmeticOverride(overrides, "head", EquipmentSlot::HeadCosmetic,
+                  *itemDatabase, *m_armor, &ArmorWearer::setHeadCosmeticItem); !result)
+            return std::unexpected(std::move(result.error()));
+          if (auto result = applyLoungeCosmeticOverride(overrides, "chest", EquipmentSlot::ChestCosmetic,
+                  *itemDatabase, *m_armor, &ArmorWearer::setChestCosmeticItem); !result)
+            return std::unexpected(std::move(result.error()));
+          if (auto result = applyLoungeCosmeticOverride(overrides, "legs", EquipmentSlot::LegsCosmetic,
+                  *itemDatabase, *m_armor, &ArmorWearer::setLegsCosmeticItem); !result)
+            return std::unexpected(std::move(result.error()));
+          if (auto result = applyLoungeCosmeticOverride(overrides, "back", EquipmentSlot::BackCosmetic,
+                  *itemDatabase, *m_armor, &ArmorWearer::setBackCosmeticItem); !result)
+            return std::unexpected(std::move(result.error()));
         } else {
           m_state = State::Idle;
           {
@@ -2119,22 +2086,8 @@ std::expected<void, StarException> Player::update(float dt, std::uint64_t) {
         }
       }
 
-      {
-        auto armorEffectsResult = m_armor->statusEffects();
-        if (!armorEffectsResult)
-          return std::unexpected(std::move(armorEffectsResult.error()));
-        auto armorEffects = std::move(*armorEffectsResult);
-        if (auto result = m_statusController->setPersistentEffects("armor", armorEffects); !result)
-          return std::unexpected(std::move(result.error()));
-      }
-      {
-        auto toolsEffectsResult = m_tools->statusEffects();
-        if (!toolsEffectsResult)
-          return std::unexpected(std::move(toolsEffectsResult.error()));
-        auto toolsEffects = std::move(*toolsEffectsResult);
-        if (auto result = m_statusController->setPersistentEffects("tools", toolsEffects); !result)
-          return std::unexpected(std::move(result.error()));
-      }
+      if (auto result = synchronizeEquipmentStatusEffects(*m_armor, *m_tools, *m_statusController); !result)
+        return std::unexpected(std::move(result.error()));
 
       if (!m_techController->techOverridden())
         {
@@ -4674,17 +4627,7 @@ std::expected<void, StarException> Player::finalizeCreation() {
     return std::unexpected(std::move(result.error()));
   m_state = State::Idle;
   m_emoteState = HumanoidEmote::Idle;
-  auto armorEffectsResult = m_armor->statusEffects();
-  if (!armorEffectsResult)
-    return std::unexpected(std::move(armorEffectsResult.error()));
-  auto armorEffects = std::move(*armorEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("armor", armorEffects); !result)
-    return std::unexpected(std::move(result.error()));
-  auto toolEffectsResult = m_tools->statusEffects();
-  if (!toolEffectsResult)
-    return std::unexpected(std::move(toolEffectsResult.error()));
-  auto toolEffects = std::move(*toolEffectsResult);
-  if (auto result = m_statusController->setPersistentEffects("tools", toolEffects); !result)
+  if (auto result = synchronizeEquipmentStatusEffects(*m_armor, *m_tools, *m_statusController); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = m_statusController->resetAllResources(); !result)
     return std::unexpected(std::move(result.error()));

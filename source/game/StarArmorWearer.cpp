@@ -58,6 +58,8 @@ import star.world_geometry;
 import star.damage;
 
 import star.armor_wearer;
+import star.tool_user;
+import star.status_controller;
 import star.asset_source;
 import star.assets;
 import star.root_base;
@@ -337,6 +339,20 @@ std::expected<List<PersistentStatusEffect>, StarException> ArmorWearer::statusEf
   }
 
   return statusEffects;
+}
+
+std::expected<void, StarException> synchronizeEquipmentStatusEffects(
+    ArmorWearer const& armor, ToolUser const& tools, StatusController& statusController, bool cosmeticOnly) {
+  auto armorEffects = armor.statusEffects(cosmeticOnly);
+  if (!armorEffects)
+    return std::unexpected(std::move(armorEffects.error()));
+  if (auto result = statusController.setPersistentEffects("armor", *armorEffects); !result)
+    return std::unexpected(std::move(result.error()));
+
+  auto toolEffects = tools.statusEffects();
+  if (!toolEffects)
+    return std::unexpected(std::move(toolEffects.error()));
+  return statusController.setPersistentEffects("tools", *toolEffects);
 }
 
 bool ArmorWearer::setItem(std::uint8_t slot, std::shared_ptr<ArmorItem> item, bool visible) {

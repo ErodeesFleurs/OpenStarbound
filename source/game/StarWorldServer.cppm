@@ -395,6 +395,15 @@ public:
   std::optional<std::pair<String, String>> pullNewPlanetType();
 
 private:
+  friend struct WorldServerTestAccess;
+
+  enum class UpdateTiming {
+    Wiring, Liquid, FallingBlocks, BlockDamage, StorageTick, StorageGenerate, Environment, Count
+  };
+  enum class ProcessingLimit {
+    Liquid, StorageGenerate, Count
+  };
+
   explicit WorldServer(Root& root);
   struct ClientInfo {
     [[nodiscard]] static std::expected<std::shared_ptr<ClientInfo>, StarException> create(Root& root, ConnectionId clientId, InterpolationTracker const trackerInit);
@@ -439,10 +448,10 @@ private:
 
   [[nodiscard]] std::expected<void, StarException> init(bool firstTime);
 
-  // Returns nothing if the processing defined by the given configuration entry
-  // should not run this tick, if it should run this tick, returns the number
-  // of ticks since the last run.
-  [[nodiscard]] std::expected<std::optional<unsigned>, StarException> shouldRunThisStep(String const& timingConfiguration);
+  // Parse each field on first actual use, retaining the configured interval as
+  // the elapsed tick count when this step matches its interval and offset.
+  [[nodiscard]] std::expected<std::optional<unsigned>, StarException> shouldRunThisStep(UpdateTiming timingConfiguration);
+  [[nodiscard]] std::expected<std::optional<std::uint64_t>, StarException> processingLimit(ProcessingLimit limitConfiguration);
 
   [[nodiscard]] std::expected<TileModificationList, StarException> doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
@@ -496,8 +505,13 @@ private:
   std::shared_ptr<WorldStorage> m_worldStorage;
   bool m_closeAttempted = false;
   bool m_initialized = false;
-  WorldServerFidelity m_fidelity;
+  WorldServerFidelity m_fidelity = WorldServerFidelity::Medium;
   Json m_fidelityConfig;
+  // Json objects are immutable; identity detects replacement without comparing
+  // the full configuration on every WorldServerThread tick.
+  JsonObject const* m_fidelityConfigIdentity = nullptr;
+  std::array<std::optional<Vec2U>, static_cast<std::size_t>(UpdateTiming::Count)> m_updateTimings;
+  std::array<std::optional<std::optional<std::uint64_t>>, static_cast<std::size_t>(ProcessingLimit::Count)> m_processingLimits;
 
   HashSet<Vec2I> m_damagedBlocks;
   std::shared_ptr<DamageManager> m_damageManager;

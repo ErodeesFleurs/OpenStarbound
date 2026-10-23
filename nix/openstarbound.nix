@@ -5,6 +5,7 @@
   callPackage,
   cmake,
   ninja,
+  python3,
   pkg-config,
   autoPatchelfHook,
   zlib-ng,
@@ -310,8 +311,9 @@ stdenv.mkDerivation {
     ${lib.optionalString withTests ''
       # Runs game_tests against assets from the local filesystem; they cannot be
       # a build input because they are gitignored and not redistributable.
-      install -m755 ${./run-game-tests.sh} "$out/bin/run-game-tests"
+      install -m755 ${./run-game-tests.py} "$out/bin/run-game-tests"
       substituteInPlace "$out/bin/run-game-tests" \
+        --replace-fail '@python@' '${python3}/bin/python3' \
         --replace-fail '@gameTests@' "$out/libexec/game_tests" \
         --replace-fail '@bundledAssets@' "$out/share/openstarbound/assets"
     ''}

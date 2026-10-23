@@ -337,9 +337,6 @@ public:
 
   [[nodiscard]] std::expected<StringList, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
-  template <typename Filter>
-  [[nodiscard]] auto filtered(Filter&& filter) const;
-
   template <typename Comparator>
   StringList sorted(Comparator&& comparator) const;
 
@@ -578,20 +575,6 @@ inline std::size_t hash<String>::operator()(String const& s) const {
 template <typename Container>
 StringList StringList::from(Container const& m) {
   return StringList(m.begin(), m.end());
-}
-
-template <typename Filter>
-[[nodiscard]] auto StringList::filtered(Filter&& filter) const {
-  StringList l;
-  if constexpr (std::is_void_v<decltype(l.filter(std::forward<Filter>(filter)))>) {
-    l.filter(std::forward<Filter>(filter));
-    return l;
-  } else {
-    auto filtered = l.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<StringList, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<StringList, StarException>(std::move(l));
-  }
 }
 
 template <typename Comparator>
