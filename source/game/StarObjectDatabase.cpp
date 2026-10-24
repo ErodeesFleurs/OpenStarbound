@@ -959,7 +959,8 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     if (!field3Result)
       return std::unexpected(std::move(field3Result.error()));
     auto field3 = std::move(*field3Result);
-    objectConfig->scripts = field3.transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
+    std::ranges::for_each(field3, [&](String& script) { script = AssetPath::relativeTo(path, script); });
+    objectConfig->scripts = std::move(field3);
     auto field4Result = config.get("animationScripts", JsonArray());
     if (!field4Result)
       return std::unexpected(std::move(field4Result.error()));
@@ -968,7 +969,8 @@ std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::read
     if (!field5Result)
       return std::unexpected(std::move(field5Result.error()));
     auto field5 = std::move(*field5Result);
-    objectConfig->animationScripts = field5.transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
+    std::ranges::for_each(field5, [&](String& script) { script = AssetPath::relativeTo(path, script); });
+    objectConfig->animationScripts = std::move(field5);
     auto priceResult = config.getInt("price", 0);
     if (!priceResult)
       return std::unexpected(std::move(priceResult.error()));

@@ -128,6 +128,7 @@ Set `OPENSTARBOUND_TEST_JOBS` to bound parallel cases (default `1`); each discov
 Project C++ uses named modules, `import std;` and `std::expected`, with RTTI and C++ exceptions disabled. Preserve the same static C++ runtime across dependencies.
 
 Containers own their storage; shared algorithms and codecs use `SequenceContainer`, `MapContainer` and `SetContainer` constraints. Use `keyView()`/`valueView()` for nonmutating map traversal and `std::span`/`std::mdspan` for contiguous borrowed data. Views must not outlive owners or invalidation; retain snapshots across mutation or callbacks, and materialize Lua arguments before invoking scripts.
+Reuse owned sequence buffers for nonfallible path conversion and sorting; keep resource-name ordering identical across network peers. Materialize serialized arrays only once. Lua profile export borrows call-tree entries while its detached engine remains alive.
 
 `BTree<Storage>` owns a `BTreeStorage` implementation. Lua scripts use fixed-address, nonmovable hosts with value-owned features; preserve each host's initialization, storage-snapshot and shutdown ordering.
 

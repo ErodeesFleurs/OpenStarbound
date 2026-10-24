@@ -529,7 +529,8 @@ std::expected<void, StarException> Object::init(World* world, EntityId entityId,
         if (!scriptsResult)
           return std::unexpected(std::move(scriptsResult.error()));
         auto scripts = std::move(*scriptsResult);
-        auto operation3 = m_scriptComponent.setScripts(scripts.transformed(std::bind(AssetPath::relativeTo, m_config->path, std::placeholders::_1)));
+        std::ranges::for_each(scripts, [&](String& script) { script = AssetPath::relativeTo(m_config->path, script); });
+        auto operation3 = m_scriptComponent.setScripts(std::move(scripts));
         if (!operation3)
           return std::unexpected(std::move(operation3.error()));
       } else {

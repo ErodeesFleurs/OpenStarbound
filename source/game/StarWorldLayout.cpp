@@ -671,16 +671,22 @@ std::expected<Json, StarException> WorldLayout::toJson() const {
         return terrainDatabase->storeSelector(selector);
       })},
     {"layers", m_layers.transformed([](WorldLayer const& layer) -> Json {
+        JsonArray boundaries;
+        boundaries.reserve(layer.boundaries.size());
+        std::ranges::transform(layer.boundaries, std::back_inserter(boundaries), construct<Json>());
+        JsonArray cells;
+        cells.reserve(layer.cells.size());
+        std::ranges::transform(layer.cells, std::back_inserter(cells), std::mem_fn(&WorldRegion::toJson));
         return JsonObject{
           {"yStart", layer.yStart},
-          {"boundaries", JsonArray::from(layer.boundaries.transformed(construct<Json>()))},
-          {"cells", JsonArray::from(layer.cells.transformed(std::mem_fn(&WorldRegion::toJson)))}
+          {"boundaries", std::move(boundaries)},
+          {"cells", std::move(cells)}
         };
       })},
     {"regionBlending", m_regionBlending},
     {"blockNoise", std::move(blockNoise)},
     {"blendNoise", std::move(blendNoise)},
-    {"playerStartSearchRegions", JsonArray::from(m_playerStartSearchRegions.transformed(jsonFromRectI))}
+    {"playerStartSearchRegions", m_playerStartSearchRegions.transformed(jsonFromRectI)}
   };
 }
 

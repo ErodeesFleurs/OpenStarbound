@@ -80,7 +80,9 @@ std::expected<std::shared_ptr<StatCollection>, StarException> StatCollection::cr
   auto modifiers = collection->addNetElement(&collection->m_statModifiersNetState);
   if (!modifiers) return std::unexpected(std::move(modifiers.error()));
   // Sort resource names alphabetically to ensure the same order on master and slaves.
-  for (auto const& resource : collection->m_stats.resourceNames().sorted()) {
+  auto resourceNames = collection->m_stats.resourceNames();
+  std::ranges::sort(resourceNames);
+  for (auto const& resource : resourceNames) {
     auto& resourceNetState = collection->m_resourceValuesNetStates[resource];
     auto valueAdded = collection->addNetElement(&resourceNetState);
     if (!valueAdded) return std::unexpected(std::move(valueAdded.error()));

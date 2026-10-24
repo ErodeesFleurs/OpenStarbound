@@ -387,8 +387,8 @@ projectileConfig->masterOnly = std::move(*result138);
 if (!result139) return std::unexpected(std::move(result139.error()));
 auto result140 = jsonToStringList(std::move(*result139));
 if (!result140) return std::unexpected(std::move(result140.error()));
-projectileConfig->scripts =
-      std::move(*result140).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
+std::ranges::for_each(*result140, [&](String& script) { script = AssetPath::relativeTo(path, script); });
+projectileConfig->scripts = std::move(*result140);
 
   auto result141 = config.get("physicsForces", JsonObject());
 if (!result141) return std::unexpected(std::move(result141.error()));

@@ -152,10 +152,17 @@ std::expected<void, StarException> LuaRoot::shutdown() {
     value.set("source", strf("{}:{}", entry.source, entry.sourceLine));
     value.set("self", entry.selfTime);
     value.set("total", entry.totalTime);
-    List<LuaProfileEntry> calls;
+    // The detached engine and profile retain the entire call tree during export.
+    std::vector<LuaProfileEntry const*> calls;
+    calls.reserve(entry.calls.size());
     for (auto const& p : entry.calls)
-      calls.append(*p.second);
-    value.set("calls", calls.sorted([](auto const& a, auto const& b) { return a.totalTime > b.totalTime; }).transformed(jsonFromProfileEntry));
+      calls.push_back(p.second.get());
+    std::sort(calls.begin(), calls.end(), [](auto a, auto b) { return a->totalTime > b->totalTime; });
+    JsonArray storedCalls;
+    storedCalls.reserve(calls.size());
+    std::ranges::transform(calls, std::back_inserter(storedCalls),
+        [&](auto call) { return jsonFromProfileEntry(*call); });
+    value.set("calls", std::move(storedCalls));
     return value;
   };
   auto summary = Json(profile.transformed(jsonFromProfileEntry)).repr(1);
