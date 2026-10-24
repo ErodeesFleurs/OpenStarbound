@@ -11,6 +11,9 @@ import star.format;
 import star.lua_converters;
 import star.lua_game_converters;
 import star.lua_components;
+import star.world;
+import star.game_types;
+import star.rpc_promise;
 import star.drawable;
 import star.entity_rendering_types;
 import star.mixer;
@@ -28,19 +31,21 @@ struct LuaAnimationComponentExceptionTag {
 };
 using LuaAnimationComponentException = StarError<LuaAnimationComponentExceptionTag, LuaComponentException>;
 
-// Produces local drawables, lights, audio and particles from script callbacks.
-template <typename Base>
-class LuaAnimationComponent : public Base {
+
+// Local animation output is a value owned by its script host, not a context base.
+class LuaScriptAnimation {
 public:
-  using Base::Base;
+  explicit LuaScriptAnimation(LuaBaseComponent& host) : m_host(host) {}
+  LuaScriptAnimation(LuaScriptAnimation const&) = delete;
+  LuaScriptAnimation& operator=(LuaScriptAnimation const&) = delete;
   List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
   List<Particle> pullNewParticles();
   List<std::shared_ptr<AudioInstance>> pullNewAudios();
-protected:
-  [[nodiscard]] std::expected<void, StarException> contextSetup() override;
-  [[nodiscard]] std::expected<void, StarException> contextShutdown() override;
+  [[nodiscard]] std::expected<void, StarException> contextSetup();
+  void contextShutdown();
 private:
+  LuaBaseComponent& m_host;
   List<Particle> m_pendingParticles;
   List<std::shared_ptr<AudioInstance>> m_pendingAudios;
   List<std::shared_ptr<AudioInstance>> m_activeAudio;
@@ -48,15 +53,12 @@ private:
   List<LightSource> m_lightSources;
 };
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaAnimationComponent<Base>::contextSetup() {
-  if (auto result = Base::contextSetup(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (Base::hasCallbacks("localAnimator"))
+[[nodiscard]] inline std::expected<void, StarException> LuaScriptAnimation::contextSetup() {
+  if (m_host.hasCallbacks("localAnimator"))
     return {};
   LuaCallbacks callbacks;
   if (auto result = callbacks.registerCallback("playAudio", [this](String const& sound, std::optional<int> loops, std::optional<float> volume) -> std::expected<std::shared_ptr<AudioInstance>, StarException> {
-    auto assets = this->root().assets();
+    auto assets = m_host.root().assets();
     if (!assets)
       return std::unexpected(std::move(assets.error()));
     auto source = (*assets)->audio(sound);
@@ -73,7 +75,7 @@ template <typename Base>
   }); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("spawnParticle", [this](Json const& config, std::optional<Vec2F> const& position) -> std::expected<void, StarException> {
-    auto database = this->root().particleDatabase();
+    auto database = m_host.root().particleDatabase();
     if (!database)
       return std::unexpected(std::move(database.error()));
     auto particle = (*database)->particle(config);
@@ -101,7 +103,7 @@ template <typename Base>
   }); !result)
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("addJsonDrawable", [this](Json config, std::optional<String> layerName) -> std::expected<void, StarException> {
-    auto metadata = this->root().imageMetadataDatabase();
+    auto metadata = m_host.root().imageMetadataDatabase();
     if (!metadata)
       return std::unexpected(std::move(metadata.error()));
     auto drawable = Drawable::create(**metadata, config);
@@ -145,31 +147,145 @@ template <typename Base>
     return {};
   }); !result)
     return std::unexpected(std::move(result.error()));
-  return Base::addCallbacks("localAnimator", std::move(callbacks));
+  return m_host.addCallbacks("localAnimator", std::move(callbacks));
 }
 
-template <typename Base>
-List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() { return m_drawables; }
+inline List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& LuaScriptAnimation::drawables() { return m_drawables; }
 
-template <typename Base>
-List<LightSource> const& LuaAnimationComponent<Base>::lightSources() { return m_lightSources; }
+inline List<LightSource> const& LuaScriptAnimation::lightSources() { return m_lightSources; }
 
-template <typename Base>
-List<Particle> LuaAnimationComponent<Base>::pullNewParticles() { return take(m_pendingParticles); }
+inline List<Particle> LuaScriptAnimation::pullNewParticles() { return take(m_pendingParticles); }
 
-template <typename Base>
-List<std::shared_ptr<AudioInstance>> LuaAnimationComponent<Base>::pullNewAudios() {
+inline List<std::shared_ptr<AudioInstance>> LuaScriptAnimation::pullNewAudios() {
   eraseWhere(m_activeAudio, [](std::shared_ptr<AudioInstance> const& audio) { return audio->finished(); });
   return take(m_pendingAudios);
 }
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaAnimationComponent<Base>::contextShutdown() {
+inline void LuaScriptAnimation::contextShutdown() {
   for (auto const& audio : m_activeAudio)
     audio->setLoops(0);
   m_activeAudio.clear();
-  return Base::contextShutdown();
 }
+
+// Animation-only contexts do not carry message handlers or persistent storage.
+class LuaAnimationScript final : public LuaBaseComponent {
+public:
+  explicit LuaAnimationScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_animation(*this) {}
+  ~LuaAnimationScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& drawables() { return m_animation.drawables(); }
+  List<LightSource> const& lightSources() { return m_animation.lightSources(); }
+  List<Particle> pullNewParticles() { return m_animation.pullNewParticles(); }
+  List<std::shared_ptr<AudioInstance>> pullNewAudios() { return m_animation.pullNewAudios(); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_animation.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_animation.contextShutdown();
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptAnimation m_animation;
+};
+
+// Deployment scripts combine persistent entity behavior with local animation.
+class LuaDeploymentScript final : public LuaBaseComponent {
+public:
+  explicit LuaDeploymentScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_animation(*this) {}
+  ~LuaDeploymentScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const { return m_storage.getScriptStorage(); }
+  [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage) { return m_storage.setScriptStorage(std::move(storage)); }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+  List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& drawables() { return m_animation.drawables(); }
+  List<LightSource> const& lightSources() { return m_animation.lightSources(); }
+  List<Particle> pullNewParticles() { return m_animation.pullNewParticles(); }
+  List<std::shared_ptr<AudioInstance>> pullNewAudios() { return m_animation.pullNewAudios(); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_storage.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_animation.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_animation.contextShutdown();
+    m_messages.contextShutdown();
+    auto storage = m_storage.readStorage();
+    auto stopped = m_update.contextShutdown();
+    auto shutdown = LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+    return m_storage.finishShutdown(std::move(storage), std::move(shutdown));
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptStorage m_storage;
+  LuaScriptMessages m_messages;
+  LuaScriptAnimation m_animation;
+};
 
 }
 
@@ -178,5 +294,7 @@ export module star.lua_animation_component;
 export namespace Star {
   using ::Star::LuaAnimationComponentExceptionTag;
   using ::Star::LuaAnimationComponentException;
-  using ::Star::LuaAnimationComponent;
+  using ::Star::LuaScriptAnimation;
+  using ::Star::LuaAnimationScript;
+  using ::Star::LuaDeploymentScript;
 }

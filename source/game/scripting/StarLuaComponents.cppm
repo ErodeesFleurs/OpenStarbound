@@ -17,7 +17,6 @@ import star.lua_root;
 import star.lua_converters;
 import star.lua_game_converters;
 import star.world;
-import star.world_lua_bindings;
 import star.root;
 
 namespace Star {
@@ -82,6 +81,11 @@ protected:
   [[nodiscard]] std::expected<void, StarException> stopThreads();
 
 private:
+  friend class LuaScriptStorage;
+  friend class LuaScriptUpdate;
+  friend class LuaScriptMessages;
+  friend class LuaScriptAnimation;
+
   Root& m_root;
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
@@ -94,30 +98,29 @@ private:
   StringMap<std::shared_ptr<ScriptableThread>> m_threads;
 };
 
-template <typename Base>
-class LuaStorableComponent : public Base {
+
+// These fixed-address feature values borrow their owning context. They do not
+// own a LuaRoot and cannot be detached, copied or installed as dynamic plugins.
+class LuaScriptStorage {
 public:
-  using Base::Base;
+  explicit LuaScriptStorage(LuaBaseComponent& host) : m_host(host) {}
+  LuaScriptStorage(LuaScriptStorage const&) = delete;
+  LuaScriptStorage& operator=(LuaScriptStorage const&) = delete;
   [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const;
   [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage);
-protected:
-  [[nodiscard]] std::expected<void, StarException> contextSetup() override;
-  [[nodiscard]] std::expected<void, StarException> contextShutdown() override;
+  [[nodiscard]] std::expected<void, StarException> contextSetup();
+  [[nodiscard]] std::expected<JsonObject, StarException> readStorage() const;
+  [[nodiscard]] std::expected<void, StarException> finishShutdown(std::expected<JsonObject, StarException> storage, std::expected<void, StarException> shutdown);
 private:
+  LuaBaseComponent& m_host;
   JsonObject m_storage;
 };
 
-template <typename Base>
-class LuaUpdatableComponent : public Base {
+class LuaScriptUpdate {
 public:
-  struct ThreadMessage {
-    String originThread;
-    String message;
-    JsonArray args;
-    RpcPromiseKeeper<Json> promise;
-  };
-  explicit LuaUpdatableComponent(Root& root);
-  ~LuaUpdatableComponent() override;
+  explicit LuaScriptUpdate(LuaBaseComponent& host);
+  LuaScriptUpdate(LuaScriptUpdate const&) = delete;
+  LuaScriptUpdate& operator=(LuaScriptUpdate const&) = delete;
   unsigned updateDelta() const;
   float updateDt(float dt) const;
   float updateDt() const;
@@ -125,13 +128,22 @@ public:
   bool updateReady() const;
   template <typename Ret = LuaValue, typename... V>
   [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args);
-  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override;
-protected:
-  [[nodiscard]] std::expected<void, StarException> contextSetup() override;
-  [[nodiscard]] std::expected<void, StarException> contextShutdown() override;
-  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override;
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args);
+  [[nodiscard]] std::expected<void, StarException> contextSetup();
+  [[nodiscard]] std::expected<void, StarException> contextShutdown();
+  [[nodiscard]] static std::expected<void, StarException> finishShutdown(std::expected<void, StarException> stopped, std::expected<void, StarException> shutdown);
+  [[nodiscard]] std::expected<void, StarException> addThreadsCallbacks(LuaCallbacks& callbacks);
+  // Called by the concrete host's destructor, while all callback targets live.
+  void destroy();
 private:
+  struct ThreadMessage {
+    String originThread;
+    String message;
+    JsonArray args;
+    RpcPromiseKeeper<Json> promise;
+  };
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleThreadMessage(ThreadMessage const& message);
+  LuaBaseComponent& m_host;
   Periodic m_updatePeriodic;
   mutable float m_lastDt;
   List<ThreadMessage> m_threadMessages;
@@ -143,27 +155,26 @@ private:
   StringMap<ThreadMessageHandler> m_threadMessageHandlers;
 };
 
-template <typename Base>
-class LuaWorldComponent : public Base {
+class LuaScriptWorld {
 public:
-  using Base::Base;
+  explicit LuaScriptWorld(LuaBaseComponent& host) : m_host(host) {}
+  LuaScriptWorld(LuaScriptWorld const&) = delete;
+  LuaScriptWorld& operator=(LuaScriptWorld const&) = delete;
   [[nodiscard]] std::expected<void, StarException> init(World* world);
   [[nodiscard]] std::expected<void, StarException> uninit();
-protected:
-  using Base::setLuaRoot;
-  using Base::init;
 private:
+  LuaBaseComponent& m_host;
   StringSet m_worldThreadCallbacks;
 };
 
-template <typename Base>
-class LuaMessageHandlingComponent : public Base {
+class LuaScriptMessages {
 public:
-  using Base::Base;
+  explicit LuaScriptMessages(LuaBaseComponent& host) : m_host(host) {}
+  LuaScriptMessages(LuaScriptMessages const&) = delete;
+  LuaScriptMessages& operator=(LuaScriptMessages const&) = delete;
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
-protected:
-  [[nodiscard]] std::expected<void, StarException> contextSetup() override;
-  [[nodiscard]] std::expected<void, StarException> contextShutdown() override;
+  [[nodiscard]] std::expected<void, StarException> contextSetup();
+  void contextShutdown();
 private:
   struct MessageHandler {
     std::optional<LuaFunction> function;
@@ -171,6 +182,7 @@ private:
     bool passName = true;
     bool localOnly = false;
   };
+  LuaBaseComponent& m_host;
   StringMap<MessageHandler> m_messageHandlers;
 };
 
@@ -220,144 +232,8 @@ template <typename Ret>
   return std::optional<Ret>(std::move(*result));
 }
 
-template <typename Base>
-[[nodiscard]] std::expected<JsonObject, StarException> LuaStorableComponent<Base>::getScriptStorage() const {
-  if (Base::initialized())
-    return Base::context()->template getPath<JsonObject>("storage");
-  return m_storage;
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaStorableComponent<Base>::setScriptStorage(JsonObject storage) {
-  if (Base::initialized())
-    return Base::context()->setPath("storage", std::move(storage));
-  m_storage = std::move(storage);
-  return {};
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaStorableComponent<Base>::contextSetup() {
-  if (auto result = Base::contextSetup(); !result)
-    return std::unexpected(std::move(result.error()));
-  return Base::context()->setPath("storage", m_storage);
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaStorableComponent<Base>::contextShutdown() {
-  auto storage = Base::context()->template getPath<JsonObject>("storage");
-  auto shutdown = Base::contextShutdown();
-  if (storage)
-    m_storage = std::move(*storage);
-  else {
-    if (!shutdown)
-      return std::unexpected(storage.error().withContext(strf("Error shutting down Lua storage context: {}", outputException(shutdown.error(), true))));
-    return std::unexpected(std::move(storage.error()));
-  }
-  return shutdown;
-}
-
-template <typename Base>
-LuaUpdatableComponent<Base>::LuaUpdatableComponent(Root& root) : Base(root), m_lastDt(root.timing().timestep * root.timing().timescale) {
-  m_updatePeriodic.setStepCount(1);
-}
-
-template <typename Base>
-LuaUpdatableComponent<Base>::~LuaUpdatableComponent() {
-  // Child threads must stop before the parent-message queue is destroyed.
-  if (auto stopped = Base::stopThreads(); !stopped)
-    EmergencyLog::error("Error stopping Lua component threads: {}", outputException(stopped.error(), true));
-  List<ThreadMessage> messages;
-  {
-    RecursiveMutexLocker locker(m_threadMessageMutex);
-    messages = std::move(m_threadMessages);
-  }
-  for (auto& message : messages) {
-    if (auto failed = message.promise.fail("Lua component destroyed"); !failed)
-      EmergencyLog::error("Error settling destroyed Lua component message: {}", outputException(failed.error(), true));
-  }
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaUpdatableComponent<Base>::contextSetup() {
-  if (auto result = Base::contextSetup(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (!Base::hasCallbacks("script")) {
-    LuaCallbacks callbacks;
-    if (auto result = callbacks.registerCallback("updateDt", [this]() { return updateDt(); }); !result)
-      return std::unexpected(std::move(result.error()));
-    if (auto result = callbacks.registerCallback("setUpdateDelta", [this](unsigned delta) { setUpdateDelta(delta); }); !result)
-      return std::unexpected(std::move(result.error()));
-    return Base::addCallbacks("script", std::move(callbacks));
-  }
-  return {};
-}
-
-template <typename Base>
-unsigned LuaUpdatableComponent<Base>::updateDelta() const { return m_updatePeriodic.stepCount(); }
-
-template <typename Base>
-float LuaUpdatableComponent<Base>::updateDt(float dt) const {
-  m_lastDt = dt;
-  return m_updatePeriodic.stepCount() * dt;
-}
-
-template <typename Base>
-float LuaUpdatableComponent<Base>::updateDt() const { return m_updatePeriodic.stepCount() * m_lastDt; }
-
-template <typename Base>
-void LuaUpdatableComponent<Base>::setUpdateDelta(unsigned delta) { m_updatePeriodic.setStepCount(delta); }
-
-template <typename Base>
-bool LuaUpdatableComponent<Base>::updateReady() const { return m_updatePeriodic.ready(); }
-
-template <typename Base>
-RpcPromise<Json> LuaUpdatableComponent<Base>::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
-  auto pair = RpcPromise<Json>::createPair();
-  RecursiveMutexLocker locker(m_threadMessageMutex);
-  m_threadMessages.append({thread, message, args, pair.second});
-  return pair.first;
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> LuaUpdatableComponent<Base>::handleThreadMessage(ThreadMessage const& message) {
-  if (!Base::initialized())
-    return std::optional<ChainableJsonMessageResponse>{};
-  if (auto handler = m_threadMessageHandlers.ptr(message.message); handler && handler->function) {
-    auto result = handler->function->template invoke<ChainableJsonMessageResponse>(message.originThread, message.message, luaUnpack(message.args));
-    if (!result) {
-      if (auto cleanup = Base::setError(printException(result.error(), false)); !cleanup)
-        result.error() = cleanup.error().withContext(strf("Original Lua thread message failure: {}", outputException(result.error(), true)));
-      if (auto logged = Base::root().logger().error("Exception while invoking lua thread message handler for message '{}'. {}", message.message, outputException(result.error(), true)); !logged)
-        return std::unexpected(logged.error().withContext(strf("Could not log Lua thread message failure: {}", outputException(result.error(), true))));
-      return std::unexpected(std::move(result.error()));
-    }
-    return std::optional<ChainableJsonMessageResponse>(std::move(*result));
-  }
-  return std::optional<ChainableJsonMessageResponse>{};
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<LuaCallbacks, StarException> LuaUpdatableComponent<Base>::makeThreadsCallbacks() {
-  auto callbacks = Base::makeThreadsCallbacks();
-  if (!callbacks)
-    return std::unexpected(std::move(callbacks.error()));
-  if (auto result = callbacks->registerCallback("setMessageHandler", [this](String message, std::optional<LuaFunction> handler) {
-    if (handler) {
-      ThreadMessageHandler info;
-      info.name = message;
-      info.function = std::move(handler);
-      m_threadMessageHandlers.set(message, std::move(info));
-    } else {
-      m_threadMessageHandlers.remove(message);
-    }
-  }); !result)
-    return std::unexpected(std::move(result.error()));
-  return callbacks;
-}
-
-template <typename Base>
 template <typename Ret, typename... V>
-[[nodiscard]] std::expected<std::optional<Ret>, StarException> LuaUpdatableComponent<Base>::update(V&&... args) {
+[[nodiscard]] std::expected<std::optional<Ret>, StarException> LuaScriptUpdate::update(V&&... args) {
   List<ThreadMessage> messages;
   {
     RecursiveMutexLocker locker(m_threadMessageMutex);
@@ -389,172 +265,267 @@ template <typename Ret, typename... V>
     return std::unexpected(std::move(*error));
   if (!m_updatePeriodic.tick())
     return std::optional<Ret>{};
-  Base::cleanThreads();
-  return Base::template invoke<Ret>("update", std::forward<V>(args)...);
+  m_host.cleanThreads();
+  return m_host.template invoke<Ret>("update", std::forward<V>(args)...);
 }
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaUpdatableComponent<Base>::contextShutdown() {
-  // Stop producers before draining, so child uninit cannot enqueue a late,
-  // permanently pending parent message.
-  auto stopped = Base::stopThreads();
-  List<ThreadMessage> messages;
-  {
-    RecursiveMutexLocker locker(m_threadMessageMutex);
-    messages = std::move(m_threadMessages);
-  }
-  std::optional<StarException> error;
-  if (!stopped)
-    error = std::move(stopped.error());
-  for (auto& message : messages) {
-    if (auto result = message.promise.fail("Lua component uninitialized"); !result) {
-      if (!error)
-        error = std::move(result.error());
-      else
-        error = result.error().withContext(strf("Earlier Lua shutdown failure: {}", outputException(*error, true)));
-    }
-  }
-  m_threadMessageHandlers.clear();
-  auto shutdown = Base::contextShutdown();
-  if (error) {
-    if (!shutdown)
-      return std::unexpected(error->withContext(strf("Error shutting down Lua component: {}", outputException(shutdown.error(), true))));
-    return std::unexpected(std::move(*error));
-  }
-  return shutdown;
-}
+// Fireable-item contexts need world callbacks, but no periodic update queue.
+class LuaWorldScript final : public LuaBaseComponent {
+public:
+  explicit LuaWorldScript(Root& root) : LuaBaseComponent(root), m_world(*this) {}
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+private:
+  LuaScriptWorld m_world;
+};
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaWorldComponent<Base>::init(World* world) {
-  if (Base::initialized()) {
-    if (auto result = uninit(); !result)
+// GUI scripts update without binding a world or exposing entity messages.
+class LuaUpdateScript final : public LuaBaseComponent {
+public:
+  explicit LuaUpdateScript(Root& root) : LuaBaseComponent(root), m_update(*this) {}
+  ~LuaUpdateScript() override { m_update.destroy(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+protected:
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
       return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
   }
-  if (auto result = Base::setLuaRoot(world->luaRoot()); !result)
-    return std::unexpected(std::move(result.error()));
-  auto worldCallbacks = LuaBindings::makeWorldCallbacks(Base::root(), world);
-  if (!worldCallbacks)
-    return std::unexpected(std::move(worldCallbacks.error()));
-  if (auto result = Base::addCallbacks("world", std::move(*worldCallbacks)); !result)
-    return std::unexpected(std::move(result.error()));
-  auto result = [&]() -> std::expected<void, StarException> {
-    auto callbacks = LuaBindings::makeWorldThreadCallbacks(Base::root(), world);
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
     if (!callbacks)
       return std::unexpected(std::move(callbacks.error()));
-    if (auto added = Base::addThreadCallbacks("world", std::move(*callbacks)); !added)
-      return std::unexpected(std::move(added.error()));
-    auto threadCallbacks = world->luaThreadCallbacks();
-    if (!threadCallbacks)
-      return std::unexpected(std::move(threadCallbacks.error()));
-    for (auto const& p : *threadCallbacks) {
-      if (auto added = Base::addThreadCallbacks(p.first, p.second); !added)
-        return std::unexpected(std::move(added.error()));
-      m_worldThreadCallbacks.add(p.first);
-    }
-    auto initialized = Base::init();
-    if (!initialized)
-      return std::unexpected(std::move(initialized.error()));
-    return {};
-  }();
-  if (!result) {
-    if (auto rollback = uninit(); !rollback)
-      return std::unexpected(result.error().withContext(strf("Error rolling back Lua world component: {}", outputException(rollback.error(), true))));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
   }
-  return result;
-}
+private:
+  LuaScriptUpdate m_update;
+};
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaWorldComponent<Base>::uninit() {
-  std::optional<StarException> error;
-  auto remember = [&](auto result) {
-    if (!result) {
-      if (!error)
-        error = std::move(result.error());
-      else
-        error = result.error().withContext(strf("Earlier Lua world shutdown failure: {}", outputException(*error, true)));
-    }
-  };
-  remember(Base::uninit());
-  remember(Base::removeCallbacks("world"));
-  remember(Base::removeThreadCallbacks("world"));
-  for (auto const& name : m_worldThreadCallbacks)
-    remember(Base::removeThreadCallbacks(name));
-  m_worldThreadCallbacks.clear();
-  if (error)
-    return std::unexpected(std::move(*error));
-  return {};
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaMessageHandlingComponent<Base>::contextSetup() {
-  if (auto result = Base::contextSetup(); !result)
-    return std::unexpected(std::move(result.error()));
-  if (Base::hasCallbacks("message"))
-    return {};
-  LuaCallbacks callbacks;
-  if (auto result = callbacks.registerCallback("setHandler", [this](std::variant<String, Json> message, std::optional<LuaFunction> handler) -> std::expected<void, StarException> {
-    MessageHandler info;
-    if (auto config = std::get_if<Json>(&message)) {
-      auto passName = config->getBool("passName", false);
-      if (!passName)
-        return std::unexpected(std::move(passName.error()));
-      auto localOnly = config->getBool("localOnly", false);
-      if (!localOnly)
-        return std::unexpected(std::move(localOnly.error()));
-      auto name = config->getString("name");
-      if (!name)
-        return std::unexpected(std::move(name.error()));
-      info.passName = *passName;
-      info.localOnly = *localOnly;
-      info.name = std::move(*name);
-    } else {
-      info.name = std::move(std::get<String>(message));
-    }
-    if (handler) {
-      info.function = std::move(handler);
-      auto name = info.name;
-      m_messageHandlers.set(name, std::move(info));
-    } else {
-      m_messageHandlers.remove(info.name);
-    }
-    return {};
-  }); !result)
-    return std::unexpected(std::move(result.error()));
-  return Base::addCallbacks("message", std::move(callbacks));
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> LuaMessageHandlingComponent<Base>::handleMessage(String const& message, bool local, JsonArray const& args) {
-  if (!Base::initialized())
-    return std::optional<ChainableJsonMessageResponse>{};
-  auto handler = m_messageHandlers.ptr(message);
-  if (!handler || !handler->function || (handler->localOnly && !local))
-    return std::optional<ChainableJsonMessageResponse>{};
-  auto result = [&]() -> std::expected<ChainableJsonMessageResponse, StarException> {
-    if (handler->localOnly) {
-      if (handler->passName)
-        return handler->function->template invoke<ChainableJsonMessageResponse>(message, luaUnpack(args));
-      return handler->function->template invoke<ChainableJsonMessageResponse>(luaUnpack(args));
-    }
-    if (handler->passName)
-      return handler->function->template invoke<ChainableJsonMessageResponse>(message, local, luaUnpack(args));
-    return handler->function->template invoke<ChainableJsonMessageResponse>(local, luaUnpack(args));
-  }();
-  if (!result) {
-    if (auto cleanup = Base::setError(printException(result.error(), false)); !cleanup)
-      result.error() = cleanup.error().withContext(strf("Original Lua message handler failure: {}", outputException(result.error(), true)));
-    if (auto logged = Base::root().logger().error("Exception while invoking lua message handler for message '{}'. {}", message, outputException(result.error(), true)); !logged)
-      return std::unexpected(logged.error().withContext(strf("Could not log Lua message handler failure: {}", outputException(result.error(), true))));
-    return std::unexpected(std::move(result.error()));
+// Universe and worker-thread scripts update and handle messages without a world.
+class LuaMessageScript final : public LuaBaseComponent {
+public:
+  explicit LuaMessageScript(Root& root) : LuaBaseComponent(root), m_update(*this), m_messages(*this) {}
+  ~LuaMessageScript() override { m_update.destroy(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
   }
-  return std::optional<ChainableJsonMessageResponse>(std::move(*result));
-}
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+protected:
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptUpdate m_update;
+  LuaScriptMessages m_messages;
+};
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaMessageHandlingComponent<Base>::contextShutdown() {
-  m_messageHandlers.clear();
-  return Base::contextShutdown();
-}
+// Container interfaces bind a world and update, without entity-message state.
+class LuaWorldUpdateScript final : public LuaBaseComponent {
+public:
+  explicit LuaWorldUpdateScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this) {}
+  ~LuaWorldUpdateScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+};
+
+// Transient entities handle messages without allocating persistent storage.
+class LuaEntityScript final : public LuaBaseComponent {
+public:
+  explicit LuaEntityScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_messages(*this) {}
+  ~LuaEntityScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptMessages m_messages;
+};
+
+// Persistent entities snapshot storage before child-thread shutdown, then commit
+// that snapshot after the producer queue has stopped and every promise is settled.
+class LuaStoredEntityScript final : public LuaBaseComponent {
+public:
+  explicit LuaStoredEntityScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this) {}
+  ~LuaStoredEntityScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    return m_update.template update<Ret>(std::forward<V>(args)...);
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const { return m_storage.getScriptStorage(); }
+  [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage) { return m_storage.setScriptStorage(std::move(storage)); }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_storage.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto storage = m_storage.readStorage();
+    auto stopped = m_update.contextShutdown();
+    auto shutdown = LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+    return m_storage.finishShutdown(std::move(storage), std::move(shutdown));
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptStorage m_storage;
+  LuaScriptMessages m_messages;
+};
 
 }
 
@@ -564,8 +535,14 @@ export namespace Star {
   using ::Star::LuaComponentExceptionTag;
   using ::Star::LuaComponentException;
   using ::Star::LuaBaseComponent;
-  using ::Star::LuaStorableComponent;
-  using ::Star::LuaUpdatableComponent;
-  using ::Star::LuaWorldComponent;
-  using ::Star::LuaMessageHandlingComponent;
+  using ::Star::LuaScriptStorage;
+  using ::Star::LuaScriptUpdate;
+  using ::Star::LuaScriptWorld;
+  using ::Star::LuaScriptMessages;
+  using ::Star::LuaWorldScript;
+  using ::Star::LuaUpdateScript;
+  using ::Star::LuaMessageScript;
+  using ::Star::LuaWorldUpdateScript;
+  using ::Star::LuaEntityScript;
+  using ::Star::LuaStoredEntityScript;
 }

@@ -56,11 +56,11 @@ std::expected<void, StarException> Statistics::writeStatistics() {
   if (!versioningDatabase) return std::unexpected(std::move(versioningDatabase.error()));
   String filename = File::relativeTo(m_storageDirectory, "statistics");
 
-  Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
-      return std::make_pair(entry.first, entry.second.toJson());
-    }));
+  JsonObject stats;
+  for (auto const& entry : m_stats)
+    stats.set(entry.first, entry.second.toJson());
   JsonObject storage = {
-      { "stats", stats },
+      { "stats", std::move(stats) },
       { "achievements", jsonFromStringSet(m_achievements) }
     };
 

@@ -1057,12 +1057,12 @@ std::expected<std::shared_ptr<Quest>, StarException> createPreviewQuest(
   auto portrait = jsonFromList(*drawables, [](Drawable const& drawable) { return drawable.toJson(); });
   if (!portrait) return std::unexpected(std::move(portrait.error()));
   JsonObject paramJson = (*config)->parameterExamples;
-  for (auto const& name : paramJson.keys()) {
-    auto typed = paramJson[name].set("type", (*config)->parameterTypes[name]);
+  for (auto& [name, parameter] : paramJson) {
+    auto typed = parameter.set("type", (*config)->parameterTypes[name]);
     if (!typed) return std::unexpected(std::move(typed.error()));
     auto pictured = typed->set("portrait", *portrait);
     if (!pictured) return std::unexpected(std::move(pictured.error()));
-    paramJson[name] = std::move(*pictured);
+    parameter = std::move(*pictured);
   }
   auto parameters = questParamsFromJson(paramJson);
   if (!parameters) return std::unexpected(std::move(parameters.error()));

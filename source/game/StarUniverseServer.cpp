@@ -813,7 +813,7 @@ std::expected<bool, StarException> UniverseServer::updatePlanetType(CelestialCoo
   if (auto updated = m_celestialDatabase->updateParameters(coordinate, **parameters); !updated)
     return std::unexpected(std::move(updated.error()));
   ReadLocker clientsLocker(m_clientsLock);
-  for (auto clientId : m_clients.keys()) {
+  for (auto clientId : m_clients | std::views::keys) {
     if (auto sent = m_connectionServer->sendPackets(clientId, {std::make_shared<PlanetTypeUpdatePacket>(coordinate)}); !sent)
       return std::unexpected(std::move(sent.error()));
   }
@@ -1451,7 +1451,7 @@ std::expected<void, StarException> UniverseServer::sendClockUpdates() {
   auto now = Time::monotonicMilliseconds();
   if (now > m_lastClockUpdateSent + *interval) {
     auto packet = std::make_shared<UniverseTimeUpdatePacket>(m_universeClock->time());
-    for (auto clientId : m_clients.keys()) {
+    for (auto clientId : m_clients | std::views::keys) {
       if (m_disconnectingClients.contains(clientId))
         continue;
       if (auto sent = m_connectionServer->sendPackets(clientId, {packet}); !sent)
@@ -2763,7 +2763,10 @@ std::expected<void, StarException> UniverseServer::loadTempWorldIndex() {
     }
   }
 
-  auto indexed = m_tempWorldIndex.keys().transformed([this](InstanceWorldId const& world) { return tempWorldFile(world); });
+  List<String> indexed;
+  indexed.reserve(m_tempWorldIndex.size());
+  for (auto const& entry : m_tempWorldIndex)
+    indexed.append(tempWorldFile(entry.first));
   auto files = File::dirList(m_storageDirectory);
   if (!files)
     return std::unexpected(std::move(files.error()));
@@ -3922,7 +3925,7 @@ std::expected<void, StarException> UniverseServer::doDisconnection(ConnectionId 
   if (persisted && departed)
     record(m_root.logger().info("UniverseServer: Client {} disconnected for reason: {}", client->descriptiveName(), reason));
   auto players = static_cast<std::uint16_t>(m_clients.size());
-  for (auto id : m_clients.keys()) {
+  for (auto id : m_clients | std::views::keys) {
     if (m_connectionServer->hasConnection(id))
       record(m_connectionServer->sendPackets(id, {std::make_shared<ServerInfoPacket>(players, static_cast<std::uint16_t>(m_maxPlayers))}));
   }

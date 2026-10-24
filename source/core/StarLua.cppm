@@ -90,6 +90,9 @@ template <typename T>
 class LuaVariadic : public List<T> {
 public:
   using List<T>::List;
+  LuaVariadic() = default;
+  LuaVariadic(List<T> const& values) : List<T>(values) {}
+  LuaVariadic(List<T>&& values) : List<T>(std::move(values)) {}
 };
 
 // Unpack a container and apply each of the arguments separately to a lua
@@ -1171,11 +1174,8 @@ struct LuaConverter<SmallList<T, MaxStackSize>> : LuaContainerConverter<SmallLis
 template <>
 struct LuaConverter<StringList> : LuaContainerConverter<StringList> {};
 
-template <typename T, typename Compare, typename Allocator>
-struct LuaConverter<Set<T, Compare, Allocator>> : LuaContainerConverter<Set<T, Compare, Allocator>> {};
-
-template <typename BaseSet>
-struct LuaConverter<HashSetMixin<BaseSet>> : LuaContainerConverter<HashSetMixin<BaseSet>> {};
+template <SetContainer Container>
+struct LuaConverter<Container> : LuaContainerConverter<Container> {};
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
 struct LuaConverter<Map<Key, Value, Compare, Allocator>> : LuaMapConverter<Map<Key, Value, Compare, Allocator>> {};
@@ -2577,11 +2577,8 @@ export namespace Star {
   template <>
   struct LuaConverter<StringList>;
 
-  template <typename T, typename Compare, typename Allocator>
-  struct LuaConverter<Set<T, Compare, Allocator>>;
-
-  template <typename BaseSet>
-  struct LuaConverter<HashSetMixin<BaseSet>>;
+  template <SetContainer Container>
+  struct LuaConverter<Container>;
 
   template <typename Key, typename Value, typename Compare, typename Allocator>
   struct LuaConverter<Map<Key, Value, Compare, Allocator>>;

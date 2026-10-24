@@ -207,7 +207,8 @@ std::expected<Json, StarException> StatusController::diskStore() const {
   for (auto const& pair : m_persistentEffects) {
     List<PersistentStatusEffect> persistentEffects;
     persistentEffects.appendAll(pair.second.statModifiers.transformed(construct<PersistentStatusEffect>()));
-    persistentEffects.appendAll(pair.second.uniqueEffects.values().transformed(construct<PersistentStatusEffect>()));
+    for (auto const& effect : pair.second.uniqueEffects)
+      persistentEffects.append(PersistentStatusEffect(effect));
     JsonArray effects;
     for (auto const& effect : persistentEffects) {
       auto json = jsonFromPersistentStatusEffect(effect);

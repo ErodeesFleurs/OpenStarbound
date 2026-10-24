@@ -94,7 +94,7 @@ private:
   Json m_config;
   StringMap<List<std::shared_ptr<Companion>>> m_companions;
 
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
+  LuaStoredEntityScript
       m_scriptComponent;
 };
 

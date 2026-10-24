@@ -1717,9 +1717,10 @@ std::expected<void, StarException> WorldGenerator::generateMicroDungeons(WorldSt
   }
   
   // placementQueue's pointers are no longer used once compaction begins.
-  std::erase_if(m_queuedPlacements, [](QueuedPlacement const& p) {
+  auto fulfilledPlacements = std::ranges::remove_if(m_queuedPlacements, [](QueuedPlacement const& p) {
     return p.fulfilled;
   });
+  m_queuedPlacements.erase(fulfilledPlacements.begin(), fulfilledPlacements.end());
 
   return {};
 }

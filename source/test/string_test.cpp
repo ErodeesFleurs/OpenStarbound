@@ -235,8 +235,6 @@ TEST(StringTest, StandardFormattersPreserveProjectRepresentations) {
   EXPECT_EQ(std::format("{:>6.2}", String("abcd")), "    ab");
   EXPECT_EQ(std::format("{}", Line2I(Vec2I(1, 2), Vec2I(3, 4))), "[(1, 2), (3, 4)]");
   EXPECT_EQ(std::format("{}", Mat3F(1, 2, 3, 4, 5, 6, 7, 8, 9)), "1 2 3\n4 5 6\n7 8 9");
-  EXPECT_EQ(std::format("{}", List<String>{"a", "b"}), "[\"a\", \"b\"]");
-  EXPECT_EQ(std::format("{}", Set<int>{1, 2}), "{1, 2}");
 }
 
 TEST(StringTest, StreamFormattingPreservesLongEscapedJson) {

@@ -329,7 +329,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> refreshHumanoidParameters();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaAnimationScript m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
@@ -359,7 +359,7 @@ private:
   NetElementBool m_aggressive;
 
   List<std::shared_ptr<BehaviorState>> m_behaviors;
-  mutable LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
+  mutable LuaActorScript m_scriptComponent;
 
   List<ChatAction> m_pendingChatActions;
   NetElementEvent m_newChatMessageEvent;

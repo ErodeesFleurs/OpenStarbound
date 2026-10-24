@@ -240,8 +240,8 @@ protected:
 
   PolyF volume() const;
 
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaStoredEntityScript m_scriptComponent;
+  mutable LuaAnimationScript m_scriptedAnimator;
 
   NetElementTopGroup m_netGroup;
   NetElementBool m_interactive;

@@ -146,7 +146,7 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldServer, World>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldServer>(); }
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
+  typedef LuaEntityScript ScriptComponent;
   typedef std::function<std::expected<void, StarException>(Json const&)> WorldPropertyListener;
 
   // Create a new world with the given template, writing new storage file.

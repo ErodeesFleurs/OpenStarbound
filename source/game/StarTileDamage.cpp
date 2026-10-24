@@ -158,14 +158,14 @@ TileDamageParameters TileDamageParameters::sum(TileDamageParameters const& other
   result.m_requiredHarvestLevel = std::max(m_requiredHarvestLevel, other.m_requiredHarvestLevel);
   result.m_maximumEffectTime = std::max(m_maximumEffectTime, other.m_maximumEffectTime);
 
-  for (auto key : m_damages.keys()) {
+  for (auto const& key : m_damages.keyView()) {
     if (other.m_damages.contains(key))
       result.m_damages[key] = result.m_totalHealth / ((m_totalHealth / m_damages.value(key, 0)) + (other.m_totalHealth / other.m_damages.value(key, 0)));
     else
       result.m_damages[key] = m_damages.value(key, 0);
   }
 
-  for (auto key : m_damages.keys()) {
+  for (auto const& key : m_damages.keyView()) {
     if (m_damages.contains(key))
       result.m_damages[key] = result.m_totalHealth / ((m_totalHealth / m_damages.value(key, 0)) + (other.m_totalHealth / other.m_damages.value(key, 0)));
     else

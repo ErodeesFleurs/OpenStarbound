@@ -101,12 +101,16 @@ std::expected<ShipUpgrades, StarException> ShipUpgrades::create(Json config) {
 }
 
 Json ShipUpgrades::toJson() const {
+  JsonArray capabilitiesJson;
+  capabilitiesJson.reserve(capabilities.size());
+  for (auto const& capability : capabilities)
+    capabilitiesJson.append(capability);
   return JsonObject{{"shipLevel", shipLevel},
       {"maxFuel", maxFuel},
       {"crewSize", crewSize},
       {"fuelEfficiency", fuelEfficiency},
       {"shipSpeed", shipSpeed},
-      {"capabilities", capabilities.values().transformed(construct<Json>())}};
+      {"capabilities", std::move(capabilitiesJson)}};
 }
 
 std::expected<ShipUpgrades*, StarException> ShipUpgrades::apply(Json const& upgrades) {

@@ -162,7 +162,7 @@ private:
 
     TechConfig config;
 
-    LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
+    LuaActorScript
         scriptComponent;
     bool visible;
     bool toolUsageSuppressed;

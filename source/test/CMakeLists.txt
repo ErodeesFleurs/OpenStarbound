@@ -84,6 +84,7 @@ set (star_game_tests_SOURCES
       function_test.cpp
       item_test.cpp
       liquid_types_test.cpp
+      lua_component_test.cpp
       material_types_test.cpp
       root_test.cpp
       server_test.cpp

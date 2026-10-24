@@ -14,111 +14,158 @@ import star.format;
 import star.algorithm;
 namespace Star {
 
-template <typename BaseList>
-class ListMixin : public BaseList {
-public:
-  typedef BaseList Base;
+// Only explicitly opted-in owning sequences participate in generic codecs.
+template <typename T>
+concept SequenceContainer = requires { typename std::remove_cvref_t<T>::SequenceContainerTag; }
+    && std::ranges::range<T>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
-  using AppendResult = decltype(std::declval<Base&>().push_back(std::declval<value_type>()));
+namespace SequenceAlgorithms {
 
-  ListMixin();
-  ListMixin(Base const& list);
-  ListMixin(Base&& list);
-  ListMixin(value_type const* p, std::size_t count) requires (!requires { Base::MaximumSize; });
-  template <typename InputIterator>
-  ListMixin(InputIterator beg, InputIterator end) requires (!requires { Base::MaximumSize; });
-  explicit ListMixin(std::size_t len, const_reference s1 = value_type()) requires (!requires { Base::MaximumSize; });
-  ListMixin(std::initializer_list<value_type> list) requires (!requires { Base::MaximumSize; });
+template <std::ranges::input_range Range, std::ranges::input_range Container>
+auto appendAll(Range& list, Container&& source)
+    -> decltype(list.push_back(std::declval<std::ranges::range_value_t<Range>>())) {
+  using AppendResult = decltype(list.push_back(std::declval<std::ranges::range_value_t<Range>>()));
+  for (auto& e : source) {
+    if constexpr (std::is_void_v<AppendResult>) {
+      if constexpr (std::is_rvalue_reference_v<Container&&>)
+        list.push_back(std::move(e));
+      else
+        list.push_back(e);
+    } else {
+      auto added = [&] {
+        if constexpr (std::is_rvalue_reference_v<Container&&>)
+          return list.push_back(std::move(e));
+        else
+          return list.push_back(e);
+      }();
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+    }
+  }
+  if constexpr (!std::is_void_v<AppendResult>)
+    return {};
+}
 
-  [[nodiscard]]
-  AppendResult append(value_type e);
+template <std::ranges::forward_range Range>
+std::size_t remove(Range& list, std::ranges::range_value_t<Range> const& e) {
+  // Erase immediately: e may alias an element, and subsequent comparisons can
+  // observe each erase's moves and destructions.
+  std::size_t removed = 0;
+  auto i = list.begin();
+  while (i != list.end()) {
+    if (*i == e) {
+      ++removed;
+      i = list.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return removed;
+}
 
-  template <typename Container>
-  [[nodiscard]]
-  AppendResult appendAll(Container&& list);
+template <std::ranges::forward_range Range, typename Filter>
+auto filter(Range& list, Filter&& filter) {
+  using reference = std::ranges::range_reference_t<Range>;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Filter&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  auto destination = list.begin();
+  for (auto source = list.begin(); source != list.end(); ++source) {
+    bool keep;
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto accepted = std::invoke(filter, *source);
+      if (!accepted)
+        return Status(std::unexpected(std::move(accepted.error())));
+      keep = static_cast<bool>(*accepted);
+    } else {
+      keep = static_cast<bool>(std::invoke(filter, *source));
+    }
+    if (keep) {
+      if (destination != source)
+        *destination = std::move(*source);
+      ++destination;
+    }
+  }
+  list.erase(destination, list.end());
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
+}
 
-  template <class... Args>
-  reference emplaceAppend(Args&&... args) requires std::is_void_v<AppendResult>;
-  template <class... Args>
-  [[nodiscard]]
-  std::expected<value_type*, StarException> emplaceAppend(Args&&... args) requires (!std::is_void_v<AppendResult>);
+template <std::ranges::forward_range Range, typename Function>
+auto exec(Range& list, Function&& function) {
+  using reference = std::ranges::range_reference_t<Range>;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  for (auto& e : list) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto result = std::invoke(function, e);
+      if (!result)
+        return Status(std::unexpected(std::move(result.error())));
+    } else {
+      std::invoke(function, e);
+    }
+  }
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
+}
 
-  [[nodiscard]]
-  std::expected<value_type*, StarException> first();
-  [[nodiscard]]
-  std::expected<value_type const*, StarException> first() const;
+template <std::ranges::forward_range Range, typename Function>
+auto transform(Range& list, Function&& function) {
+  using reference = std::ranges::range_reference_t<Range>;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
+  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
+  for (auto& e : list) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      auto result = std::invoke(function, e);
+      if (!result)
+        return Status(std::unexpected(std::move(result.error())));
+      e = std::move(*result);
+    } else {
+      e = std::invoke(function, e);
+    }
+  }
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    return Status();
+}
 
-  [[nodiscard]]
-  std::expected<value_type*, StarException> last();
-  [[nodiscard]]
-  std::expected<value_type const*, StarException> last() const;
+template <std::ranges::forward_range Range, typename Function>
+auto any(Range& list, Function&& function) {
+  using const_reference = std::ranges::range_reference_t<Range>;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
+  for (auto const& e : list) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      decltype(auto) accepted = std::invoke(std::as_const(function), e);
+      if (!accepted)
+        return Result(std::unexpected(std::move(accepted.error())));
+      if (static_cast<bool>(*accepted))
+        return Result(true);
+    } else if (static_cast<bool>(std::invoke(std::as_const(function), e))) {
+      return Result(true);
+    }
+  }
+  return Result(false);
+}
 
-  std::optional<value_type> maybeFirst();
-  std::optional<value_type> maybeLast();
+template <std::ranges::forward_range Range, typename Function>
+auto all(Range& list, Function&& function) {
+  using const_reference = std::ranges::range_reference_t<Range>;
+  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
+  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
+  for (auto const& e : list) {
+    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+      decltype(auto) accepted = std::invoke(std::as_const(function), e);
+      if (!accepted)
+        return Result(std::unexpected(std::move(accepted.error())));
+      if (!static_cast<bool>(*accepted))
+        return Result(false);
+    } else if (!static_cast<bool>(std::invoke(std::as_const(function), e))) {
+      return Result(false);
+    }
+  }
+  return Result(true);
+}
 
-  [[nodiscard]]
-  std::expected<void, StarException> removeLast();
-  [[nodiscard]]
-  std::expected<value_type, StarException> takeLast();
-
-  std::optional<value_type> maybeTakeLast();
-
-  // Limit the size of the list by removing elements from the back until the
-  // size is the maximumSize or less.
-  void limitSizeBack(std::size_t maximumSize);
-
-  std::size_t count() const;
-
-  bool contains(const_reference e) const;
-  // Remove all equal to element, returns number removed.
-  std::size_t remove(const_reference e);
-
-  template <typename Filter>
-  [[nodiscard]]
-  auto filter(Filter&& filter);
-
-  template <typename Self, typename Filter>
-  [[nodiscard]]
-  auto filtered(this Self const& self, Filter&& filter);
-
-  template <typename Comparator>
-  [[nodiscard]]
-  AppendResult insertSorted(value_type e, Comparator&& comparator);
-  [[nodiscard]]
-  AppendResult insertSorted(value_type e);
-
-  // Returns true if this *sorted* list contains the given element.
-  template <typename Comparator>
-  bool containsSorted(value_type const& e, Comparator&& comparator);
-  bool containsSorted(value_type e);
-
-  template <typename Function>
-  [[nodiscard]]
-  auto exec(Function&& function);
-
-  template <typename Function>
-  [[nodiscard]]
-  auto exec(Function&& function) const;
-
-  template <typename Function>
-  [[nodiscard]]
-  auto transform(Function&& function);
-
-  template <typename Function>
-  [[nodiscard]]
-  auto any(Function&& function) const;
-  [[nodiscard]] auto any() const;
-
-  template <typename Function>
-  [[nodiscard]]
-  auto all(Function&& function) const;
-  [[nodiscard]] auto all() const;
-};
+}
 
 template <typename List>
 class ListHasher {
@@ -129,121 +176,97 @@ private:
   hash<typename List::value_type> elemHasher;
 };
 
-template <typename BaseList>
-class RandomAccessListMixin : public BaseList {
-public:
-  typedef BaseList Base;
-
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
-  using AppendResult = typename Base::AppendResult;
-
-  using Base::Base;
-
-  template <typename Comparator>
-  void sort(Comparator&& comparator);
-  void sort();
-
-  void reverse();
-
-  // Returns first index of given element, NPos if not found.
-  std::size_t indexOf(const_reference e, std::size_t from = 0) const;
-  // Returns last index of given element, NPos if not found.
-  std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const;
-
-  [[nodiscard]]
-  std::expected<value_type const*, StarException> at(std::size_t n) const;
-  [[nodiscard]]
-  std::expected<value_type*, StarException> at(std::size_t n);
-
-  const_reference operator[](std::size_t n) const;
-  reference operator[](std::size_t n);
-
-  // Does not throw if n is beyond end of list, instead returns def
-  value_type get(std::size_t n, value_type def = value_type()) const;
-
-  [[nodiscard]]
-  std::expected<value_type, StarException> takeAt(std::size_t i);
-
-  // Same as at, but wraps around back to the beginning.
-  [[nodiscard]]
-  std::expected<value_type const*, StarException> wrap(std::size_t n) const;
-  [[nodiscard]]
-  std::expected<value_type*, StarException> wrap(std::size_t n);
-
-  // Does not throw if list is empty
-  value_type wrap(std::size_t n, value_type def) const;
-
-  void eraseAt(std::size_t index);
-  // Erases region from begin to end, not including end.
-  void eraseAt(std::size_t begin, std::size_t end);
-
-  [[nodiscard]]
-  AppendResult insertAt(std::size_t pos, value_type e);
-
-  template <typename Container>
-  [[nodiscard]]
-  AppendResult insertAllAt(std::size_t pos, Container const& l);
-
-  // Ensures that list is large enough to hold pos elements.
-  [[nodiscard]]
-  AppendResult set(std::size_t pos, value_type e);
-
-  void swap(std::size_t i, std::size_t j);
-  // same as insert(to, takeAt(from))
-  [[nodiscard]]
-  std::expected<void, StarException> move(std::size_t from, std::size_t to);
-};
-
-template <typename BaseList>
-class FrontModifyingListMixin : public BaseList {
-public:
-  typedef BaseList Base;
-
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
-
-  using Base::Base;
-
-  void prepend(value_type e);
-
-  template <typename Container>
-  void prependAll(Container&& list);
-
-  template <class... Args>
-  reference emplacePrepend(Args&&... args);
-
-  [[nodiscard]]
-  std::expected<void, StarException> removeFirst();
-  [[nodiscard]]
-  std::expected<value_type, StarException> takeFirst();
-
-  // Limit the size of the list by removing elements from the front until the
-  // size is the maximumSize or less.
-  void limitSizeFront(std::size_t maximumSize);
-};
-
 template <typename Element, typename Allocator = std::allocator<Element>>
-class List : public RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> {
-public:
-  typedef RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> Base;
+class List {
+  using Storage = std::vector<Element, Allocator>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+public:
+  using SequenceContainerTag = void;
+  using value_type = Element;
+  using reference = typename Storage::reference;
+  using const_reference = typename Storage::const_reference;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using reverse_iterator = typename Storage::reverse_iterator;
+  using const_reverse_iterator = typename Storage::const_reverse_iterator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using AppendResult = decltype(std::declval<Storage&>().push_back(std::declval<value_type>()));
+
+  List() = default;
+  List(Storage const& storage) : m_storage(storage) {}
+  List(Storage&& storage) : m_storage(std::move(storage)) {}
+  explicit List(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
+  List(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  template <std::input_iterator Iterator>
+  List(Iterator first, Iterator last) : m_storage(first, last) {}
+  List(std::initializer_list<value_type> values) {
+    for (auto const& value : values)
+      m_storage.push_back(value);
+  }
+
+  iterator begin() { return m_storage.begin(); }
+  const_iterator begin() const { return m_storage.begin(); }
+  const_iterator cbegin() const { return m_storage.begin(); }
+  iterator end() { return m_storage.end(); }
+  const_iterator end() const { return m_storage.end(); }
+  const_iterator cend() const { return m_storage.end(); }
+  reverse_iterator rbegin() { return m_storage.rbegin(); }
+  const_reverse_iterator rbegin() const { return m_storage.rbegin(); }
+  const_reverse_iterator crbegin() const { return m_storage.rbegin(); }
+  reverse_iterator rend() { return m_storage.rend(); }
+  const_reverse_iterator rend() const { return m_storage.rend(); }
+  const_reverse_iterator crend() const { return m_storage.rend(); }
+  std::size_t size() const { return m_storage.size(); }
+  bool empty() const { return m_storage.empty(); }
+  void clear() { m_storage.clear(); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *std::prev(end()); }
+  const_reference back() const { return *std::prev(end()); }
+  [[nodiscard]] AppendResult push_back(const_reference value) { return m_storage.push_back(value); }
+  [[nodiscard]] AppendResult push_back(value_type&& value) { return m_storage.push_back(std::move(value)); }
+  decltype(auto) pop_back() { return m_storage.pop_back(); }
+  template <typename... Args>
+  decltype(auto) emplace_back(Args&&... args) { return m_storage.emplace_back(std::forward<Args>(args)...); }
+  decltype(auto) resize(std::size_t size) { return m_storage.resize(size); }
+  decltype(auto) resize(std::size_t size, const_reference value) { return m_storage.resize(size, value); }
+  decltype(auto) insert(iterator pos, const_reference value) { return m_storage.insert(pos, value); }
+  decltype(auto) insert(iterator pos, value_type&& value) { return m_storage.insert(pos, std::move(value)); }
+  decltype(auto) insert(iterator pos, std::initializer_list<value_type> values) { return m_storage.insert(pos, values); }
+  template <typename Position, typename... Args>
+    requires requires(Storage& storage, Position pos, Args&&... args) { storage.insert(pos, std::forward<Args>(args)...); }
+  decltype(auto) insert(Position pos, Args&&... args) { return m_storage.insert(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) erase(Args&&... args) { return m_storage.erase(std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) emplace(iterator pos, Args&&... args) { return m_storage.emplace(pos, std::forward<Args>(args)...); }
+  decltype(auto) assign(std::initializer_list<value_type> values) { return m_storage.assign(values); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.assign(std::forward<Args>(args)...); }
+  decltype(auto) assign(Args&&... args) { return m_storage.assign(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.reserve(std::forward<Args>(args)...); }
+  decltype(auto) reserve(Args&&... args) { return m_storage.reserve(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.shrink_to_fit(std::forward<Args>(args)...); }
+  decltype(auto) shrink_to_fit(Args&&... args) { return m_storage.shrink_to_fit(std::forward<Args>(args)...); }
+  auto capacity() const requires requires(Storage const& storage) { storage.capacity(); } { return m_storage.capacity(); }
+  auto max_size() const requires requires(Storage const& storage) { storage.max_size(); } { return m_storage.max_size(); }
+  auto get_allocator() const requires requires(Storage const& storage) { storage.get_allocator(); } { return m_storage.get_allocator(); }
+  value_type* data() { return m_storage.data(); }
+  value_type const* data() const { return m_storage.data(); }
+  void swap(List& other) { std::swap(m_storage, other.m_storage); }
+  bool operator==(List const& other) const { return m_storage == other.m_storage; }
+  bool operator<(List const& other) const { return m_storage < other.m_storage; }
+  bool operator>(List const& other) const { return other < *this; }
+  bool operator<=(List const& other) const { return !(other < *this); }
+  bool operator>=(List const& other) const { return !(*this < other); }
 
   template <typename Container>
   static List from(Container const& c);
 
-  using Base::Base;
+
 
   // Pointer to contiguous storage, returns nullptr if empty
   value_type* ptr();
@@ -262,21 +285,440 @@ public:
   template <typename Function>
   [[nodiscard]]
   auto transformed(Function&& function) const;
+
+  auto append(value_type e) -> AppendResult {
+    return m_storage.push_back(std::move(e));
+  }
+
+  template <typename Container>
+  auto appendAll(Container&& list) -> AppendResult {
+    return SequenceAlgorithms::appendAll(*this, std::forward<Container>(list));
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> reference
+      requires std::is_void_v<AppendResult> {
+    m_storage.emplace_back(std::forward<Args>(args)...);
+    return *std::prev(m_storage.end());
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+      requires (!std::is_void_v<AppendResult>) {
+    auto added = m_storage.emplace_back(std::forward<Args>(args)...);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto first() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto first() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto last() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto last() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto maybeFirst() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *m_storage.begin());
+  }
+
+  auto maybeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *std::prev(m_storage.end()));
+  }
+
+  std::expected<void, StarException> removeLast() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+    m_storage.erase(std::prev(m_storage.end()));
+    return {};
+  }
+
+  auto takeLast() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return e;
+  }
+
+  auto maybeTakeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return std::optional<value_type>(std::in_place, std::move(e));
+  }
+
+  void limitSizeBack(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.erase(std::prev(m_storage.end()));
+  }
+
+  std::size_t count() const {
+    return m_storage.size();
+  }
+
+  bool contains(const_reference e) const {
+    return std::ranges::find(*this, e) != end();
+  }
+
+  std::size_t remove(const_reference e) {
+    return SequenceAlgorithms::remove(*this, e);
+  }
+
+  template <typename Filter>
+  auto filter(Filter&& filter) {
+    return SequenceAlgorithms::filter(*this, std::forward<Filter>(filter));
+  }
+
+  template <typename Self, typename Filter>
+  auto filtered(this Self const& self, Filter&& filter) {
+    Self list(self);
+    if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+      list.filter(std::forward<Filter>(filter));
+      return list;
+    } else {
+      auto filtered = list.filter(std::forward<Filter>(filter));
+      if (!filtered)
+        return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+      return std::expected<Self, StarException>(std::move(list));
+    }
+  }
+
+  template <typename Comparator>
+  auto insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted insertion requires a nonfallible bool comparator");
+    auto i = std::upper_bound(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(i, std::move(e));
+    } else {
+      auto added = m_storage.insert(i, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto insertSorted(value_type e) -> AppendResult {
+    return insertSorted(std::move(e), std::less<value_type>{});
+  }
+
+  template <typename Comparator>
+  bool containsSorted(value_type const& e, Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted lookup requires a nonfallible bool comparator");
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    return range.first != range.second;
+  }
+
+  bool containsSorted(value_type e) {
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e);
+    return range.first != range.second;
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) const {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto transform(Function&& function) {
+    return SequenceAlgorithms::transform(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto any(Function&& function) const {
+    return SequenceAlgorithms::any(*this, std::forward<Function>(function));
+  }
+
+  auto any() const {
+    return any([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Function>
+  auto all(Function&& function) const {
+    return SequenceAlgorithms::all(*this, std::forward<Function>(function));
+  }
+
+  auto all() const {
+    return all([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Comparator>
+  void sort(Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+        "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
+    std::sort(m_storage.begin(), m_storage.end(), std::forward<Comparator>(comparator));
+  }
+
+  void sort() {
+    std::sort(m_storage.begin(), m_storage.end(), std::less<value_type>());
+  }
+
+  void reverse() {
+    std::reverse(m_storage.begin(), m_storage.end());
+  }
+
+  std::size_t indexOf(const_reference e, std::size_t from = 0) const {
+    for (std::size_t i = from; i < m_storage.size(); ++i)
+      if (operator[](i) == e)
+        return i;
+    return NPos;
+  }
+
+  std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const {
+    std::size_t index = NPos;
+    std::size_t end = std::min(m_storage.size(), til);
+    for (std::size_t i = 0; i < end; ++i) {
+      if (operator[](i) == e)
+        index = i;
+    }
+    return index;
+  }
+
+  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto operator[](std::size_t n) const -> const_reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto operator[](std::size_t n) -> reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto get(std::size_t n, value_type def = value_type()) const -> value_type {
+    if (n >= m_storage.size())
+      return def;
+    return operator[](n);
+  }
+
+  auto takeAt(std::size_t i) -> std::expected<value_type, StarException> {
+    auto element = at(i);
+    if (!element)
+      return std::unexpected(std::move(element.error()));
+    value_type e = std::move(**element);
+    m_storage.erase(m_storage.begin() + i);
+    return e;
+  }
+
+  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n, value_type def) const -> value_type {
+    if (m_storage.empty())
+      return def;
+    else
+      return operator[](n % m_storage.size());
+  }
+
+  void eraseAt(std::size_t i) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((i < m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + i);
+  }
+
+  void eraseAt(std::size_t b, std::size_t e) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((b < m_storage.size() && e <= m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + b, m_storage.begin() + e);
+  }
+
+  auto insertAt(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, std::move(e));
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  template <typename Container>
+  auto insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto set(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (std::is_void_v<AppendResult>) {
+      if (pos >= m_storage.size())
+        m_storage.resize(pos + 1);
+      operator[](pos) = std::move(e);
+    } else {
+      if (pos == std::numeric_limits<std::size_t>::max())
+        return std::unexpected(OutOfRangeException("List::set index overflows size"));
+      if (pos >= m_storage.size()) {
+        auto resized = m_storage.resize(pos + 1);
+        if (!resized)
+          return std::unexpected(std::move(resized.error()));
+      }
+      operator[](pos) = std::move(e);
+      return {};
+    }
+  }
+
+  void swap(std::size_t i, std::size_t j) {
+    std::swap(operator[](i), operator[](j));
+  }
+
+  std::expected<void, StarException> move(std::size_t from, std::size_t to) {
+    if (from >= m_storage.size() || to >= m_storage.size())
+      return std::unexpected(OutOfRangeException("List::move index out of range"));
+    if (from < to)
+      std::rotate(m_storage.begin() + from, m_storage.begin() + from + 1, m_storage.begin() + to + 1);
+    else if (to < from)
+      std::rotate(m_storage.begin() + to, m_storage.begin() + from, m_storage.begin() + from + 1);
+    return {};
+  }
+
+private:
+  Storage m_storage;
 };
 
-template <typename Element, typename Allocator>
-struct hash<List<Element, Allocator>> : public ListHasher<List<Element, Allocator>> {};
-
 template <typename Element, std::size_t MaxSize>
-class StaticList : public RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> {
-public:
-  typedef RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> Base;
+class StaticList {
+  using Storage = StaticVector<Element, MaxSize>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+public:
+  using SequenceContainerTag = void;
+  using value_type = Element;
+  using reference = typename Storage::reference;
+  using const_reference = typename Storage::const_reference;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using reverse_iterator = typename Storage::reverse_iterator;
+  using const_reverse_iterator = typename Storage::const_reverse_iterator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using AppendResult = decltype(std::declval<Storage&>().push_back(std::declval<value_type>()));
+
+  StaticList() = default;
+  StaticList(Storage const& storage) : m_storage(storage) {}
+  StaticList(Storage&& storage) : m_storage(std::move(storage)) {}
+  static constexpr std::size_t MaximumSize = MaxSize;
+
+  iterator begin() { return m_storage.begin(); }
+  const_iterator begin() const { return m_storage.begin(); }
+  const_iterator cbegin() const { return m_storage.begin(); }
+  iterator end() { return m_storage.end(); }
+  const_iterator end() const { return m_storage.end(); }
+  const_iterator cend() const { return m_storage.end(); }
+  reverse_iterator rbegin() { return m_storage.rbegin(); }
+  const_reverse_iterator rbegin() const { return m_storage.rbegin(); }
+  const_reverse_iterator crbegin() const { return m_storage.rbegin(); }
+  reverse_iterator rend() { return m_storage.rend(); }
+  const_reverse_iterator rend() const { return m_storage.rend(); }
+  const_reverse_iterator crend() const { return m_storage.rend(); }
+  std::size_t size() const { return m_storage.size(); }
+  bool empty() const { return m_storage.empty(); }
+  void clear() { m_storage.clear(); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *std::prev(end()); }
+  const_reference back() const { return *std::prev(end()); }
+  [[nodiscard]] AppendResult push_back(const_reference value) { return m_storage.push_back(value); }
+  [[nodiscard]] AppendResult push_back(value_type&& value) { return m_storage.push_back(std::move(value)); }
+  decltype(auto) pop_back() { return m_storage.pop_back(); }
+  template <typename... Args>
+  decltype(auto) emplace_back(Args&&... args) { return m_storage.emplace_back(std::forward<Args>(args)...); }
+  decltype(auto) resize(std::size_t size) { return m_storage.resize(size); }
+  decltype(auto) resize(std::size_t size, const_reference value) { return m_storage.resize(size, value); }
+  decltype(auto) insert(iterator pos, const_reference value) { return m_storage.insert(pos, value); }
+  decltype(auto) insert(iterator pos, value_type&& value) { return m_storage.insert(pos, std::move(value)); }
+  decltype(auto) insert(iterator pos, std::initializer_list<value_type> values) { return m_storage.insert(pos, values); }
+  template <typename Position, typename... Args>
+    requires requires(Storage& storage, Position pos, Args&&... args) { storage.insert(pos, std::forward<Args>(args)...); }
+  decltype(auto) insert(Position pos, Args&&... args) { return m_storage.insert(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) erase(Args&&... args) { return m_storage.erase(std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) emplace(iterator pos, Args&&... args) { return m_storage.emplace(pos, std::forward<Args>(args)...); }
+  decltype(auto) assign(std::initializer_list<value_type> values) { return m_storage.assign(values); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.assign(std::forward<Args>(args)...); }
+  decltype(auto) assign(Args&&... args) { return m_storage.assign(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.reserve(std::forward<Args>(args)...); }
+  decltype(auto) reserve(Args&&... args) { return m_storage.reserve(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.shrink_to_fit(std::forward<Args>(args)...); }
+  decltype(auto) shrink_to_fit(Args&&... args) { return m_storage.shrink_to_fit(std::forward<Args>(args)...); }
+  auto capacity() const requires requires(Storage const& storage) { storage.capacity(); } { return m_storage.capacity(); }
+  auto max_size() const requires requires(Storage const& storage) { storage.max_size(); } { return m_storage.max_size(); }
+  auto get_allocator() const requires requires(Storage const& storage) { storage.get_allocator(); } { return m_storage.get_allocator(); }
+  value_type* ptr() { return m_storage.ptr(); }
+  value_type const* ptr() const { return m_storage.ptr(); }
+  void swap(StaticList& other) { std::swap(m_storage, other.m_storage); }
+  bool operator==(StaticList const& other) const { return m_storage == other.m_storage; }
+  bool operator<(StaticList const& other) const { return m_storage < other.m_storage; }
+  bool operator>(StaticList const& other) const { return other < *this; }
+  bool operator<=(StaticList const& other) const { return !(other < *this); }
+  bool operator>=(StaticList const& other) const { return !(*this < other); }
 
   template <typename Container>
   [[nodiscard]]
@@ -289,7 +731,7 @@ public:
   [[nodiscard]]
   static std::expected<StaticList, StarException> create(std::size_t size, Element const& value = Element());
 
-  using Base::Base;
+
 
   [[nodiscard]]
   std::expected<StaticList, StarException> slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
@@ -305,26 +747,448 @@ public:
   template <typename Function>
   [[nodiscard]]
   auto transformed(Function&& function) const;
+
+  auto append(value_type e) -> AppendResult {
+    return m_storage.push_back(std::move(e));
+  }
+
+  template <typename Container>
+  auto appendAll(Container&& list) -> AppendResult {
+    return SequenceAlgorithms::appendAll(*this, std::forward<Container>(list));
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> reference
+      requires std::is_void_v<AppendResult> {
+    m_storage.emplace_back(std::forward<Args>(args)...);
+    return *std::prev(m_storage.end());
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+      requires (!std::is_void_v<AppendResult>) {
+    auto added = m_storage.emplace_back(std::forward<Args>(args)...);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto first() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto first() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto last() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto last() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto maybeFirst() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *m_storage.begin());
+  }
+
+  auto maybeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *std::prev(m_storage.end()));
+  }
+
+  std::expected<void, StarException> removeLast() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+    m_storage.erase(std::prev(m_storage.end()));
+    return {};
+  }
+
+  auto takeLast() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return e;
+  }
+
+  auto maybeTakeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return std::optional<value_type>(std::in_place, std::move(e));
+  }
+
+  void limitSizeBack(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.erase(std::prev(m_storage.end()));
+  }
+
+  std::size_t count() const {
+    return m_storage.size();
+  }
+
+  bool contains(const_reference e) const {
+    return std::ranges::find(*this, e) != end();
+  }
+
+  std::size_t remove(const_reference e) {
+    return SequenceAlgorithms::remove(*this, e);
+  }
+
+  template <typename Filter>
+  auto filter(Filter&& filter) {
+    return SequenceAlgorithms::filter(*this, std::forward<Filter>(filter));
+  }
+
+  template <typename Self, typename Filter>
+  auto filtered(this Self const& self, Filter&& filter) {
+    Self list(self);
+    if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+      list.filter(std::forward<Filter>(filter));
+      return list;
+    } else {
+      auto filtered = list.filter(std::forward<Filter>(filter));
+      if (!filtered)
+        return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+      return std::expected<Self, StarException>(std::move(list));
+    }
+  }
+
+  template <typename Comparator>
+  auto insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted insertion requires a nonfallible bool comparator");
+    auto i = std::upper_bound(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(i, std::move(e));
+    } else {
+      auto added = m_storage.insert(i, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto insertSorted(value_type e) -> AppendResult {
+    return insertSorted(std::move(e), std::less<value_type>{});
+  }
+
+  template <typename Comparator>
+  bool containsSorted(value_type const& e, Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted lookup requires a nonfallible bool comparator");
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    return range.first != range.second;
+  }
+
+  bool containsSorted(value_type e) {
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e);
+    return range.first != range.second;
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) const {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto transform(Function&& function) {
+    return SequenceAlgorithms::transform(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto any(Function&& function) const {
+    return SequenceAlgorithms::any(*this, std::forward<Function>(function));
+  }
+
+  auto any() const {
+    return any([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Function>
+  auto all(Function&& function) const {
+    return SequenceAlgorithms::all(*this, std::forward<Function>(function));
+  }
+
+  auto all() const {
+    return all([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Comparator>
+  void sort(Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+        "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
+    std::sort(m_storage.begin(), m_storage.end(), std::forward<Comparator>(comparator));
+  }
+
+  void sort() {
+    std::sort(m_storage.begin(), m_storage.end(), std::less<value_type>());
+  }
+
+  void reverse() {
+    std::reverse(m_storage.begin(), m_storage.end());
+  }
+
+  std::size_t indexOf(const_reference e, std::size_t from = 0) const {
+    for (std::size_t i = from; i < m_storage.size(); ++i)
+      if (operator[](i) == e)
+        return i;
+    return NPos;
+  }
+
+  std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const {
+    std::size_t index = NPos;
+    std::size_t end = std::min(m_storage.size(), til);
+    for (std::size_t i = 0; i < end; ++i) {
+      if (operator[](i) == e)
+        index = i;
+    }
+    return index;
+  }
+
+  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto operator[](std::size_t n) const -> const_reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto operator[](std::size_t n) -> reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto get(std::size_t n, value_type def = value_type()) const -> value_type {
+    if (n >= m_storage.size())
+      return def;
+    return operator[](n);
+  }
+
+  auto takeAt(std::size_t i) -> std::expected<value_type, StarException> {
+    auto element = at(i);
+    if (!element)
+      return std::unexpected(std::move(element.error()));
+    value_type e = std::move(**element);
+    m_storage.erase(m_storage.begin() + i);
+    return e;
+  }
+
+  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n, value_type def) const -> value_type {
+    if (m_storage.empty())
+      return def;
+    else
+      return operator[](n % m_storage.size());
+  }
+
+  void eraseAt(std::size_t i) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((i < m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + i);
+  }
+
+  void eraseAt(std::size_t b, std::size_t e) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((b < m_storage.size() && e <= m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + b, m_storage.begin() + e);
+  }
+
+  auto insertAt(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, std::move(e));
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  template <typename Container>
+  auto insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto set(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (std::is_void_v<AppendResult>) {
+      if (pos >= m_storage.size())
+        m_storage.resize(pos + 1);
+      operator[](pos) = std::move(e);
+    } else {
+      if (pos == std::numeric_limits<std::size_t>::max())
+        return std::unexpected(OutOfRangeException("List::set index overflows size"));
+      if (pos >= m_storage.size()) {
+        auto resized = m_storage.resize(pos + 1);
+        if (!resized)
+          return std::unexpected(std::move(resized.error()));
+      }
+      operator[](pos) = std::move(e);
+      return {};
+    }
+  }
+
+  void swap(std::size_t i, std::size_t j) {
+    std::swap(operator[](i), operator[](j));
+  }
+
+  std::expected<void, StarException> move(std::size_t from, std::size_t to) {
+    if (from >= m_storage.size() || to >= m_storage.size())
+      return std::unexpected(OutOfRangeException("List::move index out of range"));
+    if (from < to)
+      std::rotate(m_storage.begin() + from, m_storage.begin() + from + 1, m_storage.begin() + to + 1);
+    else if (to < from)
+      std::rotate(m_storage.begin() + to, m_storage.begin() + from, m_storage.begin() + from + 1);
+    return {};
+  }
+
+private:
+  Storage m_storage;
 };
 
 template <typename Element, std::size_t MaxStackSize>
-struct hash<StaticList<Element, MaxStackSize>> : public ListHasher<StaticList<Element, MaxStackSize>> {};
+class SmallList {
+  using Storage = SmallVector<Element, MaxStackSize>;
 
-template <typename Element, std::size_t MaxStackSize>
-class SmallList : public RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> Base;
+  using SequenceContainerTag = void;
+  using value_type = Element;
+  using reference = typename Storage::reference;
+  using const_reference = typename Storage::const_reference;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using reverse_iterator = typename Storage::reverse_iterator;
+  using const_reverse_iterator = typename Storage::const_reverse_iterator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using AppendResult = decltype(std::declval<Storage&>().push_back(std::declval<value_type>()));
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  SmallList() = default;
+  SmallList(Storage const& storage) : m_storage(storage) {}
+  SmallList(Storage&& storage) : m_storage(std::move(storage)) {}
+  explicit SmallList(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
+  SmallList(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  template <std::input_iterator Iterator>
+  SmallList(Iterator first, Iterator last) : m_storage(first, last) {}
+  SmallList(std::initializer_list<value_type> values) {
+    for (auto const& value : values)
+      m_storage.push_back(value);
+  }
+
+  iterator begin() { return m_storage.begin(); }
+  const_iterator begin() const { return m_storage.begin(); }
+  const_iterator cbegin() const { return m_storage.begin(); }
+  iterator end() { return m_storage.end(); }
+  const_iterator end() const { return m_storage.end(); }
+  const_iterator cend() const { return m_storage.end(); }
+  reverse_iterator rbegin() { return m_storage.rbegin(); }
+  const_reverse_iterator rbegin() const { return m_storage.rbegin(); }
+  const_reverse_iterator crbegin() const { return m_storage.rbegin(); }
+  reverse_iterator rend() { return m_storage.rend(); }
+  const_reverse_iterator rend() const { return m_storage.rend(); }
+  const_reverse_iterator crend() const { return m_storage.rend(); }
+  std::size_t size() const { return m_storage.size(); }
+  bool empty() const { return m_storage.empty(); }
+  void clear() { m_storage.clear(); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *std::prev(end()); }
+  const_reference back() const { return *std::prev(end()); }
+  [[nodiscard]] AppendResult push_back(const_reference value) { return m_storage.push_back(value); }
+  [[nodiscard]] AppendResult push_back(value_type&& value) { return m_storage.push_back(std::move(value)); }
+  decltype(auto) pop_back() { return m_storage.pop_back(); }
+  template <typename... Args>
+  decltype(auto) emplace_back(Args&&... args) { return m_storage.emplace_back(std::forward<Args>(args)...); }
+  decltype(auto) resize(std::size_t size) { return m_storage.resize(size); }
+  decltype(auto) resize(std::size_t size, const_reference value) { return m_storage.resize(size, value); }
+  decltype(auto) insert(iterator pos, const_reference value) { return m_storage.insert(pos, value); }
+  decltype(auto) insert(iterator pos, value_type&& value) { return m_storage.insert(pos, std::move(value)); }
+  decltype(auto) insert(iterator pos, std::initializer_list<value_type> values) { return m_storage.insert(pos, values); }
+  template <typename Position, typename... Args>
+    requires requires(Storage& storage, Position pos, Args&&... args) { storage.insert(pos, std::forward<Args>(args)...); }
+  decltype(auto) insert(Position pos, Args&&... args) { return m_storage.insert(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) erase(Args&&... args) { return m_storage.erase(std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) emplace(iterator pos, Args&&... args) { return m_storage.emplace(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.reserve(std::forward<Args>(args)...); }
+  decltype(auto) reserve(Args&&... args) { return m_storage.reserve(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.shrink_to_fit(std::forward<Args>(args)...); }
+  decltype(auto) shrink_to_fit(Args&&... args) { return m_storage.shrink_to_fit(std::forward<Args>(args)...); }
+  auto capacity() const requires requires(Storage const& storage) { storage.capacity(); } { return m_storage.capacity(); }
+  auto max_size() const requires requires(Storage const& storage) { storage.max_size(); } { return m_storage.max_size(); }
+  auto get_allocator() const requires requires(Storage const& storage) { storage.get_allocator(); } { return m_storage.get_allocator(); }
+  value_type* ptr() { return m_storage.ptr(); }
+  value_type const* ptr() const { return m_storage.ptr(); }
+  void swap(SmallList& other) { std::swap(m_storage, other.m_storage); }
+  bool operator==(SmallList const& other) const { return m_storage == other.m_storage; }
+  bool operator<(SmallList const& other) const { return m_storage < other.m_storage; }
+  bool operator>(SmallList const& other) const { return other < *this; }
+  bool operator<=(SmallList const& other) const { return !(other < *this); }
+  bool operator>=(SmallList const& other) const { return !(*this < other); }
 
   template <typename Container>
   static SmallList from(Container const& c);
 
-  using Base::Base;
+
 
   SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
@@ -339,26 +1203,455 @@ public:
   template <typename Function>
   [[nodiscard]]
   auto transformed(Function&& function) const;
+
+  auto append(value_type e) -> AppendResult {
+    return m_storage.push_back(std::move(e));
+  }
+
+  template <typename Container>
+  auto appendAll(Container&& list) -> AppendResult {
+    return SequenceAlgorithms::appendAll(*this, std::forward<Container>(list));
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> reference
+      requires std::is_void_v<AppendResult> {
+    m_storage.emplace_back(std::forward<Args>(args)...);
+    return *std::prev(m_storage.end());
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+      requires (!std::is_void_v<AppendResult>) {
+    auto added = m_storage.emplace_back(std::forward<Args>(args)...);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto first() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto first() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto last() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto last() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto maybeFirst() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *m_storage.begin());
+  }
+
+  auto maybeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *std::prev(m_storage.end()));
+  }
+
+  std::expected<void, StarException> removeLast() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+    m_storage.erase(std::prev(m_storage.end()));
+    return {};
+  }
+
+  auto takeLast() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return e;
+  }
+
+  auto maybeTakeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return std::optional<value_type>(std::in_place, std::move(e));
+  }
+
+  void limitSizeBack(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.erase(std::prev(m_storage.end()));
+  }
+
+  std::size_t count() const {
+    return m_storage.size();
+  }
+
+  bool contains(const_reference e) const {
+    return std::ranges::find(*this, e) != end();
+  }
+
+  std::size_t remove(const_reference e) {
+    return SequenceAlgorithms::remove(*this, e);
+  }
+
+  template <typename Filter>
+  auto filter(Filter&& filter) {
+    return SequenceAlgorithms::filter(*this, std::forward<Filter>(filter));
+  }
+
+  template <typename Self, typename Filter>
+  auto filtered(this Self const& self, Filter&& filter) {
+    Self list(self);
+    if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+      list.filter(std::forward<Filter>(filter));
+      return list;
+    } else {
+      auto filtered = list.filter(std::forward<Filter>(filter));
+      if (!filtered)
+        return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+      return std::expected<Self, StarException>(std::move(list));
+    }
+  }
+
+  template <typename Comparator>
+  auto insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted insertion requires a nonfallible bool comparator");
+    auto i = std::upper_bound(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(i, std::move(e));
+    } else {
+      auto added = m_storage.insert(i, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto insertSorted(value_type e) -> AppendResult {
+    return insertSorted(std::move(e), std::less<value_type>{});
+  }
+
+  template <typename Comparator>
+  bool containsSorted(value_type const& e, Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted lookup requires a nonfallible bool comparator");
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    return range.first != range.second;
+  }
+
+  bool containsSorted(value_type e) {
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e);
+    return range.first != range.second;
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) const {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto transform(Function&& function) {
+    return SequenceAlgorithms::transform(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto any(Function&& function) const {
+    return SequenceAlgorithms::any(*this, std::forward<Function>(function));
+  }
+
+  auto any() const {
+    return any([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Function>
+  auto all(Function&& function) const {
+    return SequenceAlgorithms::all(*this, std::forward<Function>(function));
+  }
+
+  auto all() const {
+    return all([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Comparator>
+  void sort(Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+        "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
+    std::sort(m_storage.begin(), m_storage.end(), std::forward<Comparator>(comparator));
+  }
+
+  void sort() {
+    std::sort(m_storage.begin(), m_storage.end(), std::less<value_type>());
+  }
+
+  void reverse() {
+    std::reverse(m_storage.begin(), m_storage.end());
+  }
+
+  std::size_t indexOf(const_reference e, std::size_t from = 0) const {
+    for (std::size_t i = from; i < m_storage.size(); ++i)
+      if (operator[](i) == e)
+        return i;
+    return NPos;
+  }
+
+  std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const {
+    std::size_t index = NPos;
+    std::size_t end = std::min(m_storage.size(), til);
+    for (std::size_t i = 0; i < end; ++i) {
+      if (operator[](i) == e)
+        index = i;
+    }
+    return index;
+  }
+
+  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto operator[](std::size_t n) const -> const_reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto operator[](std::size_t n) -> reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto get(std::size_t n, value_type def = value_type()) const -> value_type {
+    if (n >= m_storage.size())
+      return def;
+    return operator[](n);
+  }
+
+  auto takeAt(std::size_t i) -> std::expected<value_type, StarException> {
+    auto element = at(i);
+    if (!element)
+      return std::unexpected(std::move(element.error()));
+    value_type e = std::move(**element);
+    m_storage.erase(m_storage.begin() + i);
+    return e;
+  }
+
+  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n, value_type def) const -> value_type {
+    if (m_storage.empty())
+      return def;
+    else
+      return operator[](n % m_storage.size());
+  }
+
+  void eraseAt(std::size_t i) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((i < m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + i);
+  }
+
+  void eraseAt(std::size_t b, std::size_t e) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((b < m_storage.size() && e <= m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + b, m_storage.begin() + e);
+  }
+
+  auto insertAt(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, std::move(e));
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  template <typename Container>
+  auto insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto set(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (std::is_void_v<AppendResult>) {
+      if (pos >= m_storage.size())
+        m_storage.resize(pos + 1);
+      operator[](pos) = std::move(e);
+    } else {
+      if (pos == std::numeric_limits<std::size_t>::max())
+        return std::unexpected(OutOfRangeException("List::set index overflows size"));
+      if (pos >= m_storage.size()) {
+        auto resized = m_storage.resize(pos + 1);
+        if (!resized)
+          return std::unexpected(std::move(resized.error()));
+      }
+      operator[](pos) = std::move(e);
+      return {};
+    }
+  }
+
+  void swap(std::size_t i, std::size_t j) {
+    std::swap(operator[](i), operator[](j));
+  }
+
+  std::expected<void, StarException> move(std::size_t from, std::size_t to) {
+    if (from >= m_storage.size() || to >= m_storage.size())
+      return std::unexpected(OutOfRangeException("List::move index out of range"));
+    if (from < to)
+      std::rotate(m_storage.begin() + from, m_storage.begin() + from + 1, m_storage.begin() + to + 1);
+    else if (to < from)
+      std::rotate(m_storage.begin() + to, m_storage.begin() + from, m_storage.begin() + from + 1);
+    return {};
+  }
+
+private:
+  Storage m_storage;
 };
 
-template <typename Element, std::size_t MaxStackSize>
-struct hash<SmallList<Element, MaxStackSize>> : public ListHasher<SmallList<Element, MaxStackSize>> {};
-
 template <typename Element, typename Allocator = std::allocator<Element>>
-class Deque : public FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> {
-public:
-  typedef FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> Base;
+class Deque {
+  using Storage = std::deque<Element, Allocator>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+public:
+  using SequenceContainerTag = void;
+  using value_type = Element;
+  using reference = typename Storage::reference;
+  using const_reference = typename Storage::const_reference;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using reverse_iterator = typename Storage::reverse_iterator;
+  using const_reverse_iterator = typename Storage::const_reverse_iterator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using AppendResult = decltype(std::declval<Storage&>().push_back(std::declval<value_type>()));
+
+  Deque() = default;
+  Deque(Storage const& storage) : m_storage(storage) {}
+  Deque(Storage&& storage) : m_storage(std::move(storage)) {}
+  explicit Deque(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
+  Deque(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  template <std::input_iterator Iterator>
+  Deque(Iterator first, Iterator last) : m_storage(first, last) {}
+  Deque(std::initializer_list<value_type> values) {
+    for (auto const& value : values)
+      m_storage.push_back(value);
+  }
+
+  iterator begin() { return m_storage.begin(); }
+  const_iterator begin() const { return m_storage.begin(); }
+  const_iterator cbegin() const { return m_storage.begin(); }
+  iterator end() { return m_storage.end(); }
+  const_iterator end() const { return m_storage.end(); }
+  const_iterator cend() const { return m_storage.end(); }
+  reverse_iterator rbegin() { return m_storage.rbegin(); }
+  const_reverse_iterator rbegin() const { return m_storage.rbegin(); }
+  const_reverse_iterator crbegin() const { return m_storage.rbegin(); }
+  reverse_iterator rend() { return m_storage.rend(); }
+  const_reverse_iterator rend() const { return m_storage.rend(); }
+  const_reverse_iterator crend() const { return m_storage.rend(); }
+  std::size_t size() const { return m_storage.size(); }
+  bool empty() const { return m_storage.empty(); }
+  void clear() { m_storage.clear(); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *std::prev(end()); }
+  const_reference back() const { return *std::prev(end()); }
+  [[nodiscard]] AppendResult push_back(const_reference value) { return m_storage.push_back(value); }
+  [[nodiscard]] AppendResult push_back(value_type&& value) { return m_storage.push_back(std::move(value)); }
+  decltype(auto) pop_back() { return m_storage.pop_back(); }
+  template <typename... Args>
+  decltype(auto) emplace_back(Args&&... args) { return m_storage.emplace_back(std::forward<Args>(args)...); }
+  decltype(auto) resize(std::size_t size) { return m_storage.resize(size); }
+  decltype(auto) resize(std::size_t size, const_reference value) { return m_storage.resize(size, value); }
+  decltype(auto) insert(iterator pos, const_reference value) { return m_storage.insert(pos, value); }
+  decltype(auto) insert(iterator pos, value_type&& value) { return m_storage.insert(pos, std::move(value)); }
+  decltype(auto) insert(iterator pos, std::initializer_list<value_type> values) { return m_storage.insert(pos, values); }
+  template <typename Position, typename... Args>
+    requires requires(Storage& storage, Position pos, Args&&... args) { storage.insert(pos, std::forward<Args>(args)...); }
+  decltype(auto) insert(Position pos, Args&&... args) { return m_storage.insert(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) erase(Args&&... args) { return m_storage.erase(std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) emplace(iterator pos, Args&&... args) { return m_storage.emplace(pos, std::forward<Args>(args)...); }
+  decltype(auto) assign(std::initializer_list<value_type> values) { return m_storage.assign(values); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.assign(std::forward<Args>(args)...); }
+  decltype(auto) assign(Args&&... args) { return m_storage.assign(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.reserve(std::forward<Args>(args)...); }
+  decltype(auto) reserve(Args&&... args) { return m_storage.reserve(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.shrink_to_fit(std::forward<Args>(args)...); }
+  decltype(auto) shrink_to_fit(Args&&... args) { return m_storage.shrink_to_fit(std::forward<Args>(args)...); }
+  auto capacity() const requires requires(Storage const& storage) { storage.capacity(); } { return m_storage.capacity(); }
+  auto max_size() const requires requires(Storage const& storage) { storage.max_size(); } { return m_storage.max_size(); }
+  auto get_allocator() const requires requires(Storage const& storage) { storage.get_allocator(); } { return m_storage.get_allocator(); }
+  void push_front(const_reference value) { m_storage.push_front(value); }
+  void push_front(value_type&& value) { m_storage.push_front(std::move(value)); }
+  void pop_front() { m_storage.pop_front(); }
+  template <typename... Args>
+  decltype(auto) emplace_front(Args&&... args) { return m_storage.emplace_front(std::forward<Args>(args)...); }
+  void swap(Deque& other) { std::swap(m_storage, other.m_storage); }
+  bool operator==(Deque const& other) const { return m_storage == other.m_storage; }
+  bool operator<(Deque const& other) const { return m_storage < other.m_storage; }
+  bool operator>(Deque const& other) const { return other < *this; }
+  bool operator<=(Deque const& other) const { return !(other < *this); }
+  bool operator>=(Deque const& other) const { return !(*this < other); }
 
   template <typename Container>
   static Deque from(Container const& c);
 
-  using Base::Base;
+
 
   Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
@@ -373,26 +1666,505 @@ public:
   template <typename Function>
   [[nodiscard]]
   auto transformed(Function&& function) const;
+
+  auto append(value_type e) -> AppendResult {
+    return m_storage.push_back(std::move(e));
+  }
+
+  template <typename Container>
+  auto appendAll(Container&& list) -> AppendResult {
+    return SequenceAlgorithms::appendAll(*this, std::forward<Container>(list));
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> reference
+      requires std::is_void_v<AppendResult> {
+    m_storage.emplace_back(std::forward<Args>(args)...);
+    return *std::prev(m_storage.end());
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+      requires (!std::is_void_v<AppendResult>) {
+    auto added = m_storage.emplace_back(std::forward<Args>(args)...);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto first() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto first() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto last() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto last() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto maybeFirst() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *m_storage.begin());
+  }
+
+  auto maybeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *std::prev(m_storage.end()));
+  }
+
+  std::expected<void, StarException> removeLast() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+    m_storage.erase(std::prev(m_storage.end()));
+    return {};
+  }
+
+  auto takeLast() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return e;
+  }
+
+  auto maybeTakeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return std::optional<value_type>(std::in_place, std::move(e));
+  }
+
+  void limitSizeBack(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.erase(std::prev(m_storage.end()));
+  }
+
+  std::size_t count() const {
+    return m_storage.size();
+  }
+
+  bool contains(const_reference e) const {
+    return std::ranges::find(*this, e) != end();
+  }
+
+  std::size_t remove(const_reference e) {
+    return SequenceAlgorithms::remove(*this, e);
+  }
+
+  template <typename Filter>
+  auto filter(Filter&& filter) {
+    return SequenceAlgorithms::filter(*this, std::forward<Filter>(filter));
+  }
+
+  template <typename Self, typename Filter>
+  auto filtered(this Self const& self, Filter&& filter) {
+    Self list(self);
+    if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+      list.filter(std::forward<Filter>(filter));
+      return list;
+    } else {
+      auto filtered = list.filter(std::forward<Filter>(filter));
+      if (!filtered)
+        return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+      return std::expected<Self, StarException>(std::move(list));
+    }
+  }
+
+  template <typename Comparator>
+  auto insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted insertion requires a nonfallible bool comparator");
+    auto i = std::upper_bound(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(i, std::move(e));
+    } else {
+      auto added = m_storage.insert(i, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto insertSorted(value_type e) -> AppendResult {
+    return insertSorted(std::move(e), std::less<value_type>{});
+  }
+
+  template <typename Comparator>
+  bool containsSorted(value_type const& e, Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted lookup requires a nonfallible bool comparator");
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    return range.first != range.second;
+  }
+
+  bool containsSorted(value_type e) {
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e);
+    return range.first != range.second;
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) const {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto transform(Function&& function) {
+    return SequenceAlgorithms::transform(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto any(Function&& function) const {
+    return SequenceAlgorithms::any(*this, std::forward<Function>(function));
+  }
+
+  auto any() const {
+    return any([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Function>
+  auto all(Function&& function) const {
+    return SequenceAlgorithms::all(*this, std::forward<Function>(function));
+  }
+
+  auto all() const {
+    return all([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Comparator>
+  void sort(Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
+        "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
+    std::sort(m_storage.begin(), m_storage.end(), std::forward<Comparator>(comparator));
+  }
+
+  void sort() {
+    std::sort(m_storage.begin(), m_storage.end(), std::less<value_type>());
+  }
+
+  void reverse() {
+    std::reverse(m_storage.begin(), m_storage.end());
+  }
+
+  std::size_t indexOf(const_reference e, std::size_t from = 0) const {
+    for (std::size_t i = from; i < m_storage.size(); ++i)
+      if (operator[](i) == e)
+        return i;
+    return NPos;
+  }
+
+  std::size_t lastIndexOf(const_reference e, std::size_t til = NPos) const {
+    std::size_t index = NPos;
+    std::size_t end = std::min(m_storage.size(), til);
+    for (std::size_t i = 0; i < end; ++i) {
+      if (operator[](i) == e)
+        index = i;
+    }
+    return index;
+  }
+
+  auto at(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto at(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (n >= m_storage.size())
+      return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
+    return std::addressof(operator[](n));
+  }
+
+  auto operator[](std::size_t n) const -> const_reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto operator[](std::size_t n) -> reference {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((n < m_storage.size()));
+    }
+    return m_storage.operator[](n);
+  }
+
+  auto get(std::size_t n, value_type def = value_type()) const -> value_type {
+    if (n >= m_storage.size())
+      return def;
+    return operator[](n);
+  }
+
+  auto takeAt(std::size_t i) -> std::expected<value_type, StarException> {
+    auto element = at(i);
+    if (!element)
+      return std::unexpected(std::move(element.error()));
+    value_type e = std::move(**element);
+    m_storage.erase(m_storage.begin() + i);
+    return e;
+  }
+
+  auto wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n) -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("wrap() called on empty list"));
+    return std::addressof(operator[](n % m_storage.size()));
+  }
+
+  auto wrap(std::size_t n, value_type def) const -> value_type {
+    if (m_storage.empty())
+      return def;
+    else
+      return operator[](n % m_storage.size());
+  }
+
+  void eraseAt(std::size_t i) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((i < m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + i);
+  }
+
+  void eraseAt(std::size_t b, std::size_t e) {
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((b < m_storage.size() && e <= m_storage.size()));
+    }
+    m_storage.erase(m_storage.begin() + b, m_storage.begin() + e);
+  }
+
+  auto insertAt(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, std::move(e));
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  template <typename Container>
+  auto insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
+    if constexpr (Star::DebugEnabled)
+      Star::starAssertFailed((pos <= m_storage.size()));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+    } else {
+      auto added = m_storage.insert(m_storage.begin() + pos, l.begin(), l.end());
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto set(std::size_t pos, value_type e) -> AppendResult {
+    if constexpr (std::is_void_v<AppendResult>) {
+      if (pos >= m_storage.size())
+        m_storage.resize(pos + 1);
+      operator[](pos) = std::move(e);
+    } else {
+      if (pos == std::numeric_limits<std::size_t>::max())
+        return std::unexpected(OutOfRangeException("List::set index overflows size"));
+      if (pos >= m_storage.size()) {
+        auto resized = m_storage.resize(pos + 1);
+        if (!resized)
+          return std::unexpected(std::move(resized.error()));
+      }
+      operator[](pos) = std::move(e);
+      return {};
+    }
+  }
+
+  void swap(std::size_t i, std::size_t j) {
+    std::swap(operator[](i), operator[](j));
+  }
+
+  std::expected<void, StarException> move(std::size_t from, std::size_t to) {
+    if (from >= m_storage.size() || to >= m_storage.size())
+      return std::unexpected(OutOfRangeException("List::move index out of range"));
+    if (from < to)
+      std::rotate(m_storage.begin() + from, m_storage.begin() + from + 1, m_storage.begin() + to + 1);
+    else if (to < from)
+      std::rotate(m_storage.begin() + to, m_storage.begin() + from, m_storage.begin() + from + 1);
+    return {};
+  }
+
+  void prepend(value_type e) {
+    m_storage.push_front(std::move(e));
+  }
+
+  template <typename Container>
+  void prependAll(Container&& list) {
+    for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
+      if (std::is_rvalue_reference<Container&&>::value)
+        m_storage.push_front(std::move(*i));
+      else
+        m_storage.push_front(*i);
+    }
+  }
+
+  template <class... Args>
+  auto emplacePrepend(Args&&... args) -> reference {
+    m_storage.emplace_front(std::forward<Args>(args)...);
+    return *m_storage.begin();
+  }
+
+  std::expected<void, StarException> removeFirst() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeFirst() called on empty list"));
+    m_storage.pop_front();
+    return {};
+  }
+
+  auto takeFirst() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeFirst() called on empty list"));
+    value_type e = std::move(*m_storage.begin());
+    m_storage.pop_front();
+    return e;
+  }
+
+  void limitSizeFront(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.pop_front();
+  }
+
+private:
+  Storage m_storage;
 };
 
-template <typename Element, typename Allocator>
-struct hash<Deque<Element, Allocator>> : public ListHasher<Deque<Element, Allocator>> {};
-
 template <typename Element, typename Allocator = std::allocator<Element>>
-class LinkedList : public FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> {
-public:
-  typedef FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> Base;
+class LinkedList {
+  using Storage = std::list<Element, Allocator>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+public:
+  using SequenceContainerTag = void;
+  using value_type = Element;
+  using reference = typename Storage::reference;
+  using const_reference = typename Storage::const_reference;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using reverse_iterator = typename Storage::reverse_iterator;
+  using const_reverse_iterator = typename Storage::const_reverse_iterator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using AppendResult = decltype(std::declval<Storage&>().push_back(std::declval<value_type>()));
+
+  LinkedList() = default;
+  LinkedList(Storage const& storage) : m_storage(storage) {}
+  LinkedList(Storage&& storage) : m_storage(std::move(storage)) {}
+  explicit LinkedList(std::size_t length, const_reference value = value_type()) : m_storage(length, value) {}
+  LinkedList(value_type const* values, std::size_t count) : m_storage(values, values + count) {}
+  template <std::input_iterator Iterator>
+  LinkedList(Iterator first, Iterator last) : m_storage(first, last) {}
+  LinkedList(std::initializer_list<value_type> values) {
+    for (auto const& value : values)
+      m_storage.push_back(value);
+  }
+
+  iterator begin() { return m_storage.begin(); }
+  const_iterator begin() const { return m_storage.begin(); }
+  const_iterator cbegin() const { return m_storage.begin(); }
+  iterator end() { return m_storage.end(); }
+  const_iterator end() const { return m_storage.end(); }
+  const_iterator cend() const { return m_storage.end(); }
+  reverse_iterator rbegin() { return m_storage.rbegin(); }
+  const_reverse_iterator rbegin() const { return m_storage.rbegin(); }
+  const_reverse_iterator crbegin() const { return m_storage.rbegin(); }
+  reverse_iterator rend() { return m_storage.rend(); }
+  const_reverse_iterator rend() const { return m_storage.rend(); }
+  const_reverse_iterator crend() const { return m_storage.rend(); }
+  std::size_t size() const { return m_storage.size(); }
+  bool empty() const { return m_storage.empty(); }
+  void clear() { m_storage.clear(); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *std::prev(end()); }
+  const_reference back() const { return *std::prev(end()); }
+  [[nodiscard]] AppendResult push_back(const_reference value) { return m_storage.push_back(value); }
+  [[nodiscard]] AppendResult push_back(value_type&& value) { return m_storage.push_back(std::move(value)); }
+  decltype(auto) pop_back() { return m_storage.pop_back(); }
+  template <typename... Args>
+  decltype(auto) emplace_back(Args&&... args) { return m_storage.emplace_back(std::forward<Args>(args)...); }
+  decltype(auto) resize(std::size_t size) { return m_storage.resize(size); }
+  decltype(auto) resize(std::size_t size, const_reference value) { return m_storage.resize(size, value); }
+  decltype(auto) insert(iterator pos, const_reference value) { return m_storage.insert(pos, value); }
+  decltype(auto) insert(iterator pos, value_type&& value) { return m_storage.insert(pos, std::move(value)); }
+  decltype(auto) insert(iterator pos, std::initializer_list<value_type> values) { return m_storage.insert(pos, values); }
+  template <typename Position, typename... Args>
+    requires requires(Storage& storage, Position pos, Args&&... args) { storage.insert(pos, std::forward<Args>(args)...); }
+  decltype(auto) insert(Position pos, Args&&... args) { return m_storage.insert(pos, std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) erase(Args&&... args) { return m_storage.erase(std::forward<Args>(args)...); }
+  template <typename... Args>
+  decltype(auto) emplace(iterator pos, Args&&... args) { return m_storage.emplace(pos, std::forward<Args>(args)...); }
+  decltype(auto) assign(std::initializer_list<value_type> values) { return m_storage.assign(values); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.assign(std::forward<Args>(args)...); }
+  decltype(auto) assign(Args&&... args) { return m_storage.assign(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.reserve(std::forward<Args>(args)...); }
+  decltype(auto) reserve(Args&&... args) { return m_storage.reserve(std::forward<Args>(args)...); }
+  template <typename... Args>
+    requires requires(Storage& storage, Args&&... args) { storage.shrink_to_fit(std::forward<Args>(args)...); }
+  decltype(auto) shrink_to_fit(Args&&... args) { return m_storage.shrink_to_fit(std::forward<Args>(args)...); }
+  auto capacity() const requires requires(Storage const& storage) { storage.capacity(); } { return m_storage.capacity(); }
+  auto max_size() const requires requires(Storage const& storage) { storage.max_size(); } { return m_storage.max_size(); }
+  auto get_allocator() const requires requires(Storage const& storage) { storage.get_allocator(); } { return m_storage.get_allocator(); }
+  void push_front(const_reference value) { m_storage.push_front(value); }
+  void push_front(value_type&& value) { m_storage.push_front(std::move(value)); }
+  void pop_front() { m_storage.pop_front(); }
+  template <typename... Args>
+  decltype(auto) emplace_front(Args&&... args) { return m_storage.emplace_front(std::forward<Args>(args)...); }
+  void splice(const_iterator pos, LinkedList& other) { m_storage.splice(pos, other.m_storage); }
+  void splice(const_iterator pos, LinkedList& other, const_iterator element) { m_storage.splice(pos, other.m_storage, element); }
+  void splice(const_iterator pos, LinkedList& other, const_iterator first, const_iterator last) { m_storage.splice(pos, other.m_storage, first, last); }
+  template <typename Comparator = std::less<value_type>>
+  void sort(Comparator comparator = {}) { m_storage.sort(std::move(comparator)); }
+  void reverse() { m_storage.reverse(); }
+  template <typename Predicate = std::equal_to<value_type>>
+  auto unique(Predicate predicate = {}) { return m_storage.unique(std::move(predicate)); }
+  template <typename Comparator = std::less<value_type>>
+  void merge(LinkedList& other, Comparator comparator = {}) { m_storage.merge(other.m_storage, std::move(comparator)); }
+  void swap(LinkedList& other) { std::swap(m_storage, other.m_storage); }
+  bool operator==(LinkedList const& other) const { return m_storage == other.m_storage; }
+  bool operator<(LinkedList const& other) const { return m_storage < other.m_storage; }
+  bool operator>(LinkedList const& other) const { return other < *this; }
+  bool operator<=(LinkedList const& other) const { return !(other < *this); }
+  bool operator>=(LinkedList const& other) const { return !(*this < other); }
 
   template <typename Container>
   static LinkedList from(Container const& c);
 
-  using Base::Base;
+
 
   void appendAll(LinkedList list);
   void prependAll(LinkedList list);
@@ -413,645 +2185,235 @@ public:
   template <typename Function>
   [[nodiscard]]
   auto transformed(Function&& function) const;
+
+  auto append(value_type e) -> AppendResult {
+    return m_storage.push_back(std::move(e));
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> reference
+      requires std::is_void_v<AppendResult> {
+    m_storage.emplace_back(std::forward<Args>(args)...);
+    return *std::prev(m_storage.end());
+  }
+
+  template <class... Args>
+  auto emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
+      requires (!std::is_void_v<AppendResult>) {
+    auto added = m_storage.emplace_back(std::forward<Args>(args)...);
+    if (!added)
+      return std::unexpected(std::move(added.error()));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto first() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto first() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("first() called on empty list"));
+    return std::addressof(*m_storage.begin());
+  }
+
+  auto last() -> std::expected<value_type*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto last() const -> std::expected<value_type const*, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("last() called on empty list"));
+    return std::addressof(*std::prev(m_storage.end()));
+  }
+
+  auto maybeFirst() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *m_storage.begin());
+  }
+
+  auto maybeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    return std::optional<value_type>(std::in_place, *std::prev(m_storage.end()));
+  }
+
+  std::expected<void, StarException> removeLast() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
+    m_storage.erase(std::prev(m_storage.end()));
+    return {};
+  }
+
+  auto takeLast() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return e;
+  }
+
+  auto maybeTakeLast() -> std::optional<value_type> {
+    if (m_storage.empty())
+      return {};
+    value_type e = std::move(*std::prev(m_storage.end()));
+    m_storage.erase(std::prev(m_storage.end()));
+    return std::optional<value_type>(std::in_place, std::move(e));
+  }
+
+  void limitSizeBack(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.erase(std::prev(m_storage.end()));
+  }
+
+  std::size_t count() const {
+    return m_storage.size();
+  }
+
+  bool contains(const_reference e) const {
+    return std::ranges::find(*this, e) != end();
+  }
+
+  std::size_t remove(const_reference e) {
+    return SequenceAlgorithms::remove(*this, e);
+  }
+
+  template <typename Filter>
+  auto filter(Filter&& filter) {
+    return SequenceAlgorithms::filter(*this, std::forward<Filter>(filter));
+  }
+
+  template <typename Self, typename Filter>
+  auto filtered(this Self const& self, Filter&& filter) {
+    Self list(self);
+    if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
+      list.filter(std::forward<Filter>(filter));
+      return list;
+    } else {
+      auto filtered = list.filter(std::forward<Filter>(filter));
+      if (!filtered)
+        return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
+      return std::expected<Self, StarException>(std::move(list));
+    }
+  }
+
+  template <typename Comparator>
+  auto insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted insertion requires a nonfallible bool comparator");
+    auto i = std::upper_bound(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    if constexpr (std::is_void_v<AppendResult>) {
+      m_storage.insert(i, std::move(e));
+    } else {
+      auto added = m_storage.insert(i, std::move(e));
+      if (!added)
+        return std::unexpected(std::move(added.error()));
+      return {};
+    }
+  }
+
+  auto insertSorted(value_type e) -> AppendResult {
+    return insertSorted(std::move(e), std::less<value_type>{});
+  }
+
+  template <typename Comparator>
+  bool containsSorted(value_type const& e, Comparator&& comparator) {
+    static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
+        "Sorted lookup requires a nonfallible bool comparator");
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e, std::forward<Comparator>(comparator));
+    return range.first != range.second;
+  }
+
+  bool containsSorted(value_type e) {
+    auto range = std::equal_range(m_storage.begin(), m_storage.end(), e);
+    return range.first != range.second;
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto exec(Function&& function) const {
+    return SequenceAlgorithms::exec(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto transform(Function&& function) {
+    return SequenceAlgorithms::transform(*this, std::forward<Function>(function));
+  }
+
+  template <typename Function>
+  auto any(Function&& function) const {
+    return SequenceAlgorithms::any(*this, std::forward<Function>(function));
+  }
+
+  auto any() const {
+    return any([](auto const& value) -> auto const& { return value; });
+  }
+
+  template <typename Function>
+  auto all(Function&& function) const {
+    return SequenceAlgorithms::all(*this, std::forward<Function>(function));
+  }
+
+  auto all() const {
+    return all([](auto const& value) -> auto const& { return value; });
+  }
+
+  void prepend(value_type e) {
+    m_storage.push_front(std::move(e));
+  }
+
+  template <class... Args>
+  auto emplacePrepend(Args&&... args) -> reference {
+    m_storage.emplace_front(std::forward<Args>(args)...);
+    return *m_storage.begin();
+  }
+
+  std::expected<void, StarException> removeFirst() {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("removeFirst() called on empty list"));
+    m_storage.pop_front();
+    return {};
+  }
+
+  auto takeFirst() -> std::expected<value_type, StarException> {
+    if (m_storage.empty())
+      return std::unexpected(OutOfRangeException("takeFirst() called on empty list"));
+    value_type e = std::move(*m_storage.begin());
+    m_storage.pop_front();
+    return e;
+  }
+
+  void limitSizeFront(std::size_t maximumSize) {
+    while (m_storage.size() > maximumSize)
+      m_storage.pop_front();
+  }
+
+private:
+  Storage m_storage;
 };
 
 template <typename Element, typename Allocator>
+struct hash<List<Element, Allocator>> : public ListHasher<List<Element, Allocator>> {};
+
+template <typename Element, std::size_t MaxSize>
+struct hash<StaticList<Element, MaxSize>> : public ListHasher<StaticList<Element, MaxSize>> {};
+
+template <typename Element, std::size_t MaxStackSize>
+struct hash<SmallList<Element, MaxStackSize>> : public ListHasher<SmallList<Element, MaxStackSize>> {};
+
+template <typename Element, typename Allocator>
+struct hash<Deque<Element, Allocator>> : public ListHasher<Deque<Element, Allocator>> {};
+
+template <typename Element, typename Allocator>
 struct hash<LinkedList<Element, Allocator>> : public ListHasher<LinkedList<Element, Allocator>> {};
-
-template <typename T>
-decltype(auto) listDiagnosticValue(T const& value) {
-  if constexpr (requires { outputOptional(value); })
-    return outputOptional(value);
-  else
-    return (value);
-}
-
-template <typename BaseList>
-using ListDiagnosticResult = decltype(std::declval<std::ostream&>() << listDiagnosticValue(std::declval<typename BaseList::value_type const&>()));
-
-template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list)
-    requires std::same_as<ListDiagnosticResult<BaseList>, std::ostream&>;
-
-template <typename BaseList>
-[[nodiscard]]
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ListMixin<BaseList> const& list)
-    requires std::same_as<ListDiagnosticResult<BaseList>, std::expected<std::ostream*, StarException>>;
-
-template <typename... Containers>
-struct ListZipTypes {
-  typedef std::tuple<typename std::decay<Containers>::type::value_type...> Tuple;
-  typedef List<Tuple> Result;
-};
-
-template <typename... Containers>
-typename ListZipTypes<Containers...>::Result zip(Containers&&... args);
-
-template <typename Container>
-struct ListEnumerateTypes {
-  typedef std::pair<typename std::decay<Container>::type::value_type, std::size_t> Pair;
-  typedef List<Pair> Result;
-};
-
-template <typename Container>
-typename ListEnumerateTypes<Container>::Result enumerate(Container&& container);
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin()
-  : Base() {}
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin(Base const& list)
-  : Base(list) {}
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin(Base&& list)
-  : Base(std::move(list)) {}
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin(std::size_t len, const_reference s1) requires (!requires { Base::MaximumSize; })
-  : Base(len, s1) {}
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin(value_type const* p, std::size_t count) requires (!requires { Base::MaximumSize; })
-  : Base(p, p + count) {}
-
-template <typename BaseList>
-template <typename InputIterator>
-ListMixin<BaseList>::ListMixin(InputIterator beg, InputIterator end) requires (!requires { Base::MaximumSize; })
-  : Base(beg, end) {}
-
-template <typename BaseList>
-ListMixin<BaseList>::ListMixin(std::initializer_list<value_type> list) requires (!requires { Base::MaximumSize; }) {
-  // In case underlying class type doesn't support initializer_list
-  for (auto& e : list)
-    append(std::move(e));
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::append(value_type e) -> AppendResult {
-  return Base::push_back(std::move(e));
-}
-
-template <typename BaseList>
-template <typename Container>
-auto ListMixin<BaseList>::appendAll(Container&& list) -> AppendResult {
-  for (auto& e : list) {
-    if constexpr (std::is_void_v<AppendResult>) {
-      if constexpr (std::is_rvalue_reference_v<Container&&>)
-        Base::push_back(std::move(e));
-      else
-        Base::push_back(e);
-    } else {
-      auto added = [&] {
-        if constexpr (std::is_rvalue_reference_v<Container&&>)
-          return Base::push_back(std::move(e));
-        else
-          return Base::push_back(e);
-      }();
-      if (!added)
-        return std::unexpected(std::move(added.error()));
-    }
-  }
-  if constexpr (!std::is_void_v<AppendResult>)
-    return {};
-}
-
-template <typename BaseList>
-template <class... Args>
-auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> reference
-    requires std::is_void_v<AppendResult> {
-  Base::emplace_back(std::forward<Args>(args)...);
-  return *std::prev(Base::end());
-}
-
-template <typename BaseList>
-template <class... Args>
-auto ListMixin<BaseList>::emplaceAppend(Args&&... args) -> std::expected<value_type*, StarException>
-    requires (!std::is_void_v<AppendResult>) {
-  auto added = Base::emplace_back(std::forward<Args>(args)...);
-  if (!added)
-    return std::unexpected(std::move(added.error()));
-  return std::addressof(*std::prev(Base::end()));
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::first() -> std::expected<value_type*, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("first() called on empty list"));
-  return std::addressof(*Base::begin());
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::first() const -> std::expected<value_type const*, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("first() called on empty list"));
-  return std::addressof(*Base::begin());
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::last() -> std::expected<value_type*, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("last() called on empty list"));
-  return std::addressof(*std::prev(Base::end()));
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::last() const -> std::expected<value_type const*, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("last() called on empty list"));
-  return std::addressof(*std::prev(Base::end()));
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::maybeFirst() -> std::optional<value_type> {
-  if (Base::empty())
-    return {};
-  return std::optional<value_type>(std::in_place, *Base::begin());
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::maybeLast() -> std::optional<value_type> {
-  if (Base::empty())
-    return {};
-  return std::optional<value_type>(std::in_place, *std::prev(Base::end()));
-}
-
-template <typename BaseList>
-std::expected<void, StarException> ListMixin<BaseList>::removeLast() {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("removeLast() called on empty list"));
-  Base::erase(std::prev(Base::end()));
-  return {};
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::takeLast() -> std::expected<value_type, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("takeLast() called on empty list"));
-  value_type e = std::move(*std::prev(Base::end()));
-  Base::erase(std::prev(Base::end()));
-  return e;
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::maybeTakeLast() -> std::optional<value_type> {
-  if (Base::empty())
-    return {};
-  value_type e = std::move(*std::prev(Base::end()));
-  Base::erase(std::prev(Base::end()));
-  return std::optional<value_type>(std::in_place, std::move(e));
-}
-
-template <typename BaseList>
-void ListMixin<BaseList>::limitSizeBack(std::size_t maximumSize) {
-  while (Base::size() > maximumSize)
-    Base::erase(std::prev(Base::end()));
-}
-
-template <typename BaseList>
-std::size_t ListMixin<BaseList>::count() const {
-  return Base::size();
-}
-
-template <typename BaseList>
-bool ListMixin<BaseList>::contains(const_reference e) const {
-  for (auto const& r : *this) {
-    if (r == e)
-      return true;
-  }
-  return false;
-}
-
-template <typename BaseList>
-std::size_t ListMixin<BaseList>::remove(const_reference e) {
-  // Erase immediately: e may alias an element, and subsequent comparisons can
-  // observe each erase's moves and destructions, even if a later operation throws.
-  std::size_t removed = 0;
-  auto i = Base::begin();
-  while (i != Base::end()) {
-    if (*i == e) {
-      ++removed;
-      i = Base::erase(i);
-    } else {
-      ++i;
-    }
-  }
-  return removed;
-}
-
-template <typename BaseList>
-template <typename Filter>
-auto ListMixin<BaseList>::filter(Filter&& filter) {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Filter&, reference>>;
-  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  auto destination = Base::begin();
-  for (auto source = Base::begin(); source != Base::end(); ++source) {
-    bool keep;
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      auto accepted = std::invoke(filter, *source);
-      if (!accepted)
-        return Status(std::unexpected(std::move(accepted.error())));
-      keep = static_cast<bool>(*accepted);
-    } else {
-      keep = static_cast<bool>(std::invoke(filter, *source));
-    }
-    if (keep) {
-      if (destination != source)
-        *destination = std::move(*source);
-      ++destination;
-    }
-  }
-  Base::erase(destination, Base::end());
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
-    return Status();
-}
-
-template <typename BaseList>
-template <typename Self, typename Filter>
-auto ListMixin<BaseList>::filtered(this Self const& self, Filter&& filter) {
-  Self list(self);
-  if constexpr (std::is_void_v<decltype(list.filter(std::forward<Filter>(filter)))>) {
-    list.filter(std::forward<Filter>(filter));
-    return list;
-  } else {
-    auto filtered = list.filter(std::forward<Filter>(filter));
-    if (!filtered)
-      return std::expected<Self, StarException>(std::unexpected(std::move(filtered.error())));
-    return std::expected<Self, StarException>(std::move(list));
-  }
-}
-
-template <typename BaseList>
-template <typename Comparator>
-auto ListMixin<BaseList>::insertSorted(value_type e, Comparator&& comparator) -> AppendResult {
-  static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
-      "Sorted insertion requires a nonfallible bool comparator");
-  auto i = std::upper_bound(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
-  if constexpr (std::is_void_v<AppendResult>) {
-    Base::insert(i, std::move(e));
-  } else {
-    auto added = Base::insert(i, std::move(e));
-    if (!added)
-      return std::unexpected(std::move(added.error()));
-    return {};
-  }
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::insertSorted(value_type e) -> AppendResult {
-  return insertSorted(std::move(e), std::less<value_type>{});
-}
-
-template <typename BaseList>
-template <typename Comparator>
-bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
-  static_assert(std::is_invocable_r_v<bool, Comparator&, const_reference, const_reference>,
-      "Sorted lookup requires a nonfallible bool comparator");
-  auto range = std::equal_range(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
-  return range.first != range.second;
-}
-
-template <typename BaseList>
-bool ListMixin<BaseList>::containsSorted(value_type e) {
-  auto range = std::equal_range(Base::begin(), Base::end(), e);
-  return range.first != range.second;
-}
-
-template <typename BaseList>
-template <typename Function>
-auto ListMixin<BaseList>::exec(Function&& function) {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
-  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  for (auto& e : *this) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      auto result = std::invoke(function, e);
-      if (!result)
-        return Status(std::unexpected(std::move(result.error())));
-    } else {
-      std::invoke(function, e);
-    }
-  }
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
-    return Status();
-}
-
-template <typename BaseList>
-template <typename Function>
-auto ListMixin<BaseList>::exec(Function&& function) const {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
-  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  for (auto const& e : *this) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      auto result = std::invoke(function, e);
-      if (!result)
-        return Status(std::unexpected(std::move(result.error())));
-    } else {
-      std::invoke(function, e);
-    }
-  }
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
-    return Status();
-}
-
-template <typename BaseList>
-template <typename Function>
-auto ListMixin<BaseList>::transform(Function&& function) {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
-  using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  for (auto& e : *this) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      auto result = std::invoke(function, e);
-      if (!result)
-        return Status(std::unexpected(std::move(result.error())));
-      e = std::move(*result);
-    } else {
-      e = std::invoke(function, e);
-    }
-  }
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
-    return Status();
-}
-
-template <typename BaseList>
-template <typename Function>
-auto ListMixin<BaseList>::any(Function&& function) const {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
-  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
-  for (auto const& e : *this) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      decltype(auto) accepted = std::invoke(std::as_const(function), e);
-      if (!accepted)
-        return Result(std::unexpected(std::move(accepted.error())));
-      if (static_cast<bool>(*accepted))
-        return Result(true);
-    } else if (static_cast<bool>(std::invoke(std::as_const(function), e))) {
-      return Result(true);
-    }
-  }
-  return Result(false);
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::any() const {
-  return any([](auto const& value) -> auto const& { return value; });
-}
-
-template <typename BaseList>
-template <typename Function>
-auto ListMixin<BaseList>::all(Function&& function) const {
-  using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
-  using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
-  for (auto const& e : *this) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-      decltype(auto) accepted = std::invoke(std::as_const(function), e);
-      if (!accepted)
-        return Result(std::unexpected(std::move(accepted.error())));
-      if (!static_cast<bool>(*accepted))
-        return Result(false);
-    } else if (!static_cast<bool>(std::invoke(std::as_const(function), e))) {
-      return Result(false);
-    }
-  }
-  return Result(true);
-}
-
-template <typename BaseList>
-auto ListMixin<BaseList>::all() const {
-  return all([](auto const& value) -> auto const& { return value; });
-}
-
-template <typename BaseList>
-template <typename Comparator>
-void RandomAccessListMixin<BaseList>::sort(Comparator&& comparator) {
-  static_assert(std::is_invocable_r_v<bool, Comparator&, reference, reference>,
-      "Sorting requires a nonfallible bool comparator; precompute fallible keys first");
-  std::sort(Base::begin(), Base::end(), std::forward<Comparator>(comparator));
-}
-
-template <typename BaseList>
-void RandomAccessListMixin<BaseList>::sort() {
-  std::sort(Base::begin(), Base::end(), std::less<typename Base::value_type>());
-}
-
-template <typename BaseList>
-void RandomAccessListMixin<BaseList>::reverse() {
-  std::reverse(Base::begin(), Base::end());
-}
-
-template <typename BaseList>
-std::size_t RandomAccessListMixin<BaseList>::indexOf(const_reference e, std::size_t from) const {
-  for (std::size_t i = from; i < Base::size(); ++i)
-    if (operator[](i) == e)
-      return i;
-  return NPos;
-}
-
-template <typename BaseList>
-std::size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, std::size_t til) const {
-  std::size_t index = NPos;
-  std::size_t end = std::min(Base::size(), til);
-  for (std::size_t i = 0; i < end; ++i) {
-    if (operator[](i) == e)
-      index = i;
-  }
-  return index;
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::at(std::size_t n) const -> std::expected<value_type const*, StarException> {
-  if (n >= Base::size())
-    return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-  return std::addressof(operator[](n));
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::at(std::size_t n) -> std::expected<value_type*, StarException> {
-  if (n >= Base::size())
-    return std::unexpected(OutOfRangeException(strf("out of range list::at({})", n)));
-  return std::addressof(operator[](n));
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::operator[](std::size_t n) const -> const_reference {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((n < Base::size()));
-  }
-  return Base::operator[](n);
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::operator[](std::size_t n) -> reference {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((n < Base::size()));
-  }
-  return Base::operator[](n);
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::get(std::size_t n, value_type def) const -> value_type {
-  if (n >= BaseList::size())
-    return def;
-  return operator[](n);
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::takeAt(std::size_t i) -> std::expected<value_type, StarException> {
-  auto element = at(i);
-  if (!element)
-    return std::unexpected(std::move(element.error()));
-  value_type e = std::move(**element);
-  Base::erase(Base::begin() + i);
-  return e;
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) const -> std::expected<value_type const*, StarException> {
-  if (BaseList::empty())
-    return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-  return std::addressof(operator[](n % BaseList::size()));
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(std::size_t n) -> std::expected<value_type*, StarException> {
-  if (BaseList::empty())
-    return std::unexpected(OutOfRangeException("wrap() called on empty list"));
-  return std::addressof(operator[](n % BaseList::size()));
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(std::size_t n, value_type def) const -> value_type {
-  if (BaseList::empty())
-    return def;
-  else
-    return operator[](n % BaseList::size());
-}
-
-template <typename BaseList>
-void RandomAccessListMixin<BaseList>::eraseAt(std::size_t i) {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((i < Base::size()));
-  }
-  Base::erase(Base::begin() + i);
-}
-
-template <typename BaseList>
-void RandomAccessListMixin<BaseList>::eraseAt(std::size_t b, std::size_t e) {
-  if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed((b < Base::size() && e <= Base::size()));
-  }
-  Base::erase(Base::begin() + b, Base::begin() + e);
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::insertAt(std::size_t pos, value_type e) -> AppendResult {
-  if constexpr (Star::DebugEnabled)
-    Star::starAssertFailed((pos <= Base::size()));
-  if constexpr (std::is_void_v<AppendResult>) {
-    Base::insert(Base::begin() + pos, std::move(e));
-  } else {
-    auto added = Base::insert(Base::begin() + pos, std::move(e));
-    if (!added)
-      return std::unexpected(std::move(added.error()));
-    return {};
-  }
-}
-
-template <typename BaseList>
-template <typename Container>
-auto RandomAccessListMixin<BaseList>::insertAllAt(std::size_t pos, Container const& l) -> AppendResult {
-  if constexpr (Star::DebugEnabled)
-    Star::starAssertFailed((pos <= Base::size()));
-  if constexpr (std::is_void_v<AppendResult>) {
-    Base::insert(Base::begin() + pos, l.begin(), l.end());
-  } else {
-    auto added = Base::insert(Base::begin() + pos, l.begin(), l.end());
-    if (!added)
-      return std::unexpected(std::move(added.error()));
-    return {};
-  }
-}
-
-template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::set(std::size_t pos, value_type e) -> AppendResult {
-  if constexpr (std::is_void_v<AppendResult>) {
-    if (pos >= Base::size())
-      Base::resize(pos + 1);
-    operator[](pos) = std::move(e);
-  } else {
-    if (pos == std::numeric_limits<std::size_t>::max())
-      return std::unexpected(OutOfRangeException("List::set index overflows size"));
-    if (pos >= Base::size()) {
-      auto resized = Base::resize(pos + 1);
-      if (!resized)
-        return std::unexpected(std::move(resized.error()));
-    }
-    operator[](pos) = std::move(e);
-    return {};
-  }
-}
-
-template <typename BaseList>
-void RandomAccessListMixin<BaseList>::swap(std::size_t i, std::size_t j) {
-  std::swap(operator[](i), operator[](j));
-}
-
-template <typename BaseList>
-std::expected<void, StarException> RandomAccessListMixin<BaseList>::move(std::size_t from, std::size_t to) {
-  if (from >= Base::size() || to >= Base::size())
-    return std::unexpected(OutOfRangeException("List::move index out of range"));
-  if (from < to)
-    std::rotate(Base::begin() + from, Base::begin() + from + 1, Base::begin() + to + 1);
-  else if (to < from)
-    std::rotate(Base::begin() + to, Base::begin() + from, Base::begin() + from + 1);
-  return {};
-}
-
-template <typename BaseList>
-void FrontModifyingListMixin<BaseList>::prepend(value_type e) {
-  Base::push_front(std::move(e));
-}
-
-template <typename BaseList>
-template <typename Container>
-void FrontModifyingListMixin<BaseList>::prependAll(Container&& list) {
-  for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
-      Base::push_front(std::move(*i));
-    else
-      Base::push_front(*i);
-  }
-}
-
-template <typename BaseList>
-template <class... Args>
-auto FrontModifyingListMixin<BaseList>::emplacePrepend(Args&&... args) -> reference {
-  Base::emplace_front(std::forward<Args>(args)...);
-  return *Base::begin();
-}
-
-template <typename BaseList>
-std::expected<void, StarException> FrontModifyingListMixin<BaseList>::removeFirst() {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("removeFirst() called on empty list"));
-  Base::pop_front();
-  return {};
-}
-
-template <typename BaseList>
-auto FrontModifyingListMixin<BaseList>::takeFirst() -> std::expected<value_type, StarException> {
-  if (Base::empty())
-    return std::unexpected(OutOfRangeException("takeFirst() called on empty list"));
-  value_type e = std::move(*Base::begin());
-  Base::pop_front();
-  return e;
-}
-
-template <typename BaseList>
-void FrontModifyingListMixin<BaseList>::limitSizeFront(std::size_t maximumSize) {
-  while (Base::size() > maximumSize)
-    Base::pop_front();
-}
 
 template <typename Element, typename Allocator>
 template <typename Container>
@@ -1061,12 +2423,12 @@ List<Element, Allocator> List<Element, Allocator>::from(Container const& c) {
 
 template <typename Element, typename Allocator>
 auto List<Element, Allocator>::ptr() -> value_type * {
-  return Base::data();
+  return m_storage.data();
 }
 
 template <typename Element, typename Allocator>
 auto List<Element, Allocator>::ptr() const -> value_type const * {
-  return Base::data();
+  return m_storage.data();
 }
 
 template <typename Element, typename Allocator>
@@ -1097,7 +2459,7 @@ auto List<Element, Allocator>::transformed(Function&& function) {
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
   using Output = List<typename AlgorithmResultInfo<Invocation>::Value>;
   Output res;
-  res.reserve(Base::size());
+  res.reserve(m_storage.size());
   if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
     auto transformed = transformInto(res, *this, std::forward<Function>(function));
     if (!transformed)
@@ -1115,7 +2477,7 @@ auto List<Element, Allocator>::transformed(Function&& function) const {
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, const_reference>>;
   using Output = List<typename AlgorithmResultInfo<Invocation>::Value>;
   Output res;
-  res.reserve(Base::size());
+  res.reserve(m_storage.size());
   if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
     auto transformed = transformInto(res, *this, std::forward<Function>(function));
     if (!transformed)
@@ -1289,22 +2651,22 @@ LinkedList<Element, Allocator> LinkedList<Element, Allocator>::from(Container co
 
 template <typename Element, typename Allocator>
 void LinkedList<Element, Allocator>::appendAll(LinkedList list) {
-  Base::splice(Base::end(), list);
+  m_storage.splice(m_storage.end(), list.m_storage);
 }
 
 template <typename Element, typename Allocator>
 void LinkedList<Element, Allocator>::prependAll(LinkedList list) {
-  Base::splice(Base::begin(), list);
+  m_storage.splice(m_storage.begin(), list.m_storage);
 }
 
 template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::appendAll(Container&& list) {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
-      Base::push_back(std::move(e));
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
+      m_storage.push_back(std::move(e));
     else
-      Base::push_back(e);
+      m_storage.push_back(e);
   }
 }
 
@@ -1312,10 +2674,10 @@ template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::prependAll(Container&& list) {
   for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
-      Base::push_front(std::move(*i));
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
+      m_storage.push_front(std::move(*i));
     else
-      Base::push_front(*i);
+      m_storage.push_front(*i);
   }
 }
 
@@ -1350,10 +2712,47 @@ auto LinkedList<Element, Allocator>::transformed(Function&& function) const {
   return Star::transform<LinkedList<typename AlgorithmResultInfo<Invocation>::Value>>(*this, std::forward<Function>(function));
 }
 
+template <typename T>
+decltype(auto) listDiagnosticValue(T const& value) {
+  if constexpr (requires { outputOptional(value); })
+    return outputOptional(value);
+  else
+    return (value);
+}
 
-template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list)
-    requires std::same_as<ListDiagnosticResult<BaseList>, std::ostream&> {
+template <typename Sequence>
+using ListDiagnosticResult = decltype(std::declval<std::ostream&>() << listDiagnosticValue(std::declval<typename Sequence::value_type const&>()));
+
+template <SequenceContainer Sequence>
+std::ostream& operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::ostream&>;
+
+template <SequenceContainer Sequence>
+[[nodiscard]]
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::ostream*, StarException>>;
+
+template <typename... Containers>
+struct ListZipTypes {
+  typedef std::tuple<typename std::decay<Containers>::type::value_type...> Tuple;
+  typedef List<Tuple> Result;
+};
+
+template <typename... Containers>
+typename ListZipTypes<Containers...>::Result zip(Containers&&... args);
+
+template <typename Container>
+struct ListEnumerateTypes {
+  typedef std::pair<typename std::decay<Container>::type::value_type, std::size_t> Pair;
+  typedef List<Pair> Result;
+};
+
+template <typename Container>
+typename ListEnumerateTypes<Container>::Result enumerate(Container&& container);
+
+template <SequenceContainer Sequence>
+std::ostream& operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::ostream&> {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
@@ -1363,10 +2762,10 @@ std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list)
   return os << ")";
 }
 
-template <typename BaseList>
+template <SequenceContainer Sequence>
 [[nodiscard]]
-std::expected<std::ostream*, StarException> operator<<(std::ostream& os, ListMixin<BaseList> const& list)
-    requires std::same_as<ListDiagnosticResult<BaseList>, std::expected<std::ostream*, StarException>> {
+std::expected<std::ostream*, StarException> operator<<(std::ostream& os, Sequence const& list)
+    requires std::same_as<ListDiagnosticResult<Sequence>, std::expected<std::ostream*, StarException>> {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
@@ -1422,16 +2821,29 @@ export namespace Star {
   struct hash<LinkedList<Element, Allocator>>;
 }
 
+export template <typename Element, typename Allocator>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::List<Element, Allocator> const&>()), std::ostream&>
+struct std::formatter<Star::List<Element, Allocator>> : Star::StreamFormatter {};
 
-export template <typename BaseList>
-  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::ListMixin<BaseList> const&>()), std::ostream&>
-struct std::formatter<Star::ListMixin<BaseList>> : Star::StreamFormatter {};
+export template <typename Element, std::size_t Capacity>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::StaticList<Element, Capacity> const&>()), std::ostream&>
+struct std::formatter<Star::StaticList<Element, Capacity>> : Star::StreamFormatter {};
+
+export template <typename Element, std::size_t Capacity>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::SmallList<Element, Capacity> const&>()), std::ostream&>
+struct std::formatter<Star::SmallList<Element, Capacity>> : Star::StreamFormatter {};
+
+export template <typename Element, typename Allocator>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::Deque<Element, Allocator> const&>()), std::ostream&>
+struct std::formatter<Star::Deque<Element, Allocator>> : Star::StreamFormatter {};
+
+export template <typename Element, typename Allocator>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::LinkedList<Element, Allocator> const&>()), std::ostream&>
+struct std::formatter<Star::LinkedList<Element, Allocator>> : Star::StreamFormatter {};
 
 export namespace Star {
-  using ::Star::ListMixin;
+  using ::Star::SequenceContainer;
   using ::Star::ListHasher;
-  using ::Star::RandomAccessListMixin;
-  using ::Star::FrontModifyingListMixin;
   using ::Star::List;
   using ::Star::StaticList;
   using ::Star::SmallList;

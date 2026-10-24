@@ -454,7 +454,7 @@ std::expected<void, StarException> MainInterface::initialize() {
       if (auto closed = m_containerInteractor->closeContainer(); !closed)
         return std::unexpected(std::move(closed.error()));
     }
-    for (EntityId id : m_interactionScriptPanes.keys()) {
+    for (EntityId id : m_interactionScriptPanes.keyView()) {
       auto pane = as<ScriptPane>(m_interactionScriptPanes[id]);
       if (m_paneManager.isDisplayed(pane)) {
         auto withInventory = pane->openWithInventory();

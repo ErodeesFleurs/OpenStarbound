@@ -124,7 +124,7 @@ private:
 
   bool m_scripted = false;
   List<std::shared_ptr<BehaviorState>> m_behaviors;
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
+  LuaStoredEntityScript
       m_scriptComponent;
 };
 

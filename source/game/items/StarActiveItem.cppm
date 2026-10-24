@@ -173,12 +173,12 @@ private:
   [[nodiscard]]
   std::expected<LuaCallbacks, StarException> makeScriptedAnimationCallbacks();
 
-  mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
+  mutable LuaActionScript m_script;
 
   std::shared_ptr<NetworkedAnimator> m_itemAnimator;
   NetworkedAnimator::DynamicTarget m_itemAnimatorDynamicTarget;
 
-  mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  mutable LuaAnimationScript m_scriptedAnimator;
 
   HashMap<std::shared_ptr<AudioInstance>, Vec2F> m_activeAudio;
 

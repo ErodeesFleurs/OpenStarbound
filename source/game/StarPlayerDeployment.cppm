@@ -70,7 +70,7 @@ private:
 
   bool m_deploying;
   bool m_deployed;
-  LuaAnimationComponent<LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
+  LuaDeploymentScript m_scriptComponent;
 };
 
 }

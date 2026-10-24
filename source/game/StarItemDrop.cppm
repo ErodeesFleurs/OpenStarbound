@@ -224,7 +224,7 @@ private:
   
   ClientEntityMode m_clientEntityMode;
   
-  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
+  mutable LuaEntityScript m_scriptComponent;
   std::optional<Mode> m_overrideMode;
 };
 

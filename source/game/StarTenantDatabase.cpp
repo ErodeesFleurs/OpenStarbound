@@ -30,7 +30,7 @@ namespace Star {
 
 bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   // Check whether colonyTags is a supermultiset of colonyTagCriteria
-  for (std::pair<String, unsigned> const& entry : colonyTagCriteria.pairs()) {
+  for (auto const& entry : colonyTagCriteria) {
     if (colonyTags.value(entry.first, 0) < entry.second)
       return false;
   }

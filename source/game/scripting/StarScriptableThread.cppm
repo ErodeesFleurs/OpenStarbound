@@ -23,7 +23,7 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
+  using ScriptComponent = LuaMessageScript;
 
   [[nodiscard]] static std::expected<std::shared_ptr<ScriptableThread>, StarException> create(Json parameters, LuaBaseComponent* parent);
   ~ScriptableThread();

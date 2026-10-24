@@ -269,8 +269,8 @@ private:
   Vec2F m_questIndicatorOffset;
 
   List<std::shared_ptr<BehaviorState>> m_behaviors;
-  mutable LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  mutable LuaActorScript m_scriptComponent;
+  LuaAnimationScript m_scriptedAnimator;
 
   NetElementData<List<PhysicsForceRegion>> m_physicsForces;
 

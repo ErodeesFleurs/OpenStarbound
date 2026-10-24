@@ -1,17 +1,17 @@
 # Valgrind suppressions for the test binaries.
 #
-# Every report valgrind currently produces on a clean tree comes from inside
-# libre2: String::regexMatch() constructs an RE2, and RE2::Init()/Prog::Optimize()
-# read uninitialised memory in their own optimizer.  No Starbound code is
-# involved, so suppress any report whose innermost frame is an re2 function and
-# keep everything else visible:
+# RE2's optimizer produces known undefined-value reports. Keep those
+# suppressions scoped to RE2 at the innermost frame.
+# Static libc++ requires allocator interception in the main executable:
+# --soname-synonyms=somalloc=NONE prevents false new/delete mismatch reports
+# without disabling allocation-family or memory-access checks.
 #
-#   valgrind --suppressions=nix/valgrind.supp --track-origins=yes \
+#   valgrind --soname-synonyms=somalloc=NONE --suppressions=nix/valgrind.supp --track-origins=yes \
 #     ./dist/game_tests -bootconfig <cfg> --gtest_filter='<cases>'
 #
 # Regenerate (or extend, if a report inside re2 shows a different error kind)
 # with:
-#   valgrind --gen-suppressions=all ./dist/game_tests -bootconfig <cfg> --gtest_filter='<cases>'
+#   valgrind --soname-synonyms=somalloc=NONE --gen-suppressions=all ./dist/game_tests -bootconfig <cfg> --gtest_filter='<cases>'
 #
 # 'fun:' patterns are mangled symbol names; '*' is a wildcard and a trailing
 # '...' matches the rest of the stack.

@@ -150,7 +150,7 @@ public:
   void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<UniverseClient, Universe>(this, key); }
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<UniverseClient>(); }
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
+  typedef LuaMessageScript ScriptComponent;
   
   [[nodiscard]] static std::expected<std::shared_ptr<UniverseClient>, StarException> create(Root& root, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
   ~UniverseClient() override;

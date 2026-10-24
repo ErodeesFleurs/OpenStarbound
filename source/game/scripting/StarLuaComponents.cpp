@@ -24,6 +24,10 @@ import star.rpc_promise;
 import star.lua_components;
 import star.lua_root;
 import star.lua_converters;
+import star.lua_game_converters;
+import star.world;
+import star.world_lua_bindings;
+import star.periodic;
 import star.game_types;
 import star.uuid;
 import star.asset_source;
@@ -56,7 +60,7 @@ std::expected<void, StarException> LuaBaseComponent::setScript(String script) {
 
 std::expected<void, StarException> LuaBaseComponent::setScripts(StringList scripts) {
   if (initialized())
-    return std::unexpected(LuaComponentException("Cannot call LuaWorldComponent::setScripts when LuaWorldComponent is initialized"));
+    return std::unexpected(LuaComponentException("Cannot call LuaBaseComponent::setScripts when initialized"));
   m_scripts = std::move(scripts);
   return {};
 }
@@ -353,6 +357,281 @@ std::expected<LuaCallbacks, StarException> LuaBaseComponent::makeThreadsCallback
 
 RpcPromise<Json> LuaBaseComponent::threadPassMessage(String const&, String const&, JsonArray const&) {
   return RpcPromise<Json>::createFailed("Lua component cannot handle messages");
+}
+
+
+[[nodiscard]] std::expected<JsonObject, StarException> LuaScriptStorage::getScriptStorage() const {
+  if (m_host.initialized())
+    return m_host.context()->template getPath<JsonObject>("storage");
+  return m_storage;
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptStorage::setScriptStorage(JsonObject storage) {
+  if (m_host.initialized())
+    return m_host.context()->setPath("storage", std::move(storage));
+  m_storage = std::move(storage);
+  return {};
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptStorage::contextSetup() {
+  return m_host.context()->setPath("storage", m_storage);
+}
+
+std::expected<JsonObject, StarException> LuaScriptStorage::readStorage() const {
+  return m_host.context()->getPath<JsonObject>("storage");
+}
+
+std::expected<void, StarException> LuaScriptStorage::finishShutdown(std::expected<JsonObject, StarException> storage, std::expected<void, StarException> shutdown) {
+  if (storage)
+    m_storage = std::move(*storage);
+  else {
+    if (!shutdown)
+      return std::unexpected(storage.error().withContext(strf("Error shutting down Lua storage context: {}", outputException(shutdown.error(), true))));
+    return std::unexpected(std::move(storage.error()));
+  }
+  return shutdown;
+}
+
+LuaScriptUpdate::LuaScriptUpdate(LuaBaseComponent& host) : m_host(host), m_lastDt(host.root().timing().timestep * host.root().timing().timescale) {
+  m_updatePeriodic.setStepCount(1);
+}
+
+void LuaScriptUpdate::destroy() {
+  // Child threads must stop before the parent-message queue is destroyed.
+  if (auto stopped = m_host.stopThreads(); !stopped)
+    EmergencyLog::error("Error stopping Lua component threads: {}", outputException(stopped.error(), true));
+  List<ThreadMessage> messages;
+  {
+    RecursiveMutexLocker locker(m_threadMessageMutex);
+    messages = std::move(m_threadMessages);
+  }
+  for (auto& message : messages) {
+    if (auto failed = message.promise.fail("Lua component destroyed"); !failed)
+      EmergencyLog::error("Error settling destroyed Lua component message: {}", outputException(failed.error(), true));
+  }
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptUpdate::contextSetup() {
+  if (!m_host.hasCallbacks("script")) {
+    LuaCallbacks callbacks;
+    if (auto result = callbacks.registerCallback("updateDt", [this]() { return updateDt(); }); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = callbacks.registerCallback("setUpdateDelta", [this](unsigned delta) { setUpdateDelta(delta); }); !result)
+      return std::unexpected(std::move(result.error()));
+    return m_host.addCallbacks("script", std::move(callbacks));
+  }
+  return {};
+}
+
+unsigned LuaScriptUpdate::updateDelta() const { return m_updatePeriodic.stepCount(); }
+
+float LuaScriptUpdate::updateDt(float dt) const {
+  m_lastDt = dt;
+  return m_updatePeriodic.stepCount() * dt;
+}
+
+float LuaScriptUpdate::updateDt() const { return m_updatePeriodic.stepCount() * m_lastDt; }
+
+void LuaScriptUpdate::setUpdateDelta(unsigned delta) { m_updatePeriodic.setStepCount(delta); }
+
+bool LuaScriptUpdate::updateReady() const { return m_updatePeriodic.ready(); }
+
+RpcPromise<Json> LuaScriptUpdate::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
+  auto pair = RpcPromise<Json>::createPair();
+  RecursiveMutexLocker locker(m_threadMessageMutex);
+  m_threadMessages.append({thread, message, args, pair.second});
+  return pair.first;
+}
+
+[[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> LuaScriptUpdate::handleThreadMessage(ThreadMessage const& message) {
+  if (!m_host.initialized())
+    return std::optional<ChainableJsonMessageResponse>{};
+  if (auto handler = m_threadMessageHandlers.ptr(message.message); handler && handler->function) {
+    auto result = handler->function->template invoke<ChainableJsonMessageResponse>(message.originThread, message.message, luaUnpack(message.args));
+    if (!result) {
+      if (auto cleanup = m_host.setError(printException(result.error(), false)); !cleanup)
+        result.error() = cleanup.error().withContext(strf("Original Lua thread message failure: {}", outputException(result.error(), true)));
+      if (auto logged = m_host.root().logger().error("Exception while invoking lua thread message handler for message '{}'. {}", message.message, outputException(result.error(), true)); !logged)
+        return std::unexpected(logged.error().withContext(strf("Could not log Lua thread message failure: {}", outputException(result.error(), true))));
+      return std::unexpected(std::move(result.error()));
+    }
+    return std::optional<ChainableJsonMessageResponse>(std::move(*result));
+  }
+  return std::optional<ChainableJsonMessageResponse>{};
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptUpdate::addThreadsCallbacks(LuaCallbacks& callbacks) {
+  if (auto result = callbacks.registerCallback("setMessageHandler", [this](String message, std::optional<LuaFunction> handler) {
+    if (handler) {
+      ThreadMessageHandler info;
+      info.name = message;
+      info.function = std::move(handler);
+      m_threadMessageHandlers.set(message, std::move(info));
+    } else {
+      m_threadMessageHandlers.remove(message);
+    }
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  return {};
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptUpdate::contextShutdown() {
+  // Stop producers before draining, so child uninit cannot enqueue a late,
+  // permanently pending parent message.
+  auto stopped = m_host.stopThreads();
+  List<ThreadMessage> messages;
+  {
+    RecursiveMutexLocker locker(m_threadMessageMutex);
+    messages = std::move(m_threadMessages);
+  }
+  std::optional<StarException> error;
+  if (!stopped)
+    error = std::move(stopped.error());
+  for (auto& message : messages) {
+    if (auto result = message.promise.fail("Lua component uninitialized"); !result) {
+      if (!error)
+        error = std::move(result.error());
+      else
+        error = result.error().withContext(strf("Earlier Lua shutdown failure: {}", outputException(*error, true)));
+    }
+  }
+  m_threadMessageHandlers.clear();
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
+}
+
+std::expected<void, StarException> LuaScriptUpdate::finishShutdown(std::expected<void, StarException> stopped, std::expected<void, StarException> shutdown) {
+  if (!stopped) {
+    if (!shutdown)
+      return std::unexpected(stopped.error().withContext(strf("Error shutting down Lua component: {}", outputException(shutdown.error(), true))));
+    return std::unexpected(std::move(stopped.error()));
+  }
+  return shutdown;
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptWorld::init(World* world) {
+  if (m_host.initialized()) {
+    if (auto result = uninit(); !result)
+      return std::unexpected(std::move(result.error()));
+  }
+  if (auto result = m_host.setLuaRoot(world->luaRoot()); !result)
+    return std::unexpected(std::move(result.error()));
+  auto worldCallbacks = LuaBindings::makeWorldCallbacks(m_host.root(), world);
+  if (!worldCallbacks)
+    return std::unexpected(std::move(worldCallbacks.error()));
+  if (auto result = m_host.addCallbacks("world", std::move(*worldCallbacks)); !result)
+    return std::unexpected(std::move(result.error()));
+  auto result = [&]() -> std::expected<void, StarException> {
+    auto callbacks = LuaBindings::makeWorldThreadCallbacks(m_host.root(), world);
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto added = m_host.addThreadCallbacks("world", std::move(*callbacks)); !added)
+      return std::unexpected(std::move(added.error()));
+    auto threadCallbacks = world->luaThreadCallbacks();
+    if (!threadCallbacks)
+      return std::unexpected(std::move(threadCallbacks.error()));
+    for (auto const& p : *threadCallbacks) {
+      if (auto added = m_host.addThreadCallbacks(p.first, p.second); !added)
+        return std::unexpected(std::move(added.error()));
+      m_worldThreadCallbacks.add(p.first);
+    }
+    auto initialized = m_host.init();
+    if (!initialized)
+      return std::unexpected(std::move(initialized.error()));
+    return {};
+  }();
+  if (!result) {
+    if (auto rollback = uninit(); !rollback)
+      return std::unexpected(result.error().withContext(strf("Error rolling back Lua world component: {}", outputException(rollback.error(), true))));
+  }
+  return result;
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptWorld::uninit() {
+  std::optional<StarException> error;
+  auto remember = [&](auto result) {
+    if (!result) {
+      if (!error)
+        error = std::move(result.error());
+      else
+        error = result.error().withContext(strf("Earlier Lua world shutdown failure: {}", outputException(*error, true)));
+    }
+  };
+  remember(m_host.uninit());
+  remember(m_host.removeCallbacks("world"));
+  remember(m_host.removeThreadCallbacks("world"));
+  for (auto const& name : m_worldThreadCallbacks)
+    remember(m_host.removeThreadCallbacks(name));
+  m_worldThreadCallbacks.clear();
+  if (error)
+    return std::unexpected(std::move(*error));
+  return {};
+}
+
+[[nodiscard]] std::expected<void, StarException> LuaScriptMessages::contextSetup() {
+  if (m_host.hasCallbacks("message"))
+    return {};
+  LuaCallbacks callbacks;
+  if (auto result = callbacks.registerCallback("setHandler", [this](std::variant<String, Json> message, std::optional<LuaFunction> handler) -> std::expected<void, StarException> {
+    MessageHandler info;
+    if (auto config = std::get_if<Json>(&message)) {
+      auto passName = config->getBool("passName", false);
+      if (!passName)
+        return std::unexpected(std::move(passName.error()));
+      auto localOnly = config->getBool("localOnly", false);
+      if (!localOnly)
+        return std::unexpected(std::move(localOnly.error()));
+      auto name = config->getString("name");
+      if (!name)
+        return std::unexpected(std::move(name.error()));
+      info.passName = *passName;
+      info.localOnly = *localOnly;
+      info.name = std::move(*name);
+    } else {
+      info.name = std::move(std::get<String>(message));
+    }
+    if (handler) {
+      info.function = std::move(handler);
+      auto name = info.name;
+      m_messageHandlers.set(name, std::move(info));
+    } else {
+      m_messageHandlers.remove(info.name);
+    }
+    return {};
+  }); !result)
+    return std::unexpected(std::move(result.error()));
+  return m_host.addCallbacks("message", std::move(callbacks));
+}
+
+[[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> LuaScriptMessages::handleMessage(String const& message, bool local, JsonArray const& args) {
+  if (!m_host.initialized())
+    return std::optional<ChainableJsonMessageResponse>{};
+  auto handler = m_messageHandlers.ptr(message);
+  if (!handler || !handler->function || (handler->localOnly && !local))
+    return std::optional<ChainableJsonMessageResponse>{};
+  auto result = [&]() -> std::expected<ChainableJsonMessageResponse, StarException> {
+    if (handler->localOnly) {
+      if (handler->passName)
+        return handler->function->template invoke<ChainableJsonMessageResponse>(message, luaUnpack(args));
+      return handler->function->template invoke<ChainableJsonMessageResponse>(luaUnpack(args));
+    }
+    if (handler->passName)
+      return handler->function->template invoke<ChainableJsonMessageResponse>(message, local, luaUnpack(args));
+    return handler->function->template invoke<ChainableJsonMessageResponse>(local, luaUnpack(args));
+  }();
+  if (!result) {
+    if (auto cleanup = m_host.setError(printException(result.error(), false)); !cleanup)
+      result.error() = cleanup.error().withContext(strf("Original Lua message handler failure: {}", outputException(result.error(), true)));
+    if (auto logged = m_host.root().logger().error("Exception while invoking lua message handler for message '{}'. {}", message, outputException(result.error(), true)); !logged)
+      return std::unexpected(logged.error().withContext(strf("Could not log Lua message handler failure: {}", outputException(result.error(), true))));
+    return std::unexpected(std::move(result.error()));
+  }
+  return std::optional<ChainableJsonMessageResponse>(std::move(*result));
+}
+
+void LuaScriptMessages::contextShutdown() {
+  m_messageHandlers.clear();
 }
 
 }

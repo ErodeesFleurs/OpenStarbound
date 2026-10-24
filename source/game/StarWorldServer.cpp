@@ -4622,12 +4622,20 @@ std::expected<void, StarException> WorldServer::writeMetadata() {
     {"protectedDungeonIds", std::move(*result507)},
     {"worldProperties", m_worldProperties},
     {"spawningEnabled", m_spawner->active()},
-    {"dungeonIdGravity", m_dungeonIdGravity.pairs().transformed([](auto const& p) -> Json {
-        return JsonArray{p.first, p.second};
-      })},
-    {"dungeonIdBreathable", m_dungeonIdBreathable.pairs().transformed([](auto const& p) -> Json {
-        return JsonArray{p.first, p.second};
-      })}
+    {"dungeonIdGravity", [&]() {
+        JsonArray gravity;
+        gravity.reserve(m_dungeonIdGravity.size());
+        for (auto const& p : m_dungeonIdGravity)
+          gravity.append(JsonArray{p.first, p.second});
+        return gravity;
+      }()},
+    {"dungeonIdBreathable", [&]() {
+        JsonArray breathable;
+        breathable.reserve(m_dungeonIdBreathable.size());
+        for (auto const& p : m_dungeonIdBreathable)
+          breathable.append(JsonArray{p.first, p.second});
+        return breathable;
+      }()}
   };
 
   auto result508 = versioningDatabase->makeCurrentVersionedJson("WorldMetadata", metadata);

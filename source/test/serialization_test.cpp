@@ -4,6 +4,9 @@ import star.format;
 import star.data_stream_devices;
 import star.string;
 import star.map;
+import star.list;
+import star.data_stream_extra;
+import star.byte_array;
 
 #include "gtest/gtest.h"
 
@@ -32,6 +35,42 @@ TEST(DataStreamTest, All) {
   testMap(map1);
   testMap(map2);
   testMap(map3);
+}
+
+TEST(DataStreamTest, SequenceWireBytesAndTruncatedPrefix) {
+  List<std::uint8_t> values{0x10, 0x20};
+  auto encoded = DataStreamBuffer::serialize(values);
+  ASSERT_TRUE(encoded);
+  EXPECT_EQ(*encoded, ByteArray("\x02\x10\x20", 3));
+
+  List<std::uint8_t> decoded{0x7f};
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x03\x10\x20", 3));
+  ASSERT_FALSE(read);
+  EXPECT_EQ(decoded, values);
+}
+
+TEST(DataStreamTest, BoundedDecodeRetainsAcceptedPrefixOnCapacityError) {
+  StaticList<std::uint8_t, 2> decoded;
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x03\x10\x20\x30", 4));
+  ASSERT_FALSE(read);
+  ASSERT_EQ(decoded.size(), 2u);
+  EXPECT_EQ(decoded[0], 0x10);
+  EXPECT_EQ(decoded[1], 0x20);
+}
+
+TEST(DataStreamTest, OrderedMapWireBytesAndDuplicateKeys) {
+  Map<std::uint8_t, std::uint8_t> values{{2, 0x22}, {1, 0x11}};
+  auto encoded = DataStreamBuffer::serialize(values);
+  ASSERT_TRUE(encoded);
+  EXPECT_EQ(*encoded, ByteArray("\x02\x01\x11\x02\x22", 5));
+
+  Map<std::uint8_t, std::uint8_t> decoded{{9, 9}};
+  auto read = DataStreamBuffer::deserialize(decoded, ByteArray("\x02\x07\x0b\x07\x16", 5));
+  ASSERT_TRUE(read);
+  ASSERT_EQ(decoded.size(), 1u);
+  auto value = decoded.get(7);
+  ASSERT_TRUE(value);
+  EXPECT_EQ(**value, 0x0b);
 }
 
 TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {

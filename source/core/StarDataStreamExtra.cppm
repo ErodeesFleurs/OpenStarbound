@@ -187,8 +187,8 @@ template <typename Element>
   return &ds;
 }
 
-template <typename BaseList>
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, ListMixin<BaseList> const& list) {
+template <SequenceContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Container const& list) {
   {
     auto result = ds.writeContainer(list);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -196,8 +196,8 @@ template <typename BaseList>
   return &ds;
 }
 
-template <typename BaseList>
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, ListMixin<BaseList>& list) {
+template <SequenceContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Container& list) {
   {
     auto result = ds.readContainer(list);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -205,8 +205,8 @@ template <typename BaseList>
   return &ds;
 }
 
-template <typename BaseSet>
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, SetMixin<BaseSet> const& set) {
+template <SetContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Container const& set) {
   {
     auto result = ds.writeContainer(set);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -214,8 +214,8 @@ template <typename BaseSet>
   return &ds;
 }
 
-template <typename BaseSet>
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, SetMixin<BaseSet>& set) {
+template <SetContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Container& set) {
   {
     auto result = ds.readContainer(set);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -223,8 +223,8 @@ template <typename BaseSet>
   return &ds;
 }
 
-template <typename BaseMap>
-[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, MapMixin<BaseMap> const& map) {
+template <MapContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator<<(DataStream& ds, Container const& map) {
   {
     auto result = ds.writeMapContainer(map);
     if (!result) return std::unexpected(std::move(result.error()));
@@ -232,8 +232,8 @@ template <typename BaseMap>
   return &ds;
 }
 
-template <typename BaseMap>
-[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MapMixin<BaseMap>& map) {
+template <MapContainer Container>
+[[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, Container& map) {
   {
     auto result = ds.readMapContainer(map);
     if (!result) return std::unexpected(std::move(result.error()));

@@ -281,13 +281,17 @@ void SimpleBTreeLeaf<Key, Data, Pointer>::setNextLeaf(std::optional<Pointer> n) 
 // Testing BTree class that simulates storage by storing in-memory copies of
 // nodes.  Used to test BTree algorithm.
 
-struct SimpleBTreeBase {
+struct SimpleBTreeStorage {
   typedef int Key;
   typedef String Data;
   typedef int Pointer;
 
   typedef SimpleBTreeIndex<int, int> Index;
   typedef SimpleBTreeLeaf<int, String, int> Leaf;
+
+  SimpleBTreeStorage(std::size_t maxisize, std::size_t maxlsize, bool leafLinks = true)
+    : root(-1), rootleaf(true), maxIndexSize(maxisize), maxLeafSize(maxlsize),
+      indexId(0), leafId(0), keepLeafLinks(leafLinks) {}
 
   Pointer rootPointer() {
     return root;
@@ -511,11 +515,12 @@ struct SimpleBTreeBase {
   }
 
   std::optional<Pointer> nextLeaf(Leaf const& leaf) {
-    return leaf.nextLeaf();
+    return keepLeafLinks ? leaf.nextLeaf() : std::nullopt;
   }
 
   void setNextLeaf(Leaf& leaf, std::optional<Pointer> n) {
-    leaf.setNextLeaf(n);
+    if (keepLeafLinks)
+      leaf.setNextLeaf(n);
   }
 
   int root;
@@ -526,6 +531,7 @@ struct SimpleBTreeBase {
 
   int indexId;
   int leafId;
+  bool keepLeafLinks;
 
   Map<int, Index> indexes;
   Map<int, Leaf> leaves;
@@ -534,14 +540,12 @@ struct SimpleBTreeBase {
   List<int> deletedIndexes;
 };
 
-struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
-  SimpleBTree(std::size_t maxisize, std::size_t maxlsize) {
-    maxIndexSize = maxisize;
-    maxLeafSize = maxlsize;
+static_assert(BTreeStorage<SimpleBTreeStorage>);
+static_assert(!std::is_base_of_v<SimpleBTreeStorage, BTree<SimpleBTreeStorage>>);
 
-    leafId = 0;
-    indexId = 0;
-  }
+struct SimpleBTree : public BTree<SimpleBTreeStorage> {
+  SimpleBTree(std::size_t maxisize, std::size_t maxlsize, bool leafLinks = true)
+    : BTree(std::in_place, maxisize, maxlsize, leafLinks) {}
 
   [[nodiscard]] std::expected<void, StarException> print() {
     auto printed = forAllNodes(Printer());
@@ -671,4 +675,40 @@ void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
 TEST(BTreeTest, All) {
   testBTree(3, 2);
   testBTree(6, 6);
+}
+
+TEST(BTreeTest, TraversalWithoutLeafLinks) {
+  SimpleBTree db(3, 2, false);
+  ASSERT_TRUE(db.createNewRoot());
+  for (int k = 0; k < 32; ++k)
+    ASSERT_TRUE(db.insert(k, genValue(k)));
+
+  auto records = db.find(5, 23);
+  ASSERT_TRUE(records);
+  ASSERT_EQ(records->size(), 18u);
+  for (std::size_t i = 0; i < records->size(); ++i) {
+    EXPECT_EQ((*records)[i].first, static_cast<int>(i) + 5);
+    EXPECT_EQ((*records)[i].second, genValue(static_cast<int>(i) + 5));
+  }
+
+  int nextKey = 0;
+  ASSERT_TRUE(db.forAll([&](int k, String const& data) -> std::expected<void, StarException> {
+    EXPECT_EQ(k, nextKey++);
+    EXPECT_EQ(data, genValue(k));
+    return {};
+  }));
+  EXPECT_EQ(nextKey, 32);
+
+  // Deferred node deletion is applied by setNewRoot, including root shrink.
+  for (int k = 0; k < 32; ++k) {
+    auto removed = db.remove(k);
+    ASSERT_TRUE(removed);
+    EXPECT_TRUE(*removed);
+  }
+  auto levels = db.indexLevels();
+  ASSERT_TRUE(levels);
+  EXPECT_EQ(*levels, 0u);
+  auto count = db.recordCount();
+  ASSERT_TRUE(count);
+  EXPECT_EQ(*count, 0u);
 }

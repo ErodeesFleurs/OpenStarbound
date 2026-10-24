@@ -24,8 +24,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-  BTreeDatabase::BTreeDatabase(Logger& logger) : m_logger(logger) {
-    m_impl.parent = this;
+  BTreeDatabase::BTreeDatabase(Logger& logger) : m_logger(logger), m_impl(std::in_place, *this) {
     m_open = false;
     m_deviceSize = 0;
     m_blockSize = 2048;
@@ -1642,16 +1641,17 @@ namespace Star {
     BlockIndex count = 1; // 1 to include root index
 
     double start = Time::monotonicTime();
-    auto result150 = m_impl.loadIndex(m_impl.rootPointer());
+    BTreeImpl storage(*this);
+    auto result150 = storage.loadIndex(storage.rootPointer());
     if (!result150) return std::unexpected(std::move(result150.error()));
     auto index = std::move(*result150);
     auto result151 = flattenVisitor(index, count);
     if (!result151) return std::unexpected(std::move(result151.error()));
     if ((*result151)) {
 
-      m_impl.deleteIndex(index);
+      storage.deleteIndex(index);
       index->self = InvalidBlockIndex;
-      auto result152 = m_impl.storeIndex(index);
+      auto result152 = storage.storeIndex(index);
       if (!result152) return std::unexpected(std::move(result152.error()));
       m_root = (*result152);
     }
@@ -1680,12 +1680,13 @@ namespace Star {
   }
 
   [[nodiscard]] std::expected<bool, StarException> BTreeDatabase::flattenVisitor(BTreeImpl::Index& index, BlockIndex& count) {
+    BTreeImpl storage(*this);
     auto pointerCount = index->pointerCount();
     count += pointerCount;
     bool canStore = !m_availableBlocks.empty();
 
     bool needsStore = false;
-    if (m_impl.indexLevel(index) == 0) {
+    if (storage.indexLevel(index) == 0) {
 
       for (std::size_t i = 0; i != pointerCount; ++i) {
 
@@ -1707,14 +1708,14 @@ namespace Star {
 
           if (leafNeedsStore) {
 
-            auto result140 = m_impl.loadLeaf(indexPointer);
+            auto result140 = storage.loadLeaf(indexPointer);
             if (!result140) return std::unexpected(std::move(result140.error()));
             auto leaf = std::move(*result140);
-            auto result141 = m_impl.deleteLeaf(leaf);
+            auto result141 = storage.deleteLeaf(leaf);
             if (!result141) return std::unexpected(std::move(result141.error()));
 
             leaf->self = InvalidBlockIndex;
-            auto result142 = m_impl.storeLeaf(leaf);
+            auto result142 = storage.storeLeaf(leaf);
             if (!result142) return std::unexpected(std::move(result142.error()));
             index->updatePointer(i, (*result142));
             auto result143 = leafTailBlocks(leaf->self);
@@ -1730,7 +1731,7 @@ namespace Star {
 
       for (std::size_t i = 0; i != pointerCount; ++i) {
 
-        auto result144 = m_impl.loadIndex(index->pointer(i));
+        auto result144 = storage.loadIndex(index->pointer(i));
         if (!result144) return std::unexpected(std::move(result144.error()));
         auto childIndex = std::move(*result144);
         if (canStore) {
@@ -1739,9 +1740,9 @@ namespace Star {
           if (!result145) return std::unexpected(std::move(result145.error()));
           if ((*result145)) {
 
-            m_impl.deleteIndex(childIndex);
+            storage.deleteIndex(childIndex);
             childIndex->self = InvalidBlockIndex;
-            auto result146 = m_impl.storeIndex(childIndex);
+            auto result146 = storage.storeIndex(childIndex);
             if (!result146) return std::unexpected(std::move(result146.error()));
             index->updatePointer(i, (*result146));
             canStore = !m_availableBlocks.empty();

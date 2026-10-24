@@ -5,6 +5,9 @@ import star.flat_hash_map;
 import star.random;
 import star.vector;
 import star.map;
+import star.set;
+import star.ordered_map;
+import star.ordered_set;
 import star.string;
 import star.string_view;
 import star.color;
@@ -400,4 +403,263 @@ TEST(FlatHashMap, NonDefaultAlignedValueLifetime) {
   EXPECT_EQ(*original.find(99)->second.value, 99);
   original.clear();
   EXPECT_TRUE(lifetimes[0].expired());
+}
+
+namespace {
+
+static_assert(MapContainer<Map<int, int>>);
+static_assert(MapContainer<HashMap<int, int>>);
+static_assert(MapContainer<StableHashMap<int, int>>);
+static_assert(!MapContainer<std::map<int, int>>);
+static_assert(!MapContainer<OrderedMap<int, int>>);
+static_assert(!MapContainer<OrderedHashMap<int, int>>);
+static_assert(SetContainer<Set<int>>);
+static_assert(SetContainer<HashSet<int>>);
+static_assert(SetContainer<StableHashSet<int>>);
+static_assert(!SetContainer<std::set<int>>);
+static_assert(!SetContainer<OrderedSet<int>>);
+static_assert(!SetContainer<OrderedHashSet<int>>);
+static_assert(std::same_as<HashMap<int, int>::Storage,
+    FlatHashMap<int, int, hash<int>, std::equal_to<>, std::allocator<std::pair<int const, int>>>>);
+static_assert(std::same_as<StableHashMap<int, int>::Storage,
+    std::unordered_map<int, int, hash<int>, std::equal_to<>, std::allocator<std::pair<int const, int>>>>);
+static_assert(!std::derived_from<Map<int, int>, Map<int, int>::Storage>);
+static_assert(!std::derived_from<HashMap<int, int>, HashMap<int, int>::Storage>);
+static_assert(!std::derived_from<StableHashMap<int, int>, StableHashMap<int, int>::Storage>);
+static_assert(!std::derived_from<Set<int>, Set<int>::Storage>);
+static_assert(!std::derived_from<HashSet<int>, HashSet<int>::Storage>);
+static_assert(!std::derived_from<StableHashSet<int>, StableHashSet<int>::Storage>);
+
+template <template <typename...> class MapType>
+void expectMapOwnershipContract() {
+  MapType<int, int> values{{1, 10}, {1, 99}, {2, 20}};
+  EXPECT_EQ(values.size(), 2u);
+  auto borrowed = values.get(1);
+  ASSERT_TRUE(borrowed);
+  EXPECT_EQ(**borrowed, 10);
+  auto const& constValues = values;
+  static_assert(std::same_as<decltype(constValues.get(1)), std::expected<int const*, StarException>>);
+  static_assert(std::same_as<decltype(values.get(1)), std::expected<int*, StarException>>);
+  auto copied = values.maybe(1);
+  auto keys = values.keys();
+  auto snapshot = values.values();
+  auto pairs = values.pairs();
+  for (auto& value : values.valueView())
+    ++value;
+  EXPECT_EQ(**borrowed, 11);
+  ASSERT_TRUE(copied);
+  EXPECT_EQ(*copied, 10);
+  EXPECT_EQ(std::ranges::count(snapshot, 10), 1);
+  EXPECT_EQ(std::ranges::count(pairs, 10, &std::pair<int, int>::second), 1);
+  EXPECT_EQ(std::ranges::count(values.keyView(), 1), 1);
+  EXPECT_EQ(keys.size(), 2u);
+  EXPECT_EQ(values.value(9, 42), 42);
+  EXPECT_FALSE(values.get(9));
+  EXPECT_FALSE(values.at(9));
+  EXPECT_FALSE(values.take(9));
+  EXPECT_FALSE(values.maybe(9));
+  EXPECT_FALSE(values.maybeTake(9));
+  EXPECT_FALSE(values.add(1, 90));
+  EXPECT_EQ(values.value(1), 11);
+
+  MapType<int, int> incoming{{1, 50}, {3, 30}};
+  EXPECT_FALSE(values.merge(incoming));
+  EXPECT_EQ(values.value(1), 11);
+  EXPECT_EQ(values.value(3), 30);
+  EXPECT_FALSE(values.merge(incoming, true));
+  EXPECT_EQ(values.value(1), 50);
+  auto taken = values.take(1);
+  ASSERT_TRUE(taken);
+  EXPECT_EQ(*taken, 50);
+  EXPECT_FALSE(values.contains(1));
+
+  MapType<int, std::unique_ptr<int>> owners;
+  owners.try_emplace(1, std::make_unique<int>(7));
+  auto candidate = std::make_unique<int>(8);
+  EXPECT_FALSE(owners.try_emplace(1, std::move(candidate)).second);
+  ASSERT_TRUE(candidate);
+  EXPECT_EQ(*candidate, 8);
+  auto extracted = owners.take(1);
+  ASSERT_TRUE(extracted);
+  ASSERT_TRUE(*extracted);
+  EXPECT_EQ(**extracted, 7);
+  EXPECT_TRUE(owners.empty());
+
+  MapType<int, int> printed{{1, 2}};
+  std::ostringstream stream;
+  stream << printed;
+  EXPECT_EQ(stream.str(), "{ \"1\" : \"2\" }");
+  EXPECT_EQ(std::format("{}", printed), stream.str());
+}
+
+template <typename Container>
+void expectSetAlgebraContract() {
+  Container values{1, 2, 3, 4};
+  Container other{2, 4, 5};
+  EXPECT_EQ(values.intersection(other), (Container{2, 4}));
+  EXPECT_EQ(values.difference(other), (Container{1, 3}));
+  EXPECT_EQ(values.combination(other), (Container{1, 2, 3, 4, 5}));
+  EXPECT_TRUE(values.hasIntersection(other));
+  EXPECT_FALSE(values.hasIntersection(Container{9}));
+  auto snapshot = values.values();
+  EXPECT_EQ(std::ranges::distance(values.valueView()), 4);
+  EXPECT_FALSE(values.add(1));
+  EXPECT_TRUE(values.remove(1));
+  EXPECT_EQ(snapshot.size(), 4u);
+  EXPECT_EQ(std::ranges::count(snapshot, 1), 1);
+  while (!values.empty()) {
+    auto taken = values.takeFirst();
+    ASSERT_TRUE(taken);
+    EXPECT_FALSE(values.contains(*taken));
+  }
+  EXPECT_FALSE(values.first());
+  EXPECT_FALSE(values.last());
+  EXPECT_FALSE(values.takeFirst());
+  EXPECT_FALSE(values.takeLast());
+  EXPECT_FALSE(values.maybeFirst());
+  EXPECT_FALSE(values.maybeLast());
+  EXPECT_FALSE(values.maybeTakeFirst());
+  EXPECT_FALSE(values.maybeTakeLast());
+}
+
+struct SetRecord {
+  int key;
+  int revision;
+  bool operator==(SetRecord const&) const = default;
+};
+struct SetRecordLess {
+  bool operator()(SetRecord const& a, SetRecord const& b) const { return a.key < b.key; }
+};
+struct SetRecordHash {
+  std::size_t operator()(SetRecord const& value) const { return hash<int>{}(value.key); }
+};
+struct SetRecordEqual {
+  bool operator()(SetRecord const& a, SetRecord const& b) const { return a.key == b.key; }
+};
+
+template <typename Container>
+void expectSetReplacementContract() {
+  Container values;
+  EXPECT_TRUE(values.add(SetRecord{1, 10}));
+  EXPECT_FALSE(values.add(SetRecord{1, 20}));
+  EXPECT_EQ(values.begin()->revision, 10);
+  EXPECT_TRUE(values.replace(SetRecord{1, 30}));
+  EXPECT_EQ(values.begin()->revision, 30);
+  EXPECT_FALSE(values.replace(SetRecord{2, 40}));
+  EXPECT_EQ(values.size(), 2u);
+}
+
+struct OwnedIntLess {
+  bool operator()(std::unique_ptr<int> const& a, std::unique_ptr<int> const& b) const { return *a < *b; }
+};
+struct OwnedIntHash {
+  std::size_t operator()(std::unique_ptr<int> const& value) const { return hash<int>{}(*value); }
+};
+struct OwnedIntEqual {
+  bool operator()(std::unique_ptr<int> const& a, std::unique_ptr<int> const& b) const { return *a == *b; }
+};
+
+template <typename Container>
+void expectSetOwnershipTransfer() {
+  Container values;
+  auto owner = std::make_unique<int>(7);
+  auto identity = owner.get();
+  EXPECT_TRUE(values.add(std::move(owner)));
+  EXPECT_FALSE(owner);
+  auto extracted = values.takeFirst();
+  ASSERT_TRUE(extracted);
+  EXPECT_EQ(extracted->get(), identity);
+  EXPECT_TRUE(values.empty());
+  values.add(std::move(*extracted));
+  auto last = values.maybeTakeLast();
+  ASSERT_TRUE(last);
+  EXPECT_EQ(last->get(), identity);
+  EXPECT_TRUE(values.empty());
+}
+
+struct FallibleSetValue {
+  int value;
+  std::vector<int>* visited;
+  friend bool operator<(FallibleSetValue const& a, FallibleSetValue const& b) { return a.value < b.value; }
+  friend std::expected<std::ostream*, StarException> operator<<(std::ostream& stream, FallibleSetValue const& value) {
+    value.visited->push_back(value.value);
+    if (value.value == 2)
+      return std::unexpected(OutOfRangeException("first diagnostic error", false));
+    stream << value.value;
+    return &stream;
+  }
+};
+
+}
+
+TEST(MapComposition, OwnsStorageAndSeparatesBorrowedLookupFromSnapshots) {
+  expectMapOwnershipContract<Map>();
+  expectMapOwnershipContract<HashMap>();
+  expectMapOwnershipContract<StableHashMap>();
+}
+
+TEST(MapComposition, StableStorageKeepsBorrowedValuesAcrossRehash) {
+  StableHashMap<int, int> values{{1, 10}};
+  int* borrowed = values.ptr(1);
+  for (int key = 2; key < 200; ++key)
+    values.set(key, key);
+  values.reserve(1000);
+  EXPECT_EQ(values.ptr(1), borrowed);
+  EXPECT_EQ(*borrowed, 10);
+}
+
+TEST(SetComposition, OrderedAndHashAlgebraPreserveMembership) {
+  expectSetAlgebraContract<Set<int>>();
+  expectSetAlgebraContract<HashSet<int, CollisionHash>>();
+  expectSetAlgebraContract<StableHashSet<int, CollisionHash>>();
+  Set<int, std::greater<int>> descending{1, 2, 3, 4};
+  Set<int, std::greater<int>> other{2, 4, 5};
+  EXPECT_EQ(descending.intersection(other), (Set<int, std::greater<int>>{4, 2}));
+  EXPECT_EQ(descending.difference(other), (Set<int, std::greater<int>>{3, 1}));
+  ASSERT_TRUE(descending.first());
+  EXPECT_EQ(*descending.first(), 4);
+  EXPECT_EQ(*descending.last(), 1);
+}
+
+TEST(SetComposition, ReplacementUsesEquivalenceRatherThanObjectEquality) {
+  expectSetReplacementContract<Set<SetRecord, SetRecordLess>>();
+  expectSetReplacementContract<HashSet<SetRecord, SetRecordHash, SetRecordEqual>>();
+  expectSetReplacementContract<StableHashSet<SetRecord, SetRecordHash, SetRecordEqual>>();
+}
+
+TEST(SetComposition, TakeTransfersMoveOnlyValues) {
+  expectSetOwnershipTransfer<Set<std::unique_ptr<int>, OwnedIntLess>>();
+  expectSetOwnershipTransfer<HashSet<std::unique_ptr<int>, OwnedIntHash, OwnedIntEqual>>();
+  expectSetOwnershipTransfer<StableHashSet<std::unique_ptr<int>, OwnedIntHash, OwnedIntEqual>>();
+}
+
+TEST(MapComposition, CheckedDiagnosticStopsAtFirstValueError) {
+  std::vector<int> visited;
+  Map<int, FallibleSetValue> values{{1, {1, &visited}}, {2, {2, &visited}}, {3, {3, &visited}}};
+  std::ostringstream stream;
+  auto printed = stream << values;
+  static_assert(std::same_as<decltype(printed), std::expected<std::ostream*, StarException>>);
+  ASSERT_FALSE(printed);
+  EXPECT_TRUE(printed.error().is<OutOfRangeException>());
+  EXPECT_EQ(visited, (std::vector<int>{1, 2}));
+  EXPECT_EQ(stream.str(), "{ \"1\" : \"1\", \"2\" : \"");
+}
+
+TEST(SetComposition, CheckedDiagnosticStopsAtFirstElementError) {
+  std::vector<int> visited;
+  Set<FallibleSetValue> values{{1, &visited}, {2, &visited}, {3, &visited}};
+  std::ostringstream stream;
+  auto printed = stream << values;
+  static_assert(std::same_as<decltype(printed), std::expected<std::ostream*, StarException>>);
+  ASSERT_FALSE(printed);
+  EXPECT_TRUE(printed.error().is<OutOfRangeException>());
+  EXPECT_EQ(visited, (std::vector<int>{1, 2}));
+  EXPECT_EQ(stream.str(), "(1, ");
+
+  Set<int> ordered{1, 2};
+  HashSet<int> flat{1};
+  StableHashSet<int> stable{1};
+  EXPECT_EQ(std::format("{}", ordered), "(1, 2)");
+  EXPECT_EQ(std::format("{}", flat), "(1)");
+  EXPECT_EQ(std::format("{}", stable), "(1)");
 }

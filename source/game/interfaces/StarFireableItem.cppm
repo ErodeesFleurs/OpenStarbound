@@ -166,7 +166,7 @@ protected:
   bool m_walkWhileFiring;
   bool m_stopWhileFiring;
 
-  mutable std::optional<LuaWorldComponent<LuaBaseComponent>> m_scriptComponent;
+  mutable std::optional<LuaWorldScript> m_scriptComponent;
 
   Json m_fireableParams;
 

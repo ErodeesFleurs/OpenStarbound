@@ -3,6 +3,7 @@ import star.memory;
 import star.hash;
 
 import star.format;
+import star.stream_formatter;
 import std;
 
 import star.byte_array;
@@ -628,3 +629,5 @@ export template <> struct std::formatter<Star::CaseInsensitiveString> : std::for
     return std::formatter<std::string>::format(key.string().utf8(), ctx);
   }
 };
+
+export template <> struct std::formatter<Star::StringList> : Star::StreamFormatter {};

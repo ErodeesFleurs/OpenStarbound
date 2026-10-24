@@ -183,8 +183,7 @@ Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
     if (m_pvpTeamCounter == 0)
       m_pvpTeamCounter = 1;
     bool done = true;
-    for (auto k : m_teams.keys()) {
-      auto const& t = *m_teams.ptr(k);
+    for (auto const& [k, t] : m_teams) {
       if (t.pvpTeamNumber == team.pvpTeamNumber) {
         if (k != teamUuid)
           done = false;

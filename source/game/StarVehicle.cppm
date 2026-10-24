@@ -241,9 +241,9 @@ private:
   std::shared_ptr<MovementController> m_movementController;
   std::shared_ptr<NetworkedAnimator> m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
-  LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
+  LuaStoredEntityScript m_scriptComponent;
   
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaAnimationScript m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
   Map<ConnectionId, GameTimer> m_aliveMasterConnections;

@@ -443,7 +443,7 @@ private:
 
   std::shared_ptr<LuaRoot> m_luaRoot;
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
+  typedef LuaMessageScript ScriptComponent;
   StringMap<std::shared_ptr<UniverseServer::ScriptComponent>> m_scriptContexts;
 
   mutable RecursiveMutex m_messageLock;

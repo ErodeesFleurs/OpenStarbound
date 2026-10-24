@@ -180,7 +180,7 @@ private:
   explicit StatusController(Root& root);
   [[nodiscard]] std::expected<void, StarException> configure(Json const& config);
   Root& m_root;
-  typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
+  typedef LuaStatusScript StatScript;
 
   struct EffectAnimator : public NetElement {
     explicit EffectAnimator(Root& root);

@@ -610,7 +610,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> initialize(std::shared_ptr<PlayerConfig> config, Uuid uuid);
   [[nodiscard]] std::expected<void, StarException> netLoad(ByteArray const& store, NetCompatibilityRules rules);
   [[nodiscard]] std::expected<void, StarException> installHumanoid();
-  typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
+  typedef LuaActorScript GenericScriptComponent;
 
 
   // handle input and other events (master only) that happen BEFORE movement/tech controller updates
@@ -634,7 +634,7 @@ private:
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   std::shared_ptr<NetHumanoid> m_currentNetHumanoid;
   NetElementData<std::optional<String>> m_deathParticleBurst;
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
+  LuaAnimationScript m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 

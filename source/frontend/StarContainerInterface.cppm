@@ -119,7 +119,7 @@ private:
 
   GuiReader m_reader;
 
-  std::optional<LuaWorldComponent<LuaUpdatableComponent<LuaBaseComponent>>> m_script;
+  std::optional<LuaWorldUpdateScript> m_script;
 };
 
 }

@@ -201,6 +201,8 @@ private:
     typedef std::shared_ptr<IndexNode> Index;
     typedef std::shared_ptr<LeafNode> Leaf;
 
+    explicit BTreeImpl(BTreeDatabase& database) : parent(&database) {}
+
     Pointer rootPointer();
     bool rootIsLeaf();
     [[nodiscard]] std::expected<void, StarException> setNewRoot(Pointer pointer, bool isLeaf);
@@ -277,7 +279,7 @@ private:
   Logger& m_logger;
   mutable ReadersWriterMutex m_lock;
 
-  BTreeMixin<BTreeImpl> m_impl;
+  BTree<BTreeImpl> m_impl;
 
   std::shared_ptr<IODevice> m_device;
   bool m_open;

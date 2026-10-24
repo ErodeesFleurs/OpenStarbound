@@ -290,12 +290,17 @@ std::expected<void, StarException> SystemWorldServer::removeClientShip(Connectio
 }
 
 List<std::shared_ptr<SystemClientShip>> SystemWorldServer::shipsAtLocation(SystemLocation const& location) const {
-  return m_ships.values().filtered([location](auto const& ship) { return ship->systemLocation() == location; });
+  List<std::shared_ptr<SystemClientShip>> ships;
+  for (auto const& ship : m_ships | std::views::values) {
+    if (ship->systemLocation() == location)
+      ships.append(ship);
+  }
+  return ships;
 }
 
 std::expected<List<InstanceWorldId>, StarException> SystemWorldServer::activeInstanceWorlds() const {
   List<InstanceWorldId> worlds;
-  for (auto clientId : m_clientShips.keys()) {
+  for (auto clientId : m_clientShips | std::views::keys) {
     auto warp = clientWarpAction(clientId);
     if (!warp)
       return std::unexpected(std::move(warp.error()));
@@ -363,7 +368,7 @@ std::expected<bool, StarException> SystemWorldServer::addObject(std::shared_ptr<
         return std::unexpected(std::move(size.error()));
       distances.append({*distance, *size / 2.0});
     }
-    for (auto const& existing : m_objects.values())
+    for (auto const& existing : m_objects | std::views::values)
       if (existing->permanent())
         distances.append({existing->position().magnitude(), 0});
     auto outerDistance = planetOrbitDistance(*outer);
@@ -389,7 +394,7 @@ std::expected<bool, StarException> SystemWorldServer::addObject(std::shared_ptr<
   auto store = object->netStore();
   if (!store)
     return std::unexpected(std::move(store.error()));
-  for (auto clientId : m_clientShips.keys())
+  for (auto clientId : m_clientShips | std::views::keys)
     m_outgoingPackets[clientId].append(std::make_shared<SystemObjectCreatePacket>(*store));
   m_triggerStorage = true;
   return true;

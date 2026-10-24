@@ -181,7 +181,8 @@ private:
 };
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const& m);
+auto operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const& m)
+    -> decltype(printMap(os, m));
 
 template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using OrderedMap = OrderedMapWrapper<std::map, Key, Value, Allocator, Compare>;
@@ -663,9 +664,9 @@ void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::sortByValue() {
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const& m) {
-  printMap(os, m);
-  return os;
+auto operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const& m)
+    -> decltype(printMap(os, m)) {
+  return printMap(os, m);
 }
 
 }
@@ -673,6 +674,7 @@ std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Al
 export module star.ordered_map;
 
 export template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
+  requires std::same_as<decltype(std::declval<std::ostream&>() << std::declval<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const&>()), std::ostream&>
 struct std::formatter<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>> : Star::StreamFormatter {};
 
 export namespace Star {

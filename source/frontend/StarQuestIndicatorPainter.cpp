@@ -213,9 +213,12 @@ std::expected<void, StarException> QuestIndicatorPainter::update(float dt, std::
     }
   }
 
-  std::erase_if(static_cast<Map<EntityId, Indicator>::Base&>(m_indicators), [&foundIndicators](auto const& indicator) {
-    return !foundIndicators.contains(indicator.first);
-  });
+  for (auto indicator = m_indicators.begin(); indicator != m_indicators.end();) {
+    if (!foundIndicators.contains(indicator->first))
+      indicator = m_indicators.erase(indicator);
+    else
+      ++indicator;
+  }
   return {};
 }
 

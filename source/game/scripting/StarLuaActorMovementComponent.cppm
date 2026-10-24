@@ -2,6 +2,11 @@ module;
 import std;
 import star.format;
 import star.lua;
+import star.lua_components;
+import star.root;
+import star.world;
+import star.string;
+import star.rpc_promise;
 import star.json;
 import star.game_types;
 import star.list;
@@ -15,23 +20,27 @@ import star.math_common;
 import star.algorithm;
 import star.output_proxy;
 
+
 namespace Star {
 
-class Root;
-
-// Holds actor controls between script updates, including the update-error path.
-template <typename Base>
-class LuaActorMovementComponent : public Base {
+// Buffered actor controls belong to one fixed-address script host. The host
+// explicitly clears before updating and applies controls afterwards, even on error.
+class LuaScriptMovement {
 public:
-  explicit LuaActorMovementComponent(Root& root);
+  explicit LuaScriptMovement(LuaBaseComponent& host) : m_host(host) {}
+  LuaScriptMovement(LuaScriptMovement const&) = delete;
+  LuaScriptMovement& operator=(LuaScriptMovement const&) = delete;
   [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller);
   [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks();
   bool autoClearControls() const;
   void setAutoClearControls(bool enabled);
-  template <typename Ret = LuaValue, typename... V>
-  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args);
-private:
+  void beforeUpdate(bool updateReady) {
+    if (updateReady && m_autoClearControls)
+      clearControls();
+  }
   [[nodiscard]] std::expected<void, StarException> performControls();
+private:
+  LuaBaseComponent& m_host;
   void clearControls();
   ActorMovementController* m_movementController = nullptr;
   bool m_autoClearControls = true;
@@ -54,11 +63,7 @@ private:
   std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
 };
 
-template <typename Base>
-LuaActorMovementComponent<Base>::LuaActorMovementComponent(Root& root) : Base(root) {}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* controller) {
+[[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::addActorMovementCallbacks(ActorMovementController* controller) {
   if (!controller)
     return removeActorMovementCallbacks();
   auto built = LuaBindings::makeMovementControllerCallbacks(controller);
@@ -195,53 +200,34 @@ template <typename Base>
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("pathfinding", [this]() { return m_movementController->pathfinding(); }); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaActorMovementComponent::autoClearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaScriptMovement::autoClearControls, this)); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaActorMovementComponent::setAutoClearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaScriptMovement::setAutoClearControls, this)); !result)
     return std::unexpected(std::move(result.error()));
-  if (auto result = callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaActorMovementComponent::clearControls, this)); !result)
+  if (auto result = callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaScriptMovement::clearControls, this)); !result)
     return std::unexpected(std::move(result.error()));
   auto previous = m_movementController;
   m_movementController = controller;
-  if (auto added = Base::addCallbacks("mcontroller", std::move(callbacks)); !added) {
+  if (auto added = m_host.addCallbacks("mcontroller", std::move(callbacks)); !added) {
     m_movementController = previous;
     return std::unexpected(std::move(added.error()));
   }
   return {};
 }
 
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::removeActorMovementCallbacks() {
-  auto removed = Base::removeCallbacks("mcontroller");
+[[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::removeActorMovementCallbacks() {
+  auto removed = m_host.removeCallbacks("mcontroller");
   if (!removed)
     return std::unexpected(std::move(removed.error()));
   m_movementController = nullptr;
   return {};
 }
 
-template <typename Base>
-bool LuaActorMovementComponent<Base>::autoClearControls() const { return m_autoClearControls; }
+inline bool LuaScriptMovement::autoClearControls() const { return m_autoClearControls; }
 
-template <typename Base>
-void LuaActorMovementComponent<Base>::setAutoClearControls(bool enabled) { m_autoClearControls = enabled; }
+inline void LuaScriptMovement::setAutoClearControls(bool enabled) { m_autoClearControls = enabled; }
 
-template <typename Base>
-template <typename Ret, typename... V>
-[[nodiscard]] std::expected<std::optional<Ret>, StarException> LuaActorMovementComponent<Base>::update(V&&... args) {
-  if (Base::updateReady() && m_autoClearControls)
-    clearControls();
-  auto result = Base::template update<Ret>(std::forward<V>(args)...);
-  auto controls = performControls();
-  if (!controls) {
-    if (!result)
-      return std::unexpected(controls.error().withContext(strf("Original Lua movement update failure: {}", outputException(result.error(), true))));
-    return std::unexpected(std::move(controls.error()));
-  }
-  return result;
-}
-
-template <typename Base>
-[[nodiscard]] std::expected<void, StarException> LuaActorMovementComponent<Base>::performControls() {
+[[nodiscard]] inline std::expected<void, StarException> LuaScriptMovement::performControls() {
   if (!m_movementController)
     return {};
   m_movementController->controlRotation(m_controlRotation);
@@ -280,8 +266,7 @@ template <typename Base>
   return {};
 }
 
-template <typename Base>
-void LuaActorMovementComponent<Base>::clearControls() {
+inline void LuaScriptMovement::clearControls() {
   m_controlRotation = {};
   m_controlAcceleration = {};
   m_controlForce = {};
@@ -302,10 +287,223 @@ void LuaActorMovementComponent<Base>::clearControls() {
   m_controlPathMove.reset();
 }
 
+// Persistent entity scripts snapshot storage before stopping child threads.
+class LuaActorScript final : public LuaBaseComponent {
+public:
+  explicit LuaActorScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_movement(*this) {}
+  ~LuaActorScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    m_movement.beforeUpdate(m_update.updateReady());
+    auto result = m_update.template update<Ret>(std::forward<V>(args)...);
+    auto controls = m_movement.performControls();
+    if (!controls) {
+      if (!result)
+        return std::unexpected(controls.error().withContext(strf("Original Lua movement update failure: {}", outputException(result.error(), true))));
+      return std::unexpected(std::move(controls.error()));
+    }
+    return result;
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const { return m_storage.getScriptStorage(); }
+  [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage) { return m_storage.setScriptStorage(std::move(storage)); }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
+  bool autoClearControls() const { return m_movement.autoClearControls(); }
+  void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_storage.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto storage = m_storage.readStorage();
+    auto stopped = m_update.contextShutdown();
+    auto shutdown = LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+    return m_storage.finishShutdown(std::move(storage), std::move(shutdown));
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptStorage m_storage;
+  LuaScriptMessages m_messages;
+  LuaScriptMovement m_movement;
+};
+
+// Active-item / quest scripts install storage before update callbacks, and read
+// it back after stopping child threads. This differs intentionally from actors.
+class LuaActionScript final : public LuaBaseComponent {
+public:
+  explicit LuaActionScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_storage(*this), m_messages(*this), m_movement(*this) {}
+  ~LuaActionScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    m_movement.beforeUpdate(m_update.updateReady());
+    auto result = m_update.template update<Ret>(std::forward<V>(args)...);
+    auto controls = m_movement.performControls();
+    if (!controls) {
+      if (!result)
+        return std::unexpected(controls.error().withContext(strf("Original Lua movement update failure: {}", outputException(result.error(), true))));
+      return std::unexpected(std::move(controls.error()));
+    }
+    return result;
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<JsonObject, StarException> getScriptStorage() const { return m_storage.getScriptStorage(); }
+  [[nodiscard]] std::expected<void, StarException> setScriptStorage(JsonObject storage) { return m_storage.setScriptStorage(std::move(storage)); }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
+  bool autoClearControls() const { return m_movement.autoClearControls(); }
+  void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_storage.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto stopped = m_update.contextShutdown();
+    auto storage = m_storage.readStorage();
+    auto shutdown = m_storage.finishShutdown(std::move(storage), LuaBaseComponent::contextShutdown());
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), std::move(shutdown));
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptStorage m_storage;
+  LuaScriptMessages m_messages;
+  LuaScriptMovement m_movement;
+};
+
+// Status-effect scripts retain actor controls without allocating script storage.
+class LuaStatusScript final : public LuaBaseComponent {
+public:
+  explicit LuaStatusScript(Root& root) : LuaBaseComponent(root), m_world(*this), m_update(*this), m_messages(*this), m_movement(*this) {}
+  ~LuaStatusScript() override { m_update.destroy(); }
+  [[nodiscard]] std::expected<void, StarException> init(World* world) { return m_world.init(world); }
+  [[nodiscard]] std::expected<void, StarException> uninit() { return m_world.uninit(); }
+  unsigned updateDelta() const { return m_update.updateDelta(); }
+  float updateDt(float dt) const { return m_update.updateDt(dt); }
+  float updateDt() const { return m_update.updateDt(); }
+  void setUpdateDelta(unsigned delta) { m_update.setUpdateDelta(delta); }
+  bool updateReady() const { return m_update.updateReady(); }
+  template <typename Ret = LuaValue, typename... V>
+  [[nodiscard]] std::expected<std::optional<Ret>, StarException> update(V&&... args) {
+    m_movement.beforeUpdate(m_update.updateReady());
+    auto result = m_update.template update<Ret>(std::forward<V>(args)...);
+    auto controls = m_movement.performControls();
+    if (!controls) {
+      if (!result)
+        return std::unexpected(controls.error().withContext(strf("Original Lua movement update failure: {}", outputException(result.error(), true))));
+      return std::unexpected(std::move(controls.error()));
+    }
+    return result;
+  }
+  RpcPromise<Json> threadPassMessage(String const& thread, String const& message, JsonArray const& args) override {
+    return m_update.threadPassMessage(thread, message, args);
+  }
+  [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> handleMessage(String const& message, bool localMessage, JsonArray const& args = {}) {
+    return m_messages.handleMessage(message, localMessage, args);
+  }
+  [[nodiscard]] std::expected<void, StarException> addActorMovementCallbacks(ActorMovementController* controller) { return m_movement.addActorMovementCallbacks(controller); }
+  [[nodiscard]] std::expected<void, StarException> removeActorMovementCallbacks() { return m_movement.removeActorMovementCallbacks(); }
+  bool autoClearControls() const { return m_movement.autoClearControls(); }
+  void setAutoClearControls(bool enabled) { m_movement.setAutoClearControls(enabled); }
+protected:
+  using LuaBaseComponent::setLuaRoot;
+  [[nodiscard]] std::expected<void, StarException> contextSetup() override {
+    if (auto result = LuaBaseComponent::contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_update.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    if (auto result = m_messages.contextSetup(); !result)
+      return std::unexpected(std::move(result.error()));
+    return {};
+  }
+  [[nodiscard]] std::expected<void, StarException> contextShutdown() override {
+    m_messages.contextShutdown();
+    auto stopped = m_update.contextShutdown();
+    return LuaScriptUpdate::finishShutdown(std::move(stopped), LuaBaseComponent::contextShutdown());
+  }
+  [[nodiscard]] std::expected<LuaCallbacks, StarException> makeThreadsCallbacks() override {
+    auto callbacks = LuaBaseComponent::makeThreadsCallbacks();
+    if (!callbacks)
+      return std::unexpected(std::move(callbacks.error()));
+    if (auto result = m_update.addThreadsCallbacks(*callbacks); !result)
+      return std::unexpected(std::move(result.error()));
+    return callbacks;
+  }
+private:
+  LuaScriptWorld m_world;
+  LuaScriptUpdate m_update;
+  LuaScriptMessages m_messages;
+  LuaScriptMovement m_movement;
+};
+
 }
 
 export module star.lua_actor_movement_component;
 
 export namespace Star {
-  using ::Star::LuaActorMovementComponent;
+  using ::Star::LuaScriptMovement;
+  using ::Star::LuaActorScript;
+  using ::Star::LuaActionScript;
+  using ::Star::LuaStatusScript;
 }

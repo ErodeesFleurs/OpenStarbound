@@ -151,7 +151,7 @@ private:
 
   float interfaceScale() const;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  typedef LuaUpdateScript ScriptComponent;
   std::shared_ptr<ScriptComponent> m_scriptComponent;
 
   GuiContext* m_guiContext;

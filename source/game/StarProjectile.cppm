@@ -248,7 +248,7 @@ private:
   Vec2I m_collisionTile;
   Vec2I m_lastNonCollidingTile;
 
-  mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
+  mutable LuaEntityScript m_scriptComponent;
 
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;

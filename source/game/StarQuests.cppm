@@ -211,7 +211,7 @@ private:
   std::optional<float> m_progress;
   std::optional<float> m_compassDirection;
 
-  LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
+  LuaActionScript
       m_scriptComponent;
 };
 
