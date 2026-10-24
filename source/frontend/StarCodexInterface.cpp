@@ -37,7 +37,6 @@ import star.periodic_function;
 import star.either;
 
 
-// Keep Uuid's textual definition ahead of the global codex interface on GCC.
 import star.lua_root;
 import star.uuid;
 import star.application;

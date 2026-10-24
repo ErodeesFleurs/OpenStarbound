@@ -93,7 +93,6 @@ import star.pane;
 import star.uuid;
 import star.warping;
 
-// Parse foundations before importing global bookmark value types on GCC.
 import star.sky_parameters;
 import star.system_world;
 import star.player_universe_map;

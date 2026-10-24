@@ -28,7 +28,6 @@ import star.either;
 
 
 
-// Parse foundations before importing global bookmark value types on GCC.
 import star.sky_types;
 import star.animation;
 import star.particle;

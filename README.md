@@ -34,7 +34,7 @@ Use `/help` for commands. See the [command reference](assets/opensb/help.config.
 
 ## Building
 
-Requires **C++23**, **CMake 3.28+**, **Ninja 1.11+**, and [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled libc++ and `std` module sources. All C++ dependencies must use the same compiler/runtime; Windows uses MinGW, not MSVC.
+Requires **C++23**, **CMake 3.28+**, **Ninja 1.11+**, and [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled libc++ and `std` module sources. Windows, Linux, macOS and CI use this toolchain; GCC, Apple Clang and MSVC builds are unsupported. C++ dependencies must use the same compiler/runtime; Windows uses the MinGW ABI.
 
 Lua is fetched using a [version/SHA-256 lock](cmake/dependencies/lua.json) and [project patch](cmake/patches/lua-openstarbound.patch), not vendored. Git is required for this path; Nix supplies prepatched sources. For offline builds, pass `-DFETCHCONTENT_SOURCE_DIR_STAR_LUA=/path/to/prepatched-lua` and `-DFETCHCONTENT_FULLY_DISCONNECTED=ON`; the source root must contain `src/`.
 

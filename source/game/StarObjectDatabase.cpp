@@ -44,7 +44,6 @@ import star.weighted_pool;
 
 import star.lua_root;
 import star.utility_lua_bindings;
-// Parse JSON iterator templates before Particle imports animation (GCC 16).
 import star.item_descriptor;
 import star.drawable;
 import star.animation;

@@ -194,7 +194,6 @@ private:
   std::optional<Color> m_fontColorChecked;
 };
 
-// GCC 16 needs the existing key function in this complete-definition TU for RTTI.
 ButtonWidget::~ButtonWidget() {
   if (auto group = m_buttonGroup.lock())
     group->removeButton(this);

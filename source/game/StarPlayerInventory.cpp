@@ -92,7 +92,6 @@ import star.armors;
 import star.drawable;
 import star.pointable_item;
 
-// Import before Player's global forward declaration so GCC 16 emits the vtable.
 import star.player_inventory;
 
 import star.uuid;

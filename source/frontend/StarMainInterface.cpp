@@ -187,7 +187,6 @@ import star.crafting_interface;
 
 import star.merchant_interface;
 
-// Keep Uuid's textual definition ahead of the global codex interface on GCC.
 import star.uuid;
 import star.player_codexes;
 
@@ -312,7 +311,6 @@ import star.fireable_item;
 import star.tool_user_entity;
 
 
-// Parse foundations before importing global bookmark value types on GCC.
 import star.player_universe_map;
 
 

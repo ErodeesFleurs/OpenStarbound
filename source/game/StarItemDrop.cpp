@@ -40,7 +40,6 @@ import star.ordered_set;
 import star.either;
 import star.periodic_function;
 
-// Parse JSON iterator templates before game headers import modules (GCC 16).
 import star.lua_root;
 
 import star.lua_components;

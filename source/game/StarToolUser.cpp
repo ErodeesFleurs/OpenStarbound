@@ -37,7 +37,6 @@ import star.spline;
 import star.observer_stream;
 import star.either;
 
-// Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
 import star.lua_root;
 import star.lua_components;
 import star.status_effect_entity;

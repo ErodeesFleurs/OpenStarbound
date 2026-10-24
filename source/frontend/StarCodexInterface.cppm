@@ -3,7 +3,6 @@ import std;
 import star.type_identity;
 import star.json;
 
-// Keep Uuid's textual definition ahead of the global codex interface on GCC.
 import star.data_stream;
 import star.casting;
 import star.input_event;

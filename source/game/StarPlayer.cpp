@@ -70,7 +70,6 @@ import star.btree_database;
 import star.image;
 
 import star.utility_lua_bindings;
-// Parse JSON iterator templates before game headers import modules (GCC 16).
 import star.lua_root;
 import star.lua_actor_movement_component;
 import star.lua_components;

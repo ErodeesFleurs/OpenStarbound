@@ -32,7 +32,6 @@ import star.audio;
 import star.map;
 
 
-// Parse foundations before importing global bookmark value types on GCC.
 import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
