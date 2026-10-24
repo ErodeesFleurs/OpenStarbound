@@ -127,13 +127,15 @@ Set `OPENSTARBOUND_TEST_JOBS` to bound parallel cases (default `1`); each discov
 
 Project C++ uses named modules, `import std;` and `std::expected`, with RTTI and C++ exceptions disabled. Preserve the same static C++ runtime across dependencies.
 
-Containers own their storage; shared algorithms and codecs use `SequenceContainer`, `MapContainer` and `SetContainer` constraints. Use `std::span`/`std::mdspan` for contiguous borrowed data; views must not outlive owners or reallocation. Retain owning snapshots across mutation or callbacks.
+Containers own their storage; shared algorithms and codecs use `SequenceContainer`, `MapContainer` and `SetContainer` constraints. Use `keyView()`/`valueView()` for nonmutating map traversal and `std::span`/`std::mdspan` for contiguous borrowed data. Views must not outlive owners or invalidation; retain snapshots across mutation or callbacks, and materialize Lua arguments before invoking scripts.
 
 `BTree<Storage>` owns a `BTreeStorage` implementation. Lua scripts use fixed-address, nonmovable hosts with value-owned features; preserve each host's initialization, storage-snapshot and shutdown ordering.
 
 Synchronization uses standard mutexes, guards and condition variables; clock acquisition uses `std::chrono`. Checked native thread lifecycle, writer-preferring read/write locking and durable file I/O remain explicit. Convert raw clock ticks using their reported frequencies. TCP close must wake readiness waits promptly while allowing already-buffered complete packets to drain.
 
-Numeric lexical conversion uses `std::from_chars` and requires full tokens. Integer overflow leaves existing destinations unchanged; value-initialized conversions yield `0`, including oversized `uint64_t` inputs that previously wrapped.
+Numeric lexical conversion uses `std::from_chars` and requires full tokens. Integer overflow leaves existing destinations unchanged; value-initialized conversions yield `0`, including oversized `uint64_t` inputs that previously wrapped. JSON numbers use bounded UTF-32 stack buffers with `std::format_to_n`, preserving default formatting.
+
+Fixed input/log-level name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. Runtime text still undergoes UTF-8 validation and case-insensitive comparison.
 
 For clangd 23, run `nix develop -c bash scripts/ide/configure-clangd.sh`. Use `--experimental-modules-support`, `--compile-commands-dir=/absolute/path/to/OpenStarbound/build/clangd` and `--query-driver=/nix/store/*-xclang-wrapper-*/bin/clang++,/nix/store/*-xclang-wrapper-*/bin/clang`; set `LC_ALL=C` and `LANGUAGE=C`.
 

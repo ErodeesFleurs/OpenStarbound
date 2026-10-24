@@ -739,14 +739,10 @@ std::expected<void, StarException> ClientApplication::processInput(InputEvent co
       return keyEvent.key == keyUp->key;
     });
 
-    if (!KeyNames)
-      return std::unexpected(KeyNames.error());
-    if (!KeyModNames)
-      return std::unexpected(KeyModNames.error());
-    auto keyName = KeyNames->getRight(keyUp->key);
+    auto keyName = enumName<KeyNames>(keyUp->key);
     if (!keyName)
       return std::unexpected(std::move(keyName.error()));
-    auto modKey = KeyModNames->maybeLeft(**keyName);
+    auto modKey = maybeEnumValue<KeyModNames>(*keyName);
     if (!modKey)
       return std::unexpected(std::move(modKey.error()));
     if (*modKey)

@@ -158,11 +158,10 @@ std::expected<RootLoader, StarException> RootLoader::create(Defaults defaults) {
     strf("Log to the given logfile relative to the root directory, defaults to {}",
       loader.m_defaults.logFile ? *loader.m_defaults.logFile : "no log file"));
   if (!logfile) return std::unexpected(std::move(logfile.error()));
-  if (!LogLevelNames) return std::unexpected(LogLevelNames.error());
-  auto levelName = LogLevelNames->getRight(loader.m_defaults.logLevel);
+  auto levelName = enumName<LogLevelNames>(loader.m_defaults.logLevel);
   if (!levelName) return std::unexpected(std::move(levelName.error()));
   auto loglevel = loader.addParameter("loglevel", "level", Optional,
-    strf("Sets the logging level (debug|info|warn|error), defaults to {}", **levelName));
+    strf("Sets the logging level (debug|info|warn|error), defaults to {}", *levelName));
   if (!loglevel) return std::unexpected(std::move(loglevel.error()));
   auto quiet = loader.addSwitch("quiet", strf("Do not log to stdout, defaults to {}", loader.m_defaults.quiet));
   if (!quiet) return std::unexpected(std::move(quiet.error()));
@@ -277,10 +276,9 @@ std::expected<Root::Settings, StarException> RootLoader::rootSettingsForOptions(
     rootSettings.includeUGC = *ugc;
 
     if (auto level = options.parameters.value("loglevel").maybeFirst()) {
-      if (!LogLevelNames) return std::unexpected(LogLevelNames.error());
-      auto parsed = LogLevelNames->getLeft(*level);
+      auto parsed = enumValue<LogLevelNames>(*level);
       if (!parsed) return std::unexpected(std::move(parsed.error()));
-      rootSettings.logLevel = **parsed;
+      rootSettings.logLevel = *parsed;
     } else {
       rootSettings.logLevel = m_defaults.logLevel;
     }

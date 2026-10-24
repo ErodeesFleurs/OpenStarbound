@@ -7,6 +7,10 @@ import star.file;
 import star.game_test;
 import star.game_types;
 import star.json;
+import star.input;
+import star.input_event;
+import star.map;
+import star.unicode;
 import star.lua;
 import star.lua_components;
 import star.lua_actor_movement_component;
@@ -268,6 +272,86 @@ const GameTestRegistration threadMessages("LuaComponentLifecycle", "ThreadPromis
   }
   ASSERT_TRUE(destroyed);
   expectPromiseFailure(*destroyed);
+});
+
+const GameTestRegistration inputEventNames("InputNameSerialization", "EventJsonPreservesCanonicalNamesAndUnknownEnumErrors", [](GameTest&) {
+  auto key = Input::inputEventToJson(KeyDownEvent{Key::F16, KeyMod::LGui | KeyMod::AltGr});
+  ASSERT_TRUE(key) << key.error().what();
+  EXPECT_EQ(*key, Json(JsonObject{{"type", "KeyDown"}, {"data", JsonObject{
+      {"key", "F16"}, {"mods", JsonArray{"LGui", "AltGr"}}}}}));
+  auto mouse = Input::inputEventToJson(MouseButtonUpEvent{MouseButton::FourthButton, Vec2F(3, 4)});
+  ASSERT_TRUE(mouse) << mouse.error().what();
+  EXPECT_EQ(*mouse, Json(JsonObject{{"type", "MouseButtonUp"}, {"data", JsonObject{
+      {"mouseButton", "MouseFourth"}, {"mousePosition", JsonArray{3.0, 4.0}}}}}));
+  auto controller = Input::inputEventToJson(ControllerButtonDownEvent{7, ControllerButton::Invalid});
+  ASSERT_TRUE(controller) << controller.error().what();
+  EXPECT_EQ(*controller, Json(JsonObject{{"type", "ControllerButtonDown"}, {"data", JsonObject{
+      {"controllerButton", "Invalid"}, {"controller", 7}}}}));
+  auto axis = Input::inputEventToJson(ControllerAxisEvent{2, ControllerAxis::TriggerRight, 0.5f});
+  ASSERT_TRUE(axis) << axis.error().what();
+  EXPECT_EQ(*axis, Json(JsonObject{{"type", "ControllerAxis"}, {"data", JsonObject{
+      {"controllerAxis", "TriggerRight"}, {"controllerAxisValue", 0.5}, {"controller", 2}}}}));
+  auto unknownKey = Input::inputEventToJson(KeyUpEvent{static_cast<Key>(65535)});
+  ASSERT_FALSE(unknownKey);
+  EXPECT_TRUE(unknownKey.error().is<MapException>());
+  auto unknownAxis = Input::inputEventToJson(ControllerAxisEvent{2, ControllerAxis::Invalid, 0.5f});
+  ASSERT_FALSE(unknownAxis);
+  EXPECT_TRUE(unknownAxis.error().is<MapException>());
+});
+
+const GameTestRegistration inputBindNames("InputNameSerialization", "BindJsonPreservesCaseFirstErrorsAndUnknownNames", [](GameTest&) {
+  auto key = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "eSc"},
+      {"mods", JsonArray{"rShIfT", "lCtRl", "RSHIFT"}}});
+  ASSERT_TRUE(key) << key.error().what();
+  auto keyBind = std::get_if<Input::KeyBind>(&*key);
+  ASSERT_NE(keyBind, nullptr);
+  EXPECT_EQ(keyBind->key, Key::Escape);
+  EXPECT_EQ(keyBind->mods, KeyMod::RShift | KeyMod::LCtrl);
+  EXPECT_EQ(keyBind->priority, 2);
+  auto serializedKey = Input::bindToJson(*key);
+  ASSERT_TRUE(serializedKey) << serializedKey.error().what();
+  EXPECT_EQ(*serializedKey, Json(JsonObject{{"type", "key"}, {"value", "Esc"},
+      {"mods", JsonArray{"RShift", "LCtrl"}}}));
+  auto reparsedKey = Input::bindFromJson(*serializedKey);
+  ASSERT_TRUE(reparsedKey) << reparsedKey.error().what();
+  auto reparsedKeyBind = std::get_if<Input::KeyBind>(&*reparsedKey);
+  ASSERT_NE(reparsedKeyBind, nullptr);
+  EXPECT_EQ(reparsedKeyBind->key, keyBind->key);
+  EXPECT_EQ(reparsedKeyBind->mods, keyBind->mods);
+  EXPECT_EQ(reparsedKeyBind->priority, keyBind->priority);
+
+  for (Json const& json : JsonArray{
+      JsonObject{{"type", "mouse"}, {"value", "mOuSeFiFtH"}},
+      JsonObject{{"type", "controller"}, {"value", "tOuChPaD"}, {"controller", 7}}}) {
+    auto bind = Input::bindFromJson(json);
+    ASSERT_TRUE(bind) << bind.error().what();
+    auto serialized = Input::bindToJson(*bind);
+    ASSERT_TRUE(serialized) << serialized.error().what();
+    auto type = json.getString("type");
+    ASSERT_TRUE(type);
+    EXPECT_EQ(*serialized, *type == "mouse"
+        ? Json(JsonObject{{"type", "mouse"}, {"value", "MouseFifth"}})
+        : Json(JsonObject{{"type", "controller"}, {"value", "Touchpad"}, {"controller", 7}}));
+  }
+  String malformed("zzzz\xff", 5);
+  auto unknown = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "not a key"},
+      {"mods", JsonArray{malformed}}});
+  ASSERT_TRUE(unknown) << unknown.error().what();
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(*unknown));
+  auto invalidName = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", malformed}});
+  ASSERT_FALSE(invalidName);
+  EXPECT_TRUE(invalidName.error().is<UnicodeException>());
+  auto firstUnknown = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "A"},
+      {"mods", JsonArray{"unknown modifier", malformed}}});
+  ASSERT_FALSE(firstUnknown);
+  EXPECT_TRUE(firstUnknown.error().is<MapException>());
+  auto firstInvalid = Input::bindFromJson(JsonObject{{"type", "key"}, {"value", "A"},
+      {"mods", JsonArray{malformed, "unknown modifier"}}});
+  ASSERT_FALSE(firstInvalid);
+  EXPECT_TRUE(firstInvalid.error().is<UnicodeException>());
+  auto invalidValue = Input::bindToJson(Input::KeyBind{static_cast<Key>(65535)});
+  ASSERT_FALSE(invalidValue);
+  EXPECT_TRUE(invalidValue.error().is<MapException>());
 });
 
 }

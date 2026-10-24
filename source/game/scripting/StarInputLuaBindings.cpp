@@ -7,6 +7,7 @@ import star.json;
 import star.lua;
 import star.lua_converters;
 import star.input_event;
+import star.bi_map;
 import star.thread;
 import star.listener;
 import star.hash;
@@ -35,77 +36,63 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeInputCallbacks(Input
     return std::unexpected(std::move(registration.error()));
 
   if (auto registration = callbacks.registerCallback("keyDown", [input](String const& keyName, std::optional<StringList> const& modNames) -> std::expected<std::optional<unsigned>, StarException> {
-    if (!KeyNames)
-      return std::unexpected(KeyNames.error());
-    auto key = KeyNames->getLeft(keyName);
+    auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
     std::optional<KeyMod> mod;
     if (modNames) {
-      if (!KeyModNames)
-        return std::unexpected(KeyModNames.error());
       mod = KeyMod::NoMod;
       for (auto& modName : *modNames) {
-        auto modifier = KeyModNames->getLeft(modName);
+        auto modifier = enumValue<KeyModNames>(modName);
         if (!modifier)
           return std::unexpected(std::move(modifier.error()));
-        *mod |= **modifier;
+        *mod |= *modifier;
       }
     }
-    return input->keyDown(**key, mod);
+    return input->keyDown(*key, mod);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
   auto keyHeld = [input](String const& keyName) -> std::expected<bool, StarException> {
-    if (!KeyNames)
-      return std::unexpected(KeyNames.error());
-    auto key = KeyNames->getLeft(keyName);
+    auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
-    return input->keyHeld(**key);
+    return input->keyHeld(*key);
   };
   if (auto registration = callbacks.registerCallback("keyHeld", keyHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("key",     keyHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("keyUp", [input](String const& keyName) -> std::expected<std::optional<unsigned>, StarException> {
-    if (!KeyNames)
-      return std::unexpected(KeyNames.error());
-    auto key = KeyNames->getLeft(keyName);
+    auto key = enumValue<KeyNames>(keyName);
     if (!key)
       return std::unexpected(std::move(key.error()));
-    return input->keyUp(**key);
+    return input->keyUp(*key);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
   if (auto registration = callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
-    if (!MouseButtonNames)
-      return std::unexpected(MouseButtonNames.error());
-    auto button = MouseButtonNames->getLeft(buttonName);
+    auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseDown(**button);
+    return input->mouseDown(*button);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 
   auto mouseHeld = [input](String const& buttonName) -> std::expected<bool, StarException> {
-    if (!MouseButtonNames)
-      return std::unexpected(MouseButtonNames.error());
-    auto button = MouseButtonNames->getLeft(buttonName);
+    auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseHeld(**button);
+    return input->mouseHeld(*button);
   };
   if (auto registration = callbacks.registerCallback("mouseHeld", mouseHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("mouse",     mouseHeld); !registration)
     return std::unexpected(std::move(registration.error()));
   if (auto registration = callbacks.registerCallback("mouseUp", [input](String const& buttonName) -> std::expected<std::optional<List<Vec2F>>, StarException> {
-    if (!MouseButtonNames)
-      return std::unexpected(MouseButtonNames.error());
-    auto button = MouseButtonNames->getLeft(buttonName);
+    auto button = enumValue<MouseButtonNames>(buttonName);
     if (!button)
       return std::unexpected(std::move(button.error()));
-    return input->mouseUp(**button);
+    return input->mouseUp(*button);
   }); !registration)
     return std::unexpected(std::move(registration.error()));
 

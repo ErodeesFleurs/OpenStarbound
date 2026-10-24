@@ -249,7 +249,7 @@ std::expected<void, StarException> SystemWorldServer::addClientShip(ConnectionId
   m_outgoingPackets.set(clientId, {});
   List<ByteArray> objectStores;
   objectStores.reserve(m_objects.size());
-  for (auto const& object : m_objects.values()) {
+  for (auto const& object : m_objects.valueView()) {
     auto store = object->netStore();
     if (!store)
       return std::unexpected(std::move(store.error()));
@@ -257,7 +257,7 @@ std::expected<void, StarException> SystemWorldServer::addClientShip(ConnectionId
   }
   List<ByteArray> shipStores;
   shipStores.reserve(m_ships.size() - 1);
-  for (auto const& otherShip : m_ships.values()) {
+  for (auto const& otherShip : m_ships.valueView()) {
     if (otherShip->uuid() != uuid) {
       auto store = otherShip->netStore();
       if (!store)
@@ -461,7 +461,7 @@ std::expected<void, StarException> SystemWorldServer::queueUpdatePackets() {
   for (auto clientId : m_clientNetVersions.keys()) {
     auto versions = m_clientNetVersions.ptr(clientId);
     HashMap<Uuid, ByteArray> shipUpdates;
-    for (auto const& ship : m_ships.values()) {
+    for (auto const& ship : m_ships.valueView()) {
       auto update = ship->writeNetState(versions->ships.value(ship->uuid(), 0), {});
       if (!update)
         return std::unexpected(std::move(update.error()));
@@ -470,7 +470,7 @@ std::expected<void, StarException> SystemWorldServer::queueUpdatePackets() {
         shipUpdates.set(ship->uuid(), std::move(update->first));
     }
     HashMap<Uuid, ByteArray> objectUpdates;
-    for (auto const& object : m_objects.values()) {
+    for (auto const& object : m_objects.valueView()) {
       auto update = object->writeNetState(versions->objects.value(object->uuid(), 0), {});
       if (!update)
         return std::unexpected(std::move(update.error()));

@@ -1258,7 +1258,13 @@ std::expected<ItemRecipe, StarException> ContainerObject::recipeForMaterials(Lis
     auto group = std::move(*groupResult);
     return database->getPreciseRecipeForMaterials(group, inputItems, {});
   }
-  auto resultResult = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](std::shared_ptr<Item> const& item) { return (bool)item; }).transformed([](std::shared_ptr<Item> const& item) { return item->descriptor().toJson(); }));
+  auto descriptors = inputItems
+      | std::views::filter([](std::shared_ptr<Item> const& item) { return bool(item); })
+      | std::views::transform([](std::shared_ptr<Item> const& item) { return item->descriptor().toJson(); });
+  JsonArray materials;
+  materials.reserve(inputItems.size());
+  std::ranges::copy(descriptors, std::back_inserter(materials));
+  auto resultResult = m_scriptComponent.invoke<Json>("craftingRecipe", materials);
   if (!resultResult)
     return std::unexpected(std::move(resultResult.error()));
   auto result = std::move(*resultResult);

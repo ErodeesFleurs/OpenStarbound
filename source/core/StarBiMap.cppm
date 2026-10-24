@@ -2,6 +2,7 @@ module;
 
 import std;
 import star.string;
+import star.string_view;
 import star.map;
 import star.list;
 import star.hash;
@@ -124,6 +125,100 @@ private:
 
 template <typename Left, typename Right, typename LeftHash = Star::hash<Left>, typename RightHash = Star::hash<Right>>
 using BiHashMap = BiMap<Left, Right, StableHashMap<Left, Right const*, LeftHash>, StableHashMap<Right, Left const*, RightHash>>;
+
+// Fixed ASCII enum spellings share the same Unicode-aware comparison and UTF-8
+// error boundary as StringView. Storage and reverse indices are constant data.
+constexpr int compareEnumNameBytes(std::string_view a, std::string_view b) {
+  auto lower = [](unsigned char c) { return c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c; };
+  for (std::size_t i = 0; i < std::min(a.size(), b.size()); ++i) {
+    auto left = lower(static_cast<unsigned char>(a[i]));
+    auto right = lower(static_cast<unsigned char>(b[i]));
+    if (left != right)
+      return left < right ? -1 : 1;
+  }
+  return a.size() < b.size() ? -1 : a.size() > b.size() ? 1 : 0;
+}
+
+template <typename Enum, std::size_t N>
+consteval auto sortedEnumNames(std::array<std::pair<Enum, std::string_view>, N> names) {
+  std::sort(names.begin(), names.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+  return names;
+}
+
+template <auto const& Names>
+consteval bool validEnumNames() {
+  for (std::size_t i = 0; i < Names.size(); ++i) {
+    for (unsigned char c : Names[i].second)
+      if (c >= 0x80)
+        return false;
+    if (i && Names[i - 1].first >= Names[i].first)
+      return false;
+    for (std::size_t j = 0; j < i; ++j)
+      if (compareEnumNameBytes(Names[i].second, Names[j].second) == 0)
+        return false;
+  }
+  return true;
+}
+
+template <auto const& Names>
+[[nodiscard]] std::expected<std::string_view, StarException> enumName(
+    typename std::remove_cvref_t<decltype(Names)>::value_type::first_type value) {
+  static_assert(validEnumNames<Names>(), "Fixed enum names must be unique ASCII spellings in enum order");
+  auto position = std::lower_bound(Names.begin(), Names.end(), value,
+      [](auto const& pair, auto key) { return pair.first < key; });
+  if (position == Names.end() || position->first != value)
+    return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()",
+        "enumName: key not found while rendering its diagnostic", value));
+  return position->second;
+}
+
+template <auto const& Names>
+[[nodiscard]] auto maybeEnumValue(StringView name)
+    -> std::expected<std::optional<typename std::remove_cvref_t<decltype(Names)>::value_type::first_type>, StarException> {
+  static_assert(validEnumNames<Names>(), "Fixed enum names must be unique ASCII spellings in enum order");
+  // Validate the entire argument before a short-circuit comparison can hide a
+  // malformed suffix, including when the name cannot match any table entry.
+  auto length = name.size();
+  if (!length)
+    return std::unexpected(std::move(length.error()));
+  static constexpr auto indices = [] {
+    std::array<std::size_t, Names.size()> result{};
+    for (std::size_t i = 0; i < result.size(); ++i)
+      result[i] = i;
+    std::sort(result.begin(), result.end(), [](auto a, auto b) {
+      return compareEnumNameBytes(Names[a].second, Names[b].second) < 0;
+    });
+    return result;
+  }();
+  std::size_t first = 0;
+  std::size_t last = indices.size();
+  while (first != last) {
+    auto middle = first + (last - first) / 2;
+    auto const& pair = Names[indices[middle]];
+    auto compared = name.compare(StringView(pair.second), String::CaseInsensitive);
+    if (!compared)
+      return std::unexpected(std::move(compared.error()));
+    if (*compared == 0)
+      return pair.first;
+    if (*compared < 0)
+      last = middle;
+    else
+      first = middle + 1;
+  }
+  return std::nullopt;
+}
+
+template <auto const& Names>
+[[nodiscard]] auto enumValue(StringView name)
+    -> std::expected<typename std::remove_cvref_t<decltype(Names)>::value_type::first_type, StarException> {
+  auto value = maybeEnumValue<Names>(name);
+  if (!value)
+    return std::unexpected(std::move(value.error()));
+  if (!*value)
+    return std::unexpected(mapDiagnosticError("Key '{}' not found in Map::get()",
+        "enumValue: key not found while rendering its diagnostic", name));
+  return **value;
+}
 
 // Case insensitive Enum <-> String map. Only validated, hash-stable keys enter
 // the reverse index; public text lookup validates before touching the index.
@@ -620,4 +715,9 @@ export namespace Star {
   using ::Star::BiMap;
   using ::Star::BiHashMap;
   using ::Star::EnumMap;
+  using ::Star::sortedEnumNames;
+  using ::Star::validEnumNames;
+  using ::Star::enumName;
+  using ::Star::maybeEnumValue;
+  using ::Star::enumValue;
 }

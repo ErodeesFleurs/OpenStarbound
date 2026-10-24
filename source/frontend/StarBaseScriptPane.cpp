@@ -220,12 +220,11 @@ std::expected<void, StarException> BaseScriptPane::tick(float dt) {
   }
   for (auto const& p : m_canvasKeyCallbacks) {
     for (auto const& keyEvent : p.first->pullKeyEvents()) {
-      if (!KeyNames)
-        return std::unexpected(KeyNames.error());
-      auto keyName = KeyNames->getRight(keyEvent.key);
+      auto keyName = enumName<KeyNames>(keyEvent.key);
       if (!keyName)
         return std::unexpected(std::move(keyName.error()));
-      auto result = m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown, **keyName);
+      // KeyNames borrows whole static string literals; Lua copies their bytes.
+      auto result = m_script.invoke(p.second, (int)keyEvent.key, keyEvent.keyDown, keyName->data());
       if (!result)
         return std::unexpected(std::move(result.error()));
     }

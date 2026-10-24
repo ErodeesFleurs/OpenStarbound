@@ -114,10 +114,6 @@ extern std::expected<EnumMap<InterfaceAction>, StarException> const InterfaceAct
 });
 
 std::expected<KeyChord, StarException> inputDescriptorFromJson(Json const& json) {
-  if (!KeyNames)
-    return std::unexpected(KeyNames.error());
-  if (!KeyModNames)
-    return std::unexpected(KeyModNames.error());
   Key key;
   auto type = json.getString("type");
   if (!type)
@@ -131,10 +127,10 @@ std::expected<KeyChord, StarException> inputDescriptorFromJson(Json const& json)
     auto name = value->toString();
     if (!name)
       return std::unexpected(std::move(name.error()));
-    auto parsed = KeyNames->getLeft(*name);
+    auto parsed = enumValue<KeyNames>(*name);
     if (!parsed)
       return std::unexpected(std::move(parsed.error()));
-    key = **parsed;
+    key = *parsed;
   } else if (value->canConvert(Json::Type::Int)) {
     auto number = value->toUInt();
     if (!number)
@@ -157,44 +153,36 @@ std::expected<KeyChord, StarException> inputDescriptorFromJson(Json const& json)
     auto name = entry.toString();
     if (!name)
       return std::unexpected(std::move(name.error()));
-    auto parsed = KeyModNames->getLeft(*name);
+    auto parsed = enumValue<KeyModNames>(*name);
     if (!parsed)
       return std::unexpected(std::move(parsed.error()));
-    mods |= **parsed;
+    mods |= *parsed;
   }
   return KeyChord{key, mods};
 }
 
 std::expected<Json, StarException> inputDescriptorToJson(KeyChord const& chord) {
-  if (!KeyNames)
-    return std::unexpected(KeyNames.error());
-  if (!KeyModNames)
-    return std::unexpected(KeyModNames.error());
   JsonArray modNames;
-  for (auto const& p : *KeyModNames) {
+  for (auto const& p : KeyModNames) {
     if ((chord.mods & p.first) != KeyMod::NoMod)
-      modNames.append(p.second);
+      modNames.append(String(p.second));
   }
-  auto name = KeyNames->getRight(chord.key);
+  auto name = enumName<KeyNames>(chord.key);
   if (!name)
     return std::unexpected(std::move(name.error()));
-  return JsonObject{{"type", "key"}, {"value", **name}, {"mods", modNames}};
+  return JsonObject{{"type", "key"}, {"value", String(*name)}, {"mods", modNames}};
 }
 
 std::expected<String, StarException> printInputDescriptor(KeyChord chord) {
-  if (!KeyNames)
-    return std::unexpected(KeyNames.error());
-  if (!KeyModNames)
-    return std::unexpected(KeyModNames.error());
   StringList modNames;
-  for (auto const& p : *KeyModNames) {
+  for (auto const& p : KeyModNames) {
     if ((chord.mods & p.first) != KeyMod::NoMod)
-      modNames.append(p.second);
+      modNames.append(String(p.second));
   }
-  auto name = KeyNames->getRight(chord.key);
+  auto name = enumName<KeyNames>(chord.key);
   if (!name)
     return std::unexpected(std::move(name.error()));
-  return String::joinWith(" + ", modNames.join(" + "), **name);
+  return String::joinWith(" + ", modNames.join(" + "), String(*name));
 }
 
 KeyBindings::KeyBindings() = default;

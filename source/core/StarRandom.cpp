@@ -118,13 +118,7 @@ std::expected<double, StarException> RandomSource::randd(double min, double max)
 }
 
 bool RandomSource::randb() {
-  std::uint32_t v = gen32();
-  bool parity = false;
-  while (v) {
-    parity = !parity;
-    v = v & (v - 1);
-  }
-  return parity;
+  return (std::popcount(gen32()) & 1) != 0;
 }
 
 void RandomSource::randBytes(char* buf, std::size_t len) {

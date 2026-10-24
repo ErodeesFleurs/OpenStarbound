@@ -70,35 +70,6 @@ struct Empty {
   }
 };
 
-// Return intersection of sorted containers.
-template <typename Container>
-[[nodiscard]] auto intersect(Container const& a, Container const& b) {
-  using Insertion = decltype(std::declval<Container&>().insert(std::declval<Container&>().end(), *a.begin()));
-  constexpr bool fallible = AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible;
-  using Result = std::conditional_t<fallible, std::expected<Container, StarException>, Container>;
-  Container r;
-  auto ai = a.begin();
-  auto bi = b.begin();
-  while (ai != a.end() && bi != b.end()) {
-    if (*ai < *bi) {
-      ++ai;
-    } else if (*bi < *ai) {
-      ++bi;
-    } else {
-      if constexpr (fallible) {
-        auto inserted = r.insert(r.end(), *ai);
-        if (!inserted)
-          return Result(std::unexpected(std::move(inserted.error())));
-      } else {
-        r.insert(r.end(), *ai);
-      }
-      ++ai;
-      ++bi;
-    }
-  }
-  return Result(std::move(r));
-}
-
 template <typename MapType1, typename MapType2>
 [[nodiscard]] auto mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
   using Insertion = std::remove_cvref_t<decltype(targetMap.insert(*sourceMap.begin()))>;
@@ -321,12 +292,6 @@ template <typename Container, typename Getter>
   return sortByComputedValue(container, std::forward<Getter>(valueGetter), true);
 }
 
-template <typename Container>
-Container reverseCopy(Container c) {
-  std::reverse(c.begin(), c.end());
-  return c;
-}
-
 template <typename T>
 T copy(T c) {
   return c;
@@ -397,117 +362,6 @@ T take(T& t) {
   return t2;
 }
 
-// Wraps a unary function to produce an output iterator
-template <typename UnaryFunction>
-class FunctionOutputIterator {
-public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
-
-  class OutputProxy {
-  public:
-    OutputProxy(UnaryFunction& f)
-      : m_function(f) {}
-
-    template <typename T>
-    OutputProxy& operator=(T&& value) {
-      static_assert(!AlgorithmResultInfo<std::remove_cvref_t<std::invoke_result_t<UnaryFunction&, T>>>::Fallible,
-          "Fallible output callbacks require an explicit checked loop");
-      m_function(std::forward<T>(value));
-      return *this;
-    }
-
-  private:
-    UnaryFunction& m_function;
-  };
-
-  [[nodiscard]] static std::expected<FunctionOutputIterator, StarException> create(UnaryFunction f) {
-    if constexpr (requires { f == nullptr; }) {
-      if (f == nullptr)
-        return std::unexpected(StarException("Cannot create an output iterator with an empty callback"));
-    }
-    return FunctionOutputIterator(std::move(f));
-  }
-
-  OutputProxy operator*() {
-    return OutputProxy(m_function);
-  }
-
-  FunctionOutputIterator& operator++() {
-    return *this;
-  }
-
-  FunctionOutputIterator operator++(int) {
-    return *this;
-  }
-
-private:
-  explicit FunctionOutputIterator(UnaryFunction f)
-    : m_function(std::move(f)) {}
-
-  UnaryFunction m_function;
-};
-
-template <typename UnaryFunction>
-[[nodiscard]] auto makeFunctionOutputIterator(UnaryFunction f) {
-  return FunctionOutputIterator<UnaryFunction>::create(std::move(f));
-}
-
-// Wraps a nullary function to produce an input iterator
-template <typename NullaryFunction>
-class FunctionInputIterator {
-public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
-
-  using Invocation = std::invoke_result_t<NullaryFunction&>;
-  using Value = std::conditional_t<std::is_reference_v<Invocation>, std::remove_reference_t<Invocation>*, Invocation>;
-  using FunctionReturnType = std::conditional_t<AlgorithmResultInfo<std::remove_cvref_t<Invocation>>::Fallible,
-      std::remove_cvref_t<Invocation>, std::expected<Value, StarException>>;
-
-  explicit FunctionInputIterator(NullaryFunction f = {})
-    : m_function(std::move(f)) {}
-
-  [[nodiscard]] FunctionReturnType operator*() {
-    if constexpr (requires { m_function == nullptr; }) {
-      if (m_function == nullptr)
-        return std::unexpected(StarException("Cannot invoke an empty input iterator callback"));
-    }
-    if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Invocation>>::Fallible) {
-      return std::invoke(m_function);
-    } else if constexpr (std::is_reference_v<Invocation>) {
-      return &std::invoke(m_function);
-    } else if constexpr (std::is_void_v<Invocation>) {
-      std::invoke(m_function);
-      return {};
-    } else {
-      return std::invoke(m_function);
-    }
-  }
-
-  FunctionInputIterator& operator++() {
-    return *this;
-  }
-
-  FunctionInputIterator operator++(int) {
-    return *this;
-  }
-
-private:
-  NullaryFunction m_function;
-};
-
-template <typename NullaryFunction>
-FunctionInputIterator<NullaryFunction> makeFunctionInputIterator(NullaryFunction f) {
-  return FunctionInputIterator<NullaryFunction>(std::move(f));
-}
-
 template <typename Functor>
 class FinallyGuard {
 public:
@@ -543,69 +397,6 @@ private:
 template <typename Functor>
 FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
   return FinallyGuard<Functor>(std::forward<Functor>(f));
-}
-
-
-// Unpack a parameter expansion into a container
-
-template <typename Container, typename... T>
-[[nodiscard]] auto unpackVariadic(T&&... t) {
-  constexpr bool fallible = (AlgorithmResultInfo<std::remove_cvref_t<decltype(
-      std::declval<Container&>().insert(std::declval<Container&>().end(), std::declval<T>()))>>::Fallible || ...);
-  Container c;
-  if constexpr (fallible) {
-    std::expected<void, StarException> status;
-    auto insert = [&](auto&& value) {
-      if (!status)
-        return;
-      using Insertion = decltype(c.insert(c.end(), std::forward<decltype(value)>(value)));
-      if constexpr (AlgorithmResultInfo<std::remove_cvref_t<Insertion>>::Fallible) {
-        auto result = c.insert(c.end(), std::forward<decltype(value)>(value));
-        if (!result)
-          status = std::unexpected(std::move(result.error()));
-      } else {
-        c.insert(c.end(), std::forward<decltype(value)>(value));
-      }
-    };
-    (insert(std::forward<T>(t)), ...);
-    if (!status)
-      return std::expected<Container, StarException>(std::unexpected(std::move(status.error())));
-    return std::expected<Container, StarException>(std::move(c));
-  } else {
-    (c.insert(c.end(), std::forward<T>(t)), ...);
-    return c;
-  }
-}
-
-// Call a function on each entry in a variadic parameter set
-
-template <typename Function, typename... Args>
-[[nodiscard]] auto callFunctionVariadic(Function&& function, Args&&... args) {
-  constexpr bool fallible = (AlgorithmResultInfo<std::remove_cvref_t<std::invoke_result_t<Function&, std::remove_reference_t<Args>&>>>::Fallible || ...)
-      || requires { function == nullptr; };
-  if constexpr (fallible) {
-    if constexpr (requires { function == nullptr; }) {
-      if (function == nullptr)
-        return std::expected<void, StarException>(std::unexpected(StarException("Cannot invoke an empty variadic callback")));
-    }
-    std::expected<void, StarException> status;
-    auto invoke = [&](auto& arg) {
-      if (!status)
-        return;
-      using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, decltype(arg)>>;
-      if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
-        auto result = std::invoke(function, arg);
-        if (!result)
-          status = std::unexpected(std::move(result.error()));
-      } else {
-        std::invoke(function, arg);
-      }
-    };
-    (invoke(args), ...);
-    return status;
-  } else {
-    (std::invoke(function, args), ...);
-  }
 }
 
 template <typename... Rest>
@@ -682,7 +473,6 @@ export namespace Star {
   using ::Star::SwallowReturn;
   using ::Star::swallow;
   using ::Star::Empty;
-  using ::Star::intersect;
   using ::Star::mapMerge;
   using ::Star::mapsEqual;
   using ::Star::filter;
@@ -691,19 +481,12 @@ export namespace Star {
   using ::Star::sorted;
   using ::Star::sortByComputedValue;
   using ::Star::stableSortByComputedValue;
-  using ::Star::reverseCopy;
   using ::Star::copy;
   using ::Star::transformInto;
   using ::Star::transform;
   using ::Star::take;
-  using ::Star::FunctionOutputIterator;
-  using ::Star::makeFunctionOutputIterator;
-  using ::Star::FunctionInputIterator;
-  using ::Star::makeFunctionInputIterator;
   using ::Star::FinallyGuard;
   using ::Star::finally;
-  using ::Star::unpackVariadic;
-  using ::Star::callFunctionVariadic;
   using ::Star::VariadicTypedef;
   using ::Star::FunctionTraits;
 }

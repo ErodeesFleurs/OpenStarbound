@@ -18,13 +18,6 @@ import star.poly;
 import star.algorithm;
 namespace Star {
 
-extern std::expected<EnumMap<LogLevel>, StarException> const LogLevelNames = EnumMap<LogLevel>::create({
-  {LogLevel::Debug, "Debug"},
-  {LogLevel::Info, "Info"},
-  {LogLevel::Warn, "Warn"},
-  {LogLevel::Error, "Error"}
-});
-
 LogSink::LogSink()
   : m_level(LogLevel::Info) {}
 
@@ -40,12 +33,10 @@ LogLevel LogSink::level() {
 
 std::expected<void, StarException> StdoutLogSink::log(char const* msg, LogLevel level) {
   std::lock_guard locker(m_logMutex);
-  if (!LogLevelNames)
-    return std::unexpected(LogLevelNames.error());
-  auto name = LogLevelNames->getRight(level);
+  auto name = enumName<LogLevelNames>(level);
   if (!name)
     return std::unexpected(std::move(name.error()));
-  coutf("[{}] {}\n", **name, msg);
+  coutf("[{}] {}\n", *name, msg);
   return {};
 }
 
@@ -64,12 +55,10 @@ std::expected<std::shared_ptr<FileLogSink>, StarException> FileLogSink::create(
 std::expected<void, StarException> FileLogSink::log(char const* msg, LogLevel level) {
   std::lock_guard locker(m_logMutex);
   auto timestamp = Time::printCurrentDateAndTime("<hours>:<minutes>:<seconds>.<millis>");
-  if (!LogLevelNames)
-    return std::unexpected(LogLevelNames.error());
-  auto name = LogLevelNames->getRight(level);
+  auto name = enumName<LogLevelNames>(level);
   if (!name)
     return std::unexpected(std::move(name.error()));
-  auto line = strf("[{}] [{}] {}\n", timestamp, **name, msg);
+  auto line = strf("[{}] [{}] {}\n", timestamp, *name, msg);
   auto written = m_output->write(line.data(), line.size());
   if (!written)
     return std::unexpected(std::move(written.error()));

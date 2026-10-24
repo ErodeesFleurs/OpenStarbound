@@ -206,9 +206,9 @@ std::expected<Json, StarException> StatusController::diskStore() const {
   JsonObject persistentEffectCategories;
   for (auto const& pair : m_persistentEffects) {
     List<PersistentStatusEffect> persistentEffects;
-    persistentEffects.appendAll(pair.second.statModifiers.transformed(construct<PersistentStatusEffect>()));
-    for (auto const& effect : pair.second.uniqueEffects)
-      persistentEffects.append(PersistentStatusEffect(effect));
+    persistentEffects.reserve(pair.second.statModifiers.size() + pair.second.uniqueEffects.size());
+    std::ranges::transform(pair.second.statModifiers, std::back_inserter(persistentEffects), construct<PersistentStatusEffect>());
+    std::ranges::transform(pair.second.uniqueEffects, std::back_inserter(persistentEffects), construct<PersistentStatusEffect>());
     JsonArray effects;
     for (auto const& effect : persistentEffects) {
       auto json = jsonFromPersistentStatusEffect(effect);
@@ -392,11 +392,12 @@ std::expected<float, StarException> StatusController::modifyResourcePercentage(S
 }
 
 List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
+  // Keep the category snapshot's hash-set iteration order in the returned list.
   auto category = m_persistentEffects.maybe(statEffectCategory).value_or(PersistentEffectCategory{});
-  List<PersistentStatusEffect> persistentEffects =
-      category.statModifiers.transformed(construct<PersistentStatusEffect>());
-  persistentEffects.appendAll(
-      List<UniqueStatusEffect>::from(category.uniqueEffects).transformed(construct<PersistentStatusEffect>()));
+  List<PersistentStatusEffect> persistentEffects;
+  persistentEffects.reserve(category.statModifiers.size() + category.uniqueEffects.size());
+  std::ranges::transform(category.statModifiers, std::back_inserter(persistentEffects), construct<PersistentStatusEffect>());
+  std::ranges::transform(category.uniqueEffects, std::back_inserter(persistentEffects), construct<PersistentStatusEffect>());
   return persistentEffects;
 }
 

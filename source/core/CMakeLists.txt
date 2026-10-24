@@ -110,7 +110,6 @@ target_sources (star_modules PRIVATE
     StarColor.cpp
     StarFont.cpp
     StarImage.cpp
-    StarInputEvent.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 if (STAR_SYSTEM_FAMILY_UNIX)
   target_sources (star_modules PRIVATE StarLockFile_unix.cpp StarTime_unix.cpp

@@ -1,10 +1,12 @@
 import std;
+import star.format;
 import star.json;
 import star.string;
 import star.unicode;
 import star.file;
 import star.lexical_cast;
 import star.json_path;
+import star.json_builder;
 import star.random;
 
 #include "gtest/gtest.h"
@@ -224,6 +226,105 @@ TEST(JsonTest, Types) {
   EXPECT_EQ(v.type(), Json::Type::Array);
   v = JsonObject();
   EXPECT_EQ(v.type(), Json::Type::Object);
+}
+
+TEST(JsonTest, NumericOutputPreservesIntegerExtrema) {
+  Json numbers = JsonArray{std::numeric_limits<std::int64_t>::min(), std::numeric_limits<std::int64_t>::max(), 0, -1};
+  auto text = numbers.repr();
+  ASSERT_TRUE(text);
+  EXPECT_EQ(*text, "[-9223372036854775808,9223372036854775807,0,-1]");
+
+  auto parsed = Json::parseJson(*text);
+  ASSERT_TRUE(parsed);
+  EXPECT_EQ(*parsed, numbers);
+}
+
+TEST(JsonTest, NumericOutputPreservesFloatingBoundaries) {
+  Json numbers = JsonArray{
+      0.0, std::bit_cast<double>(std::uint64_t{0x8000000000000000}), 1.5, 1e100, 1e-100,
+      std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest(),
+      std::numeric_limits<double>::min(), std::numeric_limits<double>::denorm_min()};
+  auto text = numbers.repr();
+  ASSERT_TRUE(text);
+  EXPECT_EQ(*text, "[0,-0,1.5,1e+100,1e-100,1.7976931348623157e+308,-1.7976931348623157e+308,"
+      "2.2250738585072014e-308,5e-324]");
+}
+
+TEST(JsonTest, NumericOutputPreservesNonfiniteSpellings) {
+  Json numbers = JsonArray{
+      std::bit_cast<double>(std::uint64_t{0x7ff0000000000000}),
+      std::bit_cast<double>(std::uint64_t{0xfff0000000000000}),
+      std::bit_cast<double>(std::uint64_t{0x7ff8000000000000})};
+  auto text = numbers.repr();
+  ASSERT_TRUE(text);
+  // Preserve the existing spellings, even though strict JSON cannot parse them.
+  EXPECT_EQ(*text, "[inf,-inf,nan]");
+}
+
+TEST(JsonTest, NumericStreamPreservesKindsAndSignedZero) {
+  JsonArray numbers{
+      std::numeric_limits<std::int64_t>::min(), std::numeric_limits<std::int64_t>::max(), 0,
+      0.0, std::bit_cast<double>(std::uint64_t{0x8000000000000000}),
+      std::numeric_limits<double>::max(), std::numeric_limits<double>::denorm_min()};
+  for (auto const& number : numbers) {
+    JsonBuilderStream sink;
+    auto written = JsonStreamer<Json>::toJsonStream(number, sink, false);
+    ASSERT_TRUE(written);
+    auto rebuilt = sink.takeTop();
+    ASSERT_TRUE(rebuilt);
+    EXPECT_EQ(rebuilt->type(), number.type());
+    if (number.type() == Json::Type::Int) {
+      auto original = number.toInt();
+      auto actual = rebuilt->toInt();
+      ASSERT_TRUE(original);
+      ASSERT_TRUE(actual);
+      EXPECT_EQ(*actual, *original);
+    } else {
+      auto original = number.toDouble();
+      auto actual = rebuilt->toDouble();
+      ASSERT_TRUE(original);
+      ASSERT_TRUE(actual);
+      EXPECT_EQ(std::bit_cast<std::uint64_t>(*actual), std::bit_cast<std::uint64_t>(*original));
+    }
+  }
+}
+
+TEST(JsonTest, NumericOutputStopsAtFirstSinkError) {
+  struct Sink {
+    std::u32string& prefix;
+    std::size_t& calls;
+    std::size_t limit;
+
+    std::expected<void, StarException> push(char32_t c) {
+      ++calls;
+      if (prefix.size() == limit)
+        return std::unexpected(JsonException("numeric sink failure"));
+      prefix.push_back(c);
+      return {};
+    }
+  };
+
+  JsonArray numbers{std::numeric_limits<std::int64_t>::min(), std::numeric_limits<double>::max()};
+  for (auto const& number : numbers) {
+    for (std::size_t limit : {std::size_t{1}, std::size_t{6}}) {
+      std::u32string prefix;
+      std::size_t calls = 0;
+      // The invalid string must not replace the earlier numeric sink failure.
+      Json input = JsonArray{number, String("\xff", 1)};
+      auto written = outputUtf32Json(input, Sink{prefix, calls, limit}, 0, false);
+      ASSERT_FALSE(written);
+      EXPECT_TRUE(written.error().is<JsonException>());
+      EXPECT_FALSE(written.error().is<UnicodeException>());
+      EXPECT_EQ(calls, limit + 1);
+      EXPECT_EQ(prefix.size(), limit);
+      if (limit == 1)
+        EXPECT_EQ(prefix, U"[");
+      else if (number.type() == Json::Type::Int)
+        EXPECT_EQ(prefix, U"[-9223");
+      else
+        EXPECT_EQ(prefix, U"[1.797");
+    }
+  }
 }
 
 TEST(JsonTest, Query) {

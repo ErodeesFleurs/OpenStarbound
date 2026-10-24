@@ -86,13 +86,12 @@ Json keyModsToJson(KeyMod mod) {
   std::uint8_t modPriority = 0;
   auto array = json.toArray();
   if (!array) return std::unexpected(std::move(array.error()));
-  if (!KeyModNames) return std::unexpected(KeyModNames.error());
   for (Json const& jMod : *array) {
     auto text = jMod.toString();
     if (!text) return std::unexpected(std::move(text.error()));
-    auto named = KeyModNames->getLeft(*text);
+    auto named = enumValue<KeyModNames>(*text);
     if (!named) return std::unexpected(std::move(named.error()));
-    KeyMod changedMod = mod | **named;
+    KeyMod changedMod = mod | *named;
     if (mod != changedMod) {
       mod = changedMod;
       ++modPriority;
@@ -122,35 +121,31 @@ std::expected<Json, StarException> Input::inputEventToJson(InputEvent const& inp
 
   if (auto keyDown = std::get_if<KeyDownEvent>(&input)) {
     type = "KeyDown";
-    if (!KeyNames) return std::unexpected(KeyNames.error());
-    auto name = KeyNames->getRight(keyDown->key);
+    auto name = enumName<KeyNames>(keyDown->key);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"key", **name},
+      {"key", String(*name)},
       {"mods", keyModsToJson(keyDown->mods)}
     };
   } else if (auto keyUp = std::get_if<KeyUpEvent>(&input)) {
     type = "KeyUp";
-    if (!KeyNames) return std::unexpected(KeyNames.error());
-    auto name = KeyNames->getRight(keyUp->key);
+    auto name = enumName<KeyNames>(keyUp->key);
     if (!name) return std::unexpected(std::move(name.error()));
-    data = JsonObject{{"key", **name}};
+    data = JsonObject{{"key", String(*name)}};
   } else if (auto mouseDown = std::get_if<MouseButtonDownEvent>(&input)) {
     type = "MouseButtonDown";
-    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
-    auto name = MouseButtonNames->getRight(mouseDown->mouseButton);
+    auto name = enumName<MouseButtonNames>(mouseDown->mouseButton);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"mouseButton", **name},
+      {"mouseButton", String(*name)},
       {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}
     };
   } else if (auto mouseUp = std::get_if<MouseButtonUpEvent>(&input)) {
     type = "MouseButtonUp";
-    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
-    auto name = MouseButtonNames->getRight(mouseUp->mouseButton);
+    auto name = enumName<MouseButtonNames>(mouseUp->mouseButton);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"mouseButton", **name},
+      {"mouseButton", String(*name)},
       {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}
     };
   } else if (auto mouseWheel = std::get_if<MouseWheelEvent>(&input)) {
@@ -167,27 +162,24 @@ std::expected<Json, StarException> Input::inputEventToJson(InputEvent const& inp
     };
   } else if (auto controllerDown = std::get_if<ControllerButtonDownEvent>(&input)) {
     type = "ControllerButtonDown";
-    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
-    auto name = ControllerButtonNames->getRight(controllerDown->controllerButton);
+    auto name = enumName<ControllerButtonNames>(controllerDown->controllerButton);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerButton", **name},
+      {"controllerButton", String(*name)},
       {"controller", controllerDown->controller}};
   } else if (auto controllerUp = std::get_if<ControllerButtonUpEvent>(&input)) {
     type = "ControllerButtonUp";
-    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
-    auto name = ControllerButtonNames->getRight(controllerUp->controllerButton);
+    auto name = enumName<ControllerButtonNames>(controllerUp->controllerButton);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerButton", **name},
+      {"controllerButton", String(*name)},
       {"controller", controllerUp->controller}};
   } else if (auto controllerAxis = std::get_if<ControllerAxisEvent>(&input)) {
     type = "ControllerAxis";
-    if (!ControllerAxisNames) return std::unexpected(ControllerAxisNames.error());
-    auto name = ControllerAxisNames->getRight(controllerAxis->controllerAxis);
+    auto name = enumName<ControllerAxisNames>(controllerAxis->controllerAxis);
     if (!name) return std::unexpected(std::move(name.error()));
     data = JsonObject{
-      {"controllerAxis", **name},
+      {"controllerAxis", String(*name)},
       {"controllerAxisValue", controllerAxis->controllerAxisValue},
       {"controller", controllerAxis->controller}};
   }
@@ -219,8 +211,7 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
 
   if (type == "key") {
     KeyBind keyBind;
-    if (!KeyNames) return std::unexpected(KeyNames.error());
-    auto key = KeyNames->maybeLeft(*text);
+    auto key = maybeEnumValue<KeyNames>(*text);
     if (!key) return std::unexpected(std::move(key.error()));
     if (!*key) return bind;
     keyBind.key = **key;
@@ -233,8 +224,7 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
   }
   else if (type == "mouse") {
     MouseBind mouseBind;
-    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
-    auto button = MouseButtonNames->maybeLeft(*text);
+    auto button = maybeEnumValue<MouseButtonNames>(*text);
     if (!button) return std::unexpected(std::move(button.error()));
     if (!*button) return bind;
     mouseBind.button = **button;
@@ -247,8 +237,7 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
   }
   else if (type == "controller") {
     ControllerBind controllerBind;
-    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
-    auto button = ControllerButtonNames->maybeLeft(*text);
+    auto button = maybeEnumValue<ControllerButtonNames>(*text);
     if (!button) return std::unexpected(std::move(button.error()));
     if (!*button) return bind;
     controllerBind.button = **button;
@@ -263,36 +252,33 @@ std::expected<Input::Bind, StarException> Input::bindFromJson(Json const& json) 
 
 std::expected<Json, StarException> Input::bindToJson(Bind const& bind) {
   if (auto keyBind = std::get_if<KeyBind>(&bind)) {
-    if (!KeyNames) return std::unexpected(KeyNames.error());
-    auto name = KeyNames->getRight(keyBind->key);
+    auto name = enumName<KeyNames>(keyBind->key);
     if (!name) return std::unexpected(std::move(name.error()));
     auto obj = JsonObject{
       {"type", "key"},
-      {"value", **name}
+      {"value", String(*name)}
     }; // don't want empty mods to exist as null entry
     if (auto mods = keyModsToJson(keyBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
   }
   else if (auto mouseBind = std::get_if<MouseBind>(&bind)) {
-    if (!MouseButtonNames) return std::unexpected(MouseButtonNames.error());
-    auto name = MouseButtonNames->getRight(mouseBind->button);
+    auto name = enumName<MouseButtonNames>(mouseBind->button);
     if (!name) return std::unexpected(std::move(name.error()));
     auto obj = JsonObject{
       {"type", "mouse"},
-      {"value", **name}
+      {"value", String(*name)}
     };
     if (auto mods = keyModsToJson(mouseBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
   }
   else if (auto controllerBind = std::get_if<ControllerBind>(&bind)) {
-    if (!ControllerButtonNames) return std::unexpected(ControllerButtonNames.error());
-    auto name = ControllerButtonNames->getRight(controllerBind->button);
+    auto name = enumName<ControllerButtonNames>(controllerBind->button);
     if (!name) return std::unexpected(std::move(name.error()));
     return JsonObject{
       {"type", "controller"},
-      {"value", **name},
+      {"value", String(*name)},
       {"controller", controllerBind->controller}
     };
   }

@@ -21,7 +21,13 @@ enum class LogLevel {
   Warn,
   Error
 };
-extern std::expected<EnumMap<LogLevel>, StarException> const LogLevelNames;
+inline constexpr auto LogLevelNames = sortedEnumNames(std::to_array<std::pair<LogLevel, std::string_view>>({
+  {LogLevel::Debug, "Debug"},
+  {LogLevel::Info, "Info"},
+  {LogLevel::Warn, "Warn"},
+  {LogLevel::Error, "Error"}
+}));
+static_assert(validEnumNames<LogLevelNames>());
 
 // A sink for Logger messages.
 class LogSink {

@@ -96,16 +96,25 @@ std::expected<void, StarException> JsonStreamer<Json>::toJsonStream(Json const& 
     case Json::Type::Float: {
       auto value = val.toDouble();
       if (!value) return std::unexpected(std::move(value.error()));
-      auto text = String(toString(*value)).wideString();
-      if (!text) return std::unexpected(std::move(text.error()));
-      return stream.putDouble(text->data(), text->size());
+      // Binary64's shortest default form needs at most 17 significant digits,
+      // a sign, decimal point and e+/-ddd (24 characters); fixed form is no longer.
+      static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<double>::digits == 53
+          && std::numeric_limits<double>::max_exponent == 1024);
+      std::array<char32_t, 32> text;
+      auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
+      if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
+        return std::unexpected(JsonException("JSON floating-point formatting buffer exhausted"));
+      return stream.putDouble(text.data(), static_cast<std::size_t>(formatted.size));
     }
     case Json::Type::Int: {
       auto value = val.toInt();
       if (!value) return std::unexpected(std::move(value.error()));
-      auto text = String(toString(*value)).wideString();
-      if (!text) return std::unexpected(std::move(text.error()));
-      return stream.putInteger(text->data(), text->size());
+      // digits10 excludes the final decimal digit; reserve that digit and a sign.
+      std::array<char32_t, std::numeric_limits<std::int64_t>::digits10 + 2> text;
+      auto formatted = std::format_to_n(text.data(), text.size(), "{}", *value);
+      if (formatted.size > static_cast<decltype(formatted.size)>(text.size()))
+        return std::unexpected(JsonException("JSON integer formatting buffer exhausted"));
+      return stream.putInteger(text.data(), static_cast<std::size_t>(formatted.size));
     }
     case Json::Type::String: {
       auto value = val.toString();

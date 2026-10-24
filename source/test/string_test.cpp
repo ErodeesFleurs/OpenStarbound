@@ -10,6 +10,10 @@ import star.set;
 import star.line;
 import star.matrix3;
 import star.vector;
+import star.bi_map;
+import star.input_event;
+import star.logging;
+import star.map;
 
 #include "gtest/gtest.h"
 
@@ -406,6 +410,86 @@ TEST(StringTest, CaseInsensitive) {
 
   StringSet keyCmp = {"One", "Three"};
   EXPECT_EQ(keys, keyCmp);
+}
+
+TEST(StringTest, FixedEnumNamesPreserveCaseInsensitiveLookupAndCanonicalNames) {
+  auto roundTrip = []<auto const& Names>() {
+    for (auto const& [value, spelling] : Names) {
+      auto lower = String(spelling).toLower();
+      ASSERT_TRUE(lower);
+      auto parsed = enumValue<Names>(*lower);
+      ASSERT_TRUE(parsed);
+      EXPECT_EQ(*parsed, value);
+      auto canonical = enumName<Names>(*parsed);
+      ASSERT_TRUE(canonical);
+      EXPECT_EQ(*canonical, spelling);
+    }
+  };
+  roundTrip.operator()<LogLevelNames>();
+  roundTrip.operator()<KeyNames>();
+  roundTrip.operator()<KeyModNames>();
+  roundTrip.operator()<MouseButtonNames>();
+  roundTrip.operator()<MouseWheelNames>();
+  roundTrip.operator()<ControllerAxisNames>();
+  roundTrip.operator()<ControllerButtonNames>();
+  EXPECT_EQ(enumValue<KeyNames>("kEyPaD eNtEr"), Key::KeypadEnter);
+  EXPECT_EQ(enumValue<KeyModNames>("lMeTa"), KeyMod::LGui);
+  EXPECT_EQ(enumName<KeyNames>(Key::Escape), "Esc");
+  EXPECT_EQ(enumName<KeyNames>(Key::Delete), "Del");
+  EXPECT_EQ(enumName<ControllerButtonNames>(ControllerButton::Invalid), "Invalid");
+}
+
+TEST(StringTest, FixedEnumNamesDistinguishUnknownNamesInvalidUtf8AndSparseValues) {
+  for (std::string_view text : {"", "Escape", "LMeta", "日本語", "K", "A "}) {
+    auto optional = maybeEnumValue<KeyNames>(text);
+    ASSERT_TRUE(optional);
+    EXPECT_FALSE(*optional);
+    auto required = enumValue<KeyNames>(text);
+    ASSERT_FALSE(required);
+    EXPECT_TRUE(required.error().is<MapException>());
+  }
+  auto embeddedNull = enumValue<KeyNames>(std::string_view("A\0", 2));
+  ASSERT_FALSE(embeddedNull);
+  EXPECT_TRUE(embeddedNull.error().is<MapException>());
+  for (std::string_view bytes : {std::string_view("\xff", 1), std::string_view("A\xff", 2),
+      std::string_view("zzzz\xc3", 5)}) {
+    auto optional = maybeEnumValue<KeyNames>(bytes);
+    ASSERT_FALSE(optional);
+    EXPECT_TRUE(optional.error().is<UnicodeException>());
+    auto required = enumValue<LogLevelNames>(bytes);
+    ASSERT_FALSE(required);
+    EXPECT_TRUE(required.error().is<UnicodeException>());
+  }
+  auto unknownKey = enumName<KeyNames>(static_cast<Key>(65535));
+  ASSERT_FALSE(unknownKey);
+  EXPECT_TRUE(unknownKey.error().is<MapException>());
+  auto unnamedModifier = enumName<KeyModNames>(KeyMod::Scroll);
+  ASSERT_FALSE(unnamedModifier);
+  EXPECT_TRUE(unnamedModifier.error().is<MapException>());
+  auto unnamedAxis = enumName<ControllerAxisNames>(ControllerAxis::Invalid);
+  ASSERT_FALSE(unnamedAxis);
+  EXPECT_TRUE(unnamedAxis.error().is<MapException>());
+  auto unknownLevel = enumValue<LogLevelNames>("warning");
+  ASSERT_FALSE(unknownLevel);
+  EXPECT_TRUE(unknownLevel.error().is<MapException>());
+}
+
+TEST(StringTest, FixedEnumNamesPreserveEnumSortedIterationAndText) {
+  StringList modifiers;
+  for (auto const& [value, name] : KeyModNames)
+    modifiers.append(String(name));
+  EXPECT_EQ(modifiers, (StringList{"NoMod", "LShift", "RShift", "LCtrl", "RCtrl",
+      "LAlt", "RAlt", "LMeta", "RMeta", "Num", "Caps", "AltGr"}));
+  EXPECT_EQ(modifiers.join(" + "),
+      "NoMod + LShift + RShift + LCtrl + RCtrl + LAlt + RAlt + LMeta + RMeta + Num + Caps + AltGr");
+  StringList tail;
+  for (auto const& [value, name] : KeyNames)
+    if (value >= Key::NumLock)
+      tail.append(String(name));
+  EXPECT_EQ(tail, (StringList{"NumLock", "CapsLock", "ScrollLock", "RShift", "LShift",
+      "RCtrl", "LCtrl", "RAlt", "LAlt", "RGui", "LGui", "AltGr", "Compose", "Help",
+      "PrintScreen", "SysReq", "Pause", "Menu", "Power", "F16", "F17", "F18", "F19",
+      "F20", "F21", "F22", "F23", "F24"}));
 }
 
 TEST(StringTest, RegexSearch) {

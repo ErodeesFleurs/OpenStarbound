@@ -147,14 +147,10 @@ std::expected<bool, StarException> KeybindingsMenu::sendEvent(InputEvent const& 
         return true;
       }
     } else if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
-      if (!KeyNames)
-        return std::unexpected(KeyNames.error());
-      if (!KeyModNames)
-        return std::unexpected(KeyModNames.error());
-      auto keyName = KeyNames->getRight(keyDown->key);
+      auto keyName = enumName<KeyNames>(keyDown->key);
       if (!keyName)
         return std::unexpected(std::move(keyName.error()));
-      auto modKey = KeyModNames->maybeLeft(**keyName);
+      auto modKey = maybeEnumValue<KeyModNames>(*keyName);
       if (!modKey)
         return std::unexpected(std::move(modKey.error()));
       if (*modKey) {

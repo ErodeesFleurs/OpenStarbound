@@ -150,7 +150,148 @@ enum class Key : std::uint16_t {
   F23,
   F24
 };
-extern std::expected<EnumMap<Key>, StarException> const KeyNames;
+inline constexpr auto KeyNames = sortedEnumNames(std::to_array<std::pair<Key, std::string_view>>({
+  {Key::Backspace, "Backspace"},
+  {Key::Tab, "Tab"},
+  {Key::Clear, "Clear"},
+  {Key::Return, "Return"},
+  {Key::Escape, "Esc"},
+  {Key::Space, "Space"},
+  {Key::Exclaim, "!"},
+  {Key::QuotedBL, "\""},
+  {Key::Hash, "#"},
+  {Key::Dollar, "$"},
+  {Key::Ampersand, "&"},
+  {Key::Quote, "\'"},
+  {Key::LeftParen, "("},
+  {Key::RightParen, ")"},
+  {Key::Asterisk, "*"},
+  {Key::Plus, "+"},
+  {Key::Comma, ","},
+  {Key::Minus, "-"},
+  {Key::Period, "."},
+  {Key::Slash, "/"},
+  {Key::Zero, "0"},
+  {Key::One, "1"},
+  {Key::Two, "2"},
+  {Key::Three, "3"},
+  {Key::Four, "4"},
+  {Key::Five, "5"},
+  {Key::Six, "6"},
+  {Key::Seven, "7"},
+  {Key::Eight, "8"},
+  {Key::Nine, "9"},
+  {Key::Colon, ":"},
+  {Key::Semicolon, ";"},
+  {Key::Less, "<"},
+  {Key::Equals, "="},
+  {Key::Greater, ">"},
+  {Key::Question, "?"},
+  {Key::At, "@"},
+  {Key::LeftBracket, "["},
+  {Key::Backslash, "\\"},
+  {Key::RightBracket, "]"},
+  {Key::Caret, "^"},
+  {Key::Underscore, "_"},
+  {Key::Backquote, "`"},
+  {Key::A, "A"},
+  {Key::B, "B"},
+  {Key::C, "C"},
+  {Key::D, "D"},
+  {Key::E, "E"},
+  {Key::F, "F"},
+  {Key::G, "G"},
+  {Key::H, "H"},
+  {Key::I, "I"},
+  {Key::J, "J"},
+  {Key::K, "K"},
+  {Key::L, "L"},
+  {Key::M, "M"},
+  {Key::N, "N"},
+  {Key::O, "O"},
+  {Key::P, "P"},
+  {Key::Q, "Q"},
+  {Key::R, "R"},
+  {Key::S, "S"},
+  {Key::T, "T"},
+  {Key::U, "U"},
+  {Key::V, "V"},
+  {Key::W, "W"},
+  {Key::X, "X"},
+  {Key::Y, "Y"},
+  {Key::Z, "Z"},
+  {Key::Delete, "Del"},
+  {Key::Keypad0, "Keypad 0"},
+  {Key::Keypad1, "Keypad 1"},
+  {Key::Keypad2, "Keypad 2"},
+  {Key::Keypad3, "Keypad 3"},
+  {Key::Keypad4, "Keypad 4"},
+  {Key::Keypad5, "Keypad 5"},
+  {Key::Keypad6, "Keypad 6"},
+  {Key::Keypad7, "Keypad 7"},
+  {Key::Keypad8, "Keypad 8"},
+  {Key::Keypad9, "Keypad 9"},
+  {Key::KeypadPeriod, "Keypad ."},
+  {Key::KeypadDivide, "Keypad /"},
+  {Key::KeypadMultiply, "Keypad *"},
+  {Key::KeypadMinus, "Keypad -"},
+  {Key::KeypadPlus, "Keypad +"},
+  {Key::KeypadEnter, "Keypad Enter"},
+  {Key::KeypadEquals, "Keypad ="},
+  {Key::Up, "Up"},
+  {Key::Down, "Down"},
+  {Key::Right, "Right"},
+  {Key::Left, "Left"},
+  {Key::Insert, "Ins"},
+  {Key::Home, "Home"},
+  {Key::End, "End"},
+  {Key::PageUp, "PageUp"},
+  {Key::PageDown, "PageDown"},
+  {Key::F1, "F1"},
+  {Key::F2, "F2"},
+  {Key::F3, "F3"},
+  {Key::F4, "F4"},
+  {Key::F5, "F5"},
+  {Key::F6, "F6"},
+  {Key::F7, "F7"},
+  {Key::F8, "F8"},
+  {Key::F9, "F9"},
+  {Key::F10, "F10"},
+  {Key::F11, "F11"},
+  {Key::F12, "F12"},
+  {Key::F13, "F13"},
+  {Key::F14, "F14"},
+  {Key::F15, "F15"},
+  {Key::F16, "F16"},
+  {Key::F17, "F17"},
+  {Key::F18, "F18"},
+  {Key::F19, "F19"},
+  {Key::F20, "F20"},
+  {Key::F21, "F21"},
+  {Key::F22, "F22"},
+  {Key::F23, "F23"},
+  {Key::F24, "F24"},
+  {Key::NumLock, "NumLock"},
+  {Key::CapsLock, "CapsLock"},
+  {Key::ScrollLock, "ScrollLock"},
+  {Key::RShift, "RShift"},
+  {Key::LShift, "LShift"},
+  {Key::RCtrl, "RCtrl"},
+  {Key::LCtrl, "LCtrl"},
+  {Key::RAlt, "RAlt"},
+  {Key::LAlt, "LAlt"},
+  {Key::RGui, "RGui"},
+  {Key::LGui, "LGui"},
+  {Key::AltGr, "AltGr"},
+  {Key::Compose, "Compose"},
+  {Key::Help, "Help"},
+  {Key::PrintScreen, "PrintScreen"},
+  {Key::SysReq, "SysReq"},
+  {Key::Pause, "Pause"},
+  {Key::Menu, "Menu"},
+  {Key::Power, "Power"}
+}));
+static_assert(validEnumNames<KeyNames>());
 
 enum class KeyMod : std::uint16_t {
   NoMod = 0x0000,
@@ -167,7 +308,21 @@ enum class KeyMod : std::uint16_t {
   AltGr = 0x4000,
   Scroll = 0x8000
 };
-extern std::expected<EnumMap<KeyMod>, StarException> const KeyModNames;
+inline constexpr auto KeyModNames = sortedEnumNames(std::to_array<std::pair<KeyMod, std::string_view>>({
+  {KeyMod::NoMod, "NoMod"},
+  {KeyMod::LShift, "LShift"},
+  {KeyMod::RShift, "RShift"},
+  {KeyMod::LCtrl, "LCtrl"},
+  {KeyMod::RCtrl, "RCtrl"},
+  {KeyMod::LAlt, "LAlt"},
+  {KeyMod::RAlt, "RAlt"},
+  {KeyMod::LGui, "LMeta"},
+  {KeyMod::RGui, "RMeta"},
+  {KeyMod::Num, "Num"},
+  {KeyMod::Caps, "Caps"},
+  {KeyMod::AltGr, "AltGr"}
+}));
+static_assert(validEnumNames<KeyModNames>());
 
 KeyMod operator|(KeyMod a, KeyMod b);
 KeyMod operator&(KeyMod a, KeyMod b);
@@ -182,13 +337,24 @@ enum class MouseButton : std::uint8_t {
   FourthButton,
   FifthButton
 };
-extern std::expected<EnumMap<MouseButton>, StarException> const MouseButtonNames;
+inline constexpr auto MouseButtonNames = sortedEnumNames(std::to_array<std::pair<MouseButton, std::string_view>>({
+  {MouseButton::Left, "MouseLeft"},
+  {MouseButton::Middle, "MouseMiddle"},
+  {MouseButton::Right, "MouseRight"},
+  {MouseButton::FourthButton, "MouseFourth"},
+  {MouseButton::FifthButton, "MouseFifth"}
+}));
+static_assert(validEnumNames<MouseButtonNames>());
 
 enum class MouseWheel : std::uint8_t {
   Up,
   Down
 };
-extern std::expected<EnumMap<MouseWheel>, StarException> const MouseWheelNames;
+inline constexpr auto MouseWheelNames = sortedEnumNames(std::to_array<std::pair<MouseWheel, std::string_view>>({
+  {MouseWheel::Up, "MouseWheelUp"},
+  {MouseWheel::Down, "MouseWheelDown"}
+}));
+static_assert(validEnumNames<MouseWheelNames>());
 
 typedef std::uint32_t ControllerId;
 
@@ -201,7 +367,15 @@ enum class ControllerAxis : std::uint8_t {
   TriggerRight,
   Invalid = 255
 };
-extern std::expected<EnumMap<ControllerAxis>, StarException> const ControllerAxisNames;
+inline constexpr auto ControllerAxisNames = sortedEnumNames(std::to_array<std::pair<ControllerAxis, std::string_view>>({
+  {ControllerAxis::LeftX, "LeftX"},
+  {ControllerAxis::LeftY, "LeftY"},
+  {ControllerAxis::RightX, "RightX"},
+  {ControllerAxis::RightY, "RightY"},
+  {ControllerAxis::TriggerLeft, "TriggerLeft"},
+  {ControllerAxis::TriggerRight, "TriggerRight"},
+}));
+static_assert(validEnumNames<ControllerAxisNames>());
 
 enum class ControllerButton : std::uint8_t {
   A,
@@ -227,7 +401,31 @@ enum class ControllerButton : std::uint8_t {
   Touchpad,
   Invalid = 255
 };
-extern std::expected<EnumMap<ControllerButton>, StarException> const ControllerButtonNames;
+inline constexpr auto ControllerButtonNames = sortedEnumNames(std::to_array<std::pair<ControllerButton, std::string_view>>({
+  {ControllerButton::A, "A"},
+  {ControllerButton::B, "B"},
+  {ControllerButton::X, "X"},
+  {ControllerButton::Y, "Y"},
+  {ControllerButton::Back, "Back"},
+  {ControllerButton::Guide, "Guide"},
+  {ControllerButton::Start, "Start"},
+  {ControllerButton::LeftStick, "LeftStick"},
+  {ControllerButton::RightStick, "RightStick"},
+  {ControllerButton::LeftShoulder, "LeftShoulder"},
+  {ControllerButton::RightShoulder, "RightShoulder"},
+  {ControllerButton::DPadUp, "DPadUp"},
+  {ControllerButton::DPadDown, "DPadDown"},
+  {ControllerButton::DPadLeft, "DPadLeft"},
+  {ControllerButton::DPadRight, "DPadRight"},
+  {ControllerButton::Misc1, "Misc1"},
+  {ControllerButton::Paddle1, "Paddle1"},
+  {ControllerButton::Paddle2, "Paddle2"},
+  {ControllerButton::Paddle3, "Paddle3"},
+  {ControllerButton::Paddle4, "Paddle4"},
+  {ControllerButton::Touchpad, "Touchpad"},
+  {ControllerButton::Invalid, "Invalid"}
+}));
+static_assert(validEnumNames<ControllerButtonNames>());
 
 struct KeyDownEvent {
   Key key;
