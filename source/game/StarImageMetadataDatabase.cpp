@@ -42,7 +42,7 @@ namespace Star {
 
 ImageMetadataDatabase::ImageMetadataDatabase(Root& root)
   : m_root(root), m_sizeCache(root.random()), m_spacesCache(root.random()), m_regionCache(root.random()) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   int timeSmear = 2000;
   std::int64_t timeToLive = 60000;
   m_sizeCache.setTimeSmear(timeSmear);
@@ -54,7 +54,7 @@ ImageMetadataDatabase::ImageMetadataDatabase(Root& root)
 }
 
 std::expected<Vec2U, StarException> ImageMetadataDatabase::imageSize(AssetPath const& path) const {
-  MutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex);
   auto cached = m_sizeCache.ptr(path);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
@@ -74,7 +74,7 @@ std::expected<Vec2U, StarException> ImageMetadataDatabase::imageSize(AssetPath c
 std::expected<List<Vec2I>, StarException> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
   SpacesEntry key = std::make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
-  MutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex);
   auto cached = m_spacesCache.ptr(key);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
@@ -152,7 +152,7 @@ std::expected<List<Vec2I>, StarException> ImageMetadataDatabase::imageSpaces(Ass
 }
 
 std::expected<RectU, StarException> ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
-  MutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex);
   
   auto cached = m_regionCache.ptr(path);
   if (!cached)
@@ -196,7 +196,7 @@ std::expected<RectU, StarException> ImageMetadataDatabase::nonEmptyRegion(AssetP
 }
 
 void ImageMetadataDatabase::cleanup() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
 
   m_sizeCache.cleanup();
   m_spacesCache.cleanup();
@@ -256,7 +256,7 @@ std::expected<Vec2U, StarException> ImageMetadataDatabase::calculateImageSize(As
     else
       return fallback();
   } else {
-    MutexLocker locker(m_mutex);
+    std::unique_lock locker(m_mutex);
     auto size = m_sizeCache.ptr(path.basePath);
     if (!size)
       return std::unexpected(std::move(size.error()));

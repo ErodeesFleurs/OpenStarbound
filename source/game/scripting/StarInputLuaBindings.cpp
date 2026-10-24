@@ -12,7 +12,7 @@ import star.listener;
 import star.hash;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.input;
 
 module star.input_lua_bindings;

@@ -740,10 +740,10 @@ Assets::~Assets() {
 
 std::expected<void, StarException> Assets::stopWorkers() {
   {
-    MutexLocker locker(m_assetsMutex);
+    std::lock_guard locker(m_assetsMutex);
     m_stopThreads = true;
-    m_assetsQueued.broadcast();
-    m_assetsDone.broadcast();
+    m_assetsQueued.notify_all();
+    m_assetsDone.notify_all();
   }
   std::optional<StarException> error;
   for (auto& worker : m_workerThreads) {
@@ -758,7 +758,7 @@ std::expected<void, StarException> Assets::stopWorkers() {
 }
 
 void Assets::hotReload() const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   m_assetsCache.clear();
   m_assetErrors.clear();
   m_queue.clear();
@@ -766,12 +766,12 @@ void Assets::hotReload() const {
 }
 
 StringList Assets::assetSources() const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   return m_assetSources;
 }
 
 std::expected<JsonObject, StarException> Assets::assetSourceMetadata(String const& sourceName) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   auto source = m_assetSourcePaths.getRight(sourceName);
   if (!source)
     return std::unexpected(std::move(source.error()));
@@ -779,7 +779,7 @@ std::expected<JsonObject, StarException> Assets::assetSourceMetadata(String cons
 }
 
 ByteArray Assets::digest() const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   return m_digest;
 }
 
@@ -787,7 +787,7 @@ std::expected<bool, StarException> Assets::assetExists(String const& path) const
   auto key = CaseInsensitiveStringView::create(path);
   if (!key)
     return std::unexpected(std::move(key.error()));
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   return m_files.contains(*key);
 }
 
@@ -795,7 +795,7 @@ std::expected<std::optional<Assets::AssetFileDescriptor>, StarException> Assets:
   auto key = CaseInsensitiveStringView::create(path);
   if (!key)
     return std::unexpected(std::move(key.error()));
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   return m_files.maybe(*key);
 }
 
@@ -803,7 +803,7 @@ std::expected<String, StarException> Assets::assetSource(String const& path) con
   auto key = CaseInsensitiveStringView::create(path);
   if (!key)
     return std::unexpected(std::move(key.error()));
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   if (auto p = m_files.ptr(*key)) {
     auto source = m_assetSourcePaths.getLeft(p->source);
     if (!source)
@@ -814,7 +814,7 @@ std::expected<String, StarException> Assets::assetSource(String const& path) con
 }
 
 std::optional<String> Assets::assetSourcePath(std::shared_ptr<AssetSource> const& source) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.maybeLeft(source);
 }
 
@@ -905,7 +905,7 @@ std::expected<void, StarException> Assets::queueJsons(StringList const& paths) c
 }
 
 std::expected<void, StarException> Assets::queueJsons(CaseInsensitiveStringSet const& paths) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   for (auto const& path : paths) {
     auto components = AssetPath::split(path.string());
     if (auto valid = validatePath(components, true, false); !valid)
@@ -935,7 +935,7 @@ std::expected<void, StarException> Assets::queueImages(StringList const& paths) 
 }
 
 std::expected<void, StarException> Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   for (auto const& path : paths) {
     auto components = AssetPath::split(path.string());
     if (auto valid = validatePath(components, true, true); !valid)
@@ -958,7 +958,7 @@ std::expected<std::shared_ptr<FramesSpecification const>, StarException> Assets:
   auto components = AssetPath::split(path);
   if (auto valid = validatePath(components, false, false); !valid)
     return std::unexpected(std::move(valid.error()));
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::unique_lock assetsLocker(m_assetsMutex);
   return bestFramesSpecification(path);
 }
 
@@ -985,7 +985,7 @@ std::expected<void, StarException> Assets::queueAudios(StringList const& paths) 
 }
 
 std::expected<void, StarException> Assets::queueAudios(CaseInsensitiveStringSet const& paths) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   for (auto const& path : paths) {
     auto components = AssetPath::split(path.string());
     if (auto valid = validatePath(components, false, true); !valid)
@@ -1032,7 +1032,7 @@ std::expected<std::shared_ptr<IODevice>, StarException> Assets::openFile(String 
 }
 
 void Assets::clearCache() {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
 
   // Clear all assets that are not queued or broken.
   for (auto it = m_assetsCache.begin(); it != m_assetsCache.end();) {
@@ -1046,7 +1046,7 @@ void Assets::clearCache() {
 }
 
 void Assets::cleanup() {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
 
   double time = Time::monotonicTime();
 
@@ -1208,7 +1208,7 @@ std::expected<FramesSpecification, StarException> Assets::parseFramesSpecificati
 }
 
 void Assets::queueAssets(List<AssetId> const& assetIds) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
 
   for (auto const& id : assetIds)
     queueAsset(id);
@@ -1223,13 +1223,13 @@ void Assets::queueAsset(AssetId const& assetId) const {
     auto j = m_queue.find(assetId);
     if (j == m_queue.end()) {
       m_queue[assetId] = QueuePriority::Load;
-      m_assetsQueued.signal();
+      m_assetsQueued.notify_one();
     }
   }
 }
 
 std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::tryAsset(AssetId const& id) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::lock_guard assetsLocker(m_assetsMutex);
   if (m_workerError)
     return std::unexpected(*m_workerError);
   if (m_stopThreads)
@@ -1243,13 +1243,13 @@ std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::tryAsse
   }
   if (!m_queue.contains(id)) {
     m_queue[id] = QueuePriority::Load;
-    m_assetsQueued.signal();
+    m_assetsQueued.notify_one();
   }
   return std::shared_ptr<AssetData>{};
 }
 
 std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::getAsset(AssetId const& id) const {
-  MutexLocker assetsLocker(m_assetsMutex);
+  std::unique_lock assetsLocker(m_assetsMutex);
   while (true) {
     if (m_workerError)
       return std::unexpected(*m_workerError);
@@ -1268,7 +1268,7 @@ std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::getAsse
     if (!worked)
       return std::unexpected(std::move(worked.error()));
     if (!*worked && !m_stopThreads)
-      m_assetsDone.wait(m_assetsMutex);
+      m_assetsDone.wait(assetsLocker);
   }
 }
 
@@ -1277,17 +1277,18 @@ std::expected<void, StarException> Assets::workerMain() {
     // Do not hold the asset mutex while collecting Lua garbage.
     std::expected<void, StarException> collected;
     {
-      RecursiveMutexLocker luaLocker(m_luaMutex);
+      std::unique_lock luaLocker(m_luaMutex, std::defer_lock);
+      lockWithDiagnostics(luaLocker);
       collected = as<LuaEngine>(m_luaEngine.get())->collectGarbage();
     }
 
-    MutexLocker assetsLocker(m_assetsMutex);
+    std::unique_lock assetsLocker(m_assetsMutex);
     if (!collected) {
       if (!m_workerError)
         m_workerError = collected.error();
       m_stopThreads = true;
-      m_assetsQueued.broadcast();
-      m_assetsDone.broadcast();
+      m_assetsQueued.notify_all();
+      m_assetsDone.notify_all();
       return std::unexpected(std::move(collected.error()));
     }
     if (m_stopThreads)
@@ -1308,7 +1309,7 @@ std::expected<void, StarException> Assets::workerMain() {
 
     if (queuePriority != QueuePriority::Load && queuePriority != QueuePriority::PostProcess) {
       // Nothing in the queue that needs work
-      m_assetsQueued.wait(m_assetsMutex);
+      m_assetsQueued.wait(assetsLocker);
       continue;
     }
 
@@ -1317,14 +1318,14 @@ std::expected<void, StarException> Assets::workerMain() {
       if (!m_workerError)
         m_workerError = worked.error();
       m_stopThreads = true;
-      m_assetsQueued.broadcast();
-      m_assetsDone.broadcast();
+      m_assetsQueued.notify_all();
+      m_assetsDone.notify_all();
       return std::unexpected(std::move(worked.error()));
     }
     if (!*worked && !m_stopThreads) {
       // We are blocking on some sort of busy asset, so need to wait on
       // something to complete here, rather than spinning and burning cpu.
-      m_assetsDone.wait(m_assetsMutex);
+      m_assetsDone.wait(assetsLocker);
       continue;
     }
 
@@ -1338,6 +1339,8 @@ std::expected<void, StarException> Assets::workerMain() {
 
 template <typename Function>
 [[nodiscard]] decltype(auto) Assets::unlockDuring(Function f) const {
+  // Borrow the caller's ownership: checked callbacks return before we restore
+  // the mutex, including on failure, so its guard never outlives an unlocked mutex.
   m_assetsMutex.unlock();
   auto result = f();
   m_assetsMutex.lock();
@@ -1442,7 +1445,8 @@ std::expected<std::shared_ptr<Image const>, StarException> Assets::readImage(Str
 }
 
 std::expected<std::shared_ptr<Image const>, StarException> Assets::applyImagePatches(std::shared_ptr<Image const> image, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const {
-  RecursiveMutexLocker luaLocker(m_luaMutex);
+  std::unique_lock luaLocker(m_luaMutex, std::defer_lock);
+  lockWithDiagnostics(luaLocker);
   LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
   auto imageUserData = luaEngine->createUserData(*image);
   if (!imageUserData)
@@ -1460,7 +1464,7 @@ std::expected<std::shared_ptr<Image const>, StarException> Assets::applyImagePat
       return std::unexpected(std::move(isLua.error()));
     if (*isLua) {
       std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchPath);
-      luaLocker.lock();
+      lockWithDiagnostics(luaLocker);
       std::shared_ptr<LuaContext>& context = m_patchContexts[contextKey];
       if (!context) {
         auto createdContext = luaEngine->createContext();
@@ -1593,7 +1597,8 @@ std::expected<Json, StarException> Assets::applyJsonPatches(Json const& input, S
       return std::unexpected(std::move(isLua.error()));
     if (*isLua) {
       std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchBasePath);
-      RecursiveMutexLocker luaLocker(m_luaMutex);
+      std::unique_lock luaLocker(m_luaMutex, std::defer_lock);
+      lockWithDiagnostics(luaLocker);
       // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
       std::shared_ptr<LuaContext>& context = m_patchContexts[contextKey];
       if (!context) {
@@ -1671,7 +1676,7 @@ std::expected<bool, StarException> Assets::doLoad(AssetId const& id) const {
     return static_cast<bool>(*loaded);
   m_assetsCache[id] = {};
   m_assetErrors[id] = loaded.error();
-  m_assetsDone.broadcast();
+  m_assetsDone.notify_all();
   m_queue.remove(id);
   auto logged = m_logger.error("Error loading asset: {}, {}", id.path, outputException(ExceptionDiagnostic(loaded.error()), true));
   if (!logged)
@@ -1696,7 +1701,7 @@ std::expected<bool, StarException> Assets::doPost(AssetId const& id) const {
     asset->needsPostProcessing = false;
     m_assetsCache[id] = asset;
     freshen(asset);
-    m_assetsDone.broadcast();
+    m_assetsDone.notify_all();
   }
   if (logError)
     return std::unexpected(std::move(*logError));
@@ -1740,7 +1745,7 @@ std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::loadAss
     m_queue.remove(id);
     m_assetsCache[id] = {};
     m_assetErrors[id] = loaded.error();
-    m_assetsDone.broadcast();
+    m_assetsDone.notify_all();
     return std::unexpected(std::move(loaded.error()));
   }
   auto asset = std::move(*loaded);
@@ -1750,11 +1755,11 @@ std::expected<std::shared_ptr<Assets::AssetData>, StarException> Assets::loadAss
     else
       m_queue.remove(id);
     m_assetsCache[id] = asset;
-    m_assetsDone.broadcast();
+    m_assetsDone.notify_all();
     freshen(asset);
   } else {
     m_queue[id] = QueuePriority::Load;
-    m_assetsQueued.signal();
+    m_assetsQueued.notify_one();
     if (auto moved = m_queue.toBack(id); !moved)
       return std::unexpected(std::move(moved.error()));
   }

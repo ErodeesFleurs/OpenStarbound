@@ -94,12 +94,12 @@ namespace Star {
   }
 
   std::uint32_t BTreeDatabase::indexCacheSize() const {
-    SpinLocker lock(m_indexCacheSpinLock);
+    std::lock_guard lock(m_indexCacheSpinLock);
     return m_indexCache.maxSize();
   }
 
   void BTreeDatabase::setIndexCacheSize(std::uint32_t indexCacheSize) {
-    SpinLocker lock(m_indexCacheSpinLock);
+    std::lock_guard lock(m_indexCacheSpinLock);
     m_indexCache.setMaxSize(indexCacheSize);
   }
 
@@ -229,9 +229,9 @@ namespace Star {
         auto result115 = ds.write<std::uint32_t>(m_blockSize);
         if (!result115) return std::unexpected(std::move(result115.error()));
 
-        ByteArray contentIdentifier = m_contentIdentifier.utf8Bytes();
-        contentIdentifier.resize(ContentIdentifierStringSize, 0);
-        auto result116 = ds.writeBytes(contentIdentifier);
+        std::array<char, ContentIdentifierStringSize> contentIdentifier{};
+        std::ranges::copy(m_contentIdentifier.utf8(), contentIdentifier.begin());
+        auto result116 = ds.writeData(contentIdentifier.data(), contentIdentifier.size());
         if (!result116) return std::unexpected(std::move(result116.error()));
 
         auto result117 = ds.write(m_keySize);
@@ -719,7 +719,7 @@ namespace Star {
   }
 
   [[nodiscard]] auto BTreeDatabase::BTreeImpl::loadIndex(Pointer pointer) -> std::expected<Index, StarException> {
-    SpinLocker lock(parent->m_indexCacheSpinLock);
+    std::unique_lock lock(parent->m_indexCacheSpinLock);
     if (auto index = parent->m_indexCache.ptr(pointer)) {
       return *index;
     }

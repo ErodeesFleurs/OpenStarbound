@@ -254,7 +254,7 @@ bool TcpServer::isClosed() const {
 }
 
 std::expected<std::shared_ptr<TcpSocket>, StarException> TcpServer::accept(unsigned timeout) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (auto status = Socket::poll({{m_listenSocket, {true, false}}}, timeout); !status)
     return std::unexpected(std::move(status.error()));
   auto socket = m_listenSocket->accept(m_logger);
@@ -264,7 +264,7 @@ std::expected<std::shared_ptr<TcpSocket>, StarException> TcpServer::accept(unsig
 }
 
 std::expected<void, StarException> TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (!callback)
     return std::unexpected(NetworkException("Cannot install an empty TCP accept callback"));
   m_callback = std::move(callback);

@@ -258,7 +258,7 @@ private:
   Root& m_root;
 
   StringMap<String> m_paths;
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashTtlCache<String, std::shared_ptr<ObjectConfig>> m_configCache;
 
   std::shared_ptr<Rebuilder> m_rebuilder;

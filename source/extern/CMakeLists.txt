@@ -3,7 +3,6 @@ set (star_extern_HEADERS
     curve25519/include/ed25519_signature.h
     curve25519/include/external_calls.h
     imgui_iterator.inl
-    fast_float.h
     imgui_lua_bindings.hpp
     tinyformat.h
     xxhash.h

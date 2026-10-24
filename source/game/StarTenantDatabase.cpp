@@ -76,12 +76,12 @@ std::expected<std::shared_ptr<TenantDatabase>, StarException> TenantDatabase::cr
 }
 
 void TenantDatabase::cleanup() {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   m_tenantCache.cleanup();
 }
 
 std::expected<std::shared_ptr<Tenant>, StarException> TenantDatabase::getTenant(String const& name) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto result = m_tenantCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<Tenant>, StarException> {
     auto path = m_paths.ptr(name);
     if (!path)

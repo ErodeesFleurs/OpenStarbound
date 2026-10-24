@@ -85,7 +85,7 @@ private:
   // processing.
   [[nodiscard]] std::expected<bool, StarException> handleCommand(ChatReceivedMessage& message);
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   RandomService& m_random;
 
   HashMap<ConnectionId, ClientInfo> m_clients;

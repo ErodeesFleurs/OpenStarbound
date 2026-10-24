@@ -1,7 +1,6 @@
 import std;
 import star.format;
 import star.json;
-import star.thread;
 import star.string;
 import star.version;
 import star.configuration;
@@ -18,37 +17,37 @@ Json Configuration::defaultConfiguration() const {
 }
 
 Json Configuration::currentConfiguration() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_currentConfig;
 }
 
 std::expected<String, StarException> Configuration::printConfiguration() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_currentConfig.printJson(2, true);
 }
 
 std::expected<Json, StarException> Configuration::get(String const& key, Json def) const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_currentConfig.get(key, def);
 }
 
 std::expected<Json, StarException> Configuration::getPath(String const& path, Json def) const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_currentConfig.query(path, def);
 }
 
 std::expected<Json, StarException> Configuration::getDefault(String const& key) const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_defaultConfig.get(key, {});
 }
 
 std::expected<Json, StarException> Configuration::getDefaultPath(String const& path) const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_defaultConfig.query(path, {});
 }
 
 std::expected<void, StarException> Configuration::set(String const& key, Json const& value) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (key == "configurationVersion")
     return std::unexpected(ConfigurationException("cannot set configurationVersion"));
 
@@ -60,7 +59,7 @@ std::expected<void, StarException> Configuration::set(String const& key, Json co
 }
 
 std::expected<void, StarException> Configuration::setPath(String const& path, Json const& value) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   auto components = path.splitAny("[].");
   if (!components)
     return std::unexpected(std::move(components.error()));

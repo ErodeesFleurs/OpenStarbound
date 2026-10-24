@@ -150,7 +150,8 @@ std::expected<void, StarException> ScriptableThread::stop() {
   auto joined = Thread::join();
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_messages);
   }
   std::optional<StarException> error;
@@ -174,7 +175,8 @@ bool ScriptableThread::errorOccurred() { return m_errorOccurred; }
 bool ScriptableThread::shouldExpire() { return m_shouldExpire; }
 
 std::expected<void, StarException> ScriptableThread::passMessage(Message&& message) {
-  RecursiveMutexLocker locker(m_messageMutex);
+  std::unique_lock locker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (m_stop || m_errorOccurred)
     return message.promise.fail("Thread is stopped");
   m_messages.append(std::move(message));
@@ -245,7 +247,8 @@ std::expected<void, StarException> ScriptableThread::run() {
   }
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     m_stop = true;
     messages = std::move(m_messages);
   }
@@ -290,7 +293,8 @@ std::expected<void, StarException> ScriptableThread::update() {
   }
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_messages);
   }
   for (auto& message : messages) {

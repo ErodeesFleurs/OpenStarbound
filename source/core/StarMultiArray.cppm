@@ -14,8 +14,8 @@ struct MultiArrayExceptionTag {
 using MultiArrayException = StarError<MultiArrayExceptionTag, StarException>;
 
 // Multidimensional array class that wraps a vector as a simple contiguous N
-// dimensional array.  Values are stored so that the highest dimension is the
-// dimension with stride 0, and the lowest dimension has the largest stride.
+// dimensional array. The last index is contiguous (stride 1), matching
+// std::layout_right; the first index has the largest stride.
 //
 // Due to usage of std::vector, ElementT = bool means that the user must use
 // set() and get() rather than operator()
@@ -29,6 +29,10 @@ public:
 
   typedef Array<std::size_t, Rank> IndexArray;
   typedef Array<std::size_t, Rank> SizeArray;
+
+  using Extents = std::dextents<std::size_t, Rank>;
+  using View = std::mdspan<Element, Extents, std::layout_right>;
+  using ConstView = std::mdspan<Element const, Extents, std::layout_right>;
 
   typedef typename Storage::iterator iterator;
   typedef typename Storage::const_iterator const_iterator;
@@ -117,6 +121,14 @@ public:
 
   Element const* data() const;
   Element* data();
+
+  // Unchecked, non-owning views of ordinary contiguous storage (not bool proxies).
+  // Keep the owner alive and do not resize, clear, move or replace it while borrowed.
+  // Reacquire the view after any operation that changes storage or shape.
+  View view() & requires std::same_as<typename Storage::reference, Element&>;
+  ConstView view() const & requires std::same_as<typename Storage::reference, Element&>;
+  View view() && = delete;
+  ConstView view() const && = delete;
 
 private:
   std::size_t storageIndex(IndexArray const& index) const;
@@ -426,6 +438,18 @@ Element const* MultiArray<Element, Rank>::data() const {
 template <typename Element, std::size_t Rank>
 Element* MultiArray<Element, Rank>::data() {
   return m_data.ptr();
+}
+
+template <typename Element, std::size_t Rank>
+typename MultiArray<Element, Rank>::View MultiArray<Element, Rank>::view() &
+    requires std::same_as<typename Storage::reference, Element&> {
+  return View(data(), Extents(std::span<std::size_t const, Rank>(m_shape.ptr(), Rank)));
+}
+
+template <typename Element, std::size_t Rank>
+typename MultiArray<Element, Rank>::ConstView MultiArray<Element, Rank>::view() const &
+    requires std::same_as<typename Storage::reference, Element&> {
+  return ConstView(data(), Extents(std::span<std::size_t const, Rank>(m_shape.ptr(), Rank)));
 }
 
 template <typename Element, std::size_t Rank>

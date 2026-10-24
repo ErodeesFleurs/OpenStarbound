@@ -59,7 +59,7 @@ import star.btree_database;
 import star.image;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;

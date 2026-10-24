@@ -382,7 +382,7 @@ private:
 
   Root& m_root;
 
-  mutable RecursiveMutex m_mainLock;
+  mutable std::recursive_mutex m_mainLock;
   
   bool m_isLocal;
 
@@ -419,7 +419,7 @@ private:
   std::shared_ptr<UniverseConnectionServer> m_connectionServer;
   std::unique_ptr<TcpServer> m_tcpServer;
 
-  RecursiveMutex m_connectionAcceptThreadsMutex;
+  std::recursive_mutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
   LinkedList<std::pair<UniverseConnection, std::int64_t>> m_deadConnections;
 
@@ -446,7 +446,7 @@ private:
   typedef LuaMessageScript ScriptComponent;
   StringMap<std::shared_ptr<UniverseServer::ScriptComponent>> m_scriptContexts;
 
-  mutable RecursiveMutex m_messageLock;
+  mutable std::recursive_mutex m_messageLock;
   List<Universe::Message> m_universeMessages;
   
   HashMap<Uuid, std::pair<ConnectionId, std::variant<std::monostate, ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;

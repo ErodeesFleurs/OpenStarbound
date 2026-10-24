@@ -58,7 +58,7 @@ private:
   Root& m_root;
   static std::expected<EnumMap<EntityType>, StarException> const EntityStorageIdentifiers;
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   std::shared_ptr<PlayerFactory const> m_playerFactory;
   std::shared_ptr<MonsterDatabase const> m_monsterDatabase;

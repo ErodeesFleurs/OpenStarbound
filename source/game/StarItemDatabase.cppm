@@ -242,13 +242,13 @@ private:
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
 
-  mutable RecursiveMutex m_luaMutex;
+  mutable std::recursive_mutex m_luaMutex;
   std::shared_ptr<LuaRoot> m_luaRoot;
   std::shared_ptr<Rebuilder> m_rebuilder;
 
   typedef std::tuple<ItemDescriptor, std::optional<float>, std::optional<std::uint64_t>> ItemCacheEntry;
 
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, std::shared_ptr<Item>> m_itemCache;
 };
 

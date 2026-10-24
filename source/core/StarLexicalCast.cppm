@@ -3,7 +3,6 @@ import std;
 import star.format;
 import star.string;
 import star.string_view;
-#include "fast_float.h"
 
 namespace Star {
 
@@ -14,9 +13,11 @@ using BadLexicalCast = StarError<BadLexicalCastTag, StarException>;
 
 BadLexicalCast lexicalCastError(std::errc ec, const char* first, const char* last);
 
+// Full-token range errors remain successful: integers retain the destination,
+// while the pinned libc++ floating parser writes signed infinity or zero.
 template <typename Type>
 [[nodiscard]] bool tryLexicalCast(Type& result, const char* first, const char* last) {
-  auto res = fast_float::from_chars(first, last, result);
+  auto res = std::from_chars(first, last, result);
   return res.ptr == last && (res.ec == std::errc() || res.ec == std::errc::result_out_of_range);
 }
 
@@ -50,7 +51,7 @@ template <typename Type>
 template <typename Type>
 [[nodiscard]] std::expected<Type, StarException> lexicalCast(const char* first, const char* last) {
   Type result{};
-  auto res = fast_float::from_chars(first, last, result);
+  auto res = std::from_chars(first, last, result);
   if ((res.ec != std::errc() && res.ec != std::errc::result_out_of_range) || res.ptr != last)
     return std::unexpected(lexicalCastError(res.ec, first, last));
   

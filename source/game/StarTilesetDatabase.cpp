@@ -437,7 +437,7 @@ std::expected<std::shared_ptr<TilesetDatabase>, StarException> TilesetDatabase::
   return std::shared_ptr<TilesetDatabase>(new TilesetDatabase(root));
 }
 std::expected<std::shared_ptr<Tiled::Tileset const>, StarException> TilesetDatabase::get(String const& path) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto result = m_tilesetCache.get(path, [this](String const& path) { return readTileset(path); });
   if (!result) return std::unexpected(std::move(result.error()));
   return **result;

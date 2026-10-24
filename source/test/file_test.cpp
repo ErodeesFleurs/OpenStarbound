@@ -51,7 +51,7 @@ TEST(FileTest, FullReadRejectsImpossibleLengths) {
 
 namespace {
   std::filesystem::path fsPath(String const& path) {
-    return std::filesystem::path(path.utf8());
+    return std::filesystem::path(std::u8string_view(reinterpret_cast<char8_t const*>(path.utf8Ptr()), path.utf8Size()));
   }
 
   // Never follows symlinks, so it is safe even when the removal under test
@@ -115,6 +115,142 @@ TEST(FileTest, All) {
 #endif
 }
 
+TEST(FileTest, DirectoryHelpersPreserveFailureBoundaries) {
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto directory = File::temporaryDirectory(**randomResult);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  auto child = File::relativeTo(*directory, "nested/child");
+  ASSERT_TRUE(File::makeDirectoryRecursive(child));
+  EXPECT_TRUE(File::makeDirectoryRecursive(child));
+  auto existing = File::makeDirectory(child);
+  ASSERT_FALSE(existing);
+  EXPECT_TRUE(existing.error().is<IOException>());
+
+  auto file = File::relativeTo(*directory, "regular");
+  ASSERT_TRUE(File::writeFile("kept", file));
+  EXPECT_FALSE(File::makeDirectory(file));
+  EXPECT_FALSE(File::makeDirectoryRecursive(file));
+  EXPECT_FALSE(File::makeDirectoryRecursive(File::relativeTo(file, "child")));
+  EXPECT_FALSE(File::removeDirectoryRecursive(file));
+  auto contents = File::readFileString(file);
+  ASSERT_TRUE(contents);
+  EXPECT_EQ(*contents, "kept");
+  EXPECT_FALSE(File::dirList(file));
+
+  auto missing = File::relativeTo(*directory, "missing");
+  EXPECT_FALSE(File::remove(missing));
+  EXPECT_FALSE(File::removeDirectoryRecursive(missing));
+  EXPECT_EQ(File::exists(missing), false);
+  EXPECT_EQ(File::isFile(missing), false);
+  EXPECT_EQ(File::isDirectory(missing), false);
+  EXPECT_EQ(File::isSymlink(missing), false);
+  EXPECT_EQ(File::exists(File::relativeTo(file, "child")), false);
+  EXPECT_EQ(File::isDirectory(File::relativeTo(file, "child")), false);
+  EXPECT_FALSE(File::makeDirectory(""));
+  EXPECT_FALSE(File::makeDirectoryRecursive(""));
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  EXPECT_FALSE(File::makeDirectoryRecursive("\\"));
+  EXPECT_FALSE(File::makeDirectoryRecursive("/"));
+#else
+  EXPECT_TRUE(File::makeDirectoryRecursive("/"));
+#endif
+}
+
+TEST(FileTest, CurrentDirectoryChangesAndReportsErrors) {
+  auto original = File::currentDirectory();
+  ASSERT_TRUE(original);
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto directory = File::temporaryDirectory(**randomResult);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  auto restore = finally([&]() { EXPECT_TRUE(File::changeDirectory(*original)); });
+  auto child = File::relativeTo(*directory, "目录-é");
+  ASSERT_TRUE(File::makeDirectory(child));
+  ASSERT_TRUE(File::changeDirectory(child));
+  auto current = File::currentDirectory();
+  auto expected = File::fullPath(child);
+  ASSERT_TRUE(current);
+  ASSERT_TRUE(expected);
+  EXPECT_EQ(*current, *expected);
+  EXPECT_FALSE(File::changeDirectory(File::relativeTo(child, "missing")));
+  auto unchanged = File::currentDirectory();
+  ASSERT_TRUE(unchanged);
+  EXPECT_EQ(*unchanged, *current);
+}
+
+TEST(FileTest, DirectoryListingPreservesDotsAndUtf8Names) {
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto directory = File::temporaryDirectory(**randomResult);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  String child = "目录-é";
+  String file = "данные.txt";
+  ASSERT_TRUE(File::makeDirectory(File::relativeTo(*directory, child)));
+  ASSERT_TRUE(File::writeFile("contents", File::relativeTo(*directory, file)));
+
+  auto entries = File::dirList(*directory);
+  ASSERT_TRUE(entries);
+  ASSERT_EQ(entries->size(), 2u);
+  auto contains = [](auto const& list, String const& name, bool directoryEntry) {
+    return std::ranges::any_of(list, [&](auto const& entry) {
+      return entry.first == name && entry.second == directoryEntry;
+    });
+  };
+  EXPECT_TRUE(contains(*entries, child, true));
+  EXPECT_TRUE(contains(*entries, file, false));
+
+  auto withDots = File::dirList(*directory, false);
+  ASSERT_TRUE(withDots);
+  EXPECT_EQ(withDots->size(), 4u);
+  EXPECT_TRUE(contains(*withDots, ".", true));
+  EXPECT_TRUE(contains(*withDots, "..", true));
+  EXPECT_TRUE(contains(*withDots, child, true));
+  EXPECT_TRUE(contains(*withDots, file, false));
+}
+
+#ifndef STAR_SYSTEM_FAMILY_WINDOWS
+TEST(FileTest, FullPathRequiresExistingTargetsAndResolvesSymlinks) {
+  auto randomResult = RandomService::create();
+  ASSERT_TRUE(randomResult);
+  auto directory = File::temporaryDirectory(**randomResult);
+  ASSERT_TRUE(directory);
+  auto cleanup = finally([&]() { removeTree(*directory); });
+  auto real = File::relativeTo(*directory, "real");
+  ASSERT_TRUE(File::makeDirectory(real));
+  auto resolved = File::fullPath(real + "/../real/");
+  auto canonical = File::fullPath(real);
+  ASSERT_TRUE(resolved);
+  ASSERT_TRUE(canonical);
+  EXPECT_EQ(*resolved, *canonical);
+  EXPECT_FALSE(File::fullPath(File::relativeTo(*directory, "missing")));
+
+  auto link = File::relativeTo(*directory, "link");
+  std::error_code error;
+  std::filesystem::create_directory_symlink(fsPath(real), fsPath(link), error);
+  if (error)
+    GTEST_SKIP() << "cannot create directory symlinks here: " << error.message();
+  auto linked = File::fullPath(link);
+  ASSERT_TRUE(linked);
+  EXPECT_EQ(*linked, *canonical);
+  EXPECT_TRUE(File::makeDirectoryRecursive(link));
+  EXPECT_FALSE(File::makeDirectory(link));
+  EXPECT_EQ(File::isDirectory(link), true);
+
+  auto broken = File::relativeTo(*directory, "broken");
+  std::filesystem::create_symlink(fsPath(File::relativeTo(*directory, "missing")), fsPath(broken), error);
+  ASSERT_FALSE(error) << error.message();
+  EXPECT_EQ(File::isSymlink(broken), true);
+  EXPECT_EQ(File::exists(broken), false);
+  EXPECT_FALSE(File::fullPath(broken));
+  EXPECT_TRUE(File::removeDirectoryRecursive(broken));
+  EXPECT_EQ(File::isSymlink(broken), false);
+}
+#endif
+
 TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
   auto randomResult = RandomService::create();
   ASSERT_TRUE(randomResult);
@@ -148,6 +284,15 @@ TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
   EXPECT_EQ(File::isDirectory(dir), false);
   // The directory the symlink pointed at has to be untouched.
   EXPECT_EQ(File::isFile(File::relativeTo(File::relativeTo(outside, "real"), "keep.txt")), true);
+
+  // The root itself can be a link, with or without a trailing separator.
+  for (auto suffix : {"", "/"}) {
+    std::filesystem::create_directory_symlink(fsPath(File::relativeTo(outside, "real")), fsPath(dir), ec);
+    ASSERT_FALSE(ec) << ec.message();
+    EXPECT_TRUE(File::removeDirectoryRecursive(dir + suffix));
+    EXPECT_EQ(File::isSymlink(dir), false);
+    EXPECT_EQ(File::isFile(File::relativeTo(File::relativeTo(outside, "real"), "keep.txt")), true);
+  }
 }
 
 TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {

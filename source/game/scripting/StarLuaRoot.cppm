@@ -79,7 +79,7 @@ private:
 
   private:
     Root& m_root;
-    mutable RecursiveMutex mutex;
+    mutable std::recursive_mutex mutex;
     StringMap<ByteArray> scripts;
   };
 

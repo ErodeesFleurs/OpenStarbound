@@ -256,7 +256,7 @@ private:
   StringMap<MonsterSkill> m_skills;
   StringMap<List<ColorReplaceMap>> m_colorSwaps;
 
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
 
   std::shared_ptr<Rebuilder> m_rebuilder;
 

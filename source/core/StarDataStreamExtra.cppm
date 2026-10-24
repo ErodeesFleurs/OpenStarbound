@@ -109,7 +109,7 @@ template <typename ElementT, std::size_t RankN>
 
 template <typename ElementT, std::size_t RankN>
 [[nodiscard]] std::expected<DataStream*, StarException> operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
-  typename MultiArray<ElementT, RankN>::SizeList size;
+  typename MultiArray<ElementT, RankN>::SizeArray size;
   for (std::size_t i = 0; i < RankN; ++i)
     {
       auto dimension = ds.readVlqU();

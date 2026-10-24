@@ -30,7 +30,7 @@ import star.map;
 import star.set;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.animated_part_set;
 import star.drawable;
 import star.animation;

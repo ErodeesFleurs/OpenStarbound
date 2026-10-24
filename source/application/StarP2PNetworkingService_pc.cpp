@@ -10,7 +10,6 @@ import star.format;
 import star.string;
 import star.list;
 import star.logging;
-import star.thread;
 import star.random;
 import star.input_event;
 import star.application;
@@ -79,7 +78,7 @@ PcP2PNetworkingService::PcP2PNetworkingService(std::shared_ptr<PcPlatformService
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (m_state->discordAvailable) {
-    MutexLocker discordLocker(m_state->discordMutex);
+    std::lock_guard discordLocker(m_state->discordMutex);
     m_discordLifetime->service = this;
 
     m_discordPartySize = {};
@@ -91,12 +90,12 @@ PcP2PNetworkingService::PcP2PNetworkingService(std::shared_ptr<PcPlatformService
         }
         auto joined = addPendingJoin(strf("+platform:{}", peerId));
         if (!joined) {
-          MutexLocker serviceLocker(m_mutex);
+          std::lock_guard serviceLocker(m_mutex);
           recordDiscordCallbackError(m_state.get(), std::move(joined.error()));
         }
       });
     m_discordOnActivityRequestToken = m_state->discordCore->ActivityManager().OnActivityJoinRequest.Connect([this](discord::User const& user) {
-        MutexLocker serviceLocker(m_mutex);
+        std::lock_guard serviceLocker(m_mutex);
         String userName = String(user.GetUsername());
         if (auto logged = m_state->logger.info("Received join request from user '{}'", userName); !logged) {
           m_state->discordError = std::move(logged.error());
@@ -115,10 +114,10 @@ PcP2PNetworkingService::PcP2PNetworkingService(std::shared_ptr<PcPlatformService
 PcP2PNetworkingService::~PcP2PNetworkingService() {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (m_state->discordAvailable) {
-    MutexLocker discordLocker(m_state->discordMutex);
+    std::lock_guard discordLocker(m_state->discordMutex);
     m_discordLifetime->service = nullptr;
     for (auto const& entry : m_discordOpenSockets) {
-      MutexLocker socketLocker(entry.second->mutex);
+      std::lock_guard socketLocker(entry.second->mutex);
       entry.second->mode = DiscordSocketMode::Disconnected;
     }
     m_discordOpenSockets.clear();
@@ -171,9 +170,9 @@ std::expected<void, StarException> Star::PcP2PNetworkingService::setActivityData
   [[maybe_unused]] std::int64_t startTime,
   [[maybe_unused]] std::optional<std::pair<std::uint16_t, std::uint16_t>> party) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(m_state->discordMutex);
+  std::lock_guard discordLocker(m_state->discordMutex);
 #endif
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (m_state->discordAvailable && m_state->discordCurrentUser) {
@@ -226,7 +225,7 @@ std::expected<void, StarException> Star::PcP2PNetworkingService::setActivityData
           if (res != discord::Result::Ok)
             recordDiscordCallbackError(state, ApplicationException::format("Failed to set Discord activity (err {})", (int)res));
           if (auto service = lifetime->service) {
-            MutexLocker serviceLocker(service->m_mutex);
+            std::lock_guard serviceLocker(service->m_mutex);
             service->m_discordUpdatingActivity = false;
           }
         });
@@ -237,14 +236,14 @@ std::expected<void, StarException> Star::PcP2PNetworkingService::setActivityData
 }
 
 std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> PcP2PNetworkingService::pullPendingJoin() {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   auto join = std::move(m_pendingJoin);
   m_pendingJoin.emplace<0>();
   return join;
 }
 
 std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (auto request = m_discordJoinRequests.maybeTakeLast()) {
@@ -260,7 +259,7 @@ std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::Pc
 void PcP2PNetworkingService::setAcceptingP2PConnections(bool acceptingP2PConnections) {
   List<std::unique_ptr<P2PSocket>> rejectedConnections;
   {
-    MutexLocker serviceLocker(m_mutex);
+    std::lock_guard serviceLocker(m_mutex);
     m_acceptingP2PConnections = acceptingP2PConnections;
     if (!m_acceptingP2PConnections)
       rejectedConnections = take(m_pendingIncomingConnections);
@@ -269,15 +268,15 @@ void PcP2PNetworkingService::setAcceptingP2PConnections(bool acceptingP2PConnect
 }
 
 List<std::unique_ptr<P2PSocket>> PcP2PNetworkingService::acceptP2PConnections() {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   return take(m_pendingIncomingConnections);
 }
 
 std::expected<void, StarException> Star::PcP2PNetworkingService::update() {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(m_state->discordMutex);
+  std::lock_guard discordLocker(m_state->discordMutex);
 #endif
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   for (auto& p : m_pendingDiscordJoinRequests) {
@@ -319,9 +318,9 @@ std::expected<void, StarException> Star::PcP2PNetworkingService::update() {
 
 std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService::connectToPeer(P2PNetworkingPeerId peerId) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(m_state->discordMutex);
+  std::lock_guard discordLocker(m_state->discordMutex);
 #endif
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   auto extracted = peerId.extract("_");
   if (!extracted)
     return std::unexpected(std::move(extracted.error()));
@@ -362,7 +361,7 @@ std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService:
 }
 
 std::expected<void, StarException> PcP2PNetworkingService::addPendingJoin(String connectionString) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   auto platform = connectionString.extract(":");
   if (!platform)
     return std::unexpected(std::move(platform.error()));
@@ -390,18 +389,18 @@ std::expected<void, StarException> PcP2PNetworkingService::addPendingJoin(String
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 
 PcP2PNetworkingService::SteamP2PSocket::~SteamP2PSocket() {
-  MutexLocker serviceLocker(parent->m_mutex);
-  MutexLocker socketLocker(mutex);
+  std::lock_guard serviceLocker(parent->m_mutex);
+  std::lock_guard socketLocker(mutex);
   parent->steamCloseSocket(this);
 }
 
 bool PcP2PNetworkingService::SteamP2PSocket::isOpen() {
-  MutexLocker socketLocker(mutex);
+  std::lock_guard socketLocker(mutex);
   return connected;
 }
 
 std::expected<bool, StarException> PcP2PNetworkingService::SteamP2PSocket::sendMessage(ByteArray const& message) {
-  MutexLocker socketLocker(mutex);
+  std::lock_guard socketLocker(mutex);
   if (error)
     return std::unexpected(*error);
   if (!connected)
@@ -414,7 +413,7 @@ std::expected<bool, StarException> PcP2PNetworkingService::SteamP2PSocket::sendM
 }
 
 std::expected<std::optional<ByteArray>, StarException> PcP2PNetworkingService::SteamP2PSocket::receiveMessage() {
-  MutexLocker socketLocker(mutex);
+  std::unique_lock socketLocker(mutex);
   if (error)
     return std::unexpected(*error);
   if (!incoming.empty()) {
@@ -427,7 +426,7 @@ std::expected<std::optional<ByteArray>, StarException> PcP2PNetworkingService::S
   if (connected) {
     socketLocker.unlock();
     {
-      MutexLocker serviceLocker(parent->m_mutex);
+      std::lock_guard serviceLocker(parent->m_mutex);
       auto received = parent->steamReceiveAll();
       if (!received)
         return std::unexpected(std::move(received.error()));
@@ -447,7 +446,7 @@ std::expected<std::optional<ByteArray>, StarException> PcP2PNetworkingService::S
 
 auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> std::unique_ptr<SteamP2PSocket> {
   if (auto oldSocket = m_steamOpenSockets.value(steamId.ConvertToUint64())) {
-    MutexLocker socketLocker(oldSocket->mutex);
+    std::lock_guard socketLocker(oldSocket->mutex);
     steamCloseSocket(oldSocket);
   }
 
@@ -462,10 +461,10 @@ auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> std::uniq
 }
 
 std::expected<void, StarException> PcP2PNetworkingService::steamOnConnectionFailure(P2PSessionConnectFail_t* callback) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   auto logged = m_state->logger.warn("Connection with Steam user {} failed (error code: {})", callback->m_steamIDRemote.ConvertToUint64(), callback->m_eP2PSessionError);
   if (auto socket = m_steamOpenSockets.value(callback->m_steamIDRemote.ConvertToUint64())) {
-    MutexLocker socketLocker(socket->mutex);
+    std::lock_guard socketLocker(socket->mutex);
     socket->error = ApplicationException::format("Connection with Steam user {} failed (error code: {})", callback->m_steamIDRemote.ConvertToUint64(), callback->m_eP2PSessionError);
     steamCloseSocket(socket);
   }
@@ -481,7 +480,7 @@ std::expected<void, StarException> PcP2PNetworkingService::steamOnJoinRequested(
 }
 
 std::expected<void, StarException> PcP2PNetworkingService::steamOnSessionRequest(P2PSessionRequest_t* callback) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   // Not sure whether this HasFriend call is actually necessary, or whether
   // non-friends can even initiate P2P sessions.
   if (m_acceptingP2PConnections && SteamAPI_ISteamFriends_HasFriend(SteamAPI_SteamFriends(),
@@ -520,7 +519,7 @@ std::expected<void, StarException> PcP2PNetworkingService::steamReceiveAll() {
       return std::unexpected(ApplicationException("SteamNetworking::ReadP2PPacket returned false"));
     data.resize(messageSize);
     if (auto openSocket = m_steamOpenSockets.value(messageRemoteUser.ConvertToUint64())) {
-      MutexLocker socketLocker(openSocket->mutex);
+      std::lock_guard socketLocker(openSocket->mutex);
       openSocket->incoming.append(std::move(data));
     }
   }
@@ -532,22 +531,22 @@ std::expected<void, StarException> PcP2PNetworkingService::steamReceiveAll() {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
 PcP2PNetworkingService::DiscordP2PSocket::~DiscordP2PSocket() {
-  MutexLocker discordLocker(state->discordMutex);
+  std::lock_guard discordLocker(state->discordMutex);
   if (auto service = lifetime->service) {
-    MutexLocker serviceLocker(service->m_mutex);
-    MutexLocker socketLocker(mutex);
+    std::lock_guard serviceLocker(service->m_mutex);
+    std::lock_guard socketLocker(mutex);
     service->discordCloseSocket(this);
   }
 }
 
 bool PcP2PNetworkingService::DiscordP2PSocket::isOpen() {
-  MutexLocker socketLocker(mutex);
+  std::lock_guard socketLocker(mutex);
   return mode != DiscordSocketMode::Disconnected;
 }
 
 std::expected<bool, StarException> PcP2PNetworkingService::DiscordP2PSocket::sendMessage(ByteArray const& message) {
-  MutexLocker discordLocker(state->discordMutex);
-  MutexLocker socketLocker(mutex);
+  std::lock_guard discordLocker(state->discordMutex);
+  std::lock_guard socketLocker(mutex);
   if (error)
     return std::unexpected(*error);
   if (!lifetime->service || mode != DiscordSocketMode::Connected)
@@ -561,7 +560,7 @@ std::expected<bool, StarException> PcP2PNetworkingService::DiscordP2PSocket::sen
 }
 
 std::expected<std::optional<ByteArray>, StarException> PcP2PNetworkingService::DiscordP2PSocket::receiveMessage() {
-  MutexLocker socketLocker(mutex);
+  std::lock_guard socketLocker(mutex);
   if (error)
     return std::unexpected(*error);
   if (!incoming.empty()) {
@@ -602,7 +601,7 @@ std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService:
   if (auto logged = m_state->logger.info("Connecting to Discord lobby {}", lobbyId); !logged)
     return std::unexpected(std::move(logged.error()));
   if (auto oldSocket = m_discordOpenSockets.value(remoteUserId)) {
-    MutexLocker socketLocker(oldSocket->mutex);
+    std::lock_guard socketLocker(oldSocket->mutex);
     discordCloseSocket(oldSocket);
   }
 
@@ -626,7 +625,7 @@ std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService:
           disconnectDiscordLobby(state, lobbyId);
         return;
       }
-      MutexLocker serviceLocker(service->m_mutex);
+      std::lock_guard serviceLocker(service->m_mutex);
       auto socket = service->m_discordOpenSockets.value(remoteUserId);
       if (!socket || socket->connectionGeneration != generation) {
         if (res == discord::Result::Ok) {
@@ -639,7 +638,7 @@ std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService:
         }
         return;
       }
-      MutexLocker socketLocker(socket->mutex);
+      std::lock_guard socketLocker(socket->mutex);
       if (res != discord::Result::Ok) {
         socket->error = ApplicationException::format("Discord lobby {} connection failed (err {})", lobbyId, (int)res);
         service->discordCloseSocket(socket);
@@ -675,7 +674,7 @@ std::expected<std::unique_ptr<P2PSocket>, StarException> PcP2PNetworkingService:
 }
 
 void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::uint8_t* data, std::uint32_t size) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
 
   if (!m_discordServerLobby || lobbyId != m_discordServerLobby->first) {
     recordDiscordCallbackError(m_state.get(), ApplicationException::format("Received message from unexpected lobby {}", lobbyId));
@@ -684,7 +683,7 @@ void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, d
 
   if (auto socket = m_discordOpenSockets.value(userId)) {
       if (channel == DiscordMainNetworkChannel) {
-        MutexLocker socketLocker(socket->mutex);
+        std::lock_guard socketLocker(socket->mutex);
         socket->incoming.append(ByteArray((char const*)data, size));
       } else {
         recordDiscordCallbackError(m_state.get(), ApplicationException::format("Received Discord message on unexpected channel {}, ignoring", channel));
@@ -695,7 +694,7 @@ void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, d
   }
 
 void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyId, discord::UserId userId) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && !m_state->discordCurrentUser) {
     recordDiscordCallbackError(m_state.get(), ApplicationException("Discord current user is unavailable during lobby member connection"));
     return;
@@ -723,7 +722,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberUpdate(discord::LobbyId lobbyId
 }
 
 void PcP2PNetworkingService::discordOnLobbyMemberDisconnect(discord::LobbyId lobbyId, discord::UserId userId) {
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
   if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && !m_state->discordCurrentUser) {
     recordDiscordCallbackError(m_state.get(), ApplicationException("Discord current user is unavailable during lobby member disconnection"));
     return;
@@ -731,7 +730,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberDisconnect(discord::LobbyId lob
 
   if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && m_state->discordCurrentUser && userId != m_state->discordCurrentUser->GetId()) {
     if (auto socket = m_discordOpenSockets.value(userId)) {
-      MutexLocker socketLocker(socket->mutex);
+      std::lock_guard socketLocker(socket->mutex);
       discordCloseSocket(socket);
     }
   }
@@ -741,9 +740,9 @@ void PcP2PNetworkingService::discordOnLobbyMemberDisconnect(discord::LobbyId lob
 
 std::expected<void, StarException> PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(m_state->discordMutex);
+  std::lock_guard discordLocker(m_state->discordMutex);
 #endif
-  MutexLocker serviceLocker(m_mutex);
+  std::lock_guard serviceLocker(m_mutex);
 
   if (location == m_joinLocation)
     return {};
@@ -822,7 +821,7 @@ std::expected<void, StarException> PcP2PNetworkingService::setJoinLocation(JoinL
             deleteDiscordLobby(state, lobbyId);
             return;
           }
-          MutexLocker serviceLocker(service->m_mutex);
+          std::lock_guard serviceLocker(service->m_mutex);
           if (generation != service->m_discordLobbyGeneration) {
             deleteDiscordLobby(state, lobbyId);
             return;

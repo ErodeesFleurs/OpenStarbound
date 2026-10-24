@@ -6,66 +6,117 @@ import star.string;
 import star.format;
 import std;
 import star.byte_array;
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+import star.string_windows;
+#endif
 
 namespace Star {
 
 namespace {
-  // Delete the link itself, never traverse its target.
-  std::expected<bool, StarException> removeSymlink(String const& fileName) {
-    auto link = File::isSymlink(fileName);
-    if (!link)
-      return std::unexpected(std::move(link.error()));
-    if (!*link)
-      return false;
-    auto removed = File::remove(fileName);
-    if (!removed)
-      return std::unexpected(std::move(removed.error()));
-    return true;
+  std::expected<std::filesystem::path, StarException> filesystemPath(String const& path) {
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+    auto native = stringToUtf16(path);
+    if (!native)
+      return std::unexpected(std::move(native.error()));
+    return std::filesystem::path(native->get());
+#else
+    return std::filesystem::path(path.utf8Ptr());
+#endif
   }
 }
 
+std::expected<String, StarException> File::currentDirectory() {
+  std::error_code error;
+  auto path = std::filesystem::current_path(error);
+  if (error)
+    return std::unexpected(IOException::format("could not get current directory: {}", error.message()));
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  return utf16ToString(path.c_str());
+#else
+  return String(path.native());
+#endif
+}
+
+std::expected<void, StarException> File::changeDirectory(String const& dirName) {
+  auto path = filesystemPath(dirName);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  std::error_code error;
+  std::filesystem::current_path(*path, error);
+  if (error)
+    return std::unexpected(IOException::format("could not change directory to '{}': {}", dirName, error.message()));
+  return {};
+}
+
+std::expected<void, StarException> File::makeDirectory(String const& dirName) {
+  auto path = filesystemPath(dirName);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  std::error_code error;
+  if (!std::filesystem::create_directory(*path, error)) {
+    // Unlike create_directory, a single mkdir must reject an existing directory.
+    if (!error)
+      error = std::make_error_code(std::errc::file_exists);
+    return std::unexpected(IOException::format("could not create directory '{}': {}", dirName, error.message()));
+  }
+  return {};
+}
 
 std::expected<void, StarException> File::makeDirectoryRecursive(String const& fileName) {
-  auto parent = dirName(fileName);
-  auto parentExists = isDirectory(parent);
-  if (!parentExists)
-    return std::unexpected(std::move(parentExists.error()));
-  if (!*parentExists) {
-    if (parent == fileName)
-      return std::unexpected(IOException::format("Cannot create directory ancestor '{}'", parent));
-    auto result = makeDirectoryRecursive(parent);
-    if (!result)
-      return std::unexpected(std::move(result.error()));
+  auto path = filesystemPath(fileName);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  // The native helper rejects bare, drive-relative roots after trimming separators.
+  if (path->has_root_directory() && !path->has_root_name() && !path->has_relative_path())
+    return std::unexpected(IOException::format("Cannot create directory ancestor '{}'", fileName));
+#endif
+  std::error_code error;
+  std::filesystem::create_directories(*path, error);
+  if (error)
+    return std::unexpected(IOException::format("could not create directory '{}': {}", fileName, error.message()));
+  return {};
+}
+
+std::expected<void, StarException> File::remove(String const& fileName) {
+  auto path = filesystemPath(fileName);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  std::error_code error;
+  if (!std::filesystem::remove(*path, error)) {
+    // Missing paths are an error in the File interface, not a successful no-op.
+    if (!error)
+      error = std::make_error_code(std::errc::no_such_file_or_directory);
+    return std::unexpected(IOException::format("remove error on '{}': {}", fileName, error.message()));
   }
-  auto directoryExists = isDirectory(fileName);
-  if (!directoryExists)
-    return std::unexpected(std::move(directoryExists.error()));
-  if (!*directoryExists)
-    return makeDirectory(fileName);
   return {};
 }
 
 std::expected<void, StarException> File::removeDirectoryRecursive(String const& fileName) {
-  auto link = removeSymlink(fileName);
-  if (!link)
-    return std::unexpected(std::move(link.error()));
-  if (*link)
-    return {};
-  auto entries = dirList(fileName);
-  if (!entries)
-    return std::unexpected(std::move(entries.error()));
-  for (auto const& [entry, isDir] : *entries) {
-    auto path = relativeTo(fileName, entry);
-    auto childLink = removeSymlink(path);
-    if (!childLink)
-      return std::unexpected(std::move(childLink.error()));
-    if (*childLink)
-      continue;
-    auto result = isDir ? removeDirectoryRecursive(path) : remove(path);
-    if (!result)
-      return std::unexpected(std::move(result.error()));
+  auto path = filesystemPath(fileName);
+  if (!path)
+    return std::unexpected(std::move(path.error()));
+  std::error_code error;
+  auto status = std::filesystem::symlink_status(*path, error);
+  if (error)
+    return std::unexpected(IOException::format("could not remove directory '{}': {}", fileName, error.message()));
+  // A trailing separator must still require a directory, but must not turn a
+  // directory symlink into a traversal of its target.
+  if (path->has_relative_path() && path->filename().empty()) {
+    while (path->has_relative_path() && path->filename().empty())
+      *path = path->parent_path();
+    status = std::filesystem::symlink_status(*path, error);
+    if (error)
+      return std::unexpected(IOException::format("could not remove directory '{}': {}", fileName, error.message()));
   }
-  return remove(fileName);
+  // remove_all also accepts regular files and missing paths; this API does not.
+  if (!std::filesystem::is_directory(status) && !std::filesystem::is_symlink(status))
+    return std::unexpected(IOException::format("cannot recursively remove non-directory '{}'", fileName));
+  if (std::filesystem::remove_all(*path, error) == 0 && !error)
+    error = std::make_error_code(std::errc::no_such_file_or_directory);
+  if (error)
+    return std::unexpected(IOException::format("could not remove directory '{}': {}", fileName, error.message()));
+  return {};
 }
 
 std::expected<void, StarException> File::copy(String const& source, String const& target) {

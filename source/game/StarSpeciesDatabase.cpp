@@ -125,7 +125,8 @@ std::expected<Json, StarException> SpeciesDatabase::humanoidConfig(HumanoidIdent
   auto baseConfig = (*definition)->humanoidConfig();
   if (!baseConfig) return std::unexpected(std::move(baseConfig.error()));
   if (!(*definition)->m_buildScripts.empty()) {
-    RecursiveMutexLocker locker(m_luaMutex);
+    std::unique_lock locker(m_luaMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     auto context = m_luaRoot->createContext((*definition)->m_buildScripts);
     if (!context) return std::unexpected(std::move(context.error()));
     auto removed = context->remove("root");
@@ -167,7 +168,8 @@ std::expected<CharacterCreationResult, StarException> SpeciesDatabase::createHum
   if (!definition) return std::unexpected(std::move(definition.error()));
   auto const& speciesDefinition = *definition;
   if (!speciesDefinition->m_creationScripts.empty()) {
-    RecursiveMutexLocker locker(m_luaMutex);
+    std::unique_lock locker(m_luaMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     auto context = m_luaRoot->createContext(speciesDefinition->m_creationScripts);
     if (!context) return std::unexpected(std::move(context.error()));
     auto removed = context->remove("root");

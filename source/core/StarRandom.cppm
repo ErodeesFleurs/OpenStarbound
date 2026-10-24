@@ -3,7 +3,6 @@ import std;
 import star.format;
 import star.static_random;
 import star.byte_array;
-import star.thread;
 
 namespace Star {
 
@@ -132,7 +131,7 @@ public:
   template <typename Container>
   void shuffle(Container& container);
 private:
-  Mutex m_mutex;
+  std::mutex m_mutex;
   RandomSource m_source;
 };
 

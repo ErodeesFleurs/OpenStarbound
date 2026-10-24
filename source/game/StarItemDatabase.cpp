@@ -266,7 +266,7 @@ std::expected<std::shared_ptr<ItemDatabase>, StarException> ItemDatabase::create
 
 void ItemDatabase::cleanup() {
   {
-    MutexLocker locker(m_cacheMutex);
+    std::lock_guard locker(m_cacheMutex);
     m_itemCache.cleanup([](ItemCacheEntry const&, std::shared_ptr<Item> const& item) {
       return item.use_count() != 1;
     });
@@ -359,7 +359,8 @@ std::expected<ItemDatabase::ItemConfig, StarException> ItemDatabase::itemConfig(
   if (!builder)
     return std::unexpected(std::move(builder.error()));
   if (*builder) {
-    RecursiveMutexLocker locker(m_luaMutex);
+    std::unique_lock locker(m_luaMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     auto context = m_luaRoot->createContext(**builder);
     if (!context)
       return std::unexpected(std::move(context.error()));
@@ -398,7 +399,7 @@ std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::itemShared(Ite
   if (!descriptor)
     return std::shared_ptr<Item>();
   ItemCacheEntry entry{descriptor, level, seed};
-  MutexLocker locker(m_cacheMutex);
+  std::unique_lock locker(m_cacheMutex);
   auto cached = m_itemCache.ptr(entry);
   if (!cached)
     return std::unexpected(std::move(cached.error()));
@@ -622,7 +623,8 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
 std::expected<std::shared_ptr<Item>, StarException> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
   if (!item)
     return item;
-  RecursiveMutexLocker locker(m_luaMutex);
+  std::unique_lock locker(m_luaMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   LuaBaseComponent script(m_root);
   auto setup = [&]() -> std::expected<void, StarException> {
     auto removed = script.removeCallbacks("root");
@@ -690,7 +692,8 @@ std::expected<bool, StarException> ItemDatabase::ageItem(std::shared_ptr<Item>& 
   if ((*data)->agingScripts.empty())
     return false;
   ItemDescriptor original = item->descriptor();
-  RecursiveMutexLocker locker(m_luaMutex);
+  std::unique_lock locker(m_luaMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   LuaBaseComponent script(m_root);
   auto removed = script.removeCallbacks("root");
   if (!removed)

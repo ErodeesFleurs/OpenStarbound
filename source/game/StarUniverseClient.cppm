@@ -268,7 +268,7 @@ private:
   
   Root& m_root;
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   std::shared_ptr<PlayerStorage> m_playerStorage;
   std::shared_ptr<Statistics> m_statistics;
@@ -314,7 +314,7 @@ private:
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;
 
-  mutable RecursiveMutex m_messageMutex;
+  mutable std::recursive_mutex m_messageMutex;
   List<Universe::Message> m_universeMessages;
   
   HashMap<Uuid, RpcPromiseKeeper<Json>> m_universeMessageResponses;

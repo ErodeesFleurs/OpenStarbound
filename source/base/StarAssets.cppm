@@ -378,12 +378,12 @@ private:
 
   Settings m_settings;
 
-  mutable Mutex m_assetsMutex;
+  mutable std::mutex m_assetsMutex;
 
-  mutable ConditionVariable m_assetsQueued;
+  mutable std::condition_variable m_assetsQueued;
   mutable OrderedHashMap<AssetId, QueuePriority, AssetIdHash> m_queue;
 
-  mutable ConditionVariable m_assetsDone;
+  mutable std::condition_variable m_assetsDone;
   mutable HashMap<AssetId, std::shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
   mutable HashMap<AssetId, StarException, AssetIdHash> m_assetErrors;
 
@@ -393,7 +393,7 @@ private:
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
   mutable HashMap<std::pair<AssetSource*, String>, std::shared_ptr<LuaContext>> m_patchContexts;
-  mutable RecursiveMutex m_luaMutex;
+  mutable std::recursive_mutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
   StringList m_assetSources;

@@ -1,24 +1,40 @@
+import std;
 import star.thread;
 import star.format;
 
 namespace Star {
 
+#ifdef STAR_SYSTEM_WINDOWS
+void lockWithDiagnostics(std::unique_lock<std::recursive_mutex>& lock) {
+  lock.lock();
+}
+#endif
+
+void Thread::sleep(unsigned millis) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(millis));
+}
+
+void Thread::yield() {
+  std::this_thread::yield();
+}
+
+
 ReadersWriterMutex::ReadersWriterMutex()
   : m_readers(), m_writers(), m_readWaiters(), m_writeWaiters() {}
 
 void ReadersWriterMutex::readLock() {
-  MutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex);
   if (m_writers || m_writeWaiters) {
     m_readWaiters++;
     while (m_writers || m_writeWaiters)
-      m_readCond.wait(m_mutex);
+      m_readCond.wait(locker);
     m_readWaiters--;
   }
   m_readers++;
 }
 
 bool ReadersWriterMutex::tryReadLock() {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (m_writers || m_writeWaiters)
     return false;
   m_readers++;
@@ -26,25 +42,25 @@ bool ReadersWriterMutex::tryReadLock() {
 }
 
 void ReadersWriterMutex::readUnlock() {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_readers--;
   if (m_writeWaiters)
-    m_writeCond.signal();
+    m_writeCond.notify_one();
 }
 
 void ReadersWriterMutex::writeLock() {
-  MutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex);
   if (m_readers || m_writers) {
     m_writeWaiters++;
     while (m_readers || m_writers)
-      m_writeCond.wait(m_mutex);
+      m_writeCond.wait(locker);
     m_writeWaiters--;
   }
   m_writers = 1;
 }
 
 bool ReadersWriterMutex::tryWriteLock() {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (m_readers || m_writers)
     return false;
   m_writers = 1;
@@ -52,12 +68,12 @@ bool ReadersWriterMutex::tryWriteLock() {
 }
 
 void ReadersWriterMutex::writeUnlock() {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_writers = 0;
   if (m_writeWaiters)
-    m_writeCond.signal();
+    m_writeCond.notify_one();
   else if (m_readWaiters)
-    m_readCond.broadcast();
+    m_readCond.notify_all();
 }
 
 ReadLocker::ReadLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock), m_locked(false) {

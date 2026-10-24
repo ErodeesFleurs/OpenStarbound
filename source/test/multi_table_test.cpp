@@ -46,6 +46,103 @@ TEST(MultiArrayTest, All) {
   EXPECT_EQ(table3(4, 4, 4), 42);
 }
 
+template <typename Array>
+concept HasMutableArrayView = requires(Array& array) { array.view(); };
+
+template <typename Array>
+concept HasTemporaryArrayView = requires(Array&& array) { std::move(array).view(); };
+
+TEST(MultiArrayTest, ViewsPreserveLayoutConstnessAndCheckedOwnerAccess) {
+  static_assert(HasMutableArrayView<MultiArray<int, 3>>);
+  static_assert(!HasMutableArrayView<MultiArray<bool, 3>>);
+  static_assert(!HasTemporaryArrayView<MultiArray<int, 3>>);
+  static_assert(!HasTemporaryArrayView<MultiArray<int, 3> const>);
+
+  MultiArray<int, 3> array(2, 3, 4);
+  {
+    auto view = array.view();
+    auto const constView = std::as_const(array).view();
+    static_assert(std::same_as<decltype(view[0, 0, 0]), int&>);
+    static_assert(std::same_as<decltype(constView[0, 0, 0]), int const&>);
+    EXPECT_EQ(view.stride(0), 12u);
+    EXPECT_EQ(view.stride(1), 4u);
+    EXPECT_EQ(view.stride(2), 1u);
+    for (std::size_t x = 0; x < view.extent(0); ++x)
+      for (std::size_t y = 0; y < view.extent(1); ++y)
+        for (std::size_t z = 0; z < view.extent(2); ++z) {
+          view[x, y, z] = static_cast<int>(100 * x + 10 * y + z);
+          EXPECT_EQ((&view[x, y, z]), array.data() + (x * 3 + y) * 4 + z);
+        }
+    EXPECT_EQ((constView[1, 2, 3]), 123);
+    auto checked = std::as_const(array).at(1, 2, 3);
+    ASSERT_TRUE(checked);
+    EXPECT_EQ(*checked, (&constView[1, 2, 3]));
+  }
+
+  EXPECT_FALSE(array.at(2, 0, 0));
+  EXPECT_FALSE(std::as_const(array).at(0, 3, 0));
+  auto copy = array;
+  array.resize(3, 4, 5);
+  auto const resizedView = std::as_const(array).view();
+  EXPECT_EQ(resizedView.extent(2), 5u);
+  EXPECT_EQ((resizedView[1, 2, 3]), 123);
+  EXPECT_EQ(copy(1, 2, 3), 123);
+
+  MultiArray<int, 3> empty(2, 0, 4);
+  EXPECT_EQ(empty.view().size(), 0u);
+  MultiArray<bool, 2> bits(2, 3);
+  ASSERT_TRUE(bits.set({1, 2}, true));
+  EXPECT_TRUE(bits.get({1, 2}));
+  EXPECT_FALSE(bits.set({2, 0}, true));
+}
+
+template <std::size_t Rank>
+void testViewInterpolation() {
+  using Table = MultiTable<double, double, Rank>;
+  Table table;
+  typename Table::RangeArray ranges;
+  typename Table::PositionArray coordinate;
+  double interpolatedExpected = 0;
+  double steppedExpected = 0;
+  double clampedExpected = 0;
+  double factor = 1;
+  for (std::size_t dim = 0; dim < Rank; ++dim) {
+    for (std::size_t i = 0; i < dim + 4; ++i)
+      ranges[dim].append(static_cast<double>(i));
+    coordinate[dim] = static_cast<double>(dim) + 0.25;
+    interpolatedExpected += coordinate[dim] * factor;
+    steppedExpected += static_cast<double>(dim) * factor;
+    clampedExpected += static_cast<double>(dim + 3) * factor;
+    factor *= 10;
+  }
+  table.setRanges(ranges);
+  table.eval([](typename Table::PositionArray const& point) {
+    double value = 0;
+    double factor = 1;
+    for (std::size_t dim = 0; dim < Rank; ++dim) {
+      value += point[dim] * factor;
+      factor *= 10;
+    }
+    return value;
+  });
+
+  for (auto mode : {InterpolationMode::Linear, InterpolationMode::Cubic, InterpolationMode::HalfStep}) {
+    table.setInterpolationMode(mode);
+    auto interpolated = table.interpolate(coordinate);
+    ASSERT_TRUE(interpolated);
+    EXPECT_NEAR(*interpolated, mode == InterpolationMode::HalfStep ? steppedExpected : interpolatedExpected, 1e-9);
+    auto clamped = table.interpolate(Table::PositionArray::filled(100));
+    ASSERT_TRUE(clamped);
+    EXPECT_NEAR(*clamped, clampedExpected, 1e-9);
+  }
+}
+
+TEST(MultiTableTest, ViewInterpolationPreservesTwoThreeAndFourDimensionalResults) {
+  testViewInterpolation<2>();
+  testViewInterpolation<3>();
+  testViewInterpolation<4>();
+}
+
 TEST(MultiTableTest, All) {
   MultiTable2F table;
   table.setRanges({MultiTable2F::Range{0, 2, 4, 6, 8, 10}, MultiTable2F::Range{0, 5, 10}});

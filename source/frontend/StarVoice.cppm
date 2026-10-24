@@ -83,7 +83,7 @@ public:
     std::unique_ptr<::OpusDecoder, void(*)(::OpusDecoder*)> decoderMono;
     std::unique_ptr<::OpusDecoder, void(*)(::OpusDecoder*)> decoderStereo;
     std::shared_ptr<VoiceAudioStream> audioStream;
-    Mutex mutex;
+    std::mutex mutex;
 
     std::int64_t lastReceiveTime = 0;
     std::int64_t lastPlayTime = 0;
@@ -166,7 +166,7 @@ private:
   std::shared_ptr<Speaker> m_clientSpeaker;
   HashMap<SpeakerId, std::shared_ptr<Speaker>> m_speakers;
 
-  Mutex m_activeSpeakersMutex;
+  std::mutex m_activeSpeakersMutex;
   HashSet<std::shared_ptr<Speaker>> m_activeSpeakers;
 
 
@@ -197,8 +197,8 @@ private:
   unsigned m_bitrate = 0;
 
   ThreadFunction<void> m_thread;
-  Mutex m_threadMutex;
-  ConditionVariable m_threadCond;
+  std::mutex m_threadMutex;
+  std::condition_variable m_threadCond;
   std::atomic<bool> m_stopThread = true;
 
   std::vector<std::int16_t> m_decodeBuffer;
@@ -210,11 +210,11 @@ private:
   std::shared_ptr<ApplicationController> m_applicationController;
 
 
-  Mutex m_encodeMutex;
+  std::mutex m_encodeMutex;
   std::vector<ByteArray> m_encodedChunks;
   std::size_t m_encodedChunksLength = 0;
 
-  Mutex m_captureMutex;
+  std::mutex m_captureMutex;
   std::queue<VoiceAudioChunk> m_capturedChunks;
   std::size_t m_capturedChunksFrames = 0;
 };

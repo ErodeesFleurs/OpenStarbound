@@ -93,7 +93,7 @@ private:
   [[nodiscard]] std::expected<LuaCallbacks, StarException> makeVersioningCallbacks(ItemDatabase const* itemCatalog) const;
 
   Root& m_root;
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   std::shared_ptr<LuaRoot> m_luaRoot;
 
   StringMap<VersionNumber> m_currentVersions;

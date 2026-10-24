@@ -85,7 +85,7 @@ std::expected<std::shared_ptr<UniverseSettings>, StarException> UniverseSettings
 }
 
 Json UniverseSettings::toJson() const {
-  MutexLocker locker(m_lock);
+  std::lock_guard locker(m_lock);
 
   return JsonObject{
       {"uuid", m_uuid.hex()},
@@ -98,13 +98,13 @@ Uuid UniverseSettings::uuid() const {
 }
 
 StringSet UniverseSettings::flags() const {
-  MutexLocker locker(m_lock);
+  std::lock_guard locker(m_lock);
 
   return m_flags;
 }
 
 std::expected<void, StarException> UniverseSettings::setFlag(String const& flag) {
-  MutexLocker locker(m_lock);
+  std::lock_guard locker(m_lock);
 
   if (m_flags.add(flag)) {
     auto logged = m_root.logger().info("Universe flags set to {}", m_flags);

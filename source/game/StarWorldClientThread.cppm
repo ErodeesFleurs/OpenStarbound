@@ -168,17 +168,17 @@ private:
   [[nodiscard]]
   std::expected<void, StarException> runLoop();
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   std::shared_ptr<WorldClient> m_worldClient;
   ClientSubWorldId m_subWorldId;
   WorldClientAction m_updateAction;
 
-  mutable RecursiveMutex m_queueMutex;
+  mutable std::recursive_mutex m_queueMutex;
   List<std::shared_ptr<Packet>> m_incomingPacketQueue;
   List<std::shared_ptr<Packet>> m_outgoingPacketQueue;
 
-  mutable RecursiveMutex m_messageMutex;
+  mutable std::recursive_mutex m_messageMutex;
   List<Message> m_messages;
 
   std::atomic<bool> m_stop;

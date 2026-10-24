@@ -115,8 +115,9 @@ struct LuaHttpSession::Impl {
     auto domain = extractDomain(request.url);
     if (!domain)
       return std::unexpected(std::move(domain.error()));
-    RecursiveMutexLocker callbackLock(callbackMutex);
-    MutexLocker lock(mutex);
+    std::unique_lock callbackLock(callbackMutex, std::defer_lock);
+    lockWithDiagnostics(callbackLock);
+    std::unique_lock lock(mutex);
     if (stopped) {
       if (auto failed = keeper.fail("HTTP session stopped"); !failed)
         return std::unexpected(std::move(failed.error()));
@@ -140,7 +141,7 @@ struct LuaHttpSession::Impl {
           auto notified = callback(*domain);
           if (!notified) {
             // A synchronous reply may already have removed this request.
-            MutexLocker stateLock(mutex);
+            std::lock_guard stateLock(mutex);
             for (auto it = pendingRequests.begin(); it != pendingRequests.end(); ++it) {
               if (it->id == id) {
                 auto failed = it->rpcKeeper.fail(strf("HTTP request failed: {}", notified.error().what()));
@@ -160,9 +161,9 @@ struct LuaHttpSession::Impl {
 
   Root& root;
   std::unique_ptr<HttpClient> httpClient;
-  RecursiveMutex callbackMutex;
+  std::recursive_mutex callbackMutex;
   LuaBindings::HttpTrustRequestCallback trustRequestCallback;
-  Mutex mutex;
+  std::mutex mutex;
   List<PendingHttpRequest> pendingRequests;
   HashMap<std::uint64_t, AsyncHttpRequest> asyncRequests;
   std::uint64_t nextRequestId = 1;
@@ -184,19 +185,21 @@ LuaHttpSession::~LuaHttpSession() {
 }
 
 void LuaHttpSession::setHttpTrustRequestCallback(LuaBindings::HttpTrustRequestCallback callback) {
-  RecursiveMutexLocker callbackLock(m_impl->callbackMutex);
-  MutexLocker lock(m_impl->mutex);
+  std::unique_lock callbackLock(m_impl->callbackMutex, std::defer_lock);
+  lockWithDiagnostics(callbackLock);
+  std::lock_guard lock(m_impl->mutex);
   if (!m_impl->stopped)
     m_impl->trustRequestCallback = std::move(callback);
 }
 
 void LuaHttpSession::clearHttpTrustRequestCallback() {
-  RecursiveMutexLocker callbackLock(m_impl->callbackMutex);
+  std::unique_lock callbackLock(m_impl->callbackMutex, std::defer_lock);
+  lockWithDiagnostics(callbackLock);
   m_impl->trustRequestCallback = {};
 }
 
 std::expected<void, StarException> LuaHttpSession::handleHttpTrustReply(String const& domain, bool allowed) {
-  MutexLocker lock(m_impl->mutex);
+  std::lock_guard lock(m_impl->mutex);
   if (m_impl->stopped)
     return {};
   std::optional<StarException> error;
@@ -222,7 +225,7 @@ std::expected<void, StarException> LuaHttpSession::handleHttpTrustReply(String c
 }
 
 std::expected<void, StarException> LuaHttpSession::poll() {
-  MutexLocker lock(m_impl->mutex);
+  std::lock_guard lock(m_impl->mutex);
   std::optional<StarException> error;
   auto& requests = m_impl->asyncRequests;
   for (auto it = requests.begin(); it != requests.end();) {
@@ -253,7 +256,8 @@ std::expected<void, StarException> LuaHttpSession::poll() {
 }
 
 std::expected<void, StarException> LuaHttpSession::stop() {
-  RecursiveMutexLocker callbackLock(m_impl->callbackMutex);
+  std::unique_lock callbackLock(m_impl->callbackMutex, std::defer_lock);
+  lockWithDiagnostics(callbackLock);
   std::optional<StarException> error;
   auto remember = [&](std::expected<void, StarException> result) {
     if (!result) {
@@ -264,7 +268,7 @@ std::expected<void, StarException> LuaHttpSession::stop() {
     }
   };
   {
-    MutexLocker lock(m_impl->mutex);
+    std::lock_guard lock(m_impl->mutex);
     if (!m_impl->stopped) {
       m_impl->stopped = true;
       m_impl->trustRequestCallback = {};
@@ -449,7 +453,7 @@ std::expected<LuaCallbacks, StarException> LuaBindings::makeHttpCallbacks(std::s
     return std::unexpected(std::move(result.error()));
   if (auto result = callbacks.registerCallback("isTrusted", [weakSession](String const& domain) -> std::expected<bool, StarException> {
     if (auto owner = weakSession.lock()) {
-      MutexLocker lock(owner->m_impl->mutex);
+      std::lock_guard lock(owner->m_impl->mutex);
       return owner->m_impl->isTrustedDomain(domain);
     }
     return false;

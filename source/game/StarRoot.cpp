@@ -233,47 +233,47 @@ std::expected<void, StarException> Root::initialize() {
     return std::unexpected(std::move(preparing.error()));
 
   auto maintenance = Thread::invoke("Root::maintenanceMain", [this]() -> std::expected<void, StarException> {
-      MutexLocker locker(m_maintenanceStopMutex);
+      std::unique_lock locker(m_maintenanceStopMutex);
       while (!m_stopMaintenanceThread) {
         m_reloadListeners.clearExpiredListeners();
 
         {
-          MutexLocker locker(m_objectDatabaseMutex);
+          std::unique_lock locker(m_objectDatabaseMutex);
           if (std::shared_ptr<ObjectDatabase> objectDb = m_objectDatabase) {
             locker.unlock();
             objectDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_itemDatabaseMutex);
+          std::unique_lock locker(m_itemDatabaseMutex);
           if (std::shared_ptr<ItemDatabase> itemDb = m_itemDatabase) {
             locker.unlock();
             itemDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_monsterDatabaseMutex);
+          std::unique_lock locker(m_monsterDatabaseMutex);
           if (std::shared_ptr<MonsterDatabase> monsterDb = m_monsterDatabase) {
             locker.unlock();
             monsterDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_assetsMutex);
+          std::unique_lock locker(m_assetsMutex);
           if (std::shared_ptr<Assets> assets = m_assets) {
             locker.unlock();
             assets->cleanup();
           }
         }
         {
-          MutexLocker locker(m_tenantDatabaseMutex);
+          std::unique_lock locker(m_tenantDatabaseMutex);
           if (std::shared_ptr<TenantDatabase> tenantDb = m_tenantDatabase) {
             locker.unlock();
             tenantDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_imageMetadataDatabaseMutex);
+          std::unique_lock locker(m_imageMetadataDatabaseMutex);
           if (std::shared_ptr<ImageMetadataDatabase> imgMetaDb = m_imageMetadataDatabase) {
             locker.unlock();
             imgMetaDb->cleanup();
@@ -285,13 +285,13 @@ std::expected<void, StarException> Root::initialize() {
           return std::unexpected(std::move(entropy.error()));
 
         {
-          MutexLocker locker(m_configurationMutex);
+          std::lock_guard locker(m_configurationMutex);
           auto written = writeConfig();
           if (!written)
             return std::unexpected(std::move(written.error()));
         }
 
-        m_maintenanceStopCondition.wait(m_maintenanceStopMutex, RootMaintenanceSleep);
+        m_maintenanceStopCondition.wait_for(locker, std::chrono::milliseconds(RootMaintenanceSleep));
       }
       return {};
     });
@@ -307,9 +307,9 @@ Root::~Root() {
     EmergencyLog::error("Root: Shutdown log failed: {}", outputException(logged.error(), true));
 
   {
-    MutexLocker locker(m_maintenanceStopMutex);
+    std::lock_guard locker(m_maintenanceStopMutex);
     m_stopMaintenanceThread = true;
-    m_maintenanceStopCondition.signal();
+    m_maintenanceStopCondition.notify_one();
   }
   if (m_maintenanceThread) {
     if (auto finished = m_maintenanceThread.finish(); !finished)
@@ -336,75 +336,72 @@ std::expected<void, StarException> Root::reload() {
     // in the same order (well, the same order*ing* not necessarily the same
     // order) to avoid deadlocks.  This means that we need to enumerate the
     // finicky, implicit dependency order that we have due to each member's
-    // constructor referencing root recursively.  We could avoid doing this
-    // explicitly with C++11's std::lock (if c++11 threading primitives were
-    // finally reliable on all targets), or some other equivalent deadlock
-    // avoidance algorithm.
+    // constructor referencing root recursively.
 
     // Entity factory depends on all the entity databases and the versioning
     // database.
-    MutexLocker entityFactoryLock(m_entityFactoryMutex);
+    std::lock_guard entityFactoryLock(m_entityFactoryMutex);
 
     // Species database depends on the item database.
-    MutexLocker speciesDatabaseLock(m_speciesDatabaseMutex);
+    std::lock_guard speciesDatabaseLock(m_speciesDatabaseMutex);
 
     // Item database depends on object database and codex database
-    MutexLocker itemDatabaseLock(m_itemDatabaseMutex);
+    std::lock_guard itemDatabaseLock(m_itemDatabaseMutex);
 
     // These databases depend on various things below, but not the item database
-    MutexLocker objectDatabaseLock(m_objectDatabaseMutex);
-    MutexLocker playerFactoryLock(m_playerFactoryMutex);
-    MutexLocker npcDatabaseLock(m_npcDatabaseMutex);
-    MutexLocker stagehandDatabaseLock(m_stagehandDatabaseMutex);
-    MutexLocker vehicleDatabaseLock(m_vehicleDatabaseMutex);
-    MutexLocker monsterDatabaseLock(m_monsterDatabaseMutex);
-    MutexLocker plantDatabaseLock(m_plantDatabaseMutex);
-    MutexLocker projectileDatabaseLock(m_projectileDatabaseMutex);
+    std::lock_guard objectDatabaseLock(m_objectDatabaseMutex);
+    std::lock_guard playerFactoryLock(m_playerFactoryMutex);
+    std::lock_guard npcDatabaseLock(m_npcDatabaseMutex);
+    std::lock_guard stagehandDatabaseLock(m_stagehandDatabaseMutex);
+    std::lock_guard vehicleDatabaseLock(m_vehicleDatabaseMutex);
+    std::lock_guard monsterDatabaseLock(m_monsterDatabaseMutex);
+    std::lock_guard plantDatabaseLock(m_plantDatabaseMutex);
+    std::lock_guard projectileDatabaseLock(m_projectileDatabaseMutex);
 
     // Biome database depends on liquids, materials, and stored function
     // databases.
-    MutexLocker biomeDatabaseLock(m_biomeDatabaseMutex);
+    std::lock_guard biomeDatabaseLock(m_biomeDatabaseMutex);
 
     // Dungeon definitions database depends on the material and liquids database
-    MutexLocker dungeonDefinitionsLock(m_dungeonDefinitionsMutex);
-    MutexLocker tilesetDatabaseLock(m_tilesetDatabaseMutex);
+    std::lock_guard dungeonDefinitionsLock(m_dungeonDefinitionsMutex);
+    std::lock_guard tilesetDatabaseLock(m_tilesetDatabaseMutex);
 
-    MutexLocker statisticsDatabaseLock(m_statisticsDatabaseMutex);
+    std::lock_guard statisticsDatabaseLock(m_statisticsDatabaseMutex);
 
     // Liquids database depends on the materials database
-    MutexLocker liquidsDatabaseLock(m_liquidsDatabaseMutex);
+    std::lock_guard liquidsDatabaseLock(m_liquidsDatabaseMutex);
 
     // Material database depends on particle database
-    MutexLocker materialDatabaseLock(m_materialDatabaseMutex);
+    std::lock_guard materialDatabaseLock(m_materialDatabaseMutex);
 
     // Databases that depend on functions database.
-    MutexLocker damageDatabaseLock(m_damageDatabaseMutex);
-    MutexLocker effectSourceDatabaseLock(m_effectSourceDatabaseMutex);
-    MutexLocker statusEffectDatabaseLock(m_statusEffectDatabaseMutex);
-    MutexLocker treasureDatabaseLock(m_treasureDatabaseMutex);
+    std::lock_guard damageDatabaseLock(m_damageDatabaseMutex);
+    std::lock_guard effectSourceDatabaseLock(m_effectSourceDatabaseMutex);
+    std::lock_guard statusEffectDatabaseLock(m_statusEffectDatabaseMutex);
+    std::lock_guard treasureDatabaseLock(m_treasureDatabaseMutex);
 
     // Databases that don't depend on anything other than assets
-    MutexLocker codexDatabaseLock(m_codexDatabaseMutex);
-    MutexLocker behaviorDatabaseMutex(m_behaviorDatabaseMutex);
-    MutexLocker techDatabaseLock(m_techDatabaseMutex);
-    MutexLocker aiDatabaseLock(m_aiDatabaseMutex);
-    MutexLocker questTemplateDatabaseLock(m_questTemplateDatabaseMutex);
-    MutexLocker emoteProcessorLock(m_emoteProcessorMutex);
-    MutexLocker terrainDatabaseLock(m_terrainDatabaseMutex);
-    MutexLocker particleDatabaseLock(m_particleDatabaseMutex);
-    MutexLocker versioningDatabaseLock(m_versioningDatabaseMutex);
-    MutexLocker functionDatabaseLock(m_functionDatabaseMutex);
-    MutexLocker imageMetadataDatabaseLock(m_imageMetadataDatabaseMutex);
-    MutexLocker tenantDatabaseLock(m_tenantDatabaseMutex);
-    MutexLocker nameGeneratorLock(m_nameGeneratorMutex);
-    MutexLocker danceDatabaseLock(m_danceDatabaseMutex);
-    MutexLocker spawnTypeDatabaseLock(m_spawnTypeDatabaseMutex);
-    MutexLocker radioMessageDatabaseLock(m_radioMessageDatabaseMutex);
-    MutexLocker collectionDatabaseLock(m_collectionDatabaseMutex);
+    std::lock_guard codexDatabaseLock(m_codexDatabaseMutex);
+    std::lock_guard behaviorDatabaseMutex(m_behaviorDatabaseMutex);
+    std::lock_guard techDatabaseLock(m_techDatabaseMutex);
+    std::lock_guard aiDatabaseLock(m_aiDatabaseMutex);
+    std::lock_guard questTemplateDatabaseLock(m_questTemplateDatabaseMutex);
+    std::lock_guard emoteProcessorLock(m_emoteProcessorMutex);
+    std::lock_guard terrainDatabaseLock(m_terrainDatabaseMutex);
+    std::lock_guard particleDatabaseLock(m_particleDatabaseMutex);
+    std::lock_guard versioningDatabaseLock(m_versioningDatabaseMutex);
+    std::lock_guard functionDatabaseLock(m_functionDatabaseMutex);
+    std::lock_guard imageMetadataDatabaseLock(m_imageMetadataDatabaseMutex);
+    std::lock_guard tenantDatabaseLock(m_tenantDatabaseMutex);
+    std::lock_guard nameGeneratorLock(m_nameGeneratorMutex);
+    std::lock_guard danceDatabaseLock(m_danceDatabaseMutex);
+    std::lock_guard spawnTypeDatabaseLock(m_spawnTypeDatabaseMutex);
+    std::lock_guard radioMessageDatabaseLock(m_radioMessageDatabaseMutex);
+    std::lock_guard collectionDatabaseLock(m_collectionDatabaseMutex);
 
     // Configuration and Assets are at the very bottom of the hierarchy.
-    MutexLocker configurationLock(m_configurationMutex);
-    MutexLocker assetsLock(m_assetsMutex);
+    std::lock_guard configurationLock(m_configurationMutex);
+    std::lock_guard assetsLock(m_assetsMutex);
 
     auto written = writeConfig();
     if (!written)
@@ -460,7 +457,7 @@ std::expected<void, StarException> Root::loadMods(StringList modDirectories, boo
   if (_reload)
     m_modDirectories.clear();
 
-  MutexLocker locker(m_modsMutex);
+  std::lock_guard locker(m_modsMutex);
   m_modDirectories = std::move(modDirectories);
   
   if (_reload)
@@ -544,7 +541,7 @@ std::expected<void, StarException> Root::fullyLoad() {
     return std::unexpected(std::move(logged.error()));
 
   {
-    MutexLocker locker(m_assetsMutex);
+    std::lock_guard locker(m_assetsMutex);
     if (m_assets)
       m_assets->clearCache();
   }
@@ -1058,7 +1055,7 @@ std::expected<void, StarException> Root::writeConfig() {
 }
 
 std::expected<WorkerPool*, StarException> Root::workers() {
-  MutexLocker locker(m_workersStartMutex);
+  std::lock_guard locker(m_workersStartMutex);
   if (!m_workersStarted) {
     auto started = m_workers.start(std::max(1u, std::thread::hardware_concurrency()));
     if (!started) return std::unexpected(std::move(started.error()));
@@ -1068,7 +1065,7 @@ std::expected<WorkerPool*, StarException> Root::workers() {
 }
 
 std::expected<bool*, StarException> Root::humanoidHeadRotation() {
-  MutexLocker locker(m_headRotationMutex);
+  std::lock_guard locker(m_headRotationMutex);
   if (!m_headRotationInitialized) {
     auto config = configuration();
     if (!config) return std::unexpected(std::move(config.error()));
@@ -1083,15 +1080,15 @@ std::expected<bool*, StarException> Root::humanoidHeadRotation() {
 }
 
 template <typename T, typename... Params>
-[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
       return T::create(std::forward<Params>(params)...);
     });
 }
 
 template <typename T>
-[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction) {
-  MutexLocker locker(mutex);
+[[nodiscard]] std::expected<std::shared_ptr<T>, StarException> Root::loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction) {
+  std::lock_guard locker(mutex);
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();
     auto loaded = loadFunction();

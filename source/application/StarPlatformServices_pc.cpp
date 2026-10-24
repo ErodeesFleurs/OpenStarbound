@@ -178,7 +178,7 @@ std::expected<void, StarException> PcPlatformServicesState::initialize() {
   }
 
   if (discordAvailable) {
-    MutexLocker locker(discordMutex);
+    std::lock_guard locker(discordMutex);
     discordCore->SetLogHook(discord::LogLevel::Info, [this](discord::LogLevel level, char const* msg) {
       std::expected<void, StarException> logged;
       if (level == discord::LogLevel::Debug)
@@ -196,7 +196,7 @@ std::expected<void, StarException> PcPlatformServicesState::initialize() {
     auto eventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() -> std::expected<void, StarException> {
         while (!discordEventShutdown) {
           {
-            MutexLocker locker(discordMutex);
+            std::lock_guard locker(discordMutex);
             auto result = discordCore->RunCallbacks();
             if (result != discord::Result::Ok) {
               discordError = ApplicationException::format("Discord callback dispatch failed (err {})", (int)result);
@@ -306,7 +306,7 @@ std::expected<std::unique_ptr<PcPlatformServices>, StarException> PcPlatformServ
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(services->m_state->discordMutex);
+  std::lock_guard discordLocker(services->m_state->discordMutex);
   if (services->m_state->discordAvailable) {
     if (auto logged = logger.debug("Registering Starbound to Discord at path: {}", path); !logged)
       return std::unexpected(std::move(logged.error()));
@@ -352,7 +352,7 @@ std::expected<void, StarException> PcPlatformServices::update() {
   }
 #endif
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  MutexLocker discordLocker(m_state->discordMutex);
+  std::lock_guard discordLocker(m_state->discordMutex);
   if (m_state->discordAvailable && m_state->discordError)
     return std::unexpected(std::move(*std::exchange(m_state->discordError, {})));
 #endif

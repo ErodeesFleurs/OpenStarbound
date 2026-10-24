@@ -14,14 +14,11 @@ bool WorkerPoolHandle::done() const {
 }
 
 std::expected<bool, StarException> WorkerPoolHandle::wait(unsigned millis) const {
-  MutexLocker locker(m_impl->mutex);
-  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
-  while (!m_impl->done.load(std::memory_order_acquire) && millis != 0) {
-    auto remaining = deadline - std::chrono::steady_clock::now();
-    if (remaining <= decltype(remaining)::zero())
-      break;
-    m_impl->condition.wait(m_impl->mutex,
-        static_cast<unsigned>(std::chrono::ceil<std::chrono::milliseconds>(remaining).count()));
+  std::unique_lock locker(m_impl->mutex);
+  if (millis != 0) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+    m_impl->condition.wait_until(locker, deadline,
+        [this] { return m_impl->done.load(std::memory_order_acquire); });
   }
   if (m_impl->error)
     return std::unexpected(*m_impl->error);
@@ -54,7 +51,7 @@ std::expected<std::unique_ptr<WorkerPool>, StarException> WorkerPool::create(Str
 WorkerPool::~WorkerPool() {
   // Unlike explicit stop(), final cleanup must attempt every independent join,
   // including when destruction itself violates the no-own-job lifecycle rule.
-  MutexLocker threadLock(m_threadMutex);
+  std::lock_guard threadLock(m_threadMutex);
   auto result = stopWorkers();
   if (!result)
     EmergencyLog::error("Worker pool {} failed during destruction: {}", m_name, outputException(ExceptionDiagnostic(result.error()), true));
@@ -68,12 +65,12 @@ std::expected<void, StarException> WorkerPool::start(unsigned threadCount) {
   if (threadCount == 0)
     return stop();
 
-  MutexLocker threadLock(m_threadMutex);
+  std::lock_guard threadLock(m_threadMutex);
   {
-    MutexLocker workLock(m_workMutex);
+    std::lock_guard workLock(m_workMutex);
     for (auto const& worker : m_workerThreads)
       worker->shouldStop = true;
-    m_workCondition.broadcast();
+    m_workCondition.notify_all();
   }
   auto joined = joinWorkers();
   if (!joined)
@@ -81,7 +78,7 @@ std::expected<void, StarException> WorkerPool::start(unsigned threadCount) {
 
   std::optional<StarException> failure;
   {
-    MutexLocker workLock(m_workMutex);
+    std::lock_guard workLock(m_workMutex);
     m_workerThreads.reserve(threadCount);
     for (unsigned i = 0; i < threadCount; ++i) {
       auto worker = std::make_unique<WorkerThread>(this);
@@ -107,20 +104,20 @@ std::expected<void, StarException> WorkerPool::start(unsigned threadCount) {
 std::expected<void, StarException> WorkerPool::stop() {
   if (isWorkerThread())
     return std::unexpected(WorkerPoolException("Cannot stop a worker pool from one of its jobs"));
-  MutexLocker threadLock(m_threadMutex);
+  std::lock_guard threadLock(m_threadMutex);
   return stopWorkers();
 }
 
 std::expected<void, StarException> WorkerPool::stopWorkers() {
   std::deque<QueuedWork> cancelledWork;
   {
-    MutexLocker workLock(m_workMutex);
+    std::lock_guard workLock(m_workMutex);
     m_acceptingWork = false;
     for (auto const& worker : m_workerThreads)
       worker->shouldStop = true;
     cancelledWork = std::move(m_pendingWork);
     m_pendingWork.clear();
-    m_workCondition.broadcast();
+    m_workCondition.notify_all();
   }
   std::optional<StarException> failure;
   std::optional<StarException> cancelled;
@@ -158,7 +155,7 @@ std::expected<void, StarException> WorkerPool::joinWorkers() {
     }
   }
   {
-    MutexLocker workLock(m_workMutex);
+    std::lock_guard workLock(m_workMutex);
     std::erase_if(m_workerThreads, [](auto const& worker) { return worker->isJoined(); });
   }
   if (failure)
@@ -169,8 +166,8 @@ std::expected<void, StarException> WorkerPool::joinWorkers() {
 std::expected<void, StarException> WorkerPool::finish() {
   if (isWorkerThread())
     return std::unexpected(WorkerPoolException("Cannot finish a worker pool from one of its jobs"));
-  MutexLocker threadLock(m_threadMutex);
-  MutexLocker workLock(m_workMutex);
+  std::lock_guard threadLock(m_threadMutex);
+  std::unique_lock workLock(m_workMutex);
   m_acceptingWork = false;
   m_finishingThread = std::this_thread::get_id();
   std::optional<StarException> failure;
@@ -185,13 +182,13 @@ std::expected<void, StarException> WorkerPool::finish() {
       else
         EmergencyLog::error("Worker pool {} completion failed: {}", m_name, outputException(ExceptionDiagnostic(result.error()), true));
     }
-    Thread::yield();
+    std::this_thread::yield();
     workLock.lock();
   }
   m_finishingThread = {};
   for (auto const& worker : m_workerThreads)
     worker->shouldStop = true;
-  m_workCondition.broadcast();
+  m_workCondition.notify_all();
   workLock.unlock();
   auto joined = joinWorkers();
   if (!joined) {
@@ -208,25 +205,25 @@ WorkerPoolHandle WorkerPool::addWork(UniqueFunction<std::expected<void, StarExce
   auto state = std::make_shared<WorkerPoolHandle::Impl>();
   queueWork([state, work = std::move(work)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
     auto result = cancelled ? std::expected<void, StarException>(std::unexpected(std::move(*cancelled))) : work();
-    MutexLocker lock(state->mutex);
+    std::lock_guard lock(state->mutex);
     if (!result)
       state->error.emplace(std::move(result.error()));
     state->done.store(true, std::memory_order_release);
     state->done.notify_all();
-    state->condition.broadcast();
+    state->condition.notify_all();
     return {};
   });
   return state;
 }
 
 std::size_t WorkerPool::getWorkerCount() const {
-  MutexLocker lock(m_workMutex);
+  std::lock_guard lock(m_workMutex);
   return m_workerThreads.size();
 }
 
 bool WorkerPool::isWorkerThread() const {
   auto id = std::this_thread::get_id();
-  MutexLocker lock(m_workMutex);
+  std::lock_guard lock(m_workMutex);
   if (m_finishingThread == id)
     return true;
   for (auto const& worker : m_workerThreads) {
@@ -246,12 +243,12 @@ WorkerPool::WorkerThread::~WorkerThread() {
 }
 
 std::expected<void, StarException> WorkerPool::WorkerThread::run() {
-  MutexLocker workLock(parent->m_workMutex);
+  std::unique_lock workLock(parent->m_workMutex);
   id = std::this_thread::get_id();
   while (!shouldStop) {
     if (parent->m_pendingWork.empty()) {
       waiting = true;
-      parent->m_workCondition.wait(parent->m_workMutex);
+      parent->m_workCondition.wait(workLock);
       waiting = false;
     } else {
       auto work = std::move(parent->m_pendingWork.front());
@@ -267,10 +264,10 @@ std::expected<void, StarException> WorkerPool::WorkerThread::run() {
 }
 
 void WorkerPool::queueWork(QueuedWork work) {
-  MutexLocker workLock(m_workMutex);
+  std::unique_lock workLock(m_workMutex);
   if (m_acceptingWork) {
     m_pendingWork.push_back(std::move(work));
-    m_workCondition.signal();
+    m_workCondition.notify_one();
   } else {
     workLock.unlock();
     auto result = work(WorkerPoolException("Cannot submit work to a stopped worker pool"));

@@ -46,7 +46,7 @@ private:
 
   Root& m_root;
 
-  mutable Mutex m_lock;
+  mutable std::mutex m_lock;
 
   Uuid m_uuid;
   StringSet m_flags;

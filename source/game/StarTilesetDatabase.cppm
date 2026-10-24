@@ -71,7 +71,7 @@ private:
   explicit TilesetDatabase(Root& root) : m_root(root) {}
   [[nodiscard]] std::expected<std::shared_ptr<Tiled::Tileset const>, StarException> readTileset(String const& path) const;
   Root& m_root;
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashLruCache<String, std::shared_ptr<Tiled::Tileset const>> m_tilesetCache;
 };
 

@@ -359,7 +359,7 @@ auto paletteName = std::move(*result44);
 }
 
 void MonsterDatabase::cleanup() {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   m_monsterCache.cleanup();
 }
 
@@ -393,7 +393,7 @@ std::expected<MonsterVariant, StarException> MonsterDatabase::randomMonster(Stri
 }
 
 std::expected<MonsterVariant, StarException> MonsterDatabase::monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto variant = m_monsterCache.get(std::make_tuple(typeName, seed, uniqueParameters),
       [this](std::tuple<String, std::uint64_t, Json> const& key) {
         return produceMonster(std::get<0>(key), std::get<1>(key), std::get<2>(key));

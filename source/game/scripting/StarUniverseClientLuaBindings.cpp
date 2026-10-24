@@ -52,7 +52,7 @@ import star.audio;
 import star.map;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.uuid;
 import star.celestial_coordinate;
 import star.warping;

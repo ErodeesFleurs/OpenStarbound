@@ -154,7 +154,7 @@ private:
 
   StringMap<std::shared_ptr<SpeciesDefinition>> m_species;
 
-  mutable RecursiveMutex m_luaMutex;
+  mutable std::recursive_mutex m_luaMutex;
   std::shared_ptr<LuaRoot> m_luaRoot;
 };
 

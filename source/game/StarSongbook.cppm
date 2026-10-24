@@ -29,7 +29,7 @@ private:
     std::int64_t epoch;
   };
   StringMap<std::shared_ptr<TimeSource>> timeSources;
-  Mutex mutex;
+  std::mutex mutex;
 };
 
 class Songbook : public NetElementSyncGroup {

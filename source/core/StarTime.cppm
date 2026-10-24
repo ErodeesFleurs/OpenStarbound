@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.thread;
 
 namespace Star {
 
@@ -20,12 +19,14 @@ namespace Time {
   String printDateAndTime(std::int64_t epochTicks, String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
   String printCurrentDateAndTime(String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
 
-  // Ticks since unix epoch
+  // Native system_clock ticks since the Unix epoch; use epochTickFrequency()
+  // rather than assuming a fixed tick unit.
   std::int64_t epochTicks();
   // Epoch ticks per second, static throughout application lifetime.
   std::int64_t epochTickFrequency();
 
-  // Ticks since unspecified time before program start
+  // Native steady_clock ticks since an unspecified time before program start;
+  // use monotonicTickFrequency() rather than assuming a fixed tick unit.
   std::int64_t monotonicTicks();
   // Monotonic ticks per second, static throughout application lifetime.
   std::int64_t monotonicTickFrequency();
@@ -71,9 +72,9 @@ public:
 private:
   void updateElapsed() const;
 
-  mutable RecursiveMutex m_mutex;
-  mutable std::int64_t m_elapsedTicks;
-  mutable std::optional<std::int64_t> m_lastTicks;
+  mutable std::recursive_mutex m_mutex;
+  mutable std::chrono::steady_clock::duration m_elapsed;
+  mutable std::optional<std::chrono::steady_clock::time_point> m_lastUpdate;
   bool m_running;
 };
 

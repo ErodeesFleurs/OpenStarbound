@@ -147,7 +147,7 @@ private:
   Periodic m_updatePeriodic;
   mutable float m_lastDt;
   List<ThreadMessage> m_threadMessages;
-  mutable RecursiveMutex m_threadMessageMutex;
+  mutable std::recursive_mutex m_threadMessageMutex;
   struct ThreadMessageHandler {
     std::optional<LuaFunction> function;
     String name;
@@ -236,7 +236,8 @@ template <typename Ret, typename... V>
 [[nodiscard]] std::expected<std::optional<Ret>, StarException> LuaScriptUpdate::update(V&&... args) {
   List<ThreadMessage> messages;
   {
-    RecursiveMutexLocker locker(m_threadMessageMutex);
+    std::unique_lock locker(m_threadMessageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_threadMessages);
   }
   std::optional<StarException> error;

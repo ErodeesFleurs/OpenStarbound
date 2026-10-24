@@ -402,7 +402,8 @@ void LuaScriptUpdate::destroy() {
     EmergencyLog::error("Error stopping Lua component threads: {}", outputException(stopped.error(), true));
   List<ThreadMessage> messages;
   {
-    RecursiveMutexLocker locker(m_threadMessageMutex);
+    std::unique_lock locker(m_threadMessageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_threadMessages);
   }
   for (auto& message : messages) {
@@ -438,7 +439,8 @@ bool LuaScriptUpdate::updateReady() const { return m_updatePeriodic.ready(); }
 
 RpcPromise<Json> LuaScriptUpdate::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
   auto pair = RpcPromise<Json>::createPair();
-  RecursiveMutexLocker locker(m_threadMessageMutex);
+  std::unique_lock locker(m_threadMessageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_threadMessages.append({thread, message, args, pair.second});
   return pair.first;
 }
@@ -481,7 +483,8 @@ RpcPromise<Json> LuaScriptUpdate::threadPassMessage(String const& thread, String
   auto stopped = m_host.stopThreads();
   List<ThreadMessage> messages;
   {
-    RecursiveMutexLocker locker(m_threadMessageMutex);
+    std::unique_lock locker(m_threadMessageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_threadMessages);
   }
   std::optional<StarException> error;

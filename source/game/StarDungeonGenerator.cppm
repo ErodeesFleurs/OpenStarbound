@@ -737,7 +737,7 @@ private:
   [[nodiscard]] std::expected<std::shared_ptr<DungeonDefinition>, StarException> readDefinition(String const& path) const;
 
   StringMap<String> m_paths;
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashLruCache<String, std::shared_ptr<DungeonDefinition>> m_definitionCache;
 };
 

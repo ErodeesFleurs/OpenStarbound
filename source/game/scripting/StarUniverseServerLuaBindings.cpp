@@ -54,7 +54,7 @@ import star.logging;
 import star.listener;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.lua_game_converters;
 import star.universe;
 import star.celestial_coordinate;

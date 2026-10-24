@@ -2,7 +2,6 @@ import std;
 import star.audio;
 import star.string;
 import star.format;
-import star.thread;
 import star.list;
 import star.map;
 import star.set;
@@ -61,17 +60,17 @@ AudioInstance::AudioInstance(Audio audio)
 }
 
 std::optional<Vec2F> AudioInstance::position() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_position;
 }
 
 void AudioInstance::setPosition(std::optional<Vec2F> position) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_position = position;
 }
 
 void AudioInstance::translate(Vec2F const& distance) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (m_position)
     *m_position += distance;
   else
@@ -79,12 +78,12 @@ void AudioInstance::translate(Vec2F const& distance) {
 }
 
 float AudioInstance::rangeMultiplier() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_rangeMultiplier;
 }
 
 void AudioInstance::setRangeMultiplier(float rangeMultiplier) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_rangeMultiplier = rangeMultiplier;
 }
 
@@ -92,7 +91,7 @@ void AudioInstance::setVolume(float targetValue, float rampTime) {
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((targetValue >= 0));
   }
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
 
   if (m_stopping)
     return;
@@ -111,7 +110,7 @@ void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((targetValue >= 0));
   }
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
 
   if (m_stopping)
     return;
@@ -127,53 +126,53 @@ void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
 }
 
 int AudioInstance::loops() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_loops;
 }
 
 void AudioInstance::setLoops(int loops) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_loops = loops;
 }
 
 std::expected<double, StarException> AudioInstance::currentTime() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_audio.currentTime();
 }
 
 std::expected<double, StarException> AudioInstance::totalTime() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_audio.totalTime();
 }
 
 std::expected<void, StarException> AudioInstance::seekTime(double time) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_audio.seekTime(time);
 }
 
 MixerGroup AudioInstance::mixerGroup() const {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_mixerGroup;
 }
 
 void AudioInstance::setMixerGroup(MixerGroup mixerGroup) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_mixerGroup = mixerGroup;
 }
 
 void AudioInstance::setClockStart(std::optional<std::int64_t> clockStartTime) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_clockStart = clockStartTime;
 }
 
 void AudioInstance::setClockStop(std::optional<std::int64_t> clockStopTime, std::int64_t fadeOutTime) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_clockStop = clockStopTime;
   m_clockStopFadeOut = fadeOutTime;
 }
 
 void AudioInstance::stop(float rampTime) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
 
   if (rampTime <= 0.0f) {
     m_volume.value = 0.0f;
@@ -219,24 +218,24 @@ unsigned Mixer::channels() const {
 std::expected<void, StarException> Mixer::addEffect(String const& effectName, EffectFunction effectFunction, float rampTime) {
   if (!effectFunction)
     return std::unexpected(AudioException("Cannot add an empty audio effect"));
-  MutexLocker locker(m_effectsMutex);
+  std::lock_guard locker(m_effectsMutex);
   m_effects[effectName] = std::make_shared<EffectInfo>(EffectInfo{std::move(effectFunction), 0.0f, rateOfChangeFromRampTime(rampTime), false});
   return {};
 }
 
 void Mixer::removeEffect(String const& effectName, float rampTime) {
-  MutexLocker locker(m_effectsMutex);
+  std::lock_guard locker(m_effectsMutex);
   if (m_effects.contains(effectName))
     m_effects[effectName]->velocity = -rateOfChangeFromRampTime(rampTime);
 }
 
 StringList Mixer::currentEffects() {
-  MutexLocker locker(m_effectsMutex);
+  std::lock_guard locker(m_effectsMutex);
   return m_effects.keys();
 }
 
 bool Mixer::hasEffect(String const& effectName) {
-  MutexLocker locker(m_effectsMutex);
+  std::lock_guard locker(m_effectsMutex);
   return m_effects.contains(effectName);
 }
 
@@ -245,13 +244,13 @@ void Mixer::setSpeed(float speed) {
 }
 
 void Mixer::setVolume(float volume, float rampTime) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_volume.target = volume;
   m_volume.velocity = rateOfChangeFromRampTime(rampTime);
 }
 
 std::expected<void, StarException> Mixer::play(std::shared_ptr<AudioInstance> sample) {
-  MutexLocker locker(m_queueMutex);
+  std::lock_guard locker(m_queueMutex);
   auto added = m_audios.add(std::move(sample), AudioState{List<float>(m_channels, 1.0f)});
   if (!added)
     return std::unexpected(std::move(added.error()));
@@ -259,7 +258,7 @@ std::expected<void, StarException> Mixer::play(std::shared_ptr<AudioInstance> sa
 }
 
 void Mixer::stopAll(float rampTime) {
-  MutexLocker locker(m_queueMutex);
+  std::lock_guard locker(m_queueMutex);
   float vel = rateOfChangeFromRampTime(rampTime);
   for (auto const& p : m_audios)
     p.first->stop(vel);
@@ -277,7 +276,7 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
   Map<MixerGroup, RampedValue> groupVolumes;
 
   {
-    MutexLocker locker(m_mutex);
+    std::lock_guard locker(m_mutex);
     speed = m_speed;
     sampleRate = m_sampleRate;
     channels = m_channels;
@@ -306,13 +305,13 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
     outBuffer[i] = 0;
 
   {
-    MutexLocker locker(m_queueMutex);
+    std::lock_guard locker(m_queueMutex);
     // Mix all active sounds
     for (auto& p : m_audios) {
       auto& audioInstance = p.first;
       auto& audioState = p.second;
 
-      MutexLocker audioLocker(audioInstance->m_mutex);
+      std::lock_guard audioLocker(audioInstance->m_mutex);
 
       if (audioInstance->m_finished)
         continue;
@@ -426,7 +425,7 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
   }
 
   {
-    MutexLocker locker(m_effectsMutex);
+    std::lock_guard locker(m_effectsMutex);
     // Apply all active effects
     for (auto const& pair : m_effects) {
       auto const& effectInfo = pair.second;
@@ -459,7 +458,7 @@ std::expected<void, StarException> Mixer::read(std::int16_t* outBuffer, std::siz
   }
 
   {
-    MutexLocker locker(m_mutex);
+    std::lock_guard locker(m_mutex);
 
     m_volume.value = endVolume;
 
@@ -535,7 +534,7 @@ Mixer::EffectFunction Mixer::echo(float time, float dry, float wet) const {
 }
 
 void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (rampTime <= 0.0f) {
     m_groupVolumes[group].value = targetValue;
     m_groupVolumes[group].target = targetValue;
@@ -548,7 +547,7 @@ void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) 
 
 std::expected<void, StarException> Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   {
-    MutexLocker locker(m_queueMutex);
+    std::lock_guard locker(m_queueMutex);
     eraseWhere(m_audios, [](auto const& p) {
       return p.first->m_finished;
     });
@@ -568,7 +567,7 @@ std::expected<void, StarException> Mixer::update(float, PositionalAttenuationFun
   }
 
   {
-    MutexLocker locker(m_effectsMutex);
+    std::lock_guard locker(m_effectsMutex);
     eraseWhere(m_effects, [](auto const& p) {
         return p.second->finished;
       });

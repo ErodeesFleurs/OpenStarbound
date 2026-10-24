@@ -244,14 +244,6 @@ Container sorted(Container const& c, Compare comp) {
   return c2;
 }
 
-template <typename Container, typename Compare>
-Container stableSorted(Container const& c, Compare comp) {
-  static_assert(std::is_invocable_r_v<bool, Compare&, typename Container::value_type const&, typename Container::value_type const&>,
-      "Sort comparison must be nonfallible; check fallible keys with sortByComputedValue first");
-  auto c2 = c;
-  std::sort(c2.begin(), c2.end(), comp);
-  return c2;
-}
 
 template <typename Container>
 Container sorted(Container const& c) {
@@ -260,12 +252,6 @@ Container sorted(Container const& c) {
   return c2;
 }
 
-template <typename Container>
-Container stableSorted(Container const& c) {
-  auto c2 = c;
-  std::sort(c2.begin(), c2.end(), std::less<typename Container::value_type>());
-  return c2;
-}
 
 // Sort a container by the output of a computed value. The computed value is
 // only computed *once* per item in the container, which is useful both for
@@ -703,7 +689,6 @@ export namespace Star {
   using ::Star::filtered;
   using ::Star::eraseWhere;
   using ::Star::sorted;
-  using ::Star::stableSorted;
   using ::Star::sortByComputedValue;
   using ::Star::stableSortByComputedValue;
   using ::Star::reverseCopy;

@@ -203,6 +203,28 @@ TEST(ListFiltering, MoveOnlyValuesKeepStableOrder) {
   EXPECT_TRUE(values.empty());
 }
 
+TEST(ListAlgorithms, StatefulMoveOnlyCallbacksRemainBorrowed) {
+  struct Transform {
+    std::unique_ptr<int> next = std::make_unique<int>(1);
+    int operator()(int value) { return value + (*next)++; }
+  } transform;
+  List<int> values{1, 2, 3};
+  values.transform(transform);
+  EXPECT_EQ(values, (List<int>{2, 4, 6}));
+  EXPECT_EQ(*transform.next, 4);
+
+  struct Accumulate {
+    std::unique_ptr<int> total = std::make_unique<int>(0);
+    void operator()(int& value) {
+      *total += value;
+      value = *total;
+    }
+  } accumulate;
+  values.exec(accumulate);
+  EXPECT_EQ(values, (List<int>{2, 6, 12}));
+  EXPECT_EQ(*accumulate.total, 12);
+}
+
 TEST(ByteOrder, FloatingPayloadAndIntegerRepresentations) {
   auto opposite = platformByteOrder() == ByteOrder::LittleEndian ? ByteOrder::BigEndian : ByteOrder::LittleEndian;
   for (auto bits : {std::uint32_t{0}, std::uint32_t{0x80000000}, std::uint32_t{0x7fc12345}, std::uint32_t{0x3f800000}}) {

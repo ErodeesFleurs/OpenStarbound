@@ -647,6 +647,27 @@ const GameTestRegistration universeConnectionsTcpCloseWakesNativeReadinessWithou
   EXPECT_EQ(received.get(), false);
 });
 
+const GameTestRegistration universeConnectionsTcpBufferedPacketSurvivesLocalClose(
+    "UniverseConnections", "TcpBufferedPacketSurvivesLocalClose", [](GameTest& fixture) {
+  auto pair = connectionTestTcpPair(fixture.root().logger());
+  ASSERT_TRUE(pair) << pair.error().what();
+  auto [sender, socket] = std::move(*pair);
+  auto packetSocket = TcpPacketSocket::open(fixture.root().logger(), socket);
+  ASSERT_TRUE(packetSocket) << packetSocket.error().what();
+  auto frame = connectionTestFrame(49);
+  ASSERT_TRUE(frame) << frame.error().what();
+  ASSERT_EQ(sender->send(frame->ptr(), frame->size()), frame->size());
+  ASSERT_TRUE(socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2)));
+  ASSERT_EQ((*packetSocket)->readData(), true);
+
+  UniverseConnection receiver(std::move(*packetSocket));
+  receiver.close();
+  EXPECT_FALSE(receiver.isOpen());
+  ASSERT_EQ(receiver.receiveAny(0), true);
+  EXPECT_EQ(connectionTestVersion(receiver), 49u);
+  EXPECT_EQ(receiver.receiveAny(0), false);
+});
+
 const GameTestRegistration universeConnectionsTcpShutdownWakesEveryNativeReadinessWaiter(
     "UniverseConnections", "TcpShutdownWakesEveryNativeReadinessWaiter", [](GameTest& fixture) {
   auto pair = connectionTestTcpPair(fixture.root().logger());

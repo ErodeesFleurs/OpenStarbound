@@ -98,7 +98,7 @@ public:
     WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {});
 
   WorldRenderData& renderData();
-  MutexLocker lockRenderData();
+  std::unique_lock<std::mutex> lockRenderData();
 
   template <typename Function>
   [[nodiscard]] static std::expected<void, StarException> forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
@@ -123,7 +123,7 @@ private:
   Vec2F m_liquidDrawLevels;
 
   WorldRenderData m_tempRenderData;
-  Mutex m_tempRenderDataMutex;
+  std::mutex m_tempRenderDataMutex;
 };
 
 template <typename Function>

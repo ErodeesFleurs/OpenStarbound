@@ -3,7 +3,6 @@ import std;
 import star.format;
 import star.output_proxy;
 import star.string;
-import star.thread;
 import star.logging;
 
 namespace Star {
@@ -103,7 +102,7 @@ private:
       outcome.template emplace<Failed>(std::move(error));
     }
 
-    Mutex mutex;
+    std::mutex mutex;
     std::variant<Pending, Fulfilled, Failed, Chained> outcome;
   };
 
@@ -153,7 +152,7 @@ template <typename Result, typename Error>
     return std::unexpected(RpcPromiseException("Cannot chain an empty RpcPromiseKeeper"));
   if (!promise.m_state)
     return std::unexpected(RpcPromiseException("Cannot chain an empty RpcPromise"));
-  MutexLocker lock(m_state->mutex);
+  std::lock_guard lock(m_state->mutex);
   if (!m_state->pending())
     return std::unexpected(RpcPromiseException("chain called on already finished RpcPromise"));
   m_state->outcome.template emplace<typename RpcPromise<Result, Error>::Chained>(std::move(promise));
@@ -164,7 +163,7 @@ template <typename Result, typename Error>
 [[nodiscard]] std::expected<void, StarException> RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
   if (!m_state)
     return std::unexpected(RpcPromiseException("Cannot fulfill an empty RpcPromiseKeeper"));
-  MutexLocker lock(m_state->mutex);
+  std::lock_guard lock(m_state->mutex);
   if (!m_state->pending())
     return std::unexpected(RpcPromiseException("fulfill called on already finished RpcPromise"));
   m_state->fulfill(std::move(result));
@@ -175,7 +174,7 @@ template <typename Result, typename Error>
 [[nodiscard]] std::expected<void, StarException> RpcPromiseKeeper<Result, Error>::fail(Error error) {
   if (!m_state)
     return std::unexpected(RpcPromiseException("Cannot fail an empty RpcPromiseKeeper"));
-  MutexLocker lock(m_state->mutex);
+  std::lock_guard lock(m_state->mutex);
   if (!m_state->pending())
     return std::unexpected(RpcPromiseException("fail called on already finished RpcPromise"));
   m_state->fail(std::move(error));
@@ -255,7 +254,7 @@ template <typename Result, typename Error>
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
   auto& val = **currentState;
-  MutexLocker lock(val.mutex);
+  std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
@@ -270,7 +269,7 @@ template <typename Result, typename Error>
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
   auto& val = **currentState;
-  MutexLocker lock(val.mutex);
+  std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
@@ -285,7 +284,7 @@ template <typename Result, typename Error>
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
   auto& val = **currentState;
-  MutexLocker lock(val.mutex);
+  std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
@@ -300,7 +299,7 @@ template <typename Result, typename Error>
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
   auto& val = **currentState;
-  MutexLocker lock(val.mutex);
+  std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));
@@ -317,7 +316,7 @@ template <typename Result, typename Error>
   if (!currentState)
     return std::unexpected(std::move(currentState.error()));
   auto& val = **currentState;
-  MutexLocker lock(val.mutex);
+  std::lock_guard lock(val.mutex);
   auto polled = val.poll();
   if (!polled)
     return std::unexpected(std::move(polled.error()));

@@ -25,8 +25,8 @@ public:
 private:
   friend WorkerPool;
   struct Impl {
-    Mutex mutex;
-    ConditionVariable condition;
+    std::mutex mutex;
+    std::condition_variable condition;
     std::atomic<bool> done{false};
     std::optional<StarException> error;
   };
@@ -47,8 +47,8 @@ public:
 private:
   friend WorkerPool;
   struct Impl {
-    Mutex mutex;
-    ConditionVariable condition;
+    std::mutex mutex;
+    std::condition_variable condition;
     std::optional<ResultType> result;
     std::optional<StarException> error;
     std::atomic<bool> done{false};
@@ -100,10 +100,10 @@ private:
   [[nodiscard]] std::expected<void, StarException> joinWorkers();
 
   String m_name;
-  Mutex m_threadMutex;
+  std::mutex m_threadMutex;
   std::vector<std::unique_ptr<WorkerThread>> m_workerThreads;
-  mutable Mutex m_workMutex;
-  ConditionVariable m_workCondition;
+  mutable std::mutex m_workMutex;
+  std::condition_variable m_workCondition;
   std::deque<QueuedWork> m_pendingWork;
   std::thread::id m_finishingThread;
   bool m_acceptingWork = true;
@@ -116,14 +116,11 @@ bool WorkerPoolPromise<ResultType>::done() const {
 
 template <typename ResultType>
 [[nodiscard]] std::expected<bool, StarException> WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
-  MutexLocker locker(m_impl->mutex);
-  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
-  while (!m_impl->done.load(std::memory_order_acquire) && millis != 0) {
-    auto remaining = deadline - std::chrono::steady_clock::now();
-    if (remaining <= decltype(remaining)::zero())
-      break;
-    m_impl->condition.wait(m_impl->mutex,
-        static_cast<unsigned>(std::chrono::ceil<std::chrono::milliseconds>(remaining).count()));
+  std::unique_lock locker(m_impl->mutex);
+  if (millis != 0) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+    m_impl->condition.wait_until(locker, deadline,
+        [this] { return m_impl->done.load(std::memory_order_acquire); });
   }
   if (m_impl->error)
     return std::unexpected(*m_impl->error);
@@ -160,14 +157,14 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<std::expect
   auto state = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
   queueWork([state, producer = std::move(producer)](std::optional<StarException> cancelled) mutable -> std::expected<void, StarException> {
     auto result = cancelled ? std::expected<ResultType, StarException>(std::unexpected(std::move(*cancelled))) : producer();
-    MutexLocker lock(state->mutex);
+    std::lock_guard lock(state->mutex);
     if (result)
       state->result.emplace(std::move(*result));
     else
       state->error.emplace(std::move(result.error()));
     state->done.store(true, std::memory_order_release);
     state->done.notify_all();
-    state->condition.broadcast();
+    state->condition.notify_all();
     return {};
   });
   return state;

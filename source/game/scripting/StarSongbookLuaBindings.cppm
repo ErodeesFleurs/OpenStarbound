@@ -5,7 +5,7 @@ import star.string;
 import star.json;
 import star.thread;
 import star.vector;
-// Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
+// Match existing consumers' include order for SIMD intrinsics used by xxhash.
 import star.game_types;
 
 import star.lua;

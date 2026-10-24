@@ -407,12 +407,12 @@ private:
   ThreadFunction<void> m_lightingThread;
   bool m_lightingThreadStarted = false;
   
-  Mutex m_lightingMutex;
-  ConditionVariable m_lightingCond;
+  std::mutex m_lightingMutex;
+  std::condition_variable m_lightingCond;
   std::atomic<bool> m_stopLightingThread;
 
-  Mutex m_lightMapPrepMutex;
-  Mutex m_lightMapMutex;
+  std::mutex m_lightMapPrepMutex;
+  std::mutex m_lightMapMutex;
 
   Lightmap m_pendingLightMap;
   Lightmap m_lightMap;

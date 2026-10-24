@@ -249,17 +249,17 @@ std::expected<std::shared_ptr<CommandProcessor>, StarException> CommandProcessor
 }
 
 std::expected<void, StarException> CommandProcessor::close() {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_scriptComponent.uninit();
 }
 
 std::expected<ServerCommandResult, StarException> CommandProcessor::adminCommand(String const& command, String const& argumentString) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return handleCommand(ServerConnectionId, command, argumentString);
 }
 
 std::expected<ServerCommandResult, StarException> CommandProcessor::userCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   if (connectionId == ServerConnectionId)
     return std::unexpected(StarException("CommandProcessor::userCommand called with ServerConnectionId"));
   return handleCommand(connectionId, command, argumentString);

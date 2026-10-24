@@ -49,7 +49,7 @@ struct PcPlatformServicesState {
 
   // Must lock discordMutex before accessing any of the managers when not inside
   // a discord callback.
-  Mutex discordMutex;
+  std::mutex discordMutex;
 
   std::unique_ptr<discord::Core> discordCore;
   

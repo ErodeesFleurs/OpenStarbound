@@ -76,7 +76,7 @@ private:
   static const std::expected<CaseInsensitiveStringMap<Command>, StarException> s_commandMap;
   [[nodiscard]] static std::expected<CaseInsensitiveStringMap<Command>, StarException> makeCommandMap();
 
-  mutable Mutex m_mutex;
+  mutable std::mutex m_mutex;
 
   [[nodiscard]] std::expected<ServerCommandResult, StarException> handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
   [[nodiscard]] std::expected<std::optional<String>, StarException> adminCheck(ConnectionId connectionId, String const& commandDescription) const;

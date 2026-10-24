@@ -152,7 +152,7 @@ std::expected<Collectable, StarException> CollectionDatabase::collectable(String
   if (!config || !definition)
     return std::unexpected(CollectionDatabaseException(strf("Collectable '{}' not found in collection '{}'", collectableName, collectionName)));
   {
-    MutexLocker locker(m_collectablesMutex);
+    std::lock_guard locker(m_collectablesMutex);
     if (auto published = m_collectables.ptr(collectionName))
       if (auto cached = published->ptr(collectableName))
         return *cached;
@@ -173,7 +173,7 @@ std::expected<Collectable, StarException> CollectionDatabase::collectable(String
       return std::unexpected(CollectionDatabaseException(strf("Collectable '{}' not found in collection '{}'", collectableName, collectionName), result.error()));
     return std::unexpected(std::move(result.error()));
   }
-  MutexLocker locker(m_collectablesMutex);
+  std::lock_guard locker(m_collectablesMutex);
   auto& published = m_collectables[collectionName];
   if (auto cached = published.ptr(collectableName))
     return *cached;

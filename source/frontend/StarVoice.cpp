@@ -105,7 +105,7 @@ public:
   std::queue<std::int16_t> samples;
   SDL_AudioStream* sdlAudioStreamMono = nullptr;
   SDL_AudioStream* sdlAudioStreamStereo = nullptr;
-  Mutex mutex;
+  std::mutex mutex;
 
   [[nodiscard]] static std::expected<std::shared_ptr<VoiceAudioStream>, StarException> create() {
     auto audio = std::make_shared<VoiceAudioStream>();
@@ -216,8 +216,8 @@ Voice::~Voice() {
   m_stopThread = true;
 
   {
-    MutexLocker locker(m_threadMutex);
-    m_threadCond.broadcast();
+    std::lock_guard locker(m_threadMutex);
+    m_threadCond.notify_all();
   }
 
   if (m_thread) {
@@ -438,13 +438,13 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
     m_clientSpeaker->playing = active;
   }
 
-  MutexLocker captureLock(m_captureMutex);
+  std::lock_guard captureLock(m_captureMutex);
   if (active) {
     auto data = std::make_unique_for_overwrite<std::int16_t[]>(sampleCount);
     std::memcpy(data.get(), stream, sampleCount * sizeof(std::int16_t));
     m_capturedChunks.emplace(std::move(data), sampleCount);
     m_capturedChunksFrames += sampleCount / m_deviceChannels;
-    m_threadCond.signal();
+    m_threadCond.notify_one();
   }
   else { // Clear out any residual data so they don't manifest at the start of the next encode, whenever that is
     while (!m_capturedChunks.empty())
@@ -464,12 +464,12 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
 
   bool mix = false;
   {
-    MutexLocker lock(m_activeSpeakersMutex);
+    std::lock_guard lock(m_activeSpeakersMutex);
     auto it = m_activeSpeakers.begin();
     while (it != m_activeSpeakers.end()) {
       std::shared_ptr<Speaker> const& speaker = *it;
       VoiceAudioStream* audio = speaker->audioStream.get();
-      MutexLocker audioLock(audio->mutex);
+      std::lock_guard audioLock(audio->mutex);
       if (speaker->playing && !audio->samples.empty()) {
         for (std::size_t i = 0; i != samples; ++i)
           speakerBuffer[i] = audio->take();
@@ -483,7 +483,7 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
           float volume = speaker->volume;
           std::array<float, 2> levels;
           {
-            MutexLocker locker(speaker->mutex);
+            std::lock_guard locker(speaker->mutex);
             levels = speaker->channelVolumes;
           }
           for (std::size_t i = 0; i != samples; ++i)
@@ -545,7 +545,7 @@ std::expected<void, StarException> Voice::update(float, PositionalAttenuationFun
         newChannelVolumes = Vec2F{1.0f - *left, 1.0f - *right};
       }
       {
-        MutexLocker locker(speaker->mutex);
+        std::lock_guard locker(speaker->mutex);
         speaker->channelVolumes = newChannelVolumes;
       }
       auto& dbHistory = speaker->dbHistory;
@@ -595,7 +595,7 @@ std::expected<int, StarException> Voice::send(DataStreamBuffer& out, std::size_t
   if (auto result = out.write<std::uint16_t>(VOICE_VERSION); !result)
     return std::unexpected(std::move(result.error()));
 
-  MutexLocker encodeLock(m_encodeMutex);
+  std::unique_lock encodeLock(m_encodeMutex);
 
   if (m_encodedChunks.empty())
     return 0;
@@ -636,7 +636,7 @@ std::expected<bool, StarException> Voice::receive(std::shared_ptr<Speaker> speak
 }
 
 std::expected<bool, StarException> Voice::decode(std::shared_ptr<Speaker> const& speaker, std::string_view view) {
-    DataStreamExternalBuffer reader(view.data(), view.size());
+    DataStreamExternalBuffer reader{std::span<char const>(view)};
     reader.setByteOrder(ByteOrder::LittleEndian);
     auto version = reader.read<std::uint16_t>();
     if (!version) return std::unexpected(std::move(version.error()));
@@ -678,7 +678,7 @@ std::expected<bool, StarException> Voice::decode(std::shared_ptr<Speaker> const&
         return std::unexpected(std::move(resampled.error()));
 
       {
-        MutexLocker lock(speaker->audioStream->mutex);
+        std::lock_guard lock(speaker->audioStream->mutex);
         auto& samples = speaker->audioStream->samples;
 
         auto now = Time::monotonicMilliseconds();
@@ -734,7 +734,7 @@ std::expected<std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>, StarException
 
 std::expected<void, StarException> Voice::resetEncoder() {
   int channels = encoderChannels();
-  MutexLocker locker(m_threadMutex);
+  std::lock_guard locker(m_threadMutex);
   auto created = createEncoder(channels);
   if (!created) return std::unexpected(std::move(created.error()));
   auto encoder = std::move(*created);
@@ -804,7 +804,7 @@ bool Voice::playSpeaker(std::shared_ptr<Speaker> const& speaker, int) {
   if (!speaker->playing) {
     speaker->lastPlayTime = Time::monotonicMilliseconds();
     speaker->playing = true;
-    MutexLocker lock(m_activeSpeakersMutex);
+    std::lock_guard lock(m_activeSpeakersMutex);
     m_activeSpeakers.insert(speaker);
   }
   return true;
@@ -812,16 +812,16 @@ bool Voice::playSpeaker(std::shared_ptr<Speaker> const& speaker, int) {
 
 std::expected<void, StarException> Voice::thread() {
   while (true) {
-    MutexLocker locker(m_threadMutex);
+    std::unique_lock locker(m_threadMutex);
     if (m_stopThread)
       return {};
 
-    m_threadCond.wait(m_threadMutex);
+    m_threadCond.wait(locker);
     if (m_stopThread)
       return {};
 
     {
-      MutexLocker locker(m_captureMutex);
+      std::lock_guard locker(m_captureMutex);
       ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
       std::size_t frameSamples = VOICE_FRAME_SIZE * (std::size_t)m_deviceChannels;
       while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
@@ -850,7 +850,7 @@ std::expected<void, StarException> Voice::thread() {
           encoded.resize(encodedSize);
 
           {
-            MutexLocker locker(m_encodeMutex);
+            std::lock_guard locker(m_encodeMutex);
             m_encodedChunks.emplace_back(std::move(encoded));
             m_encodedChunksLength += encodedSize;
 

@@ -116,7 +116,7 @@ private:
 
   UniverseConnection() = default;
 
-  mutable Mutex m_mutex;
+  mutable std::mutex m_mutex;
   std::unique_ptr<PacketSocket> m_packetSocket;
   List<std::shared_ptr<Packet>> m_sendQueue;
   Deque<std::shared_ptr<Packet>> m_receiveQueue;
@@ -163,7 +163,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> initialize();
   [[nodiscard]] std::expected<void, StarException> processConnections(std::size_t shard);
   struct Connection {
-    Mutex mutex;
+    std::mutex mutex;
     std::unique_ptr<PacketSocket> packetSocket;
     List<std::shared_ptr<Packet>> sendQueue;
     Deque<std::shared_ptr<Packet>> receiveQueue;
@@ -197,7 +197,7 @@ private:
 
   PacketReceiveCallback const m_packetReceiver;
 
-  mutable RecursiveMutex m_connectionsMutex;
+  mutable std::recursive_mutex m_connectionsMutex;
   // The registry itself is partitioned; workers never snapshot other shards.
   List<HashMap<ConnectionId, std::shared_ptr<Connection>>> m_connections;
 

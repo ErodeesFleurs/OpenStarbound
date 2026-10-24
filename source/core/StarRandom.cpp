@@ -1,7 +1,6 @@
 import std;
 import star.format;
 import star.xx_hash;
-import star.thread;
 import star.math_common;
 
 import star.random;
@@ -218,7 +217,7 @@ std::expected<void, StarException> RandomService::init() {
 }
 
 void RandomService::init(std::uint64_t seed) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_source.init(seed);
 }
 
@@ -231,13 +230,13 @@ std::expected<void, StarException> RandomService::addEntropy() {
 }
 
 void RandomService::addEntropy(std::uint64_t seed) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   m_source.addEntropy(seed);
 }
 
 #define STAR_RANDOM_METHOD(Type, Name, Parameters, Arguments) \
   Type RandomService::Name Parameters { \
-    MutexLocker locker(m_mutex); \
+    std::lock_guard locker(m_mutex); \
     return m_source.Name Arguments; \
   }
 
@@ -251,22 +250,22 @@ STAR_RANDOM_METHOD(bool, randb, (), ())
 STAR_RANDOM_METHOD(long long, randInt, (long long max), (max))
 STAR_RANDOM_METHOD(unsigned long long, randUInt, (unsigned long long max), (max))
 std::expected<long long, StarException> RandomService::randInt(long long min, long long max) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_source.randInt(min, max);
 }
 
 std::expected<unsigned long long, StarException> RandomService::randUInt(unsigned long long min, unsigned long long max) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_source.randUInt(min, max);
 }
 
 std::expected<float, StarException> RandomService::randf(float min, float max) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_source.randf(min, max);
 }
 
 std::expected<double, StarException> RandomService::randd(double min, double max) {
-  MutexLocker locker(m_mutex);
+  std::lock_guard locker(m_mutex);
   return m_source.randd(min, max);
 }
 STAR_RANDOM_METHOD(float, nrandf, (float stddev, float mean), (stddev, mean))

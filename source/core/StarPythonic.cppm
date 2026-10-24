@@ -90,26 +90,6 @@ template <typename T>
   return slice<T, T>(r, a, b, j);
 }
 
-template <typename ResultContainer, typename Iterable>
-[[nodiscard]] auto enumerateConstruct(Iterable&& list) {
-  using Reference = decltype(*std::begin(list));
-  using Value = std::pair<Reference, std::size_t>;
-  using AppendResult = decltype(std::declval<ResultContainer&>().push_back(std::declval<Value>()));
-  using Result = std::conditional_t<std::is_void_v<AppendResult>, ResultContainer, std::expected<ResultContainer, StarException>>;
-  ResultContainer res;
-  for (auto [index, value] : std::views::enumerate(list)) {
-    if constexpr (std::is_void_v<AppendResult>) {
-      res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
-    } else {
-      auto appended = res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
-      if (!appended)
-        return Result(std::unexpected(std::move(appended.error())));
-    }
-  }
-
-  return Result(std::move(res));
-}
-
 }
 
 export module star.pythonic;
@@ -118,5 +98,4 @@ export namespace Star {
   using ::Star::SliceIndex;
   using ::Star::SliceNil;
   using ::Star::slice;
-  using ::Star::enumerateConstruct;
 }

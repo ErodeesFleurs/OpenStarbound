@@ -282,7 +282,8 @@ std::expected<void, StarException> LuaRoot::ScriptCache::loadScript(LuaEngine& e
   auto assets = m_root.assets();
   if (!assets)
     return std::unexpected(std::move(assets.error()));
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto bytes = (*assets)->bytes(path);
   if (!bytes)
     return std::unexpected(std::move(bytes.error()));
@@ -294,22 +295,26 @@ std::expected<void, StarException> LuaRoot::ScriptCache::loadScript(LuaEngine& e
 }
 
 bool LuaRoot::ScriptCache::scriptLoaded(String const& path) const {
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return scripts.contains(path);
 }
 
 void LuaRoot::ScriptCache::unloadScript(String const& path) {
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   scripts.remove(path);
 }
 
 void LuaRoot::ScriptCache::clear() {
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   scripts.clear();
 }
 
 std::expected<void, StarException> LuaRoot::ScriptCache::loadContextScript(LuaContext& context, String const& path) {
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!scriptLoaded(path)) {
     if (auto result = loadScript(context.engine(), path); !result)
       return std::unexpected(std::move(result.error()));
@@ -318,7 +323,8 @@ std::expected<void, StarException> LuaRoot::ScriptCache::loadContextScript(LuaCo
 }
 
 std::size_t LuaRoot::ScriptCache::memoryUsage() const {
-  RecursiveMutexLocker locker(mutex);
+  std::unique_lock locker(mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   std::size_t total = 0;
   for (auto const& p : scripts)
     total += p.second.size();

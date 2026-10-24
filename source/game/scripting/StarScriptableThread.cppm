@@ -52,7 +52,7 @@ private:
   [[nodiscard]] std::expected<void, StarException> update();
   [[nodiscard]] std::expected<std::optional<ChainableJsonMessageResponse>, StarException> receiveMessage(String const& message, JsonArray const& args);
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   
   std::shared_ptr<LuaRoot> m_luaRoot;
   StringMap<std::shared_ptr<ScriptableThread::ScriptComponent>> m_scriptContexts;
@@ -64,7 +64,7 @@ private:
   
   float m_timestep;
 
-  mutable RecursiveMutex m_messageMutex;
+  mutable std::recursive_mutex m_messageMutex;
   List<Message> m_messages;
 
   std::atomic<bool> m_stop;

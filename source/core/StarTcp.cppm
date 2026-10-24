@@ -62,7 +62,7 @@ public:
 private:
   TcpServer(Logger& logger, HostAddressWithPort const& address);
   Logger& m_logger;
-  mutable Mutex m_mutex;
+  mutable std::mutex m_mutex;
 
   AcceptCallback m_callback;
   ThreadFunction<void> m_callbackThread;

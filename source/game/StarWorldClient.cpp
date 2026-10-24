@@ -513,8 +513,8 @@ std::expected<void, StarException> WorldClient::close() {
   if (m_lightingThreadStarted) {
     m_stopLightingThread = true;
     {
-      MutexLocker locker(m_lightingMutex);
-      m_lightingCond.broadcast();
+      std::lock_guard locker(m_lightingMutex);
+      m_lightingCond.notify_all();
     }
     auto stopped = m_lightingThread.finish();
     if (!stopped)
@@ -1034,7 +1034,7 @@ std::expected<void, StarException> WorldClient::render(WorldRenderData& renderDa
   
   if (!m_fullBright) {
     {
-      MutexLocker m_prepLocker(m_lightMapPrepMutex);
+      std::lock_guard m_prepLocker(m_lightMapPrepMutex);
       m_pendingLights = std::move(renderLightSources);
       m_pendingParticleLights = m_particles->lightSources();
       m_pendingLightRange = window.padded(1);
@@ -1043,7 +1043,7 @@ std::expected<void, StarException> WorldClient::render(WorldRenderData& renderDa
     //Kae: Padded by one to fix light spread issues at the edges of the frame.
     
     if (m_asyncLighting) {
-      m_lightingCond.signal();
+      m_lightingCond.notify_one();
     } else {
       auto result48 = lightingCalc();
       if (!result48)
@@ -2637,8 +2637,8 @@ std::expected<void, StarException> WorldClient::collectLiquid(List<Vec2I> const&
 }
 
 std::expected<bool, StarException> WorldClient::waitForLighting(WorldRenderData* renderData) {
-  MutexLocker prepLocker(m_lightMapPrepMutex);
-  MutexLocker lightMapLocker(m_lightMapMutex);
+  std::lock_guard prepLocker(m_lightMapPrepMutex);
+  std::lock_guard lightMapLocker(m_lightMapMutex);
   if (renderData && !m_lightMap.empty()) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
@@ -3033,7 +3033,7 @@ std::expected<void, StarException> WorldClient::lightingTileGather() {
 }
 
 std::expected<void, StarException> WorldClient::lightingCalc() {
-  MutexLocker prepLocker(m_lightMapPrepMutex);
+  std::unique_lock prepLocker(m_lightMapPrepMutex);
   if (!m_pendingLightReady.load()) {
     return {};
   }
@@ -3117,7 +3117,7 @@ std::expected<void, StarException> WorldClient::lightingCalc() {
   if (!result249)
     return std::unexpected(std::move(result249.error()));
   {
-    MutexLocker mapLocker(m_lightMapMutex);
+    std::lock_guard mapLocker(m_lightMapMutex);
     m_lightMinPosition = lightRange.min();
     m_lightMap = std::move(m_pendingLightMap);
   }
@@ -3125,9 +3125,9 @@ std::expected<void, StarException> WorldClient::lightingCalc() {
 }
 
 std::expected<void, StarException> WorldClient::lightingMain() {
-  MutexLocker condLocker(m_lightingMutex);
+  std::unique_lock condLocker(m_lightingMutex);
   while (true) {
-    m_lightingCond.wait(m_lightingMutex);
+    m_lightingCond.wait(condLocker);
     if (m_stopLightingThread) {
       return {};
     }

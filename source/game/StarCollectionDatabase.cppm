@@ -68,7 +68,7 @@ private:
   Root& m_root;
   StringMap<Collection> m_collections;
   StringMap<StringMap<Json>> m_collectableConfigs;
-  mutable Mutex m_collectablesMutex;
+  mutable std::mutex m_collectablesMutex;
   mutable StringMap<StringMap<Collectable>> m_collectables;
 };
 

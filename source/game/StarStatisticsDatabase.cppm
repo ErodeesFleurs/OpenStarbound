@@ -46,7 +46,7 @@ private:
   StringMap<String> m_eventPaths;
   StringMap<String> m_achievementPaths;
   StringMap<StringList> m_statAchievements;
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashLruCache<String, std::shared_ptr<StatEvent>> m_eventCache;
   mutable HashLruCache<String, std::shared_ptr<Achievement>> m_achievementCache;
 };

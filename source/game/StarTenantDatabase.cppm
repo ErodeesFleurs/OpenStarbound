@@ -80,7 +80,7 @@ private:
 
   Root& m_root;
   Map<String, String> m_paths;
-  mutable Mutex m_cacheMutex;
+  mutable std::mutex m_cacheMutex;
   mutable HashTtlCache<String, std::shared_ptr<Tenant>> m_tenantCache;
 };
 

@@ -168,7 +168,8 @@ std::expected<std::shared_ptr<EntityFactory>, StarException> EntityFactory::crea
 }
 
 std::expected<ByteArray, StarException> EntityFactory::netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
 
   if (auto player = as<Player>(entity)) {
     return player->netStore(rules);
@@ -199,7 +200,8 @@ std::expected<ByteArray, StarException> EntityFactory::netStoreEntity(std::share
 }
 
 std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
 
   if (type == EntityType::Player) {
     return m_playerFactory->netLoadPlayer(netStore, rules);
@@ -230,7 +232,8 @@ std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::netLoadEnti
 }
 
 std::expected<Json, StarException> EntityFactory::diskStoreEntity(std::shared_ptr<Entity> const& entity) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
 
   if (auto player = as<Player>(entity)) {
     return player->diskStore();
@@ -257,7 +260,8 @@ std::expected<Json, StarException> EntityFactory::diskStoreEntity(std::shared_pt
 }
 
 std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
 
   if (type == EntityType::Player) {
     return m_playerFactory->diskLoadPlayer(diskStore);
@@ -284,7 +288,8 @@ std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::diskLoadEnt
 }
 
 std::expected<Json, StarException> EntityFactory::loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto identifier = EntityStorageIdentifiers->getRight(expectedType);
   if (!identifier) return std::unexpected(std::move(identifier.error()));
@@ -292,7 +297,8 @@ std::expected<Json, StarException> EntityFactory::loadVersionedJson(VersionedJso
 }
 
 std::expected<VersionedJson, StarException> EntityFactory::storeVersionedJson(EntityType type, Json const& store) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto identifier = EntityStorageIdentifiers->getRight(type);
   if (!identifier) return std::unexpected(std::move(identifier.error()));
@@ -300,7 +306,8 @@ std::expected<VersionedJson, StarException> EntityFactory::storeVersionedJson(En
 }
 
 std::expected<std::shared_ptr<Entity>, StarException> EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!EntityStorageIdentifiers) return std::unexpected(EntityStorageIdentifiers.error());
   auto type = EntityStorageIdentifiers->getLeft(versionedJson.identifier);
   if (!type) return std::unexpected(std::move(type.error()));

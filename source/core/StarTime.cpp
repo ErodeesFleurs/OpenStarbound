@@ -1,32 +1,51 @@
 import std;
 import star.string;
 import star.format;
-import star.thread;
 import star.time;
-import star.math_common;
-import star.lexical_cast;
+import star.thread;
 
 namespace Star {
 namespace Time {
 
+std::int64_t epochTicks() {
+  return std::chrono::system_clock::now().time_since_epoch().count();
+}
+
+std::int64_t epochTickFrequency() {
+  static_assert(std::chrono::system_clock::period::num == 1);
+  return std::chrono::system_clock::period::den;
+}
+
+std::int64_t monotonicTicks() {
+  return std::chrono::steady_clock::now().time_since_epoch().count();
+}
+
+std::int64_t monotonicTickFrequency() {
+  static_assert(std::chrono::steady_clock::period::num == 1);
+  return std::chrono::steady_clock::period::den;
+}
+
 double timeSinceEpoch() {
-  return ticksToSeconds(epochTicks(), epochTickFrequency());
+  return std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 std::int64_t millisecondsSinceEpoch() {
-  return ticksToMilliseconds(epochTicks(), epochTickFrequency());
+  auto elapsed = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed + std::chrono::microseconds(500)).count();
 }
 
 double monotonicTime() {
-  return ticksToSeconds(monotonicTicks(), monotonicTickFrequency());
+  return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 std::int64_t monotonicMilliseconds() {
-  return ticksToMilliseconds(monotonicTicks(), monotonicTickFrequency());
+  auto elapsed = std::chrono::steady_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed + std::chrono::microseconds(500)).count();
 }
 
 std::int64_t monotonicMicroseconds() {
-  return ticksToMicroseconds(monotonicTicks(), monotonicTickFrequency());
+  auto elapsed = std::chrono::steady_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(elapsed + std::chrono::nanoseconds(500)).count();
 }
 
 String printDuration(double time) {
@@ -70,6 +89,8 @@ double ticksToSeconds(std::int64_t ticks, std::int64_t tickFrequency) {
   return ticks / (double)tickFrequency;
 }
 
+// Retain the numeric API's half-unit bias followed by truncation toward zero,
+// including its asymmetric rounding for negative countdown values.
 std::int64_t ticksToMilliseconds(std::int64_t ticks, std::int64_t tickFrequency) {
   std::int64_t ticksPerMs = (tickFrequency + 500) / 1000;
   return (ticks + ticksPerMs / 2) / ticksPerMs;
@@ -97,7 +118,7 @@ std::int64_t microsecondsToTicks(std::int64_t microseconds, std::int64_t tickFre
 Clock::Clock() : Clock(true) {}
 
 Clock::Clock(bool start) {
-  m_elapsedTicks = 0;
+  m_elapsed = std::chrono::steady_clock::duration::zero();
   m_running = false;
   if (start)
     Clock::start();
@@ -108,67 +129,77 @@ Clock::Clock(Clock const& clock) {
 }
 
 Clock& Clock::operator=(Clock const& clock) {
-  m_elapsedTicks = clock.m_elapsedTicks;
-  m_lastTicks = clock.m_lastTicks;
+  m_elapsed = clock.m_elapsed;
+  m_lastUpdate = clock.m_lastUpdate;
   m_running = clock.m_running;
 
   return *this;
 }
 
 void Clock::reset() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   updateElapsed();
-  m_elapsedTicks = 0;
+  m_elapsed = std::chrono::steady_clock::duration::zero();
 }
 
 void Clock::stop() {
-  RecursiveMutexLocker locker(m_mutex);
-  m_lastTicks.reset();
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
+  m_lastUpdate.reset();
   m_running = false;
 }
 
 void Clock::start() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_running = true;
   updateElapsed();
 }
 
 bool Clock::running() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_running;
 }
 
 double Clock::time() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   updateElapsed();
-  return Time::ticksToSeconds(m_elapsedTicks, Time::monotonicTickFrequency());
+  return std::chrono::duration<double>(m_elapsed).count();
 }
 
 std::int64_t Clock::milliseconds() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   updateElapsed();
-  return Time::ticksToMilliseconds(m_elapsedTicks, Time::monotonicTickFrequency());
+  return std::chrono::duration_cast<std::chrono::milliseconds>(m_elapsed + std::chrono::microseconds(500)).count();
 }
 
 void Clock::setTime(double time) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   updateElapsed();
-  m_elapsedTicks = Time::secondsToTicks(time, Time::monotonicTickFrequency());
+  m_elapsed = std::chrono::steady_clock::duration(Time::secondsToTicks(time, Time::monotonicTickFrequency()));
 }
 
 void Clock::setMilliseconds(std::int64_t millis) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   updateElapsed();
-  m_elapsedTicks = Time::millisecondsToTicks(millis, Time::monotonicTickFrequency());
+  m_elapsed = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::milliseconds(millis));
 }
 
 void Clock::adjustTime(double timeAdjustment) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   setTime(std::max<double>(0.0, time() + timeAdjustment));
 }
 
 void Clock::adjustMilliseconds(std::int64_t millisAdjustment) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   setMilliseconds(milliseconds() + millisAdjustment);
 }
 
@@ -176,12 +207,12 @@ void Clock::updateElapsed() const {
   if (!m_running)
     return;
 
-  std::int64_t currentTicks = Time::monotonicTicks();
+  auto currentTime = std::chrono::steady_clock::now();
 
-  if (m_lastTicks)
-    m_elapsedTicks += (currentTicks - *m_lastTicks);
+  if (m_lastUpdate)
+    m_elapsed += currentTime - *m_lastUpdate;
 
-  m_lastTicks = currentTicks;
+  m_lastUpdate = currentTime;
 }
 
 Timer Timer::withTime(double timeLeft, bool start) {

@@ -210,7 +210,7 @@ private:
   
   bool m_serverDebug = false;
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   WorldChunks m_shipChunks;
   WorldChunks m_shipChunksUpdate;

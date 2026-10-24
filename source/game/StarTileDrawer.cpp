@@ -294,8 +294,8 @@ WorldRenderData& TileDrawer::renderData() {
   return m_tempRenderData;
 }
 
-MutexLocker TileDrawer::lockRenderData() {
-  return MutexLocker(m_tempRenderDataMutex);
+std::unique_lock<std::mutex> TileDrawer::lockRenderData() {
+  return std::unique_lock(m_tempRenderDataMutex);
 }
 
 RenderTile const& TileDrawer::getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos) {

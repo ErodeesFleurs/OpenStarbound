@@ -6,15 +6,10 @@ import star.format;
 import star.string;
 import star.type_identity;
 
-//#define STAR_MUTEX_LOG
-
 namespace Star {
 
 struct ThreadImpl;
 struct ThreadFunctionImpl;
-struct MutexImpl;
-struct ConditionVariableImpl;
-struct RecursiveMutexImpl;
 
 template <typename Return>
 class ThreadFunction;
@@ -138,109 +133,9 @@ private:
   std::shared_ptr<std::optional<Return>> m_return;
 };
 
-// *Non* recursive mutex lock, for use with ConditionVariable
-class Mutex {
-public:
-  Mutex();
-  Mutex(Mutex&&);
-  ~Mutex();
-
-  Mutex& operator=(Mutex&&);
-
-  void lock();
-
-  // Attempt to acquire the mutex without blocking.
-  bool tryLock();
-
-  void unlock();
-
-private:
-  friend struct ConditionVariableImpl;
-  std::unique_ptr<MutexImpl> m_impl;
-};
-
-class ConditionVariable {
-public:
-  ConditionVariable();
-  ConditionVariable(ConditionVariable&&);
-  ~ConditionVariable();
-
-  ConditionVariable& operator=(ConditionVariable&&);
-
-  // Atomically unlocks the mutex argument and waits on the condition.  On
-  // acquiring the condition, atomically returns and re-locks the mutex.  Must
-  // lock the mutex before calling.  If millis is given, waits for a maximum of
-  // the given milliseconds only.
-  void wait(Mutex& mutex, std::optional<unsigned> millis = {});
-
-  // Wake one waiting thread.  The calling thread for is allowed to either hold
-  // or not hold the mutex that the threads waiting on the condition are using,
-  // both will work and result in slightly different scheduling.
-  void signal();
-
-  // Wake all threads, policy for holding the mutex is the same for signal().
-  void broadcast();
-
-private:
-  std::unique_ptr<ConditionVariableImpl> m_impl;
-};
-
-// Recursive mutex lock.  lock() may be called many times freely by the same
-// thread, but unlock() must be called an equal number of times to unlock it.
-class RecursiveMutex {
-public:
-  RecursiveMutex();
-  RecursiveMutex(RecursiveMutex&&);
-  ~RecursiveMutex();
-
-  RecursiveMutex& operator=(RecursiveMutex&&);
-
-  #ifdef STAR_MUTEX_LOG
-  void setLogged(bool logged);
-  #endif
-
-  void lock();
-
-  // Attempt to acquire the mutex without blocking.
-  bool tryLock();
-
-  void unlock();
-
-private:
-  std::unique_ptr<RecursiveMutexImpl> m_impl;
-  #ifdef STAR_MUTEX_LOG
-  bool m_log = false;
-  #endif
-};
-
-// RAII for mutexes.  Locking and unlocking are always safe, MLocker will never
-// attempt to lock the held mutex more than once, or unlock more than once, and
-// destruction will always unlock the mutex *iff* it is actually locked.
-// (Locked here refers to one specific MLocker *itself* locking the mutex, not
-// whether the mutex is locked *at all*, so it is sensible to use with
-// RecursiveMutex)
-template <typename MutexType>
-class MLocker {
-public:
-  // Pass false to lock to start unlocked
-  MLocker(MutexType& ref, bool lock = true);
-  ~MLocker();
-
-  MLocker(MLocker const&) = delete;
-  MLocker& operator=(MLocker const&) = delete;
-
-  MutexType& mutex();
-
-  void unlock();
-  void lock();
-  bool tryLock();
-
-private:
-  MutexType& m_mutex;
-  bool m_locked;
-};
-typedef MLocker<Mutex> MutexLocker;
-typedef MLocker<RecursiveMutex> RecursiveMutexLocker;
+// Acquire an unlocked standard guard, retaining the native long-wait stack
+// diagnostic on platforms that previously provided it.
+void lockWithDiagnostics(std::unique_lock<std::recursive_mutex>& lock);
 
 class ReadersWriterMutex {
 public:
@@ -255,9 +150,9 @@ public:
   void writeUnlock();
 
 private:
-  Mutex m_mutex;
-  ConditionVariable m_readCond;
-  ConditionVariable m_writeCond;
+  std::mutex m_mutex;
+  std::condition_variable m_readCond;
+  std::condition_variable m_writeCond;
   unsigned m_readers;
   unsigned m_writers;
   unsigned m_readWaiters;
@@ -303,56 +198,12 @@ public:
   SpinLock();
 
   void lock();
-  bool tryLock();
+  bool try_lock();
   void unlock();
 
 private:
   std::atomic_flag m_lock;
 };
-typedef MLocker<SpinLock> SpinLocker;
-
-template <typename MutexType>
-MLocker<MutexType>::MLocker(MutexType& ref, bool l)
-  : m_mutex(ref), m_locked(false) {
-  if (l)
-    lock();
-}
-
-template <typename MutexType>
-MLocker<MutexType>::~MLocker() {
-  unlock();
-}
-
-template <typename MutexType>
-MutexType& MLocker<MutexType>::mutex() {
-  return m_mutex;
-}
-
-template <typename MutexType>
-void MLocker<MutexType>::unlock() {
-  if (m_locked) {
-    m_mutex.unlock();
-    m_locked = false;
-  }
-}
-
-template <typename MutexType>
-void MLocker<MutexType>::lock() {
-  if (!m_locked) {
-    m_mutex.lock();
-    m_locked = true;
-  }
-}
-
-template <typename MutexType>
-bool MLocker<MutexType>::tryLock() {
-  if (!m_locked) {
-    if (m_mutex.tryLock())
-      m_locked = true;
-  }
-
-  return m_locked;
-}
 
 template <typename Function, typename... Args>
 [[nodiscard]] auto Thread::invoke(String const& name, Function&& f, Args&&... args)
@@ -442,7 +293,7 @@ inline void SpinLock::unlock() {
   m_lock.clear(std::memory_order_release);
 }
 
-inline bool SpinLock::tryLock() {
+inline bool SpinLock::try_lock() {
   return !m_lock.test_and_set(std::memory_order_acquire);
 }
 
@@ -453,22 +304,13 @@ export module star.thread;
 export namespace Star {
   using ::Star::ThreadImpl;
   using ::Star::ThreadFunctionImpl;
-  using ::Star::MutexImpl;
-  using ::Star::ConditionVariableImpl;
-  using ::Star::RecursiveMutexImpl;
   using ::Star::Thread;
   using ::Star::ThreadFunction;
   template <>
   class ThreadFunction<void>;
-  using ::Star::Mutex;
-  using ::Star::ConditionVariable;
-  using ::Star::RecursiveMutex;
-  using ::Star::MLocker;
-  using ::Star::MutexLocker;
-  using ::Star::RecursiveMutexLocker;
+  using ::Star::lockWithDiagnostics;
   using ::Star::ReadersWriterMutex;
   using ::Star::ReadLocker;
   using ::Star::WriteLocker;
   using ::Star::SpinLock;
-  using ::Star::SpinLocker;
 }

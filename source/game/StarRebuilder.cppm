@@ -27,7 +27,7 @@ public:
 private:
   Rebuilder() = default;
   std::shared_ptr<LuaRoot> m_luaRoot;
-  mutable RecursiveMutex m_luaMutex;
+  mutable std::recursive_mutex m_luaMutex;
   std::shared_ptr<List<LuaContext>> m_contexts;
 };
 

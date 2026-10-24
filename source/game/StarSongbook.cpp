@@ -200,7 +200,7 @@ std::expected<void, StarException> Songbook::update(EntityMode mode, World* worl
     if (!m_song.isNull()) {
       auto parsed = [&]() -> std::expected<List<Note>, StarException> {
         {
-          MutexLocker lock(m_synchronization.mutex);
+          std::lock_guard lock(m_synchronization.mutex);
           if (!m_synchronization.timeSources.contains(m_timeSource)) {
             m_timeSourceInstance = std::make_shared<TimeSource>();
             m_synchronization.timeSources[m_timeSource] = m_timeSourceInstance;
@@ -912,7 +912,7 @@ void Songbook::play(Json const& song, String const& timeSource) {
   {
     m_epochUpdated = false;
     m_timeSourceEpoch = Time::millisecondsSinceEpoch();
-    MutexLocker lock(m_synchronization.mutex);
+    std::lock_guard lock(m_synchronization.mutex);
     if (!m_synchronization.timeSources.contains(m_timeSource)) {
       m_timeSourceInstance = std::make_shared<TimeSource>();
       m_synchronization.timeSources[m_timeSource] = m_timeSourceInstance;

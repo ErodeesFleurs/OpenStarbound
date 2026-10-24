@@ -68,26 +68,26 @@ auto filter(Range& list, Filter&& filter) {
   using reference = std::ranges::range_reference_t<Range>;
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Filter&, reference>>;
   using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  auto destination = list.begin();
-  for (auto source = list.begin(); source != list.end(); ++source) {
-    bool keep;
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    auto destination = list.begin();
+    for (auto source = list.begin(); source != list.end(); ++source) {
       auto accepted = std::invoke(filter, *source);
       if (!accepted)
         return Status(std::unexpected(std::move(accepted.error())));
-      keep = static_cast<bool>(*accepted);
-    } else {
-      keep = static_cast<bool>(std::invoke(filter, *source));
+      if (static_cast<bool>(*accepted)) {
+        if (destination != source)
+          *destination = std::move(*source);
+        ++destination;
+      }
     }
-    if (keep) {
-      if (destination != source)
-        *destination = std::move(*source);
-      ++destination;
-    }
-  }
-  list.erase(destination, list.end());
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
+    list.erase(destination, list.end());
     return Status();
+  } else {
+    auto tail = std::remove_if(list.begin(), list.end(), [&](auto&& value) {
+      return !static_cast<bool>(std::invoke(filter, std::forward<decltype(value)>(value)));
+    });
+    list.erase(tail, list.end());
+  }
 }
 
 template <std::ranges::forward_range Range, typename Function>
@@ -95,17 +95,16 @@ auto exec(Range& list, Function&& function) {
   using reference = std::ranges::range_reference_t<Range>;
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
   using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  for (auto& e : list) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    for (auto& e : list) {
       auto result = std::invoke(function, e);
       if (!result)
         return Status(std::unexpected(std::move(result.error())));
-    } else {
-      std::invoke(function, e);
     }
-  }
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
     return Status();
+  } else {
+    std::ranges::for_each(list, std::ref(function));
+  }
 }
 
 template <std::ranges::forward_range Range, typename Function>
@@ -113,18 +112,19 @@ auto transform(Range& list, Function&& function) {
   using reference = std::ranges::range_reference_t<Range>;
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function&, reference>>;
   using Status = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<void, StarException>, void>;
-  for (auto& e : list) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    for (auto& e : list) {
       auto result = std::invoke(function, e);
       if (!result)
         return Status(std::unexpected(std::move(result.error())));
       e = std::move(*result);
-    } else {
-      e = std::invoke(function, e);
     }
-  }
-  if constexpr (AlgorithmResultInfo<Invocation>::Fallible)
     return Status();
+  } else {
+    std::ranges::for_each(list, [&](auto& value) {
+      value = std::invoke(function, value);
+    });
+  }
 }
 
 template <std::ranges::forward_range Range, typename Function>
@@ -132,18 +132,20 @@ auto any(Range& list, Function&& function) {
   using const_reference = std::ranges::range_reference_t<Range>;
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
   using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
-  for (auto const& e : list) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    for (auto const& e : list) {
       decltype(auto) accepted = std::invoke(std::as_const(function), e);
       if (!accepted)
         return Result(std::unexpected(std::move(accepted.error())));
       if (static_cast<bool>(*accepted))
         return Result(true);
-    } else if (static_cast<bool>(std::invoke(std::as_const(function), e))) {
-      return Result(true);
     }
+    return Result(false);
+  } else {
+    return std::ranges::any_of(list, [&](auto const& value) {
+      return static_cast<bool>(std::invoke(std::as_const(function), value));
+    });
   }
-  return Result(false);
 }
 
 template <std::ranges::forward_range Range, typename Function>
@@ -151,18 +153,20 @@ auto all(Range& list, Function&& function) {
   using const_reference = std::ranges::range_reference_t<Range>;
   using Invocation = std::remove_cvref_t<std::invoke_result_t<Function const&, const_reference>>;
   using Result = std::conditional_t<AlgorithmResultInfo<Invocation>::Fallible, std::expected<bool, StarException>, bool>;
-  for (auto const& e : list) {
-    if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+  if constexpr (AlgorithmResultInfo<Invocation>::Fallible) {
+    for (auto const& e : list) {
       decltype(auto) accepted = std::invoke(std::as_const(function), e);
       if (!accepted)
         return Result(std::unexpected(std::move(accepted.error())));
       if (!static_cast<bool>(*accepted))
         return Result(false);
-    } else if (!static_cast<bool>(std::invoke(std::as_const(function), e))) {
-      return Result(false);
     }
+    return Result(true);
+  } else {
+    return std::ranges::all_of(list, [&](auto const& value) {
+      return static_cast<bool>(std::invoke(std::as_const(function), value));
+    });
   }
-  return Result(true);
 }
 
 }

@@ -97,7 +97,7 @@ private:
   bool removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid);
 
   Root& m_root;
-  RecursiveMutex m_mutex;
+  std::recursive_mutex m_mutex;
   Map<Uuid, Team> m_teams;
   StringMap<List<Uuid>> m_connectedPlayers;
   Map<Uuid, Invitation> m_invitations;

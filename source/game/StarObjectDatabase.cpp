@@ -747,7 +747,7 @@ std::expected<std::shared_ptr<ObjectDatabase>, StarException> ObjectDatabase::cr
 }
 
 void ObjectDatabase::cleanup() {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   m_configCache.cleanup([](String const&, std::shared_ptr<ObjectConfig> const& config) {
       return config.use_count() != 1;
     });
@@ -762,7 +762,7 @@ bool ObjectDatabase::isObject(String const& objectName) const {
 }
 
 std::expected<std::shared_ptr<ObjectConfig>, StarException> ObjectDatabase::getConfig(String const& objectName) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto result = m_configCache.get(objectName,
       [this](String const& name) -> std::expected<std::shared_ptr<ObjectConfig>, StarException> {
         if (auto path = m_paths.maybe(name))

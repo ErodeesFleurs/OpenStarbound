@@ -214,36 +214,42 @@ bool WorldClientThread::shouldExpire() {
 }
 
 void WorldClientThread::pushIncomingPackets(List<std::shared_ptr<Packet>> packets) {
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   m_incomingPacketQueue.appendAll(std::move(packets));
 }
 
 List<std::shared_ptr<Packet>> WorldClientThread::pullOutgoingPackets() {
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   return take(m_outgoingPacketQueue);
 }
 
 std::expected<void, StarException> WorldClientThread::executeAction(WorldClientAction action) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!action)
     return std::unexpected(StarException("Cannot execute an empty client world action"));
   return action(this, m_worldClient.get());
 }
 
 void WorldClientThread::setUpdateAction(WorldClientAction updateAction) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_updateAction = updateAction;
 }
 
 void WorldClientThread::passMessage(Message&& message) {
-  RecursiveMutexLocker locker(m_messageMutex);
+  std::unique_lock locker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_messages.append(std::move(message));
 }
 
 std::expected<void, StarException> WorldClientThread::clearMessages() {
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_messages);
   }
   std::optional<StarException> error;
@@ -307,15 +313,17 @@ std::expected<void, StarException> WorldClientThread::runLoop() {
 }
 
 std::expected<void, StarException> WorldClientThread::update() {
-  RecursiveMutexLocker locker(m_mutex);
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   auto incomingPackets = take(m_incomingPacketQueue);
   queueLocker.unlock();
   auto incoming = m_worldClient->handleIncomingPackets(std::move(incomingPackets));
   if (!incoming) {
     auto logged = m_worldClient->root().logger().error("WorldClientThread error handling incoming packets: {}",
         outputException(ExceptionDiagnostic(incoming.error()), true));
-    queueLocker.lock();
+    lockWithDiagnostics(queueLocker);
     m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
     queueLocker.unlock();
     m_errorOccurred = true;
@@ -333,7 +341,8 @@ std::expected<void, StarException> WorldClientThread::update() {
   if (m_worldClient->inWorld()) {
     List<Message> messages;
     {
-      RecursiveMutexLocker messageLocker(m_messageMutex);
+      std::unique_lock messageLocker(m_messageMutex, std::defer_lock);
+      lockWithDiagnostics(messageLocker);
       messages = std::move(m_messages);
     }
     std::optional<StarException> error;
@@ -366,7 +375,7 @@ std::expected<void, StarException> WorldClientThread::update() {
 
   auto outgoingPackets = m_worldClient->getOutgoingPackets();
   auto shouldDestroy = m_worldClient->pullRequestedDestroy();
-  queueLocker.lock();
+  lockWithDiagnostics(queueLocker);
   m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldPackets>(m_subWorldId, std::move(outgoingPackets)));
   if (shouldDestroy) {
     auto logged = m_worldClient->root().logger().info("WorldClientThread requesting destroy");

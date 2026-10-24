@@ -1,13 +1,10 @@
 #include <errno.h>
 #include <stdio.h>
-#include <string.h>
-#include <limits.h>
 #include <stdlib.h>
-#include <dirent.h>
+#include <string.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 
 import std;
 import star.file;
@@ -43,69 +40,31 @@ String File::convertDirSeparators(String const& path) {
   return String(std::move(bytes));
 }
 
-std::expected<String, StarException> File::currentDirectory() {
-  char buffer[PATH_MAX];
-  if (::getcwd(buffer, sizeof(buffer)) == nullptr)
-    return std::unexpected(IOException::format("getcwd failed: {}", std::strerror(errno)));
-  return String(buffer);
-}
-
-std::expected<void, StarException> File::changeDirectory(String const& dirName) {
-  if (::chdir(dirName.utf8Ptr()) != 0)
-    return std::unexpected(IOException::format("could not change directory to '{}': {}", dirName, std::strerror(errno)));
-  return {};
-}
-
-std::expected<void, StarException> File::makeDirectory(String const& dirName) {
-  if (::mkdir(dirName.utf8Ptr(), 0777) != 0)
-    return std::unexpected(IOException::format("could not create directory '{}', {}", dirName, std::strerror(errno)));
-  return {};
-}
-
 std::expected<List<std::pair<String, bool>>, StarException> File::dirList(String const& dirName, bool skipDots) {
-  DIR* directory = ::opendir(dirName.utf8Ptr());
-  if (!directory)
-    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, std::strerror(errno)));
-  List<std::pair<String, bool>> fileList;
-  int readError = 0;
-  while (true) {
-    errno = 0;
-    auto entry = ::readdir(directory);
-    if (!entry) {
-      readError = errno;
-      break;
-    }
-    String name(entry->d_name);
-    if (skipDots && (name == "." || name == ".."))
-      continue;
-    bool directoryEntry = false;
-#ifndef STAR_SYSTEM_HAIKU
-    if (entry->d_type == DT_DIR) {
-      directoryEntry = true;
-    } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
-#endif
-      auto status = isDirectory(relativeTo(dirName, name));
-      if (!status) {
-        if (::closedir(directory) < 0)
-          std::fprintf(stderr, "Error closing directory after status failure: %s\n", std::strerror(errno));
-        return std::unexpected(std::move(status.error()));
-      }
-      directoryEntry = *status;
-#ifndef STAR_SYSTEM_HAIKU
-    }
-#endif
-    fileList.append({std::move(name), directoryEntry});
+  std::error_code error;
+  std::filesystem::directory_iterator entry(std::filesystem::path(dirName.utf8Ptr()), error);
+  if (error)
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
+  List<std::pair<String, bool>> files;
+  // Standard directory iterators omit these entries unconditionally.
+  if (!skipDots) {
+    files.append({".", true});
+    auto parent = isDirectory(relativeTo(dirName, ".."));
+    if (!parent)
+      return std::unexpected(std::move(parent.error()));
+    files.append({"..", *parent});
   }
-  int closed = ::closedir(directory);
-  int closeError = closed < 0 ? errno : 0;
-  if (readError) {
-    if (closeError)
-      std::fprintf(stderr, "Error closing directory after failed listing: %s\n", std::strerror(closeError));
-    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, std::strerror(readError)));
+  for (std::filesystem::directory_iterator end; entry != end; entry.increment(error)) {
+    if (error)
+      return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
+    auto directory = entry->is_directory(error);
+    // Native stat failures for an entry have always classified it as non-directory.
+    error.clear();
+    files.append({String(entry->path().filename().native()), directory});
   }
-  if (closeError)
-    return std::unexpected(IOException::format("closedir failed on dir '{}': {}", dirName, std::strerror(closeError)));
-  return fileList;
+  if (error)
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
+  return files;
 }
 
 String File::baseName(String const& fileName) {
@@ -130,10 +89,11 @@ String File::relativeTo(String const& relativeTo, String const& path) {
 }
 
 std::expected<String, StarException> File::fullPath(String const& fileName) {
-  char buffer[PATH_MAX];
-  if (::realpath(fileName.utf8Ptr(), buffer) == nullptr)
-    return std::unexpected(IOException::format("realpath failed on file '{}': {}", fileName, std::strerror(errno)));
-  return String(buffer);
+  std::error_code error;
+  auto path = std::filesystem::canonical(std::filesystem::path(fileName.utf8Ptr()), error);
+  if (error)
+    return std::unexpected(IOException::format("could not resolve file '{}': {}", fileName, error.message()));
+  return String(path.native());
 }
 
 std::expected<String, StarException> File::temporaryFileName(RandomService& random) {
@@ -172,29 +132,23 @@ std::expected<String, StarException> File::temporaryDirectory(RandomService& ran
 }
 
 std::expected<bool, StarException> File::exists(String const& path) {
-  struct stat status;
-  return ::stat(path.utf8Ptr(), &status) == 0;
+  std::error_code error;
+  return std::filesystem::exists(std::filesystem::path(path.utf8Ptr()), error);
 }
 
 std::expected<bool, StarException> File::isFile(String const& path) {
-  struct stat status;
-  return ::stat(path.utf8Ptr(), &status) == 0 && S_ISREG(status.st_mode);
+  std::error_code error;
+  return std::filesystem::is_regular_file(std::filesystem::path(path.utf8Ptr()), error);
 }
 
 std::expected<bool, StarException> File::isDirectory(String const& path) {
-  struct stat status;
-  return ::stat(path.utf8Ptr(), &status) == 0 && S_ISDIR(status.st_mode);
+  std::error_code error;
+  return std::filesystem::is_directory(std::filesystem::path(path.utf8Ptr()), error);
 }
 
 std::expected<bool, StarException> File::isSymlink(String const& path) {
-  struct stat status;
-  return ::lstat(path.utf8Ptr(), &status) == 0 && S_ISLNK(status.st_mode);
-}
-
-std::expected<void, StarException> File::remove(String const& filename) {
-  if (std::remove(filename.utf8Ptr()) < 0)
-    return std::unexpected(IOException::format("remove error: {}", std::strerror(errno)));
-  return {};
+  std::error_code error;
+  return std::filesystem::is_symlink(std::filesystem::path(path.utf8Ptr()), error);
 }
 
 std::expected<void, StarException> File::rename(String const& source, String const& target) {

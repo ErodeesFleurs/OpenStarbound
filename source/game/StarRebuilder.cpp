@@ -84,7 +84,8 @@ std::expected<std::shared_ptr<Rebuilder>, StarException> Rebuilder::create(Root&
 std::expected<bool, StarException> Rebuilder::rebuild(Json store, StarException lastError, AttemptCallback attempt) const {
   if (!attempt)
     return std::unexpected(StarException("Cannot rebuild with an empty attempt callback"));
-  RecursiveMutexLocker locker(m_luaMutex);
+  std::unique_lock locker(m_luaMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   for (auto& context : *m_contexts) {
     auto next = context.invokePath<Json>("error", store, strf("{}", outputException(lastError, false)));
     if (!next)

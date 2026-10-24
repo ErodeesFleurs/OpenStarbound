@@ -157,7 +157,8 @@ std::expected<std::shared_ptr<ServerClientContext>, StarException> ServerClientC
 
 std::expected<void, StarException> ServerClientContext::initialize() {
   auto upgradeHandler = m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> std::expected<Json, StarException> {
-    RecursiveMutexLocker locker(m_mutex);
+    std::unique_lock locker(m_mutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     auto upgrades = shipUpgrades();
     auto applied = upgrades.apply(args);
     if (!applied)
@@ -169,7 +170,8 @@ std::expected<void, StarException> ServerClientContext::initialize() {
     return std::unexpected(std::move(upgradeHandler.error()));
 
   auto speciesHandler = m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> std::expected<Json, StarException> {
-    RecursiveMutexLocker locker(m_mutex);
+    std::unique_lock locker(m_mutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     auto newSpecies = species.toString();
     if (!newSpecies)
       return std::unexpected(std::move(newSpecies.error()));
@@ -197,7 +199,8 @@ std::expected<void, StarException> ServerClientContext::initialize() {
         return std::unexpected(std::move(descriptor.error()));
       overflow.append(std::move(*descriptor));
     }
-    RecursiveMutexLocker locker(m_mutex);
+    std::unique_lock locker(m_mutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     if (m_worldThread) {
       auto executed = m_worldThread->executeAction([args, items = std::move(*items), &overflow](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
         auto entityId = args.getInt("entityId");
@@ -239,7 +242,8 @@ std::expected<void, StarException> ServerClientContext::initialize() {
     auto flagName = args.toString();
     if (!flagName)
       return std::unexpected(std::move(flagName.error()));
-    RecursiveMutexLocker locker(m_mutex);
+    std::unique_lock locker(m_mutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     if (m_worldThread) {
       auto executed = m_worldThread->executeAction([flagName = std::move(*flagName)](WorldServerThread*, WorldServer* server) -> std::expected<void, StarException> {
         return server->universeSettings()->setFlag(flagName);
@@ -296,7 +300,8 @@ NetCompatibilityRules ServerClientContext::netRules() const {
 }
 
 String ServerClientContext::descriptiveName() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   String hostName = m_remoteAddress ? toString(*m_remoteAddress) : "local";
   return strf("'{}' <{}> ({})", m_playerName, m_clientId, hostName);
 }
@@ -306,72 +311,86 @@ std::expected<void, StarException> ServerClientContext::registerRpcHandlers(Json
 }
 
 CelestialCoordinate ServerClientContext::shipCoordinate() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_shipCoordinate.get();
 }
 
 void ServerClientContext::setShipCoordinate(CelestialCoordinate system) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_shipCoordinate.set(system);
 }
 
 SystemLocation ServerClientContext::shipLocation() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_shipSystemLocation;
 }
 
 void ServerClientContext::setShipLocation(SystemLocation location) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_shipSystemLocation = location;
 }
 
 std::optional<std::pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_orbitWarpActionNetState.get();
 }
 
 void ServerClientContext::setOrbitWarpAction(std::optional<std::pair<WarpAction, WarpMode>> warpAction) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_orbitWarpActionNetState.set(warpAction);
 }
 
 bool ServerClientContext::isAdmin() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_isAdminNetState.get();
 }
 
 void ServerClientContext::setAdmin(bool admin) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_isAdminNetState.set(admin);
 }
 
 bool ServerClientContext::serverDebug() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_serverDebug;
 }
 
 void ServerClientContext::setServerDebug(bool serverDebug) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_serverDebug = serverDebug;
 }
 
 EntityDamageTeam ServerClientContext::team() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_teamNetState.get();
 }
 
 void ServerClientContext::setTeam(EntityDamageTeam team) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_teamNetState.set(team);
 }
 
 ShipUpgrades ServerClientContext::shipUpgrades() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_shipUpgrades.get();
 }
 
 void ServerClientContext::setShipUpgrades(ShipUpgrades upgrades) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_shipUpgrades.set(upgrades);
 }
 
@@ -380,23 +399,27 @@ void ServerClientContext::setShipSpecies(String shipSpecies) {
 }
 
 WorldChunks ServerClientContext::shipChunks() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_shipChunks;
 }
 
 void ServerClientContext::updateShipChunks(WorldChunks newShipChunks) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_shipChunksUpdate.merge(WorldStorage::getWorldChunksUpdate(m_shipChunks, newShipChunks), true);
   m_shipChunks = std::move(newShipChunks);
 }
 
 std::expected<void, StarException> ServerClientContext::readUpdate(ByteArray data) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_rpc.receive(data);
 }
 
 std::expected<ByteArray, StarException> ServerClientContext::writeUpdate() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto rpcUpdate = m_rpc.send();
   if (!rpcUpdate)
     return std::unexpected(std::move(rpcUpdate.error()));
@@ -442,7 +465,8 @@ std::expected<ByteArray, StarException> ServerClientContext::writeUpdate() {
 }
 
 void ServerClientContext::setSystemWorld(std::shared_ptr<SystemWorldServerThread> systemWorldThread) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (m_systemWorldThread == systemWorldThread)
     return;
 
@@ -450,17 +474,20 @@ void ServerClientContext::setSystemWorld(std::shared_ptr<SystemWorldServerThread
 }
 
 std::shared_ptr<SystemWorldServerThread> ServerClientContext::systemWorld() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_systemWorldThread;
 }
 
 void ServerClientContext::clearSystemWorld() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   setSystemWorld({});
 }
 
 void ServerClientContext::setPlayerWorld(std::shared_ptr<WorldServerThread> worldThread) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (m_worldThread == worldThread)
     return;
 
@@ -472,12 +499,14 @@ void ServerClientContext::setPlayerWorld(std::shared_ptr<WorldServerThread> worl
 }
 
 std::shared_ptr<WorldServerThread> ServerClientContext::playerWorld() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_worldThread;
 }
 
 WorldId ServerClientContext::playerWorldId() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_playerWorldIdNetState.get();
 }
 
@@ -486,7 +515,8 @@ void ServerClientContext::clearPlayerWorld() {
 }
 
 void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, std::shared_ptr<WorldServerThread> worldThread) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (m_subWorldThreads[subWorldId] == worldThread)
     return;
 
@@ -494,12 +524,14 @@ void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, std::shared_p
 }
 
 std::shared_ptr<WorldServerThread> ServerClientContext::subWorld(ClientSubWorldId subWorldId) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_subWorldThreads.value(subWorldId);
 }
 
 bool ServerClientContext::hasSubWorld(ClientSubWorldId subWorldId) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_subWorldThreads.contains(subWorldId);
 }
 
@@ -508,27 +540,32 @@ void ServerClientContext::clearSubWorld(ClientSubWorldId subWorldId) {
 }
 
 List<ClientSubWorldId> ServerClientContext::subWorlds() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_subWorldThreads.keys();
 }
 
 WarpToWorld ServerClientContext::playerReturnWarp() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_returnWarp;
 }
 
 void ServerClientContext::setPlayerReturnWarp(WarpToWorld warp) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_returnWarp = std::move(warp);
 }
 
 WarpToWorld ServerClientContext::playerReviveWarp() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_reviveWarp;
 }
 
 void ServerClientContext::setPlayerReviveWarp(WarpToWorld warp) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_reviveWarp = std::move(warp);
 }
 
@@ -536,7 +573,8 @@ ServerClientContext::CustomWorld::CustomWorld() : chunks(WorldChunks()), chunksU
 ServerClientContext::CustomWorld::CustomWorld(WorldChunks initialChunks) : chunks(std::move(initialChunks)), chunksUpdate(WorldChunks()), active(false) {}
 
 std::expected<void, StarException> ServerClientContext::customWorldRequested(String name, RpcPromiseKeeper<WorldChunks> promise) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto added = m_worldRequests.add(std::move(name), std::move(promise));
   if (!added)
     return std::unexpected(std::move(added.error()));
@@ -544,7 +582,8 @@ std::expected<void, StarException> ServerClientContext::customWorldRequested(Str
 }
 
 std::expected<void, StarException> ServerClientContext::customWorldReceived(String name, WorldChunks chunks) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (auto promise = m_worldRequests.maybeTake(name)) {
     auto fulfilled = promise->fulfill(chunks);
     if (!fulfilled)
@@ -557,7 +596,8 @@ std::expected<void, StarException> ServerClientContext::customWorldReceived(Stri
 }
 
 std::expected<void, StarException> ServerClientContext::failWorldRequests() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   std::optional<StarException> firstError;
   for (auto& p : m_worldRequests) {
     auto failed = p.second.fail("Client disconnected");
@@ -571,32 +611,37 @@ std::expected<void, StarException> ServerClientContext::failWorldRequests() {
 }
 
 std::optional<WorldChunks> ServerClientContext::customWorldChunks(String name) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (auto world = m_customWorlds.ptr(name))
     return world->chunks;
   return {};
 }
 
 void ServerClientContext::updateCustomWorldChunks(String name, WorldChunks newWorldChunks) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto& world = m_customWorlds[std::move(name)];
   world.chunksUpdate.merge(WorldStorage::getWorldChunksUpdate(world.chunks, newWorldChunks), true);
   world.chunks = std::move(newWorldChunks);
 }
 
 void ServerClientContext::setCustomWorldActive(String name, bool active) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (auto world = m_customWorlds.ptr(name))
     world->active = active;
 }
 
 List<String> ServerClientContext::customWorlds() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_customWorlds.keys();
 }
 
 std::expected<void, StarException> ServerClientContext::cleanInactiveCustomWorlds() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   for (auto const& worldName : m_customWorlds.keys()) {
     if (auto world = m_customWorlds.ptr(worldName)) {
       if (!world->active && world->chunksUpdate.empty()) {
@@ -611,7 +656,8 @@ std::expected<void, StarException> ServerClientContext::cleanInactiveCustomWorld
 }
 
 std::expected<void, StarException> ServerClientContext::loadServerData(Json const& store) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto coordinateData = store.get("shipCoordinate");
   if (!coordinateData)
     return std::unexpected(std::move(coordinateData.error()));
@@ -655,7 +701,8 @@ std::expected<void, StarException> ServerClientContext::loadServerData(Json cons
 }
 
 std::expected<Json, StarException> ServerClientContext::storeServerData() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto location = jsonFromSystemLocation(m_shipSystemLocation);
   auto teamData = team().toJson();
   if (!teamData)

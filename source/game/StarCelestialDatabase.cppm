@@ -219,7 +219,7 @@ protected:
   
   bool m_chunksAlwaysPersistent = false;
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   HashTtlCache<Vec2I, CelestialChunk> m_chunkCache;
   BTreeSha256Database m_database;
@@ -275,7 +275,7 @@ private:
   explicit CelestialSlaveDatabase(RandomService& random);
   float m_requestTimeout;
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   HashTtlCache<Vec2I, CelestialChunk> m_chunkCache;
   HashMap<Vec2I, Timer> m_pendingChunkRequests;
   HashMap<Vec3I, Timer> m_pendingSystemRequests;

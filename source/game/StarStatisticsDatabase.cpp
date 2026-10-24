@@ -95,7 +95,7 @@ std::expected<void, StarException> StatisticsDatabase::load() {
 }
 
 std::expected<std::shared_ptr<StatEvent>, StarException> StatisticsDatabase::event(String const& name) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto cached = m_eventCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<StatEvent>, StarException> {
     if (auto path = m_eventPaths.maybe(name)) {
       auto assets = m_root.assets();
@@ -109,7 +109,7 @@ std::expected<std::shared_ptr<StatEvent>, StarException> StatisticsDatabase::eve
 }
 
 std::expected<std::shared_ptr<Achievement>, StarException> StatisticsDatabase::achievement(String const& name) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto cached = m_achievementCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<Achievement>, StarException> {
     if (auto path = m_achievementPaths.maybe(name)) {
       auto assets = m_root.assets();

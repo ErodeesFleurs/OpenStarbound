@@ -4959,7 +4959,7 @@ const String secretProprefix = std::string("\0JsonProperty\0", sizeof("\0JsonPro
 std::optional<StringView> Player::getSecretPropertyView(String const& name) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     auto const& view = tag->utf8();
-    DataStreamExternalBuffer buffer(view.data(), view.size());
+    DataStreamExternalBuffer buffer{std::span<char const>(view)};
     auto type = buffer.read<std::uint8_t>();
     if (!type || (Json::Type)(*type - 1) != Json::Type::String)
       return {};
@@ -4981,7 +4981,7 @@ String const* Player::getSecretPropertyPtr(String const& name) const {
 
 std::expected<Json, StarException> Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
-    DataStreamExternalBuffer buffer(tag->utf8Ptr(), tag->utf8Size());
+    DataStreamExternalBuffer buffer{std::span<char const>(tag->utf8Ptr(), tag->utf8Size())};
     auto value = buffer.read<Json>();
     if (value)
       return std::move(*value);

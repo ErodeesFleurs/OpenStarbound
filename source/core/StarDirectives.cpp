@@ -8,7 +8,6 @@ import star.list;
 import star.image_processing;
 import star.data_stream;
 import star.string_view;
-import star.thread;
 import star.directives;
 import star.image;
 import star.logging;
@@ -122,7 +121,7 @@ void Directives::loadOperations() const {
   if (!m_shared)
     return;
 
-  MutexLocker locker(m_shared->mutex, false);
+  std::unique_lock locker(m_shared->mutex, std::defer_lock);
   if (m_shared.use_count() != 1)
     locker.lock();
   for (auto& entry : m_shared->entries)

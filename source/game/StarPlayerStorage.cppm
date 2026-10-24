@@ -118,7 +118,7 @@ private:
   [[nodiscard]] std::expected<String const*, StarException> uuidFileName(Uuid const& uuid);
   [[nodiscard]] std::expected<void, StarException> writeMetadata();
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   bool m_initialized = false;
   String m_storageDirectory;
   String m_backupDirectory;

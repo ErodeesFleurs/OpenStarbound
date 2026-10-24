@@ -158,12 +158,8 @@ void DataStreamBuffer::reset(ByteArray b) {
 
 DataStreamExternalBuffer::DataStreamExternalBuffer() : m_buffer() {}
 
-DataStreamExternalBuffer::DataStreamExternalBuffer(ByteArray const& byteArray) : DataStreamExternalBuffer(byteArray.ptr(), byteArray.size()) {}
-
-DataStreamExternalBuffer::DataStreamExternalBuffer(DataStreamBuffer const& buffer) : DataStreamExternalBuffer(buffer.ptr(), buffer.size()) {}
-
-DataStreamExternalBuffer::DataStreamExternalBuffer(char const* externalData, std::size_t len) : DataStreamExternalBuffer() {
-  reset(externalData, len);
+DataStreamExternalBuffer::DataStreamExternalBuffer(std::span<char const> externalData) : DataStreamExternalBuffer() {
+  reset(externalData);
 }
 
 char const* DataStreamExternalBuffer::ptr() const {
@@ -204,8 +200,8 @@ bool DataStreamExternalBuffer::empty() const {
   return m_buffer.dataSize() - *result;
 }
 
-void DataStreamExternalBuffer::reset(char const* externalData, std::size_t len) {
-  m_buffer.reset({externalData, len});
+void DataStreamExternalBuffer::reset(std::span<char const> externalData) {
+  m_buffer.reset(externalData);
 }
 
 [[nodiscard]] std::expected<void, StarException> DataStreamExternalBuffer::readData(char* data, std::size_t len) {

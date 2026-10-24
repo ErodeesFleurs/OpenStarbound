@@ -210,9 +210,9 @@ private:
   [[nodiscard]] std::expected<void, StarException> initialize();
   [[nodiscard]] std::expected<StringList, StarException> scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMember(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, Params&&... params);
   template <typename T>
-  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction);
+  [[nodiscard]] std::expected<std::shared_ptr<T>, StarException> loadMemberFunction(std::shared_ptr<T>& ptr, std::mutex& mutex, char const* name, std::function<std::expected<std::shared_ptr<T>, StarException>()> loadFunction);
 
   // m_configurationMutex must be held when calling.
   [[nodiscard]] std::expected<void, StarException> writeConfig();
@@ -226,15 +226,15 @@ private:
   Curve25519::KeySet m_identity;
   SongbookSynchronization m_songbookSynchronization;
   WorkerPool m_workers;
-  Mutex m_workersStartMutex;
+  std::mutex m_workersStartMutex;
   bool m_workersStarted = false;
-  Mutex m_headRotationMutex;
+  std::mutex m_headRotationMutex;
   bool m_headRotationInitialized = false;
   bool m_humanoidHeadRotation = true;
 
   Settings m_settings;
 
-  Mutex m_modsMutex;
+  std::mutex m_modsMutex;
   StringList m_modDirectories;
 
   ListenerGroup m_reloadListeners;
@@ -243,129 +243,129 @@ private:
   std::optional<String> m_runtimeConfigFile;
 
   ThreadFunction<void> m_maintenanceThread;
-  Mutex m_maintenanceStopMutex;
-  ConditionVariable m_maintenanceStopCondition;
+  std::mutex m_maintenanceStopMutex;
+  std::condition_variable m_maintenanceStopCondition;
   bool m_stopMaintenanceThread = false;
 
   std::shared_ptr<Assets> m_assets;
-  Mutex m_assetsMutex;
+  std::mutex m_assetsMutex;
 
   std::shared_ptr<Configuration> m_configuration;
-  Mutex m_configurationMutex;
+  std::mutex m_configurationMutex;
 
   std::shared_ptr<ObjectDatabase> m_objectDatabase;
-  Mutex m_objectDatabaseMutex;
+  std::mutex m_objectDatabaseMutex;
 
   std::shared_ptr<PlantDatabase> m_plantDatabase;
-  Mutex m_plantDatabaseMutex;
+  std::mutex m_plantDatabaseMutex;
 
   std::shared_ptr<ProjectileDatabase> m_projectileDatabase;
-  Mutex m_projectileDatabaseMutex;
+  std::mutex m_projectileDatabaseMutex;
 
   std::shared_ptr<MonsterDatabase> m_monsterDatabase;
-  Mutex m_monsterDatabaseMutex;
+  std::mutex m_monsterDatabaseMutex;
 
   std::shared_ptr<NpcDatabase> m_npcDatabase;
-  Mutex m_npcDatabaseMutex;
+  std::mutex m_npcDatabaseMutex;
 
   std::shared_ptr<StagehandDatabase> m_stagehandDatabase;
-  Mutex m_stagehandDatabaseMutex;
+  std::mutex m_stagehandDatabaseMutex;
 
   std::shared_ptr<VehicleDatabase> m_vehicleDatabase;
-  Mutex m_vehicleDatabaseMutex;
+  std::mutex m_vehicleDatabaseMutex;
 
   std::shared_ptr<PlayerFactory> m_playerFactory;
-  Mutex m_playerFactoryMutex;
+  std::mutex m_playerFactoryMutex;
 
   std::shared_ptr<EntityFactory> m_entityFactory;
-  Mutex m_entityFactoryMutex;
+  std::mutex m_entityFactoryMutex;
 
   std::shared_ptr<PatternedNameGenerator> m_nameGenerator;
-  Mutex m_nameGeneratorMutex;
+  std::mutex m_nameGeneratorMutex;
 
   std::shared_ptr<ItemDatabase> m_itemDatabase;
-  Mutex m_itemDatabaseMutex;
+  std::mutex m_itemDatabaseMutex;
 
   std::shared_ptr<MaterialDatabase> m_materialDatabase;
-  Mutex m_materialDatabaseMutex;
+  std::mutex m_materialDatabaseMutex;
 
   std::shared_ptr<TerrainDatabase> m_terrainDatabase;
-  Mutex m_terrainDatabaseMutex;
+  std::mutex m_terrainDatabaseMutex;
 
   std::shared_ptr<BiomeDatabase> m_biomeDatabase;
-  Mutex m_biomeDatabaseMutex;
+  std::mutex m_biomeDatabaseMutex;
 
   std::shared_ptr<LiquidsDatabase> m_liquidsDatabase;
-  Mutex m_liquidsDatabaseMutex;
+  std::mutex m_liquidsDatabaseMutex;
 
   std::shared_ptr<StatusEffectDatabase> m_statusEffectDatabase;
-  Mutex m_statusEffectDatabaseMutex;
+  std::mutex m_statusEffectDatabaseMutex;
 
   std::shared_ptr<DamageDatabase> m_damageDatabase;
-  Mutex m_damageDatabaseMutex;
+  std::mutex m_damageDatabaseMutex;
 
   std::shared_ptr<ParticleDatabase> m_particleDatabase;
-  Mutex m_particleDatabaseMutex;
+  std::mutex m_particleDatabaseMutex;
 
   std::shared_ptr<EffectSourceDatabase> m_effectSourceDatabase;
-  Mutex m_effectSourceDatabaseMutex;
+  std::mutex m_effectSourceDatabaseMutex;
 
   std::shared_ptr<FunctionDatabase> m_functionDatabase;
-  Mutex m_functionDatabaseMutex;
+  std::mutex m_functionDatabaseMutex;
 
   std::shared_ptr<TreasureDatabase> m_treasureDatabase;
-  Mutex m_treasureDatabaseMutex;
+  std::mutex m_treasureDatabaseMutex;
 
   std::shared_ptr<DungeonDefinitions> m_dungeonDefinitions;
-  Mutex m_dungeonDefinitionsMutex;
+  std::mutex m_dungeonDefinitionsMutex;
 
   std::shared_ptr<TilesetDatabase> m_tilesetDatabase;
-  Mutex m_tilesetDatabaseMutex;
+  std::mutex m_tilesetDatabaseMutex;
 
   std::shared_ptr<StatisticsDatabase> m_statisticsDatabase;
-  Mutex m_statisticsDatabaseMutex;
+  std::mutex m_statisticsDatabaseMutex;
 
   std::shared_ptr<EmoteProcessor> m_emoteProcessor;
-  Mutex m_emoteProcessorMutex;
+  std::mutex m_emoteProcessorMutex;
 
   std::shared_ptr<SpeciesDatabase> m_speciesDatabase;
-  Mutex m_speciesDatabaseMutex;
+  std::mutex m_speciesDatabaseMutex;
 
   std::shared_ptr<ImageMetadataDatabase> m_imageMetadataDatabase;
-  Mutex m_imageMetadataDatabaseMutex;
+  std::mutex m_imageMetadataDatabaseMutex;
 
   std::shared_ptr<VersioningDatabase> m_versioningDatabase;
-  Mutex m_versioningDatabaseMutex;
+  std::mutex m_versioningDatabaseMutex;
 
   std::shared_ptr<QuestTemplateDatabase> m_questTemplateDatabase;
-  Mutex m_questTemplateDatabaseMutex;
+  std::mutex m_questTemplateDatabaseMutex;
 
   std::shared_ptr<AiDatabase> m_aiDatabase;
-  Mutex m_aiDatabaseMutex;
+  std::mutex m_aiDatabaseMutex;
 
   std::shared_ptr<TechDatabase> m_techDatabase;
-  Mutex m_techDatabaseMutex;
+  std::mutex m_techDatabaseMutex;
 
   std::shared_ptr<CodexDatabase> m_codexDatabase;
-  Mutex m_codexDatabaseMutex;
+  std::mutex m_codexDatabaseMutex;
 
   std::shared_ptr<BehaviorDatabase> m_behaviorDatabase;
-  Mutex m_behaviorDatabaseMutex;
+  std::mutex m_behaviorDatabaseMutex;
 
   std::shared_ptr<TenantDatabase> m_tenantDatabase;
-  Mutex m_tenantDatabaseMutex;
+  std::mutex m_tenantDatabaseMutex;
 
   std::shared_ptr<DanceDatabase> m_danceDatabase;
-  Mutex m_danceDatabaseMutex;
+  std::mutex m_danceDatabaseMutex;
 
   std::shared_ptr<SpawnTypeDatabase> m_spawnTypeDatabase;
-  Mutex m_spawnTypeDatabaseMutex;
+  std::mutex m_spawnTypeDatabaseMutex;
 
   std::shared_ptr<RadioMessageDatabase> m_radioMessageDatabase;
-  Mutex m_radioMessageDatabaseMutex;
+  std::mutex m_radioMessageDatabaseMutex;
 
   std::shared_ptr<CollectionDatabase> m_collectionDatabase;
-  Mutex m_collectionDatabaseMutex;
+  std::mutex m_collectionDatabaseMutex;
 };
 
 }

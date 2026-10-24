@@ -39,11 +39,11 @@ struct MultiArrayInterpolator2 {
       offset[i] = binfo.offset;
     }
 
-    return interpolateSub(array, imin, imax, offset, IndexList(), 0);
+    return interpolateSub(array.view(), imin, imax, offset, IndexList(), 0);
   }
 
   Element interpolateSub(
-      MultiArray const& array,
+      typename MultiArray::ConstView const& array,
       IndexList const& imin, IndexList const& imax,
       PositionList const& offset, IndexList const& index,
       std::size_t const dim) const {
@@ -56,7 +56,8 @@ struct MultiArrayInterpolator2 {
     WeightList weights = weightFunction(offset[dim]);
 
     if (dim == Rank - 1) {
-      return weights[0] * array(minIndex) + weights[1] * array(maxIndex);
+      return weights[0] * array[std::span<std::size_t const, Rank>(minIndex.ptr(), Rank)] +
+        weights[1] * array[std::span<std::size_t const, Rank>(maxIndex.ptr(), Rank)];
     } else {
       return
         weights[0] * interpolateSub(array, imin, imax, offset, minIndex, dim+1) +
@@ -102,11 +103,11 @@ struct MultiArrayInterpolator4 {
       offset[i] = bound.offset;
     }
 
-    return interpolateSub(array, index0, index1, index2, index3, offset, IndexList(), 0);
+    return interpolateSub(array.view(), index0, index1, index2, index3, offset, IndexList(), 0);
   }
 
   Element interpolateSub(
-      MultiArray const& array,
+      typename MultiArray::ConstView const& array,
       IndexList const& i0, IndexList const& i1,
       IndexList const& i2, IndexList const& i3,
       PositionList const& offset, IndexList const& index,
@@ -125,10 +126,10 @@ struct MultiArrayInterpolator4 {
 
     if (dim == Rank - 1) {
       return
-        weights[0] * array(index0) +
-        weights[1] * array(index1) +
-        weights[2] * array(index2) +
-        weights[3] * array(index3);
+        weights[0] * array[std::span<std::size_t const, Rank>(index0.ptr(), Rank)] +
+        weights[1] * array[std::span<std::size_t const, Rank>(index1.ptr(), Rank)] +
+        weights[2] * array[std::span<std::size_t const, Rank>(index2.ptr(), Rank)] +
+        weights[3] * array[std::span<std::size_t const, Rank>(index3.ptr(), Rank)];
     } else {
       return
         weights[0] * interpolateSub(array, i0, i1, i2, i3, offset, index0, dim+1) +
@@ -190,16 +191,17 @@ struct MultiArrayPiecewiseInterpolator {
     }
 
     std::sort(piecewiseRangeList.begin(), piecewiseRangeList.end());
+    auto const view = array.view();
 
     IndexList location = minIndex;
-    Element result = array(location);
+    Element result = view[std::span<std::size_t const, Rank>(location.ptr(), Rank)];
     Element last = result;
     Element current;
 
     for (std::size_t i = 0; i < Rank; ++i) {
       auto const& pr = piecewiseRangeList[i];
       location[pr.dim] = maxIndex[pr.dim];
-      current = array(location);
+      current = view[std::span<std::size_t const, Rank>(location.ptr(), Rank)];
 
       WeightList weights = weightFunction(pr.offset);
       result += last * (weights[0] - 1) + current * weights[1];
@@ -248,9 +250,10 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
 
+    auto const view = array.view();
     return
-      xweights[0] * (yweights[0] * array(imin[0], imin[1]) + yweights[1] * array(imin[0], imax[1])) +
-      xweights[1] * (yweights[0] * array(imax[0], imin[1]) + yweights[1] * array(imax[0], imax[1]));
+      xweights[0] * (yweights[0] * view[imin[0], imin[1]] + yweights[1] * view[imin[0], imax[1]]) +
+      xweights[1] * (yweights[0] * view[imax[0], imin[1]] + yweights[1] * view[imax[0], imax[1]]);
   }
 };
 
@@ -293,31 +296,32 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
 
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
+    auto const view = array.view();
 
     return
       xweights[0] * (
-          yweights[0] * array(index0[0], index0[1]) +
-          yweights[1] * array(index0[0], index1[1]) +
-          yweights[2] * array(index0[0], index2[1]) +
-          yweights[3] * array(index0[0], index3[1])
+          yweights[0] * view[index0[0], index0[1]] +
+          yweights[1] * view[index0[0], index1[1]] +
+          yweights[2] * view[index0[0], index2[1]] +
+          yweights[3] * view[index0[0], index3[1]]
         ) +
       xweights[1] * (
-          yweights[0] * array(index1[0], index0[1]) +
-          yweights[1] * array(index1[0], index1[1]) +
-          yweights[2] * array(index1[0], index2[1]) +
-          yweights[3] * array(index1[0], index3[1])
+          yweights[0] * view[index1[0], index0[1]] +
+          yweights[1] * view[index1[0], index1[1]] +
+          yweights[2] * view[index1[0], index2[1]] +
+          yweights[3] * view[index1[0], index3[1]]
         ) +
       xweights[2] * (
-          yweights[0] * array(index2[0], index0[1]) +
-          yweights[1] * array(index2[0], index1[1]) +
-          yweights[2] * array(index2[0], index2[1]) +
-          yweights[3] * array(index2[0], index3[1])
+          yweights[0] * view[index2[0], index0[1]] +
+          yweights[1] * view[index2[0], index1[1]] +
+          yweights[2] * view[index2[0], index2[1]] +
+          yweights[3] * view[index2[0], index3[1]]
         ) +
       xweights[3] * (
-          yweights[0] * array(index3[0], index0[1]) +
-          yweights[1] * array(index3[0], index1[1]) +
-          yweights[2] * array(index3[0], index2[1]) +
-          yweights[3] * array(index3[0], index3[1])
+          yweights[0] * view[index3[0], index0[1]] +
+          yweights[1] * view[index3[0], index1[1]] +
+          yweights[2] * view[index3[0], index2[1]] +
+          yweights[3] * view[index3[0], index3[1]]
         );
   }
 };
@@ -360,26 +364,27 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
     WeightList zweights = weightFunction(offset[2]);
+    auto const view = array.view();
 
     return
       xweights[0] * (
             yweights[0] * (
-              zweights[0] * array(imin[0], imin[1], imin[2]) +
-              zweights[1] * array(imin[0], imin[1], imax[2])
+              zweights[0] * view[imin[0], imin[1], imin[2]] +
+              zweights[1] * view[imin[0], imin[1], imax[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(imin[0], imax[1], imin[2]) +
-              zweights[1] * array(imin[0], imax[1], imax[2])
+              zweights[0] * view[imin[0], imax[1], imin[2]] +
+              zweights[1] * view[imin[0], imax[1], imax[2]]
             )
           ) +
       xweights[1] * (
             yweights[0] * (
-              zweights[0] * array(imax[0], imin[1], imin[2]) +
-              zweights[1] * array(imax[0], imin[1], imax[2])
+              zweights[0] * view[imax[0], imin[1], imin[2]] +
+              zweights[1] * view[imax[0], imin[1], imax[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(imax[0], imax[1], imin[2]) +
-              zweights[1] * array(imax[0], imax[1], imax[2])
+              zweights[0] * view[imax[0], imax[1], imin[2]] +
+              zweights[1] * view[imax[0], imax[1], imax[2]]
             )
           );
   }
@@ -425,110 +430,111 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
     WeightList zweights = weightFunction(offset[2]);
+    auto const view = array.view();
 
     return
       xweights[0] * (
             yweights[0] * (
-              zweights[0] * array(index0[0], index0[1], index0[2]) +
-              zweights[1] * array(index0[0], index0[1], index1[2]) +
-              zweights[2] * array(index0[0], index0[1], index2[2]) +
-              zweights[3] * array(index0[0], index0[1], index3[2])
+              zweights[0] * view[index0[0], index0[1], index0[2]] +
+              zweights[1] * view[index0[0], index0[1], index1[2]] +
+              zweights[2] * view[index0[0], index0[1], index2[2]] +
+              zweights[3] * view[index0[0], index0[1], index3[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(index0[0], index1[1], index0[2]) +
-              zweights[1] * array(index0[0], index1[1], index1[2]) +
-              zweights[2] * array(index0[0], index1[1], index2[2]) +
-              zweights[3] * array(index0[0], index1[1], index3[2])
+              zweights[0] * view[index0[0], index1[1], index0[2]] +
+              zweights[1] * view[index0[0], index1[1], index1[2]] +
+              zweights[2] * view[index0[0], index1[1], index2[2]] +
+              zweights[3] * view[index0[0], index1[1], index3[2]]
             ) +
             yweights[2] * (
-              zweights[0] * array(index0[0], index2[1], index0[2]) +
-              zweights[1] * array(index0[0], index2[1], index1[2]) +
-              zweights[2] * array(index0[0], index2[1], index2[2]) +
-              zweights[3] * array(index0[0], index2[1], index3[2])
+              zweights[0] * view[index0[0], index2[1], index0[2]] +
+              zweights[1] * view[index0[0], index2[1], index1[2]] +
+              zweights[2] * view[index0[0], index2[1], index2[2]] +
+              zweights[3] * view[index0[0], index2[1], index3[2]]
             ) +
             yweights[3] * (
-              zweights[0] * array(index0[0], index3[1], index0[2]) +
-              zweights[1] * array(index0[0], index3[1], index1[2]) +
-              zweights[2] * array(index0[0], index3[1], index2[2]) +
-              zweights[3] * array(index0[0], index3[1], index3[2])
+              zweights[0] * view[index0[0], index3[1], index0[2]] +
+              zweights[1] * view[index0[0], index3[1], index1[2]] +
+              zweights[2] * view[index0[0], index3[1], index2[2]] +
+              zweights[3] * view[index0[0], index3[1], index3[2]]
             )
           ) +
       xweights[1] * (
             yweights[0] * (
-              zweights[0] * array(index1[0], index0[1], index0[2]) +
-              zweights[1] * array(index1[0], index0[1], index1[2]) +
-              zweights[2] * array(index1[0], index0[1], index2[2]) +
-              zweights[3] * array(index1[0], index0[1], index3[2])
+              zweights[0] * view[index1[0], index0[1], index0[2]] +
+              zweights[1] * view[index1[0], index0[1], index1[2]] +
+              zweights[2] * view[index1[0], index0[1], index2[2]] +
+              zweights[3] * view[index1[0], index0[1], index3[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(index1[0], index1[1], index0[2]) +
-              zweights[1] * array(index1[0], index1[1], index1[2]) +
-              zweights[2] * array(index1[0], index1[1], index2[2]) +
-              zweights[3] * array(index1[0], index1[1], index3[2])
+              zweights[0] * view[index1[0], index1[1], index0[2]] +
+              zweights[1] * view[index1[0], index1[1], index1[2]] +
+              zweights[2] * view[index1[0], index1[1], index2[2]] +
+              zweights[3] * view[index1[0], index1[1], index3[2]]
             ) +
             yweights[2] * (
-              zweights[0] * array(index1[0], index2[1], index0[2]) +
-              zweights[1] * array(index1[0], index2[1], index1[2]) +
-              zweights[2] * array(index1[0], index2[1], index2[2]) +
-              zweights[3] * array(index1[0], index2[1], index3[2])
+              zweights[0] * view[index1[0], index2[1], index0[2]] +
+              zweights[1] * view[index1[0], index2[1], index1[2]] +
+              zweights[2] * view[index1[0], index2[1], index2[2]] +
+              zweights[3] * view[index1[0], index2[1], index3[2]]
             ) +
             yweights[3] * (
-              zweights[0] * array(index1[0], index3[1], index0[2]) +
-              zweights[1] * array(index1[0], index3[1], index1[2]) +
-              zweights[2] * array(index1[0], index3[1], index2[2]) +
-              zweights[3] * array(index1[0], index3[1], index3[2])
+              zweights[0] * view[index1[0], index3[1], index0[2]] +
+              zweights[1] * view[index1[0], index3[1], index1[2]] +
+              zweights[2] * view[index1[0], index3[1], index2[2]] +
+              zweights[3] * view[index1[0], index3[1], index3[2]]
             )
           ) +
       xweights[2] * (
             yweights[0] * (
-              zweights[0] * array(index2[0], index0[1], index0[2]) +
-              zweights[1] * array(index2[0], index0[1], index1[2]) +
-              zweights[2] * array(index2[0], index0[1], index2[2]) +
-              zweights[3] * array(index2[0], index0[1], index3[2])
+              zweights[0] * view[index2[0], index0[1], index0[2]] +
+              zweights[1] * view[index2[0], index0[1], index1[2]] +
+              zweights[2] * view[index2[0], index0[1], index2[2]] +
+              zweights[3] * view[index2[0], index0[1], index3[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(index2[0], index1[1], index0[2]) +
-              zweights[1] * array(index2[0], index1[1], index1[2]) +
-              zweights[2] * array(index2[0], index1[1], index2[2]) +
-              zweights[3] * array(index2[0], index1[1], index3[2])
+              zweights[0] * view[index2[0], index1[1], index0[2]] +
+              zweights[1] * view[index2[0], index1[1], index1[2]] +
+              zweights[2] * view[index2[0], index1[1], index2[2]] +
+              zweights[3] * view[index2[0], index1[1], index3[2]]
             ) +
             yweights[2] * (
-              zweights[0] * array(index2[0], index2[1], index0[2]) +
-              zweights[1] * array(index2[0], index2[1], index1[2]) +
-              zweights[2] * array(index2[0], index2[1], index2[2]) +
-              zweights[3] * array(index2[0], index2[1], index3[2])
+              zweights[0] * view[index2[0], index2[1], index0[2]] +
+              zweights[1] * view[index2[0], index2[1], index1[2]] +
+              zweights[2] * view[index2[0], index2[1], index2[2]] +
+              zweights[3] * view[index2[0], index2[1], index3[2]]
             ) +
             yweights[3] * (
-              zweights[0] * array(index2[0], index3[1], index0[2]) +
-              zweights[1] * array(index2[0], index3[1], index1[2]) +
-              zweights[2] * array(index2[0], index3[1], index2[2]) +
-              zweights[3] * array(index2[0], index3[1], index3[2])
+              zweights[0] * view[index2[0], index3[1], index0[2]] +
+              zweights[1] * view[index2[0], index3[1], index1[2]] +
+              zweights[2] * view[index2[0], index3[1], index2[2]] +
+              zweights[3] * view[index2[0], index3[1], index3[2]]
             )
           ) +
       xweights[3] * (
             yweights[0] * (
-              zweights[0] * array(index3[0], index0[1], index0[2]) +
-              zweights[1] * array(index3[0], index0[1], index1[2]) +
-              zweights[2] * array(index3[0], index0[1], index2[2]) +
-              zweights[3] * array(index3[0], index0[1], index3[2])
+              zweights[0] * view[index3[0], index0[1], index0[2]] +
+              zweights[1] * view[index3[0], index0[1], index1[2]] +
+              zweights[2] * view[index3[0], index0[1], index2[2]] +
+              zweights[3] * view[index3[0], index0[1], index3[2]]
             ) +
             yweights[1] * (
-              zweights[0] * array(index3[0], index1[1], index0[2]) +
-              zweights[1] * array(index3[0], index1[1], index1[2]) +
-              zweights[2] * array(index3[0], index1[1], index2[2]) +
-              zweights[3] * array(index3[0], index1[1], index3[2])
+              zweights[0] * view[index3[0], index1[1], index0[2]] +
+              zweights[1] * view[index3[0], index1[1], index1[2]] +
+              zweights[2] * view[index3[0], index1[1], index2[2]] +
+              zweights[3] * view[index3[0], index1[1], index3[2]]
             ) +
             yweights[2] * (
-              zweights[0] * array(index3[0], index2[1], index0[2]) +
-              zweights[1] * array(index3[0], index2[1], index1[2]) +
-              zweights[2] * array(index3[0], index2[1], index2[2]) +
-              zweights[3] * array(index3[0], index2[1], index3[2])
+              zweights[0] * view[index3[0], index2[1], index0[2]] +
+              zweights[1] * view[index3[0], index2[1], index1[2]] +
+              zweights[2] * view[index3[0], index2[1], index2[2]] +
+              zweights[3] * view[index3[0], index2[1], index3[2]]
             ) +
             yweights[3] * (
-              zweights[0] * array(index3[0], index3[1], index0[2]) +
-              zweights[1] * array(index3[0], index3[1], index1[2]) +
-              zweights[2] * array(index3[0], index3[1], index2[2]) +
-              zweights[3] * array(index3[0], index3[1], index3[2])
+              zweights[0] * view[index3[0], index3[1], index0[2]] +
+              zweights[1] * view[index3[0], index3[1], index1[2]] +
+              zweights[2] * view[index3[0], index3[1], index2[2]] +
+              zweights[3] * view[index3[0], index3[1], index3[2]]
             )
           );
   }

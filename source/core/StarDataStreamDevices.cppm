@@ -156,11 +156,10 @@ public:
     return typeName<DataStreamExternalBuffer>();
   }
   DataStreamExternalBuffer();
-  DataStreamExternalBuffer(ByteArray const& byteArray);
-  DataStreamExternalBuffer(DataStreamBuffer const& buffer);
+  // Borrows read-only storage; it must remain valid and unmoved until reset or destruction.
+  explicit DataStreamExternalBuffer(std::span<char const> externalData);
 
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
-  DataStreamExternalBuffer(char const* externalData, std::size_t len);
 
   char const* ptr() const;
 
@@ -172,7 +171,7 @@ public:
   [[nodiscard]] std::expected<std::size_t, StarException> pos();
   [[nodiscard]] std::expected<std::size_t, StarException> remaining();
 
-  void reset(char const* externalData, std::size_t len);
+  void reset(std::span<char const> externalData);
 
   [[nodiscard]] std::expected<void, StarException> readData(char* data, std::size_t len) override;
   [[nodiscard]] std::expected<void, StarException> writeData(char const* data, std::size_t len) override;

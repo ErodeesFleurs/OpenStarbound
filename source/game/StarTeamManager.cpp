@@ -104,7 +104,8 @@ void TeamManager::setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers) {
 }
 
 void TeamManager::playerDisconnected(Uuid const& playerUuid) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
 
   purgeInvitationsFor(playerUuid);
   purgeInvitationsFrom(playerUuid);
@@ -117,7 +118,8 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
 }
 
 TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   for (auto const& teamPair : m_teams) {
     if (teamPair.second.members.contains(playerUuid))
       return teamPair.second.pvpTeamNumber;
@@ -172,7 +174,8 @@ bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
 }
 
 Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
 
   Uuid teamUuid(m_root.random());
   auto& team = m_teams.try_emplace(teamUuid, m_root.random()).first->second; // create
@@ -204,7 +207,8 @@ Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
 }
 
 bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
 
   if (!m_teams.contains(teamUuid))
     return false;
@@ -233,7 +237,8 @@ bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
 }
 
 bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
 
   if (!m_teams.contains(teamUuid))
     return false;
@@ -258,7 +263,8 @@ bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
 }
 
 std::expected<Json, StarException> TeamManager::fetchTeamStatus(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto playerUuidText = arguments.getString("playerUuid");
   if (!playerUuidText) return std::unexpected(std::move(playerUuidText.error()));
   auto playerUuidResult = Uuid::create(*playerUuidText);
@@ -321,7 +327,8 @@ std::expected<Json, StarException> TeamManager::fetchTeamStatus(Json const& argu
 }
 
 std::expected<Json, StarException> TeamManager::updateStatus(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto playerUuidText = arguments.getString("playerUuid");
   if (!playerUuidText) return std::unexpected(std::move(playerUuidText.error()));
   auto playerUuidResult = Uuid::create(*playerUuidText);
@@ -410,7 +417,8 @@ std::expected<Json, StarException> TeamManager::updateStatus(Json const& argumen
 }
 
 std::expected<Json, StarException> TeamManager::invite(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto inviteeText = arguments.getString("inviteeName");
   if (!inviteeText) return std::unexpected(std::move(inviteeText.error()));
   auto inviteeName = Text::stripEscapeCodes(*inviteeText);
@@ -462,7 +470,8 @@ std::expected<Json, StarException> TeamManager::invite(Json const& arguments) {
 }
 
 std::expected<Json, StarException> TeamManager::pollInvitation(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto playerUuidText = arguments.getString("playerUuid");
   if (!playerUuidText) return std::unexpected(std::move(playerUuidText.error()));
   auto playerUuidResult = Uuid::create(*playerUuidText);
@@ -498,7 +507,8 @@ std::expected<Json, StarException> TeamManager::pollInvitation(Json const& argum
 }
 
 std::expected<Json, StarException> TeamManager::acceptInvitation(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto inviterUuidText = arguments.getString("inviterUuid");
   if (!inviterUuidText) return std::unexpected(std::move(inviterUuidText.error()));
   auto inviterUuidResult = Uuid::create(*inviterUuidText);
@@ -550,7 +560,8 @@ std::expected<Json, StarException> TeamManager::acceptInvitation(Json const& arg
 }
 
 std::expected<Json, StarException> TeamManager::removeFromTeam(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto playerUuidText = arguments.getString("playerUuid");
   if (!playerUuidText) return std::unexpected(std::move(playerUuidText.error()));
   auto playerUuidResult = Uuid::create(*playerUuidText);
@@ -582,7 +593,8 @@ std::expected<Json, StarException> TeamManager::removeFromTeam(Json const& argum
 }
 
 std::expected<Json, StarException> TeamManager::makeLeader(Json const& arguments) {
-  RecursiveMutexLocker lock(m_mutex);
+  std::unique_lock lock(m_mutex, std::defer_lock);
+  lockWithDiagnostics(lock);
   auto playerUuidText = arguments.getString("playerUuid");
   if (!playerUuidText) return std::unexpected(std::move(playerUuidText.error()));
   auto playerUuidResult = Uuid::create(*playerUuidText);

@@ -28,7 +28,7 @@ import star.map;
 import star.set;
 
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.status_types;
 import star.damage_types;
 import star.world_geometry;

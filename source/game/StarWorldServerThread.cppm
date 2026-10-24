@@ -125,7 +125,7 @@ private:
   [[nodiscard]]
   std::expected<void, StarException> sync();
 
-  mutable RecursiveMutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
 
   HashSet<ConnectionId> m_clients;
   // A failed removal may be retried, but its incoming packets must not run again.
@@ -136,11 +136,11 @@ private:
   String m_worldName;
   WorldServerAction m_updateAction;
 
-  mutable RecursiveMutex m_queueMutex;
+  mutable std::recursive_mutex m_queueMutex;
   Map<ConnectionId, List<std::shared_ptr<Packet>>> m_incomingPacketQueue;
   Map<ConnectionId, List<std::shared_ptr<Packet>>> m_outgoingPacketQueue;
 
-  mutable RecursiveMutex m_messageMutex;
+  mutable std::recursive_mutex m_messageMutex;
   List<Message> m_messages;
 
   std::atomic<bool> m_stop;

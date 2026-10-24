@@ -4,7 +4,7 @@ import star.format;
 import star.string;
 import star.json;
 
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+// Match client include order for SIMD intrinsics used by xxhash.
 import star.data_stream;
 import star.lua;
 import star.uuid;

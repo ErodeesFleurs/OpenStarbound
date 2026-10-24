@@ -977,7 +977,7 @@ public:
 
 private:
   void recordAudioError(StarException error) {
-    MutexLocker lock(m_audioErrorMutex);
+    std::lock_guard lock(m_audioErrorMutex);
     if (!m_audioError)
       m_audioError.emplace(std::move(error));
     else
@@ -988,7 +988,7 @@ private:
   }
 
   std::optional<StarException> takeAudioError() {
-    MutexLocker lock(m_audioErrorMutex);
+    std::lock_guard lock(m_audioErrorMutex);
     return std::exchange(m_audioError, {});
   }
 
@@ -1607,7 +1607,7 @@ private:
   AudioCallback m_audioInputCallback;
   std::vector<std::uint8_t> m_audioInputData;
   std::vector<std::uint8_t> m_audioOutputData;
-  Mutex m_audioErrorMutex;
+  std::mutex m_audioErrorMutex;
   std::optional<StarException> m_audioError;
   std::optional<std::pair<RectI, int>> m_textInputArea;
 

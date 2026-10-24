@@ -1532,7 +1532,7 @@ std::expected<std::shared_ptr<DungeonDefinitions>, StarException> DungeonDefinit
 }
 
 std::expected<std::shared_ptr<DungeonDefinition const>, StarException> DungeonDefinitions::get(String const& name) const {
-  MutexLocker locker(m_cacheMutex);
+  std::lock_guard locker(m_cacheMutex);
   auto definition = m_definitionCache.get(name, [this](String const& name) -> std::expected<std::shared_ptr<DungeonDefinition>, StarException> {
     if (auto path = m_paths.maybe(name)) return readDefinition(*path);
     return std::unexpected(DungeonException::format("Unknown dungeon: '{}'", name));

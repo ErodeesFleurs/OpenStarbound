@@ -1,7 +1,6 @@
 module;
 
 import std;
-import star.thread;
 import star.set;
 import star.string;
 import star.map;
@@ -44,7 +43,7 @@ public:
   [[nodiscard]] std::expected<void, StarException> log(char const* msg, LogLevel level) override;
 
 private:
-  Mutex m_logMutex;
+  std::mutex m_logMutex;
 };
 
 class FileLogSink : public LogSink {
@@ -57,7 +56,7 @@ public:
 private:
   FileLogSink() = default;
   std::shared_ptr<File> m_output;
-  Mutex m_logMutex;
+  std::mutex m_logMutex;
 };
 
 // A fixed-address log domain. Its sinks never affect another owner.
@@ -85,7 +84,7 @@ public:
 private:
   std::shared_ptr<StdoutLogSink> s_stdoutSink;
   HashSet<std::shared_ptr<LogSink>> s_sinks;
-  Mutex s_mutex;
+  std::mutex s_mutex;
 };
 
 // Stateless diagnostics for process/bootstrap code without a business owner.
@@ -130,7 +129,7 @@ public:
 
 private:
   HashMap<String, String> s_logMap;
-  Mutex s_logMapMutex;
+  std::mutex s_logMapMutex;
 };
 
 // Logging for spatial data.  Divided into multiple named coordinate spaces.
@@ -172,7 +171,7 @@ public:
   void setObserved(bool observed);
 
 private:
-  Mutex s_mutex;
+  std::mutex s_mutex;
   StringMap<Deque<Line>> s_lines;
   StringMap<Deque<Point>> s_points;
   StringMap<Deque<LogText>> s_logText;

@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <io.h>
 #include <stdio.h>
 #include <windows.h>
@@ -44,34 +43,8 @@ String File::convertDirSeparators(String const& path) {
   return String(std::move(bytes));
 }
 
-std::expected<String, StarException> File::currentDirectory() {
-  WCHAR buffer[MAX_PATH];
-  auto length = GetCurrentDirectoryW(MAX_PATH, buffer);
-  if (!length)
-    return std::unexpected(IOException::format("GetCurrentDirectory failed: {}", GetLastError()));
-  if (length >= MAX_PATH)
-    return std::unexpected(IOException("GetCurrentDirectory exceeds path buffer"));
-  return utf16ToString(buffer);
-}
-
-std::expected<void, StarException> File::changeDirectory(String const& dirName) {
-  auto path = stringToUtf16(dirName);
-  if (!path)
-    return std::unexpected(std::move(path.error()));
-  if (!SetCurrentDirectoryW(path->get()))
-    return std::unexpected(IOException::format("could not change directory to '{}': {}", dirName, GetLastError()));
-  return {};
-}
-
-std::expected<void, StarException> File::makeDirectory(String const& dirName) {
-  auto path = stringToUtf16(dirName);
-  if (!path)
-    return std::unexpected(std::move(path.error()));
-  if (!CreateDirectoryW(path->get(), nullptr))
-    return std::unexpected(IOException::format("could not create directory '{}': {}", dirName, GetLastError()));
-  return {};
-}
-
+// These queries intentionally retain wildcard matching and Windows reparse-point
+// attributes, which are not equivalent to filesystem::status/symlink_status.
 std::expected<bool, StarException> File::exists(String const& path) {
   auto native = stringToUtf16(path);
   if (!native)
@@ -122,6 +95,7 @@ std::expected<bool, StarException> File::isSymlink(String const& path) {
   return (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && data.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
 }
 
+// GetFullPathName is lexical on Windows and accepts paths that do not exist.
 std::expected<String, StarException> File::fullPath(String const& path) {
   auto native = stringToUtf16(path);
   if (!native)
@@ -139,33 +113,30 @@ std::expected<List<std::pair<String, bool>>, StarException> File::dirList(String
   auto native = stringToUtf16(relativeTo(dirName, "*"));
   if (!native)
     return std::unexpected(std::move(native.error()));
-  WIN32_FIND_DATAW data;
-  auto handle = FindFirstFileW(native->get(), &data);
-  if (handle == INVALID_HANDLE_VALUE)
-    return std::unexpected(IOException::format("Invalid file handle in dirList of '{}', error is {}", dirName, GetLastError()));
+  std::error_code error;
+  std::filesystem::path path(native->get());
+  path.remove_filename();
+  std::filesystem::directory_iterator entry(path, error);
+  if (error)
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
   List<std::pair<String, bool>> files;
-  while (true) {
-    auto entry = utf16ToString(data.cFileName);
-    if (!entry) {
-      if (!FindClose(handle))
-        std::fprintf(stderr, "Error closing directory after conversion failure: %lu\n", GetLastError());
-      return std::unexpected(std::move(entry.error()));
-    }
-    if (!skipDots || (*entry != "." && *entry != ".."))
-      files.append({std::move(*entry), (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0});
-    if (!FindNextFileW(handle, &data))
-      break;
+  // Windows root directories do not expose the special dot entries.
+  if (!skipDots && path != path.root_path()) {
+    files.append({".", true});
+    files.append({"..", true});
   }
-  auto error = GetLastError();
-  bool closed = FindClose(handle);
-  auto closeError = closed ? ERROR_SUCCESS : GetLastError();
-  if (error != ERROR_NO_MORE_FILES && error != ERROR_SUCCESS) {
-    if (!closed)
-      std::fprintf(stderr, "Error closing directory after listing failure: %lu\n", closeError);
-    return std::unexpected(IOException::format("FindNextFile error in dirList of '{}': {}", dirName, error));
+  for (std::filesystem::directory_iterator end; entry != end; entry.increment(error)) {
+    if (error)
+      return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
+    auto name = utf16ToString(entry->path().filename().c_str());
+    if (!name)
+      return std::unexpected(std::move(name.error()));
+    // Keep Windows' directory-reparse-point classification, even for a broken link.
+    auto attributes = GetFileAttributesW(entry->path().c_str());
+    files.append({std::move(*name), attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY)});
   }
-  if (!closed)
-    return std::unexpected(IOException::format("FindClose error in dirList of '{}': {}", dirName, closeError));
+  if (error)
+    return std::unexpected(IOException::format("dirList failed on dir '{}': {}", dirName, error.message()));
   return files;
 }
 
@@ -244,22 +215,6 @@ std::expected<String, StarException> File::temporaryDirectory(RandomService& ran
   if (!made)
     return std::unexpected(std::move(made.error()));
   return directory;
-}
-
-std::expected<void, StarException> File::remove(String const& filename) {
-  auto path = stringToUtf16(filename);
-  if (!path)
-    return std::unexpected(std::move(path.error()));
-  auto directory = isDirectory(filename);
-  if (!directory)
-    return std::unexpected(std::move(directory.error()));
-  if (*directory) {
-    if (!RemoveDirectoryW(path->get()))
-      return std::unexpected(IOException::format("RemoveDirectory error: {}", GetLastError()));
-  } else if (::_wremove(path->get()) < 0) {
-    return std::unexpected(IOException::format("remove error: {}", std::strerror(errno)));
-  }
-  return {};
 }
 
 std::expected<void, StarException> File::rename(String const& source, String const& target) {

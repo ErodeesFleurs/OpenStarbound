@@ -45,7 +45,7 @@ private:
   typedef std::tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
 
   Root& m_root;
-  mutable Mutex m_mutex;
+  mutable std::mutex m_mutex;
   mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;
   mutable HashTtlCache<SpacesEntry, List<Vec2I>> m_spacesCache;
   mutable HashTtlCache<AssetPath, RectU> m_regionCache;

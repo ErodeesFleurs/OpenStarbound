@@ -223,7 +223,8 @@ std::expected<void, StarException> WorldServerThread::close() {
       return std::unexpected(error.withContext(strf("World message drain also failed: {}", drained.error().what())));
     return std::unexpected(std::move(error));
   }
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   std::optional<StarException> error;
   if (!stopped)
     error = std::move(stopped.error());
@@ -261,7 +262,8 @@ bool WorldServerThread::shouldExpire() {
 }
 
 std::expected<bool, StarException> WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto valid = m_worldServer->spawnTargetValid(spawnTarget);
   if (!valid) {
     auto logged = recordError(valid.error());
@@ -273,7 +275,8 @@ std::expected<bool, StarException> WorldServerThread::spawnTargetValid(SpawnTarg
 
 std::expected<bool, StarException> WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget,
     bool isLocal, bool isAdmin, NetCompatibilityRules netRules, ClientSubWorldId subWorldId) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto added = m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules, subWorldId);
   if (!added) {
     auto logged = recordError(added.error());
@@ -287,8 +290,10 @@ std::expected<bool, StarException> WorldServerThread::addClient(ConnectionId cli
 }
 
 std::expected<List<std::shared_ptr<Packet>>, StarException> WorldServerThread::removeClient(ConnectionId clientId) {
-  RecursiveMutexLocker locker(m_mutex);
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   List<std::shared_ptr<Packet>> incomingPackets;
   if (auto queued = m_incomingPacketQueue.ptr(clientId))
     incomingPackets = take(*queued);
@@ -332,43 +337,51 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> WorldServerThread::r
 }
 
 List<ConnectionId> WorldServerThread::clients() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_clients.values();
 }
 
 bool WorldServerThread::hasClient(ConnectionId clientId) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_clients.contains(clientId);
 }
 
 bool WorldServerThread::noClients() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_clients.empty();
 }
 
 ClientSubWorldId WorldServerThread::clientSubWorld(ConnectionId clientId) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_worldServer->clientSubWorld(clientId);
 }
 
 List<ConnectionId> WorldServerThread::erroredClients() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto unerroredClients = HashSet<ConnectionId>::from(m_worldServer->clientIds());
   return m_clients.difference(unerroredClients).values();
 }
 
 void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets) {
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   m_incomingPacketQueue[clientId].appendAll(std::move(packets));
 }
 
 List<std::shared_ptr<Packet>> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
-  RecursiveMutexLocker queueLocker(m_queueMutex);
+  std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+  lockWithDiagnostics(queueLocker);
   return take(m_outgoingPacketQueue[clientId]);
 }
 
 std::expected<std::optional<Vec2F>, StarException> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (auto player = m_worldServer->clientPlayer(clientId)) {
     auto feetOffset = player->feetOffset();
     if (!feetOffset) {
@@ -383,29 +396,34 @@ std::expected<std::optional<Vec2F>, StarException> WorldServerThread::playerRevi
 }
 
 std::expected<std::optional<std::pair<String, String>>, StarException> WorldServerThread::pullNewPlanetType() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_worldServer->pullNewPlanetType();
 }
 
 std::expected<void, StarException> WorldServerThread::executeAction(WorldServerAction action) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!action)
     return std::unexpected(StarException("Cannot execute an empty server world action"));
   return action(this, m_worldServer.get());
 }
 
 void WorldServerThread::setUpdateAction(WorldServerAction updateAction) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_updateAction = updateAction;
 }
 
 void WorldServerThread::passMessages(List<Message>&& messages) {
-  RecursiveMutexLocker locker(m_messageMutex);
+  std::unique_lock locker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_messages.appendAll(std::move(messages));
 }
 
 std::expected<void, StarException> WorldServerThread::unloadAll(bool force) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto unloaded = m_worldServer->unloadAll(force);
   if (!unloaded) {
     auto logged = recordError(unloaded.error());
@@ -416,7 +434,8 @@ std::expected<void, StarException> WorldServerThread::unloadAll(bool force) {
 }
 
 std::expected<WorldChunks, StarException> WorldServerThread::readChunks() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto chunks = m_worldServer->readChunks();
   if (!chunks) {
     auto logged = recordError(chunks.error());
@@ -429,7 +448,8 @@ std::expected<WorldChunks, StarException> WorldServerThread::readChunks() {
 std::expected<void, StarException> WorldServerThread::drainMessages() {
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_messages);
   }
   std::optional<StarException> error;
@@ -548,10 +568,12 @@ std::expected<void, StarException> WorldServerThread::runLoop() {
 }
 
 std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity fidelity) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto unerroredClientIds = m_worldServer->clientIds();
   for (auto clientId : m_worldServer->clientIds()) {
-    RecursiveMutexLocker queueLocker(m_queueMutex);
+    std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+    lockWithDiagnostics(queueLocker);
     auto incomingPackets = take(m_incomingPacketQueue[clientId]);
     queueLocker.unlock();
     auto handled = m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
@@ -561,7 +583,8 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
       auto removed = m_worldServer->removeClient(clientId);
       if (!removed)
         return std::unexpected(std::move(removed.error()));
-      RecursiveMutexLocker outgoingLocker(m_queueMutex);
+      std::unique_lock outgoingLocker(m_queueMutex, std::defer_lock);
+      lockWithDiagnostics(outgoingLocker);
       m_outgoingPacketQueue[clientId].appendAll(std::move(*removed));
       unerroredClientIds.remove(clientId);
       if (!logged)
@@ -580,7 +603,8 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
 
   List<Message> messages;
   {
-    RecursiveMutexLocker messageLocker(m_messageMutex);
+    std::unique_lock messageLocker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(messageLocker);
     messages = std::move(m_messages);
   }
   std::optional<StarException> error;
@@ -613,7 +637,8 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
     auto outgoingPackets = m_worldServer->getOutgoingPackets(clientId);
     if (!outgoingPackets)
       return std::unexpected(std::move(outgoingPackets.error()));
-    RecursiveMutexLocker queueLocker(m_queueMutex);
+    std::unique_lock queueLocker(m_queueMutex, std::defer_lock);
+    lockWithDiagnostics(queueLocker);
     m_outgoingPacketQueue[clientId].appendAll(std::move(*outgoingPackets));
   }
   m_shouldExpire = m_worldServer->shouldExpire();
@@ -623,7 +648,8 @@ std::expected<void, StarException> WorldServerThread::update(WorldServerFidelity
 }
 
 std::expected<void, StarException> WorldServerThread::sync() {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto logged = m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", m_worldName);
   if (!logged)
     return std::unexpected(std::move(logged.error()));

@@ -415,7 +415,7 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> TcpPacketSocket::rec
   std::uint64_t const PacketBatchLimit = 131072;
   List<std::shared_ptr<Packet>> packets;
   auto parse = [&]() -> std::expected<void, StarException> {
-    DataStreamExternalBuffer ds(m_inputBuffer);
+    DataStreamExternalBuffer ds{std::span<char const>(m_inputBuffer)};
     std::size_t trimPos = 0;
     while (true) {
       auto atEnd = ds.atEnd();
@@ -462,7 +462,7 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> TcpPacketSocket::rec
       auto position = ds.pos();
       if (!position)
         return std::unexpected(std::move(position.error()));
-      DataStreamExternalBuffer packetStream(ds.ptr() + *position, packetSize);
+      DataStreamExternalBuffer packetStream(std::span<char const>(ds.ptr(), ds.size()).subspan(*position, packetSize));
       packetStream.setStreamCompatibilityVersion(netRules());
       ByteArray uncompressed;
       if (packetCompressed) {
@@ -470,7 +470,7 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> TcpPacketSocket::rec
         if (!decoded)
           return std::unexpected(std::move(decoded.error()));
         uncompressed = std::move(*decoded);
-        packetStream.reset(uncompressed.ptr(), uncompressed.size());
+        packetStream.reset(std::span<char const>(uncompressed.ptr(), uncompressed.size()));
       }
       auto advanced = ds.seek(packetSize, IOSeek::Relative);
       if (!advanced)
@@ -576,6 +576,10 @@ std::expected<bool, StarException> TcpPacketSocket::writeData() {
 }
 
 std::expected<bool, StarException> TcpPacketSocket::readData() {
+  // A local close is terminal for native reads, not a socket error. Buffered
+  // frames remain available to receivePackets(), including after close.
+  if (!m_socket->isOpen())
+    return false;
   bool dataReceived = false;
   auto read = [&]() -> std::expected<void, StarException> {
     char readBuffer[1024];
@@ -766,7 +770,7 @@ std::expected<List<std::shared_ptr<Packet>>, StarException> P2PPacketSocket::rec
         packetBytes = std::move(*decoded);
       }
       m_incomingStats.mix(*type, packetSize, !compressionStreamEnabled());
-      DataStreamExternalBuffer packetStream(packetBytes);
+      DataStreamExternalBuffer packetStream{std::span<char const>(packetBytes)};
       packetStream.setStreamCompatibilityVersion(netRules());
       do {
         auto created = createPacket(*type);

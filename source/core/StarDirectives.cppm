@@ -6,7 +6,6 @@ import star.list;
 import star.format;
 import star.hash;
 import star.data_stream;
-import star.thread;
 import star.image_processing;
 
 namespace Star {
@@ -36,7 +35,7 @@ public:
     List<Entry> entries;
     String string;
     std::size_t hash = 0;
-    mutable Mutex mutex;
+    mutable std::mutex mutex;
 
     bool empty() const;
     Shared();

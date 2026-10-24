@@ -125,6 +125,49 @@ TEST(Thread, ReadersWriterMutex) {
   EXPECT_TRUE(wl.tryLock());
 }
 
+TEST(Thread, ReadersWriterMutexPrefersQueuedWriter) {
+  ReadersWriterMutex mutex;
+  ReadLocker initialReader(mutex);
+  std::latch releaseWriter(1);
+  std::atomic<unsigned> order = 0;
+  std::atomic<unsigned> writerOrder = 0;
+  std::atomic<unsigned> readerOrder = 0;
+  std::thread writer([&] {
+    WriteLocker lock(mutex);
+    writerOrder = ++order;
+    releaseWriter.wait();
+  });
+
+  // A held reader prevents the writer from acquiring the lock. Once another
+  // read attempt fails, the writer is queued and later readers must wait.
+  bool writerQueued = false;
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while ((deadline - std::chrono::steady_clock::now()).count() > 0) {
+    if (!mutex.tryReadLock()) {
+      writerQueued = true;
+      break;
+    }
+    mutex.readUnlock();
+    std::this_thread::yield();
+  }
+  EXPECT_TRUE(writerQueued);
+  std::thread reader([&] {
+    ReadLocker lock(mutex);
+    readerOrder = ++order;
+  });
+  initialReader.unlock();
+
+  deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (writerOrder == 0 && (deadline - std::chrono::steady_clock::now()).count() > 0)
+    std::this_thread::yield();
+  EXPECT_EQ(writerOrder.load(), 1u);
+  EXPECT_EQ(readerOrder.load(), 0u);
+  releaseWriter.count_down();
+  writer.join();
+  reader.join();
+  EXPECT_EQ(readerOrder.load(), 2u);
+}
+
 TEST(Listener, DisconnectWaitsForInvocationAndPreventsLaterTriggers) {
   ListenerGroup group;
   std::latch entered(1);

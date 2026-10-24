@@ -4,7 +4,6 @@ import std;
 import star.format;
 import star.audio;
 import star.string;
-import star.thread;
 import star.list;
 import star.map;
 import star.set;
@@ -75,7 +74,7 @@ private:
 
   explicit AudioInstance(Audio audio);
 
-  mutable Mutex m_mutex;
+  mutable std::mutex m_mutex;
 
   Audio m_audio;
 
@@ -156,17 +155,17 @@ private:
   };
 
   Logger& m_logger;
-  Mutex m_mutex;
+  std::mutex m_mutex;
   unsigned m_sampleRate;
   unsigned m_channels;
 
   RampedValue m_volume;
 
-  Mutex m_queueMutex;
+  std::mutex m_queueMutex;
 
   HashMap<std::shared_ptr<AudioInstance>, AudioState> m_audios;
 
-  Mutex m_effectsMutex;
+  std::mutex m_effectsMutex;
   StringMap<std::shared_ptr<EffectInfo>> m_effects;
 
   List<std::int16_t> m_mixBuffer;

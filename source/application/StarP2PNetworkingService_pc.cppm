@@ -13,7 +13,6 @@ import star.byte_array;
 import star.string;
 import star.list;
 import star.map;
-import star.thread;
 import star.input_event;
 import star.application;
 import star.host_address;
@@ -140,7 +139,7 @@ private:
     [[nodiscard]] std::expected<bool, StarException> sendMessage(ByteArray const& message) override;
     [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> receiveMessage() override;
 
-    Mutex mutex;
+    std::mutex mutex;
     std::optional<StarException> error;
     PcP2PNetworkingService* parent = nullptr;
     CSteamID steamId = CSteamID();
@@ -182,7 +181,7 @@ private:
     [[nodiscard]] std::expected<bool, StarException> sendMessage(ByteArray const& message) override;
     [[nodiscard]] std::expected<std::optional<ByteArray>, StarException> receiveMessage() override;
 
-    Mutex mutex;
+    std::mutex mutex;
     std::optional<StarException> error;
     std::shared_ptr<PcPlatformServicesState> state;
     std::shared_ptr<DiscordCallbackLifetime> lifetime;
@@ -213,7 +212,7 @@ private:
   SteamCallback<PcP2PNetworkingService, P2PSessionRequest_t> m_callbackSessionRequest;
 #endif
 
-  Mutex m_mutex;
+  std::mutex m_mutex;
   JoinLocation m_joinLocation;
   bool m_acceptingP2PConnections = false;
   List<std::unique_ptr<P2PSocket>> m_pendingIncomingConnections;

@@ -23,7 +23,7 @@ using DBException = StarError<DBExceptionTag, IOException>;
 
 class BTreeDatabase {
 public:
-  std::uint32_t const ContentIdentifierStringSize = 16;
+  static constexpr std::uint32_t ContentIdentifierStringSize = 16;
 
   explicit BTreeDatabase(Logger& logger);
   BTreeDatabase(Logger& logger, String const& contentIdentifier, std::size_t keySize);

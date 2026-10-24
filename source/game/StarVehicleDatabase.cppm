@@ -37,7 +37,7 @@ private:
 
   StringMap<std::pair<String, Json>> m_vehicles;
 
-  mutable RecursiveMutex m_luaMutex;
+  mutable std::recursive_mutex m_luaMutex;
   std::shared_ptr<Rebuilder> m_rebuilder;
 };
 

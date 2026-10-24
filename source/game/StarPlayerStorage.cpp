@@ -319,12 +319,14 @@ PlayerStorage::~PlayerStorage() {
 }
 
 std::size_t PlayerStorage::playerCount() const {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   return m_savedPlayersCache.size();
 }
 
 std::optional<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (index < m_savedPlayersCache.size())
     return std::next(m_savedPlayersCache.begin(), index)->first;
   else
@@ -336,7 +338,8 @@ std::expected<std::optional<Uuid>, StarException> PlayerStorage::playerUuidByNam
   if (!cleanMatch)
     return std::unexpected(std::move(cleanMatch.error()));
   std::optional<Uuid> uuid;
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   std::size_t longest = std::numeric_limits<std::size_t>::max();
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
@@ -365,7 +368,8 @@ std::expected<List<Uuid>, StarException> PlayerStorage::playerUuidListByName(Str
   if (!cleanMatch)
     return std::unexpected(std::move(cleanMatch.error()));
   List<Uuid> list;
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;
@@ -388,7 +392,8 @@ std::expected<Json, StarException> PlayerStorage::savePlayer(std::shared_ptr<Pla
   auto entityFactory = m_root.entityFactory();
   if (!entityFactory)
     return std::unexpected(std::move(entityFactory.error()));
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto playerUuid = player->uuid();
   if (!playerUuid)
     return std::unexpected(std::move(playerUuid.error()));
@@ -425,7 +430,8 @@ std::expected<Json, StarException> PlayerStorage::savePlayer(std::shared_ptr<Pla
 }
 
 std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (auto cache = m_savedPlayersCache.ptr(uuid))
     return *cache;
   else
@@ -465,13 +471,15 @@ std::expected<std::shared_ptr<Player>, StarException> PlayerStorage::loadPlayer(
   auto logged = m_root.logger().error("Error loading player file, ignoring! {}", outputException(ExceptionDiagnostic(loaded.error()), false));
   if (!logged)
     return std::unexpected(std::move(logged.error()));
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_savedPlayersCache.remove(uuid);
   return std::shared_ptr<Player>();
 }
 
 std::expected<void, StarException> PlayerStorage::deletePlayer(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!m_savedPlayersCache.contains(uuid))
     return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
   m_savedPlayersCache.remove(uuid);
@@ -511,7 +519,8 @@ std::expected<void, StarException> PlayerStorage::deletePlayer(Uuid const& uuid)
 }
 
 std::expected<WorldChunks, StarException> PlayerStorage::loadShipData(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!m_savedPlayersCache.contains(uuid))
     return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
   auto basename = uuidFileName(uuid);
@@ -537,7 +546,8 @@ std::expected<WorldChunks, StarException> PlayerStorage::loadShipData(Uuid const
 }
 
 std::expected<void, StarException> PlayerStorage::applyShipUpdates(Uuid const& uuid, WorldChunks const& updates) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   if (!m_savedPlayersCache.contains(uuid))
     return std::unexpected(PlayerException(strf("No such stored player with uuid '{}'", uuid.hex())));
   if (updates.empty())
@@ -557,7 +567,8 @@ std::expected<void, StarException> PlayerStorage::moveToFront(Uuid const& uuid) 
 }
 
 std::expected<void, StarException> PlayerStorage::backupCycle(Uuid const& uuid) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto configuration = m_root.configuration();
   if (!configuration)
     return std::unexpected(std::move(configuration.error()));

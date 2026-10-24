@@ -61,12 +61,14 @@ std::expected<std::size_t, StarException> findJsonMatch(Json const& searchable, 
 }
 
 namespace JsonPatching {
-  static const StringMap<std::expected<Json, StarException> (*)(Json const&, Json const&)> functionMap{
+  using Operation = std::expected<Json, StarException> (*)(Json const&, Json const&);
+  using OperationEntry = std::pair<std::string_view, Operation>;
+  static constexpr std::array<OperationEntry, 7> functionMap{{
       {"test", &applyTestOperation}, {"remove", &applyRemoveOperation},
       {"add", &applyAddOperation}, {"replace", &applyReplaceOperation},
       {"move", &applyMoveOperation}, {"copy", &applyCopyOperation},
       {"merge", &applyMergeOperation},
-  };
+  }};
 
   std::expected<Json, StarException> applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {
     auto operation = op.getString("op");
@@ -75,10 +77,10 @@ namespace JsonPatching {
         return std::unexpected(JsonPatchException(strf("Could not apply operation to base. {}", operation.error().what()), false));
       return std::unexpected(std::move(operation.error()));
     }
-    auto function = functionMap.ptr(*operation);
-    if (!function)
+    auto function = std::ranges::find(functionMap, operation->utf8(), &OperationEntry::first);
+    if (function == functionMap.end())
       return std::unexpected(JsonPatchException(strf("Invalid operation: {}", *operation), false));
-    auto applied = (*function)(base, op);
+    auto applied = function->second(base, op);
     if (!applied && applied.error().is<JsonException>())
       return std::unexpected(JsonPatchException(strf("Could not apply operation to base. {}", applied.error().what()), false));
     return applied;

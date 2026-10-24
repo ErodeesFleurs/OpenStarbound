@@ -726,7 +726,8 @@ std::expected<void, StarException> UniverseClient::update(float dt) {
   }
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    std::unique_lock locker(m_messageMutex, std::defer_lock);
+    lockWithDiagnostics(locker);
     messages = std::move(m_universeMessages);
   }
   for (std::size_t i = 0; i != messages.size(); ++i) {
@@ -752,7 +753,8 @@ std::expected<void, StarException> UniverseClient::update(float dt) {
         if (!failed)
           error = error.withContext(strf("Error rejecting failed universe message: {}", failed.error().what()));
       }
-      RecursiveMutexLocker locker(m_messageMutex);
+      std::unique_lock locker(m_messageMutex, std::defer_lock);
+      lockWithDiagnostics(locker);
       messages.erase(messages.begin(), messages.begin() + i + 1);
       messages.appendAll(std::move(m_universeMessages));
       m_universeMessages = std::move(messages);
@@ -1441,7 +1443,8 @@ std::shared_ptr<UniverseClient::ScriptComponent> UniverseClient::scriptContext(S
 }
 
 std::expected<void, StarException> UniverseClient::createCustomWorld(String const& name, Json templateData) {
-  RecursiveMutexLocker locker(m_mutex);
+  std::unique_lock locker(m_mutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   auto directoryResult = File::isDirectory(m_customWorldStorageDirectory);
   if (!directoryResult)
     return std::unexpected(std::move(directoryResult.error()));
@@ -1667,7 +1670,8 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
           return std::unexpected(std::move(operation73.error()));
         auto updates = m_clientContext->newCustomWorldUpdates();
         if (!updates.empty()) {
-          RecursiveMutexLocker locker(m_mutex);
+          std::unique_lock locker(m_mutex, std::defer_lock);
+          lockWithDiagnostics(locker);
           for (auto& p : updates) {
             if (p.second.empty())
               continue;
@@ -1786,7 +1790,8 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
           if (!operation82)
             return std::unexpected(std::move(operation82.error()));
         } else {
-          RecursiveMutexLocker locker(m_mutex);
+          std::unique_lock locker(m_mutex, std::defer_lock);
+          lockWithDiagnostics(locker);
           String filename = File::relativeTo(m_customWorldStorageDirectory, strf("{}.world", request->name));
           auto existsResult = File::exists(filename);
           if (!existsResult)
@@ -1894,7 +1899,8 @@ std::expected<void, StarException> UniverseClient::handlePackets(List<std::share
           m_universeMessagePromises[message->uuid] = std::get<RpcPromise<Json>>(*response);
         }
       } else if (auto message = as<UniverseMessageResponse>(packet)) {
-        RecursiveMutexLocker locker(m_messageMutex);
+        std::unique_lock locker(m_messageMutex, std::defer_lock);
+        lockWithDiagnostics(locker);
         if (!m_universeMessageResponses.contains(message->uuid)) {
           auto operation97 = m_root.logger().warn("UniverseClient: UniverseMessageResponse received for unknown context [{}]!", message->uuid.hex());
           if (!operation97)
@@ -2006,7 +2012,8 @@ std::expected<void, StarException> UniverseClient::reset() {
   if (m_connection)
     m_connection->close();
   m_connection.reset();
-  RecursiveMutexLocker messageLocker(m_messageMutex);
+  std::unique_lock messageLocker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(messageLocker);
   for (auto& message : m_universeMessages) {
     if (auto keeper = std::get_if<RpcPromiseKeeper<Json>>(&message.keeper))
       remember(keeper->fail("Universe disconnected"));
@@ -2025,7 +2032,8 @@ std::expected<void, StarException> UniverseClient::reset() {
 std::expected<void, StarException> UniverseClient::passMessage(Universe::Message&& message) {
   if (!std::holds_alternative<RpcPromiseKeeper<Json>>(message.keeper))
     return std::unexpected(StarException("Universe client message requires a local response keeper"));
-  RecursiveMutexLocker locker(m_messageMutex);
+  std::unique_lock locker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_universeMessages.append(std::move(message));
   return {};
 }
@@ -2048,7 +2056,8 @@ std::expected<RpcPromise<Json>, StarException> UniverseClient::sendUniverseMessa
     return RpcPromise<Json>::createFailed("Server is not new enough");
   auto pair = RpcPromise<Json>::createPair();
   Uuid uuid(m_root.random());
-  RecursiveMutexLocker locker(m_messageMutex);
+  std::unique_lock locker(m_messageMutex, std::defer_lock);
+  lockWithDiagnostics(locker);
   m_universeMessageResponses[uuid] = pair.second;
   locker.unlock();
   auto operation38 = m_connection->pushSingle(std::make_shared<UniverseMessage>(connectionId, message, args, uuid));

@@ -10,11 +10,11 @@ using namespace Star;
 
 TEST(WorkerPoolTest, All) {
   int counter = 0;
-  Mutex counterMutex;
+  std::mutex counterMutex;
 
   auto incCounter = [&counter, &counterMutex]() -> std::expected<void, StarException> {
     Thread::sleep(100);
-    MutexLocker locker(counterMutex);
+    std::lock_guard locker(counterMutex);
     counter += 1;
     return {};
   };
