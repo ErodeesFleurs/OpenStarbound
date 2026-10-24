@@ -42,7 +42,7 @@ template <typename T1, typename T2>
 struct LuaConverter<std::pair<T1, T2>> {
   template <typename Pair>
   [[nodiscard]] static std::expected<LuaValue, StarException> from(LuaEngine& engine, Pair&& v) {
-    auto created = engine.createTable();
+    auto created = engine.createTable(2, 0);
     if (!created)
       return std::unexpected(std::move(created.error()));
     auto t = std::move(*created);

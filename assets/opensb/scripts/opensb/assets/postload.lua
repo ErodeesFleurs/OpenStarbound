@@ -1,3 +1,15 @@
+-- Lua 5.5 makes for control variables read-only. Keep vanilla's fractional
+-- scan bounds and floor each sample into a body-local instead.
+local flyingPath = "/scripts/actions/flying.lua"
+local flyingScript, flyingFixes = assets.bytes(flyingPath):gsub(
+  "(for y=groundLine%[1%]%[2%], groundPoint%[2%], %-1 do%s+)y = math%.floor%(y%)",
+  "%1local y = math.floor(y)",
+  1
+)
+if flyingFixes > 0 then
+  assets.add(flyingPath, flyingScript)
+end
+
 -- Revert cursor frames if a mod replaced cursors.png with a SD version again
 -- Otherwise, scale down our HD cursors
 if assets.image("/cursors/cursors.png"):size()[1] == 64 then

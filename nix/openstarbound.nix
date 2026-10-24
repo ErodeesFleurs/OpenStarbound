@@ -2,6 +2,7 @@
   lib,
   stdenv,
   stdenvNoCC,
+  fetchurl,
   callPackage,
   cmake,
   ninja,
@@ -55,6 +56,32 @@ let
   version = "0.1.15.1";
   sdkExtension = stdenv.hostPlatform.extensions.sharedLibrary;
   opusCmake = callPackage ./opus-cmake-config.nix { };
+  luaMetadata = builtins.fromJSON (builtins.readFile ../cmake/dependencies/lua.json);
+  # Isolate the patch's store identity from unrelated edits to the flake source.
+  luaPatch = builtins.path {
+    path = ../cmake/patches/lua-openstarbound.patch;
+    name = "openstarbound-lua.patch";
+  };
+  # Fetch and patch sources only: the project's compiler builds the Lua target,
+  # including sanitizer instrumentation, rather than linking a separate package.
+  luaSource = stdenvNoCC.mkDerivation {
+    pname = "openstarbound-lua-source";
+    version = luaMetadata.version;
+    src = fetchurl {
+      inherit (luaMetadata) url sha256;
+    };
+    patches = [ luaPatch ];
+    strictDeps = true;
+    dontConfigure = true;
+    dontBuild = true;
+    dontFixup = true;
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out"
+      cp -R . "$out/"
+      runHook postInstall
+    '';
+  };
   # SDL 3.4.14's ALSA backend omits two matching frees on audio shutdown.
   # Keep the normal ALSA driver; patch its ownership rather than hiding leaks
   # by selecting the dummy audio driver.
@@ -239,6 +266,7 @@ stdenv.mkDerivation {
   '';
   cmakeFlags = [
     (lib.cmakeFeature "STAR_SOURCE_IDENTIFIER" sourceIdentifier)
+    (lib.cmakeFeature "FETCHCONTENT_SOURCE_DIR_STAR_LUA" "${luaSource}")
     (lib.cmakeBool "STAR_BUILD_GUI" guiSupport)
     # Include maintenance utilities (map_grep and tileset tools) in package builds.
     (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
@@ -328,7 +356,7 @@ stdenv.mkDerivation {
   # needed (nor may the ordinary shared Qt/Wayland scope enter the closure).
 
   passthru = {
-    inherit imgui dependencies runtimeLibraries;
+    inherit imgui luaSource dependencies runtimeLibraries;
     inherit
       guiSupport
       steamSupport

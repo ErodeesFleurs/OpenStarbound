@@ -13,8 +13,6 @@ extern "C" {
 #pragma clang diagnostic ignored "-Wformat-security"
 #endif
 
-// THIS IS FOR LUA 5.3 although you can make a few changes for other versions
-
 #define IMGUI_FUNCTION_DRAW_LIST(name) \
 static int impl_draw_list_##name(lua_State *L) { \
   int max_args = lua_gettop(L); \
@@ -118,7 +116,7 @@ static int impl_##name(lua_State *L) { \
 #define OPTIONAL_UINT_ARG(name, otherwise)\
   unsigned int name = otherwise; \
   if (arg <= max_args) { \
-    name = (unsigned int)lua_tounsigned(L, arg++); \
+    name = (unsigned int)lua_tointeger(L, arg++); \
   }
 
 #define UINT_ARG(name) \

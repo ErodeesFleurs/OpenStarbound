@@ -14,7 +14,7 @@ These stub files provide:
 
 ### In this repository
 
-Open the repository root in an editor using Lua Language Server (LuaLS), including Zed or VS Code's [Lua extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua). The root `.luarc.json` configures Lua 5.3 and Starbound's `/path/to/script.lua` asset imports. Stubs are indexed automatically; do not execute or `require` them.
+Open the repository root in an editor using a Lua Language Server (LuaLS) version supporting Lua 5.5, including Zed or VS Code's [Lua extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua). The root `.luarc.json` configures Lua 5.5, OpenStarbound's nonstandard operators and Starbound's `/path/to/script.lua` asset imports. Stubs are indexed automatically; do not execute or `require` them.
 
 Only known engine entrypoints and JSON-configured UI callbacks are listed as diagnostic globals. Unused callback parameters are explicitly named with an `_` prefix and excluded from unused-local reports. Undefined globals, missing fields and argument type checks remain enabled.
 
@@ -24,7 +24,7 @@ Add the entire stub directory, including `openstarbound/`, to that workspace's `
 
 ```json
 {
-  "runtime.version": "Lua 5.3",
+  "runtime.version": "Lua 5.5",
   "workspace.library": ["/path/to/OpenStarbound/doc/lua/stubs"]
 }
 ```

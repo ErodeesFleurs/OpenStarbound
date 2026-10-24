@@ -446,7 +446,7 @@ namespace LuaBindings {
     if (!callScriptArgsOptionalResult)
       return std::unexpected(std::move(callScriptArgsOptionalResult.error()));
     auto callScriptArgsOptional = std::move(*callScriptArgsOptionalResult);
-    auto callScriptArgs = callScriptArgsOptional.value_or(List<LuaValue>{});
+    auto callScriptArgs = std::move(callScriptArgsOptional).value_or(List<LuaValue>{});
     auto callScriptResultOptionalResult = options.get<std::optional<LuaValue>>("callScriptResult");
     if (!callScriptResultOptionalResult)
       return std::unexpected(std::move(callScriptResultOptionalResult.error()));
@@ -498,7 +498,7 @@ namespace LuaBindings {
 
     auto geometry = world->geometry();
 
-    auto innerSelector = [=](std::shared_ptr<EntityT> const& entity) -> std::expected<bool, StarException> {
+    auto innerSelector = [=, &callScriptArgs](std::shared_ptr<EntityT> const& entity) -> std::expected<bool, StarException> {
       if (selector) {
         auto selectedResult = selector(entity);
         if (!selectedResult)
@@ -633,7 +633,9 @@ namespace LuaBindings {
       }
     }
 
-    auto table = engine.createTable();
+    if (entities.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+      return std::unexpected(LuaException("Too many entries for a Lua entity query table"));
+    auto table = engine.createTable(static_cast<int>(entities.size()), 0);
     if (!table)
       return std::unexpected(std::move(table.error()));
     LuaTable entityIds = std::move(*table);

@@ -338,7 +338,7 @@ TEST(LuaTest, UserDataTest) {
   ASSERT_TRUE((luaContext.load(
       R"SCRIPT(
         function doit(ref)
-          global = ref
+          heldValue = ref
         end
       )SCRIPT")));
 
@@ -350,7 +350,7 @@ TEST(LuaTest, UserDataTest) {
   auto userdata2 = std::move(*userdata2Result);
 
   ASSERT_TRUE((luaContext.invokePath("doit", userdata1)));
-  auto userdata3Result = luaContext.get<LuaUserData>("global");
+  auto userdata3Result = luaContext.get<LuaUserData>("heldValue");
   ASSERT_TRUE(userdata3Result);
   auto userdata3 = std::move(*userdata3Result);
 
@@ -378,7 +378,7 @@ TEST(LuaTest, UserDataTest) {
   EXPECT_EQ((*data3)->field, 3);
 
   ASSERT_TRUE((luaContext.invokePath("doit", TestUserData1())));
-  auto userdata4Result = luaContext.get("global");
+  auto userdata4Result = luaContext.get("heldValue");
   ASSERT_TRUE(userdata4Result);
   auto userdata4 = std::move(*userdata4Result);
   auto convertedUserdata = luaEngine->luaMaybeTo<TestUserData1>(userdata4);
@@ -386,7 +386,7 @@ TEST(LuaTest, UserDataTest) {
   EXPECT_TRUE(*convertedUserdata);
 
   ASSERT_TRUE((luaContext.invokePath("doit", "notuserdata")));
-  auto notuserdataResult = luaContext.get("global");
+  auto notuserdataResult = luaContext.get("heldValue");
   ASSERT_TRUE(notuserdataResult);
   auto notuserdata = std::move(*notuserdataResult);
   auto rejectedUserdata = luaEngine->luaMaybeTo<TestUserData1>(notuserdata);
@@ -685,8 +685,8 @@ TEST(LuaTest, Scope2) {
   auto context1 = std::move(*context1Result);
   ASSERT_TRUE((context1.load(R"SCRIPT(
       function init1()
-        global = {}
-        global.val = 10
+        scopeState = {}
+        scopeState.val = 10
       end
     )SCRIPT")));
 
@@ -695,8 +695,8 @@ TEST(LuaTest, Scope2) {
   auto context2 = std::move(*context2Result);
   ASSERT_TRUE((context2.load(R"SCRIPT(
       function init2()
-        global = {}
-        global.val = 20
+        scopeState = {}
+        scopeState.val = 20
       end
     )SCRIPT")));
 
@@ -706,14 +706,14 @@ TEST(LuaTest, Scope2) {
   EXPECT_EQ(context2.contains("init1"), false);
 
   ASSERT_TRUE((context1.invokePath("init1")));
-  EXPECT_EQ(context1.getPath<int>("global.val"), 10);
+  EXPECT_EQ(context1.getPath<int>("scopeState.val"), 10);
 
-  expectLuaNil(context2.getPath("global"));
+  expectLuaNil(context2.getPath("scopeState"));
 
   ASSERT_TRUE((context2.invokePath("init2")));
-  EXPECT_EQ(context2.getPath<int>("global.val"), 20);
+  EXPECT_EQ(context2.getPath<int>("scopeState.val"), 20);
 
-  EXPECT_EQ(context1.getPath<int>("global.val"), 10);
+  EXPECT_EQ(context1.getPath<int>("scopeState.val"), 10);
 }
 
 TEST(LuaTest, MetaTable) {
@@ -1189,7 +1189,56 @@ TEST(LuaTest, GarbageCollection) {
   EXPECT_EQ(ptr.use_count(), 1);
 }
 
-TEST(LuaTest, GarbageCollectionErrorPreservesContextAndReleasesUserData) {
+TEST(LuaTest, AutomaticCollectionCanBeStoppedAndRestarted) {
+  auto engine = LuaEngine::create(false);
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  (*engine)->setAutoGarbageCollection(false);
+  EXPECT_EQ(context->eval<bool>("collectgarbage('isrunning')"), false);
+  (*engine)->setAutoGarbageCollection(true);
+  EXPECT_EQ(context->eval<bool>("collectgarbage('isrunning')"), true);
+  (*engine)->setAutoGarbageCollection(false);
+  ASSERT_TRUE((*engine)->collectGarbage(1));
+  EXPECT_EQ(context->eval<bool>("collectgarbage('isrunning')"), false);
+}
+
+TEST(LuaTest, OrdinaryCallsReleaseExpiredReferencesWithoutHostCollection) {
+  auto engine = LuaEngine::create(false);
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    observed = setmetatable({}, {__mode = "v"})
+    function remember(index)
+      local object = {index = index}
+      observed[index] = object
+      return object
+    end
+    function alive()
+      collectgarbage("collect")
+      local count = 0
+      for _ in pairs(observed) do count = count + 1 end
+      return count
+    end
+  )SCRIPT"));
+  std::optional<LuaTable> retained;
+  {
+    auto first = context->invokePath<LuaTable>("remember", 1);
+    ASSERT_TRUE(first);
+    retained = std::move(*first);
+  }
+  for (int i = 2; i <= 4096; ++i) {
+    auto temporary = context->invokePath<LuaTable>("remember", i);
+    ASSERT_TRUE(temporary);
+  }
+  EXPECT_EQ(context->invokePath<int>("alive"), 1);
+  EXPECT_EQ(retained->get<int>("index"), 1);
+  retained.reset();
+  EXPECT_EQ(context->invokePath<int>("alive"), 0);
+}
+
+TEST(LuaTest, FinalizerWarningPreservesContextAndReleasesUserData) {
   auto engineResult = LuaEngine::create();
   ASSERT_TRUE(engineResult);
   auto& engine = *engineResult;
@@ -1206,10 +1255,12 @@ TEST(LuaTest, GarbageCollectionErrorPreservesContextAndReleasesUserData) {
     ASSERT_TRUE(context.setPath("trackedResource", *userdata));
   }
   ASSERT_TRUE(context.load(R"SCRIPT(
+    finalized = false
     do
       local doomed = {resource = trackedResource}
       setmetatable(doomed, {
         __gc = function(object)
+          finalized = true
           object.resource = nil
           error("lua-gc-finalizer-recovery-marker")
         end
@@ -1220,15 +1271,11 @@ TEST(LuaTest, GarbageCollectionErrorPreservesContextAndReleasesUserData) {
   resource.reset();
   EXPECT_FALSE(lifetime.expired());
 
-  auto collection = engine->collectGarbage();
-  ASSERT_FALSE(collection);
-  EXPECT_TRUE(collection.error().is<LuaException>());
-  EXPECT_NE(std::string_view(collection.error().what()).find("lua-gc-finalizer-recovery-marker"),
-      std::string_view::npos);
+  ASSERT_TRUE(engine->collectGarbage());
+  EXPECT_EQ(context.get<bool>("finalized"), true);
   EXPECT_EQ(context.eval<int>("6 * 7"), 42);
 
-  // The failed finalizer can leave other pending finalizers for the next
-  // collection; a further cycle reclaims objects retained during finalization.
+  // Finalized userdata can retain objects until a subsequent GC cycle.
   ASSERT_TRUE(engine->collectGarbage());
   ASSERT_TRUE(engine->collectGarbage());
   EXPECT_TRUE(lifetime.expired());

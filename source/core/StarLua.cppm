@@ -134,6 +134,7 @@ template <typename... Types>
 LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... args);
 
 namespace LuaDetail {
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> tableToJsonContainer(LuaTable const& table);
   struct LuaRegistryReference {
     LuaRegistryReference(LuaEnginePtr engine, int handleIndex);
     LuaRegistryReference(LuaRegistryReference const&) = delete;
@@ -649,7 +650,8 @@ public:
   template <typename T>
   [[nodiscard]] std::expected<void, StarException> setGlobal(char const* key, T value);
 
-  // Perform either a full or incremental garbage collection.
+  // Full collection, or incremental work measured in KiB. Expired native
+  // references are also released at ordinary call/resume boundaries.
   [[nodiscard]] std::expected<void, StarException> collectGarbage(std::optional<unsigned> steps = {});
 
   // Stop / start automatic garbage collection
@@ -676,6 +678,7 @@ private:
   friend class LuaUserData;
   friend class LuaContext;
   friend class LuaNullEnforcer;
+  friend std::expected<std::optional<Json>, StarException> LuaDetail::tableToJsonContainer(LuaTable const& table);
 
   LuaEngine() = default;
 
@@ -746,10 +749,13 @@ private:
   [[nodiscard]] std::expected<int, StarException> popHandle(lua_State* state);
   void pushHandle(lua_State* state, int handleIndex);
   [[nodiscard]] std::expected<int, StarException> copyHandle(int handleIndex);
+  // Unref is allocation-free after the registry freelist has been initialized.
+  void releaseHandles(lua_State* state);
   void destroyHandle(int handleIndex);
 
   [[nodiscard]] std::expected<void, StarException> pushLuaValue(lua_State* state, LuaValue const& luaValue);
   [[nodiscard]] std::expected<LuaValue, StarException> popLuaValue(lua_State* state);
+  [[nodiscard]] std::expected<std::optional<Json>, StarException> stackToJson(int index);
   // Allocates under a protected Lua call, leaving uninitialized storage on top.
   [[nodiscard]] std::expected<void*, StarException> allocateUserData(std::size_t size);
 
@@ -794,6 +800,7 @@ private:
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
   int m_nullTerminated;
+  std::string m_warningMessage;
   HashMap<std::tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> m_profileEntries;
   lua_Debug m_debugInfo;
 };
@@ -1560,10 +1567,8 @@ namespace LuaDetail {
   // of ipairs, stop at the first nil entry.
   [[nodiscard]] std::expected<LuaTable, StarException> jsonContainerToTable(LuaEngine& engine, Json const& container);
 
-  // popJsonContainer must be called with a lua table on the top of the stack.
-  // Uses the table contents, as well as any hint entries if the table was
-  // created originally from a Json, to determine whether a JsonArray or
-  // JsonObject is more appropriate.
+  // Converts the rooted table and its JSON type/null hints using borrowed
+  // stack values, without promoting its entries to persistent native handles.
   [[nodiscard]] std::expected<std::optional<Json>, StarException> tableToJsonContainer(LuaTable const& t);
 
   // Special lua functions to operate on our custom jarray / jobject container
@@ -2219,7 +2224,10 @@ template <typename... Args>
   auto recursion = incrementRecursionLevel();
   if (!recursion)
     return std::unexpected(std::move(recursion.error()));
-  int res = lua_resume(threadState, nullptr, static_cast<int>(*argSize));
+  releaseHandles(threadState);
+  int returnValues = 0;
+  int res = lua_resume(threadState, m_state, static_cast<int>(*argSize), &returnValues);
+  releaseHandles(threadState);
   decrementRecursionLevel();
   // Once resumed, its prior stack no longer belongs to the suspended frame.
   restoreThread.top = 0;
@@ -2230,7 +2238,6 @@ template <typename... Args>
       return std::unexpected(std::move(status.error()));
   }
 
-  int returnValues = lua_gettop(threadState);
   if (returnValues == 0) {
     return std::optional<LuaDetail::LuaFunctionReturn>(std::in_place);
   } else if (returnValues == 1) {

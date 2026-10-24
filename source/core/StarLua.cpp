@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <lua.hpp>
 import std;
 import star.lua;
@@ -82,6 +83,18 @@ void pushCallbackError(lua_State* state, StarException const& error, void* instr
     // payload. Both must reach lua_error, after diagnostic ownership ends.
     (void)lua_pcall(state, 1, 1, 0);
   }
+}
+
+std::expected<void, StarException> validateNativeLuaValue(lua_State* state, int index) {
+  int type = lua_type(state, index);
+  if (type == LUA_TLIGHTUSERDATA)
+    return std::unexpected(LuaException("Unsupported type in popLuaValue"));
+  if (type == LUA_TUSERDATA) {
+    if (!lua_getmetatable(state, index))
+      return std::unexpected(LuaException("Userdata in popLuaValue missing metatable"));
+    lua_pop(state, 1);
+  }
+  return {};
 }
 }
 
@@ -349,7 +362,7 @@ std::expected<std::optional<JsonArray>, StarException> LuaConverter<JsonArray>::
 std::expected<LuaEnginePtr, StarException> LuaEngine::create(bool safe) {
   LuaEnginePtr self(new LuaEngine);
 
-  self->m_state = lua_newstate(allocate, nullptr);
+  self->m_state = lua_newstate(allocate, nullptr, luaL_makeseed(nullptr));
 
   self->m_scriptDefaultEnvRegistryId = LUA_NOREF;
   self->m_wrappedFunctionMetatableRegistryId = LUA_NOREF;
@@ -368,6 +381,14 @@ std::expected<LuaEnginePtr, StarException> LuaEngine::create(bool safe) {
 
   lua_checkstack(self->m_state, 5);
   *reinterpret_cast<LuaEngine**>(lua_getextraspace(self->m_state)) = self.get();
+  lua_setwarnf(self->m_state, [](void* userdata, char const* message, int continued) {
+    auto self = static_cast<LuaEngine*>(userdata);
+    self->m_warningMessage += message;
+    if (!continued) {
+      std::fprintf(stderr, "Lua warning: %s\n", self->m_warningMessage.c_str());
+      self->m_warningMessage.clear();
+    }
+  }, self.get());
   auto initialize = [](lua_State* state) {
     auto self = luaEnginePtr(state);
     bool safe = lua_toboolean(state, 1);
@@ -511,6 +532,10 @@ std::expected<LuaEnginePtr, StarException> LuaEngine::create(bool safe) {
   LuaDetail::shallowCopy(self->m_state, -2, -1);
   self->m_scriptDefaultEnvRegistryId = luaL_ref(self->m_state, LUA_REGISTRYINDEX);
   lua_pop(self->m_state, 1);
+  // Use Lua's own freelist layout rather than a version-specific registry slot.
+  lua_pushboolean(state, 0);
+  int temporary = luaL_ref(state, LUA_REGISTRYINDEX);
+  luaL_unref(state, LUA_REGISTRYINDEX, temporary);
     return 0;
   };
   lua_pushcfunction(self->m_state, initialize);
@@ -731,7 +756,7 @@ std::expected<void*, StarException> LuaEngine::allocateUserData(std::size_t size
     return std::unexpected(LuaException("Exhausted the Lua stack while allocating userdata"));
   lua_pushcfunction(m_state, [](lua_State* state) {
     auto size = static_cast<std::size_t*>(lua_touserdata(state, 1));
-    lua_newuserdata(state, *size);
+    lua_newuserdatauv(state, *size, 0);
     return 1;
   });
   lua_pushlightuserdata(m_state, &size);
@@ -811,62 +836,47 @@ std::expected<LuaContext, StarException> LuaEngine::createContext() {
   return context;
 }
 
+void LuaEngine::releaseHandles(lua_State* state) {
+  if (m_handleFree.empty() || !lua_checkstack(state, 2))
+    return;
+  // Existing slots are overwritten without allocating or running finalizers.
+  // Retain the queue capacity instead of allocating another batch next time.
+  for (int handle : m_handleFree)
+    luaL_unref(state, LUA_REGISTRYINDEX, handle);
+  m_handleFree.clear();
+}
+
 std::expected<void, StarException> LuaEngine::collectGarbage(std::optional<unsigned> steps) {
   LuaStackRestore stack(m_state);
   if (!lua_checkstack(m_state, 4))
     return std::unexpected(LuaException("Exhausted the Lua stack while collecting garbage"));
-  auto handles = take(m_handleFree);
   struct Input {
-    int const* handles;
-    std::size_t count;
-    std::size_t processed;
-    bool step;
-    int amount;
-  };
-  Input input{handles.ptr(), handles.size(), 0, steps.has_value(), steps ? (int)*steps : 0};
-  bool running = lua_gc(m_state, LUA_GCISRUNNING, 0);
+    bool incremental;
+    std::size_t bytes;
+  } input{steps.has_value(), steps ? std::size_t(*steps) * 1024 : 0};
+  bool running = lua_gc(m_state, LUA_GCISRUNNING);
   lua_pushcfunction(m_state, [](lua_State* state) {
     auto input = static_cast<Input*>(lua_touserdata(state, 1));
-    // Establish the freelist slot before releasing anything. Registry writes
-    // do not run ordinary finalizers, but inserting a missing slot can fail
-    // allocation and leave through Lua's memory-error exit.
-    if (input->count != 0) {
-      lua_rawgeti(state, LUA_REGISTRYINDEX, 0);
-      bool initialize = lua_isnil(state, -1);
-      lua_pop(state, 1);
-      if (initialize) {
-        lua_pushinteger(state, 0);
-        lua_rawseti(state, LUA_REGISTRYINDEX, 0);
-      }
-    }
-    // Both the live reference slots and freelist slot now exist: each unref
-    // completes without allocation, so progress commits after the whole call.
-    while (input->processed < input->count) {
-      luaL_unref(state, LUA_REGISTRYINDEX, input->handles[input->processed]);
-      ++input->processed;
-    }
-    lua_gc(state, input->step ? LUA_GCSTEP : LUA_GCCOLLECT, input->amount);
+    if (input->incremental)
+      lua_gc(state, LUA_GCSTEP, input->bytes);
+    else
+      lua_gc(state, LUA_GCCOLLECT);
     return 0;
   });
   lua_pushlightuserdata(m_state, &input);
   int status = pcallWithTraceback(m_state, 1, 0);
-  // Finalizers can queue new releases while the owned batch is being handled.
-  // Retain those entries and restore only this batch's unprocessed suffix.
-  for (std::size_t i = input.processed; i < handles.size(); ++i)
-    m_handleFree.append(handles[i]);
-  // An errored incremental collection bypasses Lua's own running-state restore.
-  if (bool(lua_gc(m_state, LUA_GCISRUNNING, 0)) != running)
-    lua_gc(m_state, running ? LUA_GCRESTART : LUA_GCSTOP, 0);
+  if (bool(lua_gc(m_state, LUA_GCISRUNNING)) != running)
+    lua_gc(m_state, running ? LUA_GCRESTART : LUA_GCSTOP);
   return handleError(m_state, status);
 }
 
 void LuaEngine::setAutoGarbageCollection(bool autoGarbageColleciton) {
-  lua_gc(m_state, LUA_GCSTOP, autoGarbageColleciton ? 1 : 0);
+  lua_gc(m_state, autoGarbageColleciton ? LUA_GCRESTART : LUA_GCSTOP);
 }
 
 void LuaEngine::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
-  lua_gc(m_state, LUA_GCSETPAUSE, std::round(pause * 100));
-  lua_gc(m_state, LUA_GCSETSTEPMUL, std::round(stepMultiplier * 100));
+  lua_gc(m_state, LUA_GCPARAM, LUA_GCPPAUSE, static_cast<int>(std::round(pause * 100)));
+  lua_gc(m_state, LUA_GCPARAM, LUA_GCPSTEPMUL, static_cast<int>(std::round(stepMultiplier * 100)));
 }
 
 std::size_t LuaEngine::memoryUsage() const {
@@ -1012,11 +1022,13 @@ std::expected<void, StarException> LuaEngine::handleError(lua_State* state, int 
 }
 
 int LuaEngine::pcallWithTraceback(lua_State* state, int nargs, int nresults) {
+  releaseHandles(state);
   int msghPosition = lua_gettop(state) - nargs;
   lua_rawgeti(state, LUA_REGISTRYINDEX, m_pcallTracebackMessageHandlerRegistryId);
   lua_insert(state, msghPosition);
   int ret = lua_pcall(state, nargs, nresults, msghPosition);
   lua_remove(state, msghPosition);
+  releaseHandles(state);
   return ret;
 }
 
@@ -1039,9 +1051,9 @@ int LuaEngine::coresumeWithTraceback(lua_State* state) {
   }
 
   lua_xmove(state, co, args);
-  int status = lua_resume(co, state, args);
+  int res = 0;
+  int status = lua_resume(co, state, args, &res);
   if (status == LUA_OK || status == LUA_YIELD) {
-    int res = lua_gettop(co);
     lua_checkstack(state, res + 1);
     lua_pushboolean(state, 1);
     lua_xmove(co, state, res);
@@ -1290,7 +1302,7 @@ std::expected<void, StarException> LuaEngine::setContextRequire(int handleIndex,
   Input input{&requireFunction, m_requireFunctionMetatableRegistryId, invokeRequire};
   lua_pushcfunction(m_state, [](lua_State* state) {
     auto input = static_cast<Input*>(lua_touserdata(state, 2));
-    auto function = (LuaContext::RequireFunction*)lua_newuserdata(state, sizeof(LuaContext::RequireFunction));
+    auto function = (LuaContext::RequireFunction*)lua_newuserdatauv(state, sizeof(LuaContext::RequireFunction), 0);
     new (function) LuaContext::RequireFunction(std::move(*input->function));
     lua_rawgeti(state, LUA_REGISTRYINDEX, input->metatable);
     lua_setmetatable(state, -2);
@@ -1538,7 +1550,7 @@ std::expected<LuaFunction, StarException> LuaEngine::createWrappedFunction(LuaDe
   Input input{&function, m_wrappedFunctionMetatableRegistryId, invokeFunction};
   lua_pushcfunction(m_state, [](lua_State* state) {
     auto input = static_cast<Input*>(lua_touserdata(state, 1));
-    auto function = (LuaDetail::LuaWrappedFunction*)lua_newuserdata(state, sizeof(LuaDetail::LuaWrappedFunction));
+    auto function = (LuaDetail::LuaWrappedFunction*)lua_newuserdatauv(state, sizeof(LuaDetail::LuaWrappedFunction), 0);
     new (function) LuaDetail::LuaWrappedFunction(std::move(*input->function));
     lua_rawgeti(state, LUA_REGISTRYINDEX, input->metatable);
     lua_setmetatable(state, -2);
@@ -1747,21 +1759,23 @@ void LuaDetail::shallowCopy(lua_State* state, int sourceIndex, int targetIndex) 
 }
 
 std::expected<LuaTable, StarException> LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type) {
-  auto newIndexMetaMethod = [](LuaTable const& table, LuaValue const& key, LuaValue const& value) -> std::expected<void, StarException> {
-    auto mt = table.getMetatable();
-    if (!mt)
-      return std::unexpected(std::move(mt.error()));
-    if (!*mt)
-      return std::unexpected(LuaException("JSON table missing metatable"));
-    auto nils = (*mt)->rawGet<LuaTable>("__nils");
-    if (!nils)
-      return std::unexpected(std::move(nils.error()));
-    auto tracked = value == LuaNil ? nils->rawSet(key, 0) : nils->rawSet(key, LuaNil);
-    if (!tracked)
-      return std::unexpected(std::move(tracked.error()));
-    return table.rawSet(key, value);
+  auto newIndexMetaMethod = [](lua_State* state) {
+    if (!lua_getmetatable(state, 1))
+      return luaL_error(state, "JSON table missing metatable");
+    lua_getfield(state, -1, "__nils");
+    if (!lua_istable(state, -1))
+      return luaL_error(state, "JSON table missing null tracking table");
+    lua_pushvalue(state, 2);
+    if (lua_isnil(state, 3))
+      lua_pushinteger(state, 0);
+    else
+      lua_pushnil(state);
+    lua_rawset(state, -3);
+    lua_settop(state, 3);
+    lua_rawset(state, 1);
+    return 0;
   };
-  auto mt = engine.createTable(0, 0);
+  auto mt = engine.createTable(0, 3);
   if (!mt)
     return std::unexpected(std::move(mt.error()));
   auto nils = engine.createTable(0, 0);
@@ -1770,7 +1784,7 @@ std::expected<LuaTable, StarException> LuaDetail::insertJsonMetatable(LuaEngine&
   auto nilTable = mt->rawSet("__nils", *nils);
   if (!nilTable)
     return std::unexpected(std::move(nilTable.error()));
-  auto function = engine.createFunction(newIndexMetaMethod);
+  auto function = engine.createRawFunction(newIndexMetaMethod);
   if (!function)
     return std::unexpected(std::move(function.error()));
   auto newIndex = mt->rawSet("__newindex", std::move(*function));
@@ -1788,7 +1802,13 @@ std::expected<LuaTable, StarException> LuaDetail::insertJsonMetatable(LuaEngine&
 std::expected<LuaTable, StarException> LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& container) {
   if (!container.isType(Json::Type::Array) && !container.isType(Json::Type::Object))
     return std::unexpected(LuaException("jsonContainerToTable called on improper json type"));
-  auto table = engine.createTable(0, 0);
+  auto size = container.size();
+  if (!size)
+    return std::unexpected(std::move(size.error()));
+  if (*size > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+    return std::unexpected(LuaException("Too many entries for a Lua JSON container"));
+  bool array = container.isType(Json::Type::Array);
+  auto table = engine.createTable(array ? static_cast<int>(*size) : 0, array ? 0 : static_cast<int>(*size));
   if (!table)
     return std::unexpected(std::move(table.error()));
   auto nils = insertJsonMetatable(engine, *table, container.type());
@@ -1818,84 +1838,174 @@ std::expected<LuaTable, StarException> LuaDetail::jsonContainerToTable(LuaEngine
 }
 
 std::expected<std::optional<Json>, StarException> LuaDetail::tableToJsonContainer(LuaTable const& table) {
-  JsonObject stringEntries;
-  Map<unsigned, Json> intEntries;
-  int typeHint = 0;
-  auto mt = table.getMetatable();
-  if (!mt)
-    return std::unexpected(std::move(mt.error()));
-  if (*mt) {
-    auto th = (*mt)->get<std::optional<int>>("__typehint");
-    if (!th)
-      return std::unexpected(std::move(th.error()));
-    if (*th)
-      typeHint = **th;
-    auto nils = (*mt)->get<std::optional<LuaTable>>("__nils");
-    if (!nils)
-      return std::unexpected(std::move(nils.error()));
-    if (*nils) {
-      bool failedConversion = false;
-      auto iterated = (**nils).iterate([&](LuaValue const& key, LuaValue const&) -> std::expected<bool, StarException> {
-        if (auto i = asInteger(key)) {
-          intEntries[*i] = Json();
-        } else {
-          auto str = table.engine().luaMaybeTo<String>(key);
-          if (!str)
-            return std::unexpected(std::move(str.error()));
-          if (!*str) {
-            failedConversion = true;
-            return false;
-          }
-          stringEntries[std::move(**str)] = Json();
-        }
-        return true;
-      });
-      if (!iterated)
-        return std::unexpected(std::move(iterated.error()));
-      if (failedConversion)
-        return std::optional<Json>();
+  auto& engine = table.engine();
+  LuaStackRestore restore(engine.m_state);
+  if (!lua_checkstack(engine.m_state, 1))
+    return std::unexpected(LuaException("Exhausted the Lua stack while reading JSON"));
+  engine.pushHandle(engine.m_state, table.handleIndex());
+  return engine.stackToJson(-1);
+}
+
+std::expected<std::optional<Json>, StarException> LuaEngine::stackToJson(int index) {
+  LuaStackRestore restore(m_state);
+  index = lua_absindex(m_state, index);
+  switch (lua_type(m_state, index)) {
+    case LUA_TNIL:
+      return Json();
+    case LUA_TBOOLEAN:
+      return Json(lua_toboolean(m_state, index) != 0);
+    case LUA_TNUMBER:
+      if (lua_isinteger(m_state, index))
+        return Json(lua_tointeger(m_state, index));
+      return Json(lua_tonumber(m_state, index));
+    case LUA_TSTRING: {
+      std::size_t size;
+      char const* data = lua_tolstring(m_state, index, &size);
+      if (m_nullTerminated > 0)
+        size = std::strlen(data);
+      return Json(String(data, size));
     }
+    case LUA_TTABLE:
+      break;
+    default:
+      return std::optional<Json>();
   }
-  bool failedConversion = false;
-  auto iterated = table.iterate([&](LuaValue key, LuaValue value) -> std::expected<bool, StarException> {
-    auto jsonValue = table.engine().luaMaybeTo<Json>(value);
-    if (!jsonValue)
-      return std::unexpected(std::move(jsonValue.error()));
-    if (!*jsonValue) {
-      failedConversion = true;
-      return false;
-    }
-    if (auto i = asInteger(key)) {
-      intEntries[*i] = std::move(**jsonValue);
+  if (!lua_checkstack(m_state, 8))
+    return std::unexpected(LuaException("Exhausted the Lua stack while reading JSON"));
+
+  // Only the metadata lookup can invoke user metamethods. Keep it protected;
+  // all C++ JSON ownership remains outside Lua's longjmp boundary.
+  lua_pushcfunction(m_state, [](lua_State* state) {
+    if (!lua_getmetatable(state, 1)) {
+      lua_pushnil(state);
+      lua_pushnil(state);
     } else {
-      auto stringKey = table.engine().luaMaybeTo<String>(std::move(key));
-      if (!stringKey)
-        return std::unexpected(std::move(stringKey.error()));
-      if (!*stringKey) {
-        failedConversion = true;
+      lua_getfield(state, -1, "__typehint");
+      lua_getfield(state, -2, "__nils");
+    }
+    return 2;
+  });
+  lua_pushvalue(m_state, index);
+  auto metadata = handleError(m_state, pcallWithTraceback(m_state, 1, 2));
+  if (!metadata)
+    return std::unexpected(std::move(metadata.error()));
+  lua_pushvalue(m_state, -2);
+  auto hintValue = popLuaValue(m_state);
+  if (!hintValue)
+    return std::unexpected(std::move(hintValue.error()));
+  auto hint = luaTo<std::optional<int>>(std::move(*hintValue));
+  if (!hint)
+    return std::unexpected(std::move(hint.error()));
+  int typeHint = hint->value_or(0);
+  int nilsIndex = lua_gettop(m_state);
+  if (!lua_isnil(m_state, nilsIndex) && !lua_istable(m_state, nilsIndex))
+    return std::unexpected(LuaConversionException("JSON null tracking value is not a table"));
+
+  JsonObject stringEntries;
+  struct Entry {
+    unsigned index;
+    std::size_t order;
+    Json value;
+  };
+  std::vector<Entry> intEntries;
+  intEntries.reserve(lua_rawlen(m_state, index));
+  bool ordered = true;
+  auto visit = [&](int tableIndex, bool nulls) -> std::expected<bool, StarException> {
+    LuaStackRestore cursorRestore(m_state);
+    lua_pushnil(m_state);
+    int cursor = lua_gettop(m_state);
+    while (true) {
+      lua_pushcfunction(m_state, [](lua_State* state) {
+        return lua_next(state, 1) ? 2 : 0;
+      });
+      lua_pushvalue(m_state, tableIndex);
+      lua_pushvalue(m_state, cursor);
+      auto next = handleError(m_state, pcallWithTraceback(m_state, 2, LUA_MULTRET));
+      if (!next)
+        return std::unexpected(std::move(next.error()));
+      lua_remove(m_state, cursor);
+      if (lua_gettop(m_state) < cursor)
+        return true;
+      // Preserve the native boundary's error precedence even when the value
+      // is ignored by null tracking or a different value cannot become JSON.
+      for (int position : {cursor, cursor + 1}) {
+        auto representable = validateNativeLuaValue(m_state, position);
+        if (!representable)
+          return std::unexpected(std::move(representable.error()));
+      }
+      Json value;
+      if (!nulls) {
+        auto converted = stackToJson(cursor + 1);
+        if (!converted)
+          return std::unexpected(std::move(converted.error()));
+        if (!*converted)
+          return false;
+        value = std::move(**converted);
+      }
+      int keyType = lua_type(m_state, cursor);
+      if (keyType == LUA_TNUMBER) {
+        LuaValue key = lua_isinteger(m_state, cursor)
+            ? LuaValue(lua_tointeger(m_state, cursor)) : LuaValue(lua_tonumber(m_state, cursor));
+        if (auto integer = LuaDetail::asInteger(key)) {
+          unsigned keyIndex = static_cast<unsigned>(*integer);
+          if (!intEntries.empty() && intEntries.back().index >= keyIndex)
+            ordered = false;
+          intEntries.push_back({keyIndex, intEntries.size(), std::move(value)});
+        } else {
+          stringEntries[String(toString(lua_tonumber(m_state, cursor)))] = std::move(value);
+        }
+      } else if (keyType == LUA_TSTRING) {
+        std::size_t size;
+        char const* data = lua_tolstring(m_state, cursor, &size);
+        if (m_nullTerminated > 0)
+          size = std::strlen(data);
+        stringEntries[String(data, size)] = std::move(value);
+      } else {
         return false;
       }
-      stringEntries[std::move(**stringKey)] = std::move(**jsonValue);
+      lua_pop(m_state, 1); // The next iteration retains only the original key.
     }
-    return true;
-  });
-  if (!iterated)
-    return std::unexpected(std::move(iterated.error()));
-  if (failedConversion)
+  };
+  if (lua_istable(m_state, nilsIndex)) {
+    auto visited = visit(nilsIndex, true);
+    if (!visited)
+      return std::unexpected(std::move(visited.error()));
+    if (!*visited)
+      return std::optional<Json>();
+  }
+  auto visited = visit(index, false);
+  if (!visited)
+    return std::unexpected(std::move(visited.error()));
+  if (!*visited)
     return std::optional<Json>();
-  bool interpretAsList = stringEntries.empty()
-      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && std::prev(intEntries.end())->first == intEntries.size()));
-  if (interpretAsList) {
-    JsonArray list;
-    for (auto& p : intEntries) {
-      if (p.first == 0)
-        return std::unexpected(LuaException("JSON array index must be positive"));
-      list.set(p.first - 1, std::move(p.second));
+  if (!ordered) {
+    std::sort(intEntries.begin(), intEntries.end(), [](Entry const& a, Entry const& b) {
+      return a.index < b.index || (a.index == b.index && a.order < b.order);
+    });
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < intEntries.size(); ++i) {
+      if (count && intEntries[count - 1].index == intEntries[i].index)
+        intEntries[count - 1].value = std::move(intEntries[i].value);
+      else {
+        if (count != i)
+          intEntries[count] = std::move(intEntries[i]);
+        ++count;
+      }
     }
+    intEntries.resize(count);
+  }
+  bool interpretAsList = stringEntries.empty()
+      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && intEntries.back().index == intEntries.size()));
+  if (interpretAsList) {
+    if (!intEntries.empty() && intEntries.front().index == 0)
+      return std::unexpected(LuaException("JSON array index must be positive"));
+    JsonArray list(intEntries.empty() ? 0 : intEntries.back().index);
+    for (auto& entry : intEntries)
+      list[entry.index - 1] = std::move(entry.value);
     return Json(std::move(list));
   }
-  for (auto& p : intEntries)
-    stringEntries[toString(p.first)] = std::move(p.second);
+  for (auto& entry : intEntries)
+    stringEntries[toString(entry.index)] = std::move(entry.value);
   return Json(std::move(stringEntries));
 }
 

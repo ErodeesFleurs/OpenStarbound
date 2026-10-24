@@ -177,6 +177,12 @@
                 inputsFrom = [ package ];
                 XCLANG_ROOT = package.dependencies.cc.bundledRuntime;
                 OPENSTARBOUND_BUILD_RPATH = nixpkgs.lib.makeLibraryPath package.runtimeLibraries;
+                # Manual CMake invocations can pass $cmakeFlags, or use the
+                # exported source path as the standard FetchContent cache option.
+                FETCHCONTENT_SOURCE_DIR_STAR_LUA = "${package.luaSource}";
+                cmakeFlags = [
+                  (nixpkgs.lib.cmakeFeature "FETCHCONTENT_SOURCE_DIR_STAR_LUA" "${package.luaSource}")
+                ];
                 # The package patches literal ImGui Lua format strings; the shell
                 # builds the working tree without applying packaging patches.
                 hardeningDisable = [ "format" ];

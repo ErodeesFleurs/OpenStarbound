@@ -57,7 +57,11 @@ template <typename Key, typename Value, typename... Rest>
 
 template <typename... Fields>
 [[nodiscard]] std::expected<LuaValue, StarException> makeTable(LuaEngine& engine, Fields&&... fields) {
-  auto created = engine.createTable();
+  constexpr auto arrayFields = []<std::size_t... I>(std::index_sequence<I...>) {
+    return (0 + ... + int(std::is_integral_v<std::remove_cvref_t<
+        std::tuple_element_t<2 * I, std::tuple<Fields...>>>>));
+  }(std::make_index_sequence<sizeof...(Fields) / 2>{});
+  auto created = engine.createTable(arrayFields, static_cast<int>(sizeof...(Fields) / 2) - arrayFields);
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto table = std::move(*created);
@@ -180,7 +184,7 @@ std::expected<std::optional<CollisionKind>, StarException> LuaConverter<Collisio
 std::expected<LuaValue, StarException> LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) {
   if (!CollisionKindNames)
     return std::unexpected(CollisionKindNames.error());
-  auto created = engine.createTable();
+  auto created = engine.createTable(static_cast<int>(CollisionKindNames->size()), 0);
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto table = std::move(*created);
@@ -223,7 +227,9 @@ std::expected<LuaValue, StarException> LuaConverter<PlatformerAStar::Path>::from
   auto convertNode = [&engine](PlatformerAStar::Node const& node) {
     return makeTable(engine, "position", node.position, "velocity", node.velocity);
   };
-  auto created = engine.createTable();
+  if (path.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+    return std::unexpected(LuaException("Too many entries for a Lua path table"));
+  auto created = engine.createTable(static_cast<int>(path.size()), 0);
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto pathTable = std::move(*created);
@@ -567,7 +573,7 @@ std::expected<std::optional<LiquidLevel>, StarException> LuaConverter<LiquidLeve
 }
 
 std::expected<LuaValue, StarException> LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
-  auto created = engine.createTable();
+  auto created = engine.createTable(0, std::holds_alternative<Drawable::PolyPart>(v.part) ? 4 : 5);
   if (!created)
     return std::unexpected(std::move(created.error()));
   auto table = std::move(*created);

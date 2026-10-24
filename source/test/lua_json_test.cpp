@@ -24,7 +24,7 @@ TEST(LuaJsonTest, Scope) {
 
   auto script2Result = engine->compile(
       R"SCRIPT(
-        global = 42
+        scopeValue = 42
 
         function increment()
           self.called = self.called + 1
@@ -67,8 +67,8 @@ TEST(LuaJsonTest, Scope) {
   EXPECT_EQ(context3.invokePath<Json>("increment"), 1);
   EXPECT_EQ(context1.invokePath<Json>("increment"), 5);
 
-  EXPECT_EQ(context1.contains("global"), false);
-  EXPECT_EQ(context3.contains("global"), true);
+  EXPECT_EQ(context1.contains("scopeValue"), false);
+  EXPECT_EQ(context3.contains("scopeValue"), true);
 }
 
 TEST(LuaJsonTest, FunkyRecursion) {
@@ -497,4 +497,152 @@ TEST(LuaJsonTest, IntFloat) {
   EXPECT_TRUE(intResult->isType(Json::Type::Int));
   EXPECT_EQ(context.invokePath<String>("printNumber", 1.0), "1.0");
   EXPECT_EQ(context.invokePath<String>("printNumber", 1), "1");
+}
+
+TEST(LuaJsonTest, MixedKeysPreserveNestedJsonKinds) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    function mixedKeys()
+      local result = jobject()
+      result[1] = jarray()
+      result[2.5] = jobject()
+      result.named = nil
+      result.nested = {jarray(), jobject()}
+      return result
+    end
+  )SCRIPT"));
+  auto result = context->invokePath<Json>("mixedKeys");
+  ASSERT_TRUE(result);
+  Json expected = JsonObject{{"1", JsonArray{}}, {"2.5", JsonObject{}},
+      {"named", Json()}, {"nested", JsonArray{JsonArray{}, JsonObject{}}}};
+  EXPECT_EQ(*result, expected);
+}
+
+TEST(LuaJsonTest, ActualValuesOverrideNullTracking) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    function overwrittenNulls()
+      local object = jobject()
+      object.value = nil
+      rawset(object, "value", 42)
+      local array = jarray()
+      array[1] = nil
+      rawset(array, 1, 7)
+      return {object, array}
+    end
+  )SCRIPT"));
+  auto result = context->invokePath<Json>("overwrittenNulls");
+  ASSERT_TRUE(result);
+  Json expected = JsonArray{JsonObject{{"value", 42}}, JsonArray{7}};
+  EXPECT_EQ(*result, expected);
+}
+
+TEST(LuaJsonTest, InvalidArrayIndexDoesNotPoisonContext) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    function invalidArray()
+      local array = jarray()
+      array[0] = 42
+      return array
+    end
+    function validArray()
+      return {42}
+    end
+  )SCRIPT"));
+  auto invalid = context->invokePath<Json>("invalidArray");
+  EXPECT_FALSE(invalid);
+  auto valid = context->invokePath<Json>("validArray");
+  ASSERT_TRUE(valid);
+  EXPECT_EQ(*valid, Json(JsonArray{42}));
+}
+
+TEST(LuaJsonTest, UnsupportedFunctionsAreConversionMisses) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    function unsupportedValue()
+      return {value = function() end}
+    end
+    function unsupportedKey()
+      return {[function() end] = 42}
+    end
+  )SCRIPT"));
+  for (auto name : {"unsupportedValue", "unsupportedKey"}) {
+    auto value = context->invokePath<LuaValue>(name);
+    ASSERT_TRUE(value);
+    auto converted = (*engine)->luaMaybeTo<Json>(*value);
+    ASSERT_TRUE(converted);
+    EXPECT_FALSE(*converted);
+  }
+}
+
+TEST(LuaJsonTest, UnsupportedNativeValuesRemainErrorsBeforeConversionMisses) {
+  auto engine = LuaEngine::create(false);
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    local captured = {}
+    local function holder() return captured end
+    local token = debug.upvalueid(holder, 1)
+    function invalidValue() return {value = token} end
+    function invalidKey() return {[token] = function() end} end
+    function invalidValueWithFunctionKey() return {[function() end] = token} end
+    function invalidNullTracking()
+      local result = jobject()
+      getmetatable(result).__nils.ignored = token
+      return result
+    end
+  )SCRIPT"));
+  for (auto name : {"invalidValue", "invalidKey", "invalidValueWithFunctionKey", "invalidNullTracking"}) {
+    auto value = context->invokePath<LuaValue>(name);
+    ASSERT_TRUE(value);
+    auto converted = (*engine)->luaMaybeTo<Json>(*value);
+    ASSERT_FALSE(converted);
+    EXPECT_TRUE(converted.error().is<LuaException>());
+  }
+  EXPECT_EQ(context->eval<int>("6 * 7"), 42);
+}
+
+TEST(LuaJsonTest, EmbeddedNullHonorsTerminationScopeAndOptOut) {
+  auto engine = LuaEngine::create();
+  ASSERT_TRUE(engine);
+  auto context = (*engine)->createContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->load(R"SCRIPT(
+    function embeddedNull()
+      return {value = "before\0after"}
+    end
+  )SCRIPT"));
+  Json full = JsonObject{{"value", String("before\0after", 12)}};
+  auto unrestricted = context->invokePath<Json>("embeddedNull");
+  ASSERT_TRUE(unrestricted);
+  EXPECT_EQ(*unrestricted, full);
+  {
+    auto termination = (*engine)->nullTerminate();
+    auto terminated = context->invokePath<Json>("embeddedNull");
+    ASSERT_TRUE(terminated);
+    EXPECT_EQ(*terminated, Json(JsonObject{{"value", "before"}}));
+  }
+  auto restored = context->invokePath<Json>("embeddedNull");
+  ASSERT_TRUE(restored);
+  EXPECT_EQ(*restored, full);
+  (*engine)->setNullTerminated(false);
+  {
+    auto termination = (*engine)->nullTerminate();
+    auto optedOut = context->invokePath<Json>("embeddedNull");
+    ASSERT_TRUE(optedOut);
+    EXPECT_EQ(*optedOut, full);
+  }
 }
