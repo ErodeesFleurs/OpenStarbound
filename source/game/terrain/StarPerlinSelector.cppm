@@ -2,6 +2,7 @@ module;
 import std;
 import star.format;
 import star.json;
+import star.string_view;
 
 import star.bi_map;
 import star.random;
@@ -41,9 +42,7 @@ std::expected<std::shared_ptr<PerlinSelector>, StarException> PerlinSelector::cr
   auto functionName = config.getString("function");
   if (!functionName)
     return std::unexpected(std::move(functionName.error()));
-  if (!PerlinTypeNames)
-    return std::unexpected(PerlinTypeNames.error());
-  auto type = PerlinTypeNames->getLeft(*functionName);
+  auto type = enumValue<PerlinTypeNames>(StringView(*functionName));
   if (!type)
     return std::unexpected(std::move(type.error()));
   auto octaves = config.getFloat("octaves");
@@ -64,7 +63,7 @@ std::expected<std::shared_ptr<PerlinSelector>, StarException> PerlinSelector::cr
   auto beta = config.getFloat("beta", 2.0f);
   if (!beta)
     return std::unexpected(std::move(beta.error()));
-  PerlinF function(**type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
+  PerlinF function(*type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
   auto xInfluence = config.getFloat("xInfluence", 1.0f);
   if (!xInfluence)
     return std::unexpected(std::move(xInfluence.error()));

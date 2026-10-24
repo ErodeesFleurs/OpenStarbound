@@ -100,7 +100,6 @@ target_sources (star_modules PRIVATE
     StarDirectives.cpp
     StarEncode.cpp
     StarImageProcessing.cpp
-    StarPerlin.cpp
     StarText.cpp
     StarTime.cpp
     StarUnicode.cpp

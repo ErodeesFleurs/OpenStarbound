@@ -2,6 +2,7 @@ module;
 import std;
 import star.format;
 import star.string;
+import star.string_view;
 import star.json;
 import star.json_extra;
 
@@ -103,14 +104,12 @@ std::expected<std::shared_ptr<DisplacementSelector>, StarException> Displacement
     Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database) {
   auto result = std::make_shared<DisplacementSelector>(ConstructionKey{}, config, parameters);
   RandomSource random(parameters.seed);
-  if (!PerlinTypeNames)
-    return std::unexpected(PerlinTypeNames.error());
   auto readFunction = [&](char axis) -> std::expected<PerlinF, StarException> {
     auto key = [axis](char const* suffix) { return strf("{}{}", axis, suffix); };
     auto name = config.getString(key("Type"));
     if (!name)
       return std::unexpected(std::move(name.error()));
-    auto type = PerlinTypeNames->getLeft(*name);
+    auto type = enumValue<PerlinTypeNames>(StringView(*name));
     if (!type)
       return std::unexpected(std::move(type.error()));
     auto octaves = config.getFloat(key("Octaves"));
@@ -131,7 +130,7 @@ std::expected<std::shared_ptr<DisplacementSelector>, StarException> Displacement
     auto beta = config.getFloat(key("Beta"), 2.0f);
     if (!beta)
       return std::unexpected(std::move(beta.error()));
-    return PerlinF(**type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
+    return PerlinF(*type, *octaves, *freq, *amp, *bias, *alpha, *beta, random.randu64());
   };
   auto xFunction = readFunction('x');
   if (!xFunction)

@@ -2,6 +2,8 @@ module;
 import std;
 import star.format;
 import star.json;
+import star.string;
+import star.string_view;
 
 import star.bi_map;
 import star.interpolation;
@@ -21,7 +23,13 @@ enum class PerlinType {
   Billow,
   RidgedMulti
 };
-extern std::expected<EnumMap<PerlinType>, StarException> const PerlinTypeNames;
+inline constexpr auto PerlinTypeNames = sortedEnumNames(std::array{
+  std::pair{PerlinType::Uninitialized, std::string_view("uninitialized")},
+  std::pair{PerlinType::Perlin, std::string_view("perlin")},
+  std::pair{PerlinType::Billow, std::string_view("billow")},
+  std::pair{PerlinType::RidgedMulti, std::string_view("ridgedMulti")},
+});
+static_assert(validEnumNames<PerlinTypeNames>());
 
 inline constexpr int PerlinSampleSize = 512;
 
@@ -216,8 +224,7 @@ std::expected<Perlin<Float>, StarException> Perlin<Float>::create(Json const& js
   if (!gain) return std::unexpected(std::move(gain.error()));
   auto typeName = json.getString("type");
   if (!typeName) return std::unexpected(std::move(typeName.error()));
-  if (!PerlinTypeNames) return std::unexpected(PerlinTypeNames.error());
-  auto type = PerlinTypeNames->getLeft(*typeName);
+  auto type = enumValue<PerlinTypeNames>(StringView(*typeName));
   if (!type) return std::unexpected(std::move(type.error()));
   Perlin perlin;
   perlin.m_seed = *seed;
@@ -229,7 +236,7 @@ std::expected<Perlin<Float>, StarException> Perlin<Float>::create(Json const& js
   perlin.m_beta = *beta;
   perlin.m_offset = *offset;
   perlin.m_gain = *gain;
-  perlin.m_type = **type;
+  perlin.m_type = *type;
   perlin.init(perlin.m_seed);
   return perlin;
 }
@@ -379,8 +386,7 @@ Float Perlin<Float>::beta() const {
 
 template <typename Float>
 std::expected<Json, StarException> Perlin<Float>::toJson() const {
-  if (!PerlinTypeNames) return std::unexpected(PerlinTypeNames.error());
-  auto type = PerlinTypeNames->getRight(m_type);
+  auto type = enumName<PerlinTypeNames>(m_type);
   if (!type) return std::unexpected(std::move(type.error()));
   return JsonObject{
     {"seed", m_seed},
@@ -392,7 +398,7 @@ std::expected<Json, StarException> Perlin<Float>::toJson() const {
     {"beta", m_beta},
     {"offset", m_offset},
     {"gain", m_gain},
-    {"type", **type}
+    {"type", String(*type)}
   };
 }
 

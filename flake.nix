@@ -121,6 +121,10 @@
           # RelWithAsserts build: no -DNDEBUG, so the project's own invariants
           # (starAssert) and DebugEnabled paths are live while the tests run.
           asserts = openstarbound.override { asserts = true; };
+          benchmarks = openstarbound.override {
+            guiSupport = false;
+            withBenchmarks = true;
+          };
         };
     in
     {
@@ -175,6 +179,7 @@
             })
               {
                 inputsFrom = [ package ];
+                buildInputs = [ package.dependencies.gbenchmark ];
                 XCLANG_ROOT = package.dependencies.cc.bundledRuntime;
                 OPENSTARBOUND_BUILD_RPATH = nixpkgs.lib.makeLibraryPath package.runtimeLibraries;
                 # Manual CMake invocations can pass $cmakeFlags, or use the

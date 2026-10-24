@@ -452,7 +452,7 @@ TEST(StringTest, FixedEnumNamesDistinguishUnknownNamesInvalidUtf8AndSparseValues
   ASSERT_FALSE(embeddedNull);
   EXPECT_TRUE(embeddedNull.error().is<MapException>());
   for (std::string_view bytes : {std::string_view("\xff", 1), std::string_view("A\xff", 2),
-      std::string_view("zzzz\xc3", 5)}) {
+      std::string_view("zzzz\xc3", 5), std::string_view("\xc3\xa9\xff", 3)}) {
     auto optional = maybeEnumValue<KeyNames>(bytes);
     ASSERT_FALSE(optional);
     EXPECT_TRUE(optional.error().is<UnicodeException>());

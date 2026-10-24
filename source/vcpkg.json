@@ -18,6 +18,10 @@
     { "name": "cpr", "version>=": "1.10.5", "features": ["ssl"] }
   ],
   "features": {
+    "benchmarks": {
+      "description": "Standalone Google Benchmark performance executables",
+      "dependencies": [{ "name": "benchmark", "version>=": "1.9.5" }]
+    },
     "qt-tools": {
       "description": "Static Qt5 widgets for json_tool and mod_uploader",
       "dependencies": ["qt5-base"]

@@ -123,6 +123,35 @@ OPENSTARBOUND_ASSETS=/path/to/Starbound/assets OPENSTARBOUND_TEST_JOBS=4 nix run
 
 Set `OPENSTARBOUND_TEST_JOBS` to bound parallel cases (default `1`); each discovered case gets a separate process, runtime and log/JSON report. Reports default to `./game-tests-report`; override with `OPENSTARBOUND_TEST_OUT`. Keep commercial assets out of commits and distributions.
 
+### Performance benchmarks
+
+Benchmarks are opt-in and retain correctness tests. They require static [Google Benchmark](https://github.com/google/benchmark) 1.9.5+ built with the same xclang/runtime:
+
+```sh
+nix build .#benchmarks
+./result/bin/core_benchmarks --benchmark_repetitions=7 --benchmark_out=core.json --benchmark_out_format=json
+```
+
+For native presets, configure from `source/` with `-DSTAR_BUILD_BENCHMARKS=ON -DVCPKG_MANIFEST_FEATURES="qt-tools;benchmarks"`, then build targets `core_benchmarks game_benchmarks`. Nix development shells include the dependency.
+
+`game_benchmarks` needs owned assets and a fresh, private bootconfig; never point it at saves. For example:
+
+```json
+{
+  "assetSources": ["/path/to/Starbound/assets/packed.pak", "/path/to/OpenStarbound/assets/opensb"],
+  "storageDirectory": "/tmp/osb-benchmark/storage",
+  "logDirectory": "/tmp/osb-benchmark/logs"
+}
+```
+
+```sh
+./result/bin/game_benchmarks -bootconfig /path/to/benchmark.config --benchmark_repetitions=7 --benchmark_out=game.json --benchmark_out_format=json
+```
+
+Core cases cover JSON encoding, fixed enum lookups and reserved string-key hash maps. Game cases separate cold object configuration parsing from warm lookups, parse the complete projectile catalog, serialize a generated terrestrial layout and export a genuine nested Lua profile. Asset caches are warmed; fixture setup and validation are untimed. Game cases report wall time, and profile export includes file writes.
+
+Compare identical inputs/build flags on the same CPU; use repeated samples and account for VPS noise. These measure latency/throughput, not allocator fragmentation. Do not replace correctness tests or impose timing thresholds on shared CI.
+
 ### Development notes
 
 Project C++ uses named modules, `import std;` and `std::expected`, with RTTI and C++ exceptions disabled. Preserve the same static C++ runtime across dependencies.
@@ -136,7 +165,7 @@ Synchronization uses standard mutexes, guards and condition variables; clock acq
 
 Numeric lexical conversion uses `std::from_chars` and requires full tokens. Integer overflow leaves existing destinations unchanged; value-initialized conversions yield `0`, including oversized `uint64_t` inputs that previously wrapped. JSON numbers use bounded UTF-32 stack buffers with `std::format_to_n`, preserving default formatting.
 
-Fixed input/log-level name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. Runtime text still undergoes UTF-8 validation and case-insensitive comparison.
+Fixed input, log-level and Perlin name tables are `constexpr` arrays. Use `enumName<Names>`, `enumValue<Names>` or `maybeEnumValue<Names>` for checked lookup; returned names borrow static storage. ASCII reverse lookup uses byte views and `std::ranges::lower_bound` over precomputed indices. Non-ASCII input is fully UTF-8-validated before returning a checked miss; case folding remains ASCII-only.
 
 For clangd 23, run `nix develop -c bash scripts/ide/configure-clangd.sh`. Use `--experimental-modules-support`, `--compile-commands-dir=/absolute/path/to/OpenStarbound/build/clangd` and `--query-driver=/nix/store/*-xclang-wrapper-*/bin/clang++,/nix/store/*-xclang-wrapper-*/bin/clang`; set `LC_ALL=C` and `LANGUAGE=C`.
 

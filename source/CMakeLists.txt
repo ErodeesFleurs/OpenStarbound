@@ -448,6 +448,11 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
+option(STAR_BUILD_BENCHMARKS "Build standalone performance benchmarks" OFF)
+if(STAR_BUILD_BENCHMARKS)
+  add_subdirectory(benchmark)
+endif()
+
 # Starbound stand-alone server.
 add_subdirectory(server)
 

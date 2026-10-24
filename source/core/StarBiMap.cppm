@@ -176,11 +176,15 @@ template <auto const& Names>
 [[nodiscard]] auto maybeEnumValue(StringView name)
     -> std::expected<std::optional<typename std::remove_cvref_t<decltype(Names)>::value_type::first_type>, StarException> {
   static_assert(validEnumNames<Names>(), "Fixed enum names must be unique ASCII spellings in enum order");
-  // Validate the entire argument before a short-circuit comparison can hide a
-  // malformed suffix, including when the name cannot match any table entry.
-  auto length = name.size();
-  if (!length)
-    return std::unexpected(std::move(length.error()));
+  auto bytes = name.utf8();
+  if (!std::ranges::all_of(bytes, [](unsigned char c) { return c < 0x80; })) {
+    // String::toLower only folds ASCII, so non-ASCII cannot match this table.
+    // Still validate the whole input: a malformed suffix must remain an error.
+    auto length = name.size();
+    if (!length)
+      return std::unexpected(std::move(length.error()));
+    return std::nullopt;
+  }
   static constexpr auto indices = [] {
     std::array<std::size_t, Names.size()> result{};
     for (std::size_t i = 0; i < result.size(); ++i)
@@ -190,22 +194,12 @@ template <auto const& Names>
     });
     return result;
   }();
-  std::size_t first = 0;
-  std::size_t last = indices.size();
-  while (first != last) {
-    auto middle = first + (last - first) / 2;
-    auto const& pair = Names[indices[middle]];
-    auto compared = name.compare(StringView(pair.second), String::CaseInsensitive);
-    if (!compared)
-      return std::unexpected(std::move(compared.error()));
-    if (*compared == 0)
-      return pair.first;
-    if (*compared < 0)
-      last = middle;
-    else
-      first = middle + 1;
-  }
-  return std::nullopt;
+  auto position = std::ranges::lower_bound(indices, bytes,
+      [](std::string_view a, std::string_view b) { return compareEnumNameBytes(a, b) < 0; },
+      [](std::size_t index) { return Names[index].second; });
+  if (position == indices.end() || compareEnumNameBytes(Names[*position].second, bytes) != 0)
+    return std::nullopt;
+  return Names[*position].first;
 }
 
 template <auto const& Names>

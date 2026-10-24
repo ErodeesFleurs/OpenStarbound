@@ -31,6 +31,7 @@
   discordSupport ? false,
   qtSupport ? false,
   withTests ? true,
+  withBenchmarks ? false,
   # Build with AddressSanitizer + UndefinedBehaviorSanitizer.  The checkPhase
   # then fails on the first report, so `nix build .#sanitized` is a hard gate
   # for undefined behaviour in the code the tests cover; the game_tests sweep
@@ -145,6 +146,10 @@ let
   ++ lib.optionals withTests [
     "core_tests"
     "game_tests"
+  ]
+  ++ lib.optionals withBenchmarks [
+    "core_benchmarks"
+    "game_benchmarks"
   ];
   qtTools =
     lib.optional qtSupport "json_tool" ++ lib.optional (qtSupport && steamSupport) "mod_uploader";
@@ -226,7 +231,8 @@ stdenv.mkDerivation {
     opusCmake
   ]
   ++ lib.optional (steamSupport || discordSupport) sdks
-  ++ lib.optional qtSupport qt5.qtbase;
+  ++ lib.optional qtSupport qt5.qtbase
+  ++ lib.optional withBenchmarks dependencies.gbenchmark;
 
   # Append rather than replace the caller's compiler/linker flags. These are
   # compiler-driver options: NIX_LDFLAGS would pass them directly to ld.
@@ -288,6 +294,7 @@ stdenv.mkDerivation {
       if sanitizers || asserts then "minimal" else "default"
     ))
   ]
+  ++ lib.optional withBenchmarks (lib.cmakeBool "STAR_BUILD_BENCHMARKS" true)
   ++ lib.optionals steamSupport [
     (lib.cmakeFeature "STEAM_API_INCLUDE_DIR" "${sdks}/include")
     (lib.cmakeFeature "STEAM_API_LIBRARY" "${sdks}/lib/libsteam_api${sdkExtension}")
